@@ -148,7 +148,7 @@ You can override the default by specifying a numeric argument for the
 GNUS can also bypass NNTP and read the news directly from the file
 system.  This reduces the overhead, but the features for retrieving by
 their message IDs may fail to work (@pxref{Spool Variables}).  To do
-this, specify @samp{::} as the NNTP server ``machine name''.
+this, set the variable @code{gnus-nntp-service} to @code{nil}.
 
 @cindex private news directory
 @cindex MH and GNUS

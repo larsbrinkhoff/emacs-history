@@ -4,7 +4,7 @@
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
+    the Free Software Foundation; either version 2, or (at your option)
     any later version.
 
     This program is distributed in the hope that it will be useful,
@@ -164,10 +164,6 @@ pointer looks like an int) but not on all machines.
 #define PERROR(file) report_error (file, new)
 #endif
 
-#ifndef CANNOT_DUMP  /* all rest of file!  */
-
-#ifndef CANNOT_UNEXEC /* most of rest of file */
-
 #include <a.out.h>
 /* Define getpagesize () if the system does not.
    Note that this may depend on symbols defined in a.out.h
@@ -237,6 +233,7 @@ static int pagemask;
 #endif
 
 #ifdef emacs
+#include "lisp.h"
 
 static
 report_error (file, fd)
@@ -245,7 +242,7 @@ report_error (file, fd)
 {
   if (fd)
     close (fd);
-  error ("Failure operating on %s", file);
+  report_file_error ("Cannot unexec", Fcons (build_string (file), Qnil));
 }
 #endif /* emacs */
 
@@ -419,8 +416,8 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 #define CHECK_SCNHDR(ptr, name, flags) \
   if (strcmp(s->s_name, name) == 0) { \
     if (s->s_flags != flags) { \
-      fprintf(stderr, "unexec: %x flags where %x expected in %s section.\n", \
-	      s->s_flags, flags, name); \
+      fprintf(stderr, "unexec: %lx flags where %x expected in %s section.\n", \
+	      (unsigned long)s->s_flags, flags, name); \
     } \
     if (ptr) { \
       fprintf(stderr, "unexec: duplicate section header for section %s.\n", \
@@ -619,8 +616,8 @@ write_segment (new, ptr, end)
       else if (nwrite != ret)
 	{
 	  sprintf (buf,
-		   "unexec write failure: addr 0x%x, fileno %d, size 0x%x, wrote 0x%x, errno %d",
-		   ptr, new, nwrite, ret, errno);
+		   "unexec write failure: addr 0x%lx, fileno %d, size 0x%x, wrote 0x%x, errno %d",
+		   (unsigned long)ptr, new, nwrite, ret, errno);
 	  PERROR (buf);
 	}
       i += nwrite;
@@ -837,7 +834,11 @@ unrelocate_symbols (new, a_out, a_name, new_name)
 	{
 	  int orig_int;
 
+#ifdef AIX4_1
+	  lseek (a_out, orig_data_scnptr + (ldrel->l_vaddr - d_start), 0);
+#else
 	  lseek (a_out, orig_data_scnptr + ldrel->l_vaddr, 0);
+#endif
 
 	  if (read (a_out, (void *) &orig_int, sizeof (orig_int)) != sizeof (orig_int))
 	    {
@@ -846,18 +847,32 @@ unrelocate_symbols (new, a_out, a_name, new_name)
 
 	  switch (ldrel->l_symndx) {
 	  case SYMNDX_TEXT:
+#ifdef AIX4_1
+	    p = (int *) (ldrel->l_vaddr);
+	    orig_int = * p;
+#else
 	    p = (int *) (d_start + ldrel->l_vaddr);
 	    orig_int = * p - (t_start - f_ohdr.text_start);
+#endif
 	    break;
 
 	  case SYMNDX_DATA:
 	  case SYMNDX_BSS:
+#ifdef AIX4_1
+	    p = (int *) (ldrel->l_vaddr);
+	    orig_int = * p;
+#else
 	    p = (int *) (d_start + ldrel->l_vaddr);
 	    orig_int = * p - (d_start - f_ohdr.data_start);
+#endif
 	    break;
 	  }
 
+#ifdef AIX4_1
+	  lseek (new, data_scnptr + (ldrel->l_vaddr - d_start), 0);
+#else
 	  lseek (new, data_scnptr + ldrel->l_vaddr, 0);
+#endif
 	  if (write (new, (void *) &orig_int, sizeof (orig_int)) != sizeof (orig_int))
 	    {
 	      PERROR (new_name);
@@ -866,7 +881,3 @@ unrelocate_symbols (new, a_out, a_name, new_name)
     }
 }
 #endif /* XCOFF */
-
-#endif /* not CANNOT_UNEXEC */
-
-#endif /* not CANNOT_DUMP */

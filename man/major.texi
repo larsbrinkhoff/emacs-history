@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Major Modes, Indentation, Frames, Top
 @chapter Major Modes
@@ -114,6 +114,20 @@ which allows you to specify local variables as well, like this:
 
 @noindent
 @xref{File Variables}, for more information about this.
+
+@vindex interpreter-mode-alist
+  When a file's contents begin with @samp{#!}, it can serve as an
+executable shell command, which works by running an interpreter named on
+the file's first line.  The rest of the file is used as input to the
+interpreter.
+
+  When you visit such a file in Emacs, if the file's name does not
+specify a major mode, Emacs uses the interpreter name on the first line
+to choose a mode.  If the first line is the name of a recognized
+interpreter program, such as @samp{perl} or @samp{tcl}, Emacs uses a
+mode appropriate for programs for that interpreter.  The variable
+@code{interpreter-mode-alist} specifies the correspondence between
+interpreter program names and major modes.
 
 @vindex default-major-mode
   When you visit a file that does not specify a major mode to use, or

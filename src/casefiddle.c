@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -36,31 +36,32 @@ casify_object (flag, obj)
 
   while (1)
     {
-      if (XTYPE (obj) == Lisp_Int)
+      if (INTEGERP (obj))
 	{
 	  c = XINT (obj);
 	  if (c >= 0 && c <= 0400)
 	    {
 	      if (inword)
-		XFASTINT (obj) = DOWNCASE (c);
+		XSETFASTINT (obj, DOWNCASE (c));
 	      else if (!UPPERCASEP (c))
-		XFASTINT (obj) = UPCASE1 (c);
+		XSETFASTINT (obj, UPCASE1 (c));
 	    }
 	  return obj;
 	}
-      if (XTYPE (obj) == Lisp_String)
+      if (STRINGP (obj))
 	{
 	  obj = Fcopy_sequence (obj);
 	  len = XSTRING (obj)->size;
 	  for (i = 0; i < len; i++)
 	    {
 	      c = XSTRING (obj)->data[i];
-	      if (inword)
+	      if (inword && flag != CASE_CAPITALIZE_UP)
 		c = DOWNCASE (c);
-	      else if (!UPPERCASEP (c))
+	      else if (!UPPERCASEP (c)
+		       && (!inword || flag != CASE_CAPITALIZE_UP))
 		c = UPCASE1 (c);
 	      XSTRING (obj)->data[i] = c;
-	      if (flag == CASE_CAPITALIZE)
+	      if ((int) flag >= (int) CASE_CAPITALIZE)
 		inword = SYNTAX (c) == Sword;
 	    }
 	  return obj;
@@ -72,7 +73,8 @@ casify_object (flag, obj)
 DEFUN ("upcase", Fupcase, Supcase, 1, 1, 0,
   "Convert argument to upper case and return that.\n\
 The argument may be a character or string.  The result has the same type.\n\
-The argument object is not altered.  See also `capitalize'.")
+The argument object is not altered--the value is a copy.\n\
+See also `capitalize', `downcase' and `upcase-initials'.")
   (obj)
      Lisp_Object obj;
 {
@@ -82,7 +84,7 @@ The argument object is not altered.  See also `capitalize'.")
 DEFUN ("downcase", Fdowncase, Sdowncase, 1, 1, 0,
   "Convert argument to lower case and return that.\n\
 The argument may be a character or string.  The result has the same type.\n\
-The argument object is not altered.")
+The argument object is not altered--the value is a copy.")
   (obj)
      Lisp_Object obj;
 {
@@ -94,11 +96,24 @@ DEFUN ("capitalize", Fcapitalize, Scapitalize, 1, 1, 0,
 This means that each word's first character is upper case\n\
 and the rest is lower case.\n\
 The argument may be a character or string.  The result has the same type.\n\
-The argument object is not altered.")
+The argument object is not altered--the value is a copy.")
   (obj)
      Lisp_Object obj;
 {
   return casify_object (CASE_CAPITALIZE, obj);
+}
+
+/* Like Fcapitalize but change only the initials.  */
+
+DEFUN ("upcase-initials", Fupcase_initials, Supcase_initials, 1, 1, 0,
+  "Convert the initial of each word in the argument to upper case.\n\
+Do not change the other letters of each word.\n\
+The argument may be a character or string.  The result has the same type.\n\
+The argument object is not altered--the value is a copy.")
+  (obj)
+     Lisp_Object obj;
+{
+  return casify_object (CASE_CAPITALIZE_UP, obj);
 }
 
 /* flag is CASE_UP, CASE_DOWN or CASE_CAPITALIZE or CASE_CAPITALIZE_UP.
@@ -111,16 +126,19 @@ casify_region (flag, b, e)
   register int i;
   register int c;
   register int inword = flag == CASE_DOWN;
+  int start, end;
 
   if (EQ (b, e))
     /* Not modifying because nothing marked */
     return;
 
   validate_region (&b, &e);
-  modify_region (current_buffer, XFASTINT (b), XFASTINT (e));
-  record_change (XFASTINT (b), XFASTINT (e) - XFASTINT (b));
+  start = XFASTINT (b);
+  end = XFASTINT (e);
+  modify_region (current_buffer, start, end);
+  record_change (start, end - start);
 
-  for (i = XFASTINT (b); i < XFASTINT (e); i++)
+  for (i = start; i < end; i++)
     {
       c = FETCH_CHAR (i);
       if (inword && flag != CASE_CAPITALIZE_UP)
@@ -133,9 +151,7 @@ casify_region (flag, b, e)
 	inword = SYNTAX (c) == Sword;
     }
 
-  signal_after_change (XFASTINT (b),
-		       XFASTINT (e) - XFASTINT (b), 
-		       XFASTINT (e) - XFASTINT (b));
+  signal_after_change (start, end - start, end - start);
 }
 
 DEFUN ("upcase-region", Fupcase_region, Supcase_region, 2, 2, "r",
@@ -176,10 +192,15 @@ character positions to operate on.")
   return Qnil;
 }
 
-/* Like Fcapitalize but change only the initials.  */
+/* Like Fcapitalize_region but change only the initials.  */
 
-Lisp_Object
-upcase_initials_region (b, e)
+DEFUN ("upcase-initials-region", Fupcase_initials_region,
+       Supcase_initials_region, 2, 2, "r",
+  "Upcase the initial of each word in the region.\n\
+Subsequent letters of each word are not changed.\n\
+In programs, give two arguments, the starting and ending\n\
+character positions to operate on.")
+  (b, e)
      Lisp_Object b, e;
 {
   casify_region (CASE_CAPITALIZE_UP, b, e);
@@ -193,14 +214,16 @@ operate_on_word (arg, newpoint)
 {
   Lisp_Object val;
   int farend;
+  int iarg;
 
   CHECK_NUMBER (arg, 0);
-  farend = scan_words (point, XINT (arg));
+  iarg = XINT (arg);
+  farend = scan_words (point, iarg);
   if (!farend)
-    farend = XINT (arg) > 0 ? ZV : BEGV;
+    farend = iarg > 0 ? ZV : BEGV;
 
   *newpoint = point > farend ? point : farend;
-  XFASTINT (val) = farend;
+  XSETFASTINT (val, farend);
 
   return val;
 }
@@ -214,7 +237,7 @@ See also `capitalize-word'.")
 {
   Lisp_Object beg, end;
   int newpoint;
-  XFASTINT (beg) = point;
+  XSETFASTINT (beg, point);
   end = operate_on_word (arg, &newpoint);
   casify_region (CASE_UP, beg, end);
   SET_PT (newpoint);
@@ -229,7 +252,7 @@ With negative argument, convert previous words but do not move.")
 {
   Lisp_Object beg, end;
   int newpoint;
-  XFASTINT (beg) = point;
+  XSETFASTINT (beg, point);
   end = operate_on_word (arg, &newpoint);
   casify_region (CASE_DOWN, beg, end);
   SET_PT (newpoint);
@@ -246,7 +269,7 @@ With negative argument, capitalize previous words but do not move.")
 {
   Lisp_Object beg, end;
   int newpoint;
-  XFASTINT (beg) = point;
+  XSETFASTINT (beg, point);
   end = operate_on_word (arg, &newpoint);
   casify_region (CASE_CAPITALIZE, beg, end);
   SET_PT (newpoint);
@@ -258,9 +281,11 @@ syms_of_casefiddle ()
   defsubr (&Supcase);
   defsubr (&Sdowncase);
   defsubr (&Scapitalize);
+  defsubr (&Supcase_initials);
   defsubr (&Supcase_region);
   defsubr (&Sdowncase_region);
   defsubr (&Scapitalize_region);
+  defsubr (&Supcase_initials_region);
   defsubr (&Supcase_word);
   defsubr (&Sdowncase_word);
   defsubr (&Scapitalize_word);

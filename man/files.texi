@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Files, Buffers, Fixit, Top
 @chapter File Handling
@@ -26,8 +26,8 @@ on file directories.
 * Reverting::        Reverting cancels all the changes not saved.
 * Auto Save::        Auto Save periodically protects against loss of data.
 * File Aliases::     Handling multiple names for one file.
-* Version Control::  Version control systems (RCS and SCCS).
-* ListDir::          Listing the contents of a file directory.
+* Version Control::  Version control systems (RCS, CVS and SCCS).
+* Directories::      Creating, deleting and listing file directories.
 * Comparing Files::  Finding where two files differ.
 * Misc File Ops::    Other things you can do on files.
 @end menu
@@ -106,9 +106,13 @@ on the specified host.  It logs in through FTP using your user name or
 the name @var{user}.  It may ask you for a password from time to time;
 this is used for logging in on @var{host}.
 
+@vindex file-name-handler-alist
+  You can turn off the FTP file name feature by setting the variable
+@code{file-name-handler-alist} to @code{nil}.
+
   @samp{$} in a file name is used to substitute environment variables.
 For example, if you have used the shell command @samp{export
-FOO=rms/hacks} to set up an environment variable named @samp{FOO}, then
+FOO=rms/hacks} to set up an environment variable named @code{FOO}, then
 you can use @file{/u/$FOO/test.c} or @file{/u/$@{FOO@}/test.c} as an
 abbreviation for @file{/u/rms/hacks/test.c}.  The environment variable
 name consists of all the alphanumeric characters after the @samp{$};
@@ -605,13 +609,12 @@ Occasionally you will know why the file was changed and know that it does
 not matter; then you can answer @kbd{yes} and proceed.  Otherwise, you should
 cancel the save with @kbd{C-g} and investigate the situation.
 
-  The first thing you should do when notified that simultaneous editing has
-already taken place is to list the directory with @kbd{C-u C-x C-d}
-(@pxref{ListDir,,Directory Listing}).  This  shows the file's current
-author.  You should attempt to contact him to warn him not to continue
-editing.  Often the next step is to save the contents of your Emacs buffer
-under a different name, and use @code{diff} to compare the two
-files.@refill
+  The first thing you should do when notified that simultaneous editing
+has already taken place is to list the directory with @kbd{C-u C-x C-d}
+(@pxref{Directories}).  This shows the file's current author.  You
+should attempt to contact him to warn him not to continue editing.
+Often the next step is to save the contents of your Emacs buffer under a
+different name, and use @code{diff} to compare the two files.@refill
 
   Simultaneous editing checks are also made when you visit with @kbd{C-x
 C-f} a file that is already visited and when you start to modify a
@@ -751,7 +754,7 @@ terminal for a while; second, it may avoid some auto-saving while you
 are actually typing.
 
   Emacs also does auto-saving whenever it gets a fatal error.  This
-includes killing the Emacs job with a shell command such as @code{kill
+includes killing the Emacs job with a shell command such as @samp{kill
 %emacs}, or disconnecting a phone line or network connection.
 
 @findex do-auto-save
@@ -762,13 +765,13 @@ do-auto-save}.
 @subsection Recovering Data from Auto-Saves
 
 @findex recover-file
-  The way to use the contents of an auto-save file to recover from a loss
-of data is with the command @kbd{M-x recover-file @key{RET} @var{file}
+  You can use the contents of an auto-save file to recover from a loss
+of data with the command @kbd{M-x recover-file @key{RET} @var{file}
 @key{RET}}.  This visits @var{file} and then (after your confirmation)
-restores the contents from from its auto-save file @file{#@var{file}#}.  You
-can then save with @kbd{C-x C-s} to put the recovered text into @var{file}
-itself.  For example, to recover file @file{foo.c} from its auto-save file
-@file{#foo.c#}, do:@refill
+restores the contents from from its auto-save file @file{#@var{file}#}.
+You can then save with @kbd{C-x C-s} to put the recovered text into
+@var{file} itself.  For example, to recover file @file{foo.c} from its
+auto-save file @file{#foo.c#}, do:@refill
 
 @example
 M-x recover-file @key{RET} foo.c @key{RET}
@@ -780,6 +783,22 @@ C-x C-s
 directory listing describing the specified file and the auto-save file,
 so you can compare their sizes and dates.  If the auto-save file
 is older, @kbd{M-x recover-file} does not offer to read it.
+
+@findex recover-session
+  If Emacs or the computer crashes, you can recover all the files you
+were editing from their auto save files with the command @kbd{M-x
+recover-session}.  This first shows you a list of recorded interrupted
+sessions.  Move point to the one you choose, and type @kbd{C-c C-c}.
+
+  Then @code{recover-session} asks about each of the files that were
+being edited during that session, asking whether to recover that file.
+If you answer @kbd{y}, it calls @code{recover-file}, which works in its
+normal fashion.  It shows the dates of the original file and its
+auto-save file, and asks once again whether to recover that file.
+
+  When @code{recover-session} is done, the files you've chosen to
+recover are present in Emacs buffers.  You should then save them.  Only
+this---saving them---updates the files themselves.
 
 @node File Aliases
 @section File Name Aliases
@@ -822,26 +841,23 @@ file just once.  Version control systems also record history information
 such as the creation time of each version, who created it, and a 
 description of what was changed in that version.
 
-  The GNU project recommends the version control system known as RCS,
-which is free software and available from the Free Software Foundation.
-Emacs supports use of either RCS or SCCS (a proprietary, but widely
-used, version control system that is not quite as powerful as RCS)
-through a facility called VC.  The same Emacs commands work with either
-RCS or SCCS, so you hardly have to know which one of them you are
-using.
+  The Emacs version control commands work with three version control
+systems---RCS, CVS and SCCS.  The GNU project recommends the version
+control system known as RCS, which is free software and available from
+the Free Software Foundation.
 
 @menu
-* Concepts of VC::              Basic version control information;
+* Version Systems::             Supported version control back end systems.
+* VC Concepts::                 Basic version control information;
                                   checking files in and out.
 * Editing with VC::             Commands for editing a file maintained
                                   with version control.
-* Variables for Check-in/out::  Variables that affect the commands used
-                                  to check files in or out.
 * Log Entries::                 Logging your changes.
-* Change Logs and VC::          Generating a change log file from log
-                                  entries. 
+* Change Logs and VC::          Generating a change log file from log entries. 
 * Old Versions::                Examining and comparing old versions.
-* VC Status::                   Commands to view the VC status of files and
+* Branches::                    Selecting a branch to put your changes in,
+                                  and creating a new branch.
+* Status in VC::                Commands to view the VC status of files and
                                   look at log entries.
 * Renaming and VC::             A command to rename both the source and
                                   master file correctly.
@@ -849,13 +865,41 @@ using.
                                   file versions that can be treated as a unit.
 * Version Headers::             Inserting version control headers into
                                   working files.
+* Customizing VC::              Variables to change VC's behavior.
 @end menu
 
-@node Concepts of VC
-@subsection Concepts of Version Control
+@node Version Systems
+@subsection Supported Version Control Systems
 
 @cindex RCS
+@cindex back end (version control)
+  VC currently works with three different version control systems or
+``back ends'': RCS, CVS, and SCCS.
+
+  RCS is a free version control system that is available from the Free
+Software Foundation.  It is perhaps the most mature of the supported
+back ends, and the VC commands are conceptually closest to RCS.  Almost
+everything you can do with RCS can be done through VC.
+
+@cindex CVS
+  CVS is built on top of RCS, and extends the features of RCS, allowing
+for more sophisticated release management, and concurrent multi-user
+development.  However, its concepts are rather different from those of
+RCS and VC; consequently, some VC commands work differently when used
+with CVS.  Note that before using CVS you must set up a repository,
+which is a subject too complex to treat here.  @xref{CVS and VC}.
+
 @cindex SCCS
+  SCCS is a proprietary but widely used version control system.  In
+terms of capabilities, it is the weakest of the the three that VC
+supports.  VC compensates for certain features missing in SCCS
+(snapshots, for example) by implementing them itself, but some other VC
+features, such as multiple branches, are not available with SCCS.  You
+should use SCCS only if for some reason you cannot use RCS.
+
+@node VC Concepts
+@subsection Concepts of Version Control
+
 @cindex master file
 @cindex registered file
 @cindex work file
@@ -876,9 +920,9 @@ the @dfn{work file} corresponding to its master file.
    To examine a file, you @dfn{check it out}.  This extracts a version
 of the source file (typically, the most recent) from the master file.
 If you want to edit the file, you must check it out @dfn{locked}.  Only
-one user can do this at a time for any given source file.  (This kind 
-of locking is completely unrelated to the locking that Emacs uses to
-detect simultaneous editing of a file.)
+one user can do this at a time for any given source file.  (This kind of
+locking is completely unrelated to the locking that Emacs uses to detect
+simultaneous editing of a file.)
 
   When you are done with your editing, you must @dfn{check in} the new
 version.  This records the new version in the master file, and unlocks
@@ -891,27 +935,21 @@ can do both of them with a single Emacs command: @w{@kbd{C-x C-q}}
   A @dfn{snapshot} is a coherent collection of versions of the various
 files that make up a program.  @xref{Snapshots}.
 
+  The model of checkin and checkout does not quite fit CVS.  CVS has no
+such thing as locking; multiple users can simultaneously edit their
+copies of a file, and then check in their own variants of the file, but
+these variants must be reconciled later.  @xref{CVS and VC}.
+
 @node Editing with VC
 @subsection Editing with Version Control
-
-  When you visit a file that is maintained using version control, the
-mode line displays @samp{RCS} or @samp{SCCS} to inform you that version
-control is in use, and also (in case you care) which low-level system
-the file is actually stored in.  Normally, such a source file is
-read-only, and the mode line indicates this with @samp{%%}.  With RCS,
-the mode line also indicates the number of the head version, which is
-normally also the version you are looking at.
 
   These are the commands for editing a file maintained with
 version control:
 
 @table @kbd
 @item C-x C-q
+@itemx C-x v v
 Check the visited file in or out.
-
-@item C-x v v
-Check the visited file in or out, or register it for version control
-if it isn't already registered.
 
 @item C-x v u
 Revert the buffer and the file to the last checked in version.
@@ -921,12 +959,26 @@ Remove the last-entered change from the master for the visited file.
 This undoes your last check-in.
 
 @item C-x v i
-Register the visited file in version control.
+Register the visited file for version control.
 @end table
 
 @noindent
 (@kbd{C-x v} is the prefix key for version control commands; all of these
 commands except for @kbd{C-x C-q} start with @kbd{C-x v}.)
+
+@menu
+* Check-Out::                   Checking out a file so you can edit it.
+* Check-In::                    After you edit, you check in your changes
+                                  to make a new version.
+* Version Control Undo::        Canceling changes before or after checkin.
+* Registering::                 How to start using version control
+                                  for a file.
+* VC Mode Line::                Mode line indicates version and lock status.
+* CVS and VC::                  Checkout and checkin work differently in CVS.
+@end menu
+
+@node Check-Out
+@subsubsection Check-Out
 
 @kindex C-x C-q @r{(version control)}
   When you want to modify a file maintained with version control, type
@@ -934,38 +986,40 @@ commands except for @kbd{C-x C-q} start with @kbd{C-x v}.)
 file, and tells RCS or SCCS to lock the file.  This means making the
 file writable for you (but not for anyone else).
 
-@cindex log entry
+@kindex C-u C-x C-q
+  If you specify a prefix argument (@kbd{C-u C-x C-q}) for checkout,
+Emacs asks you for a version number, and checks out that version
+@emph{unlocked}.  This lets you move to old versions, or existing
+branches of the file (@pxref{Branches}).  You can then start editing the
+selected version by typing @kbd{C-x C-q} again.  (If you edit an old
+version of a file this way, checking it in again creates a new branch.)
+
+@node Check-In
+@subsubsection Check-In
+
   When you are finished editing the file, type @kbd{C-x C-q} again.
 When used on a file that is checked out, this command checks the file
 in.  But check-in does not start immediately; first, you must enter the
 @dfn{log entry}---a description of the changes in the new version.
 @kbd{C-x C-q} pops up a buffer for you to enter this in.  When you are
-finished typing in the log entry, type @kbd{C-c C-c} to terminate it; this is
-when actual check-in takes place.
+finished typing in the log entry, type @kbd{C-c C-c} to terminate it;
+this is when actual check-in takes place.  @xref{Log Entries}.
 
-  Checking in your changes unlocks the file, so that other users can
-lock it and modify it.
+  With RCS and SCCS, a checked-out file is also @dfn{locked}, which
+means it is writable for you, but not for anyone else.  As long as you
+own the lock on the file, nobody else can modify it, and nobody can
+check in any changes to that particular version.  Checking in your
+changes unlocks the file, so that other users can lock it and modify it.
 
-@kindex C-u C-x v v
-@findex vc-next-action
-  To specify the version number for the new version, use the command
-@kbd{C-u C-x v v} to do the checkin.  @kbd{C-x v v}
-(@code{vc-next-action}) is the command that @kbd{C-x C-q} uses to do the
-``real work'' when the visited file uses version control.  When used for
-checkin, and given a numeric argument, it reads the version number with
-the minibuffer.
+  CVS, on the contrary, doesn't have a concept of locking.  The working
+files are always modifiable, allowing concurrent development, with
+possible conflicts being resolved at check-in time.  @xref{CVS and VC}.
 
-@vindex vc-make-backup-files
-  Emacs does not save backup files for source files that are maintained
-with version control.  If you want to make backup files despite version
-control, set the variable @code{vc-make-backup-files} to a
-non-@code{nil} value.
-
-@vindex vc-keep-workfiles
-  Normally the work file exists all the time, whether it is locked or
-not.  If you set @code{vc-keep-workfiles} to @code{nil}, then checking
-in a new version with @kbd{C-x C-q} deletes the work file; but any
-attempt to visit the file with Emacs creates it again.
+  To specify the version number for the new version, type @kbd{C-u C-x
+C-q} to check in a file.  Then Emacs asks you for the new version number
+in the minibuffer.  This can be used to create a new @dfn{branch} of the
+file (@pxref{Branches}), or to increment the file's major version
+number.
 
   It is not impossible to lock a file that someone else has locked.  If
 you try to check out a file that is locked, @kbd{C-x C-q} asks you
@@ -974,6 +1028,54 @@ becomes locked by you, but a message is sent to the person who had
 formerly locked the file, to inform him of what has happened.  The mode
 line indicates that a file is locked by someone else by displaying the
 login name of that person, before the version number.
+
+@node Registering
+@subsubsection Registering a File for Version Control
+
+@table @kbd
+@item C-x v i
+Register the visited file for version control.
+@end table
+
+@kindex C-x v i
+@findex vc-register
+@vindex vc-default-back-end
+  You can put any file under version control by simply visiting it, and
+then typing @w{@kbd{C-x v i}} (@code{vc-register}). After @kbd{C-x v i},
+the file is unlocked and read-only.  Type @kbd{C-x C-q} if you wish to
+start editing it.
+
+  When you register the file, Emacs must choose which version control
+system to use for it.  You can specify your choice explicitly by setting
+@code{vc-default-back-end} to @code{RCS}, @code{CVS} or @code{SCCS}.
+Otherwise, if there is a subdirectory named @file{RCS}, @file{SCCS}, or
+@file{CVS}, Emacs uses the corresponding version control system.  In the
+absence of any specification, the default choice is RCS if RCS is
+installed, otherwise SCCS.
+
+  After registering a file with CVS, you must subsequently commit the
+initial version by typing @kbd{C-x C-q}.  @xref{CVS and VC}.
+
+  The initial version number for a newly registered file is 1.1, by
+default.  To specify a different number, give @kbd{C-x v i} a numeric
+argument; then it reads the initial version number using the minibuffer.
+
+@vindex vc-initial-comment
+  If @code{vc-initial-comment} is non-@code{nil}, @kbd{C-x v i} reads
+an initial comment (much like a log entry) to describe the purpose of
+this source file.
+
+@node Version Control Undo
+@subsubsection Undoing Version Control Actions
+
+@table @kbd
+@item C-x v u
+Revert the buffer and the file to the last checked in version.
+
+@item C-x v c
+Remove the last-entered change from the master for the visited file.
+This undoes your last checkin.
+@end table
 
 @kindex C-x v u
 @findex vc-revert-buffer
@@ -992,9 +1094,9 @@ it and then decide not to change it.
   You can cancel a change after checking it in, with @kbd{C-x v c}
 (@code{vc-cancel-version}).  This command discards all record of the
 most recent checked in version.  @kbd{C-x v c} also offers to revert
-your workfile and buffer to the previous version (the one that precedes
+your work file and buffer to the previous version (the one that precedes
 the version that is deleted).  If you say @kbd{no}, then the buffer and
-workfile do not change.
+work file do not change.
 
 @ignore
   This command with a numeric argument is useful when you have checked in
@@ -1006,69 +1108,62 @@ erroneous check-in, fix the error, and repeat the check-in.
 lot of work with it.  To help you be careful, this command always
 requires confirmation with @kbd{yes}.
 
-@kindex C-x v i
-@findex vc-register
-@vindex vc-default-back-end
-  You can register the visited file for version control using
-@w{@kbd{C-x v i}} (@code{vc-register}).  If the variable
-@code{vc-default-back-end} is non-@code{nil}, it specifies which version
-control system to use; otherwise, this uses RCS if it is installed on
-your system, and SCCS otherwise.  After @kbd{C-x v i}, the file is
-unlocked and read-only.  Type @kbd{C-x C-q} if you wish to lock and edit
-it.
+@node VC Mode Line
+@subsubsection The VC Mode Line
 
-  The initial version number for a newly registered file is 1.1.  To
-specify a different number, give @kbd{C-x v i} a numeric argument; then
-it reads the initial version number using the minibuffer.
+  When you visit a file that is under version control, the mode line
+indicates the current status of the file: the name of the version
+control back end system, the locking state, and the version.
 
-@vindex vc-initial-comment
-  If @code{vc-initial-comment} is non-@code{nil}, @kbd{C-x v i} reads
-an initial comment (much like a log entry) to describe the purpose of
-this source file.
+  The locking state is displayed as a single character, which can be
+either @samp{-} or @samp{:}.  @samp{-} means the file is not locked or
+not modified by you.  Once you lock the file, the state indicator
+changes to @samp{:}.  If the file is locked by someone else, that user's
+name appears after the version number.
 
-@node Variables for Check-in/out
-@subsection Variables Affecting Check-in and Check-out
-@c There is no need to tell users about vc-master-templates.
+  For example, @samp{RCS-1.3} means you are looking at RCS version 1.3,
+which is not locked.  @samp{RCS:1.3} means that you have locked the
+file, and possibly already changed it.  @samp{RCS:jim:1.3} means that
+the file is locked by jim.
 
-@vindex vc-suppress-confirm
-  If @code{vc-suppress-confirm} is non-@code{nil}, then @kbd{C-x C-q}
-and @kbd{C-x v i} can save the current buffer without asking, and
-@kbd{C-x v u} also operates without asking for confirmation.
-(This variable does not affect @kbd{C-x v c}; that is so drastic
-that it should always ask for confirmation.)
+@node CVS and VC
+@subsubsection Using VC with CVS
+@cindex CVS (with VC)
 
-@vindex vc-command-messages
-  VC mode does much of its work by running the shell commands for RCS
-and SCCS.  If @code{vc-command-messages} is non-@code{nil}, VC displays
-messages to indicate which shell commands it runs, and additional
-messages when the commands finish.
+  In CVS, files are never locked.  Two users can check out the same file
+at the same time; each user has a separate copy and can edit it.  Work
+files are always writable; once you have one, you need not type a VC
+command to start editing the file.  You can edit it at any time.
 
-  Normally, VC assumes that it can deduce the locked/unlocked state of
-files by looking at the file permissions of the work file; this is
-fast.  However, if the @file{RCS} or @file{SCCS} subdirectory is
-actually a symbolic link, then VC does not trust the file permissions to
-reflect this status.
+@cindex committing a change (CVS)
+  CVS terminology speaks of @dfn{committing} a change rather than
+checking it in.  But in practical terms they work the same way: Emacs
+asks you to type in a log entry, and you finish it with @kbd{C-c C-c}.
+When using RCS and SCCS, you normally use @kbd{C-x C-q} twice for each
+change; once before the change, for checkout, and once after, for
+checkin.  With CVS, it's different: you normally use @kbd{C-x C-q} just
+once for each change, to commit the change when it is done.  The work
+file remains writable, so you can begin editing again with no special
+commands.
 
-@vindex vc-mistrust-permissions
-You can specify the criterion for whether to trust the file permissions
-by setting the variable @code{vc-mistrust-permissions}.  Its value may
-be @code{t} (always mistrust the file permissions and check the master
-file), @code{nil} (always trust the file permissions), or a function of
-one argument which makes the decision.  The argument is the directory
-name of the @file{RCS} or @file{SCCS} subdirectory.  A non-@code{nil}
-value from the function says to mistrust the file permissions.  If you
-find that the file permissions of work files are changed erroneously,
-set @code{vc-mistrust-permissions} to @code{t}.  Then VC always checks
-the master file to determine the file's status.
+@cindex conflict (CVS)
+  When you commit a change in a file, and someone else has committed
+another change in the meanwhile, that creates a @dfn{conflict}.  Then
+@kbd{C-x C-q} asks you to resolve the conflict and try again.
 
-@vindex vc-path
-  You can specify additional directories to search for version control
-programs by setting the variable @code{vc-path}.  These directories are
-searched before the usual search path.  But the proper files are usually
-found automatically.
+  VC does not provide a way to check out a working copy of an existing
+file in the repository.  You have to use the CVS shell commands to do
+that.  Once you have a work file, you can start using VC for that file.
+
+@vindex vc-handle-cvs
+  You can turn off use of VC for CVS-managed files by setting the
+variable @code{vc-handle-cvs} to @code{nil}.  If you do this, Emacs
+treats these files as if they were not managed, and the VC commands are
+not available for them.  You must do all CVS operations manually.
 
 @node Log Entries
 @subsection Log Entries
+@cindex log entry
 
   When you're editing an initial comment or log entry for inclusion in a
 master file, finish your entry by typing @kbd{C-c C-c}.
@@ -1112,7 +1207,7 @@ Visit the current directory's change log file and create new entries for
 versions checked in since the most recent entry in the change log file
 (@code{vc-update-change-log}).
 
-This command works with RCS only; it does not work with SCCS.
+This command works with RCS only; it does not work with CVS or SCCS.
 @end table
 
   For example, suppose the first line of @file{ChangeLog} is dated 10
@@ -1231,9 +1326,12 @@ to avoid putting such trivia into @file{ChangeLog}.
 @subsection Examining And Comparing Old Versions
 
 @table @kbd
+@item C-u C-x C-q @var{version} @key{RET}
+Select version @var{version} as the current work file version.
+
 @item C-x v ~ @var{version} @key{RET}
 Examine version @var{version} of the visited file, in a buffer of its
-own (@code{vc-version-other-window}).
+own.
 
 @item C-x v =
 Compare the current buffer contents with the latest checked-in version
@@ -1243,13 +1341,20 @@ of the file.
 Compare the specified two versions of @var{file}.
 @end table
 
+  There are two ways to work with an old version of a file.  You can
+make the old version your current work file, for example if you want to
+reproduce a former stage of development, or if you want to create a
+branch from the old version (@pxref{Branches}).  To do this, visit the
+file and type @kbd{C-u C-x C-q @var{version} @key{RET}}.  (This works
+only with RCS.)
+
 @findex vc-version-other-window
 @kindex C-x v ~
-  You can examine any version of a file by first visiting it, and then
-using @kbd{C-x v ~ @var{version} @key{RET}}
+  If you want only to examine an old version, without changing your work
+file, visit the file and then type @kbd{C-x v ~ @var{version} @key{RET}}
 (@code{vc-version-other-window}).  This puts the text of version
-@var{version} in a file named @file{@var{filename}.~@var{version}~},
-then visits it in a separate window.
+@var{version} in a file named @file{@var{filename}.~@var{version}~}, and
+visits it in its own buffer in a separate window.
 
 @findex vc-diff
 @kindex C-x v =
@@ -1273,12 +1378,114 @@ from all the checked-in versions).
   This command works by running the @code{diff} utility, getting the
 options from the variable @code{diff-switches}.  It displays the output
 in a special buffer in another window.  Unlike the @kbd{M-x diff}
-command, @kbd{C-x v =} does not try to find the changes in the old and
-new versions.  This is because one or both versions normally do not
-exist as files.  They exist only in the records of the master file.
-@xref{Comparing Files}, for more information about @kbd{M-x diff}.
+command, @kbd{C-x v =} does not try to locate the changes in the old and
+new versions.  This is because normally one or both versions do not
+exist as files when you compare them; they exist only in the records of
+the master file.  @xref{Comparing Files}, for more information about
+@kbd{M-x diff}.
 
-@node VC Status
+@node Branches
+@subsection Multiple Branches of a File
+@cindex branch (version control)
+@cindex trunk (version control)
+
+  One use of version control is to maintain multiple ``current''
+versions of a file.  For example, you might have different versions of a
+program in which you are gradually adding various unfinished new
+features.  Each such independent line of development is called a
+@dfn{branch}.  VC allows you to create branches, and switch between
+existing branches.  Note, however, that branches are supported only with
+RCS.
+
+  A file's main line of development is usually called the @dfn{trunk}.
+The versions on the trunk are normally numbered 1.1, 1.2, 1.3, etc.  At
+any such version, you may start an independent branch.  A branch
+starting at version 1.2 would have version number 1.2.1.1.  Consecutive
+versions on this branch would have numbers 1.2.1.2, 1.2.1.3, 1.2.1.4,
+and so on.  If there is a second branch also starting at version 1.2; it
+would consist of versions 1.2.2.1, 1.2.2.2, 1.2.2.3, and so on.
+
+  If you omit the final component of a version number, that is called a
+@dfn{branch number}.  It refers to the highest existing version on that
+branch.  The branches in the example above have branch numbers 1.2.1 and
+1.2.2.
+
+@cindex head version
+  A version which is the last in its branch is called a @dfn{head} version.
+
+@menu
+* Switching Branches::    How to get to another existing branch.
+* Creating Branches::     How to start a new branch.
+* Multi-User Branching::  Multiple users working at multiple branches 
+                            in parallel.
+@end menu
+
+@node Switching Branches
+@subsubsection Switching between Branches
+
+  To switch between branches, type @kbd{C-u C-x C-q} and specify the
+version number you want to select.  This version is then checked out
+@emph{unlocked} (write-protected), so you can examine it before really
+checking it out.  Switching branches in this way is allowed only when
+the file is not locked.
+
+  You may omit the minor version number, thus giving only the branch
+number; this takes you to the highest version on the indicated branch.
+If you only type @kbd{RET}, Emacs goes to the highest version on the
+trunk.
+
+  After you have switched to any branch (including the main branch), you
+stay on it for subsequent VC commands, until you explicitly select some
+other branch.
+
+@node Creating Branches
+@subsubsection Creating New Branches
+
+  To create a new branch from a head version (one that is the latest in
+the branch that contains it), first select that version if necessary,
+lock it with @kbd{C-x C-q}, and make whatever changes you want.  Then,
+when you check in the changes, use @kbd{C-u C-x C-q}.  This lets you
+specify the version number for the new version.  You should specify a
+suitable branch number for a branch starting at the current version.
+For example, if the current version is 2.5, the branch number should be
+2.5.1, 2.5.2, and so on, depending on the number of existing branches at
+that point.
+
+  To create a new branch at an older version (one that is no longer the
+head of a branch), first select that version, lock it with @kbd{C-x
+C-q}, and make your changes.  Then type @kbd{C-x C-q} again to check in
+a new version.  This automatically creates a new branch starting from
+the selected version.  You need not specially request a new branch,
+because that's the only way to add a new version at a point that is not
+the head of a branch.
+
+  After the branch is created, you ``stay'' on it.  That means that
+subsequent checkouts and checkins create new versions on that branch.
+To leave the branch, you must explicitly select a different version with
+@kbd{C-u C-x C-q} for checkout.
+
+@node Multi-User Branching
+@subsubsection Multi-User Branching
+
+  It is sometimes useful for multiple developers to work simultaneously
+on different branches of a file.  This is possible if you create
+multiple source directories.  Each source directory should have a link
+named @file{RCS} which points to a common directory of RCS master files.
+Then each source directory can have its own choice of versions checked
+out, but all share the same common RCS records.
+
+  This technique works reliably and automatically, provided that the
+source files contain RCS version headers (@pxref{Version Headers}).  The
+headers enable Emacs to be sure, at all times, which version number is
+present in the work file.
+
+  If the files do not have version headers, you must instead tell Emacs
+explicitly in each session which branch you are working on.  To do this,
+first find the file, then type @kbd{C-u C-x C-q} and specify the correct
+branch number.  This ensures that Emacs knows which branch it is using
+during this particular editing session.
+
+@node Status in VC
 @subsection VC Status Commands
 
 @kindex C-x v l
@@ -1423,6 +1630,19 @@ directly into working files.  Certain special strings called
 @dfn{version headers} are replaced in each successive version by the
 number of that version.
 
+  If you are using RCS, and version headers are present in your working
+files, Emacs can use them to determine the current version and the
+locking state of the files.  This is more reliable than referring to the
+master files, which is done when there are no version headers.  Note
+that in a multi-branch environment, version headers are necessary to
+make VC behave correctly (@pxref{Multi-User Branching}).
+
+@vindex vc-consult-headers
+  Searching for version headers is controlled by the variable
+@code{vc-consult-headers}.  If it is non-@code{nil}, Emacs searches for
+headers to determine the version number you are editing.  Setting it to
+@code{nil} disables this feature.
+
 @kindex C-x v h
 @findex vc-insert-headers
   You can use the @kbd{C-x v h} command (@code{vc-insert-headers}) to
@@ -1434,11 +1654,12 @@ Insert headers in a file for use with your version-control system.
 @end table
 
 @vindex vc-header-alist
-  The default header string is @samp{$Id$} for RCS and @samp{%W%} for
-SCCS.  You can specify other headers to insert by setting the variable
-@code{vc-header-alist}.  Its value is a list of elements of the form
-@code{(@var{program} . @var{string})} where @var{program} is @code{RCS}
-or @code{SCCS} and @var{string} is the string to use.
+  The default header string is @samp{@w{$}Id$} for RCS and
+@samp{@w{%}W%} for SCCS.  You can specify other headers to insert by
+setting the variable @code{vc-header-alist}.  Its value is a list of
+elements of the form @code{(@var{program} . @var{string})} where
+@var{program} is @code{RCS} or @code{SCCS} and @var{string} is the
+string to use.
 
   Instead of a single string, you can specify a list of strings; then
 each string in the list is inserted as a separate header on a line of
@@ -1493,25 +1714,95 @@ Note that the text above starts with a blank line.
 
   If you use more than one version header in a file, put them close
 together in the file.  The mechanism in @code{revert-buffer} that
-preserves markers may fail for markers positioned between two version
+preserves markers may not handle markers positioned between two version
 headers.
 
-@node ListDir
-@section Listing a File Directory
+@node Customizing VC
+@subsection Customizing VC
+@c There is no need to tell users about vc-master-templates.
+
+@vindex vc-make-backup-files
+  Emacs normally does not save backup files for source files that are
+maintained with version control.  If you want to make backup files even
+for files that use version control, set the variable
+@code{vc-make-backup-files} to a non-@code{nil} value.
+
+@vindex vc-keep-workfiles
+  Normally the work file exists all the time, whether it is locked or
+not.  If you set @code{vc-keep-workfiles} to @code{nil}, then checking
+in a new version with @kbd{C-x C-q} deletes the work file; but any
+attempt to visit the file with Emacs creates it again.  (With CVS, work
+files are always kept.)
+
+@vindex vc-suppress-confirm
+  If @code{vc-suppress-confirm} is non-@code{nil}, then @kbd{C-x C-q}
+and @kbd{C-x v i} can save the current buffer without asking, and
+@kbd{C-x v u} also operates without asking for confirmation.  (This
+variable does not affect @kbd{C-x v c}; that operation is so drastic
+that it should always ask for confirmation.)
+
+@vindex vc-command-messages
+  VC mode does much of its work by running the shell commands for RCS,
+CVS and SCCS.  If @code{vc-command-messages} is non-@code{nil}, VC
+displays messages to indicate which shell commands it runs, and
+additional messages when the commands finish.
+
+  When deducing the locked/unlocked state of a file, VC first looks for
+an RCS version header string in the file (@pxref{Version Headers}).  If
+there is no header string (or if the backend system is SCCS), VC
+normally looks at the file permissions of the work file; this is fast.
+But there might be situations when the file permissions cannot be
+trusted.  In this case the master file has to be consulted, which is
+rather expensive.  Also the master file can only tell you @emph{if}
+there's any lock on the file, but not whether your work file really
+contains that locked version.
+
+  You can tell VC not to use version headers to determine lock status by
+setting @code{vc-consult-headers} to @code{nil}.  VC then always uses
+the file permissions (if it can trust them), or else checks the master
+file.
+
+@vindex vc-mistrust-permissions
+  You can specify the criterion for whether to trust the file
+permissions by setting the variable @code{vc-mistrust-permissions}.  Its
+value may be @code{t} (always mistrust the file permissions and check
+the master file), @code{nil} (always trust the file permissions), or a
+function of one argument which makes the decision.  The argument is the
+directory name of the @file{RCS}, @file{CVS} or @file{SCCS}
+subdirectory.  A non-@code{nil} value from the function says to mistrust
+the file permissions.  If you find that the file permissions of work
+files are changed erroneously, set @code{vc-mistrust-permissions} to
+@code{t}.  Then VC always checks the master file to determine the file's
+status.
+
+@vindex vc-path
+  You can specify additional directories to search for version control
+programs by setting the variable @code{vc-path}.  These directories are
+searched before the usual search path.  But the proper files are usually
+found automatically.
+
+@node Directories
+@section File Directories
 
 @cindex file directory
 @cindex directory listing
   The file system groups files into @dfn{directories}.  A @dfn{directory
 listing} is a list of all the files in a directory.  Emacs provides
-directory listings in brief format (file names only) and verbose format
-(sizes, dates, and authors included).  (There is also a directory
-browser called Dired; @ref{Dired}.)
+commands to create and delete directories, and to make directory
+listings in brief format (file names only) and verbose format (sizes,
+dates, and authors included).  There is also a directory browser called
+Dired; see @ref{Dired}.
 
 @table @kbd
-@item C-x C-d @var{dir-or-pattern}
-Print a brief directory listing (@code{list-directory}).
-@item C-u C-x C-d @var{dir-or-pattern}
-Print a verbose directory listing.
+@item C-x C-d @var{dir-or-pattern} @key{RET}
+Display a brief directory listing (@code{list-directory}).
+@item C-u C-x C-d @var{dir-or-pattern} @key{RET}
+Display a verbose directory listing.
+@item M-x make-directory @key{RET} @var{dirname} @key{RET}
+Create a new directory named @var{dirname}.
+@item M-x delete-directory @key{RET} @var{dirname} @key{RET}
+Delete the directory named @var{dirname}.  It must be empty,
+or you get an error.
 @end table
 
 @findex list-directory
@@ -1533,9 +1824,10 @@ example of specifying a file name pattern:
 C-x C-d /u2/emacs/src/*.c @key{RET}
 @end example
 
-  Normally, @kbd{C-x C-d} prints a brief directory listing containing just
-file names.  A numeric argument (regardless of value) tells it to print a
-verbose listing (like @samp{ls -l}).
+  Normally, @kbd{C-x C-d} prints a brief directory listing containing
+just file names.  A numeric argument (regardless of value) tells it to
+make a verbose listing including sizes, dates, and authors (like
+@samp{ls -l}).
 
 @vindex list-directory-brief-switches
 @vindex list-directory-verbose-switches
@@ -1560,10 +1852,11 @@ the @code{diff} program, using options taken from the variable
   The buffer @samp{*Diff*} has Compilation mode as its major mode, so
 you can use @kbd{C-x `} to visit successive changed locations in the two
 source files.  You can also move to a particular hunk of changes and
-type @kbd{C-c C-c}, or click @kbd{Mouse-2} on it, to move to the
-corresponding source location.  You can also use the other special
-commands of Compilation mode: @key{SPC} and @key{DEL} for scrolling, and
-@kbd{M-p} and @kbd{M-n} for cursor motion.  @xref{Compilation}.
+type @key{RET} or @kbd{C-c C-c}, or click @kbd{Mouse-2} on it, to move
+to the corresponding source location.  You can also use the other
+special commands of Compilation mode: @key{SPC} and @key{DEL} for
+scrolling, and @kbd{M-p} and @kbd{M-n} for cursor motion.
+@xref{Compilation}.
 
 @findex diff-backup
   The command @kbd{M-x diff-backup} compares a specified file with its most
@@ -1574,8 +1867,9 @@ of.
 @findex compare-windows
   The command @kbd{M-x compare-windows} compares the text in the current
 window with that in the next window.  Comparison starts at point in each
-window.  Point moves forward in each window, a character at a time in each
-window, until the next characters in the two windows are different.  Then
+window, and each starting position is pushed on the mark ring in its
+respective buffer.  Then point moves forward in each window, a character
+at a time, until a mismatch between the two windows is reached.  Then
 the command is finished.  For more information about windows in Emacs,
 @ref{Windows}.
 

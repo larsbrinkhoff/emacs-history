@@ -16,10 +16,13 @@ File: dir	Node: Top	This is the top of the INFO tree
 * Info: (info).		Documentation browsing system.
 * Emacs: (emacs).	The extensible self-documenting text editor.
 * VIP: (vip).		A VI-emulation for Emacs.
+* VIPER: (viper).       The new VI-emulation mode in Emacs-19.29.
 * Forms: (forms).	Emacs package for editing data bases
 			  by filling in forms.
 * GNUS: (gnus).		The news reader GNUS.
+* MH-E: (mh-e).		Emacs interface to the MH mail system.
 * CL: (cl).		Partial Common Lisp support for Emacs Lisp.
 * SC: (sc).		Supercite lets you cite parts of messages you're 
 			  replying to, in hairy ways.
 * Dired-X: (dired-x).   Dired Extra Features.
+* Ediff: (ediff).	A comprehensive visual interface to diff & patch.

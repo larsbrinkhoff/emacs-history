@@ -43,8 +43,12 @@
 ;;; (add-hook 'dired-load-hook
 ;;;           (function (lambda ()
 ;;;                       (load "dired-x")
-;;;                       ;; Set variables here.  For example:
+;;;                       ;; Set global variables here.  For example:
 ;;;                       ;; (setq dired-guess-shell-gnutar "gtar")
+;;;                       )))
+;;; (add-hook 'dired-mode-hook
+;;;           (function (lambda ()
+;;;                       ;; Set buffer-local variables here.  For example:
 ;;;                       ;; (setq dired-omit-files-p t)
 ;;;                       )))
 ;;;
@@ -155,17 +159,19 @@ Read-only folders only work in VM 5, not in VM 4.")
 Use \\[dired-omit-toggle] to toggle its value.
 Uninteresting files are those whose filenames match regexp `dired-omit-files',
 plus those ending with extensions in `dired-omit-extensions'.")
+(make-variable-buffer-local 'dired-omit-files-p)
 
 (defvar dired-omit-files "^#\\|^\\.$\\|^\\.\\.$"
-  "*Filenames matching this regexp will not be displayed \(buffer-local\).
+  "*Filenames matching this regexp will not be displayed.
 This only has effect when `dired-omit-files-p' is t.  See interactive function
 `dired-omit-toggle' \(\\[dired-omit-toggle]\) and variable
 `dired-omit-extensions'.  The default is to omit  `.', `..', and auto-save
 files.")
 
 (defvar dired-find-subdir nil           ; t is pretty near to DWIM...
-  "*If non-nil, Dired does not make a new buffer for a directory if it
-can be found (perhaps as subdir) in some existing Dired buffer.
+  "*If non-nil, Dired always finds a directory in a buffer of its own.
+If nil, Dired finds the directory as a subdirectory in some other buffer
+if it is present as one.
 
 If there are several Dired buffers for a directory, the most recently
 used is chosen.
@@ -301,7 +307,7 @@ See also functions
                                 (file-name-nondirectory fn)))
                (save-excursion ; you never know where kill-buffer leaves you
                  (kill-buffer buf))))
-        (let ((buf-list (dired-buffers-for-dir fn))
+        (let ((buf-list (dired-buffers-for-dir (expand-file-name fn)))
               (buf nil))
           (and buf-list
                (y-or-n-p (format "Kill dired buffer%s of %s, too? "
@@ -527,7 +533,6 @@ whole pathname.")
 Should never be used as marker by the user or other packages.")
 
 (defun dired-omit-startup ()
-  (make-local-variable 'dired-omit-files-p)
   (or (assq 'dired-omit-files-p minor-mode-alist)
       (setq minor-mode-alist
             (append '((dired-omit-files-p " Omit")) minor-mode-alist))))
@@ -583,8 +588,7 @@ This functions works by temporarily binding `dired-marker-char' to
               (if (dired-mark-unmarked-files omit-re nil nil dired-omit-localp)
                   (progn
                     (setq count (dired-do-kill-lines nil "Omitted %d line%s."))
-                    ;; Force an update of modeline.
-                    (set-buffer-modified-p (buffer-modified-p)))
+                    (force-mode-line-update))
                 (message "(Nothing to omit)"))))
         ;; Try to preserve modified state of buffer.  So `%*' doesn't appear
         ;; in mode-line of omitted buffers.
@@ -777,7 +781,7 @@ to put saved dired buffers automatically into virtual dired mode.
 
 Also useful for `auto-mode-alist' (which see) like this:
 
-  \(setq auto-mode-alist (cons '(\"[^/]\\.dired$\" . dired-virtual-mode)
+  \(setq auto-mode-alist (cons '(\"[^/]\\.dired\\'\" . dired-virtual-mode)
                               auto-mode-alist)\)"
   (interactive)
   (dired-virtual (dired-virtual-guess-dir)))
@@ -905,7 +909,7 @@ dired."
 ;;;   that matches the first file in the file list.
 ;;;
 ;;; * If the REGEXP matches all the entries of the file list then evaluate
-;;;   COMMAND, which is either a string or an elisp expression returning a
+;;;   COMMAND, which is either a string or a Lisp expression returning a
 ;;;   string.  COMMAND may be a list of commands.
 ;;;
 ;;; * Return this command to `dired-guess-shell-command' which prompts user
@@ -1362,17 +1366,20 @@ See also variable `dired-vm-read-only-folders'."
 ;;; REDEFINE.
 ;;; Redefines dired.el's version of `dired-find-buffer-nocreate'
 (defun dired-find-buffer-nocreate (dirname)
-  (if dired-find-subdir
+  (if (and dired-find-subdir
+	   ;; don't try to find a wildcard as a subdirectory
+	   (string-equal dirname (file-name-directory dirname)))
       (let* ((cur-buf (current-buffer))
-             (buffers (nreverse (dired-buffers-for-dir dirname)))
-             (cur-buf-matches (and (memq cur-buf buffers)
-                                   ;; wildcards must match, too:
-                                   (equal dired-directory dirname))))
-        ;; We don't want to switch to the same buffer---
-        (setq buffers (delq cur-buf buffers));;need setq with delq
-        (or (car (sort buffers (function dired-buffer-more-recently-used-p)))
-            ;; ---unless it's the only possibility:
-            (and cur-buf-matches cur-buf)))
+	     (buffers (nreverse
+		       (dired-buffers-for-dir (expand-file-name dirname))))
+	     (cur-buf-matches (and (memq cur-buf buffers)
+				   ;; wildcards must match, too:
+				   (equal dired-directory dirname))))
+	;; We don't want to switch to the same buffer---
+	(setq buffers (delq cur-buf buffers));;need setq with delq
+	(or (car (sort buffers (function dired-buffer-more-recently-used-p)))
+	    ;; ---unless it's the only possibility:
+	    (and cur-buf-matches cur-buf)))
     (dired-old-find-buffer-nocreate dirname)))
 
 ;; This should be a builtin

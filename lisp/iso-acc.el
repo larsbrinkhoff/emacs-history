@@ -24,14 +24,13 @@
 
 ;;; Commentary:
 
-;; Function `iso-accents-mode' activates a minor mode
-;; (`iso-accents-minor-mode') in which typewriter "dead keys" are
-;; emulated.  The purpose of this emulation is to provide a simple
-;; means for inserting accented characters according to the ISO-8859-1
-;; character set.
+;; Function `iso-accents-mode' activates a minor mode in which
+;; typewriter "dead keys" are emulated.  The purpose of this emulation
+;; is to provide a simple means for inserting accented characters
+;; according to the ISO-8859-1 character set.
 ;;
-;; In `iso-accents-minor-mode', pseudo accent characters are used to
-;; introduce accented keys.  The pseudo-accent characterss are:
+;; In `iso-accents-mode', pseudo accent characters are used to
+;; introduce accented keys.  The pseudo-accent characters are:
 ;;
 ;;   '  (minute)    -> grave accent
 ;;   `  (backtick)  -> acute accent
@@ -121,13 +120,17 @@
     ((?\~ ?D) ?\320)
     ((?\~ ?N) ?\321)
     ((?\~ ?O) ?\325)
+    ((?\~ ?T) ?\336)
     ((?\~ ?a) ?\343)
     ((?\~ ?c) ?\347)
     ((?\~ ?d) ?\360)
     ((?\~ ?n) ?\361)
     ((?\~ ?o) ?\365)
+    ((?\~ ?t) ?\376)
     ((?\~ ?>) ?\273)
     ((?\~ ?<) ?\253)
+    ((?\~ ?!) ?\241)  ;; Inverted exclamation mark
+    ((?\~ ??) ?\277)  ;; Inverted question mark
     ((?\~ ?\ ) ?\~)
     ((?\~ ?\~) ?\270) ;; cedilla accent
     ((?\/ ?A) ?\305) ;; A-with-ring (Norwegian and Danish)
@@ -141,16 +144,16 @@
     )
   "Association list for ISO accent combinations.")
 
-(defvar iso-accents-minor-mode nil
+(defvar iso-accents-mode nil
   "*Non-nil enables ISO Accents mode.
 Setting this variable makes it local to the current buffer.
-See `iso-accents-mode'.")
-(make-variable-buffer-local 'iso-accents-minor-mode)
+See function `iso-accents-mode'.")
+(make-variable-buffer-local 'iso-accents-mode)
 
 (defun iso-accents-accent-key (prompt)
   "Modify the following character by adding an accent to it."
   ;; Pick up the accent character.
-  (if iso-accents-minor-mode
+  (if iso-accents-mode
       (iso-accents-compose prompt)
     (char-to-string last-input-char)))
 
@@ -196,7 +199,7 @@ those characters that are not actually used.")
 
 (or key-translation-map (setq key-translation-map (make-sparse-keymap)))
 ;; For sequences starting with an accent character,
-;; use a function that tests iso-accents-minor-mode.
+;; use a function that tests iso-accents-mode.
 (if (memq ?' iso-accents-enable)
     (define-key key-translation-map "'"  'iso-accents-accent-key))
 (if (memq ?` iso-accents-enable)
@@ -213,10 +216,10 @@ those characters that are not actually used.")
 ;; It is a matter of taste if you want the minor mode indicated
 ;; in the mode line...
 ;; If so, uncomment the next four lines.
-;; (or (assq 'iso-accents-minor-mode minor-mode-map-alist)
+;; (or (assq 'iso-accents-mode minor-mode-map-alist)
 ;;     (setq minor-mode-alist
 ;; 	  (append minor-mode-alist
-;; 		  '((iso-accents-minor-mode " ISO-Acc")))))
+;; 		  '((iso-accents-mode " ISO-Acc")))))
 
 ;;;###autoload
 (defun iso-accents-mode (&optional arg)
@@ -231,11 +234,14 @@ enable as accents.  If you don't need all of them, remove the ones you
 don't need from that list.
 
 Special combinations: ~c gives a c with cedilla,
-~d gives a d with dash.
+~d gives an Icelandic eth (d with dash).
+~t gives an Icelandic thorn.
 \"s gives German sharp s.
 /a gives a with ring.
 /e gives an a-e ligature.
 ~< and ~> give guillemets.
+~! gives an inverted exclamation mark.
+~? gives an inverted question mark.
 
 With an argument, a positive argument enables ISO Accents mode, 
 and a negative argument disables it."
@@ -246,10 +252,10 @@ and a negative argument disables it."
 	  ;; Negative arg means switch it off.
 	  (<= (prefix-numeric-value arg) 0)
 	;; No arg means toggle.
-	iso-accents-minor-mode)
-      (setq iso-accents-minor-mode nil)
+	iso-accents-mode)
+      (setq iso-accents-mode nil)
 
     ;; Enable electric accents.
-    (setq iso-accents-minor-mode t)))
+    (setq iso-accents-mode t)))
 
 ;;; iso-acc.el ends here

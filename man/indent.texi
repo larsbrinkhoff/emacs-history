@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Indentation, Text, Major Modes, Top
 @chapter Indentation
@@ -133,6 +133,9 @@ applicable even then, @code{indent-relative} runs @code{tab-to-tab-stop}
 
   @code{indent-relative} is the definition of @key{TAB} in Indented Text
 mode.  @xref{Text}.
+
+  @xref{Format Indentation}, for another way of specifying the
+indentation for part of your text.
 
 @node Tab Stops, Just Spaces, Indentation Commands, Indentation
 @section Tab Stops

@@ -239,8 +239,11 @@ it now) says that it is the node named @samp{Help} in the file
 called @samp{Help-P}.  An advanced Info command lets you go to any node
 whose name you know.
 
-  Besides a @samp{Next}, a node can have a @samp{Previous} or an @samp{Up}.
-This node has a @samp{Previous} but no @samp{Up}, as you can see.
+  Besides a @samp{Next}, a node can have a @samp{Previous} or an
+@samp{Up}.  This node has a @samp{Previous} which is
+@samp{Help-Small-Screen}, and an @samp{Up} which is @samp{Getting
+Started}.  Some nodes have no @samp{Previous} and some have no
+@samp{Up}.
 
   Now it is time to move on to the @samp{Next} node, named @samp{Help-P}.
 
@@ -679,18 +682,21 @@ The node name @samp{*} specifies the whole file.  So you can look at
 all of the current file by typing @kbd{g*@key{RET}} or all of any
 other file with @kbd{g(FILENAME)@key{RET}}.
 
-The @kbd{s} command allows you to search a whole file for a string.
-It switches to the next node if and when that is necessary.  You
-type @kbd{s} followed by the string to search for, terminated by
-@key{RET}.  To search for the same string again, just @kbd{s} followed
-by @key{RET} will do.  The file's nodes are scanned in the order
-they are in in the file, which has no necessary relationship to the
-order that they may be in in the tree structure of menus and @samp{next} pointers.
-But normally the two orders are not very different.  In any case,
-you can always do a @kbd{b} to find out what node you have reached, if
-the header is not visible (this can happen, because @kbd{s} puts your
-cursor at the occurrence of the string, not at the beginning of the
-node).
+The @kbd{s} command allows you to search a whole file for a string.  It
+switches to the next node if and when that is necessary.  You type
+@kbd{s} followed by the string to search for, terminated by @key{RET}.
+To search for the same string again, just @kbd{s} followed by @key{RET}
+will do.  The file's nodes are scanned in the order they are in in the
+file, which has no necessary relationship to the order that they may be
+in in the tree structure of menus and @samp{next} pointers.  But
+normally the two orders are not very different.  In any case, you can
+always do a @kbd{b} to find out what node you have reached, if the
+header is not visible (this can happen, because @kbd{s} puts your cursor
+at the occurrence of the string, not at the beginning of the node).
+
+@kbd{Meta-s} is equivalent to @kbd{s}.  That is for compatibility with
+other GNU packages that use @kbd{M-s} for a similar kind of search
+command.
 
 If you grudge the system each character of type-in it requires, you
 might like to use the commands @kbd{1}, @kbd{2}, @kbd{3}, @kbd{4}, ...

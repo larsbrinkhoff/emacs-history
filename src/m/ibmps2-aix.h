@@ -37,9 +37,10 @@ NOTE-END */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* i386 is not big-endian: lowest numbered byte is least significant. */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-/* #undef BIG_ENDIAN */
+#undef WORDS_BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -121,8 +122,6 @@ so disable it for them.  */
 #endif
 
 #define BSTRING
-#define HAVE_SELECT
-#define HAVE_TIMEVAL
 #define HAVE_VFORK
 #undef  HAVE_TERMIO
 #define HAVE_TERMIOS
@@ -144,8 +143,8 @@ so disable it for them.  */
  */
 #undef  NONSYSTEM_DIR_LIBRARY
 
-/* But don't use utimes() -- it causes SIGSEGV!  Use utime() instead. */
-#define USE_UTIME
+/* AIX utimes allegedly causes SIGSEGV.  */
+#undef HAVE_UTIMES /* override configuration decision */
 
 /* AIX defines FIONREAD, but it does not work.  */
 #define BROKEN_FIONREAD

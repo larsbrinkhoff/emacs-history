@@ -63,10 +63,8 @@
   "Number of output strings from telnet process while looking for password.")
 (make-variable-buffer-local 'telnet-count)
 
-(defvar telnet-rsh-program
-  (if (memq system-type '(hpux usg-unix-v)) 
-      "remsh" "rsh")
-  "Program to run for opening a remote shell.")
+(defvar telnet-program "telnet"
+  "Program to run to open a telnet connection.")
 
 (defvar telnet-initial-count -50
   "Initial value of `telnet-count'.  Should be set to the negative of the
@@ -98,7 +96,7 @@ rejecting one login and prompting again for a username and password.")
 ; initialization on first load.
 (if telnet-mode-map
     nil
-  (setq telnet-mode-map (copy-keymap comint-mode-map))
+  (setq telnet-mode-map (nconc (make-sparse-keymap) comint-mode-map))
   (define-key telnet-mode-map "\C-m" 'telnet-send-input)
 ;  (define-key telnet-mode-map "\C-j" 'telnet-send-input)
   (define-key telnet-mode-map "\C-c\C-q" 'send-process-next-char)
@@ -176,23 +174,27 @@ rejecting one login and prompting again for a username and password.")
       (delete-region comint-last-input-start
 		     comint-last-input-end)))
 
+;;;###autoload (add-hook 'same-window-regexps "\\*telnet-.*\\*\\(\\|<[0-9]+>\\)")
+
 ;;;###autoload
 (defun telnet (host)
   "Open a network login connection to host named HOST (a string).
-Communication with HOST is recorded in a buffer *HOST-telnet*.
+Communication with HOST is recorded in a buffer `*telnet-HOST*'.
 Normally input is edited in Emacs and sent a line at a time."
   (interactive "sOpen telnet connection to host: ")
   (let* ((comint-delimiter-argument-list '(?\  ?\t))
-         (name (concat (comint-arguments host 0 nil) "-telnet" ))
-	 (buffer (get-buffer (concat "*" name "*"))))
+         (name (concat "telnet-" (comint-arguments host 0 nil) ))
+	 (buffer (get-buffer (concat "*" name "*")))
+	 process)
     (if (and buffer (get-buffer-process buffer))
-	(switch-to-buffer (concat "*" name "*"))
-      (switch-to-buffer (make-comint name "telnet"))
-      (set-process-filter (get-process name) 'telnet-initial-filter)
+	(pop-to-buffer (concat "*" name "*"))
+      (pop-to-buffer (make-comint name telnet-program))
+      (setq process (get-buffer-process (current-buffer)))
+      (set-process-filter process 'telnet-initial-filter)
       ;; Don't send the `open' cmd till telnet is ready for it.
-      (accept-process-output (get-process name))
+      (accept-process-output process)
       (erase-buffer)
-      (send-string  name (concat "open " host "\n"))
+      (send-string process (concat "open " host "\n"))
       (telnet-mode)
       (setq comint-input-sender 'telnet-simple-send)
       (setq telnet-count telnet-initial-count))))
@@ -214,15 +216,17 @@ Data is sent to the remote host when RET is typed.
   (use-local-map telnet-mode-map)
   (run-hooks 'telnet-mode-hook))
 
+;;;###autoload (add-hook 'same-window-regexps "\\*rsh-[^-]*\\*\\(\\|<[0-9]*>\\)")
+
 ;;;###autoload
 (defun rsh (host)
   "Open a network login connection to host named HOST (a string).
-Communication with HOST is recorded in a buffer *HOST-rsh*.
+Communication with HOST is recorded in a buffer `*rsh-HOST*'.
 Normally input is edited in Emacs and sent a line at a time."
   (interactive "sOpen rsh connection to host: ")
   (require 'shell)
-  (let ((name (concat host "-rsh" )))
-    (switch-to-buffer (make-comint name telnet-rsh-program nil host))
+  (let ((name (concat "rsh-" host )))
+    (pop-to-buffer (make-comint name remote-shell-program nil host))
     (set-process-filter (get-process name) 'telnet-initial-filter)
     (telnet-mode)
     (setq telnet-count -16)))

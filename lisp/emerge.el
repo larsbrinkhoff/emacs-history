@@ -251,7 +251,9 @@ depend on the flags."
 displaying a difference.")
 
 (defvar emerge-temp-file-prefix
-  (let ((env (getenv "TMPDIR"))
+  (let ((env (or (getenv "TMPDIR")
+		 (getenv "TMP")
+		 (getenv "TEMP")))
 	d)
     (setq d (if (and env (> (length env) 0))
 		env
@@ -851,11 +853,11 @@ This is *not* a user option, since Emerge uses it for its own processing.")
    (let (f)
      (list current-prefix-arg
 	   (setq f (emerge-read-file-name "File A to merge" emerge-last-dir-A
-					  nil nil))
-	   (emerge-read-file-name "File B to merge" emerge-last-dir-B nil f)
+					  nil nil t))
+	   (emerge-read-file-name "File B to merge" emerge-last-dir-B nil f t)
 	   (and current-prefix-arg
 		(emerge-read-file-name "Output file" emerge-last-dir-output
-				       f f)))))
+				       f f nil)))))
   (emerge-files-internal
    file-A file-B startup-hooks
    (if file-out
@@ -872,13 +874,13 @@ This is *not* a user option, since Emerge uses it for its own processing.")
    (let (f)
      (list current-prefix-arg
 	   (setq f (emerge-read-file-name "File A to merge" emerge-last-dir-A
-					  nil nil))
-	   (emerge-read-file-name "File B to merge" emerge-last-dir-B nil f)
+					  nil nil t))
+	   (emerge-read-file-name "File B to merge" emerge-last-dir-B nil f t)
 	   (emerge-read-file-name "Ancestor file" emerge-last-dir-ancestor
-				  nil f)
+				  nil f t)
 	   (and current-prefix-arg
 		(emerge-read-file-name "Output file" emerge-last-dir-output
-				       f f)))))
+				       f f nil)))))
   (emerge-files-with-ancestor-internal
    file-A file-B file-ancestor startup-hooks
    (if file-out
@@ -1554,8 +1556,8 @@ With an argument, reestablish the default three-window display."
       (let* ((merge-buffer emerge-merge-buffer)
 	     (buffer-A emerge-A-buffer)
 	     (buffer-B emerge-B-buffer)
-	     (window-A (get-buffer-window buffer-A))
-	     (window-B (get-buffer-window buffer-B))
+	     (window-A (get-buffer-window buffer-A 'visible))
+	     (window-B (get-buffer-window buffer-B 'visible))
 	     (merge-window (get-buffer-window merge-buffer))
 	     (diff-vector
 	      (aref emerge-difference-list emerge-current-difference)))
@@ -1599,8 +1601,8 @@ With an argument, reestablish the default three-window display."
   (let* ((merge-buffer emerge-merge-buffer)
 	 (buffer-A emerge-A-buffer)
 	 (buffer-B emerge-B-buffer)
-	 (window-A (get-buffer-window buffer-A))
-	 (window-B (get-buffer-window buffer-B))
+	 (window-A (get-buffer-window buffer-A 'visible))
+	 (window-B (get-buffer-window buffer-B 'visible))
 	 (merge-window (get-buffer-window merge-buffer)))
     (if window-A (progn
 		   (select-window window-A)
@@ -1978,8 +1980,7 @@ need not be prefixed with \\<emerge-fast-keymap>\\[emerge-basic-keymap]."
   (setq emerge-fast-mode t)
   (setq emerge-edit-mode nil)
   (message "Fast mode set")
-  ;; force mode line redisplay
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 (defun emerge-edit-mode ()
   "Set edit mode, for Emerge.
@@ -1992,8 +1993,7 @@ must be prefixed with \\<emerge-fast-keymap>\\[emerge-basic-keymap]."
   (setq emerge-fast-mode nil)
   (setq emerge-edit-mode t)
   (message "Edit mode set")
-  ;; force mode line redisplay
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 (defun emerge-auto-advance (arg)
   "Toggle Auto-Advance mode, for Emerge.
@@ -2005,11 +2005,10 @@ With a negative argument, turn off Auto-Advance mode."
   (setq emerge-auto-advance (if (null arg)
 				(not emerge-auto-advance)
 			      (> (prefix-numeric-value arg) 0)))
-  (message (if emerge-skip-prefers
+  (message (if emerge-auto-advance
 	       "Auto-advance set"
 	     "Auto-advance cleared"))
-  ;; force mode line redisplay
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 (defun emerge-skip-prefers (arg)
   "Toggle Skip-Prefers mode, for Emerge.
@@ -2024,8 +2023,7 @@ With a negative argument, turn off Skip-Prefers mode."
   (message (if emerge-skip-prefers
 	       "Skip-prefers set"
 	     "Skip-prefers cleared"))
-  ;; force mode line redisplay
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 (defun emerge-copy-as-kill-A ()
   "Put the A variant of this difference in the kill ring."
@@ -2146,7 +2144,10 @@ Use C-u l to reset the windows afterward."
 				       (princ "Ancestor buffer is: ")
 				       (princ (buffer-name))))
 				   (princ "\n")))
-      (princ emerge-output-description))))
+      (princ emerge-output-description)
+      (save-excursion
+	(set-buffer standard-output)
+	(help-mode)))))
 
 (defun emerge-join-differences (arg)
   "Join the selected difference with the following one.
@@ -2732,7 +2733,7 @@ keymap.  Leaves merge in fast mode."
 ;; Read a file name, handling all of the various defaulting rules.
 
 (defun emerge-read-file-name (prompt alternative-default-dir default-file
-			      A-file)
+			      A-file must-match)
   ;; `prompt' should not have trailing ": ", so that it can be modified
   ;; according to context.
   ;; If alternative-default-dir is non-nil, it should be used as the default
@@ -2760,7 +2761,7 @@ keymap.  Leaves merge in fast mode."
 		    alternative-default-dir
 		    (concat alternative-default-dir
 			    (file-name-nondirectory A-file))
-		    'confirm))
+		    (and must-match 'confirm)))
    ;; If there is a default file, use it.
    (default-file
      (read-file-name (format "%s (default %s): " prompt default-file)
@@ -2769,7 +2770,7 @@ keymap.  Leaves merge in fast mode."
 		     ;; Emerge as the default for this argument.
 		     (and emerge-default-last-directories
 			  alternative-default-dir)
-		     default-file 'confirm))
+		     default-file (and must-match 'confirm)))
    (t
     (read-file-name (concat prompt ": ")
 		    ;; If emerge-default-last-directories is set, use the
@@ -2777,7 +2778,7 @@ keymap.  Leaves merge in fast mode."
 		    ;; Emerge as the default for this argument.
 		    (and emerge-default-last-directories
 			 alternative-default-dir)
-		    nil 'confirm))))
+		    nil (and must-match 'confirm)))))
 
 ;; Revise the mode line to display which difference we have selected
 
@@ -2798,8 +2799,7 @@ keymap.  Leaves merge in fast mode."
 				       (prefer-B . " - B*")
 				       (combined . " - comb"))))
 			""))))
-  ;; Force mode-line redisplay
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 ;; compare two regions in two buffers for containing the same text
 (defun emerge-compare-buffers (buffer-x x-begin x-end buffer-y y-begin y-end)
@@ -2987,6 +2987,9 @@ If some prefix of KEY has a non-prefix definition, it is redefined."
 ;;			       minor-mode indicator))
 ;;		(princ (documentation minor-mode)))))
 ;;	(setq minor-modes (cdr minor-modes))))
+;;    (save-excursion
+;;      (set-buffer standard-output)
+;;      (help-mode))
 ;;    (print-help-return-message)))
 
 ;; This goes with the redefinition of describe-mode.

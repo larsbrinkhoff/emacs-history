@@ -19,6 +19,7 @@
 ** radio:    ("name" NULL NULL T/F data (selectable thing...))
 ** strings:  ("name" NULL NULL T/F data (selectable thing...))
 ** text:     ("name" "string" <ign> T/F data)
+** main:     ("name")
 */
 
 typedef unsigned long LWLIB_ID;
@@ -99,5 +100,20 @@ void lw_set_keyboard_focus (/* Widget parent, Widget w */);
 
 /* Silly Energize hack to invert the "sheet" button */
 void lw_show_busy (/* Widget w, Boolean busy */);
+
+/* Silly hack to assist with Lucid/Athena geometry management. */
+void lw_refigure_widget (/* Widget w, Boolan doit */);
+
+/* Toolkit independent way of determining if an event occurred on a
+   menubar. */
+Boolean lw_window_is_in_menubar (/* Window win, Widget menubar_widget */);
+
+/* Manage resizing: TRUE permits resizing widget w; FALSE disallows it. */
+void lw_allow_resizing (/* Widget w, Boolean flag */);
+
+/* Set up the main window. */
+void lw_set_main_areas (/* Widget parent,
+			   Widget menubar,
+			   Widget work_area */);
 
 #endif /* LWLIB_H */

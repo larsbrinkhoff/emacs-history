@@ -17,31 +17,33 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
+#ifndef _DISPEXTERN_H_
+#define _DISPEXTERN_H_
+
 /* Nonzero means last display completed and cursor is really at
    cursX, cursY.  Zero means it was preempted. */
 extern int display_completed;
 
 #ifdef HAVE_X_WINDOWS
 #include <X11/Xlib.h>
+#endif
 
+#ifdef MSDOS
+#include "msdos.h"
+#endif
+
+#ifdef HAVE_FACES
 struct face
   {
     /* If this is non-zero, it is a GC we can use without modification
        to represent this face.  */
     GC gc;
-
-    /* If we have ever called get_cached_face on this face structure,
-       here is the index in face_vector of the face it returned.  It
-       might not be valid any more, but it's a good place to start
-       looking; get_cached_face tries to use this to avoid searching
-       all of face_vector.  */
-    int cached_index;
   
     /* Pixel value for foreground color.  */
-    int foreground;
+    EMACS_UINT foreground;
   
     /* Pixel value for background color.  */
-    int background;
+    EMACS_UINT background;
   
     /* Font used for this face.  */
     XFontStruct *font;
@@ -69,7 +71,7 @@ typedef struct face *FACE;
 #define FACE_STIPPLE(f) ((f)->stipple)
 #define FACE_UNDERLINE_P(f) ((f)->underline)
 
-#else  /* Not X */
+#else /* not HAVE_FACES */
 
 typedef int FACE;
 
@@ -80,7 +82,8 @@ typedef int FACE;
 
 #define FACE_HIGHLIGHT(f) ((f) & 0x1)
 #define FACE_UNDERLINE(f) ((f) & 0x2)
-#endif /* Not X */
+
+#endif /* not HAVE_FACES */
 
 
 /* This structure is used for the actual display of text on a frame.
@@ -171,3 +174,5 @@ struct frame_glyphs
 
 extern void get_display_line ();
 extern Lisp_Object sit_for ();
+
+#endif /* not _DISPEXTERN_H_ */

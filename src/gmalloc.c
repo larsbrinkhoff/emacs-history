@@ -5,7 +5,7 @@
 /* The malloc headers and source files from the C library follow here.  */
 
 /* Declarations for `malloc' and friends.
-   Copyright 1990, 1991, 1992, 1993 Free Software Foundation, Inc.
+   Copyright 1990, 1991, 1992, 1993, 1995 Free Software Foundation, Inc.
 		  Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -36,6 +36,12 @@ Cambridge, MA 02139, USA.
 #include <config.h>
 #endif
 
+#ifdef emacs
+/* Avoid our `valloc' declaration, since it may conflict with
+   a bogus declaration in Emacs's config.h (and `valloc' is unused).  */
+#define valloc emacs_loser_valloc
+#endif
+
 #if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
 #include <string.h>
 #else
@@ -47,10 +53,12 @@ Cambridge, MA 02139, USA.
 #endif
 #endif
 
-#if	defined(__GNU_LIBRARY__) || defined(__STDC__)
+#if	defined (__GNU_LIBRARY__) || (defined (__STDC__) && __STDC__)
 #include <limits.h>
 #else
+#ifndef CHAR_BIT
 #define	CHAR_BIT	8
+#endif
 #endif
 
 #ifdef	HAVE_UNISTD_H
@@ -79,11 +87,13 @@ extern "C"
 #define	__ptr_t		char *
 #endif /* C++ or ANSI C.  */
 
-#ifdef	__STDC__
+#if defined (__STDC__) && __STDC__
 #include <stddef.h>
-#define	__malloc_size_t	size_t
+#define	__malloc_size_t		size_t
+#define	__malloc_ptrdiff_t	ptrdiff_t
 #else
-#define	__malloc_size_t	unsigned int
+#define	__malloc_size_t		unsigned int
+#define	__malloc_ptrdiff_t	int
 #endif
 
 #ifndef	NULL
@@ -92,20 +102,21 @@ extern "C"
 
 
 /* Allocate SIZE bytes of memory.  */
-extern __ptr_t malloc __P ((size_t __size));
+extern __ptr_t malloc __P ((__malloc_size_t __size));
 /* Re-allocate the previously allocated block
    in __ptr_t, making the new block SIZE bytes long.  */
-extern __ptr_t realloc __P ((__ptr_t __ptr, size_t __size));
+extern __ptr_t realloc __P ((__ptr_t __ptr, __malloc_size_t __size));
 /* Allocate NMEMB elements of SIZE bytes each, all initialized to 0.  */
-extern __ptr_t calloc __P ((size_t __nmemb, size_t __size));
+extern __ptr_t calloc __P ((__malloc_size_t __nmemb, __malloc_size_t __size));
 /* Free a block allocated by `malloc', `realloc' or `calloc'.  */
 extern void free __P ((__ptr_t __ptr));
 
 /* Allocate SIZE bytes allocated to ALIGNMENT bytes.  */
-extern __ptr_t memalign __P ((size_t __alignment, size_t __size));
+extern __ptr_t memalign __P ((__malloc_size_t __alignment,
+			      __malloc_size_t __size));
 
 /* Allocate SIZE bytes on a page boundary.  */
-extern __ptr_t valloc __P ((size_t __size));
+extern __ptr_t valloc __P ((__malloc_size_t __size));
 
 
 #ifdef _MALLOC_INTERNAL
@@ -134,7 +145,7 @@ typedef union
     /* Heap information for a busy block.  */
     struct
       {
-	/* Zero for a large block, or positive giving the
+	/* Zero for a large (multiblock) object, or positive giving the
 	   logarithm to the base two of the fragment size.  */
 	int type;
 	union
@@ -144,8 +155,10 @@ typedef union
 		__malloc_size_t nfree; /* Free frags in a fragmented block.  */
 		__malloc_size_t first; /* First free fragment of the block.  */
 	      } frag;
-	    /* Size (in blocks) of a large cluster.  */
-	    __malloc_size_t size;
+	    /* For a large object, in its first block, this has the number
+	       of blocks in the object.  In the other blocks, this has a
+	       negative number which says how far back the first block is.  */
+	    __malloc_ptrdiff_t size;
 	  } info;
       } busy;
     /* Heap information for a free block
@@ -199,29 +212,44 @@ extern __malloc_size_t _bytes_used;
 extern __malloc_size_t _chunks_free;
 extern __malloc_size_t _bytes_free;
 
-/* Internal version of `free' used in `morecore' (malloc.c). */
+/* Internal versions of `malloc', `realloc', and `free'
+   used when these functions need to call each other.
+   They are the same but don't call the hooks.  */
+extern __ptr_t _malloc_internal __P ((__malloc_size_t __size));
+extern __ptr_t _realloc_internal __P ((__ptr_t __ptr, __malloc_size_t __size));
 extern void _free_internal __P ((__ptr_t __ptr));
 
 #endif /* _MALLOC_INTERNAL.  */
 
+/* Given an address in the middle of a malloc'd object,
+   return the address of the beginning of the object.  */
+extern __ptr_t malloc_find_object_address __P ((__ptr_t __ptr));
+
 /* Underlying allocation function; successive calls should
    return contiguous pieces of memory.  */
-extern __ptr_t (*__morecore) __P ((ptrdiff_t __size));
+extern __ptr_t (*__morecore) __P ((__malloc_ptrdiff_t __size));
 
 /* Default value of `__morecore'.  */
-extern __ptr_t __default_morecore __P ((ptrdiff_t __size));
+extern __ptr_t __default_morecore __P ((__malloc_ptrdiff_t __size));
 
 /* If not NULL, this function is called after each time
    `__morecore' is called to increase the data size.  */
 extern void (*__after_morecore_hook) __P ((void));
 
+/* Number of extra blocks to get each time we ask for more core.
+   This reduces the frequency of calling `(*__morecore)'.  */
+extern __malloc_size_t __malloc_extra_blocks;
+
 /* Nonzero if `malloc' has been called and done its initialization.  */
 extern int __malloc_initialized;
 
 /* Hooks for debugging versions.  */
+extern void (*__malloc_initialize_hook) __P ((void));
 extern void (*__free_hook) __P ((__ptr_t __ptr));
-extern __ptr_t (*__malloc_hook) __P ((size_t __size));
-extern __ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, size_t __size));
+extern __ptr_t (*__malloc_hook) __P ((__malloc_size_t __size));
+extern __ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, __malloc_size_t __size));
+extern __ptr_t (*__memalign_hook) __P ((__malloc_size_t __size,
+					__malloc_size_t __alignment));
 
 /* Return values for `mprobe': these are the kinds of inconsistencies that
    `mcheck' enables detection of.  */
@@ -270,13 +298,13 @@ extern void memory_warnings __P ((__ptr_t __start,
 /* Relocating allocator.  */
 
 /* Allocate SIZE bytes, and store the address in *HANDLEPTR.  */
-extern __ptr_t r_alloc __P ((__ptr_t *__handleptr, size_t __size));
+extern __ptr_t r_alloc __P ((__ptr_t *__handleptr, __malloc_size_t __size));
 
 /* Free the storage allocated in HANDLEPTR.  */
 extern void r_alloc_free __P ((__ptr_t *__handleptr));
 
 /* Adjust the block at HANDLEPTR to be SIZE bytes long.  */
-extern __ptr_t r_re_alloc __P ((__ptr_t *__handleptr, size_t __size));
+extern __ptr_t r_re_alloc __P ((__ptr_t *__handleptr, __malloc_size_t __size));
 
 
 #ifdef	__cplusplus
@@ -284,54 +312,8 @@ extern __ptr_t r_re_alloc __P ((__ptr_t *__handleptr, size_t __size));
 #endif
 
 #endif /* malloc.h  */
-/* Allocate memory on a page boundary.
-   Copyright (C) 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with this library; see the file COPYING.LIB.  If
-not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-Cambridge, MA 02139, USA.
-
-   The author may be reached (Email) at the address mike@ai.mit.edu,
-   or (US mail) as Mike Haertel c/o Free Software Foundation.  */
-
-#if defined (__GNU_LIBRARY__) || defined (_LIBC)
-#include <stddef.h>
-#include <sys/cdefs.h>
-extern size_t __getpagesize __P ((void));
-#else
-#include "getpagesize.h"
-#define	 __getpagesize()	getpagesize()
-#endif
-
-#ifndef	_MALLOC_INTERNAL
-#define	_MALLOC_INTERNAL
-#include <malloc.h>
-#endif
-
-static __malloc_size_t pagesize;
-
-__ptr_t
-valloc (size)
-     __malloc_size_t size;
-{
-  if (pagesize == 0)
-    pagesize = __getpagesize ();
-
-  return memalign (pagesize, size);
-}
 /* Memory allocator `malloc'.
-   Copyright 1990, 1991, 1992, 1993, 1994 Free Software Foundation
+   Copyright 1990, 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 		  Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -356,6 +338,7 @@ Cambridge, MA 02139, USA.
 #define _MALLOC_INTERNAL
 #include <malloc.h>
 #endif
+#include <errno.h>
 
 /* How to really get more memory.  */
 __ptr_t (*__morecore) __P ((ptrdiff_t __size)) = __default_morecore;
@@ -390,6 +373,9 @@ __malloc_size_t _bytes_free;
 /* Are you experienced?  */
 int __malloc_initialized;
 
+__malloc_size_t __malloc_extra_blocks;
+
+void (*__malloc_initialize_hook) __P ((void));
 void (*__after_morecore_hook) __P ((void));
 
 /* Aligned allocation.  */
@@ -417,11 +403,42 @@ align (size)
   return result;
 }
 
+
+/* This is called when `_heapinfo' and `heapsize' have just
+   been set to describe a new info table.  Set up the table
+   to describe itself and account for it in the statistics.  */
+static void register_heapinfo __P ((void));
+#ifdef __GNUC__
+__inline__
+#endif
+static void 
+register_heapinfo ()
+{
+  __malloc_size_t block, blocks;
+
+  block = BLOCK (_heapinfo);
+  blocks = BLOCKIFY (heapsize * sizeof (malloc_info));
+
+  /* Account for the _heapinfo block itself in the statistics.  */
+  _bytes_used += blocks * BLOCKSIZE;
+  ++_chunks_used;
+
+  /* Describe the heapinfo block itself in the heapinfo.  */
+  _heapinfo[block].busy.type = 0;
+  _heapinfo[block].busy.info.size = blocks;
+  /* Leave back-pointers for malloc_find_address.  */
+  while (--blocks > 0)
+    _heapinfo[block + blocks].busy.info.size = -blocks;
+}
+
 /* Set everything up and remember that we have.  */
 static int initialize __P ((void));
 static int
 initialize ()
 {
+  if (__malloc_initialize_hook)
+    (*__malloc_initialize_hook) ();
+
   heapsize = HEAP / BLOCKSIZE;
   _heapinfo = (malloc_info *) align (heapsize * sizeof (malloc_info));
   if (_heapinfo == NULL)
@@ -431,14 +448,15 @@ initialize ()
   _heapinfo[0].free.next = _heapinfo[0].free.prev = 0;
   _heapindex = 0;
   _heapbase = (char *) _heapinfo;
+  _heaplimit = BLOCK (_heapbase + heapsize * sizeof (malloc_info));
 
-  /* Account for the _heapinfo block itself in the statistics.  */
-  _bytes_used = heapsize * sizeof (malloc_info);
-  _chunks_used = 1;
+  register_heapinfo ();
 
   __malloc_initialized = 1;
   return 1;
 }
+
+static int morecore_recursing;
 
 /* Get neatly aligned memory, initializing or
    growing the heap info table as necessary. */
@@ -451,6 +469,10 @@ morecore (size)
   malloc_info *newinfo, *oldinfo;
   __malloc_size_t newsize;
 
+  if (morecore_recursing)
+    /* Avoid recursion.  The caller will know how to handle a null return.  */
+    return NULL;
+
   result = align (size);
   if (result == NULL)
     return NULL;
@@ -458,37 +480,85 @@ morecore (size)
   /* Check if we need to grow the info table.  */
   if ((__malloc_size_t) BLOCK ((char *) result + size) > heapsize)
     {
+      /* Calculate the new _heapinfo table size.  We do not account for the
+	 added blocks in the table itself, as we hope to place them in
+	 existing free space, which is already covered by part of the
+	 existing table.  */
       newsize = heapsize;
-      while ((__malloc_size_t) BLOCK ((char *) result + size) > newsize)
+      do
 	newsize *= 2;
+      while ((__malloc_size_t) BLOCK ((char *) result + size) > newsize);
+
+      /* First try to allocate the new info table in core we already have,
+	 in the usual way using realloc.  If realloc cannot extend it in
+	 place or relocate it to existing sufficient core, we will get
+	 called again, and the code above will notice the
+	 `morecore_recursing' flag and return null.  */
+      {
+	int save = errno;	/* Don't want to clobber errno with ENOMEM.  */
+	morecore_recursing = 1;
+	newinfo = (malloc_info *) _realloc_internal
+	  (_heapinfo, newsize * sizeof (malloc_info));
+	morecore_recursing = 0;
+	if (newinfo == NULL)
+	  errno = save;
+	else
+	  {
+	    /* We found some space in core, and realloc has put the old
+	       table's blocks on the free list.  Now zero the new part
+	       of the table and install the new table location.  */
+	    memset (&newinfo[heapsize], 0,
+		    (newsize - heapsize) * sizeof (malloc_info));
+	    _heapinfo = newinfo;
+	    heapsize = newsize;
+	    goto got_heap;
+	  }
+      }
+
+      /* We need new core from the system for the new heapinfo table.
+	 Find out where the new space will be and make sure the info
+	 table will be large enough to cover it.  */
+      newinfo = (malloc_info *) (*__morecore) (0);
+      while ((__malloc_size_t) BLOCK ((char *) newinfo
+				      + newsize * sizeof (malloc_info))
+	     > newsize)
+	newsize *= 2;
+
       newinfo = (malloc_info *) align (newsize * sizeof (malloc_info));
       if (newinfo == NULL)
 	{
 	  (*__morecore) (-size);
 	  return NULL;
 	}
+      /* Copy the old table to the beginning of the new,
+	 and zero the rest of the new table.  */
       memcpy (newinfo, _heapinfo, heapsize * sizeof (malloc_info));
       memset (&newinfo[heapsize], 0,
 	      (newsize - heapsize) * sizeof (malloc_info));
       oldinfo = _heapinfo;
-      newinfo[BLOCK (oldinfo)].busy.type = 0;
-      newinfo[BLOCK (oldinfo)].busy.info.size
-	= BLOCKIFY (heapsize * sizeof (malloc_info));
       _heapinfo = newinfo;
-      /* Account for the _heapinfo block itself in the statistics.  */
-      _bytes_used += newsize * sizeof (malloc_info);
-      ++_chunks_used;
-      _free_internal (oldinfo);
       heapsize = newsize;
+
+      register_heapinfo ();
+
+      /* Reset _heaplimit so _free_internal never decides
+	 it can relocate or resize the info table.  */
+      _heaplimit = 0;
+      _free_internal (oldinfo);
+
+      /* The new heap limit includes the new table just allocated.  */
+      _heaplimit = BLOCK ((char *) newinfo + heapsize * sizeof (malloc_info));
+      return result;
     }
 
+ got_heap:
   _heaplimit = BLOCK ((char *) result + size);
   return result;
 }
 
 /* Allocate memory from the heap.  */
 __ptr_t
-malloc (size)
+_malloc_internal (size)
      __malloc_size_t size;
 {
   __ptr_t result;
@@ -508,15 +578,12 @@ malloc (size)
     return NULL;
 #endif
 
-  if (__malloc_hook != NULL)
-    return (*__malloc_hook) (size);
-
   if (!__malloc_initialized)
     if (!initialize ())
       return NULL;
 
   if (size < sizeof (struct list))
-      size = sizeof (struct list);
+    size = sizeof (struct list);
 
 #ifdef SUNOS_LOCALTIME_BUG
   if (size < 16)
@@ -600,32 +667,36 @@ malloc (size)
 	  block = _heapinfo[block].free.next;
 	  if (block == start)
 	    {
-	      /* Need to get more from the system.  Check to see if
-		 the new core will be contiguous with the final free
-		 block; if so we don't need to get as much.  */
+	      /* Need to get more from the system.  Get a little extra.  */
+	      __malloc_size_t wantblocks = blocks + __malloc_extra_blocks;
 	      block = _heapinfo[0].free.prev;
 	      lastblocks = _heapinfo[block].free.size;
+	      /* Check to see if the new core will be contiguous with the
+		 final free block; if so we don't need to get as much.  */
 	      if (_heaplimit != 0 && block + lastblocks == _heaplimit &&
 		  (*__morecore) (0) == ADDRESS (block + lastblocks) &&
-		  (morecore ((blocks - lastblocks) * BLOCKSIZE)) != NULL)
+		  (morecore ((wantblocks - lastblocks) * BLOCKSIZE)) != NULL)
 		{
  		  /* Which block we are extending (the `final free
  		     block' referred to above) might have changed, if
  		     it got combined with a freed info table.  */
  		  block = _heapinfo[0].free.prev;
-  		  _heapinfo[block].free.size += (blocks - lastblocks);
-		  _bytes_free += (blocks - lastblocks) * BLOCKSIZE;
+  		  _heapinfo[block].free.size += (wantblocks - lastblocks);
+		  _bytes_free += (wantblocks - lastblocks) * BLOCKSIZE;
 		  continue;
 		}
-	      result = morecore (blocks * BLOCKSIZE);
+	      result = morecore (wantblocks * BLOCKSIZE);
 	      if (result == NULL)
 		return NULL;
 	      block = BLOCK (result);
-	      _heapinfo[block].busy.type = 0;
-	      _heapinfo[block].busy.info.size = blocks;
-	      ++_chunks_used;
-	      _bytes_used += blocks * BLOCKSIZE;
-	      return result;
+	      /* Put the new block at the end of the free list.  */
+	      _heapinfo[block].free.size = wantblocks;
+	      _heapinfo[block].free.prev = _heapinfo[0].free.prev;
+	      _heapinfo[block].free.next = 0;
+	      _heapinfo[0].free.prev = block;
+	      _heapinfo[_heapinfo[block].free.prev].free.next = block;
+	      ++_chunks_free;
+	      /* Now loop to use some of that block for this allocation.  */
 	    }
 	}
 
@@ -662,9 +733,22 @@ malloc (size)
       ++_chunks_used;
       _bytes_used += blocks * BLOCKSIZE;
       _bytes_free -= blocks * BLOCKSIZE;
+
+      /* Mark all the blocks of the object just allocated except for the
+	 first with a negative number so you can find the first block by
+	 adding that adjustment.  */
+      while (--blocks > 0)
+	_heapinfo[block + blocks].busy.info.size = -blocks;
     }
 
   return result;
+}
+
+__ptr_t
+malloc (size)
+     __malloc_size_t size;
+{
+  return (__malloc_hook != NULL ? *__malloc_hook : _malloc_internal) (size);
 }
 
 #ifndef _LIBC
@@ -696,7 +780,7 @@ _realloc (ptr, size)
 
 #endif
 /* Free a block of memory allocated by `malloc'.
-   Copyright 1990, 1991, 1992, 1994 Free Software Foundation
+   Copyright 1990, 1991, 1992, 1994, 1995 Free Software Foundation, Inc.
 		  Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -722,6 +806,22 @@ Cambridge, MA 02139, USA.
 #include <malloc.h>
 #endif
 
+
+/* Cope with systems lacking `memmove'.    */
+#ifndef memmove
+#if  (defined (MEMMOVE_MISSING) || \
+      !defined(_LIBC) && !defined(STDC_HEADERS) && !defined(USG))
+#ifdef emacs
+#undef	__malloc_safe_bcopy
+#define __malloc_safe_bcopy safe_bcopy
+#endif
+/* This function is defined in realloc.c.  */
+extern void __malloc_safe_bcopy __P ((__ptr_t, __ptr_t, __malloc_size_t));
+#define memmove(to, from, size)	__malloc_safe_bcopy ((from), (to), (size))
+#endif
+#endif
+
+
 /* Debugging hook for free.  */
 void (*__free_hook) __P ((__ptr_t __ptr));
 
@@ -738,6 +838,10 @@ _free_internal (ptr)
   __malloc_size_t block, blocks;
   register __malloc_size_t i;
   struct list *prev, *next;
+  __ptr_t curbrk;
+  const __malloc_size_t lesscore_threshold
+    /* Threshold of free space at which we will return some to the system.  */
+    = FINAL_FREE_BLOCKS + 2 * __malloc_extra_blocks;
 
   block = BLOCK (ptr);
 
@@ -796,21 +900,88 @@ _free_internal (ptr)
 	  --_chunks_free;
 	}
 
-      /* Now see if we can return stuff to the system.  */
+      /* How many trailing free blocks are there now?  */
       blocks = _heapinfo[block].free.size;
-      if (blocks >= FINAL_FREE_BLOCKS && block + blocks == _heaplimit
-	  && (*__morecore) (0) == ADDRESS (block + blocks))
+
+      /* Where is the current end of accessible core?  */
+      curbrk = (*__morecore) (0);
+
+      if (_heaplimit != 0 && curbrk == ADDRESS (_heaplimit))
 	{
-	  register __malloc_size_t bytes = blocks * BLOCKSIZE;
-	  _heaplimit -= blocks;
-	  (*__morecore) (-bytes);
-	  _heapinfo[_heapinfo[block].free.prev].free.next
-	    = _heapinfo[block].free.next;
-	  _heapinfo[_heapinfo[block].free.next].free.prev
-	    = _heapinfo[block].free.prev;
-	  block = _heapinfo[block].free.prev;
-	  --_chunks_free;
-	  _bytes_free -= bytes;
+	  /* The end of the malloc heap is at the end of accessible core.
+	     It's possible that moving _heapinfo will allow us to
+	     return some space to the system.  */
+
+ 	  __malloc_size_t info_block = BLOCK (_heapinfo);
+ 	  __malloc_size_t info_blocks = _heapinfo[info_block].busy.info.size;
+ 	  __malloc_size_t prev_block = _heapinfo[block].free.prev;
+ 	  __malloc_size_t prev_blocks = _heapinfo[prev_block].free.size;
+ 	  __malloc_size_t next_block = _heapinfo[block].free.next;
+ 	  __malloc_size_t next_blocks = _heapinfo[next_block].free.size;
+
+	  if (/* Win if this block being freed is last in core, the info table
+		 is just before it, the previous free block is just before the
+		 info table, and the two free blocks together form a useful
+		 amount to return to the system.  */
+	      (block + blocks == _heaplimit &&
+	       info_block + info_blocks == block && 
+	       prev_block != 0 && prev_block + prev_blocks == info_block &&
+	       blocks + prev_blocks >= lesscore_threshold) ||
+	      /* Nope, not the case.  We can also win if this block being
+		 freed is just before the info table, and the table extends
+		 to the end of core or is followed only by a free block,
+		 and the total free space is worth returning to the system.  */
+	      (block + blocks == info_block &&
+	       ((info_block + info_blocks == _heaplimit &&
+		 blocks >= lesscore_threshold) ||
+		(info_block + info_blocks == next_block &&
+		 next_block + next_blocks == _heaplimit &&
+		 blocks + next_blocks >= lesscore_threshold)))
+	      )
+	    {
+	      malloc_info *newinfo;
+	      __malloc_size_t oldlimit = _heaplimit;
+
+	      /* Free the old info table, clearing _heaplimit to avoid
+		 recursion into this code.  We don't want to return the
+		 table's blocks to the system before we have copied them to
+		 the new location.  */
+	      _heaplimit = 0;
+	      _free_internal (_heapinfo);
+	      _heaplimit = oldlimit;
+
+	      /* Tell malloc to search from the beginning of the heap for
+		 free blocks, so it doesn't reuse the ones just freed.  */
+	      _heapindex = 0;
+
+	      /* Allocate new space for the info table and move its data.  */
+	      newinfo = (malloc_info *) _malloc_internal (info_blocks
+							  * BLOCKSIZE);
+	      memmove (newinfo, _heapinfo, info_blocks * BLOCKSIZE);
+	      _heapinfo = newinfo;
+
+	      /* We should now have coalesced the free block with the
+		 blocks freed from the old info table.  Examine the entire
+		 trailing free block to decide below whether to return some
+		 to the system.  */
+	      block = _heapinfo[0].free.prev;
+	      blocks = _heapinfo[block].free.size;
+ 	    }
+
+	  /* Now see if we can return stuff to the system.  */
+	  if (block + blocks == _heaplimit && blocks >= lesscore_threshold)
+	    {
+	      register __malloc_size_t bytes = blocks * BLOCKSIZE;
+	      _heaplimit -= blocks;
+	      (*__morecore) (-bytes);
+	      _heapinfo[_heapinfo[block].free.prev].free.next
+		= _heapinfo[block].free.next;
+	      _heapinfo[_heapinfo[block].free.next].free.prev
+		= _heapinfo[block].free.prev;
+	      block = _heapinfo[block].free.prev;
+	      --_chunks_free;
+	      _bytes_free -= bytes;
+	    }
 	}
 
       /* Set the next search to begin at this block.  */
@@ -905,51 +1076,20 @@ free (ptr)
   else
     _free_internal (ptr);
 }
-/* Copyright (C) 1991, 1993, 1994 Free Software Foundation, Inc.
-This file is part of the GNU C Library.
 
-The GNU C Library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
-
-The GNU C Library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with the GNU C Library; see the file COPYING.LIB.  If
-not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-Cambridge, MA 02139, USA.  */
-
-#ifndef	_MALLOC_INTERNAL
-#define _MALLOC_INTERNAL
-#include <malloc.h>
-#endif
-
-#ifdef _LIBC
-
-#include <ansidecl.h>
-#include <gnu-stabs.h>
-
-#undef	cfree
-
-function_alias(cfree, free, void, (ptr),
-	       DEFUN(cfree, (ptr), PTR ptr))
-
+/* Define the `cfree' alias for `free'.  */
+#ifdef weak_alias
+weak_alias (free, cfree)
 #else
-
 void
 cfree (ptr)
      __ptr_t ptr;
 {
   free (ptr);
 }
-
 #endif
 /* Change the size of a block allocated by `malloc'.
-   Copyright 1990, 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
+   Copyright 1990, 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 		     Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -975,20 +1115,30 @@ Cambridge, MA 02139, USA.
 #include <malloc.h>
 #endif
 
+
+
+/* Cope with systems lacking `memmove'.    */
 #if  (defined (MEMMOVE_MISSING) || \
       !defined(_LIBC) && !defined(STDC_HEADERS) && !defined(USG))
 
+#ifdef emacs
+#undef	__malloc_safe_bcopy
+#define __malloc_safe_bcopy safe_bcopy
+#else
+
 /* Snarfed directly from Emacs src/dispnew.c:
    XXX Should use system bcopy if it handles overlap.  */
-#ifndef emacs
 
 /* Like bcopy except never gets confused by overlap.  */
 
-static void
-safe_bcopy (from, to, size)
-     char *from, *to;
-     int size;
+void
+__malloc_safe_bcopy (afrom, ato, size)
+     __ptr_t afrom;
+     __ptr_t ato;
+     __malloc_size_t size;
 {
+  char *from = afrom, *to = ato;
+
   if (size <= 0 || from == to)
     return;
 
@@ -1036,9 +1186,12 @@ safe_bcopy (from, to, size)
 	}
     }
 }     
-#endif	/* Not emacs.  */
+#endif /* emacs */
 
-#define memmove(to, from, size) safe_bcopy ((from), (to), (size))
+#ifndef memmove
+extern void __malloc_safe_bcopy __P ((__ptr_t, __ptr_t, __malloc_size_t));
+#define memmove(to, from, size) __malloc_safe_bcopy ((from), (to), (size))
+#endif
 
 #endif
 
@@ -1055,7 +1208,7 @@ __ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, __malloc_size_t __size));
    new region.  This module has incestuous knowledge of the
    internals of both free and malloc. */
 __ptr_t
-realloc (ptr, size)
+_realloc_internal (ptr, size)
      __ptr_t ptr;
      __malloc_size_t size;
 {
@@ -1065,14 +1218,11 @@ realloc (ptr, size)
 
   if (size == 0)
     {
-      free (ptr);
-      return malloc (0);
+      _free_internal (ptr);
+      return _malloc_internal (0);
     }
   else if (ptr == NULL)
-    return malloc (size);
-
-  if (__realloc_hook != NULL)
-    return (*__realloc_hook) (ptr, size);
+    return _malloc_internal (size);
 
   block = BLOCK (ptr);
 
@@ -1083,7 +1233,7 @@ realloc (ptr, size)
       /* Maybe reallocate a large block to a small fragment.  */
       if (size <= BLOCKSIZE / 2)
 	{
-	  result = malloc (size);
+	  result = _malloc_internal (size);
 	  if (result != NULL)
 	    {
 	      memcpy (result, ptr, size);
@@ -1124,18 +1274,19 @@ realloc (ptr, size)
 	  _heaplimit = 0;
 	  _free_internal (ptr);
 	  _heaplimit = oldlimit;
-	  result = malloc (size);
+	  result = _malloc_internal (size);
 	  if (result == NULL)
 	    {
 	      /* Now we're really in trouble.  We have to unfree
 		 the thing we just freed.  Unfortunately it might
 		 have been coalesced with its neighbors.  */
 	      if (_heapindex == block)
-	        (void) malloc (blocks * BLOCKSIZE);
+	        (void) _malloc_internal (blocks * BLOCKSIZE);
 	      else
 		{
-		  __ptr_t previous = malloc ((block - _heapindex) * BLOCKSIZE);
-		  (void) malloc (blocks * BLOCKSIZE);
+		  __ptr_t previous
+		    = _malloc_internal ((block - _heapindex) * BLOCKSIZE);
+		  (void) _malloc_internal (blocks * BLOCKSIZE);
 		  _free_internal (previous);
 		}
 	      return NULL;
@@ -1156,16 +1307,25 @@ realloc (ptr, size)
 	{
 	  /* The new size is different; allocate a new space,
 	     and copy the lesser of the new size and the old. */
-	  result = malloc (size);
+	  result = _malloc_internal (size);
 	  if (result == NULL)
 	    return NULL;
 	  memcpy (result, ptr, min (size, (__malloc_size_t) 1 << type));
-	  free (ptr);
+	  _free_internal (ptr);
 	}
       break;
     }
 
   return result;
+}
+
+__ptr_t
+realloc (ptr, size)
+     __ptr_t ptr;
+     __malloc_size_t size;
+{
+  return (__realloc_hook != NULL ? *__realloc_hook : _realloc_internal)
+    (ptr, size);
 }
 /* Copyright (C) 1991, 1992, 1994 Free Software Foundation, Inc.
 
@@ -1206,7 +1366,7 @@ calloc (nmemb, size)
 
   return result;
 }
-/* Copyright (C) 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 This file is part of the GNU C Library.
 
 The GNU C Library is free software; you can redistribute it and/or modify
@@ -1247,18 +1407,14 @@ extern __ptr_t __sbrk __P ((int increment));
    If INCREMENT is negative, shrink data space.  */
 __ptr_t
 __default_morecore (increment)
-#ifdef __STDC__
-     ptrdiff_t increment;
-#else
-     int increment;
-#endif
+     __malloc_ptrdiff_t increment;
 {
-  __ptr_t result = (__ptr_t) __sbrk ((int) increment);
+  __ptr_t result = (__ptr_t) __sbrk (increment);
   if (result == (__ptr_t) -1)
     return NULL;
   return result;
 }
-/* Copyright (C) 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public License as
@@ -1280,6 +1436,8 @@ Cambridge, MA 02139, USA.  */
 #include <malloc.h>
 #endif
 
+__ptr_t (*__memalign_hook) __P ((size_t __size, size_t __alignment));
+
 __ptr_t
 memalign (alignment, size)
      __malloc_size_t alignment;
@@ -1287,6 +1445,9 @@ memalign (alignment, size)
 {
   __ptr_t result;
   unsigned long int adj;
+
+  if (__memalign_hook)
+    return (*__memalign_hook) (alignment, size);
 
   size = ((size + alignment - 1) / alignment) * alignment;
 

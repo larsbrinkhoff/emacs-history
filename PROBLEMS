@@ -1,6 +1,244 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
+* Emacs exits with "X protocol error" when run with an X server for
+Windows.
+
+A certain X server for Windows had a bug which caused this.
+Supposedly the newer 32-bit version of this server doesn't have the
+problem.
+
+* Emacs crashes at startup on MSDOS.
+
+Some users report that Emacs 19.29 requires dpmi memory management,
+and crashes on startup if the system does not have it.  We don't yet
+know why this happens--perhaps these machines don't have enough real
+memory, or perhaps something is wrong in Emacs or the compiler.
+However, arranging to use dpmi support is a workaround.
+
+You can find out if you have a dpmi host by running go32 without
+arguments; it will tell you if it uses dpmi memory.  For more
+information about dpmi memory, consult the djgpp FAQ.  (djgpp
+is the GNU C compiler as packaged for MSDOS.)
+
+Compiling Emacs under MSDOS is extremely sensitive for proper memory
+configuration.  If you experience problems during compilation, consider
+removing some or all memory resident programs (notably disk caches)
+and make sure that your memory managers are properly configured.  See
+the djgpp faq for configuration hints.
+
+* A position you specified in .Xdefaults is ignored, using twm.
+
+twm normally ignores "program-specified" positions.
+You can tell it to obey them with this command in your `.twmrc' file:
+
+  UsePPosition	"on"		#allow clents to request a position
+
+* Compiling lib-src says there is no rule to make test-distrib.c.
+
+This results from a bug in a VERY old version of GNU Sed.  To solve
+the problem, install the current version of GNU Sed, then rerun
+Emacs's configure script.
+
+* Compiling wakeup, in lib-src, says it can't make wakeup.c.
+
+This results from a bug in GNU Sed version 2.03.  To solve the
+problem, install the current version of GNU Sed, then rerun Emacs's
+configure script.
+
+* On Sunos 4.1.1, there are errors compiling sysdep.c.
+
+If you get errors such as
+
+    "sysdep.c", line 2017: undefined structure or union
+    "sysdep.c", line 2017: undefined structure or union
+    "sysdep.c", line 2019: nodename undefined
+
+This can result from defining LD_LIBRARY_PATH.  It is very tricky
+to use that environment variable with Emacs.  The Emacs configure
+script links many test programs with the system libraries; you must
+make sure that the libraries available to configure are the same
+ones available when you build Emacs.
+
+* The right Alt key works wrong on German HP keyboards (and perhaps
+other non-English HP keyboards too).
+
+This is because HPUX defines the modifiers wrong in X.  Here is a
+shell script to fix the problem; be sure that it is run after VUE
+configures the X server.
+
+    xmodmap 2> /dev/null - << EOF
+    keysym Alt_L = Meta_L
+    keysym Alt_R = Meta_R
+    EOF
+
+    xmodmap - << EOF
+    clear mod1
+    keysym Mode_switch = NoSymbol
+    add mod1 = Meta_L
+    keysym Meta_R = Mode_switch
+    add mod2 = Mode_switch
+    EOF
+
+* The Emacs window disappears when you type M-q.
+
+Some versions of the Open Look window manager interpret M-q as a quit
+command for whatever window you are typing at.  If you want to use
+Emacs with that window manager, you should try to configure the window
+manager to use some other command.   You can disable the
+shortcut keys entirely by adding this line to ~/.OWdefaults:
+
+    OpenWindows.WindowMenuAccelerators: False
+
+* Emacs does not notice when you release the mouse.
+
+There are reports that this happened with (some) Microsoft mice and
+that replacing the mouse made it stop.
+
+* Trouble using ptys on IRIX, or running out of ptys.
+
+The program mkpts (which may be in `/usr/adm' or `/usr/sbin') needs to
+be set-UID to root, or non-root programs like Emacs will not be able
+to allocate ptys reliably.
+
+* On Irix 5.2, unexelfsgi.c can't find cmplrs/stsupport.h.
+
+The file cmplrs/stsupport.h was included in the wrong file set in the
+Irix 5.2 distribution.  You can find it in the optional fileset
+compiler_dev, or copy it from some other Irix 5.2 system.  A kludgy
+workaround is to change unexelfsgi.c to include sym.h instead of
+syms.h.
+
+* Slow startup on Linux-based GNU systems.
+
+People using systems based on the Linux kernel sometimes report that
+startup takes 10 to 15 seconds longer than `usual'.
+
+This is because Emacs looks up the host name when it starts.
+Normally, this takes negligible time; the extra delay is due to
+improper system configuration.  This problem can occur for both
+networked and non-networked machines.
+
+Here is how to fix the configuration.  It requires being root.
+
+** Networked Case
+
+First, make sure the files `/etc/hosts' and `/etc/host.conf' both
+exist.  The first line in the `/etc/hosts' file should look like this
+(replace HOSTNAME with your host name):
+
+    127.0.0.1      HOSTNAME
+
+Also make sure that the `/etc/host.conf' files contains the following
+lines:
+
+    order hosts, bind 
+    multi on
+
+Any changes, permanent and temporary, to the host name should be
+indicated in the `/etc/hosts' file, since it acts a limited local
+database of addresses and names (e.g., some SLIP connections
+dynamically allocate ip addresses).
+
+** Non-Networked Case
+
+The solution described in the networked case applies here as well.
+However, if you never intend to network your machine, you can use a
+simpler solution: create an empty `/etc/host.conf' file.  The command
+`touch /etc/host.conf' suffices to create the file.  The `/etc/hosts'
+file is not necessary with this approach.
+
+* On Solaris, Dired hangs and C-g does not work.  Or Emacs hangs
+forever waiting for termination of a subprocess that is a zombie.
+
+casper@fwi.uva.nl says the problem is in X11R6.  Rebuild libX11.so
+after changing:
+
+    #if ThreadedX
+    #define SharedX11Reqs -lthread
+    #endif
+
+to:
+
+    #if OSMinorVersion < 4
+    #if ThreadedX
+    #define SharedX11Reqs -lthread
+    #endif
+    #endif
+
+* With M-x enable-flow-control, you need to type C-\ twice
+  to do incremental search--a single C-\ gets no response.
+
+This has been traced to communicating with your machine via kermit,
+with C-\ as the kermit escape character.  One solution is to use
+another escape character in kermit.  One user did
+
+   set escape-character 17
+
+in his .kermrc file, to make C-q the kermit escape character.
+
+* The Motif version of Emacs paints the screen a solid color.
+
+This has been observed to result from the following X resource:
+
+   Emacs*default.attributeFont:	-*-courier-medium-r-*-*-*-140-*-*-*-*-iso8859-*
+
+That the resource has this effect indicates a bug in something, but we
+do not yet know what.  If it is an Emacs bug, we hope someone can
+explain what the bug is so we can fix it.  In the mean time, removing
+the resource prevents the problem.
+
+* Emacs gets hung shortly after startup, on Sunos 4.1.3.
+
+We think this is due to a bug in Sunos.  The word is that
+one of these Sunos patches fixes the bug:
+
+100075-11  100224-06  100347-03  100482-05  100557-02  100623-03  100804-03  101080-01
+100103-12  100249-09             100496-02  100564-07  100630-02  100891-10  101134-01
+100170-09  100296-04  100377-09  100507-04  100567-04  100650-02  101070-01  101145-01
+100173-10  100305-15  100383-06  100513-04  100570-05  100689-01  101071-03  101200-02
+100178-09  100338-05  100421-03  100536-02  100584-05  100784-01  101072-01  101207-01
+
+We don't know which of these patches really matter.  If you find out
+which ones, please inform bug-gnu-emacs@prep.ai.mit.edu.
+
+* Emacs aborts while starting up, only when run without X.
+
+This problem often results from compiling Emacs with GCC when GCC was
+installed incorrectly.  The usual error in installing GCC is to
+specify --includedir=/usr/include.  Installation of GCC makes
+corrected copies of the system header files.  GCC is supposed to use
+the corrected copies in preference to the original system headers.
+Specifying --includedir=/usr/include causes the original system header
+files to be used.  On some systems, the definition of ioctl in the
+original system header files is invalid for ANSI C and causes Emacs
+not to work.
+
+The fix is to reinstall GCC, and this time do not specify --includedir
+when you configure it.  Then recompile Emacs.  Specifying --includedir
+is appropriate only in very special cases and it should *never* be the
+same directory where system header files are kept.
+
+* The Compose key on a DEC keyboard does not work as Meta key.
+
+This shell command should fix it:
+
+  xmodmap -e 'keycode 0xb1 = Meta_L'
+
+* Regular expressions matching bugs on SCO systems.
+
+On SCO, there are problems in regexp matching when Emacs is compiled
+with the system compiler.  The compiler version is "Microsoft C
+version 6", SCO 4.2.0h Dev Sys Maintenance Supplement 01/06/93; Quick
+C Compiler Version 1.00.46 (Beta).  The solution is to compile with
+GCC.
+
+* On Sunos 4, you get the error ld: Undefined symbol __lib_version.
+
+This is the result of using cc or gcc with the shared library meant
+for acc (the Sunpro compiler).  Check your LD_LIBRARY_PATH and delete
+/usr/lang/SC2.0.1 or some similar directory.
+
 * You can't select from submenus (in the X toolkit version).
 
 On certain systems, mouse-tracking and selection in top-level menus
@@ -12,19 +250,6 @@ This works on most systems.  There is speculation that the failure is
 due to bugs in old versions of X toolkit libraries, but no one really
 knows.  If someone debugs this and finds the precise cause, perhaps a
 workaround can be found.
-
-* On HPUX 9.05 and 9.06, C-c and C-z are not turned off in the terminal driver.
-
-This seems to be due to a bug in HPUX.  A workaround is to start Emacs
-after first setting the "susp" (suspend job) and "dsusp" (delayed
-suspend job) control characters temporarily to a character that you
-are not likely to type (such as C-_), and set them back after Emacs
-exits.  The following script should do it:
-
-	#!/bin/sh
-	stty susp '^_' dsusp '^_'
-	emacs ${1+"$@"}
-	stty susp '^Z' dsusp '^Z'
 
 * Unusable default font on SCO 3.2v4.
 
@@ -151,8 +376,8 @@ libraries with s/sunos4shr.h.  (This doesn't work if you use the X
 toolkit.)
 
 If you get the additional error that the linker could not find
-lib_version.o, try extracting it fromcontained in
-X11/usr/lib/X11/libvim.a in X11R4, then use it in the link.
+lib_version.o, try extracting it from X11/usr/lib/X11/libvim.a in
+X11R4, then use it in the link.
 
 * Error messages `Wrong number of arguments: #<subr where-is-internal>, 5'
 
@@ -198,14 +423,9 @@ extensions to X11R5 are installed.
 
 * Typing C-c C-c in Shell mode kills your X server.
 
-This happens on Linux 1.0 thru 1.04, approximately.  The workaround is
+This happens with Linux kernel 1.0 thru 1.04, approximately.  The workaround is
 to define SIGNALS_VIA_CHARACTERS in config.h and recompile Emacs.
-Newer Linux versions don't have this problem.
-
-* On AIX, the Ctrl/Act key interacts strangely with Shift.
-
-This is an AIX feature: Ctrl/Act with Shift is used for switching
-virtual terminals.
+Newer Linux kernel versions don't have this problem.
 
 * src/Makefile and lib-src/Makefile are truncated--most of the file missing.
 
@@ -244,7 +464,8 @@ On some systems, including Sunos 4 and DGUX 5.4.2 and perhaps others,
 unexec doesn't work properly with the shared library for the X
 toolkit.  You might be able to work around this by using a nonshared
 libXt.a library.  The real fix is to upgrade the various versions of
-unexec.  We hope volunteers will do this.
+unexec and/or ralloc.  We think this has been fixed on Sunos 4
+and Solaris in version 19.29.
 
 * `make install' fails on install-doc with `Error 141'.
 
@@ -618,8 +839,8 @@ for large blocks (many pages).
 
 * test-distrib says that the distribution has been clobbered
 * or, temacs prints "Command key out of range 0-127"
-* or, temacs runs and dumps xemacs, but xemacs totally fails to work.
-* or, temacs gets errors dumping xemacs
+* or, temacs runs and dumps emacs, but emacs totally fails to work.
+* or, temacs gets errors dumping emacs
 
 This can be because the .elc files have been garbled.  Do not be
 fooled by the fact that most of a .elc file is text: these are
@@ -641,16 +862,16 @@ nonprinting characters, you can fix them:
  1) Record the names of all the .elc files.
  2) Delete all the .elc files.
  3) Recompile alloc.c with a value of PURESIZE twice as large.
-     You might as well save the old alloc.o.
- 4) Remake xemacs.  It should work now.
- 5) Running xemacs, do Meta-x byte-compile-file repeatedly
+     (See puresize.h.)  You might as well save the old alloc.o.
+ 4) Remake emacs.  It should work now.
+ 5) Running emacs, do Meta-x byte-compile-file repeatedly
   to recreate all the .elc files that used to exist.
   You may need to increase the value of the variable
   max-lisp-eval-depth to succeed in running the compiler interpreted
   on certain .el files.  400 was sufficient as of last report.
  6) Reinstall the old alloc.o (undoing changes to alloc.c if any)
   and remake temacs.
- 7) Remake xemacs.  It should work now, with valid .elc files.
+ 7) Remake emacs.  It should work now, with valid .elc files.
 
 * temacs prints "Pure Lisp storage exhausted"
 
@@ -691,7 +912,7 @@ and specify the directory that contains the Lisp files.
 Emacs should print a warning when loading a .elc file which is older
 than the corresponding .el file.
 
-* The dumped Emacs (xemacs) crashes when run, trying to write pure data.
+* The dumped Emacs crashes when run, trying to write pure data.
 
 Two causes have been seen for such problems.
 
@@ -762,10 +983,6 @@ installed copy of movemail is usually in the directory
 /usr/local/lib/emacs/VERSION/TARGET.  You must change the group and
 mode of the installed copy; changing the group and mode of the build
 directory copy is ineffective.
-
-(Exception: if you configure with --run-in-place, then the build
-directory is also the installation directory; there is only one
-copy of movemail, and that is the one to change.)
 
 * Emacs spontaneously displays "I-search: " at the bottom of the screen.
 
@@ -1008,8 +1225,7 @@ important than adapting to people who don't use `stty dec'.
 If you are obstinate about confusing buggy overprinting with deletion,
 you can redefine Backspace in your .emacs file:
   (global-set-key "\b" 'delete-backward-char)
-You may then wish to put the function  help-command  on some
-other key.  I leave to you the task of deciding which key.
+You can probably access  help-command  via f1.
 
 * Editing files through RFS gives spurious "file has changed" warnings.
 It is possible that a change in Emacs 18.37 gets around this problem,

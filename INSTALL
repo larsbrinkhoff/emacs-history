@@ -17,7 +17,7 @@ Copyright (c) 1992, 1994 Free software Foundation, Inc.
 
 BUILDING AND INSTALLATION:
 (This is for a Unix or Unix-like system.  For MSDOS, see below;
-search for MSDOG.)
+search for MSDOG.  For Windows NT, see the file nt/install.)
 
 1) Make sure your system has enough swapping space allocated to handle
 a program whose pure code is 900k bytes and whose data area is at
@@ -34,7 +34,7 @@ the building and installation take place in different directories,
 then the installation procedure momentarily requires 50+20 Mb.
 
 2) Consult `./etc/MACHINES' to see what configuration name you should
-give to the `configure' program.  That file sometimes offers hints for
+give to the `configure' program.  That file offers hints for
 getting around some possible installation problems.
 
 3) In the top directory of the Emacs distribution, run the program
@@ -44,63 +44,46 @@ getting around some possible installation problems.
 
 The CONFIGURATION-NAME argument should be a configuration name given
 in `./etc/MACHINES'.  If omitted, `configure' will try to guess your
-system type by inspecting its environment; if it cannot, you must find
-the appropriate configuration name in `./etc/MACHINES' and specify it
-explicitly.
+system type; if it cannot, you must find the appropriate configuration
+name in `./etc/MACHINES' and specify it explicitly.
 
-The `--with-x', `--with-x11', and `--with-x10' options specify which
-window system Emacs should support.  If you don't want X support,
-specify `--with-x=no'.  If all of these options are omitted,
-`configure' will try to figure out for itself whether your system has
-X11, and arrange to use it if present.
+If you don't want X support, specify `--with-x=no'.  If you omit this
+option, `configure' will try to figure out for itself whether your
+system has X, and arrange to use it if present.
 
 The `--x-includes=DIR' and `--x-libraries=DIR' options tell the build
 process where the compiler should look for the include files and
-object libraries used with the X Window System.  Normally, your
-compiler should be able to find these by default; these options should
-only be necessary if you have your X Window System files installed in
-unusual places.
+object libraries used with the X Window System.  Normally, `configure'
+is able to find them; these options are necessary if you have your X
+Window System files installed in unusual places.  These options also
+accept a list of directories, separated with colons.
 
-You can specify toolkit operation when you configure Emacs; use the
-option --with-x-toolkit.
-
-Note: on some systems, it does not work to use the toolkit with shared
-libraries.
-
-The `--run-in-place' option sets up default values for the path
-variables in `./Makefile' so that Emacs will expect to find its data
-files (lisp libraries, runnable programs, and the like) in the same
-locations they occupy while Emacs builds.  If you use `--run-in-place'
-then you don't need to do `make install'.
-
-`--run-in-place' is pretty much obsolete now.  If you put the Emacs
-executable in a subdirectory named src, which has siblings named lisp,
-lib-src, etc, info and so on, Emacs automatically uses those sibling
-directories if the standard installation directory names don't contain
-what Emacs needs.
+To get more attractive menus, you can specify an X toolkit when you
+configure Emacs; use the option `--with-x-toolkit=TOOLKIT', where
+TOOLKIT is `athena' or `motif' (`yes' and `lucid' are synonyms for
+`athena').  On some systems, it does not work to use a toolkit with
+shared libraries.
 
 The `--with-gcc' option specifies that the build process should
 compile Emacs using GCC.  If you don't want to use GCC, specify
-`--with-gcc=no'.  If this option is omitted, `configure' will search
-for GCC in your load path, and use it if present.
+`--with-gcc=no'.  If you omit this option, `configure' will search
+for GCC in your path, and use it if present.
 
-The `--srcdir=DIR' option specifies that the configuration and build
-processes should look for the Emacs source code in DIR, when DIR is
-not the current directory.
-
-You can use `--srcdir' to build Emacs for several different machine
-types from a single source directory.  Make separate build directories
-for the different configuration types, and in each one, build Emacs
-specifying the common source directory with `--srcdir'.
+You can build Emacs for several different machine types from a single
+source directory.  To do this, you must use a version of `make' that
+supports the `VPATH' variable, such as GNU `make'.  Make separate
+build directories for the different configuration types, and in each
+one, run the Emacs `configure' script.  `configure' looks for the
+Emacs source code in the directory that `configure' is in.
 
 The `--prefix=PREFIXDIR' option specifies where the installation process
 should put emacs and its data files.  This defaults to `/usr/local'.
 - Emacs (and the other utilities users run) go in PREFIXDIR/bin
   (unless the `--exec-prefix' option says otherwise).
-- The architecture-independent files go in PREFIXDIR/lib/emacs/VERSION
-  (where VERSION is the version number of Emacs, like `19.7').
+- The architecture-independent files go in PREFIXDIR/share/emacs/VERSION
+  (where VERSION is the version number of Emacs, like `19.27').
 - The architecture-dependent files go in
-  PREFIXDIR/lib/emacs/VERSION/CONFIGURATION
+  PREFIXDIR/libexec/emacs/VERSION/CONFIGURATION
   (where CONFIGURATION is the configuration name, like mips-dec-ultrix4.2),
   unless the `--exec-prefix' option says otherwise.
 
@@ -109,7 +92,7 @@ portion of the directory tree for installing architecture-specific
 files, like executables and utility programs.  If specified,
 - Emacs (and the other utilities users run) go in EXECDIR/bin, and
 - The architecture-dependent files go in
-  EXECDIR/lib/emacs/VERSION/CONFIGURATION.
+  EXECDIR/libexec/emacs/VERSION/CONFIGURATION.
 EXECDIR/bin should be a directory that is normally in users' PATHs.
 
 For example, the command
@@ -119,20 +102,23 @@ For example, the command
 configures Emacs to build for a DECstation running Ultrix, with
 support for the X11 window system.
 
-The `configure' program does not accept abbreviations for its
-options.
-
-Note that `configure' doesn't do any compilation or installation
+`configure' doesn't do any compilation or installation
 itself.  It just creates the files that influence those things:
-`./Makefile', `build-install', and `./src/config.h'.  For details on
-exactly what it does, see the section called `CONFIGURATION BY HAND',
-below.
+`./Makefile', `lib-src/Makefile', `oldXMenu/Makefile',
+`lwlib/Makefile', `src/Makefile', and `./src/config.h'.  For details
+on exactly what it does, see the section called `CONFIGURATION BY
+HAND', below.
 
 When it is done, `configure' prints a description of what it did and
-leaves a copy in the file `config.status'.  That file is also a shell
-script which, when run, recreates the same configuration; it contains
-the verbal description as a comment.  If `configure' exits with an
-error after disturbing the status quo, it removes `config.status'.
+creates a shell script `config.status' which, when run, recreates the
+same configuration.  If `configure' exits with an error after
+disturbing the status quo, it removes `config.status'.  `configure'
+also creates a file `config.cache' that saves the results of its tests
+to make reconfiguring faster, and a file `config.log' containing compiler
+output (useful mainly for debugging `configure').  You can give
+`configure' the option `--cache-file=FILE' to use the results of the
+tests in FILE instead of `config.cache'.  Set FILE to `/dev/null' to
+disable caching, for debugging `configure'.
 
 The work of `configure' can be done by editing various files in the
 distribution, but using `configure' is supposed to be simpler.  See
@@ -140,8 +126,8 @@ the section called "CONFIGURATION BY HAND" below if you want to do the
 configuration yourself.
 
 4) Look at `./lisp/paths.el'; if some of those values are not right
-for your system, edit the file `./lisp/site-init.el' containing Emacs
-Lisp code to override them; you probably don't want to edit paths.el
+for your system, set up the file `./lisp/site-init.el' with Emacs
+Lisp code to override them; it is not a good idea to edit paths.el
 itself.  YOU MUST USE THE LISP FUNCTION `setq' TO ASSIGN VALUES,
 rather than `defvar', as used by `./lisp/paths.el'.  For example,
 
@@ -149,6 +135,11 @@ rather than `defvar', as used by `./lisp/paths.el'.  For example,
 
 is how you would override the default value of the variable
 news-inews-program (which is "/usr/local/inews").
+
+Before you override a variable this way, *look at the value* that the
+variable gets by default!  Make sure you know what kind of value the
+variable should have.  If you don't pay attention to what you are
+doing, you'll make a mistake.
 
 Note that, on some systems, the code you place in site-init.el must
 not use expand-file-name or any other function which may look
@@ -161,6 +152,10 @@ site-load.el for additional libraries if you arrange for their
 documentation strings to be in the etc/DOC file (see
 src/Makefile.in.in if you wish to figure out how to do that).  For all
 else, use site-init.el.
+
+If you set load-path to a different value in site-init.el or
+site-load.el, Emacs will use *precisely* that value when it starts up
+again.  If you do this, you are on your own!
 
 Note that, on some systems, the code you place in site-init.el must
 not use expand-file-name or any other function which may look
@@ -176,19 +171,22 @@ and `./etc/termcap.dat' may already contain appropriately-modified
 entries.
 
 7) Run `make' in the top directory of the Emacs distribution to finish
-building Emacs in the standard way.  The final executable file will be
-named `src/emacs'.  If you want to have Emacs's executable programs
-and data files installed as well, run `make install'.
+building Emacs in the standard way.  The final executable file is
+named `src/emacs'.  You can execute this file "in place" without
+copying it, if you wish; then it automatically uses the sibling
+directories ../lisp, ../lib-src, ../info.
 
-By default, Emacs installs its files in the following directories:
+Or you can "install" the executable and the other Emacs into their
+installed locations, with `make install'.  By default, Emacs's files
+are installed in the following directories:
 
 `/usr/local/bin' holds the executable programs users normally run -
 		`emacs', `etags', `ctags', `b2m', `emacsclient',
 		and `rcs-checkin'.
 
-`/usr/local/lib/emacs/VERSION/lisp' holds the Emacs Lisp library;
+`/usr/local/share/emacs/VERSION/lisp' holds the Emacs Lisp library;
 		`VERSION' stands for the number of the Emacs version
-		you are installing, like `18.59' or `19.0'.  Since the
+		you are installing, like `18.59' or `19.27'.  Since the
 		lisp library changes from one version of Emacs to
 		another, including the version number in the path
 		allows you to have several versions of Emacs installed
@@ -197,19 +195,19 @@ By default, Emacs installs its files in the following directories:
 		version.
 
 		Emacs searches for its lisp files in
-		`/usr/local/lib/emacs/site-lisp', then in this
+		`/usr/local/share/emacs/site-lisp', then in this
 		directory.
 
-`/usr/local/lib/emacs/VERSION/etc' holds the Emacs tutorial, the DOC
+`/usr/local/share/emacs/VERSION/etc' holds the Emacs tutorial, the DOC
 		file, the `yow' database, and other
 		architecture-independent files Emacs might need while
 		running.  VERSION is as specified for `.../lisp'.
 
-`/usr/local/lib/emacs/lock' contains files indicating who is editing
+`/usr/local/com/emacs/lock' contains files indicating who is editing
 		what, so Emacs can detect editing clashes between
 		users.
 
-`/usr/local/lib/emacs/VERSION/CONFIGURATION-NAME' contains executable
+`/usr/local/libexec/emacs/VERSION/CONFIGURATION-NAME' contains executable
 		programs used by Emacs that users are not expected to
 		run themselves.
 		`VERSION' is the number of the Emacs version you are
@@ -244,7 +242,7 @@ information on this.
 info files.
 
 9) If your system uses lock files to interlock access to mailer inbox files,
-then you might need to make the program arch-lib/movemail setuid or setgid
+then you might need to make the movemail program setuid or setgid
 to enable it to write the lock files.  We believe this is safe.
 
 10) You are done!
@@ -269,7 +267,7 @@ Here is a complete list of the variables you may want to set.
 
 `datadir' indicates where to put the architecture-independent
 	read-only data files that Emacs refers to while it runs; it
-	defaults to /usr/local/lib.  We create the following
+	defaults to /usr/local/share.  We create the following
 	subdirectories under `datadir':
 	- `emacs/VERSION/lisp', containing the Emacs lisp library, and
 	- `emacs/VERSION/etc', containing the Emacs tutorial, the DOC
@@ -281,17 +279,17 @@ Here is a complete list of the variables you may want to set.
 	same time; this means that you don't have to make Emacs
 	unavailable while installing a new version.
 
-`statedir' indicates where to put architecture-independent data files
+`sharedstatedir' indicates where to put architecture-independent data files
 	that Emacs modifies while it runs; it defaults to
-	/usr/local/lib as well.  We create the following
-	subdirectories under `statedir':
+	/usr/local/com.  We create the following
+	subdirectories under `sharedstatedir':
 	- `emacs/lock', containing files indicating who is editing
 		what, so Emacs can detect editing clashes between
 		users.
 
-`libdir' indicates where to put architecture-specific data files that
-	Emacs refers to as it runs; it too defaults to `/usr/local/lib'.
-	We create the following subdirectories under `libdir':
+`libexecdir' indicates where to put architecture-specific data files that
+	Emacs refers to as it runs; it defaults to `/usr/local/libexec'.
+	We create the following subdirectories under `libexecdir':
 	- `emacs/VERSION/CONFIGURATION-NAME', containing executable
 		programs used by Emacs that users are not expected to run
 		themselves.  
@@ -323,7 +321,7 @@ Here is a complete list of the variables you may want to set.
 `prefix' doesn't give a path for any specific part of Emacs; instead,
 	its value is used to determine the defaults for all the
 	architecture-independent path variables - `datadir',
-	`statedir', `infodir', and `mandir'.  Its default value is
+	`sharedstatedir', `infodir', and `mandir'.  Its default value is
 	`/usr/local'; the other variables add on `lib' or `man' to it
 	by default.
 
@@ -337,7 +335,7 @@ Here is a complete list of the variables you may want to set.
 
 `exec_prefix' serves the same purpose as `prefix', but instead
 	determines the default values for the architecture-dependent
-	path variables - `bindir' and `libdir'.
+	path variables - `bindir' and `libexecdir'.
 
 The above variables serve analogous purposes in the makefiles for all
 GNU software; here are some variables specific to Emacs.
@@ -365,12 +363,12 @@ GNU software; here are some variables specific to Emacs.
 	(which see), is `/usr/local/lib/emacs/VERSION/etc'.
 
 `lockdir' indicates the directory where Emacs keeps track of its
-	locking information.  Its default value, based on `statedir'
+	locking information.  Its default value, based on `sharedstatedir'
 	(which see), is `/usr/local/lib/emacs/lock'.
 
 `archlibdir' indicates where Emacs installs and expects the
 	executable files and other architecture-dependent data it uses
-	while running.  Its default value, based on `libdir' (which
+	while running.  Its default value, based on `libexecdir' (which
 	see), is `/usr/local/lib/emacs/VERSION/CONFIGURATION-NAME'
 	(where VERSION and CONFIGURATION-NAME are as described above).
 
@@ -417,22 +415,13 @@ that run cpp to construct `Makefile'.
 from the corresponding `Makefile.in' files.  This isn't so hard,
 just a matter of substitution.
 
-5) If you're going to use the build-install script to build Emacs,
-copy `./build-ins.in' to `./build-install', and edit the
-definitions found at the top of the script.
-
 The `configure' script is built from `configure.in' by the `autoconf'
-program.  However, since Emacs has configuration requirements that
-autoconf can't meet, `configure.in' uses an marriage of custom-baked
-configuration code and autoconf macros.  New versions of autoconf
-could very well break this arrangement, so it may be wise to avoid
-rebuilding `configure' from `configure.in' when possible.
-
+program.  You need version 2.0 or newer of `autoconf' to rebuild `configure'.
 
 BUILDING GNU EMACS BY HAND
 
-Once Emacs is configured, running `make' or running the shell script
-`build-install' in the top directory performs the following steps.
+Once Emacs is configured, running `make' in the top directory performs
+the following steps.
 
 1) Run `make src/paths.h' in the top directory.  This produces
 `./src/paths.h' from the template file `./src/paths.h.in', changing
@@ -460,9 +449,8 @@ version.
 
 INSTALLATION BY HAND
 
-The steps below are done by the shell script `build-install' or by
-running `make install' in the main directory of the Emacs
-distribution.
+The steps below are done by running `make install' in the main
+directory of the Emacs distribution.
 
 1) Copy `./lisp' and its subdirectories, `./etc', and the executables
 in `./lib-src' to their final destinations, as selected in `./src/paths.h'.
@@ -473,7 +461,7 @@ Strictly speaking, not all of the executables in `./lib-src' need be copied.
     and `yow' are used by Emacs; they do need to be copied.
 - The programs `etags', `ctags', `emacsclient', `b2m', and `rcs-checkin'
     are intended to be run by users; they are handled below.
-- The programs `make-docfile', `make-path', and `test-distrib' were
+- The programs `make-docfile' and `test-distrib' were
     used in building Emacs, and are not needed any more.
 - The programs `digest-doc' and `sorted-doc' convert a `DOC' file into
     a file for users to read.  There is no important reason to move them.
@@ -517,11 +505,28 @@ problems sometimes encountered, and what to do about them.
 Installation on MSDOG (a.k.a. MSDOS)
 
 To install on MSDOG, you need to have the GNU C compiler for MSDOG
-(also known as djgpp), GNU Make, rm, mv, chmod, and sed.  Type these
-commands:
+(also known as djgpp), GNU Make, rm, mv, chmod, and sed.
 
-config msdos
-make install
+Some users report that running Emacs 19.29 requires dpmi memory
+management.  We do not know why this is so, since 19.28 did not need
+it.  If we find out what change introduced this requirement, we will
+try to eliminate it.  It is possible that this problem happens only
+when there is not enough physical memory on the machine.
+
+You can find out if you have a dpmi host by running go32 (part of
+djgpp) without arguments; it will tell you if it uses dpmi memory.
+For more information about dpmi memory, consult the djgpp FAQ.
+
+To build and install Emacs, type these commands:
+
+    config msdos
+    make install
+
+You may need to work around a type conflict between gmalloc.c and the
+header file djgppstd.h regarding declarations of memalign and valloc.
+Temporarily deleting those declarations from djgppstd.h while compiling
+Emacs or while compiling gmalloc.c should do it.  We found out about this
+problem too late to include a more convenient fix--sorry.
 
 To save disk space, Emacs is built with the idea that you will execute
 it from the same place in the file system where you built it.  As the

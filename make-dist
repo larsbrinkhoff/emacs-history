@@ -6,6 +6,24 @@
 #### be distributed.  This means that if you add a file with an odd name,
 #### you should make sure that this script will include it.
 
+# Copyright (C) 1995 Free Software Foundation, Inc.
+#
+# This file is part of GNU Emacs.
+#
+# GNU Emacs is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#
+# GNU Emacs is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GNU Emacs; see the file COPYING.  If not, write to
+# the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
 progname="$0"
 
 ### Exit if a command fails.
@@ -150,9 +168,10 @@ mkdir ${tempdir}
 ### README while the rest of the tar file is still unpacking.  Whoopee.
 echo "Making links to top-level files." 
 ln GETTING.GNU.SOFTWARE INSTALL PROBLEMS README BUGS move-if-change ${tempdir}
-ln ChangeLog Makefile.in build-ins.in configure configure.in ${tempdir}
-ln config.bat make-dist vpath.sed ${tempdir}
+ln ChangeLog Makefile.in configure configure.in ${tempdir}
+ln config.bat make-dist update-subdirs vpath.sed ${tempdir}
 ### Copy these files; they're cross-filesystem symlinks.
+cp mkinstalldirs ${tempdir}
 cp config.sub ${tempdir}
 cp config.guess ${tempdir}
 cp install.sh ${tempdir}
@@ -167,11 +186,10 @@ echo "Updating version number in README."
 
 
 echo "Creating subdirectories."
-# I think we're not going to distribute anything in external-lisp, so
-# I've removed it from this list.
 for subdir in lisp lisp/term site-lisp \
 	      src src/m src/s src/bitmaps lib-src oldXMenu lwlib \
-	      etc lock cpp info man msdos shortnames vms; do
+	      nt nt/inc nt/inc/sys \
+	      etc etc/e lock cpp info man msdos vms; do
   mkdir ${tempdir}/${subdir}
 done
 
@@ -183,7 +201,7 @@ echo "Making links to \`lisp'."
  ln [a-zA-Z]*.dat ../${tempdir}/lisp
  ## simula.el doesn't keep abbreviations in simula.defns any more.
  ## ln [a-zA-Z]*.defns ../${tempdir}/lisp
- ln ChangeLog Makefile ChangeLog.? README dired.todo ../${tempdir}/lisp
+ ln ChangeLog Makefile makefile.nt ChangeLog.? README dired.todo ../${tempdir}/lisp
  cd ../${tempdir}/lisp
  rm -f TAGS =*
  rm -f site-init site-init.el site-init.elc
@@ -208,14 +226,6 @@ echo "Making links to \`lisp/term'."
  ln README ../../${tempdir}/lisp/term
  rm -f =* TAGS)
 
-### echo "Making links to \`external-lisp'."
-### ### Don't distribute =*.el files or TAGS.
-### (cd external-lisp
-###  ln [a-zA-Z]*.el ../${tempdir}/external-lisp
-###  ln [a-zA-Z]*.elc ../${tempdir}/external-lisp
-###  ln ChangeLog README ../${tempdir}/external-lisp
-###  rm -f =* TAGS)
-
 echo "Making links to \`src'."
 ### Don't distribute =*.[ch] files, or the configured versions of
 ### config.h.in, paths.h.in, or Makefile.in.in, or TAGS.
@@ -228,6 +238,7 @@ echo "Making links to \`src'."
  ln [a-zA-Z]*.s ../${tempdir}/src
  ln README Makefile.in.in ChangeLog ChangeLog.? config.h.in paths.h.in \
     ../${tempdir}/src
+ ln makefile.nt ../${tempdir}/src
  ln .gdbinit .dbxinit ../${tempdir}/src
  ln *.opt vms-pp.trans ../${tempdir}/src
  cd ../${tempdir}/src
@@ -245,21 +256,35 @@ echo "Making links to \`src/m'."
 
 echo "Making links to \`src/s'."
 (cd src/s
- ln README [a-zA-Z0-9]*.h *.inp ../../${tempdir}/src/s)
+ ln README [a-zA-Z0-9]*.h ../../${tempdir}/src/s)
 
 echo "Making links to \`lib-src'."
 (cd lib-src
- ln [a-zA-Z]*.[chy] [a-zA-Z]*.lex ../${tempdir}/lib-src
+ ln [a-zA-Z]*.[chy] ../${tempdir}/lib-src
  ln ChangeLog Makefile.in.in README testfile vcdiff ../${tempdir}/lib-src
- ln emacs.csh rcs2log rcs-checkin ../${tempdir}/lib-src
+ ln emacs.csh rcs2log rcs-checkin makefile.nt ../${tempdir}/lib-src
  cd ../${tempdir}/lib-src
  rm -f getdate.tab.c y.tab.c y.tab.h
  rm -f =* TAGS)
 
+echo "Making links to \`nt'."
+(cd nt
+ ln emacs.ico emacs.rc config.nt config.w95 [a-z]*.in [a-z]*.c ../${tempdir}/nt
+ ln [a-z]*.bat [a-z]*.h makefile.def makefile.nt ../${tempdir}/nt
+ ln todo ChangeLog install readme ../${tempdir}/nt)
+
+echo "Making links to \`nt/inc'."
+(cd nt/inc
+ ln [a-z]*.h ../../${tempdir}/nt/inc)
+
+echo "Making links to \`nt/inc/sys'."
+(cd nt/inc/sys
+ ln [a-z]*.h ../../../${tempdir}/nt/inc/sys)
+
 echo "Making links to \`msdos'."
 (cd msdos
  ln  ChangeLog emacs.ico emacs.pif ../${tempdir}/msdos
- ln mainmake sed[1234].inp ../${tempdir}/msdos
+ ln mainmake sed*.inp ../${tempdir}/msdos
  cd ../${tempdir}/msdos
  rm -f =*)
 
@@ -278,10 +303,16 @@ echo "Making links to \`etc'."
 ### Don't distribute = files, TAGS, DOC files, backups, autosaves, or
 ### tex litter.
 (cd etc
- ln `ls -d * | grep -v 'RCS' | grep -v 'Old'` ../${tempdir}/etc
+ ln `ls -d * | grep -v 'RCS' | grep -v 'Old' | grep -v '^e$'` ../${tempdir}/etc
  cd ../${tempdir}/etc
  rm -f DOC* *~ \#*\# *.dvi *.log *,v =* core
  rm -f TAGS)
+
+echo "Making links to \`etc/e'."
+(cd etc/e
+ ln `ls -d * | grep -v 'RCS'` ../../${tempdir}/etc/e
+ cd ../../${tempdir}/etc
+ rm -f *~ \#*\# *,v =* core)
 
 echo "Making links to \`cpp'."
 (cd cpp
@@ -300,17 +331,12 @@ echo "Making links to \`man'."
 (cd man
  ln *.texi *.aux *.cps *.fns *.kys *.vrs ../${tempdir}/man
  test -f README && ln README ../${tempdir}/man
- test -f Makefile && ln Makefile ../${tempdir}/man
+ test -f Makefile.in && ln Makefile.in ../${tempdir}/man
  ln ChangeLog split-man ../${tempdir}/man
- cp texinfo.tex texindex.c getopt.c ../${tempdir}/man
+ cp texinfo.tex ../${tempdir}/man
  cd ../${tempdir}/man
  rm -f \#*\# =* *~ core emacs-index* *.Z *.z xmail
  rm -f emacs.?? termcap.?? gdb.?? *.log *.toc *.dvi *.oaux)
-
-echo "Making links to \`shortnames'."
-(cd shortnames
- ln *.c ../${tempdir}/shortnames
- ln Makefile reserved special ../${tempdir}/shortnames)
 
 echo "Making links to \`vms'."
 (cd vms
@@ -323,7 +349,7 @@ echo "Making links to \`vms'."
 echo "Making sure copying notices are all copies of \`etc/COPYING'."
 rm -f ${tempdir}/etc/COPYING
 cp etc/COPYING ${tempdir}/etc/COPYING
-for subdir in lisp src lib-src info shortnames msdos; do
+for subdir in lisp src lib-src info msdos; do
   if [ -f ${tempdir}/${subdir}/COPYING ]; then
     rm ${tempdir}/${subdir}/COPYING
   fi
@@ -333,7 +359,9 @@ done
 #### Make sure that there aren't any hard links between files in the
 #### distribution; people with afs can't deal with that.  Okay,
 #### actually we just re-copy anything with a link count greater
-#### than two.
+#### than two.  (Yes, strictly greater than 2 is correct; since we
+#### created these files by linking them in from the original tree,
+#### they'll have exactly two links normally.)
 echo "Breaking intra-tree links."
 find ${tempdir} ! -type d -links +2 \
   -exec cp -p {} $$ \; -exec rm -f {} \; -exec mv $$ {} \;

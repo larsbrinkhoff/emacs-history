@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Registers, Display, Rectangles, Top
 @chapter Registers
@@ -149,6 +149,7 @@ used to put a file name in a register:
 (set-register ?@var{r} '(file . @var{name}))
 @end smallexample
 
+@need 3000
 @noindent
 For example,
 
@@ -208,11 +209,12 @@ to the position of the bookmark at the same time.
 @kindex C-x r l
   To display a list of all your bookmarks in a separate buffer, type
 @kbd{C-x r l} (@code{list-bookmarks}).  If you switch to that buffer,
-you can use it to edit your bookmark definitions.  Type @kbd{C-h m} in
-that buffer for more information about its special editing commands.
+you can use it to edit your bookmark definitions or annotate the
+bookmarks.  Type @kbd{C-h m} in that buffer for more information about
+its special editing commands.
 
   When you kill Emacs, Emacs offers to save your bookmark values in your
-default bookmark file, @file{~/.emacs-bkmrks}, if you have changed any
+default bookmark file, @file{~/.emacs.bmk}, if you have changed any
 bookmark values.  You can also save the bookmarks at any time with the
 @kbd{M-x bookmark-save} command.  The bookmark commands load your
 default bookmark file automatically.  This saving and loading is how

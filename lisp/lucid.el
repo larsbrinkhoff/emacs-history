@@ -1,5 +1,5 @@
 ;;; lucid.el --- Emulate some Lucid Emacs functions.
-;; Copyright (C) 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -46,7 +46,7 @@
     tail))
 
 (defun set-keymap-parent (keymap new-parent)
-  (let ((tail (cdr keymap)))
+  (let ((tail keymap))
     (while (and tail (cdr tail) (not (eq (car (cdr tail)) 'keymap)))
       (setq tail (cdr tail)))
     (if tail
@@ -99,6 +99,27 @@ type that you get.  That will work in both versions of Emacs."
 		(setq i (1- i))))))
       (setq keymap (cdr keymap)))))
 
+(defun read-number (prompt &optional integers-only)
+  "Read a number from the minibuffer.
+Keep reentering the minibuffer until we get suitable input.
+If optional argument INTEGERS-ONLY is non-nil, insist on an integer."
+  (interactive)
+  (let (success
+	(number nil)
+	(predicate (if integers-only 'integerp 'numberp)))
+    (while (not success)
+      (let ((input-string (read-string prompt)))
+	(condition-case ()
+	    (setq number (read input-string))
+	  (error))
+	(if (funcall predicate number)
+	    (setq success t)
+	  (let ((cursor-in-echo-area t))
+	    (message "Please type %s"
+		     (if integers-only "an integer" "a number"))
+	    (sit-for 1)))))
+    number))
+
 (defun real-path-name (name &optional default)
   (file-truename (expand-file-name name default)))
 
@@ -118,7 +139,7 @@ bottom of the buffer stack."
       (bury-buffer (current-buffer)))
   (switch-to-buffer
    (if (<= arg 1) (other-buffer (current-buffer))
-     (nth (1+ arg)
+     (nth arg
 	  (apply 'nconc
 		 (mapcar
 		  (lambda (buf)
@@ -130,6 +151,38 @@ bottom of the buffer stack."
 (defalias 'find-face 'internal-find-face)
 (defalias 'get-face 'internal-get-face)
 (defalias 'try-face-font 'internal-try-face-font)
+
+(defun make-extent (beg end &optional buffer)
+  (make-overlay beg end buffer))
+
+(defun set-extent-property (extent prop value)
+  (if (eq prop 'duplicable)
+      (cond ((and value (not (overlay-get extent prop)))
+	     ;; If becoming duplicable, copy all overlayprops to text props.
+	     (add-text-properties (overlay-start extent)
+				  (overlay-end extent)
+				  (overlay-properties extent)
+				  (overlay-buffer extent)))
+	    ;; If becoming no longer duplicable, remove these text props.
+	    ((and (not value) (overlay-get extent prop))
+	     (remove-text-properties (overlay-start extent)
+				     (overlay-end extent)
+				     (overlay-properties extent)
+				     (overlay-buffer extent))))
+    ;; If extent is already duplicable, put this property
+    ;; on the text as well as on the overlay.
+    (if (overlay-get extent 'duplicable)
+	(put-text-property  (overlay-start extent)
+			    (overlay-end extent)
+			    prop value (overlay-buffer extent))))
+  (overlay-put extent prop value))
+
+(defun set-extent-face (extent face)
+  (set-extent-property extent 'face face))
+
+(defun delete-extent (extent)
+  (set-extent-property extent 'duplicable nil)
+  (delete-overlay extent))
 
 ;; Support the Lucid names with `screen' instead of `frame'.
 

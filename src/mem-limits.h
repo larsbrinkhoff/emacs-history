@@ -1,5 +1,5 @@
 /* Includes for memory limit warnings.
-   Copyright (C) 1990, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1990, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -29,9 +29,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/resource.h>
 #define BSD4_2			/* Tell code below to use getrlimit.  */
 
-#else
+extern int __data_start;
+#define start_of_data()	&__data_start
 
-#if defined (__osf__) && (defined (__mips) || defined (mips))
+#else /* not _LIBC */
+
+#if defined (__osf__) && (defined (__mips) || defined (mips) || defined(__alpha))
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif
@@ -43,15 +46,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifndef BSD4_2
 #ifndef USG
 #ifndef MSDOS
+#ifndef WINDOWSNT
 #include <sys/vlimit.h>
+#endif /* not WINDOWSNT */
 #endif /* not MSDOS */
 #endif /* not USG */
 #else /* if BSD4_2 */
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif /* BSD4_2 */
-
-#endif /* _LIBC */
 
 #ifdef emacs
 /* The important properties of this type are that 1) it's a pointer, and
@@ -73,9 +76,9 @@ typedef unsigned long SIZE;
 extern POINTER start_of_data ();
 #ifdef DATA_SEG_BITS
 #define EXCEEDS_LISP_PTR(ptr) \
-  (((unsigned int) (ptr) & ~DATA_SEG_BITS) >> VALBITS)
+  (((EMACS_UINT) (ptr) & ~DATA_SEG_BITS) >> VALBITS)
 #else
-#define EXCEEDS_LISP_PTR(ptr) ((unsigned int) (ptr) >> VALBITS)
+#define EXCEEDS_LISP_PTR(ptr) ((EMACS_UINT) (ptr) >> VALBITS)
 #endif
 
 #ifdef BSD
@@ -85,12 +88,13 @@ extern char etext;
 #endif
 #endif
 
-#else  /* Not emacs */ 
+#else  /* not emacs */ 
 extern char etext;
 #define start_of_data() &etext
-#endif /* Not emacs */
+#endif /* not emacs */
 
-  
+#endif /* not _LIBC */
+
 
 /* start of data space; can be changed by calling malloc_init */
 static POINTER data_space_start;
@@ -130,6 +134,16 @@ get_lim_data ()
 }
 
 #else /* not USG */
+#ifdef WINDOWSNT
+
+static void
+get_lim_data ()
+{
+  extern unsigned long data_region_size;
+  lim_data = data_region_size;
+}
+
+#else
 #if !defined (BSD4_2) && !defined (__osf__)
 
 #ifdef MSDOS
@@ -164,5 +178,6 @@ get_lim_data ()
 #endif
 }
 #endif /* BSD4_2 */
+#endif /* not WINDOWSNT */
 #endif /* not USG */
 #endif /* not NO_LIM_DATA */

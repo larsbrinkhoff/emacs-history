@@ -27,7 +27,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef signal
 
 
-#if !defined(HAVE_SOCKETS) && !defined(HAVE_SYSVIPC)
+#if !defined (HAVE_SOCKETS) && !defined (HAVE_SYSVIPC)
 #include <stdio.h>
 
 main (argc, argv)
@@ -42,7 +42,7 @@ main (argc, argv)
 
 #else /* HAVE_SOCKETS or HAVE_SYSVIPC */
 
-#if ! defined (HAVE_SYSVIPC)
+#if defined (HAVE_SOCKETS) && ! defined (NO_SOCKETS_IN_FILE_SYSTEM)
 /* BSD code is very different from SYSV IPC code */
 
 #include <sys/types.h>
@@ -55,6 +55,7 @@ main (argc, argv)
 extern char *strerror ();
 extern int errno;
 
+int
 main (argc, argv)
      int argc;
      char **argv;
@@ -67,6 +68,7 @@ main (argc, argv)
   char string[BUFSIZ];
 
   char *getenv (), *getwd ();
+  char *getcwd ();
   int geteuid ();
 
   if (argc < 2)
@@ -97,14 +99,16 @@ main (argc, argv)
       {
 	if (errno == ENOENT)
 	  fprintf (stderr,
-		   "Can't find socket; have you started the server?\n");
+		   "%s: can't find socket; have you started the server?\n",
+		   argv[0]);
 	else
-	  perror ("stat");
+	  fprintf (stderr, "%s: can't stat %s: %s\n",
+		   argv[0], server.sun_path, strerror (errno));
 	exit (1);
       }
-    if (statbfr.st_uid != geteuid())
+    if (statbfr.st_uid != geteuid ())
       {
-	fprintf (stderr, "Illegal socket owner\n");
+	fprintf (stderr, "%s: Invalid socket owner\n", argv[0]);
 	exit (1);
       }
   }
@@ -115,7 +119,9 @@ main (argc, argv)
       exit (1);
     }
   strcpy (server.sun_path, homedir);
-  strcat (server.sun_path, "/.emacs_server");
+  strcat (server.sun_path, "/.emacs-server-");
+  gethostname (system_name, sizeof (system_name));
+  strcat (server.sun_path, system_name);
 #endif
 
   if (connect (s, (struct sockaddr *) &server, strlen (server.sun_path) + 2)
@@ -132,7 +138,11 @@ main (argc, argv)
       exit (1);
     }
 
+#ifdef BSD
   cwd = getwd (string);
+#else
+  cwd = getcwd (string, sizeof string);
+#endif
   if (cwd == 0)
     {
       /* getwd puts message in STRING if it fails.  */
@@ -167,7 +177,7 @@ main (argc, argv)
   while (str = fgets (string, BUFSIZ, out))
     printf ("%s", str);
   
-  exit (0);
+  return 0;
 }
 
 #else /* This is the SYSV IPC section */
@@ -175,9 +185,11 @@ main (argc, argv)
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/utsname.h>
 #include <stdio.h>
 
 char *getwd (), *getcwd (), *getenv ();
+struct utsname system_name;
 
 main (argc, argv)
      int argc;
@@ -205,7 +217,7 @@ main (argc, argv)
     }
 
   /*
-   * Create a message queue using ~/.emacs_server as the path for ftok
+   * Create a message queue using ~/.emacs-server as the path for ftok
    */
   if ((homedir = getenv ("HOME")) == NULL)
     {
@@ -213,7 +225,14 @@ main (argc, argv)
       exit (1);
     }
   strcpy (buf, homedir);
-  strcat (buf, "/.emacs_server");
+#ifndef HAVE_LONG_FILE_NAMES
+  /* If file names are short, we can't fit the host name.  */
+  strcat (buf, "/.emacs-server");
+#else
+  strcat (buf, "/.emacs-server-");
+  uname (&system_name);
+  strcat (buf, system_name.nodename);
+#endif
   creat (buf, 0600);
   key = ftok (buf, 1);	/* unlikely to be anyone else using it */
   s = msgget (key, 0600 | IPC_CREAT);
@@ -242,7 +261,7 @@ main (argc, argv)
     }
   else
     {
-      fprintf (stderr, cwd);
+      fprintf (stderr, "%s: %s\n", argv[0], cwd);
       exit (1);
     }
 
@@ -285,7 +304,7 @@ main (argc, argv)
 #ifdef HPUX /* HPUX has a bug.  */
   if (strlen (msgp->mtext) >= 512)
     {
-      fprintf (stderr, "emacsclient: args too long for msgsnd\n");
+      fprintf (stderr, "%s: args too long for msgsnd\n", progname);
       exit (1);
     }
 #endif

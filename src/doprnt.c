@@ -7,7 +7,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -23,6 +23,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <config.h>
 #include <stdio.h>
 #include <ctype.h>
+
+extern long *xmalloc (), *xrealloc ();
 
 /* Generate output from a format-spec FORMAT,
    terminated at position FORMAT_END.
@@ -124,6 +126,16 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    case 'x':
 	      if (cnt == nargs)
 		error ("not enough arguments for format string");
+	      if (sizeof (int) == sizeof (EMACS_INT))
+		;
+	      else if (sizeof (long) == sizeof (EMACS_INT))
+		/* Insert an `l' the right place.  */
+		string[1] = string[0],
+		string[0] = string[-1],
+		string[-1] = 'l',
+		string++;
+	      else
+		abort ();
 	      sprintf (sprintf_buffer, fmtcpy, args[cnt++]);
 	      /* Now copy into final output, truncating as nec.  */
 	      string = sprintf_buffer;
@@ -186,7 +198,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    case 'c':
 	      if (cnt == nargs)
 		error ("not enough arguments for format string");
-	      *charbuf = (int) args[cnt++];
+	      *charbuf = (EMACS_INT) args[cnt++];
 	      string = charbuf;
 	      tem = 1;
 	      if (fmtcpy[1] != 'c')

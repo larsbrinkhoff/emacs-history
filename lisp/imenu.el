@@ -5,7 +5,7 @@
 ;; Author: Ake Stenhoff <etxaksf@aom.ericsson.se>
 ;;         Lars Lindberg <lli@sypro.cap.se>
 ;; Created: 8 Feb 1994
-;; Version: 1.11
+;; Version: 1.15
 ;; Keywords: tools
 ;;
 ;; This program is free software; you can redistribute it and/or modify
@@ -42,52 +42,14 @@
 ;;   function for jumping to the chosen index position is also
 ;;   supplied.
 
-;;; Change Log:
-;;    v1.11 Jul 26 1994 Ake Stenhoff
-;;      Fixed bugs in 'imenu-add-to-menubar'.
-;;    v1.10 Jul 21 1994 Ake Stenhoff
-;;      Added support for markers.
-;;      Changed the examples to use
-;;      markers.
-;;      Thanks [alon].
-;;    v1.9 Jun 14 1994 Ake Stenhoff
-;;      Added 'imenu-add-to-menubar'.
-;;    v1.7 Apr 12 1994 Ake Stenhoff
-;;	Changed doc strings refering to symbols.
-;;      Require 'cl' when compiling only.
-;;	Only uses 'cl' macros.
-;;    v1.6 Feb 28 1994 Ake Stenhoff
-;;      Added alist as an optional argument to 
-;;     'imenu-choose-buffer-index'.
-;;      Thanks [dean].
-;;    v1.5 Feb 25 1994 Ake Stenhoff
-;;      Added code to parse DEFSTRUCT, DEFCLASS, DEFTYPE,
-;;      DEFINE-CONDITION in the lisp example function.
-;;      Thanks [simon].
-;;    v1.4 Feb 18 1994 Ake Stenhoff
-;;	Added 'imenu-create-submenu-name' for creating a submenu name.
-;;	This is for getting a general look of submenu names.
-;;	Added variable 'imenu-submenu-name-format' used by 
-;;      'imenu-create-submenu-name'.
-;;    v1.3 Feb 17 1994 Lars Lindberg
-;;      Added 'imenu--flatten-index-alist' for flatten nexted index
-;;      alists.
-;;      New examples for lisp mode that utilizes the features better.
-;;      Added the variable 'imenu-space-replacement'.
-;;      The completion-buffer version of the index menu now replaces
-;;      spaces in the index-names to make tokens of them.
-;;    v1.2 Feb 14 1994 Ake Stenhoff & Lars Lindberg
-;;	Now handles nested index lists.
-;;    v1.1 Feb 9 1994 Ake Stenhoff & Lars Lindberg
-;;       Better comments (?).
-;;    v1.0 Feb 8 1994 Ake Stenhoff & Lars Lindberg
-;;       Based on func-menu.el 3.5.
-
 ;;; Thanks goes to
 ;;  [simon] - Simon Leinen simon@lia.di.epfl.ch
 ;;  [dean] - Dean Andrews ada@unison.com
 ;;  [alon] - Alon Albert al@mercury.co.il 
-
+;;  [greg] - Greg Thompson gregt@porsche.visix.COM
+;;  [wolfgang] - Wolfgang Bangerth zcg51122@rpool1.rus.uni-stuttgart.de
+;;  [kai] - Kai Grossjohann grossjoh@linus.informatik.uni-dortmund.de
+;;  [david] - David M. Smith dsmith@stats.adelaide.edu.au
 ;;; Code
 (eval-when-compile (require 'cl))
 
@@ -102,7 +64,8 @@
 
 Non-nil means always display the index in a completion buffer.
 Nil means display the index as a mouse menu when the mouse was
-used to invoke `imenu'.")
+used to invoke `imenu'.
+`never' means never automatically display a listing of any kind.")
 
 (defvar imenu-sort-function nil
   "*The function to use for sorting the index mouse-menu.
@@ -142,6 +105,13 @@ with name concatenation.")
 (defvar imenu-submenu-name-format "%s..."
   "*The format for making a submenu name.")
 
+(defvar imenu-generic-expression nil
+  "Generic regular expression for index gathering.
+
+Can be either an regular expression or an alist in the form
+\(REGEXP PAREN).")
+(make-variable-buffer-local 'imenu-generic-expression)
+
 ;;;; Hooks
 
 (defvar imenu-create-index-function 'imenu-default-create-index-function
@@ -175,6 +145,238 @@ index and it should return nil when it doesn't find another index. ")
 This function is called after the function pointed out by
 `imenu-prev-index-position-function'.")
 (make-variable-buffer-local 'imenu-extract-index-name-function)
+
+;;;
+;;; Macro to display a progress message.
+;;; RELPOS is the relative position to display.
+;;; If RELPOS is nil, then the relative position in the buffer
+;;; is calculated.
+;;; PREVPOS is the variable in which we store the last position displayed.
+(defmacro imenu-progress-message (prevpos &optional relpos reverse)
+  (` (and
+      imenu-scanning-message
+      (let ((pos (, (if relpos
+			relpos
+		      (` (imenu--relative-position (, reverse)))))))
+	(if (, (if relpos t
+		 (` (> pos (+ 5 (, prevpos))))))
+	    (progn
+	      (message imenu-scanning-message pos)
+	      (setq (, prevpos) pos)))))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;
+;;;; Some examples of functions utilizing the framework of this
+;;;; package.
+;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Return the current/previous sexp and the location of the sexp (it's
+;; beginning) without moving the point.
+(defun imenu-example--name-and-position ()
+  (save-excursion
+    (forward-sexp -1)
+    (let ((beg (point))
+	  (end (progn (forward-sexp) (point)))
+	  (marker (make-marker)))
+      (set-marker marker beg)
+      (cons (buffer-substring beg end)
+	    marker))))
+
+;;;
+;;; Lisp
+;;; 
+
+(defun imenu-example--lisp-extract-index-name ()
+  ;; Example of a candidate for `imenu-extract-index-name-function'.
+  ;; This will generate a flat index of definitions in a lisp file.
+  (save-match-data
+    (and (looking-at "(def")
+	 (condition-case nil
+	     (progn
+	       (down-list 1)
+	       (forward-sexp 2)
+	       (let ((beg (point))
+		     (end (progn (forward-sexp -1) (point))))
+		 (buffer-substring beg end)))
+	   (error nil)))))
+
+(defun imenu-example--create-lisp-index ()
+  ;; Example of a candidate for `imenu-create-index-function'.
+  ;; It will generate a nested index of definitions.
+  (let ((index-alist '())
+	(index-var-alist '())
+	(index-type-alist '())
+	(index-unknown-alist '())
+	prev-pos)
+    (goto-char (point-max))
+    (imenu-progress-message prev-pos 0)
+    ;; Search for the function
+    (while (beginning-of-defun)
+      (imenu-progress-message prev-pos nil t)
+      (save-match-data
+	(and (looking-at "(def")
+	     (save-excursion
+	       (down-list 1)
+	       (cond
+		((looking-at "def\\(var\\|const\\)")
+		 (forward-sexp 2)
+		 (push (imenu-example--name-and-position)
+		       index-var-alist))
+		((looking-at "def\\(un\\|subst\\|macro\\|advice\\)")
+		 (forward-sexp 2)
+		 (push (imenu-example--name-and-position)
+		       index-alist))
+		((looking-at "def\\(type\\|struct\\|class\\|ine-condition\\)")
+ 		 (forward-sexp 2)
+ 		 (if (= (char-after (1- (point))) ?\))
+ 		     (progn
+ 		       (forward-sexp -1)
+ 		       (down-list 1)
+ 		       (forward-sexp 1)))
+ 		 (push (imenu-example--name-and-position)
+ 		       index-type-alist))
+		(t
+		 (forward-sexp 2)
+		 (push (imenu-example--name-and-position)
+		       index-unknown-alist)))))))
+    (imenu-progress-message prev-pos 100)
+    (and index-var-alist
+	 (push (cons (imenu-create-submenu-name "Variables") index-var-alist)
+	       index-alist))
+    (and index-type-alist
+ 	 (push (cons (imenu-create-submenu-name "Types") index-type-alist)
+  	       index-alist))
+    (and index-unknown-alist
+	 (push (cons (imenu-create-submenu-name "Syntax-unknown") index-unknown-alist)
+	       index-alist))
+    index-alist))
+
+;;;
+;;; C
+;;;
+;; Regular expression to find C functions
+(defvar imenu-example--function-name-regexp-c
+  (concat 
+   "^[a-zA-Z0-9]+[ \t]?"		; type specs; there can be no
+   "\\([a-zA-Z0-9_*]+[ \t]+\\)?"	; more than 3 tokens, right?
+   "\\([a-zA-Z0-9_*]+[ \t]+\\)?"
+   "\\([*&]+[ \t]*\\)?"			; pointer
+   "\\([a-zA-Z0-9_*]+\\)[ \t]*("	; name
+   ))
+
+(defun imenu-example--create-c-index (&optional regexp)
+  (let ((index-alist '())
+	prev-pos char)
+    (goto-char (point-min))
+    (imenu-progress-message prev-pos 0)
+    ;; Search for the function
+    (save-match-data
+      (while (re-search-forward
+	      (or regexp imenu-example--function-name-regexp-c)
+	      nil t)
+	(imenu-progress-message prev-pos)
+	(backward-up-list 1)
+	(save-excursion
+	  (goto-char (scan-sexps (point) 1))
+	  (setq char (following-char)))
+	;; Skip this function name if it is a prototype declaration.
+	(if (not (eq char ?\;))
+	    (push (imenu-example--name-and-position) index-alist))))
+    (imenu-progress-message prev-pos 100)
+    (nreverse index-alist)))
+
+;;;
+;;; C++
+;;;
+;; Example of an imenu-generic-expression
+;;
+(defvar imenu-example--generic-c++-expression
+  (cons
+   ;; regular expression
+   (concat 
+    "^"					; beginning of line is required
+    "\\(template[ \t]*<[^>]+>[ \t]*\\)?" ; there may be a "template <...>"
+    "\\("
+    
+    "\\("				; >>looking for a function definition<<
+    "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	; type specs; there can be no
+    "\\([a-zA-Z0-9_:]+[ \t]+\\)?"	; more than 3 tokens, right?
+    
+    "\\("				; last type spec including */&
+    "[a-zA-Z0-9_:]+"
+    "\\([ \t]*[*&]+[ \t]*\\|[ \t]+\\)"	; either pointer/ref sign or whitespace
+    "\\)?"				; if there is a last type spec
+    
+    "\\("				; name; take that into the imenu entry
+    "[a-zA-Z0-9_:~]+"			; member function, ctor or dtor...
+                                        ; (may not contain * because then 
+                                        ; "a::operator char*" would become "char*"!)
+    "\\|"
+    "\\([a-zA-Z0-9_:~]*::\\)?operator"
+    "[^a-zA-Z1-9_][^(]*"		; ...or operator
+    " \\)"
+    "[ \t]*([^)]*)[ \t\n]*[^		;]"          ; require something other than a ; after
+                                        ; the (...) to avoid prototypes. Can't
+                                        ; catch cases with () inside the parentheses
+                                        ; surrounding the parameters
+                                        ; (like "int foo(int a=bar()) {...}"
+    "\\)"				; <<looking for a function definition>>
+    
+    "\\|"
+    
+    "\\("				; >>class decl<<
+    "\\(class[ \t]+[a-zA-Z0-9_]+\\)"	; this is the string we want to get
+    "[ \t]*[:{]"
+    "\\)"				; <<class decl>>
+    
+    "\\)")
+   ;; paren
+   (list 8 11))
+  "imenu generic expression for C++ mode in the form
+\(REGEXP PAR).")
+
+;;; 
+;;; TexInfo
+;;; 
+;; Written by Wolfgang Bangerth <zcg51122@rpool1.rus.uni-stuttgart.de>
+;;
+;;
+(defvar imenu-example--generic-texinfo-expression
+  (cons
+   (concat 
+    "^@node[ \t]+"
+    "\\([^,\n]*\\)")
+   (list 1))
+  "imenu generic expression for TexInfo mode in the form
+\(REGEXP PAR).
+
+To overide this example, Either set 'imenu-generic-expression
+or 'imenu-create-index-function")
+
+;;; 
+;;; LaTex
+;;; 
+;; Written by Wolfgang Bangerth <zcg51122@rpool1.rus.uni-stuttgart.de>
+;;
+;;
+(defvar imenu-example--generic-latex-expression
+  (concat
+   "\\("
+   "%[ \t]*[0-9]+\\.[0-9]+[,;]?[ \t]?"  ; i put numbers like 3.15 before my
+                                        ; \begin{equation}'s which tell me
+                                        ; the number the equation will get when
+                                        ; being printed.
+   "\\|"
+   "\\\\part{[^}]*}"
+   "\\|"
+   "\\\\chapter{[^}]*}"
+   "\\|"
+   "\\\\[a-zA-Z]*section{[^}]*}"
+   "\\)")
+  "imenu generic expression for LaTex mode in the form
+\"REGEXP\".")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -220,24 +422,6 @@ This function is called after the function pointed out by
 	;; Avoid overflow from multiplying by 100!
 	(/ (1- pos) (max (/ total 100) 1))
       (/ (* 100 (1- pos)) (max total 1)))))
-
-;;;
-;;; Macro to display a progress message.
-;;; RELPOS is the relative position to display.
-;;; If RELPOS is nil, then the relative position in the buffer
-;;; is calculated.
-;;; PREVPOS is the variable in which we store the last position displayed.
-(defmacro imenu-progress-message (prevpos &optional relpos reverse)
-  (` (and
-      imenu-scanning-message
-      (let ((pos (, (if relpos
-		      relpos
-		    (` (imenu--relative-position (, reverse)))))))
-	(if (, (if relpos t
-		 (` (> pos (+ 5 (, prevpos))))))
-	    (progn
-	      (message imenu-scanning-message pos)
-	      (setq (, prevpos) pos)))))))
 
 ;;;
 ;;; Function for suporting general looking submenu names.
@@ -304,17 +488,20 @@ This function is called after the function pointed out by
   ;; Sets the markers in imenu--index-alist 
   ;; point nowhere.
   ;; if alist is provided use that list.
-  (and imenu--index-alist
-       (mapcar 
+  (or alist
+      (setq alist imenu--index-alist))
+  (and alist
+       (mapcar
 	(function
 	 (lambda (item)
 	   (cond
 	    ((markerp (cdr item))
 	     (set-marker (cdr item) nil))
-	    ((listp (cdr item))
+	    ((consp (cdr item))
 	     (imenu--cleanup (cdr item))))))
-	 (if alist alist imenu--index-alist))
-	t))
+	alist)
+       t))
+
 (defun imenu-default-create-index-function ()
   "*Wrapper for index searching functions.
 
@@ -323,21 +510,10 @@ Moves point to end of buffer and then repeatedly calls
 Their results are gathered into an index alist."
   ;; These should really be done by setting imenu-create-index-function
   ;; in these major modes.  But save that change for later.
-  (cond ((eq major-mode 'emacs-lisp-mode)
-	 (imenu-example--create-lisp-index))
-	((eq major-mode 'lisp-mode)
-	 (imenu-example--create-lisp-index))
-	((eq major-mode 'c++-mode)
-	 (imenu-example--create-c++-index))
-	((eq major-mode 'c-mode)
-	 (imenu-example--create-c-index))
-	(t
-	 (or (and (fboundp imenu-prev-index-position-function)
-		  (fboundp imenu-extract-index-name-function))
-	     (error "The mode \"%s\" does not take full advantage of imenu.el yet."
-		    mode-name))      
+  (cond ((and (fboundp imenu-prev-index-position-function)
+	      (fboundp imenu-extract-index-name-function))
 	 (let ((index-alist '())
-	       name prev-pos)
+	       prev-pos name)
 	   (goto-char (point-max))
 	   (imenu-progress-message prev-pos 0 t)
 	   ;; Search for the function
@@ -348,7 +524,26 @@ Their results are gathered into an index alist."
 	     (and (stringp name)
 		  (push (cons name (point)) index-alist)))
 	   (imenu-progress-message prev-pos 100 t)
-	   index-alist))))
+	   index-alist))
+	;; Use generic expression if possible.
+	((and imenu-generic-expression)
+	 (imenu--generic-function imenu-generic-expression))
+	;; Use supplied example functions
+	((eq major-mode 'emacs-lisp-mode)
+	 (imenu-example--create-lisp-index))
+	((eq major-mode 'lisp-mode)
+	 (imenu-example--create-lisp-index))
+	((eq major-mode 'c++-mode)
+	 (imenu--generic-function imenu-example--generic-c++-expression))
+	((eq major-mode 'c-mode)
+	 (imenu-example--create-c-index))
+	((eq major-mode 'latex-mode)
+	 (imenu--generic-function imenu-example--generic-latex-expression))
+	((eq major-mode 'texinfo-mode)
+	 (imenu--generic-function imenu-example--generic-texinfo-expression))
+	(t
+	 (error "The mode \"%s\" does not take full advantage of imenu.el yet."
+		mode-name))))      
 
 (defun imenu--replace-spaces (name replacement)
   ;; Replace all spaces in NAME with REPLACEMENT.
@@ -383,6 +578,65 @@ Their results are gathered into an index alist."
 	  (imenu--flatten-index-alist pos new-prefix))))))
    index-alist))
 
+;;;
+;;; Generic index gathering function.
+;;;
+(defun imenu--generic-extract-name (paren)
+  (let ((numofpar (1- (length paren)))
+	(parencount 0)
+	(par)
+	(index))
+    ;; Try until we get a match
+    (beginning-of-line)
+    (while (and (<= parencount numofpar)
+		(setq par (nth parencount paren))
+		(equal (match-beginning par) nil)
+		(equal (match-end par) nil))
+      (setq parencount (1+ parencount)))
+    (or (and 
+	 (<= parencount numofpar)
+	 (setq index (buffer-substring (match-beginning par)
+				       (match-end par))))
+	;; take the whole match just in case.
+	(setq index (buffer-substring (match-beginning 0)
+				      (match-end 0))))
+    index))
+
+(defun imenu--generic-function (exp)
+  "Generic function for index gathering.
+
+EXP can be either an regular expression or an alist in the form
+\(REGEXP PAREN). "
+  
+  (let ((index-alist '())
+	(regexp nil)
+	(paren nil)
+	prev-pos name)
+    (cond ((stringp exp)
+	   (setq regexp exp)
+	   (setq paren nil))
+          ((listp exp)
+	   (setq regexp (car exp))
+	   (setq paren (cdr exp)))
+          (t
+           (error "Wrong type of argument.")))
+    (goto-char (point-max))
+    (imenu-progress-message prev-pos 0 t)
+    (while (re-search-backward regexp 1 t)
+      (imenu-progress-message prev-pos nil t)
+      (save-excursion
+	;; If paren get sub expression
+	(or  (and paren
+		  (setq name (imenu--generic-extract-name paren)))
+	     ;; get the whole expression
+	     (beginning-of-line)
+	     (setq name (buffer-substring (match-beginning 0) 
+					  (match-end 0)))))
+      (and (stringp name)
+	   (push (cons name (point)) index-alist)))
+    (imenu-progress-message prev-pos 100 t)
+    index-alist))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; The main functions for this package!
@@ -395,28 +649,32 @@ Their results are gathered into an index alist."
 Returns t for rescan and otherwise a position number."
   ;; Create a list for this buffer only when needed.
   (let (name choice
-	(prepared-index-alist
-	 (mapcar
-	  (function
-	   (lambda (item)
-	     (cons (imenu--replace-spaces (car item) imenu-space-replacement)
-		   (cdr item))))
-	  index-alist)))
-    (save-window-excursion
-      ;; Display the completion buffer
-      (with-output-to-temp-buffer "*Completions*"
-	(display-completion-list
-	 (all-completions "" prepared-index-alist )))
-      (let ((minibuffer-setup-hook
-	     (function (lambda ()
-			 (let ((buffer (current-buffer)))
-			   (save-excursion
-			     (set-buffer "*Completions*")
-			     (setq completion-reference-buffer buffer)))))))
-	;; Make a completion question
-	(setq name (completing-read (or prompt "Index item: ")
-				    prepared-index-alist
-				    nil t nil 'imenu--history-list))))
+	     (prepared-index-alist
+	      (mapcar
+	       (function
+		(lambda (item)
+		  (cons (imenu--replace-spaces (car item) imenu-space-replacement)
+			(cdr item))))
+	       index-alist)))
+    (if (eq imenu-always-use-completion-buffer-p 'never)
+  	(setq name (completing-read (or prompt "Index item: ")
+  				    prepared-index-alist
+ 				    nil t nil 'imenu--history-list))
+      (save-window-excursion
+	;; Display the completion buffer
+	(with-output-to-temp-buffer "*Completions*"
+	  (display-completion-list
+	   (all-completions "" prepared-index-alist )))
+	(let ((minibuffer-setup-hook
+	       (function (lambda ()
+			   (let ((buffer (current-buffer)))
+			     (save-excursion
+			       (set-buffer "*Completions*")
+			       (setq completion-reference-buffer buffer)))))))
+	  ;; Make a completion question
+	  (setq name (completing-read (or prompt "Index item: ")
+				      prepared-index-alist
+				      nil t nil 'imenu--history-list)))))
     (cond ((not (stringp name))
 	   nil)
 	  ((string= name (car imenu--rescan-item))
@@ -514,154 +772,25 @@ See 'imenu' for more information."
   "Jump to a place in the buffer chosen using a buffer menu or mouse menu.
 See `imenu-choose-buffer-index' for more information."
   (interactive)
-  (let ((index-item (imenu-choose-buffer-index)))
+  (let ((index-item (save-restriction 
+		      (widen)
+		      (imenu-choose-buffer-index))))
     (and index-item
 	 (progn
 	   (push-mark)
 	   (cond
 	    ((markerp (cdr index-item))
+	     (if (or ( > (marker-position (cdr index-item)) (point-min))
+		     ( < (marker-position (cdr index-item)) (point-max)))
+		 ;; widen if outside narrowing
+		 (widen))
 	     (goto-char (marker-position (cdr index-item))))
 	    (t
+	     (if (or ( > (cdr index-item) (point-min))
+		     ( < (cdr index-item) (point-max)))
+		 ;; widen if outside narrowing
+		 (widen))
 	     (goto-char (cdr index-item))))))))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;
-;;;; Some examples of functions utilizing the framework of this
-;;;; package.
-;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Return the current/previous sexp and the location of the sexp (its
-;; beginning) without moving the point.
-(defun imenu-example--name-and-position ()
-  (save-excursion
-    (forward-sexp -1)
-    (let ((beg (point))
-	  (end (progn (forward-sexp) (point)))
-	  (marker (make-marker)))
-      (set-marker marker beg)
-      (cons (buffer-substring beg end)
-	    marker))))
-  
-;;;
-;;; Lisp
-;;; 
-
-(defun imenu-example--lisp-extract-index-name ()
-  ;; Example of a candidate for `imenu-extract-index-name-function'.
-  ;; This will generate a flat index of definitions in a lisp file.
-  (save-match-data
-    (and (looking-at "(def")
-	 (condition-case nil
-	     (progn
-	       (down-list 1)
-	       (forward-sexp 2)
-	       (let ((beg (point))
-		     (end (progn (forward-sexp -1) (point))))
-		 (buffer-substring beg end)))
-	   (error nil)))))
-
-(defun imenu-example--create-lisp-index ()
-  ;; Example of a candidate for `imenu-create-index-function'.
-  ;; It will generate a nested index of definitions.
-  (let ((index-alist '())
-	(index-var-alist '())
-	(index-type-alist '())
-	(index-unknown-alist '())
-	prev-pos)
-    (goto-char (point-max))
-    (imenu-progress-message prev-pos 0)
-    ;; Search for the function
-    (while (beginning-of-defun)
-      (imenu-progress-message prev-pos nil t)
-      (save-match-data
-	(and (looking-at "(def")
-	     (save-excursion
-	       (down-list 1)
-	       (cond
-		((looking-at "def\\(var\\|const\\)")
-		 (forward-sexp 2)
-		 (push (imenu-example--name-and-position)
-		       index-var-alist))
-		((looking-at "def\\(un\\|subst\\|macro\\|advice\\)")
-		 (forward-sexp 2)
-		 (push (imenu-example--name-and-position)
-		       index-alist))
-		((looking-at "def\\(type\\|struct\\|class\\|ine-condition\\)")
- 		 (forward-sexp 2)
- 		 (if (= (char-after (1- (point))) ?\))
- 		     (progn
- 		       (forward-sexp -1)
- 		       (down-list 1)
- 		       (forward-sexp 1)))
- 		 (push (imenu-example--name-and-position)
- 		       index-type-alist))
-		(t
-		 (forward-sexp 2)
-		 (push (imenu-example--name-and-position)
-		       index-unknown-alist)))))))
-    (imenu-progress-message prev-pos 100)
-    (and index-var-alist
-	 (push (cons (imenu-create-submenu-name "Variables") index-var-alist)
-	       index-alist))
-    (and index-type-alist
- 	 (push (cons (imenu-create-submenu-name "Types") index-type-alist)
-  	       index-alist))
-    (and index-unknown-alist
-	 (push (cons (imenu-create-submenu-name "Syntax-unknown") index-unknown-alist)
-	       index-alist))
-    index-alist))
-    
-
-;;;
-;;; C
-;;;
-;; Regular expression to find C functions
-(defvar imenu-example--function-name-regexp-c
-  (concat 
-   "^[a-zA-Z0-9]+[ \t]?"		; type specs; there can be no
-   "\\([a-zA-Z0-9_*]+[ \t]+\\)?"	; more than 3 tokens, right?
-   "\\([a-zA-Z0-9_*]+[ \t]+\\)?"
-   "\\([*&]+[ \t]*\\)?"			; pointer
-   "\\([a-zA-Z0-9_*]+\\)[ \t]*("	; name
-   ))
-
-(defun imenu-example--create-c-index (&optional regexp)
-  (let ((index-alist '())
-	prev-pos char)
-    (goto-char (point-min))
-    (imenu-progress-message prev-pos 0)
-    ;; Search for the function
-    (save-match-data
-      (while (re-search-forward
-	      (or regexp imenu-example--function-name-regexp-c)
-	      nil t)
-	(imenu-progress-message prev-pos)
-	(backward-up-list 1)
-	(save-excursion
-	  (goto-char (scan-sexps (point) 1))
-	  (setq char (following-char)))
-	;; Skip this function name if it is a prototype declaration.
-	(if (not (eq char ?\;))
-	    (push (imenu-example--name-and-position) index-alist))))
-    (imenu-progress-message prev-pos 100)
-    (nreverse index-alist)))
-
-;;; 
-;;; C++
-;;; 
-;; Regular expression to find C++ functions
-(defvar imenu-example--function-name-regexp-c++
-  (concat 
-   "^[a-zA-Z0-9:]+[ \t]?"		; type specs; there can be no
-   "\\([a-zA-Z0-9_:~*]+[ \t]+\\)?"	; more than 3 tokens, right?
-   "\\([a-zA-Z0-9_:~*]+[ \t]+\\)?"
-   "\\([*&]+[ \t]*\\)?"			; pointer
-   "\\([a-zA-Z0-9_:*]+\\)[ \t]*("	; name
-   ))
-(defun imenu-example--create-c++-index ()
-  (imenu-example--create-c-index imenu-example--function-name-regexp-c++))
 
 (provide 'imenu)
 

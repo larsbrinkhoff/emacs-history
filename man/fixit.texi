@@ -1,9 +1,9 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Fixit, Files, Search, Top
 @chapter Commands for Fixing Typos
-@cindex typos
+@cindex typos, fixing
 @cindex mistakes, correcting
 
   In this chapter we describe the commands that are especially useful for
@@ -157,6 +157,9 @@ checker program Ispell, which is not part of Emacs.
 @table @kbd
 @item M-$
 Check and correct spelling of word at point (@code{ispell-word}).
+@item M-@key{TAB}
+Complete the word before point based on the spelling dictionary
+(@code{ispell-complete-word}).
 @item M-x ispell-buffer
 Check and correct spelling of each word in the buffer.
 @item M-x ispell-region
@@ -164,8 +167,6 @@ Check and correct spelling of each word in the region.
 @item M-x ispell-message
 Check and correct spelling of each word in a draft mail message, 
 excluding cited material.
-@item M-x ispell-complete-word
-Complete the word before point based on the spelling dictionary.
 @item M-x ispell-change-dictionary @key{RET} @var{dict} @key{RET}
 Restart the ispell process, using @var{dict} as the dictionary.
 @item M-x ispell-kill-ispell

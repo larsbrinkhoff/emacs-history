@@ -32,9 +32,14 @@
 
 #define SYSV_SYSTEM_DIR
 
-/* this silences a few compilation warnings */
+#define HAVE_TERMIOS
+#define NO_TERMIO
+
+/* This silences a few compilation warnings.  */
+#ifdef emacs
 #undef BSD
-#define BSD 199103
+#include <sys/param.h> /* To get BSD defined consistently.  */
+#endif
 
 #define WAITTYPE int
 /* get this since it won't be included if WAITTYPE is defined */
@@ -45,3 +50,5 @@
 #ifndef WCOREDUMP
 #define WCOREDUMP(w) ((w) & 0200)
 #endif
+
+#define GETPGRP_NO_ARG 1

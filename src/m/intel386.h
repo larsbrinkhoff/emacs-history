@@ -63,9 +63,10 @@ NOTE-END */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* i386 is not big-endian: lowest numbered byte is least significant. */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-/* #undef BIG_ENDIAN */
+#undef WORDS_BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -121,7 +122,21 @@ NOTE-END */
 /* j.w.hawtin@lut.ac.uk says Solaris 2.1 on the X86 needs -lkvm, and it 
    already has FSCALE defined in a system header.  */
 #define LIBS_MACHINE -lkvm
+
+#define HAVE_VFORK
+
+#else /* SOLARIS2_4 */
+#ifndef __GNUC__
+#if 0 /* wisner@gryphon.com says this screws up cpp */
+#define C_SWITCH_MACHINE -Xa
 #endif
+#ifndef NOT_C_CODE
+#ifdef HAVE_ALLOCA_H
+#include <alloca.h>
+#endif /* HAVE_ALLOCA_H */
+#endif /* not NOT_C_CODE */
+#endif /* not __GNUC__ */
+#endif /* SOLARIS2_4 */
 
 /* configure thinks solaris X86 has gethostname, but it does not work,
    so undefine it.  */
@@ -157,9 +172,6 @@ NOTE-END */
 /* #define VIRT_ADDR_VARIES */
 
 #ifdef XENIX
-#define VALBITS 26
-#define GCTYPEBITS 5
-
 /* Define NO_REMAP if memory segmentation makes it not work well
    to change the boundary between the text section and data section
    when Emacs is dumped.  If you define this, the preloaded Lisp
@@ -182,11 +194,6 @@ NOTE-END */
 /* '__fltused' is unresolved w/o Slibcfp.a */
 #define LIB_STANDARD /lib/386/Slibcfp.a /lib/386/Slibc.a
 #else /* not XENIX */
-
-#ifdef SOLARIS2
-#define VALBITS 26
-#define GCTYPEBITS 5
-#endif
 
 /* this brings in alloca() if we're using cc */
 #ifdef USG
@@ -220,4 +227,12 @@ NOTE-END */
 
 #ifdef MSDOS
 #define NO_REMAP
+#endif
+
+#ifdef WINDOWSNT
+#define VIRT_ADDR_VARIES
+#define DATA_END 	get_data_end ()
+#define DATA_START 	get_data_start ()
+#define HAVE_ALLOCA
+#define NO_ARG_ARRAY
 #endif

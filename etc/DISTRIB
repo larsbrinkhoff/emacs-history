@@ -1,11 +1,12 @@
-							-*- text -*-
+						-*- text -*-
 For an order form for all Emacs and FSF distributions deliverable from
 the USA, see the file `ORDERS' in this directory (etc/ in the GNU
 Emacs distribution or /pub/gnu/GNUinfo on prep.ai.mit.edu).  For a
-European order form, see `ORDERS.EUROPE'.
+European order form, see `ORDERS.EUROPE'.  For a Japan order form,
+see `ORDERS.JAPAN'.
 
-	   GNU Emacs availability information, January 1993
-Copyright (C) 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993 Free Software Foundation, Inc.
+	   GNU Emacs availability information, June 1995
+Copyright (C) 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1995 Free Software Foundation, Inc.
 
 	Permission is granted to anyone to make or distribute
 	verbatim copies of this document provided that the
@@ -78,9 +79,11 @@ bug-gnu-emacs@prep.ai.mit.edu; on UUCP, use the address
 ...!uunet!prep.ai.mit.edu!bug-gnu-emacs.  Otherwise, phone or write the
 foundation at:
 	Free Software Foundation
-	675 Massachusetts Avenue
-	Cambridge, MA  02139
-	+1-617-876-3296
+	59 Temple Place - Suite 330
+	Boston, MA  02111-1307
+	Voice:  +1-617-542-5942
+	Fax:    +1-617-542-2652
+
 General questions about the GNU Project can be asked of
 gnu@prep.ai.mit.edu.
 

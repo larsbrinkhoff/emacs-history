@@ -1,5 +1,5 @@
 /* terminal control module for terminals described by TERMCAP
-   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 93, 94, 95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -31,6 +31,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "termhooks.h"
 #include "keyboard.h"
 
+extern Lisp_Object Fmake_sparse_keymap ();
+
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -52,12 +54,11 @@ int line_ins_del_ok;		/* Terminal can insert and delete lines */
 int char_ins_del_ok;		/* Terminal can insert and delete chars */
 int scroll_region_ok;		/* Terminal supports setting the
 				   scroll window */
+int scroll_region_cost;		/* Cost of setting a scroll window,
+				   measured in characters */
 int memory_below_frame;		/* Terminal remembers lines
 				   scrolled off bottom */
 int fast_clear_end_of_line;	/* Terminal has a `ce' string */
-
-int dont_calculate_costs;	/* Nonzero means don't bother computing */
-				/* various cost tables; we won't use them.  */
 
 /* Nonzero means no need to redraw the entire frame on resuming
    a suspended Emacs.  This is useful on terminals with multiple pages,
@@ -113,7 +114,7 @@ int (*frame_up_to_date_hook) ();
 
    This should clear mouse_moved until the next motion
    event arrives.  */
-void (*mouse_position_hook) ( /* FRAME_PTR *f,
+void (*mouse_position_hook) ( /* FRAME_PTR *f, int insist,
 				 Lisp_Object *bar_window,
 				 enum scroll_bar_part *part,
 				 Lisp_Object *x,
@@ -253,8 +254,14 @@ static int se_is_so;	/* 1 if same string both enters and leaves
 
 /* internal state */
 
+/* The largest frame width in any call to calculate_costs.  */
+int max_frame_width;
+/* The largest frame height in any call to calculate_costs.  */
+int max_frame_height;
+
 /* Number of chars of space used for standout marker at beginning of line,
    or'd with 0100.  Zero if no standout marker at all.
+   The length of these vectors is max_frame_height.
 
    Used IFF TN_standout_width >= 0. */
 
@@ -288,6 +295,18 @@ char *tparam ();
 
 extern char *tgetstr ();
 
+
+#ifdef WINDOWSNT
+/* We aren't X windows, but we aren't termcap either.  This makes me
+   uncertain as to what value to use for frame.output_method.  For
+   this file, we'll define FRAME_TERMCAP_P to be zero so that our
+   output hooks get called instead of the termcap functions.  Probably
+   the best long-term solution is to define an output_windows_nt...  */
+
+#undef FRAME_TERMCAP_P
+#define FRAME_TERMCAP_P(_f_) 0
+#endif /* WINDOWSNT */
+
 ring_bell ()
 {
   if (! FRAME_TERMCAP_P (selected_frame))
@@ -558,6 +577,11 @@ cursor_to (row, col)
       return;
     }
 
+  /* Detect the case where we are called from reset_sys_modes
+     and the costs have never been calculated.  Do nothing.  */
+  if (chars_wasted == 0)
+    return;
+
   col += chars_wasted[row] & 077;
   if (curY == row && curX == col)
     return;
@@ -594,7 +618,7 @@ clear_to_end ()
 {
   register int i;
 
-  if (clear_to_end_hook && FRAME_TERMCAP_P (updating_frame))
+  if (clear_to_end_hook && ! FRAME_TERMCAP_P (updating_frame))
     {
       (*clear_to_end_hook) ();
       return;
@@ -651,6 +675,7 @@ clear_end_of_line (first_unused_hpos)
 {
   static GLYPH buf = SPACEGLYPH;
   if (FRAME_TERMCAP_P (selected_frame)
+      && chars_wasted != 0
       && TN_standout_width == 0 && curX == 0 && chars_wasted[curY] != 0)
     write_glyphs (&buf, 1);
   clear_end_of_line_raw (first_unused_hpos);
@@ -675,6 +700,11 @@ clear_end_of_line_raw (first_unused_hpos)
       (*clear_end_of_line_hook) (first_unused_hpos);
       return;
     }
+
+  /* Detect the case where we are called from reset_sys_modes
+     and the costs have never been calculated.  Do nothing.  */
+  if (chars_wasted == 0)
+    return;
 
   first_unused_hpos += chars_wasted[curY] & 077;
   if (curX >= first_unused_hpos)
@@ -770,6 +800,7 @@ write_glyphs (string, len)
 	    }
 	}
     }
+  cmcheckmagic ();
 }
 
 /* If start is zero, insert blanks instead of a string at start */
@@ -828,8 +859,9 @@ insert_glyphs (start, len)
 		    termscript);
 	}
 
-	OUTPUT1_IF (TS_pad_inserted_char);
-      }
+      OUTPUT1_IF (TS_pad_inserted_char);
+    }
+  cmcheckmagic ();
 }
 
 delete_glyphs (n)
@@ -999,7 +1031,8 @@ per_line_cost (str)
 
 #ifndef old
 /* char_ins_del_cost[n] is cost of inserting N characters.
-   char_ins_del_cost[-n] is cost of deleting N characters. */
+   char_ins_del_cost[-n] is cost of deleting N characters.
+   The length of this vector is based on max_frame_width.  */
 
 int *char_ins_del_vector;
 
@@ -1068,27 +1101,25 @@ calculate_ins_del_char_costs (frame)
     *p++ = (ins_startup_cost += ins_cost_per_char);
 }
 
-#ifdef HAVE_X_WINDOWS
-extern int x_screen_planes;
-#endif
-
 extern do_line_insertion_deletion_costs ();
 
 calculate_costs (frame)
      FRAME_PTR frame;
 {
-  register char *f = TS_set_scroll_region ?
-                       TS_set_scroll_region
-		     : TS_set_scroll_region_1;
+  register char *f = (TS_set_scroll_region
+		      ? TS_set_scroll_region
+		      : TS_set_scroll_region_1);
 
-  if (dont_calculate_costs)
-    return;
+  FRAME_COST_BAUD_RATE (frame) = baud_rate;
 
+  scroll_region_cost = string_cost (f);
 #ifdef HAVE_X_WINDOWS
   if (FRAME_X_P (frame))
     {
       do_line_insertion_deletion_costs (frame, 0, ".5*", 0, ".5*",
-					0, 0, x_screen_planes);
+					0, 0,
+					x_screen_planes (frame));
+      scroll_region_cost = 0;
       return;
     }
 #endif
@@ -1102,30 +1133,33 @@ calculate_costs (frame)
      chars_wasted and copybuf are only used here in term.c in cases where
      the term hook isn't called. */
 
+  max_frame_height = max (max_frame_height, FRAME_HEIGHT (frame));
+  max_frame_width = max (max_frame_width, FRAME_WIDTH (frame));
+
   if (chars_wasted != 0)
-    chars_wasted = (char *) xrealloc (chars_wasted, FRAME_HEIGHT (frame));
+    chars_wasted = (char *) xrealloc (chars_wasted, max_frame_height);
   else
-    chars_wasted = (char *) xmalloc (FRAME_HEIGHT (frame));
+    chars_wasted = (char *) xmalloc (max_frame_height);
 
   if (copybuf != 0)
-    copybuf = (char *) xrealloc (copybuf, FRAME_HEIGHT (frame));
+    copybuf = (char *) xrealloc (copybuf, max_frame_height);
   else
-    copybuf = (char *) xmalloc (FRAME_HEIGHT (frame));
+    copybuf = (char *) xmalloc (max_frame_height);
 
   if (char_ins_del_vector != 0)
     char_ins_del_vector
       = (int *) xrealloc (char_ins_del_vector,
 			  (sizeof (int)
-			   + 2 * FRAME_WIDTH (frame) * sizeof (int)));
+			   + 2 * max_frame_width * sizeof (int)));
   else
     char_ins_del_vector
       = (int *) xmalloc (sizeof (int)
-			 + 2 * FRAME_WIDTH (frame) * sizeof (int));
+			 + 2 * max_frame_width * sizeof (int));
 
-  bzero (chars_wasted, FRAME_HEIGHT (frame));
-  bzero (copybuf, FRAME_HEIGHT (frame));
+  bzero (chars_wasted, max_frame_height);
+  bzero (copybuf, max_frame_height);
   bzero (char_ins_del_vector, (sizeof (int)
-			       + 2 * FRAME_WIDTH (frame) * sizeof (int)));
+			       + 2 * max_frame_width * sizeof (int)));
 
   if (f && (!TS_ins_line && !TS_del_line))
     do_line_insertion_deletion_costs (frame,
@@ -1312,9 +1346,9 @@ term_get_fkeys_1 ()
 	if (i <= 19)
 	  fcap[1] = '1' + i - 11;
 	else if (i <= 45)
-	  fcap[1] = 'A' + i - 11;
+	  fcap[1] = 'A' + i - 20;
 	else
-	  fcap[1] = 'a' + i - 11;
+	  fcap[1] = 'a' + i - 46;
 
 	{
 	  char *sequence = tgetstr (fcap, address);
@@ -1349,6 +1383,18 @@ term_get_fkeys_1 ()
       CONDITIONAL_REASSIGN ("%8", "kP", "prior");
       /* if there's no key_dc keycap, map key_ic to `insert' keysym */
       CONDITIONAL_REASSIGN ("kD", "kI", "insert");
+
+      /* IBM has their own non-standard dialect of terminfo.
+	 If the standard name isn't found, try the IBM name.  */
+      CONDITIONAL_REASSIGN ("kB", "KO", "backtab");
+      CONDITIONAL_REASSIGN ("@4", "kJ", "execute"); /* actually "action" */
+      CONDITIONAL_REASSIGN ("@4", "kc", "execute"); /* actually "command" */
+      CONDITIONAL_REASSIGN ("%7", "ki", "menu");
+      CONDITIONAL_REASSIGN ("@7", "kw", "end");
+      CONDITIONAL_REASSIGN ("F1", "k<", "f11");
+      CONDITIONAL_REASSIGN ("F2", "k>", "f12");
+      CONDITIONAL_REASSIGN ("%1", "kq", "help");
+      CONDITIONAL_REASSIGN ("*6", "kU", "select");
 #undef CONDITIONAL_REASSIGN
   }
 }
@@ -1363,20 +1409,70 @@ term_init (terminal_type)
   register char *p;
   int status;
 
+#ifdef WINDOWSNT
+  initialize_win_nt_display ();
+
   Wcm_clear ();
-  dont_calculate_costs = 0;
+
+  area = (char *) malloc (2044);
+
+  if (area == 0)
+    abort ();
+
+  FrameRows = FRAME_HEIGHT (selected_frame);
+  FrameCols = FRAME_WIDTH (selected_frame);
+  specified_window = FRAME_HEIGHT (selected_frame);
+
+  delete_in_insert_mode = 1;
+
+  UseTabs = 0;
+  scroll_region_ok = 0;
+
+  /* Seems to insert lines when it's not supposed to, messing
+     up the display.  In doing a trace, it didn't seem to be
+     called much, so I don't think we're losing anything by
+     turning it off.  */
+
+  line_ins_del_ok = 0;
+  char_ins_del_ok = 1;
+
+  baud_rate = 19200;
+
+  FRAME_CAN_HAVE_SCROLL_BARS (selected_frame) = 0;
+  FRAME_HAS_VERTICAL_SCROLL_BARS (selected_frame) = 0;
+
+  return;
+#endif /* WINDOWSNT */
+
+  Wcm_clear ();
 
   status = tgetent (buffer, terminal_type);
   if (status < 0)
-    fatal ("Cannot open termcap database file.\n");
+    {
+#ifdef TERMINFO
+      fatal ("Cannot open terminfo database file.\n");
+#else
+      fatal ("Cannot open termcap database file.\n");
+#endif
+    }
   if (status == 0)
-    fatal ("Terminal type %s is not defined.\n\
+    {
+#ifdef TERMINFO
+      fatal ("Terminal type %s is not defined.\n\
+If that is not the actual type of terminal you have,\n\
+use the Bourne shell command `TERM=... export TERM' (C-shell:\n\
+`setenv TERM ...') to specify the correct type.  It may be necessary\n\
+to do `unset TERMINFO' (C-shell: `unsetenv TERMINFO') as well.\n",
+	     terminal_type);
+#else
+      fatal ("Terminal type %s is not defined.\n\
 If that is not the actual type of terminal you have,\n\
 use the Bourne shell command `TERM=... export TERM' (C-shell:\n\
 `setenv TERM ...') to specify the correct type.  It may be necessary\n\
 to do `unset TERMCAP' (C-shell: `unsetenv TERMCAP') as well.\n",
-	   terminal_type);
-
+	     terminal_type);
+#endif
+    }
 #ifdef TERMINFO
   area = (char *) malloc (2044);
 #else
@@ -1448,7 +1544,10 @@ to do `unset TERMCAP' (C-shell: `unsetenv TERMCAP') as well.\n",
   MultiLeft = tgetstr ("LE", address);
   MultiRight = tgetstr ("RI", address);
 
-  AutoWrap = tgetflag ("am");
+  MagicWrap = tgetflag ("xn");
+  /* Since we make MagicWrap terminals look like AutoWrap, we need to have
+     the former flag imply the latter.  */
+  AutoWrap = MagicWrap || tgetflag ("am");
   memory_below_frame = tgetflag ("db");
   TF_hazeltine = tgetflag ("hz");
   must_write_spaces = tgetflag ("in");
@@ -1456,7 +1555,6 @@ to do `unset TERMCAP' (C-shell: `unsetenv TERMCAP') as well.\n",
   TF_insmode_motion = tgetflag ("mi");
   TF_standout_motion = tgetflag ("ms");
   TF_underscore = tgetflag ("ul");
-  MagicWrap = tgetflag ("xn");
   TF_xs = tgetflag ("xs");
   TF_teleray = tgetflag ("xt");
 
@@ -1469,6 +1567,11 @@ to do `unset TERMCAP' (C-shell: `unsetenv TERMCAP') as well.\n",
     FRAME_WIDTH (selected_frame) = tgetnum ("co");
   if (FRAME_HEIGHT (selected_frame) <= 0)
     FRAME_HEIGHT (selected_frame) = tgetnum ("li");
+
+  if (FRAME_HEIGHT (selected_frame) < 3
+      || FRAME_WIDTH (selected_frame) < 3)
+    fatal ("Screen size %dx%d is too small.\n",
+	   FRAME_HEIGHT (selected_frame), FRAME_WIDTH (selected_frame));
 
   min_padding_speed = tgetnum ("pb");
   TN_standout_width = tgetnum ("sg");

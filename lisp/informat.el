@@ -48,9 +48,11 @@
 		  (case-fold-search t)
 		  list)
 	      (while (search-forward "\n\^_" nil t)
-		(forward-line 1)
-		(let ((beg (point)))
-		  (forward-line 1)
+		;; We want the 0-origin character position of the ^_.
+		;; That is the same as the Emacs (1-origin) position
+		;; of the newline before it.
+		(let ((beg (match-beginning 0)))
+		  (forward-line 2)
 		  (if (re-search-backward regexp beg t)
 		      (setq list
 			    (cons (list (buffer-substring
@@ -141,7 +143,7 @@ contains just the tag table and a directory of subfiles."
     (while subfiles
       (goto-char start)
       (insert (nth 1 (car subfiles))
-	      (format ": %d" (car (car subfiles)))
+	      (format ": %d" (1- (car (car subfiles))))
 	      "\n")
       (setq subfiles (cdr subfiles)))
     (goto-char start)

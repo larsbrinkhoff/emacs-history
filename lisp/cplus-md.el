@@ -1,7 +1,8 @@
 ;;; cplus-md.el --- C++ code editing commands for Emacs
-;;; Copyright (C) 1985, 1992, 1994 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
+;; Keywords: c languages oop
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -222,7 +223,7 @@ no args if that value is non-nil."
   (set (make-local-variable 'comment-end) "")
   (set (make-local-variable 'comment-start-skip) "/\\*+ *\\|// *")
   (set (make-local-variable 'comment-indent-function) 'c++-comment-indent)
-  (set (make-local-variable 'paragraph-start) (concat "^$\\|" page-delimiter))
+  (set (make-local-variable 'paragraph-start) (concat "$\\|" page-delimiter))
   (set (make-local-variable 'paragraph-separate) paragraph-start)
   (set (make-local-variable 'paragraph-ignore-fill-prefix) t)
   (set (make-local-variable 'require-final-newline) t)
@@ -529,26 +530,37 @@ Returns nil if line starts inside a string, t if in a comment."
 		 ;; If no, find that first statement and indent like it.
 		 (save-excursion
 		   (forward-char 1)
-		   (while (progn (skip-chars-forward " \t\n")
-				 (looking-at
-				  (concat
-				   "#\\|/\\*\\|//"
-				   "\\|case[ \t]"
-				   "\\|[a-zA-Z0-9_$]*:[^:]"
-				   "\\|friend[ \t]")))
-		     ;; Skip over comments and labels following openbrace.
-		     (cond ((= (following-char) ?\#)
-			    (forward-line 1))
-			   ((looking-at "/\\*")
-			    (search-forward "*/" nil 'move))
-			   ((looking-at "//\\|friend[ \t]")
-			    (forward-line 1))
-			   (t
-			    (re-search-forward ":[^:]" nil 'move))))
-		      ;; The first following code counts
-		      ;; if it is before the line we want to indent.
-		      (and (< (point) indent-point)
-			   (current-column)))
+		   (let ((colon-line-end 0))
+		     (while (progn (skip-chars-forward " \t\n")
+				   (looking-at
+				    (concat
+				     "#\\|/\\*\\|//"
+				     "\\|case[ \t]"
+				     "\\|[a-zA-Z0-9_$]*:[^:]"
+				     "\\|friend[ \t]")))
+		       ;; Skip over comments and labels following openbrace.
+		       (cond ((= (following-char) ?\#)
+			      (forward-line 1))
+			     ((looking-at "/\\*")
+			      (search-forward "*/" nil 'move))
+			     ((looking-at "//\\|friend[ \t]")
+			      (forward-line 1))
+			     (t
+			      (save-excursion (end-of-line)
+					      (setq colon-line-end (point)))
+			      (search-forward ":"))))
+		     ;; The first following code counts
+		     ;; if it is before the line we want to indent.
+		     (and (< (point) indent-point)
+			  (- 
+			   (if (> colon-line-end (point))
+			       (- (current-indentation) c-label-offset)
+			     (current-column))
+			   ;; If prev stmt starts with open-brace, that
+			   ;; open brace was offset by c-brace-offset.
+			   ;; Compensate to get the column where
+			   ;; an ordinary statement would start.
+			   (if (= (following-char) ?\{) c-brace-offset 0)))))
 		 ;; If no previous statement,
 		 ;; indent it relative to line brace is on.
 		 ;; For open brace in column zero, don't let statement
@@ -586,12 +598,16 @@ Returns nil if line starts inside a string, t if in a comment."
 	    ((and
 	      (search-backward "//" (max (c++-point-bol) lim) 'move)
 	      (not (c++-within-string-p (point) opoint))))
-	  (t (beginning-of-line)
-	     (skip-chars-forward " \t")
-	     (if (looking-at "#")
-		 (setq stop (<= (point) lim))
-	       (setq stop t)
-	       (goto-char opoint)))))))
+	    ;; No comment to be found.
+	    ;; If there's a # command on this line,
+	    ;; move back to it.
+	    (t (beginning-of-line)
+	       (skip-chars-forward " \t")
+	       ;; But don't get fooled if we are already before the #.
+	       (if (and (looking-at "#") (< (point) opoint))
+		   (setq stop (<= (point) lim))
+		 (setq stop t)
+		 (goto-char opoint)))))))
 
 (defun indent-c++-exp ()
   "Indent each line of the C++ grouping following point."
@@ -659,48 +675,54 @@ Returns nil if line starts inside a string, t if in a comment."
 		     (>= (car indent-stack) 0))
 		;; Line is on an existing nesting level.
 		;; Lines inside parens are handled specially.
-		(if (/= (char-after (car contain-stack)) ?\{)
-		    (setq this-indent (car indent-stack))
-		  ;; Line is at statement level.
-		  ;; Is it a new statement?  Is it an else?
-		  ;; Find last non-comment character before this line
-		  (save-excursion
-		    (setq at-else (looking-at "else\\W"))
-		    (setq at-brace (= (following-char) ?\{))
-		    (c++-backward-to-noncomment opoint)
-		    (if (not (memq (preceding-char) '(nil ?\, ?\; ?\} ?: ?\{)))
-			;; Preceding line did not end in comma or semi;
-			;; indent this line  c-continued-statement-offset
-			;; more than previous.
-			(progn
-			  (c-backward-to-start-of-continued-exp
-			   (car contain-stack))
-			  (setq this-indent
-				(+ c-continued-statement-offset
-				   (current-column)
-				   (if at-brace c-continued-brace-offset 0))))
-		      ;; Preceding line ended in comma or semi;
-		      ;; use the standard indent for this level.
-		      (if at-else
-			  (progn (c-backward-to-start-of-if opoint)
-				 (setq this-indent (current-indentation)))
-			(setq this-indent (car indent-stack))))))
+		nil
 	      ;; Just started a new nesting level.
 	      ;; Compute the standard indent for this level.
-	      (let ((val (calculate-c++-indent
-			  (if (car indent-stack)
-			      (- (car indent-stack))))))
-		(setcar indent-stack
-			(setq this-indent val))))
+	      (let (val)
+		(if (= (char-after (car contain-stack)) ?{)
+		    (save-excursion
+		      (goto-char (car contain-stack))
+		      (setq val (+ c-indent-level (current-column))))
+		  (setq val (calculate-c++-indent
+			     (if (car indent-stack)
+				 (- (car indent-stack))))))
+		(setcar indent-stack val)))
+	    ;; Adjust line indentation according to its predecessor.
+	    (if (/= (char-after (car contain-stack)) ?\{)
+		(setq this-indent (car indent-stack))
+	      ;; Line is at statement level.
+	      ;; Is it a new statement?  Is it an else?
+	      ;; Find last non-comment character before this line
+	      (save-excursion
+		(setq at-else (looking-at "else\\W"))
+		(setq at-brace (= (following-char) ?\{))
+		(c++-backward-to-noncomment opoint)
+		(if (not (memq (preceding-char) '(nil ?\, ?\; ?\} ?: ?\{)))
+		    ;; Preceding line did not end in comma or semi;
+		    ;; indent this line  c-continued-statement-offset
+		    ;; more than previous.
+		    (progn
+		      (c-backward-to-start-of-continued-exp
+		       (car contain-stack))
+		      (setq this-indent
+			    (+ c-continued-statement-offset
+			       (current-column)
+			       (if at-brace c-continued-brace-offset 0))))
+		  ;; Preceding line ended in comma or semi;
+		  ;; use the standard indent for this level.
+		  (if at-else
+		      (progn (c-backward-to-start-of-if opoint)
+			     (setq this-indent (current-indentation)))
+		    (setq this-indent (car indent-stack))))))
 	    ;; Adjust line indentation according to its contents
 	    (if (looking-at "\\(public\\|private\\|protected\\):")
-		(setq this-indent (- this-indent c-indent-level)))
-	    (if (or (looking-at "case[ \t]")
-		    (and (looking-at "[A-Za-z]")
-			 (save-excursion
-			   (forward-sexp 1)
-			   (looking-at ":[^:]"))))
-		(setq this-indent (max 1 (+ this-indent c-label-offset))))
+		(setq this-indent (- this-indent c-indent-level))
+	      (if (or (looking-at "case[ \t]")
+		      (and (looking-at "[A-Za-z]")
+			   (save-excursion
+			     (forward-sexp 1)
+			     (looking-at ":[^:]"))))
+		  (setq this-indent (max 1 (+ this-indent c-label-offset)))))
 	    (if (looking-at "friend[ \t]")
 		(setq this-indent (+ this-indent c++-friend-offset)))
 	    (if (= (following-char) ?\})

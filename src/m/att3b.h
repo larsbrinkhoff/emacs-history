@@ -33,10 +33,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define LONGBITS 32             /* Number of bits in a long */
 
-/* Define BIG_ENDIAN iff lowest-numbered byte in a word
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define WORDS_BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -58,7 +58,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define NO_UNION_TYPE
 
 /* Define EXPLICIT_SIGN_EXTEND if XINT must explicitly sign-extend
-   the 24-bit bit field into an int.  In other words, if bit fields
+   the bit field into an int.  In other words, if bit fields
    are always unsigned.
 
    If you use NO_UNION_TYPE, this flag does not matter.  */
@@ -136,10 +136,9 @@ extern int sign_extend_temp;
 #if u3b2 || u3b5 || u3b15
 
 /* On 3b2/5/15, data space has high order bit on. */
+#define VALBITS 27
 #define VALMASK (((1<<VALBITS) - 1) | (1 << 31))
-#define XTYPE(a) ((enum Lisp_Type) (((a) >> VALBITS) & 0x7F))
-#define GCTYPEBITS 5
-#define XADDRFIX(a)	((a) |= 0X80000000)	/* Because of high order */
+#define XTYPE(a) ((enum Lisp_Type) (((a) >> VALBITS) & GCTYPEMASK))
 
 #endif /* 3b2, 3b5 or 3b15 */
 

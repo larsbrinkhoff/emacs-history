@@ -25,6 +25,36 @@ to operating system names (i.e. sunos4.1) or architecture names (i.e.
 hppa1.1).  If you leave out the version number, the `configure' script
 will configure Emacs for the latest version it knows about.
 
+Acorn RISCiX (arm-acorn-riscix1.2)
+
+  Emacs 19.29 has changes that ought to support RISCiX 1.2.
+
+  Due to a bug in the RISCiX C compiler (3.4.5), emacs must
+  be built with gcc (versions 2.5.8 onwards).
+
+  In addition, you will need GNU sed and GNU make, as the RISCiX release
+  versions of these utilities cannot cope with building emacs-19!
+
+    GNU sed should be configured with:
+
+    env 'DEFS=-Dgetopt=gnu_getopt -Dopterr=gnu_opterr -Doptind=gnu_optind \
+            -Doptarg=gnu_optarg' ./configure
+
+    GNU make (3.72+) should be configured with:
+
+    env 'CFLAGS=-Dgetopt=gnu_getopt -Dopterr=gnu_opterr -Doptind=gnu_optind \
+              -Doptarg=gnu_optarg' ./configure
+
+  Emacs may be configured to use the X toolkit, by adding --with-x-toolkit
+  to the configure command.  If you do this, you will need to edit the line
+  in src/Makefile which defines LIBW (about line 59) to read:
+
+  LIBW= -lXaw_n
+
+  This ensures that the non-shared widget library is used.
+
+  It is unlikely that this version of emacs will work with RISCiX 1.1.
+
 Alliant (fx80-alliant-bsd):
 
   18.52 worked on system version 4.  Previous Emacs versions were
@@ -37,6 +67,10 @@ Alliant (fx80-alliant-bsd):
 Alliant FX/2800 (i860-alliant-bsd)
 
   Known to work with 19.26 and OS version 2.2, compiler version 1.3.
+
+Alpha (DEC) running OSF/1 (alpha-dec-osf1)
+
+  Patches merged in 19.29.
 
 Altos 3068 (m68k-altos-sysv)
 
@@ -55,57 +89,48 @@ Amdahl UTS (580-amdahl-sysv)
   even worth trying to use it.  Success was obtained with the
   uts native C compiler on uts version 5.2.5.
 
-Amiga 
+Apollo running X Windows (m68k-apollo-domain)
 
-Apollo running Domain (m68k-apollo-bsd)
+  Apollo version now supports dumping.  It has been tested on SR10.3 and
+  SR10.4.  It certainly requires at least SR10.0, and maybe SR10.2.  Be sure
+  to build in the BSD environment.
 
-  18.52 works, to some extent.
-  Code for dumping Emacs has been written, but we cannot distribute it yet.
-  There are reports of bugs in cc -O on this system.
+  By default, everything is compiled with the switch "-W0,-opt,2".  Don't try
+  to change this to full optimization (-O).  The full optimizer (in Domain CC
+  6.7, 6.8 and 6.9) generates some bad code in several modules which causes
+  the emacs window, under X, to be refreshed with each keystroke.
 
-  In `lib-src/Makefile', don't expect emacsclient and emacsserver to
-  compile.  You might want to remove them from your makefile.
+  The configuration stuff should work for the most part.  However, some Domain
+  installations may have to edit src/Makefile manually after it is created.
+  There are too many versions of both cc and X to automate this easily.
 
-  Supposedly something in dired.c runs into a compiler bug.
-  Paraphrasing the statement should avoid the problem.  I have not yet
-  received word as to the exact statement this is.
+  In `lib-src/Makefile', emacsclient and emacsserver compile and work fine
+  under CC 6.9.  They now probably work under other versions of the compiler,
+  as well.
 
-  The Apollo has a bizarre operating system which does not permit
-  Emacs to be dumped with preloaded pure Lisp code.  Therefore, each
-  time you start Emacs on this system, the standard Lisp code is loaded
-  into it.  Expect it to take a long time.  You can prevent loading of
-  the standard Lisp code by specifying the -nl switch.  It must
-  come at the beginning of the command line; only the -t and -batch
-  switches may come before it.
+  The Apollo Domain CC compiler will issue quite a few warning messages,
+  mostly complaining about incompatible pointers.  In general, these are
+  harmless and can be ignored.  If you discover otherwise, please submit a bug
+  report identifying the problem in detail.
 
-  There is one remaining problem on the Apollo.  You must replace
-  the CPP line in src/Makefile with "CPP = /usr/lib/cpp".
-  The C preprocessor lives there rather than in /lib/cpp because the
-  Aegis OS uses the /lib directory as the repository for shared libraries.
+  When you try to dump emacs, you may get the message ".rwdi section needs
+  relocation."  This means you are linking with some code that has compressed
+  data sections.  In some cases this comes from linking with X libraries.  Try
+  using shared X libraries instead.  With some versions of Domain/OS this is
+  as simple as removing the "-lX11" from the LIBX line in src/Makefile.  
+  
+  When running the configure script, use the configuration name
+  "m68k-apollo-bsd".  You will also need to use the "-with-gcc=no" and
+  "-with-x" options.  Depending upon your site configuration, you may have to
+  use other configure options, as well.  Examine the INSTALL file for other
+  configure options.
 
+  Check out the file 'lisp/x-apollo.el'.  To use it, add
 
-  Here is a design for a method of dumping and reloading the relevant
-  necessary impure areas of Emacs.
+        (load "x-apollo")
 
-  On dumping, you need to dump only the array `pure' plus the
-  locations that contain values of forwarded Lisp variables or that are
-  protected for garbage collection.  The former can be found by a
-  garbage- collection-like technique, and the latter are in the
-  staticprolist vector (see alloc.c for both things).
-
-  Reloading would work in an Emacs that has just been started; except
-  when a switch is specified to inhibit this, it would read the dump
-  file and set all the appropriate locations.  The data loaded must be
-  relocated, but that's not hard.  Those locations that are of type
-  Lisp_Object can be found by a technique like garbage-collection, and
-  those of them that point to storage can be relocated.  The other data
-  read from the file will not need to be relocated.
-
-  The switch to inhibit loading the data base would be used when it
-  is time to dump a new data base.
-
-  This would take a few seconds, which is much faster than loading
-  the Lisp code of Emacs from scratch.
+  to your .emacs file.  It provides useful default Apollo function key
+  bindings.
 
 AT&T 3b2, 3b5, 3b15, 3b20 (we32k-att-sysv)
 
@@ -206,7 +231,7 @@ Data General Aviion (m88k-dg-dgux)
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
   This machine is the older Mips-based DECstation.
-  Emacs does not support the Alpha CPU.  We hope to support that in 19.29.
+  Emacs should now work on the Alpha CPU.
 
   19.25 works on Ultrix 4.2.  The 19.26 pretest was reported to work
   on Ultrix 4.2a and on 4.4.
@@ -378,8 +403,11 @@ HP 9000 series 700 or 800 (Spectrum) (hppa1.0-hp-hpux or hppa1.1-hp-hpux
      LIBXT= $(LIBW) -lXmu -lXt $(LIBXTR6) -lXext
 
   Some people report trouble using the GNU memory allocator under
-  HP/UX version 9.  We are told that these problems go away if you
-  obtain the latest patches for the HP/UX C compiler.  James J Dempsey
+  HP/UX version 9.  The problems often manifest as lots of ^@'s in the
+  buffer.
+  
+  We are told that these problems go away if you obtain the latest
+  patches for the HP/UX C compiler.  James J Dempsey
   <jjd@spserv.bbn.com> says that this set of versions works for him:
     /bin/cc:
 	    HP92453-01 A.09.28 HP C Compiler
@@ -432,7 +460,7 @@ IBM PS/2 (i386-ibm-aix1.1 or i386-ibm-aix1.2)
   i386-ibm-aix1.1 may not work with certain new X window managers, and
   may be suboptimal.
 
-IBM RS/6000 (rs6000-ibm-aix)
+IBM RS/6000 (rs6000-ibm-aix*)
 
   Emacs 19.26 is believed to work; its pretest was tested.
 
@@ -488,13 +516,14 @@ Integrated Solutions `Optimum V' (m68k-isi-bsd4.2 or -bsd4.3)
   in a system header file, which confuses Emacs (which thinks that UMAX
   indicates the Umax operating system).
 
-Intel 386 (i386-*-isc, 		i386-*-esix,
+Intel 386 (i386-*-isc, 		i386-*-esix,	 i386-*-bsdos2,
 	   i386-*-xenix,	i386-*-linux,    i386-*-freebsd,
-	   i386-intsys-sysv,	i386-*-sysv3,
+	   i386-*-sol2.4,	i386-intsys-sysv, i386-*-sysv3,
 	   i386-*-sysv4,	i386-*-sysv4.2,
 	   i386-*-sysv5.3,	i386-*-bsd4.2,
-	   i386-*-sco3.2v4,	i386-*-bsd386,   i386-*-386bsd
-	   or i486... or i586...)
+	   i386-*-sco3.2v4,	i386-*-bsd386,   i386-*-386bsd,
+	   i386-*-msdos,	i386-*-windowsnt.
+	   i386... can be replaced with i486... or i586...)
 
   In the above configurations, * means that the manufacturer's name
   you specify does not matter, and you can use any name you like
@@ -525,6 +554,9 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 
   The 19.26 pretest was reported to work on SVR4.3 and on Freebsd.
 
+  19.29 is reported to crash when using Motif on Solaris 2.5.
+  The reasons are not yet known.
+
   Use i386-*-bsd386 for BSDI BSD/386; Emacs runs as of version 19.23.
   Make on that system is broken; use GNU make instead.
   Shell bugs in version 1.0 of BSD/386 cause configure
@@ -545,7 +577,7 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 
   If you are using System V release 4.2, you may find that `cc -E'
   puts spurious spaces in `src/xmakefile'.  If that happens,
-  specify CC=/lib/cpp as an option when you run make.
+  specify CPP=/lib/cpp as an option when you run make.
   There is no problem if you compile with GCC.
     
   Note that use on Linux with GCC 2.4 and the DLL 4.4 libraries
@@ -564,6 +596,15 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
 
   On 386/ix, to link with shared libraries, add #define USG_SHARED_LIBRARIES
   to config.h.
+
+  On SCO, there are problems in regexp matching when Emacs is compiled
+  with the system compiler.  The compiler version is "Microsoft C
+  version 6", SCO 4.2.0h Dev Sys Maintenance Supplement 01/06/93;
+  Quick C Compiler Version 1.00.46 (Beta).  The solution is to compile
+  with GCC.
+
+  On ISC systems (2.02 and more recent), don't try to use the versions
+  of X that come with the system; use XFree86 instead.
 
   There is no consistency in the handling of certain system header files
   on V.3.
@@ -591,11 +632,11 @@ Iris 2500 and Iris 2500 Turbo (m68k-sgi-iris3.5 or m68k-sgi-iris3.6)
   and m68k-sgi-iris3.6 for system version 3.6.
   Note that the 3030 is the same as the Iris 2500 Turbo.
 
-Iris 4D (mips-sgi-irix[45].*)
+Iris 4D (mips-sgi-irix[456].*)
 
   The 19.26 pretest was reported to work on IRIX 4.0.5 and 5.2.
   19.23 was reported to work on IRIX 5.2, but you may need to install
-  the "compiler_dev.hdr.internal" subsystem in order to compile Emacs.
+  the "compiler_dev.hdr.internal" subsystem in order to compile unexelfsgi.c.
   19.22 was known to work on all Silicon Graphics machines running
   IRIX 4.0.5 or IRIX 5.1.
 
@@ -610,16 +651,6 @@ Iris 4D (mips-sgi-irix[45].*)
   subprocesses of Emacs.  Irix versions 4.0 and later with GNU Emacs
   versions 18.59 and later fix this bug.
 
-Macintosh
-
-  We are boycotting Apple because of Apple's efforts to take away
-  our freedom to write compatible imitations of existing software.
-  If you value your freedom to write such programs, we urge you
-  not to buy from Apple, not to develop software for Apple, and
-  certainly not to accept a job with Apple.
-
-  See the file APPLE in this directory for more information.
-
 Masscomp (m68k-masscomp-rtu)
 
   18.36 worked on a 5500DP running RTU v3.1a and compiler version 3.2
@@ -631,7 +662,7 @@ Masscomp (m68k-masscomp-rtu)
     unsigned char k; unsigned char *p;... x = p[k];
   has been reported for "C version 1.2 under RTU 3.1".  We do not wish
   to take the time to install the numerous workarounds required to
-  compensate for this bug; go complain to Masscomp.
+  compensate for this bug.
 
   For RTU version 3.1, define FIRST_PTY_LETTER to be 'p' in `src/s/rtu.h'
   (or #undef and redefine it in config.h) so that ptys will be used.
@@ -725,6 +756,15 @@ Nu (TI or LMI) (m68k-nu-sysv)
 
   Version 18 is believed to work.
 
+Paragon OSF/1 (i860-intel-osf1)
+
+  Changes merged in 19.29.
+
+  There is a bug in OSF/1 make which claims there is a syntax error
+  in the src/xmakefile.  You can sucessfully build emacs with:
+
+        pmake MAKE=pmake
+
 Plexus (m68k-plexus-sysv)
 
   Worked as of 17.56.
@@ -770,11 +810,37 @@ Sequent Balance (ns32k-sequent-bsd4.2 or ns32k-sequent-bsd4.3)
   Delete some lines at the end of `src/m/sequent.h' for earlier system
   versions.
 
-Sequent Symmetry (i386-sequent-bsd)
+Sequent Symmetry (i386-sequent-bsd, i386-sequent-ptx)
 
-  Emacs 19 should work.  However, if you compile with the Sequent compiler,
-  you may find Emacs does not restore the terminal settings on exit.
-  If this happens, compile with GCC.
+  Emacs 19 should work on Dynix (BSD).  However, if you compile with
+  the Sequent compiler, you may find Emacs does not restore the
+  terminal settings on exit.  If this happens, compile with GCC.
+
+  Emacs 19.27 contains patches that should support
+  DYNIX/ptx 1.4 and 2.1 with the native cc compiler.
+
+  Gcc can't compile src/process.c due to a non-standard Sequent asm
+  keyword extension supported by cc and used for the network byte/word
+  swapping functions in the PTX /usr/include/netinet/in.h file.  Gcc
+  2.5.8 includes the file <sys/byteorder.h> which can be included into
+  netinet/in.h to perform these byte/word swapping functions in the
+  same manner.  Patches have been submitted to the FSF against gcc
+  2.6.0 to fix this problem and allow Emacs to be built with gcc.
+
+  If your machine does not have TCP/IP installed, you will have to edit the
+  src/s/ptx.h file and comment out #define TCPIP_INSTALLED.
+
+Siemens Nixdorf RM600 and RM400 (mips-siemens-sysv4)
+
+  Changes merged in 19.29.  This configuration should also work for
+  Pyramid MIS Server running DC-OSX 1.x.  The version configured with
+  `--with-x' works without any modifications, but `--with-x-toolkit'
+  works only if the Athena library and the Toolkit library are linked
+  statically.  For this, edit `src/Makefile' after the `configure' run
+  and modify the lines with `-lXaw' and `-lXt' as follows:
+
+    LIBW= /usr/lib/libXaw.a
+    LIBXT= $(LIBW) -lXmu /usr/lib/libXt.a $(LIBXTR6) -lXext
 
 SONY News (m68k-sony-bsd4.2 or m68k-sony-bsd4.3)
 
@@ -846,6 +912,9 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   add -lansi just before -lc.  The precise file names depend on the
   compiler version, so we cannot easily arrange to supply them.
 
+  On SunOS 4.1.1, do not use /usr/5bin/cc.  You can use gcc or/usr/bin/cc.
+  Make sure the environment variable LD_LIBRARY_PATH is not defined.
+
   Some people report crashes on SunOS 4.1.3 if SYSTEM_MALLOC is defined.
   Others have reported that Emacs works if SYSTEM_MALLOC is defined, and not
   if it is undefined.  So far we do not know why results vary in this way.
@@ -866,17 +935,10 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   likely due to a bug in Solaris 2.2's multiprocessor support,
   rather than an Emacs bug.
 
-  On Solaris 2.2 with SUNWspro 2.0.1, src/Makefile used to get bad data--
-  spurious spaces.  In 19.23, changes in configure ought to use a different
-  cpp that avoids this problem.
-
-  On Solaris, if linking gives the error that `bss_end' and `main'
-  are undefined, it may mean that the C preprocessor did the wrong
-  thing when processing `src/ymakefile' into `src/xmakefile'.
-  A tell-tale sign of this in `src/xmakefile' is the presence of
-  extra spaces, as in  	unexelf.o: unexelf . o $(config_h)
-  If this happens, try using GCC to compile Emacs,
-  or at least to preprocess `src/ymakefile' into `src/xmakefile'.
+  On Solaris, do not use /usr/ucb/cc.  Use /opt/SUNWspro/bin/cc.  Make
+  sure that /usr/ccs/bin and /opt/SUNWspro/bin are in your PATH before
+  /usr/ucb.  (Most free software packages have the same requirement on
+  Solaris.)
 
   If you have trouble using open-network-stream, get the distribution
   of `bind' (the BSD name-server), build libresolv.a, and link Emacs
@@ -907,6 +969,18 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
 
   To build a single Emacs that will run on Sun 2 and Sun 3
   HARDWARE, just build it on the Sun 2.
+
+  On Sunos 4.1.3, the word is that Emacs can loop infinitely
+  on startup with X due perhaps to a bug in Sunos.  Installing all of
+  these Sun patches fixes the problem.  We don't know which of them
+  are really relevant.
+
+    100075-11 100224-06 100347-03 100482-05 100557-02 100623-03 100804-03
+    101080-01 100103-12 100249-09 100496-02 100564-07 100630-02 100891-10
+    101134-01 100170-09 100296-04 100377-09 100507-04 100567-04 100650-02
+    101070-01 101145-01 100173-10 100305-15 100383-06 100513-04 100570-05
+    100689-01 101071-03 101200-02 100178-09 100338-05 100421-03 100536-02
+    100584-05 100784-01 101072-01 101207-01
 
 Tadpole 68K (m68k-tadpole-sysv)
 
@@ -1021,6 +1095,12 @@ Esix
 Microport
 
   See under "Intel 386".
+
+MSDOS
+
+  For installation on MSDOS, see the file etc/INSTALL and search for
+  `MSDOG'.  See the file etc/MSDOS for information about using Emacs
+  on MSDOS.
 
 SCO Unix
   If you have TCP but not X, you need to edit src/s/sco4.h
@@ -1156,6 +1236,11 @@ VMS (vmsM.N)
   Note that Emacs for VMS is usually distributed in a special VMS
   distribution.  See the file ../vms/VMSINSTALL for info on moving
   Unix distributions to VMS, and other VMS-related topics.
+
+Windows NT
+
+  For installation on Windows NT, see the file etc/INSTALL and search for
+  `Windows NT'.
 
 Xenix (xenix)
 

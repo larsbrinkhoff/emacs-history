@@ -47,9 +47,6 @@ and this notice must be preserved on all copies.  */
    Otherwise, Emacs expects to use version 10.  */
 #undef HAVE_X11
 
-/* Define if we have the X11R6 or newer.  */
-#undef HAVE_X11R6
-
 /* Define if using an X toolkit.  */
 #undef USE_X_TOOLKIT
 
@@ -67,9 +64,14 @@ and this notice must be preserved on all copies.  */
 /* Define if netdb.h declares h_errno.  */
 #undef HAVE_H_ERRNO
 
-/* If we're using any sort of window system, define MULTI_FRAME.  */
-#ifdef HAVE_X_WINDOWS
+/* Nowadays we have frame objects even if we support only ASCII terminals.  */
 #define MULTI_FRAME
+
+/* If we're using any sort of window system, define some consequences.  */
+#ifdef HAVE_X_WINDOWS
+#define MULTI_KBOARD
+#define HAVE_FACES
+#define HAVE_MOUSE
 #endif
 
 /* Define USE_TEXT_PROPERTIES to support visual and other properties
@@ -91,15 +93,32 @@ and this notice must be preserved on all copies.  */
    that & in the full name stands for the login id.  */
 #undef AMPERSAND_FULL_NAME
 
+/* Things set by --with options in the configure script.  */
+
+/* Define to support POP mail retrieval.  */
+#undef MAIL_USE_POP
+
+/* Define to support Kerberos-authenticated POP mail retrieval.  */
+#undef KERBEROS
+
+/* Define to support using a Hesiod database to find the POP server.  */
+#undef HESIOD
+
 /* Some things figured out by the configure script, grouped as they are in
    configure.in.  */
+#ifndef _ALL_SOURCE  /* suppress warning if this is pre-defined */
+#undef _ALL_SOURCE
+#endif
+#undef HAVE_SYS_SELECT_H
 #undef HAVE_SYS_TIMEB_H
 #undef HAVE_SYS_TIME_H
 #undef HAVE_UNISTD_H
+#undef HAVE_UTIME_H
 #undef STDC_HEADERS
 #undef TIME_WITH_SYS_TIME
 
 #undef HAVE_LIBDNET
+#undef HAVE_LIBPTHREADS
 #undef HAVE_LIBRESOLV
 
 #undef HAVE_ALLOCA_H
@@ -119,7 +138,6 @@ and this notice must be preserved on all copies.  */
 #undef HAVE_LONG_FILE_NAMES
 
 #undef CRAY_STACKSEG_END
-#undef STACK_DIRECTION
 
 #undef UNEXEC_SRC
 
@@ -142,7 +160,10 @@ and this notice must be preserved on all copies.  */
 #undef HAVE_RES_INIT /* For -lresolv on Suns.  */
 #undef HAVE_SETSID
 #undef HAVE_FPATHCONF
-
+#undef HAVE_SELECT
+#undef HAVE_MKTIME
+#undef HAVE_EACCESS
+#undef HAVE_GETPAGESIZE
 #undef HAVE_INET_SOCKETS
 
 #undef HAVE_AIX_SMT_EXP
@@ -151,8 +172,16 @@ and this notice must be preserved on all copies.  */
    Otherwise you must have the variable `char *sys_errlist[]'.  */
 #undef HAVE_STRERROR
 
+#undef HAVE_UTIMES
+
 /* Define if `sys_siglist' is declared by <signal.h>.  */
 #undef SYS_SIGLIST_DECLARED
+
+/* Define if `struct utimbuf' is declared by <utime.h>.  */
+#undef HAVE_STRUCT_UTIMBUF
+
+/* Define if `struct timeval' is declared by <sys/time.h>.  */
+#undef HAVE_TIMEVAL
 
 /* If using GNU, then support inline function declarations. */
 #ifdef __GNUC__
@@ -163,25 +192,27 @@ and this notice must be preserved on all copies.  */
 
 #undef EMACS_CONFIGURATION
 
+#undef EMACS_CONFIG_OPTIONS
+
 /* The configuration script defines opsysfile to be the name of the
-   s/*.h file that describes the system type you are using.  The file
+   s/SYSTEM.h file that describes the system type you are using.  The file
    is chosen based on the configuration name you give.
 
    See the file ../etc/MACHINES for a list of systems and the
    configuration names to use for them.
 
-   See s/template.h for documentation on writing s/*.h files.  */
+   See s/template.h for documentation on writing s/SYSTEM.h files.  */
 #undef config_opsysfile 
 #include config_opsysfile
 
 /* The configuration script defines machfile to be the name of the
-   m/*.h file that describes the machine you are using.  The file is
+   m/MACHINE.h file that describes the machine you are using.  The file is
    chosen based on the configuration name you give.
 
    See the file ../etc/MACHINES for a list of machines and the
    configuration names to use for them.
 
-   See m/template.h for documentation on writing m/*.h files.  */
+   See m/template.h for documentation on writing m/MACHINE.h files.  */
 #undef config_machfile
 #include config_machfile
 
@@ -205,11 +236,17 @@ typedef unsigned long EMACS_UINT;
 #endif /* not NO_SHORTNAMES */
 #endif /* SHORTNAMES */
 
+/* If no remapping takes place, static variables cannot be dumped as
+   pure, so don't worry about the `static' keyword. */
+#ifdef NO_REMAP
+#undef static
+#endif
+
 /* Define `subprocesses' should be defined if you want to
    have code for asynchronous subprocesses
    (as used in M-x compile and M-x shell).
    These do not work for some USG systems yet;
-   for the ones where they work, the s/*.h file defines this flag.  */
+   for the ones where they work, the s/SYSTEM.h file defines this flag.  */
 
 #ifndef VMS
 #ifndef USG
@@ -240,6 +277,11 @@ typedef unsigned long EMACS_UINT;
    that your compiler can find on its own, you might want to add
    "-I/..." or something similar.  */
 #undef C_SWITCH_X_SITE
+
+/* Define STACK_DIRECTION here, but not if m/foo.h did.  */
+#ifndef STACK_DIRECTION
+#undef STACK_DIRECTION
+#endif
 
 /* Define the return type of signal handlers if the s-xxx file
    did not already do so.  */

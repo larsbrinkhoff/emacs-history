@@ -9,6 +9,21 @@
 
 #define C_SWITCH_SYSTEM	-D_BSD
 #define LIBS_SYSTEM	-lbsd
-#define LD_SWITCH_SYSTEM	-non_shared
+
+#define GETPGRP_NO_ARG
+
+#define read sys_read
+#define write sys_write
+#define open sys_open
+#define close sys_close
+
+#define INTERRUPTIBLE_OPEN
+#define INTERRUPTIBLE_CLOSE
+#define INTERRUPTIBLE_IO
 
 #define SYSV_SYSTEM_DIR
+
+/* If your system uses COFF (Common Object File Format) then define the
+   preprocessor symbol "COFF". */
+
+#define COFF

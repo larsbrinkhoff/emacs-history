@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Calendar/Diary, GNUS, Dired, Top
 @chapter The Calendar and the Diary
@@ -14,10 +14,12 @@ calendar}, it prompts you for the month and year to be the center of the
 three-month calendar.  The calendar uses its own buffer, whose major
 mode is Calendar mode.
 
-  To exit the calendar, type @kbd{q}.  @kbd{Mouse-3} in the calendar
-brings up a menu of commonly used calendar features.  @xref{Calendar,
-Customizing the Calendar and Diary,, elisp, The Emacs Lisp Reference
-Manual}, for customization information about the calendar and diary.
+  @kbd{Mouse-2} in the calendar brings up a menu of operations on a
+particular date; @kbd{C-Mouse-3} brings up a menu of commonly used
+calendar features that are independent of any particular date.  To exit
+the calendar, type @kbd{q}.  @xref{Calendar, Customizing the Calendar
+and Diary,, elisp, The Emacs Lisp Reference Manual}, for customization
+information about the calendar and diary.
 
 @menu
 * Calendar Motion::       Moving through the calendar; selecting a date.
@@ -303,8 +305,9 @@ holidays or diary entries in another window.
 @kindex q @r{(Calendar mode)}
 @findex exit-calendar
   To exit from the calendar, type @kbd{q} (@code{exit-calendar}).  This
-buries all buffers related to the calendar and returns the window display
-to what it was when you entered the calendar.
+buries all buffers related to the calendar, selecting other buffers.
+(If a frame contains a dedicated calendar window, exiting from the
+calendar iconifies that frame.)
 
 @node Holidays
 @section Holidays
@@ -455,6 +458,12 @@ Time (Greenwich time).  The values of
 your time zone.  Emacs displays the times of sunrise and sunset
 @emph{corrected for daylight savings time}.  @xref{Daylight Savings},
 for how daylight savings time is determined.
+
+  As a user, you might find it convenient to set the calendar location
+variables for your usual physical location in your @file{.emacs} file.
+And when you install Emacs on a machine, you can create a
+@file{default.el} file which sets them properly for the typical location
+of most users of that machine.  @xref{Init File}.
 
 @node Lunar Phases
 @section Phases of the Moon
@@ -1273,7 +1282,7 @@ and @code{calendar-daylight-savings-ends} to @code{nil}.
 difference between daylight savings time and standard time, measured in
 minutes.  The value for Cambridge, Massachusetts is 60.
 
-@vindex calendar-daylight-savings-starts-time
+@c @vindex calendar-daylight-savings-starts-time  too long!
 @vindex calendar-daylight-savings-ends-time
   The two variables @code{calendar-daylight-savings-starts-time} and
 @code{calendar-daylight-savings-ends-time} specify the number of

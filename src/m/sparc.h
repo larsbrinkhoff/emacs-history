@@ -35,11 +35,10 @@ NOTE-END  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* SPARC has lowest-numbered byte as most significant */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-#ifndef BIG_ENDIAN
-#define BIG_ENDIAN
-#endif
+#define WORDS_BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -83,8 +82,10 @@ NOTE-END  */
    in the file alloca.s should be used.  */
 
 #define HAVE_ALLOCA
+#ifndef NOT_C_CODE
 #if __GNUC__ < 2 /* Modern versions of GCC handle alloca directly.  */
 #include <alloca.h>
+#endif
 #endif
 
 /* Must use the system's termcap, if we use any termcap.

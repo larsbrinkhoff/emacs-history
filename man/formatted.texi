@@ -1,0 +1,432 @@
+@node Formatted Text
+@section Editing Formatted Text
+
+@cindex Enriched mode
+@cindex formatted text
+@cindex WYSIWYG
+@cindex word processing
+@dfn{Enriched mode} is a minor mode for editing files that contain
+formatted text in WYSIWYG fashion, as in a word processor.  Currently,
+formatted text in Enriched mode can specify fonts, colors, underlining,
+margins, and types of filling and justification.  In the future, we plan
+to implement other formatting features as well.
+
+Enriched mode is a minor mode (@pxref{Minor Modes}).  Typically it is
+used in conjunction with Text mode (@pxref{Text Mode}).  However, you
+can also use it with other major modes such as Outline mode and Indented
+Text mode.
+
+Potentially, Emacs can store formatted text files in various file
+formats.  Currently, only one format is implemented: @dfn{text/enriched}
+format, which is defined by the MIME protocol.
+@ignore
+@xref{File Formats,, File Formats, elisp, the Emacs Lisp Reference Manual}.
+@end ignore
+
+The Emacs distribution contains a formatted text file that can serve as
+an example.  Its name is @file{etc/enriched.doc}.  It contains samples
+illustrating all the features described in this section.  It also
+contains a list of ideas for future enhancements.
+
+@menu
+* Requesting Formatted Text::   Entering and exiting Enriched mode.
+* Hard and Soft Newlines::      There are two different kinds of newlines.
+* Editing Format Info::         How to edit text properties.
+* Faces: Format Faces.          Bold, italic, underline, etc.
+* Color: Format Color.          Changing the color of text.
+* Indent: Format Indentation.   Changing the left and right margins.
+* Justification: Format Justification.
+                                Centering, setting text flush with the 
+                                  left or right margin, etc.
+* Other: Format Properties.     The "special" text properties submenu.
+* Forcing Enriched Mode::       How to force use of Enriched mode.
+@end menu
+
+@node Requesting Formatted Text
+@subsection Requesting to Edit Formatted Text
+
+Whenever you visit a file that Emacs saved in the text/enriched format,
+Emacs automatically converts the formatting information in the file into
+Emacs's own internal format (text properties), and turns on Enriched
+mode.
+
+@findex enriched-mode
+To create a new file of formatted text, first visit the nonexistent
+file, then type @kbd{M-x enriched-mode} before you start inserting text.
+This command turns on Enriched mode.  Do this before you begin inserting
+text, to ensure that the text you insert is handled properly.
+
+More generally, the command @code{enriched-mode} turns Enriched mode
+on if it was off, and off if it was on.  With a prefix argument, this
+command turns Enriched mode on if the argument is positive, and turns
+the mode off otherwise.
+
+When you save a buffer while Enriched mode is enabled in it, Emacs
+automatically converts the text to text/enriched format while writing it
+into the file.  When you visit the file again, Emacs will automatically
+recognize the format, reconvert the text, and turn on Enriched mode
+again.
+
+@vindex enriched-fill-after-visiting
+Normally, after reading a file in text/enriched format, Emacs refills
+each paragraph to fit the width of the window.  You can turn off this
+refilling, to save time, by setting the variable
+@code{enriched-fill-after-visiting} to @code{nil} or to @code{ask}.
+
+In any case, if the window width is the same as the width with which the
+file was saved, Emacs trusts that the file is already properly filled.
+
+@vindex enriched-translations
+You can add annotations for saving additional text properties, which
+Emacs normally does not save, by adding to @code{enriched-translations}.
+Note that the text/enriched standard requires any non-standard
+annotations to have names starting with @samp{x-}, as in
+@samp{x-read-only}.  This ensures that they will not conflict with
+standard annotations that may be added later.
+
+@node Hard and Soft Newlines
+@subsection Hard and Soft Newlines
+@cindex hard newline
+@cindex soft newline
+@cindex newlines, hard and soft
+
+In formatted text, Emacs distinguishes between two different kinds of
+newlines, @dfn{hard} newlines and @dfn{soft} and newlines.
+
+Hard newlines are used to separate paragraphs, or items in a list, or
+anywhere that there should always be a line break regardless of the
+margins.  The @kbd{RET} command (@code{newline}) and @kbd{C-o}
+(@code{open-line}) insert hard newlines.
+
+Soft newlines are used to make text fit between the margins.  All the
+fill commands, including Auto Fill, insert soft newlines---and they
+delete only soft newlines.
+
+Although hard and soft newlines look the same, it is important to bear
+the difference in mind.  Do not use @key{RET} to break lines in the
+middle of filled paragraphs, or else you will get hard newlines that are
+barriers to further filling.  Instead, let Auto Fill mode break lines,
+so that if the text or the margins change, Emacs can refill the lines
+properly.  @xref{Auto Fill}.
+
+On the other hand, in tables and lists, where the lines should always
+remain as you type them, you can use @key{RET} to end lines.  In this
+case you may also want to set the justification style to
+@code{unfilled}.  @xref{Format Justification}.
+
+@node Editing Format Info
+@subsection Editing Format Information
+
+There are two ways to alter the formatting information for a formatted
+text file: with keyboard commands, and with the mouse.
+
+The easiest way to add properties to your document is by using the Text
+Properties menu.  You can get to this menu in two ways: from the Edit
+menu in the menu bar, or with @kbd{C-mouse-2} (hold the @key{CTRL} key
+and press the middle mouse button).
+
+Most of the items in the Text Properties menu lead to other submenus.
+These are described in the sections that follow.  There are four items
+that do something directly:
+
+@table @samp
+@item Remove Properties
+Delete all text properties from the region.
+
+@item List Properties
+List all the text properties of the character following point.
+
+@item Display Faces
+Display a list of all the defined faces.
+
+@item Display Colors
+Display a list of all the defined colors.
+@end table
+            
+@node Format Faces
+@subsection Faces in Formatted Text
+
+The Faces submenu lists various Emacs faces including @code{bold},
+@code{italic}, and @code{underline}.  Selecting one of these adds the
+chosen face to the region.  @xref{Faces}.  You can also specify a face
+with these keyboard commands:
+
+@table @kbd
+@kindex M-g d @r{(Enriched mode)}
+@findex facemenu-set-default
+@item M-g d
+Set the region, or the next inserted character, to the @code{default} face
+(@code{facemenu-set-default}).
+@kindex M-g b @r{(Enriched mode)}
+@findex facemenu-set-bold
+@item M-g b
+Set the region, or the next inserted character, to the @code{bold} face
+(@code{facemenu-set-bold}).
+@kindex M-g i @r{(Enriched mode)}
+@findex facemenu-set-italic
+@item M-g i
+Set the region, or the next inserted character, to the @code{italic} face
+(@code{facemenu-set-italic}).
+@kindex M-g l @r{(Enriched mode)}
+@findex facemenu-set-bold-italic
+@item M-g l
+Set the region, or the next inserted character, to the @code{bold-italic} face
+(@code{facemenu-set-bold-italic}).
+@kindex M-g u @r{(Enriched mode)}
+@findex facemenu-set-underline
+@item M-g u
+Set the region, or the next inserted character, to the @code{underline} face
+(@code{facemenu-set-underline}).
+@kindex M-g o @r{(Enriched mode)}
+@findex facemenu-set-face
+@item M-g o @var{face} @key{RET}
+Set the region, or the next inserted character, to the face @var{face}
+(@code{facemenu-set-face}).
+@end table
+
+If you use these commands with a prefix argument---or, in Transient Mark
+mode, if the region is not active---then these commands specify a face
+to use for your next subsequent self-inserting input.  @xref{Transient
+Mark}.  This applies to both the keyboard commands and the menu
+commands.
+
+Enriched mode defines two additional faces: @code{excerpt} and
+@code{fixed}.  These correspond to codes used in the text/enriched file
+format.
+
+The @code{excerpts} face is intended for quotations.  This face is the
+same as @code{italic} unless you customize it (@pxref{Modifying Faces}).
+
+The @code{fixed} face is meant to say, ``Use a fixed-width font for this
+part of the text.''  Emacs currently supports only fixed-width fonts;
+therefore, the @code{fixed} annotation is not necessary now.  However,
+we plan to support variable width fonts in future Emacs versions, and
+other systems that display text/enriched format may not use a
+fixed-width font as the default.  So if you specifically want a certain
+part of the text to use a fixed-width font, you should specify the
+@code{fixed} face for that part.
+
+The @code{fixed} face is normally defined to use a different font from
+the default.  However, systems have different fonts installed; you may
+need to customize this.
+
+If you are not running Emacs under a window system, you will not be able
+to see the different faces, but you can still edit documents containing
+faces.  You can even add faces and colors to documents.  They will be
+visible when the file is viewed on a terminal that can display them.
+
+@node Format Colors
+@subsection Colors in Formatted Text
+
+You can specify foreground and background colors for portions of the
+text.  There is a menu for specifying the foreground color and a menu
+for specifying the background color.  Each color menu lists all the
+colors that you have used in Enriched mode in the current Emacs session.
+
+If you specify a color with a prefix argument---or, in Transient Mark
+mode, if the region is not active---then it applies to your next
+subsequent self-inserting input.  @xref{Transient Mark}.  Otherwise,
+the command applies to the region.
+
+Each color menu contains one additional item: @samp{Other}.  You can use
+this item to specify a color that is not listed in the menu; it reads
+the color name with the minibuffer.  To display a list of available colors
+and their names, use the @samp{Display Colors} menu item in the Text
+Properties menu (@pxref{Editing Format Info}).
+
+Any color that you specify in this way, or that is mentioned in a
+formatted text file that you read in, is added to both color menus for
+the duration of the Emacs session.
+
+@findex facemenu-set-foreground
+@findex facemenu-set-background
+There are no key bindings for specifying colors, but you can do so with
+the commands @kbd{M-x facemenu-set-foreground} and @kbd{M-x
+facemenu-set-background}.  Both of these commands read the name of the
+color with the minibuffer.
+
+@node Format Indentation
+@subsection Indentation in Formatted Text
+
+When editing formatted text, you can specify different amounts of
+indentation for the right or left margin of an entire paragraph or a
+part of a paragraph.  The margins you specify automatically affect the
+Emacs fill commands (@pxref{Filling}) and line-breaking commands.
+
+The Indentation submenu provides a convenient interface for specifying
+these properties.  The submenu contains four items:
+
+@table @samp
+@kindex C-x @key{TAB} @r{(Enriched mode)}
+@findex increase-left-margin
+@item Indent
+Indent the region by 4 columns (@code{increase-left-margin}).  In
+Enriched mode, this command is also available on @kbd{C-x @key{TAB}}; if
+you supply a numeric argument, that says how many columns to add to the
+margin (a negative argument reduces the number of columns).
+
+@item Unindent
+Remove 4 columns of indentation from the region.
+
+@item IndentRight
+Make the text narrower by indenting 4 columns at the right margin.
+
+@item UnindentRight
+Remove 4 columns of indentation from the right margin.
+@end table
+
+You can use these commands repeatedly to increase or decrease the
+indentation.
+
+The most common way to use these commands is to change the indentation
+of an entire paragraph.  However, that is not the only use.  You can
+change the margins at any point; the new values take effect at the end
+of the line (for right margins) or the beginning of the next line (for
+left margins).
+
+This makes it possible to format paragraphs with @dfn{hanging indents},
+which means that the first line is indented less than subsequent lines.
+To set up a hanging indent, increase the indentation of the region
+starting after the first word of the paragraph and running until the end
+of the paragraph.
+
+Indenting the first line of a paragraph is easier.  Set the margin for
+the whole paragraph where you want it to be for the body of the
+paragraph, then indent the first line by inserting extra spaces or tabs.
+
+Sometimes, as a result of editing, the filling of a paragraph becomes
+messed up---parts of the paragraph may extend past the left or right
+margins.  When this happens, use @kbd{M-q} (@code{fill-paragraph}) to
+refill the paragraph.
+
+@vindex standard-indent
+The variable @code{standard-indent} specifies how many columns these
+commands should add to or subtract from the indentation.  The default
+value is 4.
+
+@vindex enriched-default-right-margin
+Enriched mode automatically sets the variable @code{fill-column} based
+on the window width: it leaves a certain number of columns for the right
+margin.  The variable @code{enriched-default-right-margin} says how many
+columns.  The default value is 10.
+
+@node Format Justification
+@subsection Justification in Formatted Text
+            
+When editing formatted text, you can specify various styles of
+justification for a paragraph.  The style you specify automatically
+affects the Emacs fill commands.
+
+The Justification submenu provides a convenient interface for specifying
+the style.  The submenu contains five items:
+
+@table @code
+@item Flush Left
+This is the most common style of justification (at least for English).
+Lines are aligned at the left margin but left uneven at the right.
+
+@item Flush Right
+This aligns each line with the right margin.  Spaces and tabs are added
+on the left, if necessary, to make lines line up on the right.
+
+@item Full
+This justifies the text, aligning both edges of each line.  Justified
+text looks very nice in a printed book, where the spaces can all be
+adjusted equally, but it does not look as nice with a fixed-width font
+on the screen.  Perhaps a future version of Emacs will be able to adjust
+the width of spaces in a line to achieve elegant justification.
+
+@item Center
+This centers every line between the current margins.
+
+@item None
+This turns off filling entirely.  Each line will remain as you wrote it;
+the fill and auto-fill functions will have no effect on text which has
+this setting.  You can, however, still indent the left margin.  In
+unfilled regions, all newlines are treated as hard newlines (@pxref{Hard
+and Soft Newlines}) .
+@end table
+
+In Enriched mode, you can also specify justification from the keyboard
+using the @kbd{M-j} prefix character:
+
+@table @kbd
+@kindex M-j l @r{(Enriched mode)}
+@findex set-justification-left
+@item M-j l
+Make the region left-filled (@code{set-justification-left}).
+@kindex M-j r @r{(Enriched mode)}
+@findex set-justification-right
+@item M-j r
+Make the region right-filled (@code{set-justification-right}).
+@kindex M-j f @r{(Enriched mode)}
+@findex set-justification-full
+@item M-j f
+Make the region fully-justified (@code{set-justification-full}).
+@kindex M-j c @r{(Enriched mode)}
+@kindex M-S @r{(Enriched mode)}
+@findex set-justification-center
+@item M-j c
+@itemx M-S
+Make the region centered (@code{set-justification-center}).
+@kindex M-j u @r{(Enriched mode)}
+@findex set-justification-none
+@item M-j u
+Make the region unfilled (@code{set-justification-none}).
+@end table
+
+Justification styles apply to entire paragraphs.  All the
+justification-changing commands operate on the paragraph containing
+point, or, if the region is active, on all paragraphs which overlap the
+region.
+
+@vindex default-justification
+The default justification style is specified by the variable
+@code{default-justification}.  Its value should be one of the symbols
+@code{left}, @code{right}, @code{full}, @code{center}, or @code{none}.
+         
+@node Format Properties
+@subsection Setting Other Text Properties
+
+The Other Properties menu lets you add or remove three other useful text
+properties: @code{read-only}, @code{invisible} and @code{intangible}.
+The @code{intangible} property disallows moving point within the text,
+the @code{invisible} text property hides text from display, and the
+@code{read-only} property disallows alteration of the text.
+
+Each of these special properties has a menu item to add it to the
+region.  The last menu item, @samp{Remove Special}, removes all of these
+special properties from the text in the region.
+
+Currently, the @code{invisible} and @code{intangible} properties are
+@emph{not} saved in the text/enriched format.  The @code{read-only}
+property is saved, but it is not a standard part of the text/enriched
+format, so other editors may not respect it.
+
+@node Forcing Enriched Mode
+@subsection Forcing Enriched Mode
+
+Normally, Emacs knows when you are editing formatted text because it
+recognizes the special annotations used in the file that you visited.
+However, there are situations in which you must take special actions
+to convert file contents or turn on Enriched mode:
+
+@itemize @bullet
+@item
+When you visit a file that was created with some other editor, Emacs may
+not always recognize the file as being in the text/enriched format.  In
+this case, when you visit the file you will see the formatting commands
+rather than the formatted text.  Type @kbd{M-x format-decode-buffer} to
+translate it.
+
+@item
+When you @emph{insert} a file into a buffer, rather than visiting it.
+Emacs does the necessary conversions on the text which you insert, but
+it does not enable Enriched mode.  If you wish to do that, type @kbd{M-x
+enriched-mode}.
+@end itemize 
+
+The command @code{format-decode-buffer} translates text in various
+formats into Emacs's internal format.  It asks you to specify the format
+to translate from; however, normally you can type just @key{RET}, which
+tells Emacs to guess the format.

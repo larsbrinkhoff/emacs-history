@@ -1,8 +1,25 @@
 ;;; loadhist.el --- lisp functions for working with feature groups
+;;; Copyright (C) 1995 Free Software Foundation, Inc.
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Version: 1.0
 ;; Keywords: internal
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -71,7 +88,8 @@ a buffer with no associated file, or an eval-region, return nil."
     ))
 
 (defun file-dependents (file)
-  ;; Return the list of loaded libraries that depend on FILE.
+  "Return the list of loaded libraries that depend on FILE.
+This can include FILE itself."
   (let ((provides (file-provides file)) (dependents nil))
     (mapcar
      (function (lambda (x) 
@@ -90,7 +108,8 @@ is nil, raise an error."
   (if (not (featurep feature))
       (error "%s is not a currently loaded feature." (symbol-name feature)))
   (if (not force)
-      (let* ((file (feature-file feature)) (dependents (file-dependents file)))
+      (let* ((file (feature-file feature))
+	     (dependents (delete file (copy-sequence (file-dependents file)))))
 	(if dependents
 	    (error "Loaded libraries %s depend on %s."
 		   (prin1-to-string dependents) file)
@@ -99,7 +118,10 @@ is nil, raise an error."
     (mapcar
      (function (lambda (x) 
 		 (cond ((stringp x) nil)
-		       ((consp x) nil)
+		       ((consp x)
+			;; Remove any feature names that this file provided.
+			(if (eq (car x) 'provide)
+			    (setq features (delq (cdr x) features))))
 		       ((boundp x) (makunbound x))
 		       ((fboundp x)
 			(fmakunbound x)

@@ -1,3 +1,19 @@
+Mon Jun 19 22:50:41 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.29 released.
+
+Tue Feb  7 18:50:09 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* Makefile.in (maintainer-clean): Renamed from realclean.
+
+Tue Oct 25 18:49:26 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (ALL_CFLAGS): Reorder the switches more rationally.
+
+Mon Oct 24 14:39:54 1994  Jim Wilson  (wilson@chestnut.cygnus.com)
+
+	* Makefile.in (ALL_CFLAGS): Add C_SWITCH_X_MACHINE.
+
 Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.27 released.

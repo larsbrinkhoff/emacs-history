@@ -60,6 +60,7 @@ insertion commands first delete the region and then insert.")
 (add-hook 'pre-command-hook 'delete-selection-pre-hook)
 
 (put 'self-insert-command 'delete-selection t)
+(put 'self-insert-iso 'delete-selection t)
 
 (put 'yank 'delete-selection t)
 (put 'insert-register 'delete-selection t)
@@ -83,7 +84,7 @@ When OFF, typed text is just inserted at point."
   (setq delete-selection-mode
 	(if (null arg) (not delete-selection-mode)
 	  (> (prefix-numeric-value arg) 0)))
-  (set-buffer-modified-p (buffer-modified-p))) ;No-op, but updates mode line.
+  (force-mode-line-update))
 
 ;; This is very useful for cancelling a selection in the minibuffer without 
 ;; aborting the minibuffer.

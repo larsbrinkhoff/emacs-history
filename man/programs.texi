@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Programs, Building, Text, Top
 @chapter Editing Programs
@@ -471,7 +471,7 @@ whose names start with @code{def} always indent the second line by
 starting the expression.
 
   The standard pattern can be overridden in various ways for individual
-functions, according to the @code{lisp-indent-hook} property of the
+functions, according to the @code{lisp-indent-function} property of the
 function name.  There are four possibilities for this property:
 
 @table @asis
@@ -676,6 +676,7 @@ switch (c)
   case 'x':
 @end example
 
+@need 3000
 @noindent
 If @code{c-label-offset} were zero, the same code would be indented as
 
@@ -718,14 +719,17 @@ correct matches are specified in the syntax table.
 
 @vindex blink-matching-paren
 @vindex blink-matching-paren-distance
-  Two variables control parenthesis match display.  @code{blink-matching-paren}
-turns the feature on or off; @code{nil} turns it off, but the default is
-@code{t} to turn match display on.  @code{blink-matching-paren-distance}
-specifies how many characters back to search to find the matching opening
-delimiter.  If the match is not found in that far, scanning stops, and
-nothing is displayed.  This is to prevent scanning for the matching
-delimiter from wasting lots of time when there is no match.  The default
-is 12,000.
+@vindex blink-matching-delay
+  Three variables control parenthesis match display.
+@code{blink-matching-paren} turns the feature on or off; @code{nil}
+turns it off, but the default is @code{t} to turn match display on.
+@code{blink-matching-delay} says how many seconds to wait; the default
+is 1, but on some systems it is useful to specify a fraction of a
+second.  @code{blink-matching-paren-distance} specifies how many
+characters back to search to find the matching opening delimiter.  If
+the match is not found in that far, scanning stops, and nothing is
+displayed.  This is to prevent scanning for the matching delimiter from
+wasting lots of time when there is no match.  The default is 12,000.
 
 @cindex @code{paren} library
   When using X Windows, you can request a more powerful kind of
@@ -991,7 +995,7 @@ open-parenthesis immediately before the beginning of the partial symbol,
 only symbols with function definitions are considered as completions.
 The command which implements this is @code{lisp-complete-symbol}.
 
-  In text mode and related modes, @kbd{M-@key{TAB}} completes words
+  In Text mode and related modes, @kbd{M-@key{TAB}} completes words
 based on the spell-checker's dictionary.  @xref{Spelling}.
 
 @node Documentation
@@ -1017,6 +1021,17 @@ manual page, by running the @code{man} program.  The result goes in a
 buffer named @samp{*man @var{topic}*}.  These buffers use a special
 major mode, Man mode, that facilitates scrolling and examining other
 manual pages.  For details, type @kbd{C-h m} while in a man page buffer.
+
+@vindex Man-fontify-manpage-flag
+  For a long man page, setting the faces properly can take substantial
+time.  By default, Emacs uses faces in man pages if you are using X
+Windows.  You can turn off use of faces in man pages by setting the
+variable @code{Man-fontify-manpage-flag} to @code{nil}.
+
+@findex Man-fontify-manpage
+  If you insert the text of a man page into an Emacs buffer in some
+other fashion, you can use the command @kbd{M-x Man-fontify-manpage} to
+perform the same conversions that @kbd{M-x manual-entry} does.
 
   Eventually the GNU project hopes to replace most man pages with
 better-organized manuals that you can browse with Info.  @xref{Misc
@@ -1085,6 +1100,9 @@ entry is considered a page.  This facilitates editing the entries.
 @key{LFD} and auto-fill indent each new line like the previous line;
 this is convenient for entering the contents of an entry.
 
+  Version control systems are another way keep track of changes in your
+program and keep a change log.  @xref{Log Entries}.
+
 @node Tags
 @section Tags Tables
 @cindex tags table
@@ -1136,9 +1154,11 @@ construct whose name starts with @samp{def}.  They also include variables
 set with @code{set!} at top level in the file.
 
 @item
-In C code, any C function or macro is a tag, and so is any typedef if
-@code{-t} is specified when the tags table is constructed.  In C++ code,
-member functions are also recognized.
+In C code, any C function or typedef is a tag, and so are definitions of
+struct, union and enum.  Any @code{#define} is also a tag, unless
+@samp{--no-defines} is specified when the tags table is constructed,
+which sometimes makes the tags file much smaller.  In C++ code, member
+functions are also recognized.
 
 @item
 In Yacc or Bison input files, each rule defines as a tag the
@@ -1164,6 +1184,10 @@ In La@TeX{} text, the argument of any of the commands @code{\chapter},
 @code{\section}, @code{\subsection}, @code{\subsubsection}, @code{\eqno},
 @code{\label}, @code{\ref}, @code{\cite}, @code{\bibitem} and
 @code{\typeout} is a tag.@refill
+
+@item
+You can also generate tags based on regexp matching
+(@pxref{Create Tags Table}) for any text file.
 @end itemize
 
 @node Create Tags Table
@@ -1188,7 +1212,8 @@ etags @var{inputfiles}@dots{}
 The @code{etags} program reads the specified files, and writes a tags table
 named @file{TAGS} in the current working directory.  @code{etags}
 recognizes the language used in an input file based on its file name and
-contents; there are no switches for specifying the language.
+contents.  You can specify the language with the
+@samp{--language=@var{name}} option, described below.
 
   If the tags table data become outdated due to changes in the files
 described in the table, the way to update the tags table is the same way it
@@ -1208,12 +1233,116 @@ or when changes become substantial.  Normally there is no need to update
 the tags table after each edit, or even every day.
 
   One tags table can effectively include another.  Specify the included
-tags file name with the @samp{-include=@var{file}} option when creating
+tags file name with the @samp{--include=@var{file}} option when creating
 the file that is to include it.  The latter file then acts as if it
 contained all the files specified in the included file, as well as the
 files it directly contains.
 
-  For a list of available @code{etags} options, type @samp{etags --help}.
+  When you want to make a tags table from a great number of files, you
+may have problems listing them on the command line, because some systems
+have a limit on its length.  The simplest way to circumvent this limit
+is to tell @code{etags} to read the file names from its standard input,
+by typing a dash in place of the file names, like this:
+
+@example
+find . -name "*.[chCH]" -print | etags -
+@end example
+
+  Use the option @samp{--language=@var{name}} to specify the language
+explicitly.  You can intermix these options with file names; each one
+applies to the file names that follow it.  Specify
+@samp{--language=auto} to tell @code{etags} to resume guessing the
+language from the file names and file contents.  Specify
+@samp{--language=none} to turn off language-specific processing
+entirely; then @code{etags} recognizes tags by regexp matching alone.
+@samp{etags --help} prints the list of the languages @code{etags} knows,
+and the file name rules for guessing the language.
+
+  The @samp{--regex} option provides a general way of recognizing tags
+based on regexp matching.  You can freely intermix it with file names.
+Each @samp{--regex} option adds to the preceding ones, and applies only
+to the following files.  The syntax is:
+
+@example
+--regex=/@var{tagregexp}[/@var{nameregexp}]/
+@end example
+
+@noindent
+where @var{tagregexp} is used to match the lines to tag.  It is always
+anchored, that is, it behaves as if preceded by @samp{^}.  If you want
+to account for indentation, just match any initial number of blanks by
+beginning your regular expression with @samp{[ \t]*}.  In the regular
+expressions, @samp{\} quotes the next character, and @samp{\t} stands
+for the tab character.  Note that @code{etags} does not handle the
+other C escape sequences for special characters.
+
+  You should not match more characters with @var{tagregexp} than that
+needed to recognize what you want to tag.  If the match is such that
+more characters than needed are unavoidably matched by @var{tagregexp},
+you may find useful to add a @var{nameregexp}, in order to narrow the tag
+scope.  You can find some examples below.
+
+  The @samp{-R} option deletes all the regexps defined with
+@samp{--regex} options.  It applies to the file names following it, as
+you can see from the following example:
+
+@example
+etags --regex=/@var{reg1}/ voo.doo --regex=/@var{reg2}/ \
+    bar.ber -R --lang=lisp los.er
+@end example
+
+@noindent
+Here @code{etags} chooses the parsing language for @file{voo.doo} and
+@file{bar.ber} according to their contents.  @code{etags} also uses
+@var{reg1} to recognize additional tags in @file{voo.doo}, and both
+@var{reg1} and @var{reg2} to recognize additional tags in
+@file{bar.ber}.  @code{etags} uses the Lisp tags rules, and no regexp
+matching, to recognize tags in @file{los.er}.
+
+  Here are some more examples.  The regexps are quoted to protect them
+from shell interpretation.
+
+@noindent
+Tag the @code{DEFVAR} macros in the emacs source files:
+
+@example
+--regex='/[ \t]*DEFVAR_[A-Z_ \t(]+"\([^"]+\)"/'
+@end example
+
+@noindent
+Tag VHDL files (this example is a single long line, broken here for
+formatting reasons):
+
+@example
+--language=none
+--regex='/[ \t]*\(ARCHITECTURE\|CONFIGURATION\) +[^ ]* +OF/'
+--regex='/[ \t]*\(ATTRIBUTE\|ENTITY\|FUNCTION\|PACKAGE\
+\( BODY\)?\|PROCEDURE\|PROCESS\|TYPE\)[ \t]+\([^ \t(]+\)/\3/'
+@end example
+
+@noindent
+Tag Cobol files (every label starting in column seven):
+
+@example
+--language=none --regex='/.......[a-zA-Z0-9-]+\./'
+@end example
+
+@noindent
+Tag Postscript files (every label starting in column one):
+
+@example
+--language=none --regex='#/[^ \t@{]+#/'
+@end example
+
+@noindent
+Tag TCL files (this last example shows the usage of a @var{nameregexp}):
+
+@example
+--lang=none --regex='/proc[ \t]+\([^ \t]+\)/\1/'
+@end example
+
+  For a list of the other available @code{etags} options, execute
+@code{etags --help}.
 
 @node Select Tags Table
 @subsection Selecting a Tags Table
@@ -1383,7 +1512,7 @@ subsequently by typing @kbd{M-,}; this command resumes the last tags
 search or replace command that you did.
 
   The commands in this section carry out much broader searches than the
-@code{find-tags} family.  The @code{find-tags} commands search only for
+@code{find-tag} family.  The @code{find-tag} commands search only for
 definitions of tags that match your substring or regexp.  The commands
 @code{tags-search} and @code{tags-query-replace} find every occurrence
 of the regexp, as ordinary search commands and replace commands do in
@@ -1429,14 +1558,15 @@ Display a list of all tags matching @var{regexp}.
 @end table
 
 @findex list-tags
-  @kbd{M-x list-tags} reads the name of one of the files described by the
-selected tags table, and displays a list of all the tags defined in that
-file.  The ``file name'' argument is really just a string to compare
-against the names recorded in the tags table; it is read as a string rather
-than as a file name.  Therefore, completion and defaulting are not
-available, and you must enter the string the same way it appears in the tags
-table.  Do not include a directory as part of the file name unless the file
-name recorded in the tags table includes a directory.
+  @kbd{M-x list-tags} reads the name of one of the files described by
+the selected tags table, and displays a list of all the tags defined in
+that file.  The ``file name'' argument is really just a string to
+compare against the file names recorded in the tags table; it is read as
+a string rather than as a file name.  Therefore, completion and
+defaulting are not available, and you must enter the file name the same
+way it appears in the tags table.  Do not include a directory as part of
+the file name unless the file name recorded in the tags table includes a
+directory.
 
 @findex tags-apropos
   @kbd{M-x tags-apropos} is like @code{apropos} for tags
@@ -1903,6 +2033,16 @@ editing a C macro definition.
 
 If a line already ends in @samp{\}, this command adjusts the amount of
 whitespace before it.  Otherwise, it inserts a new @samp{\}.
+
+@item M-x cpp-highlight-buffer
+@cindex preprocessor highlighting
+@findex cpp-highlight-buffer
+Highlight parts of the text according to its preprocessor conditionals.
+This command displays another buffer named @samp{*CPP Edit*}, which
+serves as a graphic menu for selecting how to display particular kinds
+of conditionals and their contents.  After changing various settings,
+click on @samp{[A]pply these settings} (or go to that buffer and type
+@kbd{a}) to rehighlight the C mode buffer accordingly.
 @end table
 
 @findex fill-c++-comment
@@ -1924,7 +2064,7 @@ don't need to put comment delimiters on each line.)  @xref{Comments}.
   Fortran mode provides special motion commands for Fortran statements and
 subprograms, and indentation commands that understand Fortran conventions
 of nesting, line numbers and continuation statements.  Fortran mode has
-it's own Auto Fill mode that breaks long lines into proper Fortran
+its own Auto Fill mode that breaks long lines into proper Fortran
 continuation lines.
 
   Special commands for comments are provided because Fortran comments
@@ -1943,10 +2083,6 @@ runs the hook @code{fortran-mode-hook} (@pxref{Hooks}).
 * Columns: Fortran Columns.	 Measuring columns for valid Fortran.
 * Abbrev: Fortran Abbrev.	 Built-in abbrevs for Fortran keywords.
 @end menu
-
-  Fortran mode was contributed by Michael Prange.  It has been updated by
-Stephen A. Wood who has collated the contributions and suggestions of many
-users.
 
 @node Fortran Motion
 @subsection Motion Commands

@@ -31,34 +31,105 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  Then comes the documentation for that function or variable.
  */
 
+#define NO_SHORTNAMES   /* Tell config not to load remap.h */
+#include <../src/config.h>
+
 #include <stdio.h>
 #ifdef MSDOS
 #include <fcntl.h>
 #endif /* MSDOS */
+#ifdef WINDOWSNT
+#include <stdlib.h>
+#include <fcntl.h>
+#include <direct.h>
+#endif /* WINDOWSNT */
 
-#ifdef MSDOS
+#ifdef DOS_NT
 #define READ_TEXT "rt"
 #define READ_BINARY "rb"
-#else /* not MSDOS */
+#else  /* not DOS_NT */
 #define READ_TEXT "r"
 #define READ_BINARY "r"
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
 
+int scan_file ();
+int scan_lisp_file ();
+int scan_c_file ();
+
+#ifdef MSDOS
+/* s/msdos.h defines this as sys_chdir, but we're not linking with the
+   file where that function is defined.  */
+#undef chdir
+#endif
+
+/* Stdio stream for output to the DOC file.  */
 FILE *outfile;
 
+/* Name this program was invoked with.  */
+char *progname;
+
+/* Print error message.  `s1' is printf control string, `s2' is arg for it. */
+
+/* VARARGS1 */
+void
+error (s1, s2)
+     char *s1, *s2;
+{
+  fprintf (stderr, "%s: ", progname);
+  fprintf (stderr, s1, s2);
+  fprintf (stderr, "\n");
+}
+
+/* Print error message and exit.  */
+
+/* VARARGS1 */
+void
+fatal (s1, s2)
+     char *s1, *s2;
+{
+  error (s1, s2);
+  exit (1);
+}
+
+/* Like malloc but get fatal error if memory is exhausted.  */
+
+long *
+xmalloc (size)
+     unsigned int size;
+{
+  long *result = (long *) malloc (size);
+  if (result == NULL)
+    fatal ("virtual memory exhausted", 0);
+  return result;
+}
+
+int
 main (argc, argv)
      int argc;
      char **argv;
 {
   int i;
   int err_count = 0;
+  int first_infile;
 
+  progname = argv[0];
+
+  outfile = stdout;
+
+  /* Don't put CRs in the DOC file.  */
 #ifdef MSDOS
-  _fmode = O_BINARY;	/* all of files are treated as binary files */
+  _fmode = O_BINARY;
+#if 0  /* Suspicion is that this causes hanging.
+	  So instead we require people to use -o on MSDOS.  */
   (stdout)->_flag &= ~_IOTEXT;
   _setmode (fileno (stdout), O_BINARY);
+#endif
+  outfile = 0;
 #endif /* MSDOS */
-  outfile = stdout;
+#ifdef WINDOWSNT
+  _fmode = O_BINARY;
+  _setmode (fileno (stdout), O_BINARY);
+#endif /* WINDOWSNT */
 
   /* If first two args are -o FILE, output to FILE.  */
   i = 1;
@@ -78,16 +149,30 @@ main (argc, argv)
       i += 2;
     }
 
+  if (outfile == 0)
+    fatal ("No output file specified", "");
+
+  first_infile = i;
   for (; i < argc; i++)
-    err_count += scan_file (argv[i]);	/* err_count seems to be {mis,un}used */
+    {
+      int j;
+      /* Don't process one file twice.  */
+      for (j = first_infile; j < i; j++)
+	if (! strcmp (argv[i], argv[j]))
+	  break;
+      if (j == i)
+	err_count += scan_file (argv[i]);
+    }
 #ifndef VMS
-  exit (err_count);			/* see below - shane */
+  exit (err_count > 0);
 #endif /* VMS */
+  return err_count > 0;
 }
 
 /* Read file FILENAME and output its doc strings to outfile.  */
 /* Return 1 if file is not found, 0 if it is found.  */
 
+int
 scan_file (filename)
      char *filename;
 {
@@ -109,6 +194,7 @@ char buf[128];
  Convert escape sequences \n and \t to newline and tab;
  discard \ followed by newline.  */
 
+int
 read_c_string (infile, printflag)
      FILE *infile;
      int printflag;
@@ -156,6 +242,7 @@ read_c_string (infile, printflag)
 /* Write to file OUT the argument names of function FUNC, whose text is in BUF.
    MINARGS and MAXARGS are the minimum and maximum number of arguments.  */
 
+void
 write_c_args (out, func, buf, minargs, maxargs)
      FILE *out;
      char *func, *buf;
@@ -240,6 +327,7 @@ write_c_args (out, func, buf, minargs, maxargs)
    Looks for DEFUN constructs such as are defined in ../src/lisp.h.
    Accepts any word starting DEF... so it finds DEFSIMPLE and DEFPRED.  */
 
+int
 scan_c_file (filename, mode)
      char *filename, *mode;
 {
@@ -250,8 +338,9 @@ scan_c_file (filename, mode)
   register int defvarperbufferflag;
   register int defvarflag;
   int minargs, maxargs;
+  int extension = filename[strlen (filename) - 1];
 
-  if (filename[strlen (filename) - 1] == 'o')
+  if (extension == 'o')
     filename[strlen (filename) - 1] = 'c';
 
   infile = fopen (filename, mode);
@@ -262,6 +351,9 @@ scan_c_file (filename, mode)
       perror (filename);
       return 0;
     }
+
+  /* Reset extension to be able to detect duplicate files. */
+  filename[strlen (filename) - 1] = extension;
 
   c = '\n';
   while (!feof (infile))
@@ -432,6 +524,11 @@ scan_c_file (filename, mode)
   (defalias (quote NAME) #[... DOCSTRING ...])
  starting in column zero.
  (quote NAME) may appear as 'NAME as well.
+
+ We also look for #@LENGTH CONTENTS^_ at the beginning of the line.
+ When we find that, we save it for the following defining-form,
+ and we use that instead of reading a doc string within that defining-form.
+
  For defun, defmacro, and autoload, we know how to skip over the arglist.
  For defvar, defconst, and fset we skip to the docstring with a kludgy 
  formatting convention: all docstrings must appear on the same line as the
@@ -486,12 +583,13 @@ read_lisp_symbol (infile, buffer)
   skip_white (infile);
 }
 
-
+int
 scan_lisp_file (filename, mode)
      char *filename, *mode;
 {
   FILE *infile;
   register int c;
+  char *saved_string = 0;
 
   infile = fopen (filename, mode);
   if (infile == NULL)
@@ -503,8 +601,7 @@ scan_lisp_file (filename, mode)
   c = '\n';
   while (!feof (infile))
     {
-      char buffer [BUFSIZ];
-      char *fillp = buffer;
+      char buffer[BUFSIZ];
       char type;
 
       if (c != '\n')
@@ -513,6 +610,46 @@ scan_lisp_file (filename, mode)
 	  continue;
 	}
       c = getc (infile);
+      /* Detect a dynamic doc string and save it for the next expression.  */
+      if (c == '#')
+	{
+	  c = getc (infile);
+	  if (c == '@')
+	    {
+	      int length = 0;
+	      int i;
+
+	      /* Read the length.  */
+	      while ((c = getc (infile),
+		      c >= '0' && c <= '9'))
+		{
+		  length *= 10;
+		  length += c - '0';
+		}
+
+	      /* The next character is a space that is counted in the length
+		 but not part of the doc string.
+		 We already read it, so just ignore it.  */
+	      length--;
+
+	      /* Read in the contents.  */
+	      if (saved_string != 0)
+		free (saved_string);
+	      saved_string = (char *) malloc (length);
+	      for (i = 0; i < length; i++)
+		saved_string[i] = getc (infile);
+	      /* The last character is a ^_.
+		 That is needed in the .elc file
+		 but it is redundant in DOC.  So get rid of it here.  */
+	      saved_string[length - 1] = 0;
+	      /* Skip the newline.  */
+	      c = getc (infile);
+	      while (c != '\n')
+		c = getc (infile);
+	    }
+	  continue;
+	}
+
       if (c != '(')
 	continue;
 
@@ -570,23 +707,27 @@ scan_lisp_file (filename, mode)
 	  type = 'V';
 	  read_lisp_symbol (infile, buffer);
 
-	  /* Skip until the first newline; remember the two previous chars. */
-	  while (c != '\n' && c >= 0)
+	  if (saved_string == 0)
 	    {
-	      c2 = c1;
-	      c1 = c;
-	      c = getc (infile);
-	    }
+
+	      /* Skip until the first newline; remember the two previous chars. */
+	      while (c != '\n' && c >= 0)
+		{
+		  c2 = c1;
+		  c1 = c;
+		  c = getc (infile);
+		}
 	  
-	  /* If two previous characters were " and \,
-	     this is a doc string.  Otherwise, there is none.  */
-	  if (c2 != '"' || c1 != '\\')
-	    {
+	      /* If two previous characters were " and \,
+		 this is a doc string.  Otherwise, there is none.  */
+	      if (c2 != '"' || c1 != '\\')
+		{
 #ifdef DEBUG
-	      fprintf (stderr, "## non-docstring in %s (%s)\n",
-		       buffer, filename);
+		  fprintf (stderr, "## non-docstring in %s (%s)\n",
+			   buffer, filename);
 #endif
-	      continue;
+		  continue;
+		}
 	    }
 	}
 
@@ -624,23 +765,26 @@ scan_lisp_file (filename, mode)
 		}
 	    }
 
-	  /* Skip until the first newline; remember the two previous chars. */
-	  while (c != '\n' && c >= 0)
+	  if (saved_string == 0)
 	    {
-	      c2 = c1;
-	      c1 = c;
-	      c = getc (infile);
-	    }
+	      /* Skip until the first newline; remember the two previous chars. */
+	      while (c != '\n' && c >= 0)
+		{
+		  c2 = c1;
+		  c1 = c;
+		  c = getc (infile);
+		}
 	  
-	  /* If two previous characters were " and \,
-	     this is a doc string.  Otherwise, there is none.  */
-	  if (c2 != '"' || c1 != '\\')
-	    {
+	      /* If two previous characters were " and \,
+		 this is a doc string.  Otherwise, there is none.  */
+	      if (c2 != '"' || c1 != '\\')
+		{
 #ifdef DEBUG
-	      fprintf (stderr, "## non-docstring in %s (%s)\n",
-		       buffer, filename);
+		  fprintf (stderr, "## non-docstring in %s (%s)\n",
+			   buffer, filename);
 #endif
-	      continue;
+		  continue;
+		}
 	    }
 	}
 
@@ -685,18 +829,20 @@ scan_lisp_file (filename, mode)
 	  read_c_string (infile, 0);
 	  skip_white (infile);
 
-	  /* If the next three characters aren't `dquote bslash newline'
-	     then we're not reading a docstring.
-	   */
-	  if ((c = getc (infile)) != '"' ||
-	      (c = getc (infile)) != '\\' ||
-	      (c = getc (infile)) != '\n')
+	  if (saved_string == 0)
 	    {
+	      /* If the next three characters aren't `dquote bslash newline'
+		 then we're not reading a docstring.  */
+	      if ((c = getc (infile)) != '"' ||
+		  (c = getc (infile)) != '\\' ||
+		  (c = getc (infile)) != '\n')
+		{
 #ifdef DEBUG
-	      fprintf (stderr, "## non-docstring in %s (%s)\n",
-		       buffer, filename);
+		  fprintf (stderr, "## non-docstring in %s (%s)\n",
+			   buffer, filename);
 #endif
-	      continue;
+		  continue;
+		}
 	    }
 	}
 
@@ -715,14 +861,25 @@ scan_lisp_file (filename, mode)
 	  continue;
 	}
 
-      /* At this point, there is a docstring that we should gobble.
-	 The opening quote (and leading backslash-newline) have already
-	 been read.
-       */
+      /* At this point, we should either use the previous
+	 dynamic doc string in saved_string
+	 or gobble a doc string from the input file.
+
+	 In the latter case, the opening quote (and leading
+	 backslash-newline) have already been read.  */
+
       putc (037, outfile);
       putc (type, outfile);
       fprintf (outfile, "%s\n", buffer);
-      read_c_string (infile, 1);
+      if (saved_string)
+	{
+	  fputs (saved_string, outfile);
+	  /* Don't use one dynamic doc string twice.  */
+	  free (saved_string);
+	  saved_string = 0;
+	}
+      else
+	read_c_string (infile, 1);
     }
   fclose (infile);
   return 0;

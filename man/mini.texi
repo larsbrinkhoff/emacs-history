@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Minibuffer, M-x, Basic, Top
 @chapter The Minibuffer
@@ -258,19 +258,39 @@ completion is available runs the command
 window that displays a list of completions:
 
 @table @kbd
-@kindex Mouse-2
 @findex mouse-choose-completion
 @item Mouse-2
 Clicking mouse button 2 on a completion in the list of possible
 completions chooses that completion (@code{mouse-choose-completion}).
-You use this command while you are in the minibuffer; but you must click
-in the list of completions, not in the minibuffer itself.
+You normally use this command while point is in the minibuffer; but you
+must click in the list of completions, not in the minibuffer itself.
+
+@findex switch-to-completions
+@item @key{PRIOR}
+@itemx M-v
+Typing @key{PRIOR} or @key{PAGE-UP}, or @kbd{M-v}, while in the
+minibuffer, selects the window showing the completion list buffer
+(@code{switch-to-completions}).  This paves the way for using the
+commands below.  (Selecting that window in the usual ways has the same
+effect, but this way is more convenient.)
+
 @findex choose-completion
 @item @key{RET}
 Typing @key{RET} @emph{in the completion list buffer} chooses the
 completion that point is in or next to (@code{choose-completion}).  To
 use this command, you must first switch windows to the window that shows
 the list of completions.
+
+@findex next-completion
+@item @key{RIGHT}
+Typing the right-arrow key @key{RIGHT} @emph{in the completion list
+buffer} moves point to the following completion (@code{next-completion}).
+
+@findex previous-completion
+@item @key{LEFT}
+Typing the left-arrow key @key{LEFT} @emph{in the completion list
+buffer} moves point toward the beginning of the buffer, to the previous
+completion (@code{previous-completion}).
 @end table
 
 @node Strict Completion
@@ -343,11 +363,11 @@ whose initials are @samp{p} and @samp{b}.  To use this library, put
 @code{(load "complete")} in your @file{~/.emacs} file (@pxref{Init
 File}).
 
-@pindex icomplete
-  The @code{icomplete} library does not change what completion does, but
-it presents a constantly updated display that tells you what completions
-are available.  To use this library, put @code{(load "icomplete")} in
-your @file{~/.emacs} file.
+@cindex Icomplete mode
+  Icomplete mode presents a constantly-updated display that tells you
+what completions are available for the text you've entered so far.  The
+command to enable or disable this minor mode is @kbd{M-x
+icomplete-mode}.
 
 @node Minibuffer History
 @section Minibuffer History

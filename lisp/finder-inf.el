@@ -333,9 +333,6 @@
     ("gomoku.el"
         "Gomoku game between you and Emacs"
         (games))
-    ("gosmacs.el"
-        "rebindings to imitate Gosmacs."
-        (emulations))
     ("gud.el"
         "Grand Unified Debugger mode for gdb, sdb, dbx, or xdb"
         (unix  tools))

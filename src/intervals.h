@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -36,9 +36,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* True if an interval pointer is null, or is a Lisp_Buffer or
    Lisp_String pointer (meaning it points to the owner of this
    interval tree). */
-#define NULL_INTERVAL_P(i) ((i) == NULL_INTERVAL                       \
-			    || XTYPE ((Lisp_Object)(i)) == Lisp_Buffer \
-			    || XTYPE ((Lisp_Object)(i)) == Lisp_String)
+#define NULL_INTERVAL_P(i) ((i) == NULL_INTERVAL           \
+			    || BUFFERP ((Lisp_Object)(i)) \
+			    || STRINGP ((Lisp_Object)(i)))
 
 /* True if this interval has no right child. */
 #define NULL_RIGHT_CHILD(i) ((i)->right == NULL_INTERVAL)
@@ -80,9 +80,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 					       - TOTAL_LENGTH ((i)->right) \
 					       - TOTAL_LENGTH ((i)->left)))
 
-/* The absolute index of the last character belonging to I.  Note that
+/* The position of the character just past the end of I.  Note that
    the position cache i->position must be valid for this to work. */
-#define INTERVAL_LAST_POS(i) ((i)->position + LENGTH ((i)) - 1)
+#define INTERVAL_LAST_POS(i) ((i)->position + LENGTH ((i)))
 
 /* The total size of the left subtree of this interval. */
 #define LEFT_TOTAL_LENGTH(i) ((i)->left ? (i)->left->total_length : 0)
@@ -160,13 +160,28 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
   (! NULL_INTERVAL_P (i) && ! NILP (textget ((i)->plist, Qrear_nonsticky)))
 
 
+/* If PROP is the `invisible' property of a character,
+   this is 1 if the character should be treated as invisible.  */
+
+#define TEXT_PROP_MEANS_INVISIBLE(prop)				\
+  (EQ (current_buffer->invisibility_spec, Qt)			\
+   ? ! NILP (prop)						\
+   : invisible_p (prop, current_buffer->invisibility_spec))
+
+/* If PROP is the `invisible' property of a character,
+   this is 1 if the character should be treated as invisible
+   and should have an ellipsis.  */
+
+#define TEXT_PROP_MEANS_INVISIBLE_WITH_ELLIPSIS(prop)		\
+  (EQ (current_buffer->invisibility_spec, Qt)			\
+   ? 0								\
+   : invisible_ellipsis_p (prop, current_buffer->invisibility_spec))
+
 /* Declared in alloc.c */
 
 extern INTERVAL make_interval ();
 
 /* Declared in intervals.c */
-
-extern Lisp_Object interval_balance_threshold;
 
 extern INTERVAL create_root_interval ();
 extern void copy_properties ();
@@ -186,7 +201,6 @@ extern INTERVAL balance_intervals ();
 extern INLINE void copy_intervals_to_string ();
 extern INTERVAL copy_intervals ();
 extern Lisp_Object textget ();
-extern Lisp_Object textget_direct ();
 extern Lisp_Object get_local_map ();
 
 /* Declared in textprop.c */
@@ -205,10 +219,12 @@ extern Lisp_Object Qforeground, Qbackground, Qfont, Qunderline, Qstipple;
 extern Lisp_Object Qinvisible, Qintangible, Qread_only;
 
 extern Lisp_Object Vinhibit_point_motion_hooks;
+extern Lisp_Object Vdefault_text_properties;
 
 /* Sticky properties */
 extern Lisp_Object Qfront_sticky, Qrear_nonsticky;
 
+extern Lisp_Object Fget_char_property (), Fget_text_property ();
 extern Lisp_Object Ftext_properties_at ();
 extern Lisp_Object Fnext_property_change (), Fprevious_property_change ();
 extern Lisp_Object Fadd_text_properties (), Fset_text_properties ();

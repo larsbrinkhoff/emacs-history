@@ -27,7 +27,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "frame.h"
 
 #include "dispextern.h"
-
+#include "blockinput.h"
 
 #include <X11/StringDefs.h>
 #include <X11/IntrinsicP.h>
@@ -36,6 +36,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <X11/ObjectP.h>
 #include <X11/Shell.h>
 #include <X11/ShellP.h>
+#include "../lwlib/lwlib.h"
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -305,10 +306,10 @@ set_frame_size (ew)
   int flags = 0;
   
   Widget wmshell = get_wm_shell ((Widget) ew);
-  Widget app_shell = XtParent ((Widget) wmshell);
+  /* Each Emacs shell is now independent and top-level.  */
+  Widget app_shell = wmshell;
   
   if (! XtIsSubclass (wmshell, shellWidgetClass)) abort ();
-  if (! XtIsSubclass (app_shell, shellWidgetClass)) abort ();
 
   /* We don't need this for the momment. The geometry is computed in 
      xfns.c.  */
@@ -423,10 +424,12 @@ set_frame_size (ew)
 
     /* Take into account the size of the scrollbar */
     frame->display.x->vertical_scroll_bar_extra
-      = (FRAME_HAS_VERTICAL_SCROLL_BARS (frame)
-	 ? VERTICAL_SCROLL_BAR_PIXEL_WIDTH (frame)
-	 : 0);
-
+      = (!FRAME_HAS_VERTICAL_SCROLL_BARS (frame)
+	 ? 0
+	 : FRAME_SCROLL_BAR_PIXEL_WIDTH (frame) > 0
+	 ? FRAME_SCROLL_BAR_PIXEL_WIDTH (frame)
+	 : (FRAME_SCROLL_BAR_COLS (frame)
+	    * FONT_WIDTH (frame->display.x->font)));
 
     change_frame_size (frame, h, w, 1, 0);
     char_to_pixel_size (ew, w, h, &pixel_width, &pixel_height);
@@ -474,6 +477,9 @@ set_frame_size (ew)
   }
 }
 
+/* Nonzero tells update_wm_hints not to do anything
+   (the caller should call update_wm_hints explicitly later.)  */
+int update_hints_inhibit;
 
 static void
 update_wm_hints (ew)
@@ -490,7 +496,12 @@ update_wm_hints (ew)
   int base_height;
   int min_rows = 0, min_cols = 0;
 
+  if (update_hints_inhibit)
+    return;
+
+#if 0
   check_frame_size (ew->emacs_frame.frame, &min_rows, &min_cols);
+#endif
 
   pixel_to_char_size (ew, ew->core.width, ew->core.height,
 		      &char_width, &char_height);
@@ -522,14 +533,17 @@ static void
 create_frame_gcs (ew)
      EmacsFrame ew;
 {
-  struct frame* s = ew->emacs_frame.frame;
+  struct frame *s = ew->emacs_frame.frame;
 
-  s->display.x->normal_gc =
-    XCreateGC (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)), 0, 0);
-  s->display.x->reverse_gc =
-    XCreateGC (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)), 0, 0);
-  s->display.x->cursor_gc =
-    XCreateGC (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)), 0, 0);
+  s->display.x->normal_gc
+    = XCreateGC (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)),
+		 (unsigned long)0, (XGCValues *)0);
+  s->display.x->reverse_gc
+    = XCreateGC (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)),
+		 (unsigned long)0, (XGCValues *)0);
+  s->display.x->cursor_gc
+    = XCreateGC (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)),
+		 (unsigned long)0, (XGCValues *)0);
 }
 
 static char setup_frame_cursor_bits[] =
@@ -557,18 +571,20 @@ setup_frame_gcs (ew)
      effectively cache all of the GC settings we need to use.
    */
 
-  blank_stipple = 
-    XCreateBitmapFromData (XtDisplay (ew), RootWindowOfScreen (XtScreen (ew)),
-			   setup_frame_cursor_bits, 2, 2);
+  blank_stipple
+    = XCreateBitmapFromData (XtDisplay (ew),
+			     RootWindowOfScreen (XtScreen (ew)),
+			     setup_frame_cursor_bits, 2, 2);
 
   /* use fg = 0, bg = 1 below, but it's irrelevant since this pixmap should
      never actually get used as a background tile!
    */
-  blank_tile =
-    XCreatePixmapFromBitmapData (XtDisplay(ew),
-				 RootWindowOfScreen (XtScreen (ew)),
-				 setup_frame_cursor_bits, 2, 2, 0, 1,
-				 ew->core.depth);
+  blank_tile
+    = XCreatePixmapFromBitmapData (XtDisplay(ew),
+				   RootWindowOfScreen (XtScreen (ew)),
+				   setup_frame_cursor_bits, 2, 2,
+				   (unsigned long)0, (unsigned long)1,
+				   ew->core.depth);
 
   /* Normal video */
   gc_values.font = ew->emacs_frame.font->fid;
@@ -600,10 +616,10 @@ setup_frame_gcs (ew)
   gc_values.background = ew->emacs_frame.cursor_color;
   gc_values.graphics_exposures = False;
   gc_values.tile = blank_tile;
-  gc_values.stipple =
-    XCreateBitmapFromData (XtDisplay (ew),
-			   RootWindowOfScreen (XtScreen (ew)),
-			   setup_frame_cursor_bits, 16, 16);
+  gc_values.stipple
+    = XCreateBitmapFromData (XtDisplay (ew),
+			     RootWindowOfScreen (XtScreen (ew)),
+			     setup_frame_cursor_bits, 16, 16);
   XChangeGC (XtDisplay (ew), s->display.x->cursor_gc,
 	     (GCFont | GCForeground | GCBackground | GCGraphicsExposures
 	      | GCStipple | GCTile),
@@ -736,10 +752,12 @@ EmacsFrameDestroy (widget)
      been freed. */
   free_frame_faces (s);
 
+  BLOCK_INPUT;
   /* need to be careful that the face-freeing code doesn't free these too */
   XFreeGC (XtDisplay (widget), s->display.x->normal_gc);
   XFreeGC (XtDisplay (widget), s->display.x->reverse_gc);
   XFreeGC (XtDisplay (widget), s->display.x->cursor_gc);
+  UNBLOCK_INPUT;
 }
 
 void
@@ -883,20 +901,29 @@ EmacsFrameSetCharSize (widget, columns, rows)
 
   check_frame_size (f, &rows, &columns);
   f->display.x->vertical_scroll_bar_extra
-    = (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
-       ? VERTICAL_SCROLL_BAR_PIXEL_WIDTH (f)
-       : 0);
+    = (!FRAME_HAS_VERTICAL_SCROLL_BARS (f)
+       ? 0
+       : FRAME_SCROLL_BAR_PIXEL_WIDTH (f) > 0
+       ? FRAME_SCROLL_BAR_PIXEL_WIDTH (f)
+       : (FRAME_SCROLL_BAR_COLS (f) * FONT_WIDTH (f->display.x->font)));
+
   char_to_pixel_size (ew, columns, rows, &pixel_width, &pixel_height);
 
-  /* Recompute the entire geometry management.  */
+  /* Manually change the height and width of all our widgets,
+     adjusting each widget by the same increments.  */
   if (ew->core.width != pixel_width || ew->core.height != pixel_height)
     {
       int hdelta = pixel_height - ew->core.height;
+      int wdelta = pixel_width - ew->core.width;
       int column_widget_height = f->display.x->column_widget->core.height;
+      int column_widget_width = f->display.x->column_widget->core.width;
+      int outer_widget_height = f->display.x->widget->core.height;
+      int outer_widget_width = f->display.x->widget->core.width;
       int old_left = f->display.x->widget->core.x;
       int old_top = f->display.x->widget->core.y;
 
-      XawPanedSetRefigureMode (f->display.x->column_widget, False);
+      lw_refigure_widget (f->display.x->column_widget, False);
+      update_hints_inhibit = 1;
 
       ac = 0;
       XtSetArg (al[ac], XtNheight, pixel_height); ac++;
@@ -905,10 +932,18 @@ EmacsFrameSetCharSize (widget, columns, rows)
  
       ac = 0;
       XtSetArg (al[ac], XtNheight, column_widget_height + hdelta); ac++;
-      XtSetArg (al[ac], XtNwidth, pixel_width); ac++;
+      XtSetArg (al[ac], XtNwidth, column_widget_width + wdelta); ac++;
       XtSetValues (f->display.x->column_widget, al, ac);
 
-      XawPanedSetRefigureMode (f->display.x->column_widget, True);
+      ac = 0;
+      XtSetArg (al[ac], XtNheight, outer_widget_height + hdelta); ac++;
+      XtSetArg (al[ac], XtNwidth, outer_widget_width + wdelta); ac++;
+      XtSetValues (f->display.x->widget, al, ac);
+
+      lw_refigure_widget (f->display.x->column_widget, True);
+
+      update_hints_inhibit = 0;
+      update_wm_hints (ew);
 
       /* These seem to get clobbered.  I don't know why. - rms.  */
       f->display.x->widget->core.x = old_left;

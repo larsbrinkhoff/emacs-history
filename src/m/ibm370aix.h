@@ -4,12 +4,17 @@
 
 #define AIX
 
+/* Include unistd.h, even though we don't define POSIX.  */
+#define NEED_UNISTD_H
+
 /* these were defined in "ibmps2-aix.h" */
 #undef INTEL386
 #undef aix386
 
-/* i370 is  big-endian */
-#define BIG_ENDIAN 
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
+
+#define WORDS_BIG_ENDIAN
 
 #undef TEXT_START
 #undef SEGMENT_MASK

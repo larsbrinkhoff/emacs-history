@@ -39,7 +39,7 @@ and be replaced by its expansion."
   (setq abbrev-mode
 	(if (null arg) (not abbrev-mode)
 	  (> (prefix-numeric-value arg) 0)))
-  (set-buffer-modified-p (buffer-modified-p))) ;No-op, but updates mode line.
+  (force-mode-line-update))
 
 (defvar edit-abbrevs-map nil
   "Keymap used in edit-abbrevs.")
@@ -217,6 +217,7 @@ Don't use this function in a Lisp program; use `define-abbrev' instead."
 	  (read-string (format (if exp "%s abbrev for \"%s\": "
 				 "Undefine %s abbrev: ")
 			       type exp)))
+    (set-text-properties 0 (length name) nil name)
     (if (or (null exp)
 	    (not (abbrev-expansion name table))
 	    (y-or-n-p (format "%s expands to \"%s\"; redefine? "
@@ -250,6 +251,7 @@ Expands the abbreviation after defining it."
      (forward-word (- arg))
      (setq name (buffer-substring (point) (progn (forward-word 1)
 					       (setq nameloc (point))))))
+    (set-text-properties 0 (length name) nil name)
     (setq exp (read-string (format "%s expansion for \"%s\": "
 				   type name)))
     (if (or (not (abbrev-expansion name table))

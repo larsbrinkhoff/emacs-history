@@ -1,12 +1,11 @@
-This directory tree holds version 19.28 of GNU Emacs, the extensible,
+This directory tree holds version 19.29 of GNU Emacs, the extensible,
 customizable, self-documenting real-time display editor.
 
-Version 19.28 is quite stable; most users do not encounter any bugs.
-But if you do encounter bugs in this version, we encourage you to
-report them; your bug reports are valuable contributions to the FSF,
-since they allow us to notice and fix problems on machines we don't
-have, or in code we don't use often.  See the "Bugs" node of the info
-tree for more information on how to report bugs.
+You may encounter bugs in this release.  If you do, please report
+them; your bug reports are valuable contributions to the FSF, since
+they allow us to notice and fix problems on machines we don't have, or
+in code we don't use often.  See the file BUGS for more information on
+how to report bugs.
 
 See the files `etc/NEWS' and `etc/news.texi' for information on new
 features and other user-visible changes since the last version of
@@ -29,16 +28,16 @@ bug-gnu-emacs@prep.ai.mit.edu.  See the "Bugs" section of the Emacs
 manual for more information on how to report bugs.  (The file `BUGS'
 in this directory explains how you can find and read that section
 using the Info files that come with Emacs.)  See `etc/MAILINGLISTS'
-for more information on mailing lists relating to GNU products.
+for more information on mailing lists relating to GNU packages.
 
 The `etc' subdirectory contains several other files, named in
 capital letters, which you should look at when installing GNU Emacs.
 
 The file `configure' is a shell script to acclimate Emacs to the
-oddities of your processor and operating system.  It will create two
-files named `build-install' (a shell script) and `Makefile' (a script
-for the `make' program), which help automate the process of building
-and installing emacs.  See INSTALL for more detailed information.
+oddities of your processor and operating system.  It creates the file
+`Makefile' (a script for the `make' program), which automates the
+process of building and installing Emacs.  See INSTALL for more
+detailed information.
 
 The file `configure.in' is the input used by the autoconf program to
 construct the `configure' script.  Since Emacs has configuration
@@ -70,12 +69,14 @@ There are several subdirectories:
 `info' holds the Info documentation tree for Emacs.
 `man' holds the source code for the Emacs manual.
 
+   Note that the Emacs Lisp manual sources are distributed separately.
+(They are twice as large as the Emacs manual in the man subdirectory.)
+
 `msdos' holds configuration files for compiling Emacs under MSDOG.
     See the file etc/MSDOS for more information.
 `cpp' holds a C preprocessor for use instead of the installed one when
     the installed one fails to distinguish more than 8 characters in a
     symbol name.
-`shortnames' holds programs and data files for creating files of
-    #define's used to convert long symbol names to distinct sort ones
-    for C compiles that cannot distinguish more than 8 characters.
 `vms' holds instructions and useful files for running Emacs under VMS.
+`nt' holds various command files and documentation files that pertain
+    to running Emacs on Windows NT.

@@ -21,7 +21,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  * exist in your home directory, containing individual mail messages in
  * separate files in the standard gosling emacs mail reader format.
  *
- * Program takes one argument: an output file.  THis file will contain
+ * Program takes one argument: an output file.  This file will contain
  * all the messages in Messages directory, in berkeley mail format.
  * If no output file is mentioned, messages are put in ~/OMAIL.
  *
@@ -36,10 +36,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 char *malloc ();
 char *realloc ();
-char *xmalloc ();
-char *xrealloc ();
 char *getenv ();
 
+char *xmalloc ();
+char *xrealloc ();
+void skip_to_lf ();
+void sysfail ();
+
+int
 main (argc, argv)
      int argc;
      char *argv[];
@@ -53,7 +57,7 @@ main (argc, argv)
   FILE *mddf;
   FILE *mfilef;
   FILE *cff;
-  char pre[10], post[100];
+  char pre[10];
   char name[14];
   int c;
 
@@ -71,15 +75,20 @@ main (argc, argv)
   cf = (char *) xmalloc (cflen);
 
   mddf = fopen (mdd, "r");
+  if (!mddf)
+    sysfail (mdd);
   if (argc > 1)
-    mfilef = fopen (argv[1], "w");
+    mfile = argv[1];
   else
     {
       mfile = (char *) xmalloc (strlen (hd) + 7);
       strcpy (mfile, hd);
       strcat (mfile, "/OMAIL");
-      mfilef = fopen (mfile, "w");
     }
+  mfilef = fopen (mfile, "w");
+  if (!mfilef)
+    sysfail (mfile);
+
   skip_to_lf (mddf);
   while (fscanf (mddf, "%4c%14[0123456789]", pre, name) != EOF)
     {
@@ -92,23 +101,58 @@ main (argc, argv)
       strcat (cf,"/");
       strcat (cf, name);
       cff = fopen (cf, "r");
-      while ((c = getc(cff)) != EOF)
-	putc (c, mfilef);
-      putc ('\n', mfilef);
-      skip_to_lf (mddf);
-     fclose (cff);
+      if (!cff)
+	perror (cf);
+      else
+	{
+	  while ((c = getc(cff)) != EOF)
+	    putc (c, mfilef);
+	  putc ('\n', mfilef);
+	  skip_to_lf (mddf);
+	  fclose (cff);
+	}
     }
   fclose (mddf);
   fclose (mfilef);    
   return 0;
 }
 
+void
 skip_to_lf (stream)
      FILE *stream;
 {
   register int c;
-  while ((c = getc(stream)) != '\n')
+  while ((c = getc(stream)) != EOF && c != '\n')
     ;
+}
+
+
+void
+error (s1, s2)
+     char *s1, *s2;
+{
+  fprintf (stderr, "cvtmail: ");
+  fprintf (stderr, s1, s2);
+  fprintf (stderr, "\n");
+}
+
+/* Print error message and exit.  */
+
+void
+fatal (s1, s2)
+     char *s1, *s2;
+{
+  error (s1, s2);
+  exit (1);
+}
+
+void
+sysfail (s)
+     char *s;
+{
+  fprintf (stderr, "cvtmail: ");
+  perror (s);
+  exit (1);
 }
 
 char *
@@ -130,21 +174,4 @@ xrealloc (ptr, size)
   if (!result)
     fatal ("virtual memory exhausted");
   return result;
-}
-
-/* Print error message and exit.  */
-
-fatal (s1, s2)
-     char *s1, *s2;
-{
-  error (s1, s2);
-  exit (1);
-}
-
-error (s1, s2)
-     char *s1, *s2;
-{
-  fprintf (stderr, "cvtmail: ");
-  fprintf (stderr, s1, s2);
-  fprintf (stderr, "\n");
 }

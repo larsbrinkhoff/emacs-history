@@ -25,6 +25,12 @@
 #define XtCHorizontal "Horizontal"
 #define XtNcursor "cursor"
 #define XtNCursor "Cursor"
+#define XtNshowGrip "showGrip"
+#define XtCShowGrip "ShowGrip"
+#define XtNresizeToPreferred "resizeToPreferred"
+#define XtCResizeToPreferred "ResizeToPreferred"
+#define XtNallowResize "allowResize"
+#define XtCAllowResize "AllowResize"
 
 /* Motif-compatible resource names */
 #define XmNshadowThickness	"shadowThickness"

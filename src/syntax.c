@@ -1,5 +1,5 @@
 /* GNU Emacs routines to deal with syntax tables; also word and list parsing.
-   Copyright (C) 1985, 1987, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -84,7 +84,7 @@ find_defun_start (pos)
     return find_start_value;
 
   /* Back up to start of line.  */
-  tem = scan_buffer ('\n', pos, -1, &shortage, 1);
+  tem = scan_buffer ('\n', pos, BEGV, -1, &shortage, 1);
 
   while (tem > BEGV)
     {
@@ -92,7 +92,7 @@ find_defun_start (pos)
       if (SYNTAX (FETCH_CHAR (tem)) == Sopen)
 	break;
       /* Move to beg of previous line.  */
-      tem = scan_buffer ('\n', tem, -2, &shortage, 1);
+      tem = scan_buffer ('\n', tem, BEGV, -2, &shortage, 1);
     }
 
   /* Record what we found, for the next try.  */
@@ -111,7 +111,7 @@ Any vector of 256 elements will do.")
   (obj)
      Lisp_Object obj;
 {
-  if (XTYPE (obj) == Lisp_Vector && XVECTOR (obj)->size == 0400)
+  if (VECTORP (obj) && XVECTOR (obj)->size == 0400)
     return Qt;
   return Qnil;
 }
@@ -152,8 +152,8 @@ It is a copy of the TABLE, which defaults to the standard syntax table.")
      Lisp_Object table;
 {
   Lisp_Object size, val;
-  XFASTINT (size) = 0400;
-  XFASTINT (val) = 0;
+  XSETFASTINT (size, 0400);
+  XSETFASTINT (val, 0);
   val = Fmake_vector (size, val);
   if (!NILP (table))
     table = check_syntax_table (table);
@@ -291,7 +291,7 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3,
 {
   register unsigned char *p, match;
   register enum syntaxcode code;
-  Lisp_Object val;
+  int val;
 
   CHECK_NUMBER (c, 0);
   CHECK_STRING (newentry, 1);
@@ -309,36 +309,36 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3,
   if (match) p++;
   if (match == ' ') match = 0;
 
-  XFASTINT (val) = (match << 8) + (int) code;
+  val = (match << 8) + (int) code;
   while (*p)
     switch (*p++)
       {
       case '1':
-	XFASTINT (val) |= 1 << 16;
+	val |= 1 << 16;
 	break;
 
       case '2':
-	XFASTINT (val) |= 1 << 17;
+	val |= 1 << 17;
 	break;
 
       case '3':
-	XFASTINT (val) |= 1 << 18;
+	val |= 1 << 18;
 	break;
 
       case '4':
-	XFASTINT (val) |= 1 << 19;
+	val |= 1 << 19;
 	break;
 
       case 'p':
-	XFASTINT (val) |= 1 << 20;
+	val |= 1 << 20;
 	break;
 
       case 'b':
-	XFASTINT (val) |= 1 << 21;
+	val |= 1 << 21;
 	break;
       }
 	
-  XVECTOR (syntax_table)->contents[0xFF & XINT (c)] = val;
+  XSETFASTINT (XVECTOR (syntax_table)->contents[0xFF & XINT (c)], val);
 
   return Qnil;
 }
@@ -355,7 +355,7 @@ describe_syntax (value)
 
   Findent_to (make_number (16), make_number (1));
 
-  if (XTYPE (value) != Lisp_Int)
+  if (!INTEGERP (value))
     {
       insert_string ("invalid");
       return;
@@ -401,11 +401,7 @@ describe_syntax (value)
 
   insert_string ("\twhich means: ");
 
-#ifdef SWITCH_ENUM_BUG
-  switch ((int) code)
-#else
-  switch (code)
-#endif
+  switch (SWITCH_ENUM_CAST (code))
     {
     case Swhitespace:
       insert_string ("whitespace"); break;
@@ -470,7 +466,8 @@ describe_syntax_1 (vector)
 {
   struct buffer *old = current_buffer;
   set_buffer_internal (XBUFFER (Vstandard_output));
-  describe_vector (vector, Qnil, describe_syntax, 0, Qnil);
+  describe_vector (vector, Qnil, describe_syntax, 0, Qnil, Qnil);
+  call0 (intern ("help-mode"));
   set_buffer_internal (old);
   return Qnil;
 }
@@ -617,6 +614,7 @@ between them, return t; otherwise return nil.")
 	  if (from == stop)
 	    {
 	      SET_PT (from);
+	      immediate_quit = 0;
 	      return Qnil;
 	    }
 	  c = FETCH_CHAR (from);
@@ -653,13 +651,13 @@ between them, return t; otherwise return nil.")
 	      return Qnil;
 	    }
 	  c = FETCH_CHAR (from);
+	  from++;
 	  if (SYNTAX (c) == Sendcomment
 	      && SYNTAX_COMMENT_STYLE (c) == comstyle)
 	    /* we have encountered a comment end of the same style
 	       as the comment sequence which began this comment
 	       section */
 	    break;
-	  from++;
 	  if (from < stop && SYNTAX_COMEND_FIRST (c)
 	      && SYNTAX_COMEND_SECOND (FETCH_CHAR (from))
 	      && SYNTAX_COMMENT_STYLE (c) == comstyle)
@@ -867,7 +865,7 @@ scan_lists (from, count, depth, sexpflag)
   Lisp_Object val;
   register int stop;
   register int c;
-  char stringterm;
+  unsigned char stringterm;
   int quoted;
   int mathexit = 0;
   register enum syntaxcode code;
@@ -904,11 +902,7 @@ scan_lists (from, count, depth, sexpflag)
 	  if (SYNTAX_PREFIX (c))
 	    continue;
 
-#ifdef SWITCH_ENUM_BUG
-	  switch ((int) code)
-#else
-	  switch (code)
-#endif
+	  switch (SWITCH_ENUM_CAST (code))
 	    {
 	    case Sescape:
 	    case Scharquote:
@@ -921,11 +915,7 @@ scan_lists (from, count, depth, sexpflag)
 	      /* This word counts as a sexp; return at end of it. */
 	      while (from < stop)
 		{
-#ifdef SWITCH_ENUM_BUG
-		  switch ((int) SYNTAX (FETCH_CHAR (from)))
-#else
-		  switch (SYNTAX (FETCH_CHAR (from)))
-#endif
+		  switch (SWITCH_ENUM_CAST (SYNTAX (FETCH_CHAR (from))))
 		    {
 		    case Scharquote:
 		    case Sescape:
@@ -1000,11 +990,7 @@ scan_lists (from, count, depth, sexpflag)
 		{
 		  if (from >= stop) goto lose;
 		  if (FETCH_CHAR (from) == stringterm) break;
-#ifdef SWITCH_ENUM_BUG
-		  switch ((int) SYNTAX (FETCH_CHAR (from)))
-#else
-		  switch (SYNTAX (FETCH_CHAR (from)))
-#endif
+		  switch (SWITCH_ENUM_CAST (SYNTAX (FETCH_CHAR (from))))
 		    {
 		    case Scharquote:
 		    case Sescape:
@@ -1058,11 +1044,7 @@ scan_lists (from, count, depth, sexpflag)
 	  if (SYNTAX_PREFIX (c))
 	    continue;
 
-#ifdef SWITCH_ENUM_BUG
-	  switch ((int) (quoted ? Sword : code))
-#else
-	  switch (quoted ? Sword : code)
-#endif
+	  switch (SWITCH_ENUM_CAST (quoted ? Sword : code))
 	    {
 	    case Sword:
 	    case Ssymbol:
@@ -1273,7 +1255,7 @@ scan_lists (from, count, depth, sexpflag)
 
 
   immediate_quit = 0;
-  XFASTINT (val) = from;
+  XSETFASTINT (val, from);
   return val;
 
  lose:
@@ -1465,11 +1447,7 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 
       if (SYNTAX_PREFIX (FETCH_CHAR (from - 1)))
 	continue;
-#ifdef SWITCH_ENUM_BUG
-      switch ((int) code)
-#else
-      switch (code)
-#endif
+      switch (SWITCH_ENUM_CAST (code))
 	{
 	case Sescape:
 	case Scharquote:
@@ -1487,11 +1465,7 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 	symstarted:
 	  while (from < end)
 	    {
-#ifdef SWITCH_ENUM_BUG
-	      switch ((int) SYNTAX (FETCH_CHAR (from)))
-#else
-	      switch (SYNTAX (FETCH_CHAR (from)))
-#endif
+	      switch (SWITCH_ENUM_CAST (SYNTAX (FETCH_CHAR (from))))
 		{
 		case Scharquote:
 		case Sescape:
@@ -1511,9 +1485,20 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 	  curlevel->prev = curlevel->last;
 	  break;
 
+	startincomment:
+	  if (commentstop)
+	    goto done;
+	  if (from != BEGV)
+	    {
+	      /* Enter the loop in the middle so that we find
+		 a 2-char comment ender if we start in the middle of it.  */
+	      prev = FETCH_CHAR (from - 1);
+	      goto startincomment_1;
+	    }
+	  /* At beginning of buffer, enter the loop the ordinary way.  */
+
 	case Scomment:
 	  state.incomment = 1;
-	startincomment:
 	  if (commentstop)
 	    goto done;
 	  while (1)
@@ -1527,6 +1512,7 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 		   encountered.  */
 		break;
 	      from++;
+	    startincomment_1:
 	      if (from < end && SYNTAX_COMEND_FIRST (prev)
 		  && SYNTAX_COMEND_SECOND (FETCH_CHAR (from))
 		  && SYNTAX_COMMENT_STYLE (prev) == state.comstyle)
@@ -1570,11 +1556,7 @@ scan_sexps_forward (stateptr, from, end, targetdepth,
 	    {
 	      if (from >= end) goto done;
 	      if (FETCH_CHAR (from) == state.instring) break;
-#ifdef SWITCH_ENUM_BUG
-	      switch ((int) SYNTAX (FETCH_CHAR (from)))
-#else
-	      switch (SYNTAX (FETCH_CHAR (from)))
-#endif
+	      switch (SWITCH_ENUM_CAST (SYNTAX (FETCH_CHAR (from))))
 		{
 		case Scharquote:
 		case Sescape:
@@ -1692,28 +1674,28 @@ init_syntax_once ()
   v = XVECTOR (Vstandard_syntax_table);
 
   for (i = 'a'; i <= 'z'; i++)
-    XFASTINT (v->contents[i]) = (int) Sword;
+    XSETFASTINT (v->contents[i], (int) Sword);
   for (i = 'A'; i <= 'Z'; i++)
-    XFASTINT (v->contents[i]) = (int) Sword;
+    XSETFASTINT (v->contents[i], (int) Sword);
   for (i = '0'; i <= '9'; i++)
-    XFASTINT (v->contents[i]) = (int) Sword;
-  XFASTINT (v->contents['$']) = (int) Sword;
-  XFASTINT (v->contents['%']) = (int) Sword;
+    XSETFASTINT (v->contents[i], (int) Sword);
+  XSETFASTINT (v->contents['$'], (int) Sword);
+  XSETFASTINT (v->contents['%'], (int) Sword);
 
-  XFASTINT (v->contents['(']) = (int) Sopen + (')' << 8);
-  XFASTINT (v->contents[')']) = (int) Sclose + ('(' << 8);
-  XFASTINT (v->contents['[']) = (int) Sopen + (']' << 8);
-  XFASTINT (v->contents[']']) = (int) Sclose + ('[' << 8);
-  XFASTINT (v->contents['{']) = (int) Sopen + ('}' << 8);
-  XFASTINT (v->contents['}']) = (int) Sclose + ('{' << 8);
-  XFASTINT (v->contents['"']) = (int) Sstring;
-  XFASTINT (v->contents['\\']) = (int) Sescape;
+  XSETFASTINT (v->contents['('], (int) Sopen + (')' << 8));
+  XSETFASTINT (v->contents[')'], (int) Sclose + ('(' << 8));
+  XSETFASTINT (v->contents['['], (int) Sopen + (']' << 8));
+  XSETFASTINT (v->contents[']'], (int) Sclose + ('[' << 8));
+  XSETFASTINT (v->contents['{'], (int) Sopen + ('}' << 8));
+  XSETFASTINT (v->contents['}'], (int) Sclose + ('{' << 8));
+  XSETFASTINT (v->contents['"'], (int) Sstring);
+  XSETFASTINT (v->contents['\\'], (int) Sescape);
 
   for (i = 0; i < 10; i++)
-    XFASTINT (v->contents["_-+*/&|<>="[i]]) = (int) Ssymbol;
+    XSETFASTINT (v->contents["_-+*/&|<>="[i]], (int) Ssymbol);
 
   for (i = 0; i < 12; i++)
-    XFASTINT (v->contents[".,;:?!#@~^'`"[i]]) = (int) Spunct;
+    XSETFASTINT (v->contents[".,;:?!#@~^'`"[i]], (int) Spunct);
 }
 
 syms_of_syntax ()

@@ -139,7 +139,7 @@
   (if (/= (aref pattern 0) ?*)
       (error "Only patterns starting with * supported in auto-execute"))
   (setq auto-mode-alist (cons (cons (concat "\\." (substring pattern 1)
-					    "$")
+					    "\\'")
 				    function)
 			      auto-mode-alist)))
 
@@ -418,6 +418,16 @@
     (if (< from 0) (setq from (+ from length)))
     (if (< to 0) (setq to (+ to length)))
     (substring string from (+ from to))))
+
+(defun ml-concat (&rest args)
+  (let ((newargs nil) this)
+    (while args
+      (setq this (car args))
+      (if (numberp this)
+	  (setq this (number-to-string this)))
+      (setq newargs (cons this newargs)
+	    args (cdr args)))
+    (apply 'concat (nreverse newargs))))
 
 (provide 'mlsupport)
 

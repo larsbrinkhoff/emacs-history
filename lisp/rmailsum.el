@@ -1,6 +1,6 @@
 ;;; rmailsum.el --- make summary buffers for the mail reader
 
-;; Copyright (C) 1985, 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -28,6 +28,14 @@
 ;;   bindings in both modes wholly compatible.
 
 ;;; Code:
+
+(defvar rmail-summary-font-lock-keywords
+  '(("^....D.*" . font-lock-string-face)			; Deleted.
+    ("^....-.*" . font-lock-type-face)				; Unread.
+    ;; Neither of the below will be highlighted if either of the above are:
+    ("^....[^D-] \\(......\\)" 1 font-lock-keyword-face)	; Date.
+    ("{ \\([^}]+\\),}" 1 font-lock-comment-face))		; Labels.
+  "Additional expressions to highlight in Rmail Summary mode.")
 
 ;; Entry points for making a summary buffer.
 
@@ -198,7 +206,8 @@ nil for FUNCTION means all messages."
       (setq rmail-summary-buffer sumbuf))
     ;; Now display the summary buffer and go to the right place in it.
     (or was-in-summary
-	(if (one-window-p)
+	(if (and (one-window-p)
+		 pop-up-windows (not pop-up-frames))
 	    ;; If there is just one window, put the summary on the top.
 	    (progn
 	      (split-window)
@@ -371,11 +380,17 @@ nil for FUNCTION means all messages."
 (defun rmail-summary-next-all (&optional number)
   (interactive "p")
   (forward-line (if number number 1))
+  ;; It doesn't look nice to move forward past the last message line.
+  (and (eobp) (> number 0)
+       (forward-line -1))
   (display-buffer rmail-buffer))
 
 (defun rmail-summary-previous-all (&optional number)
   (interactive "p")
   (forward-line (- (if number number 1)))
+  ;; It doesn't look nice to move forward past the last message line.
+  (and (eobp) (< number 0)
+       (forward-line -1))
   (display-buffer rmail-buffer))
 
 (defun rmail-summary-next-msg (&optional number)
@@ -414,6 +429,64 @@ With prefix argument N moves backward N messages with these labels."
   (save-excursion
     (set-buffer rmail-buffer)
     (rmail-previous-labeled-message n labels)))
+
+(defun rmail-summary-next-same-subject (n)
+  "Go to the next message in the summary having the same subject.
+With prefix argument N, do this N times.
+If N is negative, go backwards."
+  (interactive "p")
+  (let (subject search-regexp  i found
+	(forward (> n 0)))
+    (save-excursion
+      (set-buffer rmail-buffer)
+      (setq subject (mail-fetch-field "Subject"))
+      (setq search-regexp (concat "^Subject: *\\(Re: *\\)?"
+				  (regexp-quote subject)
+				  "\n"))
+      (setq i rmail-current-message))
+    (if (string-match "Re:[ \t]*" subject)
+	(setq subject (substring subject (match-end 0))))
+    (save-excursion
+      (while (and (/= n 0)
+		  (if forward
+		      (not (eobp))
+		    (not (bobp))))
+	(let (done)
+	  (while (and (not done)
+		      (if forward
+			  (not (eobp))
+			(not (bobp))))
+	    ;; Advance thru summary.
+	    (forward-line (if forward 1 -1))
+	    ;; Get msg number of this line.
+	    (setq i (string-to-int
+		     (buffer-substring (point)
+				       (min (point-max) (+ 5 (point))))))
+	    ;; See if that msg has desired subject.
+	    (save-excursion
+	      (set-buffer rmail-buffer)
+	      (save-restriction
+		(widen)
+		(goto-char (rmail-msgbeg i))
+		(search-forward "\n*** EOOH ***\n")
+		(let ((beg (point)) end)
+		  (search-forward "\n\n")
+		  (setq end (point))
+		  (goto-char beg)
+		  (setq done (re-search-forward search-regexp end t))))))
+	  (if done (setq found i)))
+	(setq n (if forward (1- n) (1+ n)))))
+    (if found
+	(rmail-summary-goto-msg found)
+      (error "No %s message with same subject"
+	     (if forward "following" "previous")))))
+
+(defun rmail-summary-previous-same-subject (n)
+  "Go to the previous message in the summary having the same subject.
+With prefix argument N, do this N times.
+If N is negative, go forwards instead."
+  (interactive "p")
+  (rmail-summary-next-same-subject (- n)))
 
 ;; Delete and undelete summary commands.
 
@@ -431,8 +504,11 @@ With prefix argument, delete and move backward."
       (rmail-summary-mark-deleted del-msg)
       (while (and (not (if backward (bobp) (eobp)))
 		  (save-excursion (beginning-of-line)
-				  (looking-at " +[0-9]+D")))
-	(forward-line (if backward -1 1))))))
+				  (looking-at " *[0-9]+D")))
+	(forward-line (if backward -1 1)))
+      ;; It looks ugly to move to the empty line at end of buffer.
+      (and (eobp) (not backward)
+	   (forward-line -1)))))
 
 (defun rmail-summary-delete-backward ()
   "Delete this message and move to previous nondeleted one.
@@ -443,6 +519,7 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
 (defun rmail-summary-mark-deleted (&optional n undel)
   (and n (rmail-summary-goto-msg n t t))
   (or (eobp)
+      (not (overlay-get rmail-summary-overlay 'face))
       (let ((buffer-read-only nil))
 	(skip-chars-forward " ")
 	(skip-chars-forward "[0-9]")
@@ -547,6 +624,8 @@ Commands for sorting the summary:
   (setq rmail-summary-redo nil)
   (make-local-variable 'revert-buffer-function)
   (make-local-variable 'post-command-hook)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(rmail-summary-font-lock-keywords t))
   (rmail-summary-enable)
   (run-hooks 'rmail-summary-mode-hook))
 
@@ -590,12 +669,13 @@ Commands for sorting the summary:
 		  (unwind-protect
 		      (progn
 			(select-window window)
-			(rmail-show-message msg-num))
+			(rmail-show-message msg-num t))
 		    (select-window owin))
 		(if (buffer-name rmail-buffer)
 		    (save-excursion
 		      (set-buffer rmail-buffer)
-		      (rmail-show-message msg-num))))))))))
+		      (rmail-show-message msg-num t))))))
+	(rmail-summary-update-highlight nil)))))
 
 (defvar rmail-summary-mode-map nil)
 
@@ -645,6 +725,8 @@ Commands for sorting the summary:
   (define-key rmail-summary-mode-map " "      'rmail-summary-scroll-msg-up)
   (define-key rmail-summary-mode-map "\177"   'rmail-summary-scroll-msg-down)
   (define-key rmail-summary-mode-map "?"      'describe-mode)
+  (define-key rmail-summary-mode-map "\C-c\C-n" 'rmail-summary-next-same-subject)
+  (define-key rmail-summary-mode-map "\C-c\C-p" 'rmail-summary-previous-same-subject)
   (define-key rmail-summary-mode-map "\C-c\C-s\C-d"
     'rmail-summary-sort-by-date)
   (define-key rmail-summary-mode-map "\C-c\C-s\C-s"
@@ -672,7 +754,13 @@ Commands for sorting the summary:
   '("Output (Rmail Menu)..." . rmail-summary-output-menu))
 
 (define-key rmail-summary-mode-map [menu-bar classify input-menu]
-  '("Input Rmail file (menu)..." . rmail-input-menu))
+  '("Input Rmail File (menu)..." . rmail-input-menu))
+
+(define-key rmail-summary-mode-map [menu-bar classify input-menu]
+  '(nil))
+
+(define-key rmail-summary-mode-map [menu-bar classify output-menu]
+  '(nil))
 
 (define-key rmail-summary-mode-map [menu-bar classify output-inbox]
   '("Output (inbox)..." . rmail-summary-output))
@@ -717,7 +805,7 @@ Commands for sorting the summary:
   '("Continue" . rmail-summary-continue))
 
 (define-key rmail-summary-mode-map [menu-bar mail resend]
-  '("Re-send..." . rmail-resend))
+  '("Re-send..." . rmail-summary-resend))
 
 (define-key rmail-summary-mode-map [menu-bar mail forward]
   '("Forward" . rmail-summary-forward))
@@ -780,13 +868,14 @@ Commands for sorting the summary:
   (if (consp n) (setq n (prefix-numeric-value n)))
   (if (eobp) (forward-line -1))
   (beginning-of-line)
-  (let ((obuf (current-buffer))
-	(buf rmail-buffer)
-	(cur (point))
-	message-not-found
-	(curmsg (string-to-int
-		 (buffer-substring (point)
-				   (min (point-max) (+ 5 (point)))))))
+  (let* ((obuf (current-buffer))
+	 (buf rmail-buffer)
+	 (cur (point))
+	 message-not-found
+	 (curmsg (string-to-int
+		  (buffer-substring (point)
+				    (min (point-max) (+ 5 (point))))))
+	 (total (save-excursion (set-buffer buf) rmail-total-messages)))
     ;; If message number N was specified, find that message's line
     ;; or set message-not-found.
     ;; If N wasn't specified or that message can't be found.
@@ -796,12 +885,12 @@ Commands for sorting the summary:
       (if (< n 1)
 	  (progn (message "No preceding message")
 		 (setq n 1)))
-      (if (> n rmail-total-messages)
+      (if (> n total)
 	  (progn (message "No following message")
 		 (goto-char (point-max))
 		 (rmail-summary-goto-msg)))
       (goto-char (point-min))
-      (if (not (re-search-forward (concat "^ *" (int-to-string n)) nil t))
+      (if (not (re-search-forward (format "^%4d[^0-9]" n) nil t))
 	  (progn (or nowarn (message "Message %d not found" n))
 		 (setq n curmsg)
 		 (setq message-not-found t)
@@ -813,19 +902,7 @@ Commands for sorting the summary:
 			(let ((buffer-read-only nil))
 			  (delete-char 1)
 			  (insert " "))))
-    ;; Make sure we have an overlay to use.
-    (or rmail-summary-overlay
-	(progn
-	  (make-local-variable 'rmail-summary-overlay)
-	  (setq rmail-summary-overlay (make-overlay (point) (point)))))
-    ;; If this message is in the summary, use the overlay to highlight it.
-    ;; Otherwise, don't highlight anything.
-    (if message-not-found
-	(overlay-put rmail-summary-overlay 'face nil)
-      (move-overlay rmail-summary-overlay
-		    (save-excursion (beginning-of-line) (1+ (point)))
-		    (save-excursion (end-of-line) (point)))
-      (overlay-put rmail-summary-overlay 'face 'highlight))
+    (rmail-summary-update-highlight message-not-found)
     (beginning-of-line)
     (if skip-rmail
 	nil
@@ -836,24 +913,77 @@ Commands for sorting the summary:
 	  (select-window selwin)
 	  ;; The actions above can alter the current buffer.  Preserve it.
 	  (set-buffer obuf))))))
+
+;; Update the highlighted line in an rmail summary buffer.
+;; That should be current.  We highlight the line point is on.
+;; If NOT-FOUND is non-nil, we turn off highlighting.
+(defun rmail-summary-update-highlight (not-found)
+  ;; Make sure we have an overlay to use.
+  (or rmail-summary-overlay
+      (progn
+	(make-local-variable 'rmail-summary-overlay)
+	(setq rmail-summary-overlay (make-overlay (point) (point)))))
+  ;; If this message is in the summary, use the overlay to highlight it.
+  ;; Otherwise, don't highlight anything.
+  (if not-found
+      (overlay-put rmail-summary-overlay 'face nil)
+    (move-overlay rmail-summary-overlay
+		  (save-excursion (beginning-of-line)
+				  (skip-chars-forward " ")
+				  (point))
+		  (save-excursion (end-of-line) (point)))
+    (overlay-put rmail-summary-overlay 'face 'highlight)))
 
 (defun rmail-summary-scroll-msg-up (&optional dist)
-  "Scroll the Rmail window forward."
+  "Scroll the Rmail window forward.
+If the Rmail window is displaying the end of a message,
+advance to the next message."
   (interactive "P")
-  (let ((other-window-scroll-buffer rmail-buffer))
-    (if (get-buffer-window rmail-buffer)
-	(scroll-other-window dist)
-      ;; This forces rmail-buffer to be sized correctly later.
-      (display-buffer rmail-buffer)
-      (setq rmail-current-message nil))))
+  (if (eq dist '-)
+      (rmail-summary-scroll-msg-down nil)
+    (let ((rmail-buffer-window (get-buffer-window rmail-buffer)))
+      (if rmail-buffer-window
+	  (if (let ((rmail-summary-window (selected-window)))
+		(select-window rmail-buffer-window)
+		(prog1
+		    ;; Is EOB visible in the buffer?
+		    (save-excursion
+		      (let ((ht (window-height (selected-window))))
+			(move-to-window-line (- ht 2))
+			(end-of-line)
+			(eobp)))
+		  (select-window rmail-summary-window)))
+	      (rmail-summary-next-msg (or dist 1))
+	    (let ((other-window-scroll-buffer rmail-buffer))
+	      (scroll-other-window dist)))
+	;; This forces rmail-buffer to be sized correctly later.
+	(display-buffer rmail-buffer)
+	(setq rmail-current-message nil)))))
 
 (defun rmail-summary-scroll-msg-down (&optional dist)
-  "Scroll the Rmail window backward."
+  "Scroll the Rmail window backward.
+If the Rmail window is displaying the beginning of a message,
+advance to the previous message."
   (interactive "P")
-  (rmail-summary-scroll-msg-up
-   (cond ((eq dist '-) nil)
-	 ((null dist) '-)
-	 (t (- (prefix-numeric-value dist))))))
+  (if (eq dist '-)
+      (rmail-summary-scroll-msg-up nil)
+    (let ((rmail-buffer-window (get-buffer-window rmail-buffer)))
+      (if rmail-buffer-window
+	  (if (let ((rmail-summary-window (selected-window)))
+		(select-window rmail-buffer-window)
+		(prog1
+		    ;; Is BOB visible in the buffer?
+		    (save-excursion
+		      (move-to-window-line 0)
+		      (beginning-of-line)
+		      (bobp))
+		  (select-window rmail-summary-window)))
+	      (rmail-summary-previous-msg (or dist 1))
+	    (let ((other-window-scroll-buffer rmail-buffer))
+	      (scroll-other-window-down dist)))
+	;; This forces rmail-buffer to be sized correctly later.
+	(display-buffer rmail-buffer)
+	(setq rmail-current-message nil)))))
 
 (defun rmail-summary-beginning-of-message ()
   "Show current message from the beginning."
@@ -1025,7 +1155,19 @@ Interactively, empty argument means use same regexp used last time."
   (interactive)
   (save-excursion
     (set-buffer rmail-buffer)
-    (rmail-toggle-header)))
+    (rmail-toggle-header))
+  ;; Inside save-excursion, some changes to point in the RMAIL buffer are lost.
+  ;; Set point to point-min in the RMAIL buffer, if it is visible.
+  (let ((window (get-buffer-window rmail-buffer)))
+    (if window
+        ;; Using save-window-excursion would lose the new value of point.
+        (let ((owin (selected-window)))
+          (unwind-protect
+              (progn
+                (select-window window)
+                (goto-char (point-min)))
+            (select-window owin))))))
+
 
 (defun rmail-summary-add-label (label)
   "Add LABEL to labels associated with current Rmail message.
@@ -1054,7 +1196,11 @@ Completion is performed over known labels when reading."
 While composing the message, use \\[mail-yank-original] to yank the
 original message into it."
   (interactive)
-  (rmail-start-mail nil nil nil nil nil rmail-buffer)
+  (let ((window (get-buffer-window rmail-buffer)))
+    (if window
+	(select-window window)
+      (set-buffer rmail-buffer)))
+  (rmail-start-mail nil nil nil nil nil (current-buffer))
   (use-local-map (copy-keymap (current-local-map)))
   (define-key (current-local-map)
     "\C-c\C-c" 'rmail-summary-send-and-exit))
@@ -1062,6 +1208,10 @@ original message into it."
 (defun rmail-summary-continue ()
   "Continue composing outgoing message previously being composed."
   (interactive)
+  (let ((window (get-buffer-window rmail-buffer)))
+    (if window
+	(select-window window)
+      (set-buffer rmail-buffer)))
   (rmail-start-mail t))
 
 (defun rmail-summary-reply (just-sender)
@@ -1070,7 +1220,10 @@ Normally include CC: to all other recipients of original message;
 prefix argument means ignore them.  While composing the reply,
 use \\[mail-yank-original] to yank the original message into it."
   (interactive "P")
-  (set-buffer rmail-buffer)
+  (let ((window (get-buffer-window rmail-buffer)))
+    (if window
+	(select-window window)
+      (set-buffer rmail-buffer)))
   (rmail-reply just-sender)
   (use-local-map (copy-keymap (current-local-map)))
   (define-key (current-local-map)
@@ -1081,7 +1234,10 @@ use \\[mail-yank-original] to yank the original message into it."
 For a message rejected by the mail system, extract the interesting headers and
 the body of the original message; otherwise copy the current message."
   (interactive)
-  (set-buffer rmail-buffer)
+  (let ((window (get-buffer-window rmail-buffer)))
+    (if window
+	(select-window window)
+      (set-buffer rmail-buffer)))
   (rmail-retry-failure)
   (use-local-map (copy-keymap (current-local-map)))
   (define-key (current-local-map)
@@ -1098,15 +1254,28 @@ With prefix argument, \"resend\" the message instead of forwarding it;
 see the documentation of `rmail-resend'."
   (interactive "P")
   (save-excursion
-    (set-buffer rmail-buffer)
+    (let ((window (get-buffer-window rmail-buffer)))
+      (if window
+	  (select-window window)
+	(set-buffer rmail-buffer)))
     (rmail-forward resend)
     (use-local-map (copy-keymap (current-local-map)))
     (define-key (current-local-map)
       "\C-c\C-c" 'rmail-summary-send-and-exit)))
+
+(defun rmail-summary-resend ()
+  "Resend current message using 'rmail-resend'."
+  (interactive)
+  (save-excursion
+    (let ((window (get-buffer-window rmail-buffer)))
+      (if window
+	  (select-window window)
+	(set-buffer rmail-buffer)))
+    (call-interactively 'rmail-resend)))
 
 ;; Summary output commands.
 
-(defun rmail-summary-output-to-rmail-file ()
+(defun rmail-summary-output-to-rmail-file (&optional file-name)
   "Append the current message to an Rmail file named FILE-NAME.
 If the file does not exist, ask if it should be created.
 If file is being visited, the message is appended to the Emacs
@@ -1115,7 +1284,9 @@ buffer visiting that file."
   (save-excursion
     (set-buffer rmail-buffer)
     (let ((rmail-delete-after-output nil))
-      (call-interactively 'rmail-output-to-rmail-file)))
+      (if file-name
+	  (rmail-output-to-rmail-file file-name)
+	(call-interactively 'rmail-output-to-rmail-file))))
   (if rmail-delete-after-output
       (rmail-summary-delete-forward nil)))
 
@@ -1141,6 +1312,22 @@ The variables `rmail-secondary-file-directory' and
       (call-interactively 'rmail-output)))
   (if rmail-delete-after-output
       (rmail-summary-delete-forward nil)))
+
+(defun rmail-summary-construct-io-menu ()
+  (let ((files (rmail-find-all-files rmail-secondary-file-directory)))
+    (if (listp files)
+	(progn
+	  (define-key rmail-summary-mode-map [menu-bar classify input-menu]
+	    (cons "Input Rmail File" 
+		  (rmail-list-to-menu "Input Rmail File" 
+				      (cdr files) 
+				      'rmail-summary-input)))
+	  (define-key rmail-summary-mode-map [menu-bar classify output-menu]
+	    (cons "Output Rmail File" 
+		  (rmail-list-to-menu "Output Rmail File" 
+				      (cdr files) 
+				      'rmail-summary-output-to-rmail-file)))))))
+
 
 ;; Sorting messages in Rmail Summary buffer.
 

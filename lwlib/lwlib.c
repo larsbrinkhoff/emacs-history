@@ -28,6 +28,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "lwlib-utils.h"
 #include <X11/StringDefs.h>
 
+#ifdef __osf__
+#include <string.h>
+#include <stdlib.h>
+extern long *xmalloc();
+#endif
+
 #if defined (USE_LUCID)
 #include "lwlib-Xlw.h"
 #endif
@@ -61,6 +67,11 @@ ERROR! no more than one of USE_MOTIF and USE_OLIT may be defined.
 static widget_info*
 all_widget_info = NULL;
 
+#ifdef USE_MOTIF
+char *lwlib_toolkit_type = "motif";
+#else
+char *lwlib_toolkit_type = "lucid";
+#endif
 /* Forward declarations */
 static void
 instanciate_widget_instance (/* widget_instance* instance */);
@@ -984,7 +995,7 @@ lw_destroy_all_pop_ups ()
 }
 
 #ifdef USE_MOTIF
-extern Widget first_child (Widget);	/* garbage */
+extern Widget first_child (/* Widget */);	/* garbage */
 #endif
 
 Widget
@@ -1294,4 +1305,64 @@ lw_show_busy (w, busy)
 	  info->busy = busy;
 	}
     }
+}
+
+/* This hack exists because Lucid/Athena need to execute the strange
+   function below to support geometry management. */
+void
+lw_refigure_widget (w, doit)
+     Widget w;
+     Boolean doit;
+{
+#if defined (USE_XAW)  
+  XawPanedSetRefigureMode (w, doit);
+#endif
+#if defined (USE_MOTIF)
+  if (doit)
+    XtManageChild (w);
+  else
+    XtUnmanageChild (w);
+#endif
+}
+
+/* Toolkit independent way of determining if an event window is in the
+   menubar. */
+Boolean
+lw_window_is_in_menubar (win, menubar_widget)
+     Window win;
+     Widget menubar_widget;
+{
+  return menubar_widget
+#if defined (USE_LUCID)
+      && XtWindow (menubar_widget) == win;
+#endif
+#if defined (USE_MOTIF)
+      && XtWindowToWidget (XtDisplay (menubar_widget), win)
+      && (XtParent (XtWindowToWidget (XtDisplay (menubar_widget), win))
+	  == menubar_widget);
+#endif
+}
+
+/* Motif hack to set the main window areas. */
+void
+lw_set_main_areas (parent, menubar, work_area)
+     Widget parent;
+     Widget menubar;
+     Widget work_area;
+{
+#if defined (USE_MOTIF)
+  xm_set_main_areas (parent, menubar, work_area);
+#endif
+}
+
+/* Manage resizing for Motif.  This disables resizing when the menubar
+   is about to be modified. */
+void
+lw_allow_resizing (w, flag)
+     Widget w;
+     Boolean flag;
+{
+#if defined (USE_MOTIF)
+  xm_manage_resizing (w, flag);
+#endif
 }

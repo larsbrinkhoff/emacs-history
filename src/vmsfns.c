@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -680,8 +680,8 @@ translate_id (pid, owner)
   int prcnam[2];
 
   if (NILP (pid)
-      || XTYPE (pid) == Lisp_String && XSTRING (pid)->size == 0
-      || XTYPE (pid) == Lisp_Int && XFASTINT (pid) == 0)
+      || STRINGP (pid) && XSTRING (pid)->size == 0
+      || INTEGERP (pid) && XFASTINT (pid) == 0)
     {
       code = owner ? JPI$_OWNER : JPI$_PID;
       status = lib$getjpi (&code, 0, 0, &id);
@@ -691,7 +691,7 @@ translate_id (pid, owner)
 	       vmserrstr (status));
       return (id);
     }
-  if (XTYPE (pid) == Lisp_Int)
+  if (INTEGERP (pid))
     return (XFASTINT (pid));
   CHECK_STRING (pid, 0);
   pid = Fupcase (pid);

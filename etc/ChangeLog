@@ -1,3 +1,30 @@
+Wed May 24 16:12:15 1995  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* TUTORIAL: Delete reference to ALT.  Change <Rubout> to <Delete>.
+
+Wed Apr 26 16:58:34 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* Makefile (maintainer-clean): Renamed from realclean.
+
+Sun Apr  9 00:00:22 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* tpu-doc.el: File moved to etc dir and renamed.
+
+Fri Apr  7 14:32:56 1995  Boris Goldowsky  <boris@cs.rochester.edu>
+
+	* enriched.doc: Rewritten and simplified.
+
+Sun Nov 20 16:09:31 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile (eterm): New rule.
+	(TIC): New variable.
+
+	* e/eterm, e/eterm.ti: New files.
+
+Mon Oct 24 09:59:13 1994  Boris Goldowsky  <boris@mole.gnu.ai.mit.edu>
+
+	* enriched.doc: New file.
+
 Wed Sep  7 03:53:50 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.26 released.

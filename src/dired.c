@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -80,8 +80,8 @@ extern struct direct *readdir ();
 
 #include "regex.h"
 
-/* A search buffer, with a fastmap allocated and ready to go.  */
-extern struct re_pattern_buffer searchbuf;
+/* Returns a search buffer, with a fastmap allocated and ready to go.  */
+extern struct re_pattern_buffer *compile_pattern ();
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -113,9 +113,10 @@ If NOSORT is non-nil, the list is not sorted--its order is unpredictable.\n\
      Lisp_Object dirname, full, match, nosort;
 {
   DIR *d;
-  int length;
+  int dirnamelen;
   Lisp_Object list, name, dirfilename;
   Lisp_Object handler;
+  struct re_pattern_buffer *bufp;
 
   /* If the file name has special constructs in it,
      call the corresponding file handler.  */
@@ -154,14 +155,14 @@ If NOSORT is non-nil, the list is not sorted--its order is unpredictable.\n\
 	 catching and signalling our own errors, we just call
 	 compile_pattern to do the work for us.  */
 #ifdef VMS
-      compile_pattern (match, &searchbuf, 0,
-		       buffer_defaults.downcase_table->contents);
+      bufp = compile_pattern (match, 0,
+			      buffer_defaults.downcase_table->contents, 0);
 #else
-      compile_pattern (match, &searchbuf, 0, 0);
+      bufp = compile_pattern (match, 0, 0, 0);
 #endif
     }
 
-  /* Now searchbuf is the compiled form of MATCH; don't call anything
+  /* Now *bufp is the compiled form of MATCH; don't call anything
      which might compile a new regexp until we're done with the loop!  */
 
   /* Do this opendir after anything which might signal an error; if
@@ -173,7 +174,7 @@ If NOSORT is non-nil, the list is not sorted--its order is unpredictable.\n\
     report_file_error ("Opening directory", Fcons (dirname, Qnil));
 
   list = Qnil;
-  length = XSTRING (dirname)->size;
+  dirnamelen = XSTRING (dirname)->size;
 
   /* Loop reading blocks */
   while (1)
@@ -186,27 +187,28 @@ If NOSORT is non-nil, the list is not sorted--its order is unpredictable.\n\
       if (DIRENTRY_NONEMPTY (dp))
 	{
 	  if (NILP (match)
-	      || (0 <= re_search (&searchbuf, dp->d_name, len, 0, len, 0)))
+	      || (0 <= re_search (bufp, dp->d_name, len, 0, len, 0)))
 	    {
 	      if (!NILP (full))
 		{
-		  int index = XSTRING (dirname)->size;
-		  int total = len + index;
+		  int afterdirindex = dirnamelen;
+		  int total = len + dirnamelen;
+		  int needsep = 0;
+
+		  /* Decide whether we need to add a directory separator.  */
 #ifndef VMS
-		  if (length == 0
-		      || XSTRING (dirname)->data[length - 1] != '/')
-		    total++;
+		  if (dirnamelen == 0
+		      || !IS_ANY_SEP (XSTRING (dirname)->data[dirnamelen - 1]))
+		    needsep = 1;
 #endif /* VMS */
 
-		  name = make_uninit_string (total);
+		  name = make_uninit_string (total + needsep);
 		  bcopy (XSTRING (dirname)->data, XSTRING (name)->data,
-			 index);
-#ifndef VMS
-		  if (length == 0
-		      || XSTRING (dirname)->data[length - 1] != '/')
-		    XSTRING (name)->data[index++] = '/';
-#endif /* VMS */
-		  bcopy (dp->d_name, XSTRING (name)->data + index, len);
+			 dirnamelen);
+		  if (needsep)
+		    XSTRING (name)->data[afterdirindex++] = DIRECTORY_SEP;
+		  bcopy (dp->d_name,
+			 XSTRING (name)->data + afterdirindex, len);
 		}
 	      else
 		name = make_string (dp->d_name, len);
@@ -233,13 +235,6 @@ Returns nil if DIR contains no name starting with FILE.")
      Lisp_Object file, dirname;
 {
   Lisp_Object handler;
-  /* Don't waste time trying to complete a null string.
-     Besides, this case happens when user is being asked for
-     a directory name and has supplied one ending in a /.
-     We would not want to add anything in that case
-     even if there are some unique characters in that directory.  */
-  if (XTYPE (file) == Lisp_String && XSTRING (file)->size == 0)
-    return file;
 
   /* If the file name has special constructs in it,
      call the corresponding file handler.  */
@@ -351,7 +346,17 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 
           directoryp = ((st.st_mode & S_IFMT) == S_IFDIR);
 	  tem = Qnil;
-          if (!directoryp)
+          if (directoryp)
+	    {
+#ifndef TRIVIAL_DIRECTORY_ENTRY
+#define TRIVIAL_DIRECTORY_ENTRY(n) (!strcmp (n, ".") || !strcmp (n, ".."))
+#endif
+	      /* "." and ".." are never interesting as completions, but are
+		 actually in the way in a directory contains only one file.  */
+	      if (!passcount && TRIVIAL_DIRECTORY_ENTRY (dp->d_name))
+		continue;
+	    }
+	  else
             {
 	      /* Compare extensions-to-be-ignored against end of this file name */
 	      /* if name is not an exact match against specified string */
@@ -361,7 +366,7 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 		     CONSP (tem); tem = XCONS (tem)->cdr)
 		  {
 		    elt = XCONS (tem)->car;
-		    if (XTYPE (elt) != Lisp_String) continue;
+		    if (!STRINGP (elt)) continue;
 		    skip = len - XSTRING (elt)->size;
 		    if (skip < 0) continue;
 
@@ -382,7 +387,7 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 	    {
 	      Lisp_Object regexps;
 	      Lisp_Object zero;
-	      XFASTINT (zero) = 0;
+	      XSETFASTINT (zero, 0);
 
 	      /* Ignore this element if it fails to match all the regexps.  */
 	      for (regexps = Vcompletion_regexp_list; CONSP (regexps);
@@ -462,7 +467,7 @@ file_name_completion (file, dirname, all_flag, ver_flag)
 	      if (directoryp
 		  && compare == matchsize
 		  && bestmatchsize > matchsize
-		  && p1[matchsize] == '/')
+		  && IS_ANY_SEP (p1[matchsize]))
 		matchsize++;
 	      bestmatchsize = matchsize;
 	    }
@@ -496,8 +501,8 @@ file_name_completion_stat (dirname, dp, st_addr)
 
   bcopy (XSTRING (dirname)->data, fullname, pos);
 #ifndef VMS
-  if (fullname[pos - 1] != '/')
-    fullname[pos++] = '/';
+  if (!IS_DIRECTORY_SEP (fullname[pos - 1]))
+    fullname[pos++] = DIRECTORY_SEP;
 #endif
 
   bcopy (dp->d_name, fullname + pos, len);
@@ -653,13 +658,24 @@ If file does not exist, returns nil.")
   else					/* if we can't tell, assume worst */
     values[9] = Qt;
 #else					/* file gid will be egid */
+#ifdef WINDOWSNT
+  values[9] = Qnil;	/* sorry, no group IDs on NT */
+#else  /* not WINDOWSNT */
   values[9] = (s.st_gid != getegid ()) ? Qt : Qnil;
+#endif /* not WINDOWSNT */
 #endif	/* BSD4_2 (or BSD4_3) */
 #ifdef BSD4_3
 #undef BSD4_2 /* ok, you can look again without throwing up */
 #endif
+#ifdef WINDOWSNT
+  /* Fill in the inode and device values specially...see nt.c.  */
+  if (!get_inode_and_device_vals (filename, &values[10], &values[11])) {
+      return Qnil;
+  }
+#else  /* not WINDOWSNT */
   values[10] = make_number (s.st_ino);
   values[11] = make_number (s.st_dev);
+#endif /* not WINDOWSNT */
   return Flist (sizeof(values) / sizeof(values[0]), values);
 }
 

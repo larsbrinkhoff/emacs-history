@@ -55,28 +55,33 @@ in paths.el.")
 
 (defvar Info-directory-list
   (let ((path (getenv "INFOPATH"))
-	(sep (if (eq system-type 'ms-dos) ";" ":"))
-	(sibling (expand-file-name "../info/" (invocation-directory))))
+	;; This is for older Emacs versions
+	;; which might get this info.el from the Texinfo distribution.
+	(path-separator (if (boundp 'path-separator) path-separator
+			  (if (eq system-type 'ms-dos) ";" ":")))
+	(sibling (if installation-directory
+		     (expand-file-name "info/" installation-directory))))
     (if path
 	(let ((list nil)
 	      idx)
 	  (while (> (length path) 0)
-	    (setq idx (or (string-match sep path) (length path))
+	    (setq idx (or (string-match path-separator path) (length path))
 		  list (cons (substring path 0 idx) list)
 		  path (substring path (min (1+ idx)
 					    (length path)))))
 	  (nreverse list))
-      (if (or (member sibling Info-default-directory-list)
+      (if (or (null sibling)
+	      (member sibling Info-default-directory-list)
 	      (not (file-exists-p sibling))
-	      ;; On MS-DOS, we use movable executables always,
+	      ;; On DOS/NT, we use movable executables always,
 	      ;; and we must always find the Info dir at run time.
-	      (if (eq system-type 'ms-dos)
+	      (if (or (eq system-type 'ms-dos) (eq system-type 'windows-nt))
 		  nil
 		;; Use invocation-directory for Info only if we used it for
 		;; exec-directory also.
 		(not (string= exec-directory
-			      (expand-file-name "../lib-src/"
-						(invocation-directory))))))
+			      (expand-file-name "lib-src/"
+						installation-directory)))))
 	  Info-default-directory-list
 	(reverse (cons sibling (cdr (reverse Info-default-directory-list)))))))
   "List of directories to search for Info documentation files.
@@ -153,18 +158,21 @@ Do the right thing if the file has been compressed or zipped."
 	(setq tail (cdr tail)))
       (setq fullname (concat filename (car (car tail)))
 	    decoder (cdr (car tail)))
-      ;; check for conflict with jka-compr
-      (if (and (featurep 'jka-compr)
-	       (jka-compr-installed-p)
-	       (jka-compr-get-compression-info (concat filename
-						       (car (car tail)))))
-	  (setq decoder nil))
       (or tail
 	  (error "Can't find %s or any compressed version of it!" filename)))
+    ;; check for conflict with jka-compr
+    (if (and (featurep 'jka-compr)
+	     (jka-compr-installed-p)
+	     (jka-compr-get-compression-info fullname))
+	(setq decoder nil))
     (insert-file-contents fullname visit)
     (if decoder
-	(let ((buffer-read-only nil))
+	(let ((buffer-read-only nil)
+	      (default-directory (or (file-name-directory fullname)
+				     default-directory)))
 	  (shell-command-on-region (point-min) (point-max) decoder t)))))
+
+;;;###autoload (add-hook 'same-window-buffer-names "*info*")
 
 ;;;###autoload
 (defun info (&optional file)
@@ -179,7 +187,7 @@ to read a file name from the minibuffer."
   (if file
       (Info-goto-node (concat "(" file ")"))
     (if (get-buffer "*info*")
-	(switch-to-buffer "*info*")
+	(pop-to-buffer "*info*")
       (Info-directory))))
 
 ;;;###autoload
@@ -215,10 +223,14 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 			  ;; If specified name starts with `./'
 			  ;; then just try current directory.
 			  '("./")
-			(if Info-additional-directory-list
-			    (append Info-directory-list
-				    Info-additional-directory-list)
-			  Info-directory-list))))
+			(if (file-name-absolute-p filename)
+			    ;; No point in searching for an
+			    ;; absolute file name
+			    '(nil)
+			  (if Info-additional-directory-list
+			      (append Info-directory-list
+				      Info-additional-directory-list)
+			    Info-directory-list)))))
 	    ;; Search the directory list for file FILENAME.
 	    (while (and dirs (not found))
 	      (setq temp (expand-file-name filename (car dirs)))
@@ -271,7 +283,8 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 	      (set-marker Info-tag-table-marker nil)
 	      (goto-char (point-max))
 	      (forward-line -8)
-	      (or (equal nodename "*")
+	      ;; Use string-equal, not equal, to ignore text props.
+	      (or (string-equal nodename "*")
 		  (not (search-forward "\^_\nEnd tag table\n" nil t))
 		  (let (pos)
 		    ;; We have a tag table.  Find its beginning.
@@ -296,7 +309,8 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 	      (setq Info-current-file
 		    (if (eq filename t) "dir"
 		      (file-name-sans-versions buffer-file-name)))))
-	(if (equal nodename "*")
+	;; Use string-equal, not equal, to ignore text props.
+	(if (string-equal nodename "*")
 	    (progn (setq Info-current-node nodename)
 		   (Info-set-mode-line))
 	  ;; Search file for a suitable node.
@@ -475,14 +489,14 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
 				 nil t)
 	      (progn
 		(search-forward "\n\^_" nil 'move)
-		(beginning-of-line))
+		(beginning-of-line)
+		(insert "\n"))
 	    ;; If none exists, add one.
 	    (goto-char (point-max))
 	    (insert "\^_\nFile: dir\tNode: " nodename "\n\n* Menu:\n\n"))
 	  ;; Merge the text from the other buffer's menu
 	  ;; into the menu in the like-named node in the main buffer.
-	  (apply 'insert-buffer-substring (cdr (car nodes)))
-	  (insert "\n"))
+	  (apply 'insert-buffer-substring (cdr (car nodes))))
 	(setq nodes (cdr nodes)))
       ;; Kill all the buffers we just made.
       (while buffers
@@ -630,7 +644,8 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
   "If this node has been visited, restore the point value when we left."
   (while hl
     (if (and (equal (nth 0 (car hl)) Info-current-file)
-	     (equal (nth 1 (car hl)) Info-current-node))
+	     ;; Use string-equal, not equal, to ignore text props.
+	     (string-equal (nth 1 (car hl)) Info-current-node))
 	(progn
 	  (goto-char (nth 2 (car hl)))
 	  (setq hl nil))		;terminate the while at next iter
@@ -699,7 +714,8 @@ In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself."
     (widen)
     (goto-char found)
     (Info-select-node)
-    (or (and (equal onode Info-current-node)
+    ;; Use string-equal, not equal, to ignore text props.
+    (or (and (string-equal onode Info-current-node)
 	     (equal ofile Info-current-file))
 	(setq Info-history (cons (list ofile onode opoint)
 				 Info-history)))))
@@ -823,7 +839,7 @@ NAME may be an abbreviation of the reference name."
 	   (list (if (equal input "")
 		     default input)))
        (error "No cross-references in this node"))))
-  (let (target beg i (str (concat "\\*note " footnotename)))
+  (let (target beg i (str (concat "\\*note " (regexp-quote footnotename))))
     (while (setq i (string-match " " str i))
       (setq str (concat (substring str 0 i) "[ \t\n]+" (substring str (1+ i))))
       (setq i (+ i 6)))
@@ -853,6 +869,9 @@ NAME may be an abbreviation of the reference name."
 	    (Info-following-node-name (if multi-line "^.,\t" "^.,\t\n"))))
     (while (setq i (string-match "\n" str i))
       (aset str i ?\ ))
+    ;; Collapse multiple spaces.
+    (while (string-match "  +" str)
+      (setq str (replace-match " " t t str)))
     str))
 
 ;; No one calls this.
@@ -913,6 +932,7 @@ Completion is allowed, and the menu item point is on is the default."
 	 ;; If point is within a menu item, use that item as the default
 	 (default nil)
 	 (p (point))
+	 beg
 	 (last nil))
      (save-excursion
        (goto-char (point-min))
@@ -1021,7 +1041,9 @@ N is the digit argument used to invoke this command."
          (Info-next)
          t)
         ((and (save-excursion (search-backward "up:" nil t))
-	      (not (equal (downcase (Info-extract-pointer "up")) "top")))
+	      ;; Use string-equal, not equal, to ignore text props.
+	      (not (string-equal (downcase (Info-extract-pointer "up"))
+				 "top")))
          (let ((old-node Info-current-node))
            (Info-up)
            (let (Info-history success)
@@ -1039,7 +1061,10 @@ N is the digit argument used to invoke this command."
     (cond ((and upnode (string-match "(" upnode))
 	   (error "First node in file"))
 	  ((and upnode (or (null prevnode)
-			   (equal (downcase prevnode) (downcase upnode))))
+			   ;; Use string-equal, not equal,
+			   ;; to ignore text properties.
+			   (string-equal (downcase prevnode)
+					 (downcase upnode))))
 	   (Info-up))
 	  (prevnode
 	   ;; If we move back at the same level,
@@ -1086,21 +1111,14 @@ N is the digit argument used to invoke this command."
   (list 'condition-case nil (cons 'progn (append body '(t))) '(error nil)))
 
 (defun Info-next-preorder ()
-  "Go to the next subnode, popping up a level if there is none."
-  (interactive)
-  (cond ((Info-no-error (Info-next-menu-item)))
-	((Info-no-error (Info-up))
-	 (forward-line 1))
-	(t
-	 (error "No more nodes"))))
-
-(defun Info-next-preorder-1 ()
   "Go to the next subnode or the next node, or go up a level."
   (interactive)
   (cond ((Info-no-error (Info-next-menu-item)))
 	((Info-no-error (Info-next)))
 	((Info-no-error (Info-up))
-	 (forward-line 1))
+	 ;; Since we have already gone thru all the items in this menu,
+	 ;; go up to the end of this node.
+	 (goto-char (point-max)))
 	(t
 	 (error "No more nodes"))))
 
@@ -1111,12 +1129,22 @@ N is the digit argument used to invoke this command."
 	  (Info-last-menu-item)
 	  ;; If we go down a menu item, go to the end of the node
 	  ;; so we can scroll back through it.
-	  (goto-char (point-max))))
-	((Info-no-error (Info-up))		(forward-line -1))
-	(t 					(error "No previous nodes"))))
+	  (goto-char (point-max)))
+	 (recenter -1))
+	((Info-no-error (Info-prev))
+	 (goto-char (point-max))
+	 (recenter -1))
+	((Info-no-error (Info-up))
+	 (goto-char (point-min))
+	 (or (search-forward "\n* Menu:" nil t)
+	     (goto-char (point-max))))
+	(t (error "No previous nodes"))))
 
 (defun Info-scroll-up ()
-  "Read the next screen.  If end of buffer is visible, go to next entry."
+  "Scroll one screenful forward in Info, considering all nodes as one sequence.
+Once you scroll far enough in a node that its menu appears on the screen,
+the next scroll moves into its first subnode.  When you scroll past
+the end of a node, that goes to the next node or back up to the parent node."
   (interactive)
   (if (or (< (window-start) (point-min))
 	  (> (window-start) (point-max)))
@@ -1132,7 +1160,10 @@ N is the digit argument used to invoke this command."
       (scroll-up))))
 
 (defun Info-scroll-down ()
-  "Read the previous screen.  If start of buffer is visible, go to last entry."
+  "Scroll one screenful back in Info, considering all nodes as one sequence.
+Within the menu of a node, this goes to its last subnode.
+When you scroll past the beginning of a node, that goes to the
+previous node or back up to the parent node."
   (interactive)
   (if (or (< (window-start) (point-min))
 	  (> (window-start) (point-max)))
@@ -1198,12 +1229,17 @@ Give a blank topic name to go to the Index node itself."
     (or (re-search-forward "\n\\* \\(.*\\<Index\\>\\)" nil t)
 	(error "No index"))
     (goto-char (match-beginning 1))
-    (let ((Info-keeping-history nil))
+    ;; Here, and subsequently in this function,
+    ;; we bind Info-history to nil for internal node-switches
+    ;; so that we don't put junk in the history.
+    ;; In the first Info-goto-node call, above, we do update the history
+    ;; because that is what the user's previous node choice into it.
+    (let ((Info-history nil))
       (Info-goto-node (Info-extract-menu-node-name)))
     (or (equal topic "")
 	(let ((matches nil)
 	      (exact nil)
-	      (Info-keeping-history nil)
+	      (Info-history nil)
 	      found)
 	  (while
 	      (progn
@@ -1290,6 +1326,7 @@ Give a blank topic name to go to the Index node itself."
     (switch-to-buffer "*Help*")
     (erase-buffer)
     (insert (documentation 'Info-mode))
+    (help-mode)
     (goto-char (point-min))
     (let (ch flag)
       (while (progn (setq flag (not (pos-visible-in-window-p (point-max))))
@@ -1344,7 +1381,7 @@ At end of the node's text, moves to the next node, or up if none."
     (goto-char pos))
   (and (not (Info-try-follow-nearest-node))
        (save-excursion (forward-line 1) (eobp))
-       (Info-next-preorder-1)))
+       (Info-next-preorder)))
 
 (defun Info-follow-nearest-node ()
   "\\<Info-mode-map>Follow a node reference near point.
@@ -1352,7 +1389,7 @@ Like \\[Info-menu], \\[Info-follow-reference], \\[Info-next], \\[Info-prev] or \
 If no reference to follow, moves to the next node, or up if none."
   (interactive)
   (or (Info-try-follow-nearest-node)
-      (Info-next-preorder-1)))
+      (Info-next-preorder)))
 
 ;; Common subroutine.
 (defun Info-try-follow-nearest-node ()
@@ -1415,6 +1452,8 @@ If no reference to follow, moves to the next node, or up if none."
   (define-key Info-mode-map "p" 'Info-prev)
   (define-key Info-mode-map "q" 'Info-exit)
   (define-key Info-mode-map "s" 'Info-search)
+  ;; For consistency with Rmail.
+  (define-key Info-mode-map "\M-s" 'Info-search)
   (define-key Info-mode-map "t" 'Info-top-node)
   (define-key Info-mode-map "u" 'Info-up)
   (define-key Info-mode-map "," 'Info-index-next)
@@ -1467,9 +1506,6 @@ Advanced commands:
 \\[universal-argument] \\[info]	Move to new Info file with completion.
 \\[Info-search]	Search through this Info file for specified regexp,
 	and select the node in which the next occurrence is found.
-\\[Info-next-preorder]	Next-preorder; that is, try to go to the next menu item,
-	and if that fails try to move up, and if that fails, tell user
- 	he/she is done reading.
 \\[Info-next-reference]	Move cursor to next cross-reference or menu item.
 \\[Info-prev-reference]	Move cursor to previous cross-reference or menu item."
   (kill-all-local-variables)
@@ -1486,7 +1522,7 @@ Advanced commands:
   (make-local-variable 'Info-tag-table-marker)
   (make-local-variable 'Info-history)
   (make-local-variable 'Info-index-alternatives)
-  (if (eq (framep (selected-frame)) 'x)
+  (if (memq (framep (selected-frame)) '(x pc))
       (progn
 	(make-face 'info-node)
 	(make-face 'info-menu-5)
@@ -1518,7 +1554,14 @@ Advanced commands:
 Like text mode with the addition of `Info-cease-edit'
 which returns to Info mode for browsing.
 \\{Info-edit-map}"
-  )
+  (use-local-map Info-edit-map)
+  (setq major-mode 'Info-edit-mode)
+  (setq mode-name "Info Edit")
+  (kill-local-variable 'mode-line-buffer-identification)
+  (setq buffer-read-only nil)
+  (force-mode-line-update)
+  (buffer-enable-undo (current-buffer))
+  (run-hooks 'Info-edit-mode-hook))
 
 (defun Info-edit ()
   "Edit the contents of this Info node.
@@ -1526,15 +1569,9 @@ Allowed only if variable `Info-enable-edit' is non-nil."
   (interactive)
   (or Info-enable-edit
       (error "Editing info nodes is not enabled"))
-  (use-local-map Info-edit-map)
-  (setq major-mode 'Info-edit-mode)
-  (setq mode-name "Info Edit")
-  (kill-local-variable 'mode-line-buffer-identification)
-  (setq buffer-read-only nil)
-  ;; Make mode line update.
-  (set-buffer-modified-p (buffer-modified-p))
+  (Info-edit-mode)
   (message (substitute-command-keys
-	     "Editing: Type \\<Info-edit-map>\\[Info-cease-edit] to return to info")))
+	    "Editing: Type \\<Info-edit-map>\\[Info-cease-edit] to return to info")))
 
 (defun Info-cease-edit ()
   "Finish editing Info node; switch back to Info proper."
@@ -1548,8 +1585,7 @@ Allowed only if variable `Info-enable-edit' is non-nil."
   (setq mode-name "Info")
   (Info-set-mode-line)
   (setq buffer-read-only t)
-  ;; Make mode line update.
-  (set-buffer-modified-p (buffer-modified-p))
+  (force-mode-line-update)
   (and (marker-position Info-tag-table-marker)
        (buffer-modified-p)
        (message "Tags may have changed.  Use Info-tagify if necessary")))

@@ -1,6 +1,10 @@
 /* This file permits building Emacs with a shared libc on Sunos 4.
    To make this work, you must completely replace your C shared library
-   using one of the SunOS 4.1.x jumbo replacement patches from Sun.  */
+   using one of the SunOS 4.1.x jumbo replacement patches from Sun.
+   Here are the patch numbers for Sunos 4.1.3:
+   100890-10   SunOS 4.1.3: domestic libc jumbo patch
+   100891-10   SunOS 4.1.3: international libc jumbo patch  */
+
 
 #include "sunos4-1.h"
 
@@ -23,7 +27,7 @@
 
 #define UNEXEC	unexsunos4.o
 #define RUN_TIME_REMAP
-#define LINKER cc
+#define ORDINARY_LINK
 
 #undef LD_SWITCH_SYSTEM
 
@@ -38,6 +42,4 @@
 /* khera@cs.duke.edu says this is needed.  */
 #define memmove(to, from, size) bcopy (from, to, size)
 
-/* brett@kirk.es.go.dlr.de reported this was needed in sunos4-1-3.h,
-   so probably it is needed in this configuration too.  */
-#define X_IO_BUG
+#undef USE_DL_STUBS

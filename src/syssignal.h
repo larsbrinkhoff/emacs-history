@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -19,7 +19,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef POSIX_SIGNALS
 
-/* Don't #include <signal.h>.  That header shouldalways be #included
+/* Don't #include <signal.h>.  That header should always be #included
    before "config.h", because some configuration files (like s/hpux.h)
    indicate that SIGIO doesn't work by #undef-ing SIGIO.  If this file
    #includes <signal.h>, then that will re-#define SIGIO and confuse
@@ -58,13 +58,13 @@ extern sigset_t sys_sigmask ();
 
 /* Whether this is what all systems want or not, this is what
    appears to be assumed in the source, for example data.c:arith_error.  */
-typedef RETSIGTYPE (*signal_handler_t) (int);
+typedef RETSIGTYPE (*signal_handler_t) (/*int*/);
 
-signal_handler_t sys_signal (int signal_number, signal_handler_t action);
-int      sys_sigpause   (sigset_t new_mask);
-sigset_t sys_sigblock   (sigset_t new_mask);
-sigset_t sys_sigunblock (sigset_t new_mask);
-sigset_t sys_sigsetmask (sigset_t new_mask);
+signal_handler_t sys_signal (/*int signal_number, signal_handler_t action*/);
+int      sys_sigpause   (/*sigset_t new_mask*/);
+sigset_t sys_sigblock   (/*sigset_t new_mask*/);
+sigset_t sys_sigunblock (/*sigset_t new_mask*/);
+sigset_t sys_sigsetmask (/*sigset_t new_mask*/);
 
 #define sys_sigdel(MASK,SIG) sigdelset (&MASK,SIG)
 
@@ -135,7 +135,11 @@ sigset_t sys_sigsetmask (sigset_t new_mask);
 #ifdef BSD
 #define EMACS_KILLPG(gid, signo) (killpg ( (gid), (signo)))
 #else
+#ifdef WINDOWSNT
+#define EMACS_KILLPG(gid, signo) (win32_kill_process (gid, signo))
+#else
 #define EMACS_KILLPG(gid, signo) (kill   (-(gid), (signo)))
+#endif
 #endif
 
 /* Define SIGCHLD as an alias for SIGCLD.  There are many conditionals

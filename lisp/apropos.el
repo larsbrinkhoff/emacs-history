@@ -50,30 +50,37 @@
 Makes them run 2 or 3 times slower.  Set this non-nil if you have a fast
 machine.")
 
+(defun apropos-worthy-symbol-p (symbol)
+  "Return non-nil if SYMBOL is not worthless."
+  (or (fboundp symbol)
+      (boundp symbol)
+      (symbol-plist symbol)))
+
 ;;;###autoload
-(defun apropos (regexp &optional do-all pred)
+(defun apropos (regexp &optional do-all pred no-header)
   "Show all symbols whose names contain matches for REGEXP.
 If optional argument DO-ALL is non-nil (prefix argument if interactive),
 or if `apropos-do-all' is non-nil, does more (time-consuming) work such as
 showing key bindings.  Optional argument PRED is called with each symbol, and
-if it returns nil, the symbol is not shown.
+if it returns nil, the symbol is not shown.  If PRED is nil, the
+default predicate is that the symbol has a value, function definition
+or property list.
+
+Optional argument NO-HEADER means don't print `Function:' or `Variable:'
+in the output.
 
 Returns list of symbols and documentation found."
   (interactive "sApropos (regexp): \nP")
   (setq do-all (or apropos-do-all do-all))
+  (setq pred (or pred 'apropos-worthy-symbol-p))
   (let ((apropos-accumulate (apropos-internal regexp pred)))
     (if (null apropos-accumulate)
 	(message "No apropos matches for `%s'" regexp)
       (apropos-get-doc apropos-accumulate)
       (with-output-to-temp-buffer "*Help*"
-	(apropos-print-matches apropos-accumulate regexp nil do-all)))
+	(apropos-print-matches apropos-accumulate regexp nil
+			       do-all no-header)))
     apropos-accumulate))
-
-;; If "C-h a" still has its original binding of command-apropos, change it to
-;; use fast-command-apropos.  I don't use substitute-key-definition because
-;; it's slow.
-;(if (eq 'command-apropos (lookup-key help-map "a"))
-;    (define-key help-map "a" 'fast-command-apropos))
 
 ;; Takes LIST of symbols and adds documentation.  Modifies LIST in place.
 ;; Resulting alist is of form ((symbol fn-doc var-doc) ...).  Should only be
@@ -95,6 +102,16 @@ Returns list of symbols and documentation found."
       (setq p (cdr p)))
     list))
 
+;; Variables bound by super-apropos and used by its subroutines.
+;; It would be good to say what each one is for, but I don't know -- rms.
+(defvar apropos-item)
+(defvar apropos-var-doc)
+(defvar apropos-fn-doc)
+(defvar apropos-accumulate)
+(defvar apropos-regexp
+  "Within `super-apropos', this holds the REGEXP argument.")
+(defvar apropos-files-scanned)
+
 ;;;###autoload
 (defun super-apropos (regexp &optional do-all)
   "Show symbols whose names/documentation contain matches for REGEXP.
@@ -106,13 +123,17 @@ file.
 Returns list of symbols and documentation found."
   (interactive "sSuper Apropos: \nP")
   (setq do-all (or apropos-do-all do-all))
-  (let (apropos-accumulate fn-doc var-doc item)
-    (setq apropos-accumulate (super-apropos-check-doc-file regexp))
+  (let ((apropos-regexp regexp)
+	apropos-accumulate apropos-fn-doc apropos-var-doc apropos-item
+	apropos-files-scanned)
+    (setq apropos-accumulate
+	  (super-apropos-check-doc-file apropos-regexp))
+    (if do-all (mapatoms 'super-apropos-accumulate))
     (if (null apropos-accumulate)
-	(message "No apropos matches for `%s'" regexp)
-      (if do-all (mapatoms 'super-apropos-accumulate))
+	(message "No apropos matches for `%s'" apropos-regexp)
       (with-output-to-temp-buffer "*Help*"
-	(apropos-print-matches apropos-accumulate nil t do-all)))
+	(setq apropos-accumulate
+	      (apropos-print-matches apropos-accumulate nil t do-all))))
     apropos-accumulate))
 
 ;; Finds all documentation related to REGEXP in internal-doc-file-name.
@@ -120,61 +141,116 @@ Returns list of symbols and documentation found."
 
 (defun super-apropos-check-doc-file (regexp)
   (let* ((doc-file (concat doc-directory internal-doc-file-name))
-	 (doc-buffer
-	  ;; Force fundamental mode for the DOC file.
-	  (let (auto-mode-alist)
-	    (find-file-noselect doc-file t)))
-	type symbol doc sym-list)
-    (save-excursion
-      (set-buffer doc-buffer)
-      ;; a user said he might accidentally edit the doc file
-      (setq buffer-read-only t)
-      (bury-buffer doc-buffer)
-      (goto-char (point-min))
-      (while (re-search-forward regexp nil t)
-	(search-backward "\C-_")
-	(setq type (if (eq ?F (char-after (1+ (point))))
-		       1		;function documentation
-		     2)			;variable documentation
-	      symbol (progn
-		       (forward-char 2)
-		       (read doc-buffer))
-	      doc (buffer-substring
-		   (point)
-		   (progn
-		     (if (search-forward "\C-_" nil 'move)
-			 (1- (point))
-		       (point))))
-	      item (assq symbol sym-list))
-	(and (if (= type 1)
-		 (and (fboundp symbol) (documentation symbol))
-	       (documentation-property symbol 'variable-documentation))
-	     (or item
-		 (setq item (list symbol nil nil)
-		       sym-list (cons item sym-list)))
-	     (setcar (nthcdr type item) doc))))
+	 (doc-buffer (get-buffer-create  " apropos-temp"))
+	 type symbol doc sym-list)
+    (unwind-protect
+	(save-excursion
+	  (set-buffer doc-buffer)
+	  (buffer-disable-undo)
+	  (erase-buffer)
+	  (insert-file-contents doc-file)
+	  (while (re-search-forward regexp nil t)
+	    (search-backward "\C-_")
+	    (setq type (if (eq ?F (char-after (1+ (point))))
+			   1		;function documentation
+			 2)			;variable documentation
+		  symbol (progn
+			   (forward-char 2)
+			   (read doc-buffer))
+		  doc (buffer-substring
+		       (point)
+		       (progn
+			 (if (search-forward "\C-_" nil 'move)
+			     (1- (point))
+			   (point))))
+		  apropos-item (assq symbol sym-list))
+	    (and (if (= type 1)
+		     (and (fboundp symbol) (documentation symbol))
+		   (documentation-property symbol 'variable-documentation))
+		 (or apropos-item
+		     (setq apropos-item (list symbol nil nil)
+			   sym-list (cons apropos-item sym-list)))
+		 (setcar (nthcdr type apropos-item) doc))))
+      (kill-buffer doc-buffer))
     sym-list))
+
+(defun super-apropos-check-elc-file (regexp file)
+  (let* ((doc-buffer (get-buffer-create " apropos-temp"))
+	 symbol doc length beg end this-is-a-variable)
+    (unwind-protect
+	(save-excursion
+	  (set-buffer doc-buffer)
+	  (buffer-disable-undo)
+	  (erase-buffer)
+	  (insert-file-contents file)
+	  (while (search-forward "\n#@" nil t)
+	    ;; Read the comment length, and advance over it.
+	    (setq length (read (current-buffer)))
+	    (setq beg (point))
+	    (setq end (+ (point) length 1))
+	    (if (re-search-forward regexp end t)
+		(progn 
+		  (setq this-is-a-variable (save-excursion
+					     (goto-char end)
+					     (looking-at "(defvar\\|(defconst"))
+			symbol (save-excursion
+				 (goto-char end)
+				 (skip-chars-forward "(a-z")
+				 (forward-char 1)
+				 (read doc-buffer))
+			symbol (if (consp symbol)
+				   (nth 1 symbol)
+				 symbol)
+			doc (buffer-substring (1+ beg) (- end 2))
+			apropos-item (assq symbol apropos-accumulate))
+		  (and (if this-is-a-variable
+			   (documentation-property symbol 'variable-documentation)
+			 (and (fboundp symbol) (documentation symbol)))
+		       (or apropos-item
+			   (setq apropos-item (list symbol nil nil)
+				 apropos-accumulate (cons apropos-item
+							  apropos-accumulate)))
+		       (setcar (nthcdr (if this-is-a-variable 2 1)
+				       apropos-item)
+			       doc))))
+	    (goto-char end)))
+      (kill-buffer doc-buffer))
+    apropos-accumulate))
 
 ;; This is passed as the argument to map-atoms, so it is called once for every
 ;; symbol in obarray.  Takes one argument SYMBOL, and finds any memory-resident
-;; documentation on that symbol if it matches a variable regexp.  WARNING: this
-;; function depends on the symbols fn-doc var-doc regexp and item being bound
-;; correctly when it is called!"
+;; documentation on that symbol if it matches a variable regexp.
 
 (defun super-apropos-accumulate (symbol)
-  (cond ((string-match regexp (symbol-name symbol))
-	 (setq item (apropos-get-accum-item symbol))
-	 (setcar (cdr item) (or (safe-documentation symbol)
-				(nth 1 item)))
-	 (setcar (nthcdr 2 item) (or (safe-documentation-property symbol)
-				     (nth 2 item))))
-	(t
-	 (and (setq fn-doc (safe-documentation symbol))
-	      (string-match regexp fn-doc)
-	      (setcar (cdr (apropos-get-accum-item symbol)) fn-doc))
-	 (and (setq var-doc (safe-documentation-property symbol))
-	      (string-match regexp var-doc)
-	      (setcar (nthcdr 2 (apropos-get-accum-item symbol)) var-doc))))
+  (let (doc)
+    (cond ((string-match apropos-regexp (symbol-name symbol))
+	   (setq apropos-item (apropos-get-accum-item symbol))
+	   (setcar (cdr apropos-item)
+		   (or (safe-documentation symbol)
+		       (nth 1 apropos-item)))
+	   (setcar (nthcdr 2 apropos-item)
+		   (or (safe-documentation-property symbol)
+		       (nth 2 apropos-item))))
+	  ((or (consp (setq doc (safe-documentation symbol)))
+	       (consp (setq doc (safe-documentation-property symbol))))
+	   ;; This symbol's doc is stored in a file.
+	   ;; Scan the file if we have not scanned it before.
+	   (let ((file (car doc)))
+	     (or (member file apropos-files-scanned)
+		 (progn
+		   (setq apropos-files-scanned
+			 (cons file apropos-files-scanned))
+		   (super-apropos-check-elc-file apropos-regexp file)))))
+	  (t
+	   (and (stringp (setq doc (safe-documentation symbol)))
+		(setq apropos-fn-doc doc)
+		(string-match apropos-regexp apropos-fn-doc)
+		(setcar (cdr (apropos-get-accum-item symbol)) apropos-fn-doc))
+	   (and (stringp (setq doc (safe-documentation-property symbol)))
+		(setq apropos-var-doc doc)
+		(string-match apropos-regexp apropos-var-doc)
+		(setcar (nthcdr 2 (apropos-get-accum-item symbol))
+			apropos-var-doc)))))
   nil)
 
 ;; Prints the symbols and documentation in alist MATCHES of form ((symbol
@@ -186,7 +262,8 @@ Returns list of symbols and documentation found."
 ;; consulting key bindings.  Should only be called within a
 ;; with-output-to-temp-buffer.
 
-(defun apropos-print-matches (matches &optional regexp spacing do-all)
+(defun apropos-print-matches (matches &optional regexp
+				      spacing do-all no-header)
   (setq matches (sort matches (function
 			       (lambda (a b)
 				 (string-lessp (car a) (car b))))))
@@ -217,14 +294,25 @@ Returns list of symbols and documentation found."
 		 (princ "(not bound to any keys)"))))
 	(terpri)
 	(cond ((setq tem (nth 1 item))
-	       (princ "  Function: ")
-	       (princ (if do-all (substitute-command-keys tem) tem))))
+	       (let ((substed (if do-all (substitute-command-keys tem) tem)))
+		 (if no-header
+		     (princ "  ")
+		   (princ "  Function: ")
+		   (if (> (length substed) 67)
+		       (princ "\n  ")))
+		 (princ substed))))
 	(or (bolp) (terpri))
 	(cond ((setq tem (nth 2 item))
-	       (princ "  Variable: ")
-	       (princ (if do-all (substitute-command-keys tem) tem))))
-	(or (bolp) (terpri)))))
-  t)
+	       (let ((substed (if do-all (substitute-command-keys tem) tem)))
+		 (if no-header
+		     (princ "  ")
+		   (princ "  Variable: ")
+		   (if (> (length substed) 67)
+		       (princ "\n  ")))
+		 (princ substed))))
+	(or (bolp) (terpri)))
+      (help-mode)))
+  matches)
 
 ;; Find key bindings for symbols that are cars in ALIST.  Optionally, first
 ;; match the symbol name against REGEXP.  Modifies ALIST in place.  Each key
@@ -233,9 +321,16 @@ Returns list of symbols and documentation found."
 
 (defun apropos-match-keys (alist &optional regexp)
   (let* ((current-local-map (current-local-map))
-	 (maps (append (and current-local-map
-			    (accessible-keymaps current-local-map))
-		       (accessible-keymaps (current-global-map))))
+	 ;; Get a list of the top-level maps now active.
+	 (top-maps
+	  (if overriding-local-map
+	      (list overriding-local-map (current-global-map))
+	    (append (current-minor-mode-maps)
+		    (if current-local-map
+			(list current-local-map (current-global-map))
+		      (list (current-global-map))))))
+	 ;; Turn that into a list of all the maps including submaps.
+	 (maps (apply 'append (mapcar 'accessible-keymaps top-maps)))
 	 map				;map we are now inspecting
 	 sequence			;key sequence to reach map
 	 i				;index into vector map
@@ -253,12 +348,17 @@ Returns list of symbols and documentation found."
 	  (setq map (cdr map)))
       (while (stringp (car-safe map))
 	(setq map (cdr map)))
+
       (while (consp map)
 	(cond ((consp (car map))
 	       (setq command (cdr (car map))
 		     key (car (car map)))
-	       ;; Skip any menu prompt in this key binding.
-	       (and (consp command) (symbolp (cdr command))
+	       ;; Skip any menu prompt and help string in this key binding.
+	       (while (and (consp command) (stringp (car command)))
+		 (setq command (cdr command)))
+	       ;; Skip any cached equivalent key.
+	       (and (consp command)
+		    (consp (car command))
 		    (setq command (cdr command)))
 	       ;; if is a symbol, and matches optional regexp, and is a car
 	       ;; in alist, and is not shadowed by a different local binding,
@@ -337,14 +437,17 @@ Will return nil instead."
 		     0)))
   (if (eq (car-safe function) 'macro)
       (setq function (cdr function)))
-  (if (not (consp function))
-      nil
-    (if (not (memq (car function) '(lambda autoload)))
+  (if (byte-code-function-p function)
+      (if (> (length function) 4)
+	  (aref function 4))
+    (if (not (consp function))
 	nil
-      (setq function (nth 2 function))
-      (if (stringp function)
-	  function
-	nil))))
+      (if (not (memq (car function) '(lambda autoload)))
+	  nil
+	(setq function (nth 2 function))
+	(if (stringp function)
+	    function
+	  nil)))))
 
 (defun safe-documentation-property (symbol)
   "Like documentation-property, except it avoids calling `get_doc_string'.

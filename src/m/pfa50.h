@@ -27,9 +27,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* 68000 has lowest-numbered byte as most significant */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define WORDS_BIG_ENDIAN
 
 /* Say this machine is a 68000 */
 
@@ -65,7 +66,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define START_FILES crt0.o
 
-/* Define LD_SWITCH_MACHINE if your linker need it.
+/* Define LD_SWITCH_MACHINE if your linker needs it.
  */
 
 #define LD_SWITCH_MACHINE -e __start
@@ -73,9 +74,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #if	pfa50 || pfa70
 
 /* On A-50/60/70/80, data space has high order byte use. */
+#define VALBITS 26
 #define VALMASK (((1<<VALBITS) - 1) | 0x60000000)
-#define XTYPE(a) ((enum Lisp_Type) (((a) >> VALBITS) & 0x1f))
-#define XGCTYPE(a) ((enum Lisp_Type) (((a) >> VALBITS) & 0x1f))
+#define XTYPE(a) ((enum Lisp_Type) (((a) >> VALBITS) & GCTYPEMASK))
 
 #endif /* pfa50, pfa70 */
 
@@ -88,8 +89,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define TERMINFO
 
-#define HAVE_TIMEVAL
-#define HAVE_SELECT
 #define HAVE_PTYS
 #define HAVE_SOCKETS
 
@@ -97,9 +96,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* SX/A does not have sigblock(2) */
 #define sigblock(mask)	(0)
-
-#define USG_SYS_TIME
-#define USE_UTIME
 
 #define NO_SIOCTL_H
 

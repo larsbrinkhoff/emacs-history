@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Abbrevs, Picture, Building, Top
 @chapter Abbrevs
@@ -181,11 +181,11 @@ punctuation with @kbd{C-q}.  Thus, @kbd{foo C-q ,} leaves @samp{foo,} in
 the buffer.
 
   If you expand an abbrev by mistake, you can undo the expansion and
-bring back the abbrev itself by typing @kbd{C-_} (@code{undo}).  This
-also undoes the insertion of the non-word character that expanded the
-abbrev.  If the result you want is the terminating non-word character
-plus the unexpanded abbrev, you must reinsert the terminating character,
-quoting it with @kbd{C-q}.
+bring back the abbrev itself by typing @kbd{C-_} to undo (@pxref{Undo}).
+This also undoes the insertion of the non-word character that expanded
+the abbrev.  If the result you want is the terminating non-word
+character plus the unexpanded abbrev, you must reinsert the terminating
+character, quoting it with @kbd{C-q}.
 
 @findex expand-region-abbrevs
   @kbd{M-x expand-region-abbrevs} searches through the region for defined
@@ -309,27 +309,55 @@ automatically from the contents of the buffer, but dynamic abbrev expansion
 happens only when you request it explicitly.
 
 @kindex M-/
+@kindex C-M-/
 @findex dabbrev-expand
+@findex dabbrev-completion
 @table @kbd
 @item M-/
 Expand the word in the buffer before point as a @dfn{dynamic abbrev},
 by searching in the buffer for words starting with that abbreviation
 (@code{dabbrev-expand}).
+
+@item C-M-/
+Complete the word before point as a dynamic abbrev
+(@code{dabbrev-completion}).
 @end table
 
-  For example, if the buffer contains @samp{does this follow } and you type
-@kbd{f o M-/}, the effect is to insert @samp{follow} because that is the
-last word in the buffer that starts with @samp{fo}.  A numeric argument to
-@kbd{M-/} says to take the second, third, etc.@: distinct expansion found
-looking backward from point.  Repeating @kbd{M-/} searches for an
-alternative expansion by looking farther back.  After the entire buffer
-before point has been considered, the buffer after point is searched.
+  For example, if the buffer contains @samp{does this follow } and you
+type @kbd{f o M-/}, the effect is to insert @samp{follow} because that
+is the last word in the buffer that starts with @samp{fo}.  A numeric
+argument to @kbd{M-/} says to take the second, third, etc.@: distinct
+expansion found looking backward from point.  Repeating @kbd{M-/}
+searches for an alternative expansion by looking farther back.  After
+considering the entire buffer before point, it searches the text after
+point.  After searching all of the current buffer, @kbd{M-/} searches
+other buffers.
 
   A negative argument to @kbd{M-/}, as in @kbd{C-u - M-/}, says to
-search first for expansions after point, and only later search the text
+search first for expansions after point, and second for expansions
 before point.  If you repeat the @kbd{M-/} to look for another
 expansion, do not specify an argument.  This tries all the expansions
 after point and then the expansions before point.
+
+  After you have expanded a dynamic abbrev, you can copy additional
+words that follow the expansion in its original context.  Simply type
+@kbd{@key{SPC} M-/} for each word you want to copy.  The spacing and
+punctuation between words is copied along with the words.
+
+@vindex dabbrev-abbrev-skip-leading-regexp
+  In shell scripts and makefiles, a variable name is sometimes prefixed
+with @samp{$} and sometimes not.  Major modes for this kind of text can
+customize dynamic abbreviation to handle optional prefixes by setting
+the variable @code{dabbrev-abbrev-skip-leading-regexp}.  Its value
+should be a regular expression that matches the optional prefix that
+dynamic abbreviation should ignore.
+
+  The command @kbd{C-M-/} (@code{dabbrev-completion}) performs
+completion of a dynamic abbreviation.  Instead of trying the possible
+expansions one by one, it finds all of them, then inserts the text that
+they have in common.  If they have nothing in common, @kbd{C-M-/}
+displays a list of completions, from which you can select a choice in
+the usual manner.  @xref{Completion}.
 
   Dynamic abbrev expansion is completely independent of Abbrev mode; the
 expansion of a word with @kbd{M-/} is completely independent of whether

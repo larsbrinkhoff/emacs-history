@@ -1,3 +1,38 @@
+Thu Jun  8 15:57:24 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* sed2.inp: Define STDC_HEADERS.
+	Undefine MULTI_FRAME, until somebody fixes msdos.h and msdos.c.
+
+Fri Jan 20 19:10:12 1995  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* sed3.inp: Fix sed append command to behave as intended.
+
+Fri Jan 20 20:25:32 1995  Morten Welinder  <terra@diku.dk>
+
+	* sed3.inp: Delete mysterious dot.  Add comment to protect blank
+	line at end of file.  Make sure make-docfile is compiled.
+
+Tue Jan 10 19:18:08 1995  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* sed3.inp: Use coff2exe on make-docfile.
+	* sed1.inp: Not go32, which has problems with long arg lists.
+
+Mon Oct 17 03:49:12 1994  Morten Welinder  <terra@mole.gnu.ai.mit.edu>
+
+	* sed1.inp: Handle "\t#"-style comments.
+	(obj): Don't add any files -- now done in src/makefile.in.in
+	(temacs): Don't depend on prefix-args.
+	(DOC): Reflect makefile changes regarding two-batch run.
+
+	* sed2.inp: Add comments showing how to use the system malloc.
+	(EMACS_CONFIG_OPTIONS): Set though not useful.
+	(HAVE_MKTIME): Define.
+
+	* mainmake (clean): Add target.
+
+	* sed1x.inp, sed2x.inp, sed5x.inp: New files for X configuration.
+
+
 Thu Jul 14 19:53:46 1994  Morten Welinder  (terra@diku.dk)
 
 	* sed2.inp (HAVE_STRERROR): Define.

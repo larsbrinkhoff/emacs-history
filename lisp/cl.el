@@ -10,7 +10,7 @@
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -254,6 +254,13 @@ Keywords supported:  :test :test-not :key"
 			     (defalias 'macroexpand 'cl-macroexpand)))
 
 (defun cl-macroexpand (cl-macro &optional cl-env)
+  "Return result of expanding macros at top level of FORM.
+If FORM is not a macro call, it is returned unchanged.
+Otherwise, the macro is expanded and the expansion is considered
+in place of FORM.  When a non-macro-call results, it is returned.
+
+The second optional arg ENVIRONMENT species an environment of macro
+definitions to shadow the loaded ones for use in file byte-compilation."
   (let ((cl-macro-environment cl-env))
     (while (progn (setq cl-macro (funcall cl-old-macroexpand cl-macro cl-env))
 		  (and (symbolp cl-macro)

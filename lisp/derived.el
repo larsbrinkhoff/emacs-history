@@ -106,8 +106,8 @@
 
 The arguments to this command are as follow:
 
-PARENT:    the name of the command for the parent mode (ie. text-mode).
 CHILD:     the name of the command for the derived mode.
+PARENT:    the name of the command for the parent mode (ie. text-mode).
 NAME:      a string which will appear in the status line (ie. \"Hypertext\")
 DOCSTRING: an optional documentation string--if you do not supply one,
            the function will attempt to invent something useful.
@@ -297,8 +297,30 @@ Always merge its parent into it, since the merge is non-destructive."
 
 (defun derived-mode-merge-keymaps (old new)
   "Merge an old keymap into a new one.
-The old keymap is set to be the cdr of the new one, so that there will
+The old keymap is set to be the last cdr of the new one, so that there will
 be automatic inheritance."
+  (let ((tail new))
+    ;; Scan the NEW map for prefix keys.
+    (while (consp tail)
+      (and (consp (car tail))
+	   (let* ((key (vector (car (car tail))))
+		  (subnew (lookup-key new key))
+		  (subold (lookup-key old key)))
+	     ;; If KEY is a prefix key in both OLD and NEW, merge them.
+	     (and (keymapp subnew) (keymapp subold)
+		  (derived-mode-merge-keymaps subold subnew))))
+      (and (vectorp (car tail))
+	   ;; Search a vector of ASCII char bindings for prefix keys.
+	   (let ((i (1- (length (car tail)))))
+	     (while (>= i 0)
+	       (let* ((key (vector i))
+		      (subnew (lookup-key new key))
+		      (subold (lookup-key old key)))
+		 ;; If KEY is a prefix key in both OLD and NEW, merge them.
+		 (and (keymapp subnew) (keymapp subold)
+		      (derived-mode-merge-keymaps subold subnew)))
+	       (setq i (1- i)))))
+      (setq tail (cdr tail))))
   (setcdr (nthcdr (1- (length new)) new) old))
 
 (defun derived-mode-merge-syntax-tables (old new)

@@ -6,7 +6,7 @@
 ;; Created: 2 Oct 1993
 ;; Version: v2.8
 ;; Last Modified: 1994/06/01
-;; Keyword: news
+;; Keywords: news
 
 ;; This file is part of GNU Emacs.
 
@@ -2425,14 +2425,14 @@ ARG delimits the number of files to be decoded."
   (define-key gnus-uu-mode-map "\C-c\C-v" 'gnus-uu-interactive-execute)
   (define-key gnus-uu-mode-map "\C-m" 'gnus-uu-interactive-execute)
   (define-key gnus-uu-mode-map "\C-c\C-c" 'gnus-uu-interactive-end)
-  (define-key gnus-uu-mode-map "\C-cs" 
+  (define-key gnus-uu-mode-map "\C-c\C-z" 
     'gnus-uu-interactive-save-current-file)
   (define-key gnus-uu-mode-map "\C-c\C-s"
     'gnus-uu-interactive-save-current-file-silent)
   (define-key gnus-uu-mode-map "\C-c\C-w" 'gnus-uu-interactive-save-all-files)
   (define-key gnus-uu-mode-map "\C-c\C-o" 'gnus-uu-interactive-save-original-file)
   (define-key gnus-uu-mode-map "\C-c\C-r" 'gnus-uu-interactive-rescan-directory)
-  (define-key gnus-uu-mode-map "\C-cr" 'gnus-uu-interactive-scan-directory)
+  (define-key gnus-uu-mode-map "\C-c\C-d" 'gnus-uu-interactive-scan-directory)
   )
 
 (defun gnus-uu-interactive-set-up-windows ()
@@ -2784,9 +2784,9 @@ to post the entire encoded files.
   (setq mode-name "Gnus UU News")
   (make-local-variable 'paragraph-separate)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^" mail-header-separator "$\\|"
+  (setq paragraph-start (concat mail-header-separator "$\\|"
 				paragraph-start))
-  (setq paragraph-separate (concat "^" mail-header-separator "$\\|"
+  (setq paragraph-separate (concat mail-header-separator "$\\|"
 				   paragraph-separate))
   (run-hooks 'text-mode-hook 'gnus-uu-post-reply-mode-hook))
 

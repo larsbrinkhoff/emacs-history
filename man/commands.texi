@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Characters, Keys and Commands
@@ -28,7 +28,7 @@ keys and mouse button actions.
 assigned graphic symbols such as @samp{a} and @samp{=}; the rest are
 control characters, such as @kbd{Control-a} (usually written @kbd{C-a}
 for short).  @kbd{C-a} gets its name from the fact that you type it by
-holding down the @key{CTRL} key and then pressing @kbd{a}.
+holding down the @key{CTRL} key while pressing @kbd{a}.
 
   Some control characters have special names, and special keys you can
 type them with: for example, @key{RET}, @key{TAB}, @key{LFD}, @key{DEL}
@@ -60,7 +60,7 @@ logically speaking, the order in which the modifier keys @key{CTRL} and
 
 @cindex Meta
 @cindex M-
-@cindex ESC replacing META key
+@cindex @key{ESC} replacing @key{META} key
   Some terminals have a @key{META} key, and allow you to type Meta
 characters by holding this key down.  Thus, @kbd{Meta-a} is typed by
 holding down @key{META} and pressing @kbd{a}.  The @key{META} key works
@@ -72,24 +72,23 @@ with some other primary purpose.@refill
 using two-character sequences starting with @key{ESC}.  Thus, to enter
 @kbd{M-a}, you could type @kbd{@key{ESC} a}.  To enter @kbd{C-M-a}, you
 would type @kbd{@key{ESC} C-a}.  @key{ESC} is allowed on terminals with
-Meta keys, too, in case you have formed a habit of using it.@refill
+@key{META} keys, too, in case you have formed a habit of using it.
   
   X Windows provides several other modifier keys that can be applied to
 any input character.  These are called @key{SUPER}, @key{HYPER} and
 @key{ALT}.  We write @samp{s-}, @samp{H-} and @samp{A-} to say that a
 character uses these modifiers.  Thus, @kbd{s-H-C-x} is short for
 @kbd{Super-Hyper-Control-x}.  Not all X terminals actually provide keys
-for these modifier flags, and the standard key bindings of Emacs do not
-include such characters.  But you can assign them meanings of your own
-by customizing Emacs.
+for these modifier flags---in fact, many terminals have a key labeled
+@key{ALT} which is really a @key{META} key.  The standard key bindings
+of Emacs do not include any characters with these modifiers.  But you
+can assign them meanings of your own by customizing Emacs.
 
   Keyboard input includes keyboard keys that are not characters at all:
 for example function keys and arrow keys.  Mouse buttons are also
 outside the gamut of characters.  You can modify these events with the
 modifier keys @key{CONTROL}, @key{META}, @key{SUPER}, @key{HYPER} and
-@key{ALT} like keyboard characters.  But these inputs do not have
-numeric character codes.  Instead, Emacs represents them by their names
-(actually, Lisp objects called @dfn{symbols}).
+@key{ALT} like keyboard characters.
 
 @cindex input event
   Input characters and non-character inputs are collectively called
@@ -102,8 +101,8 @@ non-character events, see @ref{Customization}.
 ASCII characters.  These terminals use a sequence of characters to
 represent each function key.  But that is invisible to the Emacs user,
 because the keyboard input routines recognize these special sequences
-and converts them to names before any other part of Emacs gets to see
-them.
+and convert them to function key events before any other part of Emacs
+gets to see them.
 
 @node Keys, Commands, User Input, Top
 @section Keys
@@ -157,11 +156,12 @@ define it too as a prefix).  Conversely, if you remove the prefix
 definition of @kbd{C-x 4}, then @kbd{C-x 4 f} (or @kbd{C-x 4
 @var{anything}}) is no longer a key.
 
-  Typing the help character (@kbd{C-h}) after a prefix character usually
-displays a list of the commands starting with that prefix.  There are a
-few prefix characters for which this doesn't work---for historical 
-reasons, they have other meanings for @kbd{C-h} which are not easy to
-change.
+  Typing the help character (@kbd{C-h} or @key{F1}) after a prefix
+character displays a list of the commands starting with that prefix.
+There are a few prefix characters for which @kbd{C-h} does not
+work---for historical reasons, they have other meanings for @kbd{C-h}
+which are not easy to change.  But @key{F1} should work for all prefix
+characters.
   
 @node Commands, Text Characters, Keys, Top
 @section Keys and Commands

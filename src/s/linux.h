@@ -1,4 +1,4 @@
-/* This file is the configuration file for the Linux operating system.
+/* This file is the configuration file for GNU/Linux operating systems.
    Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
@@ -73,19 +73,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_TERMIOS
 
 /*
- *	Define HAVE_TIMEVAL if the system supports the BSD style clock values.
- *	Look in <sys/time.h> for a timeval structure.
- */
-
-#define HAVE_TIMEVAL
-
-/*
- *	Define HAVE_SELECT if the system supports the `select' system call.
- */
-
-#define HAVE_SELECT
-
-/*
  *	Define HAVE_PTYS if the system supports pty devices.
  */
 
@@ -157,7 +144,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef emacs
 #include <stdio.h>  /* Get the definition of _IO_STDIO_H.  */
-#ifdef _IO_STDIO_H
+#if defined(_IO_STDIO_H) || defined(_STDIO_USES_IOSTREAM)
 /* new C libio names */
 #define GNU_LIBRARY_PENDING_OUTPUT_COUNT(FILE) \
   ((FILE)->_IO_write_ptr - (FILE)->_IO_write_base)
@@ -168,8 +155,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif /* !_IO_STDIO_H */
 #endif /* emacs */
 
+/* Ask GCC where to find libgcc.a.  */
+#define LIB_GCC `$(CC) $(C_SWITCH_X_SITE) -print-libgcc-file-name`
+
+#ifndef __ELF__
 /* Linux has crt0.o in a non-standard place */
 #define START_FILES pre-crt0.o /usr/lib/crt0.o
+#else
+#define START_FILES pre-crt0.o /usr/lib/crt1.o /usr/lib/crti.o
+#endif
 
 /* As of version 1.1.51, Linux does not actually implement SIGIO.  */
 /* Here we assume that signal.h is already included.  */
@@ -181,14 +175,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define NO_SIOCTL_H           /* don't have sioctl.h */
 
-#define HAVE_GETPAGESIZE
 #define HAVE_VFORK
 #define HAVE_SYS_SIGLIST
 #define HAVE_GETWD            /* cure conflict with getcwd? */
 
-#define USE_UTIME             /* don't have utimes */
 #define SYSV_SYSTEM_DIR       /* use dirent.h */
-#define USG_SYS_TIME          /* use sys/time.h, not time.h */
 
 #define POSIX                 /* affects getpagesize.h and systty.h */
 #define POSIX_SIGNALS
@@ -202,7 +193,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Best not to include -lg, unless it is last on the command line */
 #define LIBS_DEBUG
 #define LIBS_TERMCAP -ltermcap -lcurses /* save some space with shared libs*/
+#ifndef __ELF__
 #define LIB_STANDARD -lc /* avoid -lPW */
+#else
+#undef LIB_GCC
+#define LIB_GCC
+#define LIB_STANDARD -lgcc -lc -lgcc /usr/lib/crtn.o
+#endif
 
 /* Don't use -g in test compiles in configure.
    This is so we will use the same shared libs for that linking
@@ -230,6 +227,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #define HAVE_SYSVIPC
+
+#ifdef __ELF__
+#define UNEXEC unexelf.o
+#define UNEXEC_USE_MAP_PRIVATE
+#endif
 
 #ifdef LINUX_QMAGIC
 
@@ -266,3 +268,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_XRMSETDATABASE
 #endif
 #endif /* 0 */
+
+/* The regex.o routines are a part of the GNU C-library used with Linux.  */
+#define REGEXP_IN_LIBC

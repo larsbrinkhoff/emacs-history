@@ -42,14 +42,18 @@
   (let (char)
     (save-window-excursion
      (with-output-to-temp-buffer "*Help*"
-       (if (eq (aref (this-command-keys) 0)
-	       (if (stringp (this-command-keys))
-		   (aref "\M-x" 0)
-		 ?\M-x))
-	   (princ "You have invoked the disabled command ")
-	 (princ "You have typed ")
-	 (princ (key-description (this-command-keys)))
-	 (princ ", invoking disabled command "))
+       (let ((keys (this-command-keys)))
+	 (if (or (eq (aref keys 0)
+		     (if (stringp keys)
+			 (aref "\M-x" 0)
+		       ?\M-x))
+		 (and (>= (length keys) 2)
+		      (eq (aref keys 0) meta-prefix-char)
+		      (eq (aref keys 1) ?x)))
+	     (princ "You have invoked the disabled command ")
+	   (princ "You have typed ")
+	   (princ (key-description keys))
+	   (princ ", invoking disabled command ")))
        (princ this-command)
        (princ ":\n")
        ;; Print any special message saying why the command is disabled.
@@ -71,7 +75,10 @@
 Space to try the command just this once,
       but leave it disabled,
 Y to try it and enable it (no questions if you use it again),
-N to do nothing (command remains disabled)."))
+N to do nothing (command remains disabled).")
+       (save-excursion
+	(set-buffer standard-output)
+	(help-mode)))
      (message "Type y, n or Space: ")
      (let ((cursor-in-echo-area t))
        (while (not (memq (setq char (downcase (read-char)))
@@ -101,10 +108,11 @@ to future sessions."
    (if (search-forward (concat "(put '" (symbol-name command) " ") nil t)
        (delete-region
 	(progn (beginning-of-line) (point))
-	(progn (forward-line 1) (point)))
-     ;; Must have been disabled by default.
-     (goto-char (point-max))
-     (insert "\n(put '" (symbol-name command) " 'disabled nil)\n"))
+	(progn (forward-line 1) (point))))
+   ;; Explicitly enable, in case this command is disabled by default
+   ;; or in case the code we deleted was actually a comment.
+   (goto-char (point-max))
+   (insert "\n(put '" (symbol-name command) " 'disabled nil)\n")
    (save-buffer)))
 
 ;;;###autoload
@@ -125,7 +133,7 @@ to future sessions."
 	(progn (beginning-of-line) (point))
 	(progn (forward-line 1) (point))))
    (goto-char (point-max))
-   (insert "(put '" (symbol-name command) " 'disabled t)\n")
+   (insert "\n(put '" (symbol-name command) " 'disabled t)\n")
    (save-buffer)))
 
 ;;; novice.el ends here

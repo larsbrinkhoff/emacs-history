@@ -25,15 +25,22 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <config.h>
 #include "lisp.h"
 
-#ifdef HAVE_X_WINDOWS
+#ifdef HAVE_FACES
 
+#ifdef HAVE_X_WINDOWS
 #include "xterm.h"
+#endif
+#ifdef MSDOS
+#include "dosfns.h"
+#endif
 #include "buffer.h"
 #include "dispextern.h"
 #include "frame.h"
 #include "blockinput.h"
 #include "window.h"
+#include "intervals.h"
 
+#ifdef HAVE_X_WINDOWS
 /* Compensate for bug in Xos.h on some systems, on which it requires
    time.h.  On some such systems, Xos.h tries to redefine struct
    timeval and struct timezone if USG is #defined while it is
@@ -51,7 +58,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <X11/Xos.h>
 
 #endif
-
+#endif /* HAVE_X_WINDOWS */
 
 /* An explanation of the face data structures.  */
 
@@ -105,12 +112,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    characters.  Elements 0 and 1 of computed_faces always describe the
    default and mode-line faces.
 
-   Elements 0 and 1 of computed_faces have GC's; all the other faces
-   in computed_faces do not.  The global array face_vector contains
-   faces with their GC's set.  Given a computed_face, the function
-   intern_face finds (or adds) an element of face_vector with
-   equivalent parameters, and returns a pointer to that face, whose GC
-   can then be used for display.
+   Each computed face belongs to a particular frame.
+
+   Computed faces have graphics contexts some of the time.
+   intern_face builds a GC for a specified computed face
+   if it doesn't have one already.
+   clear_face_cache clears out the GCs of all computed faces.
+   This is done from time to time so that we don't hold on to
+   lots of GCs that are no longer needed.
 
    Constraints:
 
@@ -131,48 +140,23 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    to be valid on all frames.  If they were the same array, then that
    array would grow very large on all frames, because any facial
    combination displayed on any frame would need to be a valid entry
-   on all frames.
-
-   Since face_vector is just a cache --- there are no pointers into it
-   from the rest of the code, and everyone accesses it through
-   intern_face --- we could just free its GC's and throw the whole
-   thing away without breaking anything.  This gives us a simple way
-   to garbage-collect old GC's nobody's using any more - we can just
-   purge face_vector, and then let subsequent calls to intern_face
-   refill it as needed.  The function clear_face_vector performs this
-   purge.
-
-   We're often applying intern_face to faces in computed_faces -
-   for example, we do this while sending GLYPHs from a struct
-   frame_glyphs to X during redisplay.  It would be nice to avoid
-   searching all of face_vector every time we intern a frame's face.
-   So, when intern_face finds a match for FACE in face_vector, it
-   stores the index of the match in FACE's cached_index member, and
-   checks there first next time.  */
-   
+   on all frames.  */
 
 /* Definitions and declarations.  */
 
-/* A table of display faces.  */
-static struct face **face_vector;
-/* The length in use of the table.  */
-static int nfaces;
-/* The allocated length of the table.   */
-static int nfaces_allocated;
-
 /* The number of face-id's in use (same for all frames).  */
-int next_face_id;
+static int next_face_id;
 
 /* The number of the face to use to indicate the region.  */
-int region_face;
+static int region_face;
 
 /* This is what appears in a slot in a face to signify that the face
    does not specify that display aspect.  */
 #define FACE_DEFAULT (~0)
 
 Lisp_Object Qface, Qmouse_face;
+Lisp_Object Qpixmap_spec_p;
 
-static void build_face ( /* FRAME_PTR, struct face * */ );
 int face_name_id_number ( /* FRAME_PTR, Lisp_Object name */ );
 
 struct face *intern_face ( /* FRAME_PTR, struct face * */ );
@@ -208,6 +192,8 @@ copy_face (face)
   result->background = face->background;
   result->stipple = face->stipple;
   result->underline = face->underline;
+  result->pixmap_h = face->pixmap_h;
+  result->pixmap_w = face->pixmap_w;
 
   return result;
 }
@@ -223,133 +209,22 @@ face_eql (face1, face2)
 	  && face1->underline  == face2->underline);
 }
 
-/* Interning faces in the `face_vector' cache, and clearing that cache.  */
+/* Managing graphics contexts of faces.  */
 
-/* Return the unique display face corresponding to the user-level face FACE.
-   If there isn't one, make one, and find a slot in the face_vector to
-   put it in.  */
-static struct face *
-get_cached_face (f, face)
-     struct frame *f;
-     struct face *face;
-{
-  int i, empty = -1;
-  struct face *result;
-
-  /* Perhaps FACE->cached_index is valid; this could happen if FACE is
-     in a frame's face list.  */
-  if (face->cached_index >= 0
-      && face->cached_index < nfaces
-      && face_eql (face_vector[face->cached_index], face))
-    return face_vector[face->cached_index];
-
-  /* Look for an existing display face that does the job.
-     Also find an empty slot if any.   */
-  for (i = 0; i < nfaces; i++)
-    {
-      if (face_eql (face_vector[i], face))
-	{
-	  face->cached_index = i;
-	  return face_vector[i];
-	}
-      if (face_vector[i] == 0)
-	empty = i;
-    }
-
-  /* If no empty slots, make one.  */
-  if (empty < 0 && nfaces == nfaces_allocated)
-    {
-      int newsize = nfaces + 20;
-      face_vector
-	= (struct face **) xrealloc (face_vector,
-				     newsize * sizeof (struct face *));
-      nfaces_allocated = newsize;
-    }
-
-  if (empty < 0)
-    empty = nfaces++;
-
-  /* Put a new display face in the empty slot.  */
-  result = copy_face (face);
-  face_vector[empty] = result;
-  
-  /* Make a graphics context for it.  */
-  build_face (f, result);
-
-  face->cached_index = empty;
-  return result;
-}
-
-/* Given a computed face, return an equivalent display face
-   (one which has a graphics context).  */
+#ifdef HAVE_X_WINDOWS
+/* Given a computed face, construct its graphics context if necessary.  */
 
 struct face *
 intern_face (f, face)
      struct frame *f;
      struct face *face;
 {
-  /* If it's equivalent to the default face, use that.  */
-  if (face_eql (face, FRAME_DEFAULT_FACE (f)))
-    {
-      if (!FRAME_DEFAULT_FACE (f)->gc)
-	build_face (f, FRAME_DEFAULT_FACE (f));
-      return FRAME_DEFAULT_FACE (f);
-    }
-  
-  /* If it's equivalent to the mode line face, use that.  */
-  if (face_eql (face, FRAME_MODE_LINE_FACE (f)))
-    {
-      if (!FRAME_MODE_LINE_FACE (f)->gc)
-	build_face (f, FRAME_MODE_LINE_FACE (f));
-      return FRAME_MODE_LINE_FACE (f);
-    }
-
-  /* If it's not one of the frame's default faces, it shouldn't have a GC.  */
-  if (face->gc)
-    abort ();
-  
-  /* Get a specialized display face.  */
-  return get_cached_face (f, face);
-}
-
-/* Clear out face_vector and start anew.
-   This should be done from time to time just to avoid
-   keeping too many graphics contexts in face_vector
-   that are no longer needed.  */
-
-void
-clear_face_vector ()
-{
-  Lisp_Object rest;
-  Display *dpy = x_current_display;
-  int i;
-
-  BLOCK_INPUT;
-  /* Free the display faces in the face_vector.  */
-  for (i = 0; i < nfaces; i++)
-    {
-      struct face *face = face_vector[i];
-      if (face->gc)
-	XFreeGC (dpy, face->gc);
-      xfree (face);
-    }
-  nfaces = 0;
-
-  UNBLOCK_INPUT;
-}
-
-/* Allocating and freeing X resources for display faces.  */
-
-/* Make a graphics context for face FACE, which is on frame F,
-   if that can be done.  */
-static void
-build_face (f, face)
-     struct frame *f;
-     struct face *face;
-{
   GC gc;
   XGCValues xgcv;
   unsigned long mask;
+
+  if (face->gc)
+    return face;
 
   BLOCK_INPUT;
 
@@ -363,7 +238,7 @@ build_face (f, face)
   else
     xgcv.background = f->display.x->background_pixel;
 
-  if (face->font && (int) face->font != FACE_DEFAULT)
+  if (face->font && face->font != (XFontStruct *) FACE_DEFAULT)
     xgcv.font = face->font->fid;
   else
     xgcv.font = f->display.x->font->fid;
@@ -371,20 +246,60 @@ build_face (f, face)
   xgcv.graphics_exposures = 0;
 
   mask = GCForeground | GCBackground | GCFont | GCGraphicsExposures;
-  gc = XCreateGC (x_current_display, FRAME_X_WINDOW (f),
-		  mask, &xgcv);
-
-#if 0
   if (face->stipple && face->stipple != FACE_DEFAULT)
-    XSetStipple (x_current_display, gc, face->stipple);
-#endif
+    {
+      xgcv.fill_style = FillStippled;
+      xgcv.stipple = x_bitmap_pixmap (f, face->stipple);
+      mask |= GCFillStyle | GCStipple;
+    }
+
+  gc = XCreateGC (FRAME_X_DISPLAY (f), FRAME_X_WINDOW (f),
+		  mask, &xgcv);
 
   face->gc = gc;
 
   UNBLOCK_INPUT;
+
+  return face;
 }
 
-/* Allocating, freeing, and duplicating fonts, colors, and pixmaps.  */
+/* Clear out all graphics contexts for all computed faces
+   except for the default and mode line faces.
+   This should be done from time to time just to avoid
+   keeping too many graphics contexts that are no longer needed.  */
+
+void
+clear_face_cache ()
+{
+  Lisp_Object tail, frame;
+
+  BLOCK_INPUT;
+  FOR_EACH_FRAME (tail, frame)
+    {
+      FRAME_PTR f = XFRAME (frame);
+      if (FRAME_X_P (f))
+	{
+	  int i;
+	  Display *dpy = FRAME_X_DISPLAY (f);
+
+	  for (i = 2; i < FRAME_N_COMPUTED_FACES (f); i++)
+	    {
+	      struct face *face = FRAME_COMPUTED_FACES (f) [i];
+	      if (face->gc)
+		XFreeGC (dpy, face->gc);
+	      face->gc = 0;
+	    }
+	}
+    }
+
+  UNBLOCK_INPUT;
+}
+
+/* Allocating, freeing, and duplicating fonts, colors, and pixmaps.
+
+   These functions operate on param faces only.
+   Computed faces get their fonts, colors and pixmaps
+   by merging param faces.  */
 
 static XFontStruct *
 load_font (f, name)
@@ -398,7 +313,7 @@ load_font (f, name)
 
   CHECK_STRING (name, 0);
   BLOCK_INPUT;
-  font = XLoadQueryFont (x_current_display, (char *) XSTRING (name)->data);
+  font = XLoadQueryFont (FRAME_X_DISPLAY (f), (char *) XSTRING (name)->data);
   UNBLOCK_INPUT;
 
   if (! font)
@@ -416,7 +331,7 @@ unload_font (f, font)
     return;
 
   BLOCK_INPUT;
-  XFreeFont (x_current_display, font);
+  XFreeFont (FRAME_X_DISPLAY (f), font);
   UNBLOCK_INPUT;
 }
 
@@ -425,28 +340,18 @@ load_color (f, name)
      struct frame *f;
      Lisp_Object name;
 {
-  Display *dpy = x_current_display;
-  Colormap cmap;
   XColor color;
   int result;
 
   if (NILP (name))
     return FACE_DEFAULT;
 
-  cmap = DefaultColormapOfScreen (DefaultScreenOfDisplay (x_current_display));
-
   CHECK_STRING (name, 0);
-  BLOCK_INPUT;
-  result = XParseColor (dpy, cmap, (char *) XSTRING (name)->data, &color);
-  UNBLOCK_INPUT;
+  /* if the colormap is full, defined_color will return a best match
+     to the values in an an existing cell. */
+  result = defined_color(f, (char *) XSTRING (name)->data, &color, 1);
   if (! result)
     Fsignal (Qerror, Fcons (build_string ("undefined color"),
-			    Fcons (name, Qnil)));
-  BLOCK_INPUT;
-  result = XAllocColor (dpy, cmap, &color);
-  UNBLOCK_INPUT;
-  if (! result)
-    Fsignal (Qerror, Fcons (build_string ("X server cannot allocate color"),
 			    Fcons (name, Qnil)));
   return (unsigned long) color.pixel;
 }
@@ -456,25 +361,137 @@ unload_color (f, pixel)
      struct frame *f;
      unsigned long pixel;
 {
-  /* Since faces get built by copying parameters from other faces, the
-     allocation counts for the colors get all screwed up.  I don't see
-     any solution that will take less than 10 minutes, and it's better
-     to have a color leak than a crash, so I'm just dyking this out.
-     This isn't really a color leak, anyway - if we ask for it again,
-     we'll get the same pixel.  */
-#if 0
   Colormap cmap;
-  Display *dpy = x_current_display;
+  Display *dpy = FRAME_X_DISPLAY (f);
   if (pixel == FACE_DEFAULT
-      || pixel == BLACK_PIX_DEFAULT
-      || pixel == WHITE_PIX_DEFAULT)
+      || pixel == BLACK_PIX_DEFAULT (f)
+      || pixel == WHITE_PIX_DEFAULT (f))
     return;
-  cmap = DefaultColormapOfScreen (DefaultScreenOfDisplay (x_current_display));
+  cmap = DefaultColormapOfScreen (DefaultScreenOfDisplay (dpy));
   BLOCK_INPUT;
-  XFreeColors (dpy, cmap, &pixel, 1, 0);
+  XFreeColors (dpy, cmap, &pixel, 1, (unsigned long)0);
   UNBLOCK_INPUT;
-#endif
 }
+
+DEFUN ("pixmap-spec-p", Fpixmap_spec_p, Spixmap_spec_p, 1, 1, 0,
+  "Return t if ARG is a valid pixmap specification.")
+  (arg)
+     Lisp_Object arg;
+{
+  Lisp_Object height, width;
+
+  return ((STRINGP (arg)
+	   || (CONSP (arg)
+	       && CONSP (XCONS (arg)->cdr)
+	       && CONSP (XCONS (XCONS (arg)->cdr)->cdr)
+	       && NILP (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->cdr)
+	       && (width = XCONS (arg)->car, INTEGERP (width))
+	       && (height = XCONS (XCONS (arg)->cdr)->car, INTEGERP (height))
+	       && STRINGP (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->car)
+	       && XINT (width) > 0
+	       && XINT (height) > 0
+	       /* The string must have enough bits for width * height.  */
+	       && ((XSTRING (XCONS (XCONS (XCONS (arg)->cdr)->cdr)->car)->size
+		    * (INTBITS / sizeof (int)))
+		   >= XFASTINT (width) * XFASTINT (height))))
+	  ? Qt : Qnil);
+}
+
+/* Load a bitmap according to NAME (which is either a file name
+   or a pixmap spec).  Return the bitmap_id (see xfns.c)
+   or get an error if NAME is invalid.
+
+   Store the bitmap width in *W_PTR and height in *H_PTR.  */
+
+static long
+load_pixmap (f, name, w_ptr, h_ptr)
+     FRAME_PTR f;
+     Lisp_Object name;
+     unsigned int *w_ptr, *h_ptr;
+{
+  int bitmap_id;
+  Lisp_Object tem;
+
+  if (NILP (name))
+    return FACE_DEFAULT;
+
+  tem = Fpixmap_spec_p (name);
+  if (NILP (tem))
+    wrong_type_argument (Qpixmap_spec_p, name);
+
+  BLOCK_INPUT;
+
+  if (CONSP (name))
+    {
+      /* Decode a bitmap spec into a bitmap.  */
+
+      int h, w;
+      Lisp_Object bits;
+
+      w = XINT (Fcar (name));
+      h = XINT (Fcar (Fcdr (name)));
+      bits = Fcar (Fcdr (Fcdr (name)));
+
+      bitmap_id = x_create_bitmap_from_data (f, XSTRING (bits)->data,
+					     w, h);
+    }
+  else
+    {
+      /* It must be a string -- a file name.  */
+      bitmap_id = x_create_bitmap_from_file (f, name);
+    }
+  UNBLOCK_INPUT;
+
+  if (bitmap_id < 0)
+    Fsignal (Qerror, Fcons (build_string ("invalid or undefined bitmap"),
+			    Fcons (name, Qnil)));
+
+  *w_ptr = x_bitmap_width (f, bitmap_id);
+  *h_ptr = x_bitmap_height (f, bitmap_id);
+
+  return bitmap_id;
+}
+
+#else /* !HAVE_X_WINDOWS */
+
+/* Stubs for MSDOS when not under X.  */
+
+struct face *
+intern_face (f, face)
+     struct frame *f;
+     struct face *face;
+{
+  return face;
+}
+
+void
+clear_face_cache ()
+{
+  /* No action.  */
+}
+
+#ifdef MSDOS
+unsigned long
+load_color (f, name)
+     FRAME_PTR f;
+     Lisp_Object name;
+{
+  Lisp_Object result;
+
+  if (NILP (name))
+    return FACE_DEFAULT;
+
+  CHECK_STRING (name, 0);
+  result = call1 (Qmsdos_color_translate, name);
+  if (INTEGERP (result))
+    return XINT (result);
+  else
+    Fsignal (Qerror, Fcons (build_string ("undefined color"),
+			    Fcons (name, Qnil)));
+}
+#endif
+#endif /* !HAVE_X_WINDOWS */
+
 
 /* Managing parameter face arrays for frames. */
 
@@ -492,6 +509,7 @@ init_frame_faces (f)
   new_computed_face (f, FRAME_PARAM_FACES (f)[1]);
   recompute_basic_faces (f);
 
+#ifdef MULTI_FRAME
   /* Find another X frame.  */
   {
     Lisp_Object tail, frame, result;
@@ -520,15 +538,17 @@ init_frame_faces (f)
 	    ensure_face_ready (f, i);
       }
   }
+#endif /* MULTI_FRAME */
 }
 
 
 /* Called from Fdelete_frame.  */
+
 void
 free_frame_faces (f)
      struct frame *f;
 {
-  Display *dpy = x_current_display;
+  Display *dpy = FRAME_X_DISPLAY (f);
   int i;
 
   BLOCK_INPUT;
@@ -538,14 +558,10 @@ free_frame_faces (f)
       struct face *face = FRAME_PARAM_FACES (f) [i];
       if (face)
 	{
-	  if (face->gc)
-	    XFreeGC (dpy, face->gc);
 	  unload_font (f, face->font);
 	  unload_color (f, face->foreground);
 	  unload_color (f, face->background);
-#if 0
-	  unload_pixmap (f, face->stipple);
-#endif
+	  x_destroy_bitmap (f, face->stipple);
 	  xfree (face);
 	}
     }
@@ -554,7 +570,18 @@ free_frame_faces (f)
   FRAME_N_PARAM_FACES (f) = 0;
 
   /* All faces in FRAME_COMPUTED_FACES use resources copied from
-     FRAME_PARAM_FACES; we can free them without fuss.  */
+     FRAME_PARAM_FACES; we can free them without fuss.
+     But we do free the GCs and the face objects themselves.  */
+  for (i = 0; i < FRAME_N_COMPUTED_FACES (f); i++)
+    {
+      struct face *face = FRAME_COMPUTED_FACES (f) [i];
+      if (face)
+	{
+	  if (face->gc)
+	    XFreeGC (dpy, face->gc);
+	  xfree (face);
+	}
+    }
   xfree (FRAME_COMPUTED_FACES (f));
   FRAME_COMPUTED_FACES (f) = 0;
   FRAME_N_COMPUTED_FACES (f) = 0;
@@ -640,6 +667,7 @@ ensure_face_ready (f, id)
     FRAME_PARAM_FACES (f) [id] = allocate_face ();
 }
 
+#ifdef HAVE_X_WINDOWS
 /* Return non-zero if FONT1 and FONT2 have the same width.
    We do not check the height, because we can now deal with
    different heights.
@@ -680,6 +708,7 @@ frame_update_line_height (f)
   f->display.x->line_height = biggest;
   return 1;
 }
+#endif /* not HAVE_X_WINDOWS */
 
 /* Modify face TO by copying from FROM all properties which have
    nondefault settings.  */
@@ -698,7 +727,11 @@ merge_faces (from, to)
   if (from->background != FACE_DEFAULT)
     to->background = from->background;
   if (from->stipple != FACE_DEFAULT)
-    to->stipple = from->stipple;
+    {
+      to->stipple = from->stipple;
+      to->pixmap_h = from->pixmap_h;
+      to->pixmap_w = from->pixmap_w;
+    }
   if (from->underline)
     to->underline = from->underline;
 }
@@ -711,17 +744,12 @@ compute_base_face (f, face)
      FRAME_PTR f;
      struct face *face;
 {
-  struct x_display *d = f->display.x;
-  
   face->gc = 0;
-  face->foreground = d->foreground_pixel;
-  face->background = d->background_pixel;
-  face->font = d->font;
+  face->foreground = FRAME_FOREGROUND_PIXEL (f);
+  face->background = FRAME_BACKGROUND_PIXEL (f);
+  face->font = FRAME_FONT (f);
   face->stipple = 0;
   face->underline = 0;
-
-  /* Avoid a face comparison by making this invalid.  */
-  face->cached_index = -1;
 }
 
 /* Return the face ID to use to display a special glyph which selects
@@ -806,13 +834,13 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
   if (XBUFFER (w->buffer) != current_buffer)
     abort ();
 
-  XSET (frame, Lisp_Frame, f);
+  XSETFRAME (frame, f);
 
   endpos = ZV;
   if (pos < region_beg && region_beg < endpos)
     endpos = region_beg;
 
-  XFASTINT (position) = pos;
+  XSETFASTINT (position, pos);
 
   if (mouse)
     propname = Qmouse_face;
@@ -824,7 +852,7 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
   {
     Lisp_Object limit1, end;
 
-    XFASTINT (limit1) = (limit < endpos ? limit : endpos);
+    XSETFASTINT (limit1, (limit < endpos ? limit : endpos));
     end = Fnext_single_property_change (position, propname, w->buffer, limit1);
     if (INTEGERP (end))
       endpos = XINT (end);
@@ -838,7 +866,8 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
     len = 40;
     overlay_vec = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
     
-    noverlays = overlays_at (pos, 0, &overlay_vec, &len, &next_overlay);
+    noverlays = overlays_at (pos, 0, &overlay_vec, &len,
+			     &next_overlay, (int *) 0);
 
     /* If there are more than 40,
        make enough space for all, and try again.  */
@@ -846,7 +875,8 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
       {
 	len = noverlays;
 	overlay_vec = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
-	noverlays = overlays_at (pos, 0, &overlay_vec, &len, &next_overlay);
+	noverlays = overlays_at (pos, 0, &overlay_vec, &len,
+				 &next_overlay, (int *) 0);
       }
 
     if (next_overlay < endpos)
@@ -862,7 +892,30 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
 
   compute_base_face (f, &face);
 
-  if (!NILP (prop))
+  if (CONSP (prop))
+    {
+      /* We have a list of faces, merge them in reverse order */
+      Lisp_Object length = Flength (prop);
+      int len = XINT (length);
+      Lisp_Object *faces;
+
+      /* Put them into an array */
+      faces = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
+      for (j = 0; j < len; j++)
+	{
+	  faces[j] = Fcar (prop);
+	  prop = Fcdr (prop);
+	}
+      /* So that we can merge them in the reverse order */
+      for (j = len - 1; j >= 0; j--)
+	{
+	  facecode = face_name_id_number (f, faces[j]);
+	  if (facecode >= 0 && facecode < FRAME_N_PARAM_FACES (f)
+	      && FRAME_PARAM_FACES (f) [facecode] != 0)
+	    merge_faces (FRAME_PARAM_FACES (f) [facecode], &face);
+	}
+    }
+  else if (!NILP (prop))
     {
       facecode = face_name_id_number (f, prop);
       if (facecode >= 0 && facecode < FRAME_N_PARAM_FACES (f)
@@ -876,7 +929,31 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
   for (i = 0; i < noverlays; i++)
     {
       prop = Foverlay_get (overlay_vec[i], propname);
-      if (!NILP (prop))
+      if (CONSP (prop))
+	{
+	  /* We have a list of faces, merge them in reverse order */
+	  Lisp_Object length = Flength (prop);
+	  int len = XINT (length);
+	  Lisp_Object *faces;
+	  int i;
+
+	  /* Put them into an array */
+	  faces = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
+	  for (j = 0; j < len; j++)
+	    {
+	      faces[j] = Fcar (prop);
+	      prop = Fcdr (prop);
+	    }
+	  /* So that we can merge them in the reverse order */
+	  for (j = len - 1; j >= 0; j--)
+	    {
+	      facecode = face_name_id_number (f, faces[j]);
+	      if (facecode >= 0 && facecode < FRAME_N_PARAM_FACES (f)
+		  && FRAME_PARAM_FACES (f) [facecode] != 0)
+		merge_faces (FRAME_PARAM_FACES (f) [facecode], &face);
+	    }
+	}
+      else if (!NILP (prop))
 	{
 	  Lisp_Object oend;
 	  int oendpos;
@@ -922,9 +999,9 @@ recompute_basic_faces (f)
   BLOCK_INPUT;
 
   if (FRAME_DEFAULT_FACE (f)->gc)
-    XFreeGC (x_current_display, FRAME_DEFAULT_FACE (f)->gc);
+    XFreeGC (FRAME_X_DISPLAY (f), FRAME_DEFAULT_FACE (f)->gc);
   if (FRAME_MODE_LINE_FACE (f)->gc)
-    XFreeGC (x_current_display, FRAME_MODE_LINE_FACE (f)->gc);
+    XFreeGC (FRAME_X_DISPLAY (f), FRAME_MODE_LINE_FACE (f)->gc);
 
   compute_base_face (f, FRAME_DEFAULT_FACE (f));
   compute_base_face (f, FRAME_MODE_LINE_FACE (f));
@@ -932,8 +1009,8 @@ recompute_basic_faces (f)
   merge_faces (FRAME_DEFAULT_PARAM_FACE (f), FRAME_DEFAULT_FACE (f));
   merge_faces (FRAME_MODE_LINE_PARAM_FACE (f), FRAME_MODE_LINE_FACE (f));
   
-  build_face (f, FRAME_DEFAULT_FACE (f));
-  build_face (f, FRAME_MODE_LINE_FACE (f));
+  intern_face (f, FRAME_DEFAULT_FACE (f));
+  intern_face (f, FRAME_MODE_LINE_FACE (f));
 
   UNBLOCK_INPUT;
 }
@@ -967,18 +1044,17 @@ DEFUN ("make-face-internal", Fmake_face_internal, Smake_face_internal, 1, 1, 0,
   (face_id)
      Lisp_Object face_id;
 {
-  Lisp_Object rest;
+  Lisp_Object rest, frame;
   int id = XINT (face_id);
 
   CHECK_NUMBER (face_id, 0);
   if (id < 0 || id >= next_face_id)
     error ("Face id out of range");
 
-  for (rest = Vframe_list; !NILP (rest); rest = XCONS (rest)->cdr)
+  FOR_EACH_FRAME (rest, frame)
     {
-      struct frame *f = XFRAME (XCONS (rest)->car);
-      if (FRAME_X_P (f))
-	ensure_face_ready (f, id);
+      if (FRAME_X_P (XFRAME (frame)))
+	ensure_face_ready (XFRAME (frame), id);
     }
   return Qnil;
 }
@@ -1012,6 +1088,9 @@ DEFUN ("set-face-attribute-internal", Fset_face_attribute_internal,
 
   if (EQ (attr_name, intern ("font")))
     {
+#if defined (MSDOS) && !defined (HAVE_X_WINDOWS)
+      face->font = 0; /* The one and only font.  */
+#else
       XFontStruct *font = load_font (f, attr_value);
       if (face->font != f->display.x->font)
 	unload_font (f, face->font);
@@ -1021,6 +1100,7 @@ DEFUN ("set-face-attribute-internal", Fset_face_attribute_internal,
       /* Must clear cache, since it might contain the font
 	 we just got rid of.  */
       garbaged = 1;
+#endif
     }
   else if (EQ (attr_name, intern ("foreground")))
     {
@@ -1033,23 +1113,22 @@ DEFUN ("set-face-attribute-internal", Fset_face_attribute_internal,
     {
       unsigned long new_color = load_color (f, attr_value);
       unload_color (f, face->background);
+#if defined (MSDOS) && !defined (HAVE_X_WINDOWS)
+      new_color &= ~8;  /* Bright would give blinking characters.  */
+#endif
       face->background = new_color;
       garbaged = 1;
     }
-#if 0
   else if (EQ (attr_name, intern ("background-pixmap")))
     {
-      unsigned int w, h, d;
-      unsigned long new_pixmap = load_pixmap (f, attr_value, &w, &h, &d, 0);
-      unload_pixmap (f, face->stipple);
-      if (NILP (attr_value))
-	new_pixmap = 0;
+      unsigned int w, h;
+      unsigned long new_pixmap = load_pixmap (f, attr_value, &w, &h);
+      x_destroy_bitmap (f, face->stipple);
       face->stipple = new_pixmap;
       face->pixmap_w = w;
       face->pixmap_h = h;
-/*      face->pixmap_depth = d; */
+      garbaged = 1;
     }
-#endif /* 0 */
   else if (EQ (attr_name, intern ("underline")))
     {
       int new = !NILP (attr_value);
@@ -1109,12 +1188,17 @@ syms_of_xfaces ()
   staticpro (&Qface);
   Qmouse_face = intern ("mouse-face");
   staticpro (&Qmouse_face);
+  Qpixmap_spec_p = intern ("pixmap-spec-p");
+  staticpro (&Qpixmap_spec_p);
 
   DEFVAR_INT ("region-face", &region_face,
     "Face number to use to highlight the region\n\
 The region is highlighted with this face\n\
 when Transient Mark mode is enabled and the mark is active.");
 
+#ifdef HAVE_X_WINDOWS
+  defsubr (&Spixmap_spec_p);
+#endif
   defsubr (&Sframe_face_alist);
   defsubr (&Sset_frame_face_alist);
   defsubr (&Smake_face_internal);
@@ -1122,5 +1206,4 @@ when Transient Mark mode is enabled and the mark is active.");
   defsubr (&Sinternal_next_face_id);
 }
 
-#endif /* HAVE_X_WINDOWS */
-
+#endif /* HAVE_FACES */

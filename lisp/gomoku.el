@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 1988, 1994 Free Software Foundation, Inc.
 
-;; Author: Phillippe Schnoebelen <phs@lifia.imag.fr>
+;; Author: Philippe Schnoebelen <phs@lifia.imag.fr>
 ;; Adapted-By: ESR
 ;; Keywords: games
 
@@ -103,16 +103,17 @@
   (define-key gomoku-mode-map "X" 'gomoku-human-plays)		; X
   (define-key gomoku-mode-map "x" 'gomoku-human-plays)		; x
   (define-key gomoku-mode-map "\C-m" 'gomoku-human-plays)	; RET
-  (define-key gomoku-mode-map "\C-cp" 'gomoku-human-plays)	; C-C P
-  (define-key gomoku-mode-map "\C-cb" 'gomoku-human-takes-back) ; C-C B
-  (define-key gomoku-mode-map "\C-cr" 'gomoku-human-resigns)	; C-C R
-  (define-key gomoku-mode-map "\C-ce" 'gomoku-emacs-plays)	; C-C E
+  (define-key gomoku-mode-map "\C-c\C-p" 'gomoku-human-plays)	; C-C C-P
+  (define-key gomoku-mode-map "\C-c\C-b" 'gomoku-human-takes-back) ; C-C C-B
+  (define-key gomoku-mode-map "\C-c\C-r" 'gomoku-human-resigns)	; C-C C-R
+  (define-key gomoku-mode-map "\C-c\C-e" 'gomoku-emacs-plays)	; C-C C-E
 
   (define-key gomoku-mode-map [up] 'gomoku-move-up)
   (define-key gomoku-mode-map [down] 'gomoku-move-down)
   (define-key gomoku-mode-map [left] 'gomoku-move-left)
   (define-key gomoku-mode-map [right] 'gomoku-move-right)
   (define-key gomoku-mode-map [kp-enter] 'gomoku-human-plays)
+  (define-key gomoku-mode-map [mouse-2] 'gomoku-click)
   (define-key gomoku-mode-map [insert] 'gomoku-human-plays))
 
 (defun gomoku-mode ()
@@ -737,6 +738,12 @@ Use \\[describe-mode] for more info."
 		   (t
 		    (gomoku-prompt-for-move)))))))))
 
+(defun gomoku-click (click)
+  "Play at the square where you click."
+  (interactive "e")
+  (mouse-set-point click)
+  (gomoku-human-plays))
+
 (defun gomoku-human-plays ()
   "Signal to the Gomoku program that you have played.
 You must have put the cursor on the square where you want to play.
@@ -961,8 +968,7 @@ If the game is finished, this command requests for another game."
 	  (format ": Won %d, lost %d"
 		  gomoku-number-of-human-wins
 		  gomoku-number-of-emacs-wins))))
-  ;; Then a (standard) kludgy line will force update of mode line.
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 (defun gomoku-switch-to-window ()
   "Find or create the Gomoku buffer, and display it."

@@ -55,7 +55,6 @@
       (modify-syntax-entry ?\n ">   " emacs-lisp-mode-syntax-table)
       ;; Give CR the same syntax as newline, for selective-display.
       (modify-syntax-entry ?\^m ">   " emacs-lisp-mode-syntax-table)
-      (modify-syntax-entry ?\f ">   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?\; "<   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?` "'   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?' "'   " emacs-lisp-mode-syntax-table)
@@ -89,6 +88,8 @@
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'paragraph-ignore-fill-prefix)
   (setq paragraph-ignore-fill-prefix t)
+  (make-local-variable 'fill-paragraph-function)
+  (setq fill-paragraph-function 'lisp-fill-paragraph)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'lisp-indent-line)
   (make-local-variable 'indent-region-function)
@@ -113,7 +114,6 @@
     ()
    (setq shared-lisp-mode-map (make-sparse-keymap))
    (define-key shared-lisp-mode-map "\e\C-q" 'indent-sexp)
-   (define-key shared-lisp-mode-map "\M-q" 'lisp-fill-paragraph)
    (define-key shared-lisp-mode-map "\177" 'backward-delete-char-untabify)
    (define-key shared-lisp-mode-map "\t" 'lisp-indent-line))
 
@@ -123,10 +123,38 @@ All commands in shared-lisp-mode-map are inherited by this map.")
 
 (if emacs-lisp-mode-map
     ()
-  (setq emacs-lisp-mode-map
-	(nconc (make-sparse-keymap) shared-lisp-mode-map))
-  (define-key emacs-lisp-mode-map "\e\t" 'lisp-complete-symbol)
-  (define-key emacs-lisp-mode-map "\e\C-x" 'eval-defun))
+  (let ((map (make-sparse-keymap "Emacs-Lisp")))
+    (setq emacs-lisp-mode-map
+	  (nconc (make-sparse-keymap) shared-lisp-mode-map))
+    (define-key emacs-lisp-mode-map "\e\t" 'lisp-complete-symbol)
+    (define-key emacs-lisp-mode-map "\e\C-x" 'eval-defun)
+    (define-key emacs-lisp-mode-map [menu-bar] (make-sparse-keymap))
+    (define-key emacs-lisp-mode-map [menu-bar emacs-lisp]
+      (cons "Emacs-Lisp" map))
+    (define-key map [edebug-defun]
+      '("Instrument Function for Debugging" . edebug-defun))
+    (define-key map [byte-recompile]
+      '("Byte-recompile Directory..." . byte-recompile-directory))
+    (define-key map [byte-compile]
+      '("Byte-compile This File" . emacs-lisp-byte-compile))
+    (define-key map [separator-eval] '("--"))
+    (define-key map [eval-buffer] '("Evaluate Buffer" . eval-current-buffer))
+    (define-key map [eval-region] '("Evaluate Region" . eval-region))
+    (define-key map [eval-sexp] '("Evaluate Last S-expression" . eval-last-sexp))
+    (define-key map [separator-format] '("--"))
+    (define-key map [comment-region] '("Comment Out Region" . comment-region))
+    (define-key map [indent-region] '("Indent Region" . indent-region))
+    (define-key map [indent-line] '("Indent Line" . lisp-indent-line))
+    (put 'eval-region 'menu-enable 'mark-active)
+    (put 'comment-region 'menu-enable 'mark-active)
+    (put 'indent-region 'menu-enable 'mark-active)))
+
+(defun emacs-lisp-byte-compile ()
+  "Byte compile the file containing the current buffer."
+  (interactive)
+  (if buffer-file-name
+      (byte-compile-file buffer-file-name)
+    (error "The buffer must be saved in a file first.")))
 
 (defun emacs-lisp-mode ()
   "Major mode for editing Lisp code to run in Emacs.
@@ -244,11 +272,14 @@ With argument, print output into current buffer."
 Print value in minibuffer.
 With argument, insert value in current buffer after the defun."
   (interactive "P")
-  (let ((standard-output (if eval-defun-arg-internal (current-buffer) t)))
-    (prin1 (eval (save-excursion
-		   (end-of-defun)
-		   (beginning-of-defun)
-		   (read (current-buffer)))))))
+  (let ((standard-output (if eval-defun-arg-internal (current-buffer) t))
+	(form (save-excursion
+		(end-of-defun)
+		(beginning-of-defun)
+		(read (current-buffer)))))
+    (if (eq (car form) 'defvar)
+	(setq form (cons 'defconst (cdr form))))
+    (prin1 (eval form))))
 
 (defun lisp-comment-indent ()
   (if (looking-at "\\s<\\s<\\s<")
@@ -302,6 +333,8 @@ rigidly along with this one."
 	     (> end beg))
 	   (indent-code-rigidly beg end shift-amt)))))
 
+(defvar calculate-lisp-indent-last-sexp)
+
 (defun calculate-lisp-indent (&optional parse-start)
   "Return appropriate indentation for current line as Lisp code.
 In usual case returns an integer: the column to indent to.
@@ -317,7 +350,7 @@ of the start of the containing expression."
           ;; setting this to a number inhibits calling hook
           (desired-indent nil)
           (retry t)
-          last-sexp containing-sexp)
+          calculate-lisp-indent-last-sexp containing-sexp)
       (if parse-start
           (goto-char parse-start)
           (beginning-of-defun))
@@ -329,48 +362,54 @@ of the start of the containing expression."
 		  state
                   (> (setq paren-depth (elt state 0)) 0))
         (setq retry nil)
-        (setq last-sexp (elt state 2))
+        (setq calculate-lisp-indent-last-sexp (elt state 2))
         (setq containing-sexp (elt state 1))
         ;; Position following last unclosed open.
         (goto-char (1+ containing-sexp))
         ;; Is there a complete sexp since then?
-        (if (and last-sexp (> last-sexp (point)))
+        (if (and calculate-lisp-indent-last-sexp
+		 (> calculate-lisp-indent-last-sexp (point)))
             ;; Yes, but is there a containing sexp after that?
-            (let ((peek (parse-partial-sexp last-sexp indent-point 0)))
+            (let ((peek (parse-partial-sexp calculate-lisp-indent-last-sexp
+					    indent-point 0)))
               (if (setq retry (car (cdr peek))) (setq state peek)))))
       (if retry
           nil
         ;; Innermost containing sexp found
         (goto-char (1+ containing-sexp))
-        (if (not last-sexp)
+        (if (not calculate-lisp-indent-last-sexp)
 	    ;; indent-point immediately follows open paren.
 	    ;; Don't call hook.
             (setq desired-indent (current-column))
 	  ;; Find the start of first element of containing sexp.
-	  (parse-partial-sexp (point) last-sexp 0 t)
+	  (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
 	  (cond ((looking-at "\\s(")
 		 ;; First element of containing sexp is a list.
 		 ;; Indent under that list.
 		 )
 		((> (save-excursion (forward-line 1) (point))
-		    last-sexp)
+		    calculate-lisp-indent-last-sexp)
 		 ;; This is the first line to start within the containing sexp.
 		 ;; It's almost certainly a function call.
-		 (if (= (point) last-sexp)
+		 (if (= (point) calculate-lisp-indent-last-sexp)
 		     ;; Containing sexp has nothing before this line
 		     ;; except the first element.  Indent under that element.
 		     nil
 		   ;; Skip the first element, find start of second (the first
 		   ;; argument of the function call) and indent under.
 		   (progn (forward-sexp 1)
-			  (parse-partial-sexp (point) last-sexp 0 t)))
+			  (parse-partial-sexp (point)
+					      calculate-lisp-indent-last-sexp
+					      0 t)))
 		 (backward-prefix-chars))
 		(t
-		 ;; Indent beneath first sexp on same line as last-sexp.
-		 ;; Again, it's almost certainly a function call.
-		 (goto-char last-sexp)
+		 ;; Indent beneath first sexp on same line as
+		 ;; calculate-lisp-indent-last-sexp.  Again, it's
+		 ;; almost certainly a function call.
+		 (goto-char calculate-lisp-indent-last-sexp)
 		 (beginning-of-line)
-		 (parse-partial-sexp (point) last-sexp 0 t)
+		 (parse-partial-sexp (point) calculate-lisp-indent-last-sexp
+				     0 t)
 		 (backward-prefix-chars)))))
       ;; Point is at the point to indent under unless we are inside a string.
       ;; Call indentation hook except when overridden by lisp-indent-offset
@@ -397,20 +436,21 @@ of the start of the containing expression."
 (defun lisp-indent-function (indent-point state)
   (let ((normal-indent (current-column)))
     (goto-char (1+ (elt state 1)))
-    (parse-partial-sexp (point) last-sexp 0 t)
+    (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
     (if (and (elt state 2)
              (not (looking-at "\\sw\\|\\s_")))
         ;; car of form doesn't seem to be a a symbol
         (progn
           (if (not (> (save-excursion (forward-line 1) (point))
-                      last-sexp))
-              (progn (goto-char last-sexp)
+                      calculate-lisp-indent-last-sexp))
+              (progn (goto-char calculate-lisp-indent-last-sexp)
                      (beginning-of-line)
-                     (parse-partial-sexp (point) last-sexp 0 t)))
-          ;; Indent under the list or under the first sexp on the
-          ;; same line as last-sexp.  Note that first thing on that
-          ;; line has to be complete sexp since we are inside the
-          ;; innermost containing sexp.
+                     (parse-partial-sexp (point)
+					 calculate-lisp-indent-last-sexp 0 t)))
+          ;; Indent under the list or under the first sexp on the same
+          ;; line as calculate-lisp-indent-last-sexp.  Note that first
+          ;; thing on that line has to be complete sexp since we are
+          ;; inside the innermost containing sexp.
           (backward-prefix-chars)
           (current-column))
       (let ((function (buffer-substring (point)
@@ -497,6 +537,7 @@ of the start of the containing expression."
 (put 'prog2 'lisp-indent-function 2)
 (put 'save-excursion 'lisp-indent-function 0)
 (put 'save-window-excursion 'lisp-indent-function 0)
+(put 'save-selected-window 'lisp-indent-function 0)
 (put 'save-restriction 'lisp-indent-function 0)
 (put 'save-match-data 'lisp-indent-function 0)
 (put 'let 'lisp-indent-function 1)
@@ -515,11 +556,17 @@ ENDPOS is encountered."
   (interactive)
   (let ((indent-stack (list nil))
 	(next-depth 0)
-	(starting-point (point))
+	;; If ENDPOS is non-nil, use nil as STARTING-POINT
+	;; so that calculate-lisp-indent will find the beginning of
+	;; the defun we are in.
+	;; If ENDPOS is nil, it is safe not to scan before point
+	;; since every line we indent is more deeply nested than point is.
+	(starting-point (if endpos nil (point)))
 	(last-point (point))
 	last-depth bol outer-loop-done inner-loop-done state this-indent)
-    ;; Get error now if we don't have a complete sexp after point.
-    (save-excursion (forward-sexp 1))
+    (or endpos
+	;; Get error now if we don't have a complete sexp after point.
+	(save-excursion (forward-sexp 1)))
     (save-excursion
       (setq outer-loop-done nil)
       (while (if endpos (< (point) endpos)
@@ -560,7 +607,7 @@ ENDPOS is encountered."
 					  (make-list (- next-depth) nil))
 		     last-depth (- last-depth next-depth)
 		     next-depth 0)))
-	(or outer-loop-done
+	(or outer-loop-done endpos
 	    (setq outer-loop-done (<= next-depth 0)))
 	(if outer-loop-done
 	    (forward-line 1)
@@ -600,10 +647,10 @@ ENDPOS is encountered."
 ;; Indent every line whose first char is between START and END inclusive.
 (defun lisp-indent-region (start end)
   (save-excursion
-    (goto-char start)
-    (and (bolp) (not (eolp))
-	 (lisp-indent-line))
     (let ((endmark (copy-marker end)))
+      (goto-char start)
+      (and (bolp) (not (eolp))
+	   (lisp-indent-line))
       (indent-sexp endmark)
       (set-marker endmark nil))))
 
@@ -673,7 +720,8 @@ and initial semicolons."
 	(let ((paragraph-start (concat paragraph-start "\\|^[ \t;]*$"))
 	      (paragraph-separate (concat paragraph-start "\\|^[ \t;]*$"))
 	      (fill-prefix comment-fill-prefix))
-	  (fill-paragraph justify))))))
+	  (fill-paragraph justify))))
+    t))
 
 
 (defun indent-code-rigidly (start end arg &optional nochange-regexp)

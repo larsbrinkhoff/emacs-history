@@ -47,9 +47,10 @@ NOTE-END  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* 68000 has lowest-numbered byte as most significant */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define WORDS_BIG_ENDIAN
 
 /* Say this machine is a 68000 */
 

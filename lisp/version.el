@@ -23,20 +23,18 @@
 
 ;;; Code:
 
-(defconst emacs-version "19.28" "\
+(defconst emacs-version "19.29" "\
 Version numbers of this version of Emacs.")
 
 (defconst emacs-major-version
   (progn (string-match "^[0-9]+" emacs-version)
-	 (string-to-int (substring emacs-version
-				   (match-beginning 0) (match-end 0))))
+	 (string-to-int (match-string 0 emacs-version)))
   "Major version number of this version of Emacs.
 This variable first existed in version 19.23.")
 
 (defconst emacs-minor-version
   (progn (string-match "^[0-9]+\\.\\([0-9]+\\)" emacs-version)
-	 (string-to-int (substring emacs-version
-				   (match-beginning 1) (match-end 1))))
+	 (string-to-int (match-string 1 emacs-version)))
   "Minor version number of this version of Emacs.
 This variable first existed in version 19.23.")
 
@@ -55,7 +53,11 @@ to the system configuration; look at `system-configuration' instead."
          (format "GNU Emacs %s (%s%s) of %s %s on %s"
                  emacs-version
 		 system-configuration
-		 (if (featurep 'x-toolkit) ", X toolkit" "")
+		 (if (featurep 'motif)
+		     ", Motif"
+		   (if (featurep 'x-toolkit)
+		       ", X toolkit"
+		     ""))
                  (substring emacs-build-time 0
                             (string-match " *[0-9]*:" emacs-build-time))
                  (substring emacs-build-time 

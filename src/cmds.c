@@ -1,5 +1,5 @@
 /* Simple built-in editing commands.
-   Copyright (C) 1985, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -23,12 +23,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "commands.h"
 #include "buffer.h"
 #include "syntax.h"
+#include "window.h"
+#include "keyboard.h"
 
 Lisp_Object Qkill_forward_chars, Qkill_backward_chars, Vblink_paren_function;
 
 /* A possible value for a buffer's overwrite-mode variable.  */
 Lisp_Object Qoverwrite_mode_binary;
 
+/* Non-nil means put this face on the next self-inserting character.  */
+Lisp_Object Vself_insert_face;
+
+/* This is the command that set up Vself_insert_face.  */
+Lisp_Object Vself_insert_face_command;
+
+extern Lisp_Object Qface;
 
 DEFUN ("forward-char", Fforward_char, Sforward_char, 0, 1, "p",
   "Move point right ARG characters (left if ARG negative).\n\
@@ -37,7 +46,7 @@ On reaching end of buffer, stop and signal error.")
      Lisp_Object n;
 {
   if (NILP (n))
-    XFASTINT (n) = 1;
+    XSETFASTINT (n, 1);
   else
     CHECK_NUMBER (n, 0);
 
@@ -73,7 +82,7 @@ On attempt to pass beginning or end of buffer, stop and signal error.")
      Lisp_Object n;
 {
   if (NILP (n))
-    XFASTINT (n) = 1;
+    XSETFASTINT (n, 1);
   else
     CHECK_NUMBER (n, 0);
 
@@ -105,7 +114,7 @@ With positive ARG, a non-empty line at the end counts as one line\n\
     }
 
   negp = count <= 0;
-  pos = scan_buffer ('\n', pos2, count - negp, &shortage, 1);
+  pos = scan_buffer ('\n', pos2, 0, count - negp, &shortage, 1);
   if (shortage > 0
       && (negp
 	  || (ZV > BEGV
@@ -125,7 +134,7 @@ If scan reaches end of buffer, stop there without error.")
      Lisp_Object n;
 {
   if (NILP (n))
-    XFASTINT (n) = 1;
+    XSETFASTINT (n, 1);
   else
     CHECK_NUMBER (n, 0);
 
@@ -145,17 +154,11 @@ If scan reaches end of buffer, stop there without error.")
   register int stop;
 
   if (NILP (n))
-    XFASTINT (n) = 1;
+    XSETFASTINT (n, 1);
   else
     CHECK_NUMBER (n, 0);
 
-  if (XINT (n) != 1)
-    Fforward_line (make_number (XINT (n) - 1));
-
-  pos = point;
-  stop = ZV;
-  while (pos < stop && FETCH_CHAR (pos) != '\n') pos++;
-  SET_PT (pos);
+  SET_PT (find_before_next_newline (PT, 0, XINT (n) - (XINT (n) <= 0)));
 
   return Qnil;
 }
@@ -216,66 +219,15 @@ Whichever character you type to run this command is inserted.")
   CHECK_NUMBER (arg, 0);
 
   /* Barf if the key that invoked this was not a character.  */
-  if (XTYPE (last_command_char) != Lisp_Int)
+  if (!INTEGERP (last_command_char))
     bitch_at_user ();
   else
     while (XINT (arg) > 0)
       {
-	XFASTINT (arg)--;	/* Ok since old and new vals both nonneg */
+	/* Ok since old and new vals both nonneg */
+	XSETFASTINT (arg, XFASTINT (arg) - 1);
 	internal_self_insert (XINT (last_command_char), XFASTINT (arg) != 0);
       }
-
-  return Qnil;
-}
-
-DEFUN ("newline", Fnewline, Snewline, 0, 1, "P",
-  "Insert a newline.  With arg, insert that many newlines.\n\
-In Auto Fill mode, if no numeric arg, break the preceding line if it's long.")
-  (arg1)
-     Lisp_Object arg1;
-{
-  int flag;
-  Lisp_Object arg;
-  char c1 = '\n';
-
-  arg = Fprefix_numeric_value (arg1);
-
-  if (!NILP (current_buffer->read_only))
-    Fbarf_if_buffer_read_only ();
-
-  /* Inserting a newline at the end of a line produces better
-     redisplay in try_window_id than inserting at the beginning of a
-     line, and the textual result is the same.  So, if we're at
-     beginning of line, pretend to be at the end of the previous line.  
-
-     We can't use internal_self_insert in that case since it won't do
-     the insertion correctly.  Luckily, internal_self_insert's special
-     features all do nothing in that case.  */
-
-  flag = point > BEGV && FETCH_CHAR (point - 1) == '\n';
-#ifdef USE_TEXT_PROPERTIES
-  /* We cannot use this optimization if properties change
-     in the vicinity.
-     ??? We need to check for change hook properties, etc.  */
-  if (flag)
-    if (! (point - 1 > BEGV && ! property_change_between_p (point - 2, point)))
-      flag = 0;
-#endif
-
-  if (flag)
-    SET_PT (point - 1);
-
-  while (XINT (arg) > 0)
-    {
-      if (flag)
-	insert (&c1, 1);
-      else
-	internal_self_insert ('\n', !NILP (arg1));
-      XFASTINT (arg)--;		/* Ok since old and new vals both nonneg */
-    }
-
-  if (flag)
-    SET_PT (point + 1);
 
   return Qnil;
 }
@@ -331,18 +283,34 @@ internal_self_insert (c1, noautofill)
     }
   if ((c == ' ' || c == '\n')
       && !noautofill
-      && !NILP (current_buffer->auto_fill_function)
-      && current_column () > XFASTINT (current_buffer->fill_column))
+      && !NILP (current_buffer->auto_fill_function))
     {
-      if (c1 != '\n')
-	insert_and_inherit (&c1, 1);
+      insert_and_inherit (&c1, 1);
+      if (c1 == '\n')
+	/* After inserting a newline, move to previous line and fill */
+	/* that.  Must have the newline in place already so filling and */
+	/* justification, if any, know where the end is going to be. */
+	SET_PT (point - 1);
       call0 (current_buffer->auto_fill_function);
       if (c1 == '\n')
-	insert_and_inherit (&c1, 1);
+	SET_PT (point + 1);
       hairy = 2;
     }
   else
     insert_and_inherit (&c1, 1);
+
+#ifdef HAVE_FACES
+  /* If previous command specified a face to use, use it.  */
+  if (!NILP (Vself_insert_face)
+      && EQ (current_kboard->Vlast_command, Vself_insert_face_command))
+    {
+      Lisp_Object before, after;
+      XSETINT (before, PT - 1);
+      XSETINT (after, PT);
+      Fput_text_property (before, after, Qface, Vself_insert_face, Qnil);
+      Vself_insert_face = Qnil;
+    }
+#endif
   synt = SYNTAX (c);
   if ((synt == Sclose || synt == Smath)
       && !NILP (Vblink_paren_function) && INTERACTIVE)
@@ -366,6 +334,16 @@ syms_of_cmds ()
   Qoverwrite_mode_binary = intern ("overwrite-mode-binary");
   staticpro (&Qoverwrite_mode_binary);
 
+  DEFVAR_LISP ("self-insert-face", &Vself_insert_face,
+    "If non-nil, set the face of the next self-inserting character to this.\n\
+See also `self-insert-face-command'.");
+  Vself_insert_face = Qnil;
+
+  DEFVAR_LISP ("self-insert-face-command", &Vself_insert_face_command,
+    "This is the command that set up `self-insert-face'.\n\
+If `last-command' does not equal this value, we ignore `self-insert-face'.");
+  Vself_insert_face_command = Qnil;
+
   DEFVAR_LISP ("blink-paren-function", &Vblink_paren_function,
     "Function called, if non-nil, whenever a close parenthesis is inserted.\n\
 More precisely, a char with closeparen syntax is self-inserted.");
@@ -381,15 +359,13 @@ More precisely, a char with closeparen syntax is self-inserted.");
   defsubr (&Sdelete_backward_char);
 
   defsubr (&Sself_insert_command);
-  defsubr (&Snewline);
 }
 
 keys_of_cmds ()
 {
   int n;
 
-  initial_define_key (global_map, Ctl('M'), "newline");
-  initial_define_key (global_map, Ctl('I'), "self-insert-command");
+  initial_define_key (global_map, Ctl ('I'), "self-insert-command");
   for (n = 040; n < 0177; n++)
     initial_define_key (global_map, n, "self-insert-command");
 #ifdef MSDOS

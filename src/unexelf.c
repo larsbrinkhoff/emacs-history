@@ -423,6 +423,7 @@ Filesz      Memsz       Flags       Align
 #ifndef emacs
 #define fatal(a, b, c) fprintf (stderr, a, b, c), exit (1)
 #else
+#include "config.h"
 extern void fatal (char *, ...);
 #endif
 
@@ -582,8 +583,13 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
   if (ftruncate (new_file, new_file_size))
     fatal ("Can't ftruncate (%s): errno %d\n", new_name, errno);
 
+#ifdef UNEXEC_USE_MAP_PRIVATE
+  new_base = mmap (0, new_file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE,
+		   new_file, 0);
+#else
   new_base = mmap (0, new_file_size, PROT_READ | PROT_WRITE, MAP_SHARED,
 		   new_file, 0);
+#endif
 
   if (new_base == (caddr_t) -1)
     fatal ("Can't mmap (%s): errno %d\n", new_name, errno);
@@ -718,11 +724,19 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
 	  NEW_SECTION_H (nn).sh_addralign = OLD_SECTION_H (nn).sh_addralign;
 	  NEW_SECTION_H (nn).sh_size = 0;
 	}
-      /* Any section that was original placed AFTER the bss section should now
-	 be off by NEW_DATA2_SIZE. */
-      else if (NEW_SECTION_H (nn).sh_offset >= new_data2_offset)
-	NEW_SECTION_H (nn).sh_offset += new_data2_size;
-      
+      else
+	{
+	  /* Any section that was original placed AFTER the bss
+	     section should now be off by NEW_DATA2_SIZE. */
+	  if (NEW_SECTION_H (nn).sh_offset >= new_data2_offset)
+	    NEW_SECTION_H (nn).sh_offset += new_data2_size;
+	  /* Any section that was originally placed after the section
+	     header table should now be off by the size of one section
+	     header table entry.  */
+	  if (NEW_SECTION_H (nn).sh_offset > new_file_h->e_shoff)
+	    NEW_SECTION_H (nn).sh_offset += new_file_h->e_shentsize;
+	}
+
       /* If any section hdr refers to the section after the new .data
 	 section, make it refer to next one because we have inserted 
 	 a new section in between.  */
@@ -782,7 +796,8 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
 	  && NEW_SECTION_H (n).sh_type != SHT_SYMTAB)
 	continue;
 
-      symnames = NEW_SECTION_H (NEW_SECTION_H (n).sh_link).sh_offset + new_base;
+      symnames = ((byte *) new_base
+		  + NEW_SECTION_H (NEW_SECTION_H (n).sh_link).sh_offset);
       symp = (Elf32_Sym *) (NEW_SECTION_H (n).sh_offset + new_base);
       symendp = (Elf32_Sym *) ((byte *)symp + NEW_SECTION_H (n).sh_size);
 
@@ -791,6 +806,14 @@ unexec (new_name, old_name, data_start, bss_start, entry_address)
 	    || strcmp ((char *) (symnames + symp->st_name), "_edata") == 0)
 	  memcpy (&symp->st_value, &new_bss_addr, sizeof (new_bss_addr));
     }
+
+#ifdef UNEXEC_USE_MAP_PRIVATE
+  if (lseek (new_file, 0, SEEK_SET) == -1)
+    fatal ("Can't rewind (%s): errno %d\n", new_name, errno);
+
+  if (write (new_file, new_base, new_file_size) != new_file_size)
+    fatal ("Can't write (%s): errno %d\n", new_name, errno);
+#endif
 
   /* Close the files and make the new file executable.  */
 

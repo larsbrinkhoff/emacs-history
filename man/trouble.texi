@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Dealing with Common Problems
@@ -20,6 +20,8 @@ Quit.  Cancel running or partially typed command.
 @item C-]
 Abort innermost recursive editing level and cancel the command which
 invoked it (@code{abort-recursive-edit}).
+@item @key{ESC} @key{ESC} @key{ESC}
+Either quit or abort, whichever makes sense (@code{keyboard-escape-quit}).
 @item M-x top-level
 Abort all recursive editing levels that are currently executing.
 @item C-x u
@@ -34,7 +36,7 @@ editing level and cancels the command that invoked the recursive edit.
 (@xref{Recursive Edit}.)
 
 @cindex quitting
-@cindex C-g
+@kindex C-g
   Quitting with @kbd{C-g} is used for getting rid of a partially typed
 command, or a numeric argument that you don't want.  It also stops a
 running command in the middle in a relatively safe way, so you can use
@@ -79,6 +81,19 @@ you are in a recursive edit and type @kbd{C-u 8} to enter a numeric
 argument, you can cancel that argument with @kbd{C-g} and remain in the
 recursive edit.
 
+@findex keyboard-escape-quit
+@kindex @key{ESC} @key{ESC} @key{ESC}
+  The command @kbd{@key{ESC} @key{ESC} @key{ESC}}
+(@code{keyboard-escape-quit}) can either quit or abort.  This key was
+defined because @key{ESC} is used to ``get out'' in many PC programs.
+It can cancel a prefix argument, clear a selected region, or get out of
+a Query Replace, like @kbd{C-g}.  It can get out of the minibuffer or a
+recursive edit, like @kbd{C-]}.  It can also get out of splitting the
+frame into multiple windows, like @kbd{C-x 1}.  One thing it cannot do,
+however, is stop a command that is running.  That's because it executes
+as an ordinary command, and Emacs doesn't notice it until it is ready
+for a command.
+
 @findex top-level
   The command @kbd{M-x top-level} is equivalent to ``enough'' @kbd{C-]}
 commands to get you out of all the levels of recursive edits that you
@@ -105,6 +120,7 @@ normally, and how to recognize them and correct them.
 * Screen Garbled::      Garbage on the screen.
 * Text Garbled::        Garbage in the text.
 * Unasked-for Search::  Spontaneous entry to incremental search.
+* Memory Full::         How to cope when you run out of memory.
 * Emergency Escape::    Emergency escape---
                           What to do if Emacs stops responding.
 * Total Frustration::   When you are at your wits' end.
@@ -202,6 +218,28 @@ the following in your @file{.emacs} file:
 effect of a @kbd{C-s}, and type @kbd{C-^} to get the effect of a
 @kbd{C-q}.  (These aliases work by means of keyboard translations; see
 @ref{Keyboard Translations}.)
+
+@node Memory Full
+@subsection Running out of Memory
+@cindex memory full
+@cindex out of memory
+
+  If you get the error message @samp{Virtual memory exceeded}, save your
+modified buffers with @kbd{C-x s}.  This method of saving them has the
+smallest need for additional memory.  Emacs keeps a reserve of memory
+which it makes available when this error happens; that should be enough
+to enable @kbd{C-x s} to complete its work.
+
+  Once you have saved your modified buffers, you can exit this Emacs job
+and start another, or you can use @kbd{M-x kill-some-buffers} to free
+space in the current Emacs job.  If you kill buffers containing a
+substantial amount of text, you can safely go on editing.  Emacs refills
+its memory reserve automatically when it sees sufficient free space
+available, in case you run out of memory another time.
+
+  Do not use @kbd{M-x buffer-menu} to save or kill buffers when you run
+out of memory, because the buffer menu needs a fair amount memory
+itself, and the reserve supply may not be enough.
 
 @node Emergency Escape
 @subsection Emergency Escape
@@ -401,8 +439,8 @@ or machine-readable media to this address:
 @format
 GNU Emacs Bugs
 Free Software Foundation
-675 Mass Ave
-Cambridge, MA 02139
+59 Temple Place, Suite 330
+Boston, MA 02111-1307 USA
 @end format
 
   We do not promise to fix the bug; but if the bug is serious,
@@ -424,11 +462,13 @@ else.
 
 @item
 The type of machine you are using, and the operating system name and
-version number.
+version number.  @kbd{M-x emacs-version @key{RET}} provides this
+information too.  Copy its output from the @samp{*Messages*} buffer, so
+that you get it all and get it accurately.
 
 @item
-The operands you gave to the @code{configure} command when you installed
-Emacs.
+The operands given to the @code{configure} command when Emacs was
+installed.
 
 @item
 A complete list of any modifications you have made to the Emacs source.
@@ -439,8 +479,8 @@ us, you are sending us on a wild goose chase.)
 Be precise about these changes.  A description in English is not
 enough---send a context diff for them.
 
-Adding files of your own (such as a machine description for a machine we
-don't support) is a modification of the source.
+Adding files of your own, or porting to another machine, is a
+modification of the source.
 
 @item
 Details of any other deviations from the standard procedure for installing
@@ -519,19 +559,25 @@ happening.  If you don't say to expect a crash, then we would not know
 whether the bug was happening---we would not be able to draw any
 conclusion from our observations.
 
+@item
 If the manifestation of the bug is an Emacs error message, it is
-important to report not just the text of the error message but a
+important to report the precise text of the error message, and a
 backtrace showing how the Lisp program in Emacs arrived at the error.
-To make the backtrace, execute the Lisp expression @code{(setq
-@w{debug-on-error t})} before the error happens (that is to say, you
-must execute that expression and then make the bug happen).  This causes
-the Lisp debugger to run, showing you a backtrace.  Copy the text of the
-debugger's backtrace into the bug report.
+
+To get the error message text accurately, copy it from the
+@samp{*Messages*} buffer into the bug report.  Copy all of it, not just
+part.
+
+To make a backtrace for the error, evaluate the Lisp expression
+@code{(setq @w{debug-on-error t})} before the error happens (that is to
+say, you must execute that expression and then make the bug happen).
+This causes the error to run the Lisp debugger, which shows you a
+backtrace.  Copy the text of the debugger's backtrace into the bug
+report.
 
 This use of the debugger is possible only if you know how to make the
-bug happen again.  Do note the error message the first time the bug
-happens, so if you can't make it happen again, you can report at least
-the error message.
+bug happen again.  If you can't make it happen again, at least copy
+the whole error message.
 
 @item
 Check whether any programs you have loaded into the Lisp world,
@@ -562,8 +608,13 @@ certain.
 @item
 Additional information from a C debugger such as GDB might enable
 someone to find a problem on a machine which he does not have available.
-However, you need to think when you collect this information if you want
-it to be useful.
+If you don't know how to use GDB, please read the GDB manual---it is not
+very long, and using GDB is easy.  You can find the GDB distribution,
+including the GDB manual in online form, in most of the same places you
+can find the Emacs distribution.
+
+However, you need to think when you collect the additional information
+if you want it to show what causes the bug.
 
 @cindex backtrace for bug reports
 For example, many people send just a backtrace, but that is not very
@@ -585,8 +636,8 @@ To show a variable's value in Lisp syntax, first print its value, then
 use the user-defined GDB command @code{pr} to print the Lisp object in
 Lisp syntax.  (If you must use another debugger, call the function
 @code{debug_print} with the object as an argument.)  The @code{pr}
-command is defined by the file @file{src/.gdbinit} in the Emacs
-distribution, and it works only if you are debugging a running process
+command is defined by the file @file{.gdbinit} in the @file{src}
+subdirectory, and it works only if you are debugging a running process
 (not with a core dump).
 
 To make Lisp errors stop Emacs and return to GDB, put a breakpoint at
@@ -615,6 +666,33 @@ You can print the other arguments likewise.  The argument @code{nargs}
 of @code{Ffuncall} says how many arguments @code{Ffuncall} received;
 these include the Lisp function itself and the arguments for that
 function.
+
+@item
+If the symptom of the bug is that Emacs fails to respond, don't assume
+Emacs is ``hung''---it may instead be in an infinite loop.  To find out
+which, make the problem happen under GDB and stop Emacs once it is not
+responding.  (If Emacs is using X Windows directly, you can stop Emacs
+by typing @kbd{C-c} at the GDB job.)  Then try stepping with
+@samp{step}.  If Emacs is hung, the @samp{step} command won't return.
+If it is looping, @samp{step} will return.
+
+If this shows Emacs is hung in a system call, stop it again and examine
+the arguments of the call.  In your bug report, state exactly where in
+the source the system call is, and what the arguments are.
+
+If Emacs is in an infinite loop, please determine where the loop starts
+and ends.  The easiest way to do this is to use the GDB command
+@samp{finish}.  Each time you use it, Emacs resumes execution until it
+exits one stack frame.  Keep typing @samp{finish} until it doesn't
+return---that means the infinite loop is in the stack frame which you
+just tried to finish.
+
+Stop Emacs again, and use @samp{finish} repeatedly again until you get
+@emph{back to} that frame.  Then use @samp{next} to step through that
+frame.  By stepping, you will see where the loop starts and ends.  Also
+please examine the data being used in the loop and try to determine why
+the loop does not exit when it should.  Include all of this information
+in your bug report.
 @end itemize
 
 Here are some things that are not necessary in a bug report:
@@ -795,9 +873,10 @@ ways to find it:
 
 @itemize @bullet
 @item
-Send a message to a suitable network mailing list.  First try
-@code{bug-gnu-emacs@@prep.ai.mit.edu}, and if that brings no response, try
-@code{help-gnu-emacs@@prep.ai.mit.edu}.
+Send a message to the mailing list
+@code{help-gnu-emacs@@prep.ai.mit.edu}, or post your request on
+newsgroup @code{gnu.emacs.help}.  (This mailing list and newsgroup
+interconnect, so it does not matter which one you use.)
 
 @item
 Look in the service directory for someone who might help you for a fee.

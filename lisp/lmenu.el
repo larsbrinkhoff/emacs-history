@@ -52,6 +52,9 @@
 
 (defvar add-menu-item-count 0)
 
+;; This is a variable whose value is always nil.
+(defvar make-lucid-menu-keymap-disable nil)
+
 ;; Return a menu keymap corresponding to a Lucid-style menu list
 ;; MENU-ITEMS, and with name MENU-NAME.
 (defun make-lucid-menu-keymap (menu-name menu-items)
@@ -60,9 +63,8 @@
     ;; since the define-key loop reverses them again.
     (setq menu-items (reverse menu-items))
     (while menu-items
-      (let* ((item (car menu-items))
-	     (callback (if (vectorp item) (aref item 1)))
-	     command name)
+      (let ((item (car menu-items))
+	    command name callback)
 	(cond ((stringp item)
 	       (setq command nil)
 	       (setq name (if (string-match "^-+$" item) "" item)))
@@ -71,18 +73,51 @@
 	       (setq name (car item)))
 	      ((vectorp item)
 	       (setq command (make-symbol (format "menu-function-%d"
-						  add-menu-item-count)))
-	       (setq add-menu-item-count (1+ add-menu-item-count))
-	       (put command 'menu-enable (aref item 2))
-	       (setq name (aref item 0))	       
+						  add-menu-item-count))
+		     add-menu-item-count (1+ add-menu-item-count)
+		     name (aref item 0)
+		     callback (aref item 1))
 	       (if (symbolp callback)
 		   (fset command callback)
-		 (fset command (list 'lambda () '(interactive) callback)))))
+		 (fset command (list 'lambda () '(interactive) callback)))
+	       (let ((i 2))
+		 (while (< i (length item))
+		   (cond
+		    ((eq (aref item i) ':active)
+		     (put command 'menu-enable
+			  (or (aref item (1+ i))
+			      'make-lucid-menu-keymap-disable))
+		     (setq i (+ 2 i)))
+		    ((eq (aref item i) ':suffix)
+		     ;; unimplemented
+		     (setq i (+ 2 i)))
+		    ((eq (aref item i) ':keys)
+		     ;; unimplemented
+		     (setq i (+ 2 i)))
+		    ((eq (aref item i) ':style)
+		     ;; unimplemented
+		     (setq i (+ 2 i)))
+		    ((eq (aref item i) ':selected)
+		     ;; unimplemented
+		     (setq i (+ 2 i)))
+		    ((and (symbolp (aref item i))
+			  (= ?: (string-to-char (symbol-name (aref item i)))))
+		     (error "Unrecognized menu item keyword: %S"
+			    (aref item i)))
+		    ((= i 2)
+		     ;; old-style format: active-p &optional suffix
+		     (put command 'menu-enable
+			  (or (aref item i) 'make-lucid-menu-keymap-disable))
+		     ;; suffix is unimplemented
+		     (setq i (length item)))
+		    (t
+		     (error "Unexpected menu item value: %S"
+			    (aref item i))))))))
 	(if (null command)
 	    ;; Handle inactive strings specially--allow any number
 	    ;; of identical ones.
 	    (setcdr menu (cons (list nil name) (cdr menu)))
-	  (if name 
+	  (if name
 	      (define-key menu (vector (intern name)) (cons name command)))))
       (setq menu-items (cdr menu-items)))
     menu))
@@ -96,19 +131,32 @@ menu.  This is the string that will be displayed in the parent menu, if
 any.  For toplevel menus, it is ignored.  This string is not displayed
 in the menu itself.
 
-A menu item is a vector of three or four elements:
+A menu item is a vector containing:
 
  - the name of the menu item (a string);
  - the `callback' of that item;
- - whether this item is active (selectable);
- - and an optional string to append to the name.
+ - a list of keywords with associated values:
+   - :active active-p	a form specifying whether this item is selectable;
+   - :suffix suffix	a string to be appended to the name as an `argument'
+			to the command, like `Kill Buffer NAME';
+   - :keys command-keys	a string, suitable for `substitute-command-keys',
+			to specify the keyboard equivalent of a command
+			when the callback is a form (this is not necessary
+			when the callback is a symbol, as the keyboard
+			equivalent is computed automatically in that case);
+   - :style style	a symbol: nil for a normal menu item, `toggle' for
+			a toggle button (a single option that can be turned
+			on or off), or `radio' for a radio button (one of a
+			group of mutually exclusive options);
+   - :selected form	for `toggle' or `radio' style, a form that specifies
+			whether the button will be in the selected state.
+
+Alternately, the vector may contain exactly 3 or 4 elements, with the third
+element specifying `active-p' and the fourth specifying `suffix'.
 
 If the `callback' of a menu item is a symbol, then it must name a command.
 It will be invoked with `call-interactively'.  If it is a list, then it is
 evaluated with `eval'.
-
-The fourth element of a menu item is a convenient way of adding the name
-of a command's ``argument'' to the menu, like ``Kill Buffer NAME''.
 
 If an element of a menu is a string, then that string will be presented in
 the menu as unselectable text.
@@ -128,10 +176,17 @@ The syntax, more precisely:
    active-p	:=  <t or nil, whether this thing is selectable>
    text		:=  <string, non selectable>
    name		:=  <string>
-   argument	:=  <string>
-   menu-item	:=  '['  name callback active-p [ argument ]  ']'
-   menu		:=  '(' name [ menu-item | menu | text ]+ ')'
-"
+   suffix	:=  <string>
+   command-keys	:=  <string>
+   object-style	:=  'nil' | 'toggle' | 'radio'
+   keyword	:=  ':active' active-p
+		 |  ':suffix' suffix
+		 |  ':keys' command-keys
+		 |  ':style' object-style
+		 |  ':selected' form
+   menu-item	:=  '['  name callback active-p [ suffix ]  ']'
+		 |  '['  name callback [ keyword ]+  ']'
+   menu		:=  '(' name [ menu-item | menu | text ]+ ')'"
   (let ((menu (make-lucid-menu-keymap (car menu-desc) (cdr menu-desc)))
 	(pos (mouse-pixel-position))
 	answer cmd)
@@ -191,13 +246,12 @@ The syntax, more precisely:
 		      converted))))
       (setq tail (cdr tail)))
     (setq choice (x-popup-dialog t (cons name (nreverse converted))))
-    (setq meaning (assq choice converted))
-    (if meaning
-	(if (symbolp (cdr meaning))
-	    (call-interactively (cdr meaning))
-	  (eval (cdr meaning))))))
+    (if choice
+	(if (symbolp choice)
+	    (call-interactively choice)
+	  (eval choice)))))
 
-;; This is empty because the usual elements of the menu bar 
+;; This is empty because the usual elements of the menu bar
 ;; are provided by menu-bar.el instead.
 ;; It would not make sense to duplicate them here.
 (defconst default-menubar nil)
@@ -247,9 +301,9 @@ Signals an error if the item is not found."
 
 (defun disable-menu-item (path)
   "Make the named menu item be unselectable.
-PATH is a list of strings which identify the position of the menu item in 
+PATH is a list of strings which identify the position of the menu item in
 the menu hierarchy.  (\"File\" \"Save\") means the menu item called \"Save\"
-under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the 
+under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the
 menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
   (let* ((menubar current-menubar)
 	 (pair (find-menu-item menubar path))
@@ -266,9 +320,9 @@ menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
 
 (defun enable-menu-item (path)
   "Make the named menu item be selectable.
-PATH is a list of strings which identify the position of the menu item in 
+PATH is a list of strings which identify the position of the menu item in
 the menu hierarchy.  (\"File\" \"Save\") means the menu item called \"Save\"
-under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the 
+under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the
 menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
   (let* ((menubar current-menubar)
 	 (pair (find-menu-item menubar path))
@@ -303,6 +357,8 @@ menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
 		    (car (find-menu-item (cdr so-far) (list (car rest))))))
 	    (or menu
 		(let ((rest2 so-far))
+		  (or rest2
+		      (error "Trying to modify a menu that doesn't exist"))
 		  (while (and (cdr rest2) (car (cdr rest2)))
 		    (setq rest2 (cdr rest2)))
 		  (setcdr rest2
@@ -352,7 +408,7 @@ MENU-PATH identifies the menu under which the new menu item should be inserted.
 ITEM-NAME is the string naming the menu item to be added.
 FUNCTION is the command to invoke when this menu item is selected.
  If it is a symbol, then it is invoked with `call-interactively', in the same
- way that functions bound to keys are invoked.  If it is a list, then the 
+ way that functions bound to keys are invoked.  If it is a list, then the
  list is simply evaluated.
 ENABLED-P controls whether the item is selectable or not.
 BEFORE, if provided, is the name of a menu item before which this item should
@@ -365,9 +421,9 @@ BEFORE, if provided, is the name of a menu item before which this item should
 
 (defun delete-menu-item (path)
   "Remove the named menu item from the menu hierarchy.
-PATH is a list of strings which identify the position of the menu item in 
+PATH is a list of strings which identify the position of the menu item in
 the menu hierarchy.  (\"File\" \"Save\") means the menu item called \"Save\"
-under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the 
+under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the
 menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
   (let* ((menubar current-menubar)
 	 (pair (find-menu-item menubar path))
@@ -386,9 +442,9 @@ menu item called \"Item\" under the \"Foo\" submenu of \"Menu\"."
 
 (defun relabel-menu-item (path new-name)
   "Change the string of the specified menu item.
-PATH is a list of strings which identify the position of the menu item in 
+PATH is a list of strings which identify the position of the menu item in
 the menu hierarchy.  (\"File\" \"Save\") means the menu item called \"Save\"
-under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the 
+under the toplevel \"File\" menu.  (\"Menu\" \"Foo\" \"Item\") means the
 menu item called \"Item\" under the \"Foo\" submenu of \"Menu\".
 NEW-NAME is the string that the menu item will be printed as from now on."
   (or (stringp new-name)

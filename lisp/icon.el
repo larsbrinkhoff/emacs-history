@@ -25,11 +25,6 @@
 ;;; Commentary:
 
 ;; A major mode for editing the Icon programming language.
-;;
-;; Note: use
-;;  (autoload 'icon-mode "icon" nil t)
-;;  (setq auto-mode-alist (cons '("\\.icn$" . icon-mode) auto-mode-alist))
-;; if not permanently installed in your emacs
 
 ;;; Code:
 
@@ -93,6 +88,7 @@ inserted in Icon code.")
   "*Non-nil means TAB in Icon mode should always reindent the current line,
 regardless of where in the line point is when the TAB command is used.")
 
+;;;###autoload
 (defun icon-mode ()
   "Major mode for editing Icon code.
 Expression and list commands understand all Icon brackets.
@@ -133,7 +129,7 @@ with no args, if that value is non-nil."
   (setq local-abbrev-table icon-mode-abbrev-table)
   (set-syntax-table icon-mode-syntax-table)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^$\\|" page-delimiter))
+  (setq paragraph-start (concat "$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'indent-line-function)

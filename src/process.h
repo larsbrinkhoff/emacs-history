@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -25,7 +25,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 struct Lisp_Process
   {
-    int size;
+    EMACS_INT size;
     struct Lisp_Vector *v_next;
     /* Descriptor by which we read from this process */
     Lisp_Object infd;
@@ -34,6 +34,8 @@ struct Lisp_Process
     /* Descriptor for the tty which this process is using.
        nil if we didn't record it (on some systems, there's no need).  */
     Lisp_Object subtty;
+    /* Name of subprocess terminal.  */
+    Lisp_Object tty_name;
     /* Name of this process */
     Lisp_Object name;
     /* List of command arguments that this process was run with */

@@ -337,10 +337,7 @@ Therefore, you need to have `(display-time)' in your .emacs file."
 				    (concat  "App't in "
 					     min-to-app " min. " new-time " "))
 
-			      ;; force mode line updates - from time.el
-
-			      (save-excursion (set-buffer (other-buffer)))
-			      (set-buffer-modified-p (buffer-modified-p))
+			      (force-mode-line-update t)
 			      (sit-for 0)))
 
 			(if (= min-to-app 0)
@@ -366,14 +363,17 @@ Therefore, you need to have `(display-time)' in your .emacs file."
 	 (appt-disp-buf (set-buffer (get-buffer-create appt-buffer-name))))
 
     (appt-select-lowest-window)
-    (split-window)
-      
-    (pop-to-buffer appt-disp-buf)
+    (if (cdr (assq 'unsplittable (frame-parameters)))
+	;; In an unsplittable frame, use something somewhere else.
+	(display-buffer appt-disp-buf)
+      ;; Otherwise, split the bottom window and use the lower part.
+      (split-window)
+      (pop-to-buffer appt-disp-buf))
     (setq mode-line-format 
 	  (concat "-------------------- Appointment in "
 		  min-to-app " minutes. " new-time " %-"))
     (insert-string appt-msg)
-    (shrink-window-if-larger-than-buffer (get-buffer-window appt-disp-buf))
+    (shrink-window-if-larger-than-buffer (get-buffer-window appt-disp-buf t))
     (set-buffer-modified-p nil)
     (select-window this-window)
     (if appt-audible
@@ -382,15 +382,19 @@ Therefore, you need to have `(display-time)' in your .emacs file."
 (defun appt-delete-window ()
   "Function called to undisplay appointment messages.
 Usually just deletes the appointment buffer."
-  (delete-window (get-buffer-window appt-buffer-name))
+  (let ((window (get-buffer-window appt-buffer-name t)))
+    (and window
+	 (or (and (fboundp 'frame-root-window)
+		  (eq window (frame-root-window (window-frame window))))
+	     (delete-window window))))
   (kill-buffer appt-buffer-name)
   (if appt-audible
       (beep 1)))
 
 ;; Select the lowest window on the frame.
 (defun appt-select-lowest-window ()
-  (setq lowest-window (selected-window))
-  (let* ((bottom-edge (car (cdr (cdr (cdr (window-edges))))))
+  (let* ((lowest-window (selected-window))
+	 (bottom-edge (car (cdr (cdr (cdr (window-edges))))))
          (last-window (previous-window))
          (window-search t))
     (while window-search
@@ -437,8 +441,7 @@ The time should be in either 24 hour format or am/pm format."
              (test-input (y-or-n-p prompt-string)))
         (setq tmp-msg-list (cdr tmp-msg-list))
         (if test-input
-            (setq appt-time-msg-list (delq element appt-time-msg-list)))
-        (setq tmp-appt-msg-list nil)))
+            (setq appt-time-msg-list (delq element appt-time-msg-list)))))
     (message "")))
                  
 

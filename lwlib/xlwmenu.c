@@ -14,7 +14,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with GNU Emacs; see the file COPYING.  If not, write to
+Alongalong with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Created by devin@lucid.com */
@@ -24,6 +24,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/types.h>
 #include <X11/Xos.h>
 #include <X11/IntrinsicP.h>
+#include <X11/ObjectP.h>
 #include <X11/StringDefs.h>
 #include <X11/cursorfont.h>
 #include <X11/bitmaps/gray>
@@ -31,6 +32,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 static int pointer_grabbed;
 static XEvent menu_post_event;
+
+XFontStruct *xlwmenu_default_font;
 
 static char 
 xlwMenuTranslations [] = 
@@ -323,10 +326,10 @@ size_menu (mw, level)
      XlwMenuWidget mw;
      int level;
 {
-  int		label_width = 0;
+  unsigned int  label_width = 0;
   int		rest_width = 0;
   int		max_rest_width = 0;
-  int		height = 0;
+  unsigned int  height = 0;
   int		horizontal_p = mw->menu.horizontal && (level == 0);
   widget_value*	val;
   window_state*	ws;
@@ -515,10 +518,19 @@ display_menu_item (mw, val, ws, where, highlighted_p, horizontal_p, just_compute
 	}
       else 
 	{
+	  int x_offset = x + h_spacing + shadow;
 	  char* display_string = resource_widget_value (mw, val);
 	  draw_shadow_rectangle (mw, ws->window, x, y, width, height, True);
-	  XDrawString (XtDisplay (mw), ws->window, text_gc,
-		       x + h_spacing + shadow,
+
+	  /* Deal with centering a menu title. */
+	  if (!horizontal_p && !val->contents && !val->call_data)
+	    {
+	      int l = string_width (mw, display_string);
+
+	      if (width > l)
+		x_offset = (width - l) >> 1;
+	    }
+          XDrawString (XtDisplay (mw), ws->window, text_gc, x_offset,
 		       y + v_spacing + shadow + font_ascent,
 		       display_string, strlen (display_string));
 	  
@@ -729,8 +741,8 @@ fit_to_screen (mw, ws, previous_ws, horizontal_p)
      window_state* previous_ws;
      Boolean horizontal_p;
 {
-  int screen_width = WidthOfScreen (XtScreen (mw));
-  int screen_height = HeightOfScreen (XtScreen (mw));
+  unsigned int screen_width = WidthOfScreen (XtScreen (mw));
+  unsigned int screen_height = HeightOfScreen (XtScreen (mw));
 
   if (ws->x < 0)
     ws->x = 0;
@@ -740,6 +752,8 @@ fit_to_screen (mw, ws, previous_ws, horizontal_p)
 	ws->x = previous_ws->x - ws->width;
       else
 	ws->x = screen_width - ws->width;
+      if (ws->x < 0)
+        ws->x = 0;
     }
   if (ws->y < 0)
     ws->y = 0;
@@ -749,6 +763,8 @@ fit_to_screen (mw, ws, previous_ws, horizontal_p)
 	ws->y = previous_ws->y - ws->height;
       else
 	ws->y = screen_height - ws->height;
+      if (ws->y < 0) 
+        ws->y = 0;
     }
 }
 
@@ -839,8 +855,8 @@ motion_event_is_in_menu (mw, ev, level, relative_pos)
      XPoint* relative_pos;
 {
   window_state* ws = &mw->menu.windows [level];
-  int x = level == 0 ? ws->x : ws->x + mw->menu.shadow_thickness;
-  int y = level == 0 ? ws->y : ws->y + mw->menu.shadow_thickness;
+  unsigned int x = level == 0 ? ws->x : ws->x + mw->menu.shadow_thickness;
+  unsigned int y = level == 0 ? ws->y : ws->y + mw->menu.shadow_thickness;
   relative_pos->x = ev->x_root - x;
   relative_pos->y = ev->y_root - y;
   return (x < ev->x_root && ev->x_root < x + ws->width
@@ -1045,15 +1061,13 @@ release_shadow_gcs (mw)
 }
 
 static void
-XlwMenuInitialize (request, new, args, num_args)
+XlwMenuInitialize (request, mw, args, num_args)
      Widget request;
-     Widget new;
+     XlwMenuWidget mw;
      ArgList args;
      Cardinal *num_args;
 {
   /* Get the GCs and the widget size */
-  XlwMenuWidget mw = (XlwMenuWidget)new;
-  
   XSetWindowAttributes xswa;
   int mask;
   
@@ -1072,10 +1086,17 @@ XlwMenuInitialize (request, new, args, num_args)
 /*  mw->menu.cursor = XCreateFontCursor (display, mw->menu.cursor_shape); */
   mw->menu.cursor = mw->menu.cursor_shape;
   
-  mw->menu.gray_pixmap = XCreatePixmapFromBitmapData (display, window,
-						      gray_bits, gray_width,
-						      gray_height, 1, 0, 1);
+  mw->menu.gray_pixmap
+    = XCreatePixmapFromBitmapData (display, window, gray_bits,
+				   gray_width, gray_height,
+				   (unsigned long)1, (unsigned long)0, 1);
   
+  /* I don't understand why this ends up 0 sometimes,
+     but it does.  This kludge works around it.
+     Can anyone find a real fix?   -- rms.  */
+  if (mw->menu.font == 0)
+    mw->menu.font = xlwmenu_default_font;
+
   make_drawing_gcs (mw);
   make_shadow_gcs (mw);
   
@@ -1286,10 +1307,8 @@ handle_single_motion_event (mw, ev)
     set_new_state (mw, val, level);
   remap_menubar (mw);
   
-#if 0
   /* Sync with the display.  Makes it feel better on X terms. */
   XSync (XtDisplay (mw), False);
-#endif
 }
 
 static void
@@ -1327,21 +1346,21 @@ Start (w, ev, params, num_params)
   if (!mw->menu.popped_up)
     {
       menu_post_event = *ev;
-      next_release_must_exit = 0;
+      pop_up_menu (mw, ev);
     }
   else
-    /* If we push a button while the menu is posted semipermanently,
-       releasing the button should always pop the menu down.  */
-    next_release_must_exit = 1;
+    {
+      /* If we push a button while the menu is posted semipermanently,
+	 releasing the button should always pop the menu down.  */
+      next_release_must_exit = 1;
 
-  XtCallCallbackList ((Widget)mw, mw->menu.open, NULL);
-  
-  /* notes the absolute position of the menubar window */
-  mw->menu.windows [0].x = ev->xmotion.x_root - ev->xmotion.x;
-  mw->menu.windows [0].y = ev->xmotion.y_root - ev->xmotion.y;
+      /* notes the absolute position of the menubar window */
+      mw->menu.windows [0].x = ev->xmotion.x_root - ev->xmotion.x;
+      mw->menu.windows [0].y = ev->xmotion.y_root - ev->xmotion.y;
 
-  /* handles the down like a move, slots are compatible */
-  handle_motion_event (mw, &ev->xmotion);
+      /* handles the down like a move, slots are compatible */
+      handle_motion_event (mw, &ev->xmotion);
+    }
 }
 
 static void 
@@ -1352,7 +1371,8 @@ Drag (w, ev, params, num_params)
      Cardinal *num_params;
 {
   XlwMenuWidget mw = (XlwMenuWidget)w;
-  handle_motion_event (mw, &ev->xmotion);
+  if (mw->menu.popped_up)
+    handle_motion_event (mw, &ev->xmotion);
 }
 
 static void 
@@ -1383,12 +1403,17 @@ Select (w, ev, params, num_params)
     {
       mw->menu.popped_up = False;
       XtUngrabPointer ((Widget)mw, ev->xmotion.time);
-      XtPopdown (XtParent (mw));
+      if (XtIsShell (XtParent ((Widget) mw)))
+	XtPopdown (XtParent ((Widget) mw));
+      else
+	{
+	  XtRemoveGrab ((Widget) mw);
+	  display_menu (mw, 0, False, NULL, NULL, NULL, NULL, NULL);
+	}
     }
 
   /* callback */
   XtCallCallbackList ((Widget)mw, mw->menu.select, (XtPointer)selected_item);
-  
 }
 
 
@@ -1404,12 +1429,14 @@ pop_up_menu (mw, event)
   int		h;
   int		borderwidth = mw->menu.shadow_thickness;
   Screen*	screen = XtScreen (mw);
+  Display       *display = XtDisplay (mw);
 
   next_release_must_exit = 0;
 
   XtCallCallbackList ((Widget)mw, mw->menu.open, NULL);
 
-  size_menu (mw, 0);
+  if (XtIsShell (XtParent ((Widget)mw)))
+    size_menu (mw, 0);
 
   w = mw->menu.windows [0].width;
   h = mw->menu.windows [0].height;
@@ -1426,30 +1453,46 @@ pop_up_menu (mw, event)
     y = HeightOfScreen (screen) - h - 2 * borderwidth;
 
   mw->menu.popped_up = True;
-  XtConfigureWidget (XtParent (mw), x, y, w, h,
-		     XtParent (mw)->core.border_width);
-  XtPopup (XtParent (mw), XtGrabExclusive);
-  display_menu (mw, 0, False, NULL, NULL, NULL, NULL, NULL);
+  if (XtIsShell (XtParent ((Widget)mw)))
+    {
+      XtConfigureWidget (XtParent ((Widget)mw), x, y, w, h,
+			 XtParent ((Widget)mw)->core.border_width);
+      XtPopup (XtParent ((Widget)mw), XtGrabExclusive);
+      display_menu (mw, 0, False, NULL, NULL, NULL, NULL, NULL);
+      mw->menu.windows [0].x = x + borderwidth;
+      mw->menu.windows [0].y = y + borderwidth;
+    }
+  else
+    {
+      XEvent *ev = (XEvent *) event;
+
+      XtAddGrab ((Widget) mw, True, True);
+
+      /* notes the absolute position of the menubar window */
+      mw->menu.windows [0].x = ev->xmotion.x_root - ev->xmotion.x;
+      mw->menu.windows [0].y = ev->xmotion.y_root - ev->xmotion.y;
+    }
+
 #ifdef emacs
-  x_catch_errors ();
+  x_catch_errors (display);
 #endif
   XtGrabPointer ((Widget)mw, False,
-		 (PointerMotionMask | PointerMotionHintMask | ButtonReleaseMask
+		 (PointerMotionMask
+		  | PointerMotionHintMask
+		  | ButtonReleaseMask
 		  | ButtonPressMask),
-		 GrabModeAsync, GrabModeAsync, None, mw->menu.cursor_shape,
+		 GrabModeAsync, GrabModeAsync, None,
+		 mw->menu.cursor_shape,
 		 event->time);
   pointer_grabbed = 1;
 #ifdef emacs
-  if (x_had_errors_p ())
+  if (x_had_errors_p (display))
     {
       pointer_grabbed = 0;
       XtUngrabPointer ((Widget)mw, event->time);
     }
-  x_uncatch_errors ();
+  x_uncatch_errors (display);
 #endif
-
-  mw->menu.windows [0].x = x + borderwidth;
-  mw->menu.windows [0].y = y + borderwidth;
 
   handle_motion_event (mw, (XMotionEvent*)event);
 }

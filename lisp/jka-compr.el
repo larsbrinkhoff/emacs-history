@@ -2,7 +2,6 @@
 ;;; Copyright (C) 1993, 1994  Free Software Foundation, Inc.
 
 ;; Author: jka@ece.cmu.edu (Jay K. Adams)
-;; Version: 0.11
 ;; Keywords: data
 
 ;;; Commentary: 
@@ -44,13 +43,6 @@
 
 
 ;;; APPLICATION NOTES:
-;;; 
-;;; rmail, vm, gnus, etc.
-;;;   To use compressed mail folders, .newsrc files, etc., you need
-;;;   only compress the file.  Since jka-compr searches for .gz
-;;;   versions of the files it's finding, you need not change
-;;;   variables within rmail, gnus, etc.  
-;;;
 ;;;
 ;;; crypt++
 ;;;   jka-compr can coexist with crpyt++ if you take all the decompression
@@ -62,28 +54,6 @@
 ;;;   jka-compr could properly handle a file that has been encrypted then
 ;;;   compressed, but there is little point in trying to compress an encrypted
 ;;;   file.
-;;;
-;;;
-;;; tar-mode
-;;;   Some people like to use extensions like .trz for compressed tar files.
-;;;   To handle these sorts of files, you have to add an entry to
-;;;   jka-compr-compression-info-list that looks something like this: 
-;;;
-;;;      ["\\.trz\\'" "\037\213"
-;;;       "zip"   "gzip"  nil  ("-q")
-;;;       "unzip" "gzip"  nil  ("-q" "-d")
-;;;       t
-;;;       nil]
-;;;
-;;;   The last nil in the vector (the "extension" field) prevents jka-compr
-;;;   from attempting to add .trz to an ordinary file name when it is looking
-;;;   for a compressed version of that file (i.e. don't look for things like
-;;;   foobar.c.trz).
-;;;
-;;;   Finally, to make tar-mode start up automatically, you have to add an
-;;;   entry to auto-mode-alist that looks like this
-;;;
-;;;       ("\\.trz\\'" . tar-mode)
 ;;;
 
 
@@ -128,11 +98,15 @@ for `jka-compr-compression-info-list').")
   ;; compr-message  compr-prog  compr-args
   ;; uncomp-message uncomp-prog uncomp-args
   ;; can-append auto-mode-flag]
-  '(["\\.Z~?\\'"
+  '(["\\.Z\\(~\\|\\.~[0-9]+~\\)?\\'"
      "compressing"    "compress"     ("-c")
      "uncompressing"  "uncompress"   ("-c")
      nil t]
-    ["\\.gz~?\\'"
+    ["\\.tgz\\'"
+     "zipping"        "gzip"         ("-c" "-q")
+     "unzipping"      "gzip"         ("-c" "-q" "-d")
+     t nil]
+    ["\\.gz\\(~\\|\\.~[0-9]+~\\)?\\'"
      "zipping"        "gzip"         ("-c" "-q")
      "unzipping"      "gzip"         ("-c" "-q" "-d")
      t t])
@@ -170,6 +144,9 @@ Because of the way `call-process' is defined, discarding the stderr output of
 a program adds the overhead of starting a shell each time the program is
 invoked.")
 
+(defvar jka-compr-mode-alist-additions
+  (list (cons "\\.tgz\\'" 'tar-mode))
+  "A list of pairs to add to auto-mode-alist when jka-compr is installed.")
 
 (defvar jka-compr-file-name-handler-entry
   nil
@@ -204,7 +181,7 @@ based on the filename itself and `jka-compr-compression-info-list'."
 (put 'compression-error 'error-conditions '(compression-error file-error error))
 
 
-(defvar jka-compr-acceptable-retval-list '(0 141))
+(defvar jka-compr-acceptable-retval-list '(0 2 141))
 
 
 (defun jka-compr-error (prog args infile message &optional errfile)
@@ -384,50 +361,30 @@ There should be no more than seven characters after the final `/'")
 		(uncompress-message (jka-compr-info-uncompress-message info))
 		(compress-args (jka-compr-info-compress-args info))
 		(uncompress-args (jka-compr-info-uncompress-args info))
-		(temp-file (jka-compr-make-temp-name))
 		(base-name (file-name-nondirectory visit-file))
-		cbuf temp-buffer)
+		temp-file cbuf temp-buffer)
 
 	    (setq cbuf (current-buffer)
-		  temp-buffer (get-buffer-create " *jka-compr-temp*"))
+		  temp-buffer (get-buffer-create " *jka-compr-wr-temp*"))
 	    (set-buffer temp-buffer)
 	    (widen) (erase-buffer)
 	    (set-buffer cbuf)
 
-	    (and append
-		 (not can-append)
-		 (file-exists-p filename)
-		 (let* ((local-copy (file-local-copy filename))
-			(local-file (or local-copy filename)))
+	    (if (and append
+		     (not can-append)
+		     (file-exists-p filename))
+		
+		(let* ((local-copy (file-local-copy filename))
+		       (local-file (or local-copy filename)))
+		  
+		  (setq temp-file local-file))
 
-		   (unwind-protect
-
-		       (progn
-		      
-			 (and
-			  uncompress-message
-			  (message "%s %s..." uncompress-message base-name))
-
-			 (jka-compr-call-process uncompress-program
-						 (concat uncompress-message
-							 " " base-name)
-						 local-file
-						 temp-file
-						 temp-buffer
-						 uncompress-args)
-			 (and
-			  uncompress-message
-			  (message "%s %s...done" uncompress-message base-name)))
-		     
-		     (and
-		      local-copy
-		      (file-exists-p local-copy)
-		      (delete-file local-copy)))))
+	      (setq temp-file (jka-compr-make-temp-name)))
 
 	    (and 
 	     compress-message
 	     (message "%s %s..." compress-message base-name))
-
+	    
 	    (jka-compr-run-real-handler 'write-region
 					(list start end temp-file t 'dont))
 
@@ -512,6 +469,8 @@ There should be no more than seven characters after the final `/'")
 		(condition-case error-code
 
 		    (progn
+		      (if replace
+			  (goto-char (point-min)))
 		      (setq start (point))
 		      (if (or beg end)
 			  (jka-compr-partial-uncompress uncompress-program
@@ -523,24 +482,25 @@ There should be no more than seven characters after the final `/'")
 							(if (and beg end)
 							    (- end beg)
 							  end))
-			(jka-compr-call-process uncompress-program
-						(concat uncompress-message
-							" " base-name)
-						local-file
-						t
-						nil
-						uncompress-args))
+			;; If visiting, bind off buffer-file-name so that
+			;; file-locking will not ask whether we should
+			;; really edit the buffer.
+			(let ((buffer-file-name
+			       (if visit nil buffer-file-name)))
+			  (jka-compr-call-process uncompress-program
+						  (concat uncompress-message
+							  " " base-name)
+						  local-file
+						  t
+						  nil
+						  uncompress-args)))
 		      (setq size (- (point) start))
-		      (goto-char start)
-		      ;; Run the functions that insert-file-contents would.
-		      (let ((list after-insert-file-functions)
-			    (value size))
-			(while list
-			  (setq value (funcall (car list) size))
-			  (if value
-			      (setq size value))
-			  (setq list (cdr list)))))
-
+		      (if replace
+			  (let* ((del-beg (point))
+				 (del-end (+ del-beg size)))
+			    (delete-region del-beg
+					   (min del-end (point-max)))))
+		      (goto-char start))
 		  (error
 		   (if (and (eq (car error-code) 'file-error)
 			    (eq (nth 3 error-code) local-file))
@@ -573,6 +533,19 @@ There should be no more than seven characters after the final `/'")
 	   (signal 'file-error
 		   (cons "Opening input file" (nth 2 notfound))))
 
+	  ;; Run the functions that insert-file-contents would.
+	  (let ((p after-insert-file-functions)
+		(insval size))
+	    (while p
+	      (setq insval (funcall (car p) size))
+	      (if insval
+		  (progn
+		    (or (integerp insval)
+			(signal 'wrong-type-argument
+				(list 'integerp insval)))
+		    (setq size insval)))
+	      (setq p (cdr p))))
+
 	  (list filename size))
 
       (jka-compr-run-real-handler 'insert-file-contents
@@ -592,7 +565,7 @@ There should be no more than seven characters after the final `/'")
 	      (local-copy
 	       (jka-compr-run-real-handler 'file-local-copy (list filename)))
 	      (temp-file (jka-compr-make-temp-name t))
-	      (temp-buffer (get-buffer-create " *jka-compr-temp*"))
+	      (temp-buffer (get-buffer-create " *jka-compr-flc-temp*"))
 	      (notfound nil)
 	      (cbuf (current-buffer))
 	      local-file)
@@ -726,7 +699,8 @@ Returns the new status of auto compression (non-nil means on)."
 
 (defun jka-compr-install ()
   "Install jka-compr.
-This adds entries to `file-name-handler-alist' and `auto-mode-alist'."
+This adds entries to `file-name-handler-alist' and `auto-mode-alist'
+and `inhibit-first-line-modes-suffixes'."
 
   (setq jka-compr-file-name-handler-entry
 	(cons (jka-compr-build-file-regexp) 'jka-compr-handler))
@@ -734,23 +708,42 @@ This adds entries to `file-name-handler-alist' and `auto-mode-alist'."
   (setq file-name-handler-alist (cons jka-compr-file-name-handler-entry
 				      file-name-handler-alist))
 
-  ;; Make entries in auto-mode-alist so that modes are chosen right
-  ;; according to the file names sans `.gz'.
   (mapcar
    (function (lambda (x)
-	       (and
-		(jka-compr-info-strip-extension x)
-		(setq auto-mode-alist (cons (list (jka-compr-info-regexp x)
-						  nil 'jka-compr)
-					    auto-mode-alist)))))
-
-   jka-compr-compression-info-list))
+	       (and (jka-compr-info-strip-extension x)
+		    ;; Make entries in auto-mode-alist so that modes
+		    ;; are chosen right according to the file names
+		    ;; sans `.gz'.
+		    (setq auto-mode-alist
+			  (cons (list (jka-compr-info-regexp x)
+				      nil 'jka-compr)
+				auto-mode-alist))
+		    ;; Also add these regexps to
+		    ;; inhibit-first-line-modes-suffixes, so that a
+		    ;; -*- line in the first file of a compressed tar
+		    ;; file doesn't override tar-mode.
+		    (setq inhibit-first-line-modes-suffixes
+			  (cons (jka-compr-info-regexp x)
+				inhibit-first-line-modes-suffixes)))))
+   jka-compr-compression-info-list)
+  (setq auto-mode-alist
+	(append auto-mode-alist jka-compr-mode-alist-additions)))
 
 
 (defun jka-compr-uninstall ()
   "Uninstall jka-compr.
 This removes the entries in `file-name-handler-alist' and `auto-mode-alist'
-that were created by `jka-compr-installed'."
+and `inhibit-first-line-modes-suffixes' that were added
+by `jka-compr-installed'."
+  ;; Delete from inhibit-first-line-modes-suffixes
+  ;; what jka-compr-install added.
+  (mapcar
+     (function (lambda (x)
+		 (and (jka-compr-info-strip-extension x)
+		      (setq inhibit-first-line-modes-suffixes
+			    (delete (jka-compr-info-regexp x)
+				    inhibit-first-line-modes-suffixes)))))
+     jka-compr-compression-info-list)
 
   (let* ((fnha (cons nil file-name-handler-alist))
 	 (last fnha))
@@ -768,8 +761,9 @@ that were created by `jka-compr-installed'."
 
     (while (cdr last)
       (setq entry (car (cdr last)))
-      (if (and (consp (cdr entry))
-	       (eq (nth 2 entry) 'jka-compr))
+      (if (or (member entry jka-compr-mode-alist-additions)
+	      (and (consp (cdr entry))
+		   (eq (nth 2 entry) 'jka-compr)))
 	  (setcdr last (cdr (cdr last)))
 	(setq last (cdr last))))
     

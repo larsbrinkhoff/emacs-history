@@ -138,6 +138,10 @@ Value is list of strings, one for each line of the rectangle."
 Calling from program, supply two args START and END, buffer positions.
 But in programs you might prefer to use `delete-extract-rectangle'."
   (interactive "r")
+  (if buffer-read-only
+      (progn
+	(setq killed-rectangle (extract-rectangle start end))
+	(barf-if-buffer-read-only)))
   (setq killed-rectangle (delete-extract-rectangle start end)))
 
 ;;;###autoload
@@ -200,8 +204,7 @@ This command does not delete or overwrite any existing text.
 
 Called from a program, takes three args; START, END and STRING."
   (interactive "r\nsString rectangle: ")
-  (operate-on-rectangle 'string-rectangle-line start end t)
-  (goto-char start))
+  (operate-on-rectangle 'string-rectangle-line start end t))
 
 (defun string-rectangle-line (startpos begextra endextra)
   (let (whitespace)

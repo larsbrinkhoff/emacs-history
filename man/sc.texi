@@ -124,9 +124,9 @@ Supercite is currently at major revision 3.1, and is known to work in the
 following environments:
 
 @table @asis
-@item Emacsen:
-	GNU Emacs 18.57 through 18.59, all current FSF Emacs 19,
-	all current Lucid Emacs 19, and Epoch 4.@refill
+@item Emacs versions:
+	GNU Emacs 18.57 through 18.59, all Emacs 19,
+	all current Lucid Emacs, and Epoch 4.@refill
 
 @item MUAs:
 	VM 4.37 and beyond (including VM version 5), RMAIL, MH-E 3.7 and
@@ -890,7 +890,7 @@ Buffer Initialization}.@refill
 @ifinfo
 
 @end ifinfo
-These MUAs, distributed with both FSF and Lucid GNU Emacs 19, use Emacs'
+These MUAs, distributed with Emacs and with Lucid Emacs, use Emacs's
 built-in yanking facility, which provides the citing hook variable
 @code{mail-citation-hook}.  By default, this hook's value is @code{nil},
 but by adding the following to your @file{.emacs} file, you can tell
@@ -908,13 +908,6 @@ both GNUS and Supercite will insert an attribution header:
 @example
 (setq news-reply-header-hook nil)
 @end example
-
-Note that the @code{mail-citation-hook} interface described above was
-not supported in FSF Emacs 19 until version 19.16 and in Lucid Emacs 19
-until version 19.8.  If you are running an earlier version of one of
-these Emacsen, you will need to either upgrade to the latest version, or
-use the unsupported @dfn{overloading} feature provided with Supercite.
-@xref{Overloading for Non-conforming MUAs}.@refill
 
 @node   Emacs 18 MUAs, MH-E with any Emacsen, Emacs 19 MUAs, Getting Connected
 @comment  node-name,  next,  previous,  up
@@ -1974,12 +1967,12 @@ way.@refill
 
 A quick note about Emacs 19.  Unlike in Emacs 18, the region delimited
 by @samp{point} and @samp{mark} can have two states.  It can be
-@dfn{active} or @dfn{inactive}.  Although the FSF Emacs 19 and Lucid
-Emacs 19 use different terminology and functions, both employ the same
-convention such that when the region is inactive, commands that modify
-the region should generate an error.  The user needs to explicitly
-activate the region before successfully executing the command.  All
-Supercite commands conform to this convention.
+@dfn{active} or @dfn{inactive}.  Although Emacs 19 and Lucid Emacs 19
+use different terminology and functions, both employ the same convention
+such that when the region is inactive, commands that modify the region
+should generate an error.  The user needs to explicitly activate the
+region before successfully executing the command.  All Supercite
+commands conform to this convention.
 
 Here is the list of Supercite citing commands:
 
@@ -2293,7 +2286,7 @@ a mail message to the Supercite mailing list:
 @cindex sendmail.el
 @findex mail-yank-original
 @findex defvar
-This specification was adopted, but with the recent release of FSF GNU
+This specification was adopted, but with the recent release of
 Emacs 19, it has undergone a slight modification.  Instead of the
 variable @code{mail-yank-hooks}, the new preferred hook variable that
 the MUA should provide is @code{mail-citation-hook}.

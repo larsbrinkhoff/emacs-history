@@ -1,5 +1,5 @@
 /* Code for doing intervals.
-   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -43,6 +43,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "intervals.h"
 #include "buffer.h"
 #include "puresize.h"
+#include "keyboard.h"
 
 /* The rest of the file is within this conditional.  */
 #ifdef USE_TEXT_PROPERTIES
@@ -52,8 +53,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define TMEM(sym, set) (CONSP (set) ? ! NILP (Fmemq (sym, set)) : ! NILP (set))
 
-/* Factor for weight-balancing interval trees.  */
-Lisp_Object interval_balance_threshold;
+#define min(x, y) ((x) < (y) ? (x) : (y))
 
 Lisp_Object merge_properties_sticky ();
 
@@ -72,13 +72,13 @@ create_root_interval (parent)
 
   new = make_interval ();
 
-  if (XTYPE (parent) == Lisp_Buffer)
+  if (BUFFERP (parent))
     {
       new->total_length = (BUF_Z (XBUFFER (parent))
 			   - BUF_BEG (XBUFFER (parent)));
-      XBUFFER (parent)->intervals = new;
+      BUF_INTERVALS (XBUFFER (parent)) = new;
     }
-  else if (XTYPE (parent) == Lisp_String)
+  else if (STRINGP (parent))
     {
       new->total_length = XSTRING (parent)->size;
       XSTRING (parent)->intervals = new;
@@ -413,9 +413,9 @@ balance_possible_root_interval (interval)
   parent = (Lisp_Object) (interval->parent);
   interval = balance_an_interval (interval);
 
-  if (XTYPE (parent) == Lisp_Buffer)
-    XBUFFER (parent)->intervals = interval;
-  else if (XTYPE (parent) == Lisp_String)
+  if (BUFFERP (parent))
+    BUF_INTERVALS (XBUFFER (parent)) = interval;
+  else if (STRINGP (parent))
     XSTRING (parent)->intervals = interval;
 
   return interval;
@@ -1051,9 +1051,9 @@ delete_interval (i)
       if (! NULL_INTERVAL_P (parent))
 	parent->parent = (INTERVAL) owner;
 
-      if (XTYPE (owner) == Lisp_Buffer)
-	XBUFFER (owner)->intervals = parent;
-      else if (XTYPE (owner) == Lisp_String)
+      if (BUFFERP (owner))
+	BUF_INTERVALS (XBUFFER (owner)) = parent;
+      else if (STRINGP (owner))
 	XSTRING (owner)->intervals = parent;
       else
 	abort ();
@@ -1153,7 +1153,7 @@ adjust_intervals_for_deletion (buffer, start, length)
      int start, length;
 {
   register int left_to_delete = length;
-  register INTERVAL tree = buffer->intervals;
+  register INTERVAL tree = BUF_INTERVALS (buffer);
   register int deleted;
 
   if (NULL_INTERVAL_P (tree))
@@ -1165,7 +1165,7 @@ adjust_intervals_for_deletion (buffer, start, length)
 
   if (length == TOTAL_LENGTH (tree))
     {
-      buffer->intervals = NULL_INTERVAL;
+      BUF_INTERVALS (buffer) = NULL_INTERVAL;
       return;
     }
 
@@ -1181,10 +1181,10 @@ adjust_intervals_for_deletion (buffer, start, length)
     {
       left_to_delete -= interval_deletion_adjustment (tree, start - 1,
 						      left_to_delete);
-      tree = buffer->intervals;
+      tree = BUF_INTERVALS (buffer);
       if (left_to_delete == tree->total_length)
 	{
-	  buffer->intervals = NULL_INTERVAL;
+	  BUF_INTERVALS (buffer) = NULL_INTERVAL;
 	  return;
 	}
     }
@@ -1200,11 +1200,11 @@ offset_intervals (buffer, start, length)
      struct buffer *buffer;
      int start, length;
 {
-  if (NULL_INTERVAL_P (buffer->intervals) || length == 0)
+  if (NULL_INTERVAL_P (BUF_INTERVALS (buffer)) || length == 0)
     return;
 
   if (length > 0)
-    adjust_intervals_for_insertion (buffer->intervals, start, length);
+    adjust_intervals_for_insertion (BUF_INTERVALS (buffer), start, length);
   else
     adjust_intervals_for_deletion (buffer, start, -length);
 }
@@ -1426,8 +1426,10 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
      int inherit;
 {
   register INTERVAL under, over, this, prev;
-  register INTERVAL tree = buffer->intervals;
+  register INTERVAL tree;
   int middle;
+
+  tree = BUF_INTERVALS (buffer);
 
   /* If the new text has no properties, it becomes part of whatever
      interval it was inserted into.  */
@@ -1436,13 +1438,13 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
       Lisp_Object buf;
       if (!inherit && ! NULL_INTERVAL_P (tree))
 	{
-	  XSET (buf, Lisp_Buffer, buffer);
+	  XSETBUFFER (buf, buffer);
 	  Fset_text_properties (make_number (position),
 				make_number (position + length),
 				Qnil, buf);
 	}
-      if (! NULL_INTERVAL_P (buffer->intervals))
-	buffer->intervals = balance_an_interval (buffer->intervals);
+      if (! NULL_INTERVAL_P (BUF_INTERVALS (buffer)))
+	BUF_INTERVALS (buffer) = balance_an_interval (BUF_INTERVALS (buffer));
       return;
     }
 
@@ -1453,8 +1455,8 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
       if ((BUF_Z (buffer) - BUF_BEG (buffer)) == TOTAL_LENGTH (source))
 	{
 	  Lisp_Object buf;
-	  XSET (buf, Lisp_Buffer, buffer);
-	  buffer->intervals = reproduce_tree (source, buf);
+	  XSETBUFFER (buf, buffer);
+	  BUF_INTERVALS (buffer) = reproduce_tree (source, buf);
 	  /* Explicitly free the old tree here.  */
 
 	  return;
@@ -1464,7 +1466,7 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
 	 of the intervals of the inserted string.  */
       {
 	Lisp_Object buf;
-	XSET (buf, Lisp_Buffer, buffer);
+	XSETBUFFER (buf, buffer);
 	tree = create_root_interval (buf);
       }
     }
@@ -1474,7 +1476,7 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
        some zero length intervals.  Eventually, do something clever
        about inserting properly.  For now, just waste the old intervals.  */
     {
-      buffer->intervals = reproduce_tree (source, tree->parent);
+      BUF_INTERVALS (buffer) = reproduce_tree (source, tree->parent);
       /* Explicitly free the old tree here.  */
 
       return;
@@ -1534,14 +1536,15 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
       over = next_interval (over);
     }
 
-  if (! NULL_INTERVAL_P (buffer->intervals))
-    buffer->intervals = balance_an_interval (buffer->intervals);
+  if (! NULL_INTERVAL_P (BUF_INTERVALS (buffer)))
+    BUF_INTERVALS (buffer) = balance_an_interval (BUF_INTERVALS (buffer));
   return;
 }
 
 /* Get the value of property PROP from PLIST,
    which is the plist of an interval.
-   We check for direct properties and for categories with property PROP.  */
+   We check for direct properties, for categories with property PROP, 
+   and for PROP appearing on the default-text-properties list.  */
 
 Lisp_Object
 textget (plist, prop)
@@ -1565,28 +1568,13 @@ textget (plist, prop)
 	}
     }
 
-  return fallback;
-}
-
-/* Get the value of property PROP from PLIST,
-   which is the plist of an interval.
-   We check for direct properties only! */
-
-Lisp_Object
-textget_direct (plist, prop)
-     Lisp_Object plist;
-     register Lisp_Object prop;
-{
-  register Lisp_Object tail;
-
-  for (tail = plist; !NILP (tail); tail = Fcdr (Fcdr (tail)))
-    {
-      if (EQ (prop, Fcar (tail)))
-	return Fcar (Fcdr (tail));
-    }
-
+  if (! NILP (fallback))
+    return fallback;
+  if (CONSP (Vdefault_text_properties))
+    return Fplist_get (Vdefault_text_properties, prop);
   return Qnil;
 }
+
 
 /* Set point in BUFFER to POSITION.  If the target position is 
    before an intangible character, move to an ok place.  */
@@ -1600,9 +1588,11 @@ set_point (position, buffer)
   int buffer_point;
   register Lisp_Object obj;
   int backwards = (position < BUF_PT (buffer)) ? 1 : 0;
-  int old_position = buffer->text.pt;
+  int old_position = BUF_PT (buffer);
 
-  if (position == buffer->text.pt)
+  buffer->point_before_scroll = Qnil;
+
+  if (position == BUF_PT (buffer))
     return;
 
   /* Check this now, before checking if the buffer has any intervals.
@@ -1611,16 +1601,17 @@ set_point (position, buffer)
   if (position > BUF_Z (buffer) || position < BUF_BEG (buffer))
     abort ();
 
-  if (NULL_INTERVAL_P (buffer->intervals))
+  if (NULL_INTERVAL_P (BUF_INTERVALS (buffer)))
     {
-      buffer->text.pt = position;
+      
+      BUF_PT (buffer) = position;
       return;
     }
 
   /* Set TO to the interval containing the char after POSITION,
      and TOPREV to the interval containing the char before POSITION.
      Either one may be null.  They may be equal.  */
-  to = find_interval (buffer->intervals, position);
+  to = find_interval (BUF_INTERVALS (buffer), position);
   if (position == BUF_BEGV (buffer))
     toprev = 0;
   else if (to->position == position)
@@ -1636,7 +1627,7 @@ set_point (position, buffer)
      and FROMPREV to the interval containing the char before PT.
      Either one may be null.  They may be equal.  */
   /* We could cache this and save time.  */
-  from = find_interval (buffer->intervals, buffer_point);
+  from = find_interval (BUF_INTERVALS (buffer), buffer_point);
   if (buffer_point == BUF_BEGV (buffer))
     fromprev = 0;
   else if (from->position == BUF_PT (buffer))
@@ -1649,24 +1640,69 @@ set_point (position, buffer)
   /* Moving within an interval.  */
   if (to == from && toprev == fromprev && INTERVAL_VISIBLE_P (to))
     {
-      buffer->text.pt = position;
+      BUF_PT (buffer) = position;
       return;
     }
 
-  /* If the new position is before an intangible character,
-     move forward over all such.  */
-  while (! NULL_INTERVAL_P (to)
-	 && ! NILP (textget (to->plist, Qintangible)))
+  /* If the new position is between two intangible characters
+     with the same intangible property value,
+     move forward or backward until a change in that property.  */
+  if (NILP (Vinhibit_point_motion_hooks) && ! NULL_INTERVAL_P (to)
+      && ! NULL_INTERVAL_P (toprev))
     {
-      toprev = to;
-      to = next_interval (to);
-      if (NULL_INTERVAL_P (to))
-	position = BUF_ZV (buffer);
+      if (backwards)
+	{
+	  Lisp_Object intangible_propval;
+	  intangible_propval = textget (to->plist, Qintangible);
+
+	  /* If following char is intangible,
+	     skip back over all chars with matching intangible property.  */
+	  if (! NILP (intangible_propval))
+	    while (to == toprev
+		   || ((! NULL_INTERVAL_P (toprev)
+			&& EQ (textget (toprev->plist, Qintangible),
+			       intangible_propval))))
+	      {
+		to = toprev;
+		toprev = previous_interval (toprev);
+		if (NULL_INTERVAL_P (toprev))
+		  position = BUF_BEGV (buffer);
+		else
+		  /* This is the only line that's not
+		     dual to the following loop.
+		     That's because we want the position
+		     at the end of TOPREV.  */
+		  position = to->position;
+	      }
+	}
       else
-	position = to->position;
+	{
+	  Lisp_Object intangible_propval;
+	  intangible_propval = textget (toprev->plist, Qintangible);
+
+	  /* If previous char is intangible,
+	     skip fwd over all chars with matching intangible property.  */
+	  if (! NILP (intangible_propval))
+	    while (to == toprev
+		   || ((! NULL_INTERVAL_P (to)
+			&& EQ (textget (to->plist, Qintangible),
+			       intangible_propval))))
+	      {
+		toprev = to;
+		to = next_interval (to);
+		if (NULL_INTERVAL_P (to))
+		  position = BUF_ZV (buffer);
+		else
+		  position = to->position;
+	      }
+	}
     }
 
-  buffer->text.pt = position;
+  /* Here TO is the interval after the stopping point
+     and TOPREV is the interval before the stopping point.
+     One or the other may be null.  */
+
+  BUF_PT (buffer) = position;
 
   /* We run point-left and point-entered hooks here, iff the
      two intervals are not equivalent.  These hooks take
@@ -1714,7 +1750,7 @@ temp_set_point (position, buffer)
      int position;
      struct buffer *buffer;
 {
-  buffer->text.pt = position;
+  BUF_PT (buffer) = position;
 }
 
 /* Return the proper local map for position POSITION in BUFFER.
@@ -1726,27 +1762,37 @@ get_local_map (position, buffer)
      register int position;
      register struct buffer *buffer;
 {
-  register INTERVAL interval;
-  Lisp_Object prop, tem;
-
-  if (NULL_INTERVAL_P (buffer->intervals))
-    return current_buffer->keymap;
+  Lisp_Object prop, tem, lispy_position, lispy_buffer;
+  int old_begv, old_zv;
 
   /* Perhaps we should just change `position' to the limit.  */
   if (position > BUF_Z (buffer) || position < BUF_BEG (buffer))
     abort ();
 
-  interval = find_interval (buffer->intervals, position);
-  prop = textget (interval->plist, Qlocal_map);
-  if (NILP (prop))
-    return current_buffer->keymap;
+  /* Ignore narrowing, so that a local map continues to be valid even if
+     the visible region contains no characters and hence no properties.  */
+  old_begv = BUF_BEGV (buffer);
+  old_zv = BUF_ZV (buffer);
+  BUF_BEGV (buffer) = BUF_BEG (buffer);
+  BUF_ZV (buffer) = BUF_Z (buffer);
+
+  /* There are no properties at the end of the buffer, so in that case
+     check for a local map on the last character of the buffer instead.  */
+  if (position == BUF_Z (buffer) && BUF_Z (buffer) > BUF_BEG (buffer))
+    --position;
+  XSETFASTINT (lispy_position, position);
+  XSETBUFFER (lispy_buffer, buffer);
+  prop = Fget_char_property (lispy_position, Qlocal_map, lispy_buffer);
+
+  BUF_BEGV (buffer) = old_begv;
+  BUF_ZV (buffer) = old_zv;
 
   /* Use the local map only if it is valid.  */
-  tem = Fkeymapp (prop);
-  if (!NILP (tem))
+  if (!NILP (prop)
+      && (tem = Fkeymapp (prop), !NILP (tem)))
     return prop;
 
-  return current_buffer->keymap;
+  return buffer->keymap;
 }
 
 /* Call the modification hook functions in LIST, each with START and END.  */
@@ -1767,7 +1813,7 @@ call_mod_hooks (list, start, end)
 
 /* Check for read-only intervals and signal an error if we find one.
    Then check for any modification hooks in the range START up to
-   (but not including) TO.  Create a list of all these hooks in
+   (but not including) END.  Create a list of all these hooks in
    lexicographic order, eliminating consecutive extra copies of the
    same hook.  Then call those hooks in order, with START and END - 1
    as arguments.  */
@@ -1777,7 +1823,7 @@ verify_interval_modification (buf, start, end)
      struct buffer *buf;
      int start, end;
 {
-  register INTERVAL intervals = buf->intervals;
+  register INTERVAL intervals = BUF_INTERVALS (buf);
   register INTERVAL i, prev;
   Lisp_Object hooks;
   register Lisp_Object prev_mod_hooks;
@@ -1843,7 +1889,7 @@ verify_interval_modification (buf, start, end)
 
 		      tem = textget (i->plist, Qfront_sticky);
 		      if (TMEM (Qread_only, tem)
-			  || (NILP (textget_direct (i->plist, Qread_only))
+			  || (NILP (Fplist_get (i->plist, Qread_only))
 			      && TMEM (Qcategory, tem)))
 			error ("Attempt to insert within read-only text");
 		    }
@@ -1863,7 +1909,7 @@ verify_interval_modification (buf, start, end)
 
 		      tem = textget (prev->plist, Qrear_nonsticky);
 		      if (! TMEM (Qread_only, tem)
-			  && (! NILP (textget_direct (prev->plist,Qread_only))
+			  && (! NILP (Fplist_get (prev->plist,Qread_only))
 			      || ! TMEM (Qcategory, tem)))
 			error ("Attempt to insert within read-only text");
 		    }
@@ -1882,13 +1928,13 @@ verify_interval_modification (buf, start, end)
 
 		  tem = textget (i->plist, Qfront_sticky);
 		  if (TMEM (Qread_only, tem)
-		      || (NILP (textget_direct (i->plist, Qread_only))
+		      || (NILP (Fplist_get (i->plist, Qread_only))
 			  && TMEM (Qcategory, tem)))
 		    error ("Attempt to insert within read-only text");
 
 		  tem = textget (prev->plist, Qrear_nonsticky);
 		  if (! TMEM (Qread_only, tem)
-		      && (! NILP (textget_direct (prev->plist, Qread_only))
+		      && (! NILP (Fplist_get (prev->plist, Qread_only))
 			  || ! TMEM (Qcategory, tem)))
 		    error ("Attempt to insert within read-only text");
 		}
@@ -1993,13 +2039,52 @@ copy_intervals_to_string (string, buffer, position, length)
      Lisp_Object string, buffer;
      int position, length;
 {
-  INTERVAL interval_copy = copy_intervals (XBUFFER (buffer)->intervals,
+  INTERVAL interval_copy = copy_intervals (BUF_INTERVALS (XBUFFER (buffer)),
 					   position, length);
   if (NULL_INTERVAL_P (interval_copy))
     return;
 
   interval_copy->parent = (INTERVAL) string;
   XSTRING (string)->intervals = interval_copy;
+}
+
+/* Return 1 if string S1 and S2 have identical properties; 0 otherwise.
+   Assume they have identical characters.  */
+
+int
+compare_string_intervals (s1, s2)
+     Lisp_Object s1, s2;
+{
+  INTERVAL i1, i2;
+  int pos = 1;
+  int end = XSTRING (s1)->size + 1;
+
+  /* We specify 1 as position because the interval functions
+     always use positions starting at 1.  */
+  i1 = find_interval (XSTRING (s1)->intervals, 1);
+  i2 = find_interval (XSTRING (s2)->intervals, 1);
+
+  while (pos < end)
+    {
+      /* Determine how far we can go before we reach the end of I1 or I2.  */
+      int len1 = (i1 != 0 ? INTERVAL_LAST_POS (i1) : end) - pos;
+      int len2 = (i2 != 0 ? INTERVAL_LAST_POS (i2) : end) - pos;
+      int distance = min (len1, len2);
+
+      /* If we ever find a mismatch between the strings,
+	 they differ.  */
+      if (! intervals_equal (i1, i2))
+	return 0;
+
+      /* Advance POS till the end of the shorter interval,
+	 and advance one or both interval pointers for the new position.  */
+      pos += distance;
+      if (len1 == distance)
+	i1 = next_interval (i1);
+      if (len2 == distance)
+	i2 = next_interval (i2);
+    }
+  return 1;
 }
 
 #endif /* USE_TEXT_PROPERTIES */

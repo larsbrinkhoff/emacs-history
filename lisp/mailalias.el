@@ -29,24 +29,25 @@
 
 ;;; Code:
 
-(defvar mail-aliases t
-  "Alias of mail address aliases,
-or t meaning should be initialized from `~/.mailrc'.")
+(require 'sendmail)
 
 ;; Called from sendmail-send-it, or similar functions,
 ;; only if some mail aliases are defined.
 (defun expand-mail-aliases (beg end &optional exclude)
   "Expand all mail aliases in suitable header fields found between BEG and END.
-Suitable header fields are `To', `Cc' and `Bcc' and their `Resent-' variants.
+Suitable header fields are `To', `From', `CC' and `BCC', `Reply-to', and
+their `Resent-' variants.
+
 Optional second arg EXCLUDE may be a regular expression defining text to be
 removed from alias expansions."
+  (sendmail-synch-aliases)
   (if (eq mail-aliases t)
       (progn (setq mail-aliases nil) (build-mail-aliases)))
   (goto-char beg)
   (setq end (set-marker (make-marker) end))
   (let ((case-fold-search nil))
     (while (let ((case-fold-search t))
-	     (re-search-forward "^\\(to\\|cc\\|bcc\\|resent-to\\|resent-cc\\|resent-bcc\\):" end t))
+	     (re-search-forward "^\\(Resent-\\)?\\(To\\|From\\|CC\\|BCC\\|Reply-to\\):" end t))
       (skip-chars-forward " \t")
       (let ((beg1 (point))
 	    end1 pos epos seplen
@@ -74,7 +75,7 @@ removed from alias expansions."
 		    seplen (- (point) epos))
 	    (setq epos (marker-position end1) seplen 0))
 	  (let (translation
-		(string (buffer-substring pos epos)))
+		(string (buffer-substring-no-properties pos epos)))
 	    (if (and (not (assoc string disabled-aliases))
 		     (setq translation
 			   (cdr (assoc string mail-aliases))))
@@ -102,10 +103,12 @@ removed from alias expansions."
 	(set-marker end1 nil)))
     (set-marker end nil)))
 
-;; Called by mail-setup, or similar functions, only if ~/.mailrc exists.
+;; Called by mail-setup, or similar functions, only if the file specified
+;; by mail-personal-alias-file (usually `~/.mailrc') exists.
 (defun build-mail-aliases (&optional file)
-  "Read mail aliases from `~/.mailrc' and set `mail-aliases'."
-  (setq file (expand-file-name (or file (or (getenv "MAILRC") "~/.mailrc"))))
+  "Read mail aliases from personal aliases file and set `mail-aliases'.
+By default, this is the file specified by `mail-personal-alias-file'."
+  (setq file (expand-file-name (or file mail-personal-alias-file)))
   (let ((buffer nil)
 	(obuf (current-buffer)))
     (unwind-protect
@@ -167,10 +170,11 @@ DEFINITION can be one or more mail addresses separated by spaces.
 An address can contain spaces if it is quoted with double-quotes."
   (interactive "sDefine mail alias: \nsDefine %s as mail alias for: ")
   ;; Read the defaults first, if we have not done so.
+  (sendmail-synch-aliases)
   (if (eq mail-aliases t)
       (progn
 	(setq mail-aliases nil)
-	(if (file-exists-p "~/.mailrc")
+	(if (file-exists-p mail-personal-alias-file)
 	    (build-mail-aliases))))
   ;; strip garbage from front and end
   (if (string-match "\\`[ \t\n,]+" definition)

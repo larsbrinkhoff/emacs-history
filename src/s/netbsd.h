@@ -6,9 +6,6 @@
 /* For mem-limits.h.  */
 #define BSD4_2
 
-#undef SYSTEM_TYPE
-#define SYSTEM_TYPE "netbsd"
-
 #undef KERNEL_FILE
 #undef LDAV_SYMBOL
 #define HAVE_GETLOADAVG
@@ -31,7 +28,7 @@
 
 #define LIBS_DEBUG
 /* -lutil is not needed for NetBSD >0.9.  */
-#define LIBS_SYSTEM -lutil
+/* #define LIBS_SYSTEM -lutil */
 #define LIBS_TERMCAP -ltermcap
 
 #define NEED_ERRNO
@@ -39,6 +36,8 @@
 
 /* Netbsd has POSIX-style pgrp behavior.  */
 #undef BSD_PGRPS
+
+#define GETPGRP_NO_ARG
 
 #ifndef NO_SHARED_LIBS
 /* These definitions should work for either dynamic or static linking,
@@ -60,3 +59,6 @@
 #define LOCALTIME_CACHE
 
 #define HAVE_WAIT_HEADER
+#define WAIT_USE_INT
+
+#define NO_MATHERR

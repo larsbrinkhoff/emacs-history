@@ -77,9 +77,8 @@ Is processed with `substitute-command-keys' first.")
 (xscheme-evaluation-commands scheme-mode-map)
 (xscheme-interrupt-commands scheme-mode-map)
 
-;;;###autoload
 (defun run-scheme (command-line)
-  "Run an inferior Scheme process.
+  "Run MIT Scheme in an inferior process.
 Output goes to the buffer `*scheme*'.
 With argument, asks for a command line."
   (interactive
@@ -675,12 +674,7 @@ When called, the current buffer will be the Scheme process-buffer.")
 
 (defun xscheme-set-runlight (runlight)
   (setq xscheme-runlight-string runlight)
-  (xscheme-modeline-redisplay))
-
-(defun xscheme-modeline-redisplay ()
-  (save-excursion (set-buffer (other-buffer)))
-  (set-buffer-modified-p (buffer-modified-p))
-  (sit-for 0))
+  (force-mode-line-update t))
 
 ;;;; Process Filter Operations
 
@@ -812,7 +806,7 @@ the remaining input.")
   (setq xscheme-prompt string)
   (xscheme-guarantee-newlines 2)
   (setq xscheme-mode-string (xscheme-coerce-prompt string))
-  (xscheme-modeline-redisplay))
+  (force-mode-line-update t))
 
 (defun xscheme-output-goto ()
   (xscheme-goto-output-point)

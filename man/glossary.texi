@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Glossary, Key Index, Intro, Top
 @unnumbered Glossary
@@ -18,10 +18,11 @@ commands @kbd{C-]} and @kbd{M-x top-level} are used for this.
 
 @item Alt
 Alt is the name of a modifier bit which a keyboard input character may
-have.  To make a character Alt, type it while holding down the
-@key{ALT} key.  Such characters are given names that start with
-@kbd{Alt-} (usually written @kbd{A-} for short).  @xref{User Input,
-Alt}.
+have.  To make a character Alt, type it while holding down the @key{ALT}
+key.  Such characters are given names that start with @kbd{Alt-}
+(usually written @kbd{A-} for short).  (Note that many terminals have a
+key labeled @key{ALT} which is really a @key{META} key.)  @xref{User
+Input, Alt}.
 
 @item Auto Fill Mode
 Auto Fill mode is a minor mode in which text that you insert is
@@ -233,8 +234,7 @@ but no actual text is thereby lost.  @xref{Windows}.
 
 @item Directory
 File directories are named collections in the file system, within which
-you can place individual files or subdirectories.
-@xref{ListDir,,Directories}.
+you can place individual files or subdirectories.  @xref{Directories}.
 
 @item Dired
 Dired is the Emacs facility that displays the contents of a file
@@ -262,8 +262,9 @@ tell it to.  @xref{Bugs}.
 
 @item Echo Area
 The echo area is the bottom line of the screen, used for echoing the
-arguments to commands, for asking questions, and printing brief
-messages (including error messages).  @xref{Echo Area}.
+arguments to commands, for asking questions, and printing brief messages
+(including error messages).  The messages are stored in the buffer
+@samp{*Messages*} so you can review them later.  @xref{Echo Area}.
 
 @item Echoing
 Echoing is acknowledging the receipt of commands by displaying them (in
@@ -322,15 +323,20 @@ text to be filled.  @xref{Filling}.
 Filling text means shifting text between consecutive lines so that all
 the lines are approximately the same length.  @xref{Filling}.
 
+@item Formatted Text
+Formatted text is text that displays with formatting information while
+you edit.  Formatting information includes fonts, colors, and specified
+margins.  @xref{Formatted Text}.
+
 @item Frame
-A frame is a rectangular cluster of Emacs windows.  When using X Windows,
-you can create more than one Emacs frame, each having its own X window,
-and then you can subdivide each frame into Emacs windows as you wish.
-@xref{Frames}.
+A frame is a rectangular cluster of Emacs windows.  Emacs starts out
+with one frame, but you can create more.  You can subdivide each frame
+into Emacs windows (q.v.).  When you are using X windows, all the frames
+can be visible at the same time.  @xref{Frames}.
 
 @item Function Key
-A function key is a key on the keyboard that does not correspond to any
-character.  @xref{Function Keys}.
+A function key is a key on the keyboard that sends input but does not
+correspond to any character.  @xref{Function Keys}.
 
 @item Global
 Global means `independent of the current environment; in effect
@@ -403,6 +409,10 @@ programming languages have conventions for using indentation to
 illuminate the structure of the program, and Emacs has special
 commands to adjust indentation.
 @xref{Indentation}.
+
+@item Indirect Buffer
+An indirect buffer is a buffer that shares the text of another buffer,
+called its base buffer.  @xref{Indirect Buffers}.
 
 @item Input Event
 An input event represents, within Emacs, one action taken by the user on
@@ -915,6 +925,12 @@ Synonymous with `abbrev'.
 @item Word Search
 Word search is searching for a sequence of words, considering the
 punctuation between them as insignificant.  @xref{Word Search}.
+
+@item WYSIWYG
+WYSIWYG stands for ``What you see is what you get.''  Emacs generally
+provides WYSIWYG editing for files of characters; in Enriched mode
+(@pxref{Formatted Text}), it provides WYSIWYG editing for files that
+include text formatting information.
 
 @item Yanking
 Yanking means reinserting text previously killed.  It can be used to

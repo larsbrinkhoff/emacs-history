@@ -42,7 +42,7 @@ Lisp_Object pending_boundary;
    because we don't need to record the contents.)  */
 
 record_insert (beg, length)
-     Lisp_Object beg, length;
+     int beg, length;
 {
   Lisp_Object lbeg, lend;
 
@@ -55,29 +55,29 @@ record_insert (beg, length)
 
   if (current_buffer != XBUFFER (last_undo_buffer))
     Fundo_boundary ();
-  XSET (last_undo_buffer, Lisp_Buffer, current_buffer);
+  XSETBUFFER (last_undo_buffer, current_buffer);
 
-  if (MODIFF <= current_buffer->save_modified)
+  if (MODIFF <= SAVE_MODIFF)
     record_first_change ();
 
   /* If this is following another insertion and consecutive with it
      in the buffer, combine the two.  */
-  if (XTYPE (current_buffer->undo_list) == Lisp_Cons)
+  if (CONSP (current_buffer->undo_list))
     {
       Lisp_Object elt;
       elt = XCONS (current_buffer->undo_list)->car;
-      if (XTYPE (elt) == Lisp_Cons
-	  && XTYPE (XCONS (elt)->car) == Lisp_Int
-	  && XTYPE (XCONS (elt)->cdr) == Lisp_Int
-	  && XINT (XCONS (elt)->cdr) == XINT (beg))
+      if (CONSP (elt)
+	  && INTEGERP (XCONS (elt)->car)
+	  && INTEGERP (XCONS (elt)->cdr)
+	  && XINT (XCONS (elt)->cdr) == beg)
 	{
-	  XSETINT (XCONS (elt)->cdr, XINT (beg) + XINT (length));
+	  XSETINT (XCONS (elt)->cdr, beg + length);
 	  return;
 	}
     }
 
-  lbeg = beg;
-  XSET (lend, Lisp_Int, XINT (beg) + XINT (length));
+  XSETFASTINT (lbeg, beg);
+  XSETINT (lend, beg + length);
   current_buffer->undo_list = Fcons (Fcons (lbeg, lend),
                                      current_buffer->undo_list);
 }
@@ -100,20 +100,20 @@ record_delete (beg, length)
 
   if (current_buffer != XBUFFER (last_undo_buffer))
     Fundo_boundary ();
-  XSET (last_undo_buffer, Lisp_Buffer, current_buffer);
+  XSETBUFFER (last_undo_buffer, current_buffer);
 
   at_boundary = (CONSP (current_buffer->undo_list)
 		 && NILP (XCONS (current_buffer->undo_list)->car));
 
-  if (MODIFF <= current_buffer->save_modified)
+  if (MODIFF <= SAVE_MODIFF)
     record_first_change ();
 
   if (point == beg + length)
-    XSET (sbeg, Lisp_Int, -beg);
+    XSETINT (sbeg, -beg);
   else
-    XFASTINT (sbeg) = beg;
-  XFASTINT (lbeg) = beg;
-  XFASTINT (lend) = beg + length;
+    XSETFASTINT (sbeg, beg);
+  XSETFASTINT (lbeg, beg);
+  XSETFASTINT (lend, beg + length);
 
   /* If we are just after an undo boundary, and 
      point wasn't at start of deleted range, record where it was.  */
@@ -146,16 +146,20 @@ record_change (beg, length)
 record_first_change ()
 {
   Lisp_Object high, low;
+  struct buffer *base_buffer = current_buffer;
 
   if (EQ (current_buffer->undo_list, Qt))
     return;
 
   if (current_buffer != XBUFFER (last_undo_buffer))
     Fundo_boundary ();
-  XSET (last_undo_buffer, Lisp_Buffer, current_buffer);
+  XSETBUFFER (last_undo_buffer, current_buffer);
 
-  XFASTINT (high) = (current_buffer->modtime >> 16) & 0xffff;
-  XFASTINT (low) = current_buffer->modtime & 0xffff;
+  if (base_buffer->base_buffer)
+    base_buffer = base_buffer->base_buffer;
+
+  XSETFASTINT (high, (base_buffer->modtime >> 16) & 0xffff);
+  XSETFASTINT (low, base_buffer->modtime & 0xffff);
   current_buffer->undo_list = Fcons (Fcons (Qt, Fcons (high, low)), current_buffer->undo_list);
 }
 
@@ -187,11 +191,11 @@ record_property_change (beg, length, prop, value, buffer)
   if (boundary)
     Fundo_boundary ();
 
-  if (MODIFF <= current_buffer->save_modified)
+  if (MODIFF <= SAVE_MODIFF)
     record_first_change ();
 
-  XSET (lbeg, Lisp_Int, beg);
-  XSET (lend, Lisp_Int, beg + length);
+  XSETINT (lbeg, beg);
+  XSETINT (lend, beg + length);
   entry = Fcons (Qnil, Fcons (prop, Fcons (value, Fcons (lbeg, lend))));
   current_buffer->undo_list = Fcons (entry, current_buffer->undo_list);
 
@@ -249,8 +253,7 @@ truncate_undo_list (list, minsize, maxsize)
      Skip, skip, skip the undo, skip, skip, skip the undo,
      Skip, skip, skip the undo, skip to the undo bound'ry. 
      (Get it?  "Skip to my Loo?")  */
-  if (XTYPE (next) == Lisp_Cons
-      && NILP (XCONS (next)->car))
+  if (CONSP (next) && NILP (XCONS (next)->car))
     {
       /* Add in the space occupied by this element and its chain link.  */
       size_so_far += sizeof (struct Lisp_Cons);
@@ -259,18 +262,17 @@ truncate_undo_list (list, minsize, maxsize)
       prev = next;
       next = XCONS (next)->cdr;
     }
-  while (XTYPE (next) == Lisp_Cons
-	 && ! NILP (XCONS (next)->car))
+  while (CONSP (next) && ! NILP (XCONS (next)->car))
     {
       Lisp_Object elt;
       elt = XCONS (next)->car;
 
       /* Add in the space occupied by this element and its chain link.  */
       size_so_far += sizeof (struct Lisp_Cons);
-      if (XTYPE (elt) == Lisp_Cons)
+      if (CONSP (elt))
 	{
 	  size_so_far += sizeof (struct Lisp_Cons);
-	  if (XTYPE (XCONS (elt)->car) == Lisp_String)
+	  if (STRINGP (XCONS (elt)->car))
 	    size_so_far += (sizeof (struct Lisp_String) - 1
 			    + XSTRING (XCONS (elt)->car)->size);
 	}
@@ -279,10 +281,10 @@ truncate_undo_list (list, minsize, maxsize)
       prev = next;
       next = XCONS (next)->cdr;
     }
-  if (XTYPE (next) == Lisp_Cons)
+  if (CONSP (next))
     last_boundary = prev;
 
-  while (XTYPE (next) == Lisp_Cons)
+  while (CONSP (next))
     {
       Lisp_Object elt;
       elt = XCONS (next)->car;
@@ -302,10 +304,10 @@ truncate_undo_list (list, minsize, maxsize)
 
       /* Add in the space occupied by this element and its chain link.  */
       size_so_far += sizeof (struct Lisp_Cons);
-      if (XTYPE (elt) == Lisp_Cons)
+      if (CONSP (elt))
 	{
 	  size_so_far += sizeof (struct Lisp_Cons);
-	  if (XTYPE (XCONS (elt)->car) == Lisp_String)
+	  if (STRINGP (XCONS (elt)->car))
 	    size_so_far += (sizeof (struct Lisp_String) - 1
 			    + XSTRING (XCONS (elt)->car)->size);
 	}
@@ -369,9 +371,9 @@ Return what remains of the list.")
 	  if (NILP (next))
 	    break;
 	  /* Handle an integer by setting point to that value.  */
-	  if (XTYPE (next) == Lisp_Int)
+	  if (INTEGERP (next))
 	    SET_PT (clip_to_bounds (BEGV, XINT (next), ZV));
-	  else if (XTYPE (next) == Lisp_Cons)
+	  else if (CONSP (next))
 	    {
 	      Lisp_Object car, cdr;
 
@@ -382,14 +384,19 @@ Return what remains of the list.")
 		  /* Element (t high . low) records previous modtime.  */
 		  Lisp_Object high, low;
 		  int mod_time;
+		  struct buffer *base_buffer = current_buffer;
 
 		  high = Fcar (cdr);
 		  low = Fcdr (cdr);
 		  mod_time = (XFASTINT (high) << 16) + XFASTINT (low);
+
+		  if (current_buffer->base_buffer)
+		    base_buffer = current_buffer->base_buffer;
+
 		  /* If this records an obsolete save
 		     (not matching the actual disk file)
 		     then don't mark unmodified.  */
-		  if (mod_time != current_buffer->modtime)
+		  if (mod_time != base_buffer->modtime)
 		    break;
 #ifdef CLASH_DETECTION
 		  Funlock_buffer ();
@@ -412,7 +419,7 @@ Return what remains of the list.")
 		  Fput_text_property (beg, end, prop, val, Qnil);
 		}
 #endif /* USE_TEXT_PROPERTIES */
-	      else if (XTYPE (car) == Lisp_Int && XTYPE (cdr) == Lisp_Int)
+	      else if (INTEGERP (car) && INTEGERP (cdr))
 		{
 		  /* Element (BEG . END) means range was inserted.  */
 		  Lisp_Object end;
@@ -425,7 +432,7 @@ Return what remains of the list.")
 		  Fgoto_char (car);
 		  Fdelete_region (car, cdr);
 		}
-	      else if (XTYPE (car) == Lisp_String && XTYPE (cdr) == Lisp_Int)
+	      else if (STRINGP (car) && INTEGERP (cdr))
 		{
 		  /* Element (STRING . POS) means STRING was deleted.  */
 		  Lisp_Object membuf;

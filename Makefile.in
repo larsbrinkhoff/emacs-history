@@ -22,7 +22,7 @@
 #      `make distclean' should leave only the files that were in the
 #      distribution.
 # 
-# make realclean
+# make maintainer-clean
 #      Delete everything from the current directory that can be
 #      reconstructed with this Makefile.  This typically includes
 #      everything deleted by distclean, plus more: C source files
@@ -82,12 +82,12 @@ datadir=@datadir@
 # runs.	 These files are all architecture-independent. Right now, the
 # only such data is the locking directory; ${lockdir} is a
 # subdirectory of this.
-statedir=@statedir@
+sharedstatedir=@sharedstatedir@
 
 # Where to install and expect executable files to be run by Emacs
 # rather than directly by users, and other architecture-dependent
 # data.	 ${archlibdir} is a subdirectory of this.
-libdir=@libdir@
+libexecdir=@libexecdir@
 
 # Where to install Emacs's man pages, and what extension they should have.
 mandir=@mandir@
@@ -98,6 +98,9 @@ manext=.1
 # since there are now many packages documented with the texinfo
 # system, it is inappropriate to imply that it is part of Emacs.
 infodir=@infodir@
+
+# Where to look for bitmap files.
+bitmapdir=@bitmapdir@
 
 # Where to find the source code.  The source code for Emacs's C kernel is
 # expected to be in ${srcdir}/src, and the source code for Emacs's
@@ -202,44 +205,49 @@ src/paths.h: Makefile ${srcdir}/src/paths.h.in
 	@echo "Producing \`src/paths.h' from \`src/paths.h.in'."
 	@(lisppath=`echo ${lisppath} | ${removenullpaths}` ;		\
 	  buildlisppath=`echo ${buildlisppath} | ${removenullpaths}` ;	\
-	  sed < ${srcdir}/src/paths.h.in > src/paths.h.tmp		\
+	  sed < ${srcdir}/src/paths.h.in > paths.h.tmp$$$$		\
 	  -e 's;\(#.*PATH_LOADSEARCH\).*$$;\1 "'$${lisppath}'";'	\
 	  -e 's;\(#.*PATH_DUMPLOADSEARCH\).*$$;\1 "'$${buildlisppath}'";' \
 	  -e 's;\(#.*PATH_EXEC\).*$$;\1 "${archlibdir}";'		\
 	  -e 's;\(#.*PATH_INFO\).*$$;\1 "${infodir}";'			\
 	  -e 's;\(#.*PATH_DATA\).*$$;\1 "${etcdir}";'			\
+	  -e 's;\(#.*PATH_BITMAPS\).*$$;\1 "${bitmapdir}";'		\
 	  -e 's;\(#.*PATH_DOC\).*$$;\1 "${docdir}";'			\
-	  -e 's;\(#.*PATH_LOCK\).*$$;\1 "${lockdir}/";')
-	@${srcdir}/move-if-change src/paths.h.tmp src/paths.h
+	  -e 's;\(#.*PATH_LOCK\).*$$;\1 "${lockdir}/";') &&		\
+	${srcdir}/move-if-change paths.h.tmp$$$$ src/paths.h
 
 # For `make all',
 # we force the rebuilding of src/paths.h because the user might give
 # make different values for the various directories.  Since we use
 # move-if-change, src/paths.h only actually changes if the user did
 # something notable, so the only unnecessary work we do is in building
-# src/paths.h.tmp, which isn't much.
+# paths.h.tmp$$$$, which isn't much.
 # Note that sed is not in /bin on 386bsd.
-paths-force: FRC.src.paths.h
+# We depend on src/paths.h here to prevent simultaneous execution of
+# that rule and this one, in a parallel make.
+# It is possible for paths.h to be updated twice--but that would happen anyway.
+paths-force: FRC src/paths.h
 	@echo "Producing \`src/paths.h' from \`src/paths.h.in'."
 	@(lisppath=`echo ${lisppath} | ${removenullpaths}` ;		\
 	  buildlisppath=`echo ${buildlisppath} | ${removenullpaths}` ;	\
-	  sed < ${srcdir}/src/paths.h.in > src/paths.h.tmp		\
+	  sed < ${srcdir}/src/paths.h.in > paths.h.tmp$$$$		\
 	  -e 's;\(#.*PATH_LOADSEARCH\).*$$;\1 "'$${lisppath}'";'	\
 	  -e 's;\(#.*PATH_DUMPLOADSEARCH\).*$$;\1 "'$${buildlisppath}'";' \
 	  -e 's;\(#.*PATH_EXEC\).*$$;\1 "${archlibdir}";'		\
 	  -e 's;\(#.*PATH_INFO\).*$$;\1 "${infodir}";'			\
 	  -e 's;\(#.*PATH_DATA\).*$$;\1 "${etcdir}";'			\
+	  -e 's;\(#.*PATH_BITMAPS\).*$$;\1 "${bitmapdir}";'		\
 	  -e 's;\(#.*PATH_DOC\).*$$;\1 "${docdir}";'			\
-	  -e 's;\(#.*PATH_LOCK\).*$$;\1 "${lockdir}/";')
-	@${srcdir}/move-if-change src/paths.h.tmp src/paths.h
+	  -e 's;\(#.*PATH_LOCK\).*$$;\1 "${lockdir}/";') &&		\
+	${srcdir}/move-if-change paths.h.tmp$$$$ src/paths.h
 
-src:	lib-src FRC.src src/paths.h
+src:	lib-src FRC src/paths.h
 
 # This ought to depend on src/paths.h, so that in parallel make
 # src/paths.h will be available for the compilations in lib-src.
 # But that causes trouble in `make install' if a different prefix
 # is specified at that time.
-lib-src: FRC.lib-src src/paths.h
+lib-src: FRC src/paths.h
 
 .RECURSIVE: ${SUBDIR}
 
@@ -249,7 +257,8 @@ ${SUBDIR}: ${SUBDIR_MAKEFILES} FRC
 	  LDFLAGS='${LDFLAGS}' MAKE='${MAKE}'
 
 blessmail: ${SUBDIR_MAKEFILES} src FRC
-	cd lib-src; $(MAKE) maybe-blessmail $(MFLAGS) MAKE='${MAKE}'
+	cd lib-src; $(MAKE) maybe-blessmail $(MFLAGS) \
+	  MAKE='${MAKE}' archlibdir='$(archlibdir)'
 
 Makefile: Makefile.in config.status
 	./config.status
@@ -291,8 +300,8 @@ install: ${SUBDIR} install-arch-dep install-arch-indep blessmail;
 install-arch-dep: mkdir
 	(cd lib-src; \
 	  $(MAKE) install $(MFLAGS) prefix=${prefix} \
-	    exec_prefix=${exec_prefix} bindir=${bindir} libdir=${libdir} \
-	    archlibdir=${archlibdir})
+	    exec_prefix=${exec_prefix} bindir=${bindir} \
+	    libexecdir=${libexecdir} archlibdir=${archlibdir})
 	${INSTALL_PROGRAM} src/emacs ${bindir}/emacs-${version}
 	-chmod 1755  ${bindir}/emacs-${version}
 	rm -f ${bindir}/$(EMACS)
@@ -300,6 +309,7 @@ install-arch-dep: mkdir
 
 ### Note that we copy the DOC-* files from the build etc directory
 ### as well as lots of things from ${srcdir}/etc.
+
 install-arch-indep: mkdir
 	-set ${COPYDESTS} ; \
 	 for dir in ${COPYDIR} ; do \
@@ -309,7 +319,8 @@ install-arch-indep: mkdir
 	   shift ; \
 	 done
 	-set ${COPYDESTS} ; \
-	 mkdir ${COPYDESTS} ; \
+ 	 mkdir ${COPYDESTS} ; \
+ 	 chmod ugo+rx ${COPYDESTS} ; \
 	 for dir in ${COPYDIR} ; do \
 	   dest=$$1 ; shift ; \
 	   [ -d $${dir} ] \
@@ -320,13 +331,17 @@ install-arch-indep: mkdir
 		 rm -rf $${subdir}/RCS ; \
 		 rm -rf $${subdir}/CVS ; \
 		 rm -f  $${subdir}/\#* ; \
+		 rm -f  $${subdir}/.\#* ; \
 		 rm -f  $${subdir}/*~ ; \
+		 rm -f  $${subdir}/*.orig ; \
 	       done) ; \
 	 done
+	-rm -f ${lispdir}/subdirs.el
+	$(srcdir)/update-subdirs ${lispdir}
 	if [ `(cd ./etc; /bin/pwd)` != `(cd ${docdir}; /bin/pwd)` ]; \
 	then \
-	   echo "Copying etc/DOC* ..." ; \
-	   (cd etc; tar -cf - DOC*)|(cd ${docdir}; umask 0; tar -xvf - ); \
+	   echo "Copying etc/DOC-* ..." ; \
+	   (cd etc; tar -cf - DOC-*)|(cd ${docdir}; umask 0; tar -xvf - ); \
 	else true; fi
 	thisdir=`/bin/pwd`; \
 	if [ `(cd ${srcdir}/info && /bin/pwd)` != `(cd ${infodir} && /bin/pwd)` ]; \
@@ -335,7 +350,7 @@ install-arch-indep: mkdir
 	   if [ ! -f ${infodir}/dir ] && [ -f dir ]; then \
 	     (cd $${thisdir}; ${INSTALL_DATA} ${srcdir}/info/dir ${infodir}/dir); \
 	   fi ; \
-	   for f in cl* dired-x* emacs* forms* gnus* info* sc* vip* ; do \
+	   for f in cl* dired-x* emacs* forms* gnus* info* mh-e* sc* vip*; do \
 	     (cd $${thisdir}; ${INSTALL_DATA} ${srcdir}/info/$$f ${infodir}/$$f); \
 	   done); \
 	else true; fi
@@ -345,11 +360,11 @@ install-arch-indep: mkdir
 
 ### Build all the directories we're going to install Emacs in.	Since
 ### we may be creating several layers of directories (for example,
-### /usr/local/lib/emacs/19.0/mips-dec-ultrix4.2), we use make-path
-### instead of mkdir.  Not all systems' mkdirs have the `-p' flag.
-mkdir: FRC.mkdir
-	./lib-src/make-path ${COPYDESTS} ${lockdir} ${infodir} ${mandir} \
-	  ${bindir} ${datadir} ${docdir} ${libdir} \
+### /usr/local/lib/emacs/19.0/mips-dec-ultrix4.2), we use mkinstalldirs
+### instead of mkdir.  Not all systems' mkdir programs have the `-p' flag.
+mkdir: FRC
+	$(srcdir)/mkinstalldirs ${COPYDESTS} ${lockdir} ${infodir} ${mandir} \
+	  ${bindir} ${datadir} ${docdir} ${libexecdir} \
 	  `echo ${locallisppath} | sed 's/:/ /g'`
 	-chmod 777 ${lockdir}
 
@@ -362,7 +377,7 @@ uninstall:
 	(cd lib-src; 					\
 	 $(MAKE) $(MFLAGS) uninstall			\
 	    prefix=${prefix} exec_prefix=${exec_prefix}	\
-	    bindir=${bindir} libdir=${libdir} archlibdir=${archlibdir})
+	    bindir=${bindir} libexecdir=${libexecdir} archlibdir=${archlibdir})
 	for dir in ${lispdir} ${etcdir} ; do 		\
 	  if [ -d $${dir} ]; then			\
 	    case `(cd $${dir} ; /bin/pwd)` in		\
@@ -376,26 +391,23 @@ uninstall:
 	    esac ;					\
 	  fi ;						\
 	done
-	(cd ${infodir}; rm -f cl* emacs* forms* info* vip*)
-	(cd ${mandir};  rm -f emacs.1 etags.1 ctags.1)
-	(cd ${bindir};  rm -f emacs-${version} $(EMACS))
+	(cd ${infodir} && rm -f cl* dired-x* emacs* forms* gnus* info* mh-e* sc* vip*)
+	(cd ${mandir}  && rm -f emacs.1 etags.1 ctags.1)
+	(cd ${bindir}  && rm -f emacs-${version} $(EMACS))
 
 
-### Some makes seem to remember that they've built something called FRC,
-### so you can only use a given FRC once per makefile.
-FRC FRC.src.paths.h FRC.src FRC.lib-src FRC.mkdir:
-FRC.mostlyclean FRC.clean FRC.distclean FRC.realclean:
+FRC:
 
 # ==================== Cleaning up and miscellanea ====================
 
-.PHONY: mostlyclean clean distclean realclean extraclean
+.PHONY: mostlyclean clean distclean maintainer-clean extraclean
 
 ### `mostlyclean'
 ###      Like `clean', but may refrain from deleting a few files that people
 ###      normally don't want to recompile.  For example, the `mostlyclean'
 ###      target for GCC does not delete `libgcc.a', because recompiling it
 ###      is rarely necessary and takes a lot of time.
-mostlyclean: FRC.mostlyclean
+mostlyclean: FRC
 	(cd src;      $(MAKE) $(MFLAGS) mostlyclean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) mostlyclean)
 	(cd lwlib;    $(MAKE) $(MFLAGS) mostlyclean)
@@ -410,7 +422,7 @@ mostlyclean: FRC.mostlyclean
 ###      with them.
 ### 
 ###      Delete `.dvi' files here if they are not part of the distribution.
-clean: FRC.clean
+clean: FRC
 	(cd src;      $(MAKE) $(MFLAGS) clean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) clean)
 	(cd lwlib;    $(MAKE) $(MFLAGS) clean)
@@ -424,10 +436,10 @@ clean: FRC.clean
 ###      `make distclean' should leave only the files that were in the
 ###      distribution.
 top_distclean=\
-	rm -f config.status build-install ; \
+	rm -f config.status config.cache ; \
 	rm -f Makefile ${SUBDIR_MAKEFILES} ; \
-	(cd lock ; rm -f *)
-distclean: FRC.distclean
+	(cd lock && rm -f *)
+distclean: FRC
 	(cd src;      $(MAKE) $(MFLAGS) distclean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) distclean)
 	(cd lwlib;    $(MAKE) $(MFLAGS) distclean)
@@ -436,23 +448,23 @@ distclean: FRC.distclean
 	${top_distclean}
 	
 
-### `realclean'
+### `maintainer-clean'
 ###      Delete everything from the current directory that can be
 ###      reconstructed with this Makefile.  This typically includes
 ###      everything deleted by distclean, plus more: C source files
 ###      produced by Bison, tags tables, info files, and so on.
 ### 
-###      One exception, however: `make realclean' should not delete
+###      One exception, however: `make maintainer-clean' should not delete
 ###      `configure' even if `configure' can be remade using a rule in the
-###      Makefile.  More generally, `make realclean' should not delete
+###      Makefile.  More generally, `make maintainer-clean' should not delete
 ###      anything that needs to exist in order to run `configure' and then
 ###      begin to build the program.
-realclean: FRC.realclean
-	(cd src;      $(MAKE) $(MFLAGS) realclean)
-	(cd oldXMenu; $(MAKE) $(MFLAGS) realclean)
-	(cd lwlib;    $(MAKE) $(MFLAGS) realclean)
-	(cd lib-src;  $(MAKE) $(MFLAGS) realclean)
-	-(cd man &&   $(MAKE) $(MFLAGS) realclean)
+maintainer-clean: FRC
+	(cd src;      $(MAKE) $(MFLAGS) maintainer-clean)
+	(cd oldXMenu; $(MAKE) $(MFLAGS) maintainer-clean)
+	(cd lwlib;    $(MAKE) $(MFLAGS) maintainer-clean)
+	(cd lib-src;  $(MAKE) $(MFLAGS) maintainer-clean)
+	-(cd man &&   $(MAKE) $(MFLAGS) maintainer-clean)
 	${top_distclean}
 
 ### This doesn't actually appear in the coding standards, but Karl
@@ -461,7 +473,7 @@ realclean: FRC.realclean
 ### it deletes backup and autosave files too.
 extraclean:
 	for i in ${SUBDIR}; do (cd $$i; $(MAKE) $(MFLAGS) extraclean); done
-	-(cd lock; rm *)
+	-(cd lock && rm *)
 	-rm config.status config-tmp-*
 	-rm -f *~ \#*
 
@@ -476,7 +488,7 @@ extraclean:
 ### and VC will swiftly let you know if this happens, and it is easily
 ### corrected.
 SOURCES = ChangeLog GETTING.GNU.SOFTWARE INSTALL Makefile.in PROBLEMS \
-	README build-install.in configure make-dist move-if-change
+	README configure make-dist move-if-change
 
 .PHONY: unlock relock
 
@@ -511,6 +523,7 @@ check:
 	@echo "We don't have any tests for GNU Emacs yet."
 
 dist:
+	$(srcdir)/update-subdirs ${srcdir}/lisp
 	cd ${srcdir}; make-dist
 
 .PHONY: info dvi dist check
@@ -518,4 +531,4 @@ force-info:
 info: force-info
 	(cd ${srcdir}/man; $(MAKE) $(MFLAGS) info)
 dvi:
-	(cd ${srcdir}/man; $(MAKE) $(MFLAGS) dvi)
+	(cd man; $(MAKE) $(MFLAGS) dvi)

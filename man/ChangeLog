@@ -1,3 +1,37 @@
+Mon Apr 24 00:30:14 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (INFO_TARGETS, DVI_TARGETS): Add viper targets.
+	(../info/viper, viper.dvi): New targets.
+
+Thu Apr 20 12:20:39 1995  Kevin Rodgers <kevinr@ihs.com>
+
+	* dired-x.texi (Installation): Change the example to set
+	buffer-local variables like dired-omit-files-p in
+	dired-mode-hook.
+
+Mon Apr 17 23:53:06 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (INFO_TARGETS, DVI_TARGETS): Add mh-e targets.
+	(../info/mh-e, mh-e.dvi): New targets.
+
+Tue Feb  7 18:50:09 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* Makefile.in (maintainer-clean): Renamed from realclean.
+
+Wed Nov 23 15:15:28 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in: New file.
+	* Makefile: File deleted.
+
+Sat Nov 19 05:05:52 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile (TEXINDEX_OBJS): Variable deleted.
+	(texindex, texindex.o, getopt.o): Rules deleted.
+	All deps on texindex deleted.
+	(distclean): Don't delete texindex.
+	(mostlyclean): Don't delete *.o.
+	* texindex.c, getopt.c: Files deleted.
+
 Wed Sep  7 03:53:50 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* Version 19.26 released.

@@ -35,6 +35,9 @@
 (defvar help-map (make-sparse-keymap)
   "Keymap for characters following the Help key.")
 
+(defvar help-mode-map (make-sparse-keymap)
+  "Keymap for help mode.")
+
 (define-key global-map (char-to-string help-char) 'help-command)
 (fset 'help-command help-map)
 
@@ -54,6 +57,8 @@
 
 (define-key help-map "d" 'describe-function)
 (define-key help-map "f" 'describe-function)
+
+(define-key help-map "F" 'view-emacs-FAQ)
 
 (define-key help-map "i" 'info)
 (define-key help-map "\C-f" 'Info-goto-emacs-command-node)
@@ -79,6 +84,18 @@
 (define-key help-map "v" 'describe-variable)
 
 (define-key help-map "q" 'help-quit)
+
+(defun help-mode ()
+  "Major mode for viewing help text.
+Entry to this mode runs the normal hook `help-mode-hook'.
+Commands:
+\\{help-mode-map}"
+  (interactive)
+  (kill-all-local-variables)
+  (use-local-map help-mode-map)
+  (setq mode-name "Help")
+  (setq major-mode 'help-mode)
+  (run-hooks 'help-mode-hook))
 
 (defun help-quit ()
   (interactive)
@@ -139,11 +156,16 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
        (let ((first-message
 	      (cond ((or (member (buffer-name standard-output)
 				 special-display-buffer-names)
+			 (assoc (buffer-name standard-output)
+				special-display-buffer-names)
 			 (let (found
 			       (tail special-display-regexps)
 			       (name (buffer-name standard-output)))
 			   (while (and tail (not found))
-			     (if (string-match (car tail) name)
+			     (if (or (and (consp (car tail))
+					  (string-match (car (car tail)) name))
+				     (and (stringp (car tail))
+					  (string-match (car tail) name)))
 				 (setq found t))
 			     (setq tail (cdr tail)))
 			   found))
@@ -168,8 +190,25 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
 		       (substitute-command-keys first-message)
 		     "")
 		   (if first-message "  " "")
-		   (substitute-command-keys
-		    "\\[scroll-other-window] to scroll the help."))))))
+		   ;; If the help buffer will go in a separate frame,
+		   ;; it's no use mentioning a command to scroll, so don't.
+		   (if (or (member (buffer-name standard-output)
+				   special-display-buffer-names)
+			   (memq t (mapcar '(lambda (elt)
+					      (string-match elt (buffer-name standard-output)))
+					   special-display-regexps)))
+		       nil
+		     (if (or (member (buffer-name standard-output)
+				     same-window-buffer-names)
+			     (memq t (mapcar '(lambda (elt)
+						(string-match elt (buffer-name standard-output)))
+					     same-window-regexps)))
+			 ;; Say how to scroll this window.
+			 (substitute-command-keys
+			  "\\[scroll-up] to scroll the help.")
+		       ;; Say how to scroll some other window.
+		       (substitute-command-keys
+			"\\[scroll-other-window] to scroll the help."))))))))
 
 (defun describe-key (key)
   "Display documentation of the function invoked by KEY.  KEY is a string."
@@ -191,6 +230,9 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
 	(if (documentation defn)
 	    (princ (documentation defn))
 	  (princ "not documented"))
+	(save-excursion
+	  (set-buffer standard-output)
+	  (help-mode))
 	(print-help-return-message)))))
 
 (defun describe-mode ()
@@ -228,6 +270,9 @@ describes the minor mode."
     (princ mode-name)
     (princ " mode:\n")
     (princ (documentation major-mode))
+    (save-excursion
+      (set-buffer standard-output)
+      (help-mode))
     (print-help-return-message)))
 
 ;; So keyboard macro definitions are documented correctly
@@ -266,14 +311,16 @@ describes the minor mode."
 The prefix described consists of all but the last event
 of the key sequence that ran this command."
   (interactive)
-  (let* ((key (this-command-keys))
-	 (prefix (make-vector (1- (length key)) nil))
-	 i)
-    (setq i 0)
-    (while (< i (length prefix))
-      (aset prefix i (aref key i))
-      (setq i (1+ i)))
-    (describe-bindings prefix)))
+  (let* ((key (this-command-keys)))
+    (describe-bindings
+     (if (stringp key)
+	 (substring key 0 (1- (length key)))
+       (let ((prefix (make-vector (1- (length key)) nil))
+	     (i 0))
+	 (while (< i (length prefix))
+	   (aset prefix i (aref key i))
+	   (setq i (1+ i)))
+	 prefix)))))
 ;; Make C-h after a prefix, when not specifically bound, 
 ;; run describe-prefix-bindings.
 (setq prefix-help-command 'describe-prefix-bindings)
@@ -282,6 +329,11 @@ of the key sequence that ran this command."
   "Display info on recent changes to Emacs."
   (interactive)
   (find-file-read-only (expand-file-name "NEWS" data-directory)))
+
+(defun view-emacs-FAQ ()
+  "Display the Emacs Frequently Asked Questions (FAQ) file."
+  (interactive)
+  (find-file-read-only (expand-file-name "FAQ" data-directory)))
 
 (defun view-lossage ()
   "Display last 100 input keystrokes."
@@ -300,15 +352,15 @@ of the key sequence that ran this command."
       (goto-char (point-min))
       (while (progn (move-to-column 50) (not (eobp)))
 	(search-forward " " nil t)
-	(insert "\n")))
+	(insert "\n"))
+      (help-mode))
     (print-help-return-message)))
 
 (defalias 'help 'help-for-help)
 (make-help-screen help-for-help
   "a b c f C-f i k C-k l m n p s t v w C-c C-d C-n C-w, or ? for more help:"
   "You have typed \\[help-command], the help character.  Type a Help option:
-\(Use \\<help-map>\\[scroll-up] or \\[scroll-down] to scroll through this text.
-Type \\<help-map>\\[help-quit] to exit the Help command.)
+\(Use SPC or DEL to scroll through this text.  Type \\<help-map>\\[help-quit] to exit the Help command.)
 
 a  command-apropos.  Give a substring, and see a list of commands
 	(functions interactively callable) that contain
@@ -319,6 +371,7 @@ c  describe-key-briefly.  Type a command key sequence;
 f  describe-function.  Type a function name and get documentation of it.
 C-f Info-goto-emacs-command-node.  Type a function name;
 	it takes you to the Info node for that command.
+F  view-emacs-FAQ.  Shows emacs frequently asked questions file.
 i  info. The  info  documentation reader.
 k  describe-key.  Type a command key sequence;
 	it displays the full documentation.
@@ -364,6 +417,15 @@ C-w print information on absence of warranty for GNU Emacs."
 	      (and (symbolp obj) (fboundp obj) obj)))
 	(error nil))))
 
+(defun describe-function-find-file (function)
+  (let ((files load-history)
+	file functions)
+    (while files
+      (if (memq function (cdr (car files)))
+	  (setq file (car (car files)) files nil))
+      (setq files (cdr files)))
+    file))
+
 (defun describe-function (function)
   "Display the full documentation of FUNCTION (a symbol)."
   (interactive
@@ -383,27 +445,36 @@ C-w print information on absence of warranty for GNU Emacs."
 	   (beg (if (commandp def) "an interactive " "a ")))
       (princ (cond ((or (stringp def)
 			(vectorp def))
-		    "a keyboard macro.")
+		    "a keyboard macro")
 		   ((subrp def)
-		    (concat beg "built-in function."))
+		    (concat beg "built-in function"))
 		   ((byte-code-function-p def)
-		    (concat beg "compiled Lisp function."))
+		    (concat beg "compiled Lisp function"))
 		   ((symbolp def)
-		    (format "alias for `%s'." def))
+		    (format "alias for `%s'" def))
 		   ((eq (car-safe def) 'lambda)
-		    (concat beg "Lisp function."))
+		    (concat beg "Lisp function"))
 		   ((eq (car-safe def) 'macro)
-		    "a Lisp macro.")
+		    "a Lisp macro")
 		   ((eq (car-safe def) 'mocklisp)
-		    "a mocklisp function.")
+		    "a mocklisp function")
 		   ((eq (car-safe def) 'autoload)
-		    (format "%s autoloaded Lisp %s."
+		    (format "%s autoloaded Lisp %s"
 			    (if (commandp def) "an interactive" "an")
 			    (if (nth 4 def) "macro" "function")
 ;;; Including the file name made this line too long.
 ;;;			    (nth 1 def)
 			    ))
 		   (t "")))
+      (let ((file (describe-function-find-file function)))
+	(if file
+	    (progn
+	      (princ " in `")
+	      ;; We used to add .el to the file name,
+	      ;; but that's completely wrong when the user used load-file.
+	      (princ file)
+	      (princ "'"))))
+      (princ ".")
       (terpri)
       (let ((arglist (cond ((byte-code-function-p def)
 			    (car (append def nil)))
@@ -425,8 +496,11 @@ C-w print information on absence of warranty for GNU Emacs."
 	(princ "not documented"))
       )
     (print-help-return-message)
-    ;; Return the text we displayed.
-    (save-excursion (set-buffer standard-output) (buffer-string))))
+    (save-excursion
+      (set-buffer standard-output)
+      (help-mode)
+      ;; Return the text we displayed.
+      (buffer-string))))
 
 (defun variable-at-point ()
   (condition-case ()
@@ -452,11 +526,20 @@ Returns the documentation as a string, also."
 	       v (intern val)))))
   (with-output-to-temp-buffer "*Help*"
     (prin1 variable)
-    (princ "'s value is ")
     (if (not (boundp variable))
-        (princ "void.")
+        (princ " is void")
+      (princ "'s value is ")
       (prin1 (symbol-value variable)))
-    (terpri) (terpri)
+    (terpri)
+    (if (local-variable-p variable)
+	(progn
+	  (princ (format "Local in buffer %s; " (buffer-name)))
+	  (if (not (default-boundp variable))
+	      (princ "globally void")
+	    (princ "global value is ")
+	    (prin1 (default-value variable)))
+	  (terpri)))
+    (terpri)
     (princ "Documentation:")
     (terpri)
     (let ((doc (documentation-property variable 'variable-documentation)))
@@ -464,8 +547,11 @@ Returns the documentation as a string, also."
 	  (princ (substitute-command-keys doc))
 	(princ "not documented as a variable.")))
     (print-help-return-message)
-    ;; Return the text we displayed.
-    (save-excursion (set-buffer standard-output) (buffer-string))))
+    (save-excursion
+      (set-buffer standard-output)
+      (help-mode)
+      ;; Return the text we displayed.
+      (buffer-string))))
 
 (defun where-is (definition)
   "Print message listing key sequences that invoke specified command.
@@ -496,7 +582,7 @@ documentation found."
   (let ((message
 	 (let ((standard-output (get-buffer-create "*Help*")))
 	   (print-help-return-message 'identity))))
-    (if (apropos string t 'commandp)
+    (if (apropos string t 'commandp t)
 	(and message (message message)))))
 
 (defun locate-library (library &optional nosuffix)

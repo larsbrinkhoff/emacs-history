@@ -35,49 +35,74 @@
 \\[add-change-log-entry] calls this function (if nil, `add-log-current-defun'
 instead) with no arguments.  It returns a string or nil if it cannot guess.")
 
-;; This MUST not be autoloaded, since user-login-name
-;; cannot be known at Emacs dump time.
-(defvar add-log-full-name (user-full-name)
+(defvar add-log-full-name nil
   "*Full name of user, for inclusion in ChangeLog daily headers.
 This defaults to the value returned by the `user-full-name' function.")
 
-;; This MUST not be autoloaded, since user-login-name
-;; cannot be known at Emacs dump time.
-(defvar add-log-mailing-address user-mail-address
+(defvar add-log-mailing-address nil
   "*Electronic mail address of user, for inclusion in ChangeLog daily headers.
 This defaults to the value of `user-mail-address'.")
+
+(defvar change-log-font-lock-keywords
+  '(("^[SMTWF].+" . font-lock-function-name-face)	; Date line.
+    ("^\t\\* \\([^ :\n]+\\)" 1 font-lock-comment-face)	; File name.
+    ("\(\\([^)\n]+\\)\)" 1 font-lock-keyword-face))	; Function name.
+  "Additional expressions to highlight in Change Log mode.")
+
+(defvar change-log-mode-map nil
+  "Keymap for Change Log major mode.")
+(if change-log-mode-map
+    nil
+  (setq change-log-mode-map (make-sparse-keymap))
+  (define-key change-log-mode-map "\M-q" 'change-log-fill-paragraph))
 
 (defun change-log-name ()
   (or change-log-default-name
       (if (eq system-type 'vax-vms) 
 	  "$CHANGE_LOG$.TXT" 
-	(if (eq system-type 'ms-dos)
+	(if (or (eq system-type 'ms-dos) (eq system-type 'windows-nt))
 	    "changelo"
 	  "ChangeLog"))))
 
 ;;;###autoload
 (defun prompt-for-change-log-name ()
   "Prompt for a change log name."
-  (let ((default (change-log-name)))
-    (expand-file-name
-     (read-file-name (format "Log file (default %s): " default)
-		     nil default))))
+  (let* ((default (change-log-name))
+	 (name (expand-file-name
+		(read-file-name (format "Log file (default %s): " default)
+				nil default))))
+    ;; Handle something that is syntactically a directory name.
+    ;; Look for ChangeLog or whatever in that directory.
+    (if (string= (file-name-nondirectory name) "")
+	(expand-file-name (file-name-nondirectory default)
+			  name)
+      ;; Handle specifying a file that is a directory.
+      (if (file-directory-p name)
+	  (expand-file-name (file-name-nondirectory default)
+			    (file-name-as-directory name))
+	name))))
 
 ;;;###autoload
 (defun find-change-log (&optional file-name)
   "Find a change log file for \\[add-change-log-entry] and return the name.
 
 Optional arg FILE-NAME specifies the file to use.
-If FILE-NAME is nil, use the value of `change-log-default-name' if non-nil.
-Otherwise, search in the current directory and its successive parents
-for a file named `ChangeLog' (or whatever we use on this operating system).
+If FILE-NAME is nil, use the value of `change-log-default-name'.
+If 'change-log-default-name' is nil, behave as though it were 'ChangeLog'
+\(or whatever we use on this operating system).
+
+If 'change-log-default-name' contains a leading directory component, then
+simply find it in the current directory.  Otherwise, search in the current 
+directory and its successive parents for a file so named.
 
 Once a file is found, `change-log-default-name' is set locally in the
 current buffer to the complete file name."
   ;; If user specified a file name or if this buffer knows which one to use,
   ;; just use that.
   (or file-name
-      (setq file-name change-log-default-name)
+      (setq file-name (and change-log-default-name
+			   (file-name-directory change-log-default-name)
+			   change-log-default-name))
       (progn
 	;; Chase links in the source file
 	;; and use the change log in the dir where it points.
@@ -133,6 +158,10 @@ never append to an existing entry."
 	 ;; s/he can edit the full name field in prompter if s/he wants.
 	(setq add-log-mailing-address
 	      (read-input "Mailing address: " add-log-mailing-address))))
+  (or add-log-full-name
+      (setq add-log-full-name (user-full-name)))
+  (or add-log-mailing-address
+      (setq add-log-mailing-address user-mail-address))
   (let ((defun (funcall (or add-log-current-defun-function
 			    'add-log-current-defun)))
 	paragraph-end entry)
@@ -259,14 +288,9 @@ Runs `change-log-mode-hook'."
   (set (make-local-variable 'page-delimiter) "^\\<\\|^\f")
   (set (make-local-variable 'version-control) 'never)
   (set (make-local-variable 'adaptive-fill-regexp) "\\s *")
+  (set (make-local-variable 'font-lock-defaults)
+       '(change-log-font-lock-keywords t))
   (run-hooks 'change-log-mode-hook))
-
-(defvar change-log-mode-map nil
-  "Keymap for Change Log major mode.")
-(if change-log-mode-map
-    nil
-  (setq change-log-mode-map (make-sparse-keymap))
-  (define-key change-log-mode-map "\M-q" 'change-log-fill-paragraph))
 
 ;; It might be nice to have a general feature to replace this.  The idea I
 ;; have is a variable giving a regexp matching text which should not be
@@ -289,7 +313,7 @@ Prefix arg means justify as well."
   "Return name of function definition point is in, or nil.
 
 Understands C, Lisp, LaTeX (\"functions\" are chapters, sections, ...),
-Texinfo (@node titles), and Fortran.
+Texinfo (@node titles), Perl, and Fortran.
 
 Other modes are handled by a heuristic that looks in the 10K before
 point for uppercase headings starting in the first column or
@@ -300,7 +324,8 @@ Has a preference of looking backwards."
   (condition-case nil
       (save-excursion
 	(let ((location (point)))
-	  (cond ((memq major-mode '(emacs-lisp-mode lisp-mode scheme-mode))
+	  (cond ((memq major-mode '(emacs-lisp-mode lisp-mode scheme-mode
+						    lisp-interaction-mode))
 		 ;; If we are now precisely a the beginning of a defun,
 		 ;; make sure beginning-of-defun finds that one
 		 ;; rather than the previous one.
@@ -318,7 +343,7 @@ Has a preference of looking backwards."
 		       (skip-chars-forward " ")
 		       (buffer-substring (point)
 					 (progn (forward-sexp 1) (point))))))
-		((and (memq major-mode '(c-mode c++-mode c++-c-mode))
+		((and (memq major-mode '(c-mode c++-mode c++-c-mode objc-mode))
 		      (save-excursion (beginning-of-line)
 				      ;; Use eq instead of = here to avoid
 				      ;; error when at bob and char-after
@@ -334,7 +359,7 @@ Has a preference of looking backwards."
 		 (skip-chars-forward " \t")
 		 (buffer-substring (point)
 				   (progn (forward-sexp 1) (point))))
-		((memq major-mode '(c-mode c++-mode c++-c-mode))
+		((memq major-mode '(c-mode c++-mode c++-c-mode objc-mode))
 		 (beginning-of-line)
 		 ;; See if we are in the beginning part of a function,
 		 ;; before the open brace.  If so, advance forward.
@@ -376,36 +401,38 @@ Has a preference of looking backwards."
 				     (skip-chars-forward " ,")))
 			       (buffer-substring (point)
 						 (progn (forward-sexp 1) (point))))
-			   ;; Ordinary C function syntax.
-			   (setq beg (point))
-			   (if (condition-case nil
-				   ;; Protect against "Unbalanced parens" error.
-				   (progn
-				     (down-list 1) ; into arglist
-				     (backward-up-list 1)
-				     (skip-chars-backward " \t")
-				     t)
-				 (error nil))
-			       ;; Verify initial pos was after
-			       ;; real start of function.
-			       (if (and (save-excursion
-					  (goto-char beg)
-					  ;; For this purpose, include the line
-					  ;; that has the decl keywords.  This
-					  ;; may also include some of the
-					  ;; comments before the function.
-					  (while (and (not (bobp))
-						      (save-excursion
-							(forward-line -1)
-							(looking-at "[^\n\f]")))
-					    (forward-line -1))
-					  (>= location (point)))
-					;; Consistency check: going down and up
-					;; shouldn't take us back before BEG.
-					(> (point) beg))
-				   (buffer-substring (point)
-						     (progn (backward-sexp 1)
-							    (point))))))))))
+                           (if (looking-at "^[+-]")
+                               (get-method-definition)
+                             ;; Ordinary C function syntax.
+                             (setq beg (point))
+                             (if (condition-case nil
+                                     ;; Protect against "Unbalanced parens" error.
+                                     (progn
+                                       (down-list 1) ; into arglist
+                                       (backward-up-list 1)
+                                       (skip-chars-backward " \t")
+                                       t)
+                                   (error nil))
+                                 ;; Verify initial pos was after
+                                 ;; real start of function.
+                                 (if (and (save-excursion
+                                            (goto-char beg)
+                                            ;; For this purpose, include the line
+                                            ;; that has the decl keywords.  This
+                                            ;; may also include some of the
+                                            ;; comments before the function.
+                                            (while (and (not (bobp))
+                                                        (save-excursion
+                                                          (forward-line -1)
+                                                          (looking-at "[^\n\f]")))
+                                              (forward-line -1))
+                                            (>= location (point)))
+                                          ;; Consistency check: going down and up
+                                          ;; shouldn't take us back before BEG.
+                                          (> (point) beg))
+                                     (buffer-substring (point)
+                                                       (progn (backward-sexp 1)
+                                                              (point)))))))))))
 		((memq major-mode
 		       '(TeX-mode plain-TeX-mode LaTeX-mode;; tex-mode.el
 				  plain-tex-mode latex-mode;; cmutex.el
@@ -419,7 +446,11 @@ Has a preference of looking backwards."
 					   (end-of-line)
 					   (point))))))
 		((eq major-mode 'texinfo-mode)
-		 (if (re-search-backward "^@node[ \t]+\\([^,]+\\)," nil t)
+		 (if (re-search-backward "^@node[ \t]+\\([^,\n]+\\)" nil t)
+		     (buffer-substring (match-beginning 1)
+				       (match-end 1))))
+		((eq major-mode 'perl-mode)
+		 (if (re-search-backward "^sub[ \t]+\\([^ \t\n]+\\)" nil t)
 		     (buffer-substring (match-beginning 1)
 				       (match-end 1))))
                 ((eq major-mode 'fortran-mode)
@@ -451,6 +482,31 @@ Has a preference of looking backwards."
 		       (buffer-substring (match-beginning 1)
 					 (match-end 1))))))))
     (error nil)))
+
+;; Subroutine used within get-method-definition.
+;; Add the last match in the buffer to the end of `md',
+;; followed by the string END; move to the end of that match.
+(defun get-method-definition-1 (end)
+  (setq md (concat md 
+		   (buffer-substring (match-beginning 1) (match-end 1))
+		   end))
+  (goto-char (match-end 0)))
+
+;; For objective C, return the method name if we are in a method.
+(defun get-method-definition ()
+  (let ((md "["))
+    (save-excursion
+      (if (re-search-backward "^@implementation\\s-*\\([A-Za-z_]*\\)" nil t)
+	  (get-method-definition-1 " ")))
+    (save-excursion
+      (cond
+       ((re-search-forward "^\\([-+]\\)[ \t\n\f\r]*\\(([^)]*)\\)?\\s-*" nil t)
+	(get-method-definition-1 "")
+	(while (not (looking-at "[{;]"))
+	  (looking-at
+	   "\\([A-Za-z_]*:?\\)\\s-*\\(([^)]*)\\)?[A-Za-z_]*[ \t\n\f\r]*")
+	  (get-method-definition-1 ""))
+	(concat md "]"))))))
 
 
 (provide 'add-log)

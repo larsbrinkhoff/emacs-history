@@ -1,10 +1,10 @@
 ;;; fortran.el --- Fortran mode for GNU Emacs
 
-;;; Copyright (c) 1986, 1993, 1994 Free Software Foundation, Inc.
+;;; Copyright (c) 1986, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Michael D. Prange <prange@erl.mit.edu>
 ;; Maintainer: bug-fortran-mode@erl.mit.edu
-;; Version 1.30.5 (May 20, 1994)
+;; Version 1.30.5.1 (Sept 16, 1994)
 ;; Keywords: languages
 
 ;; This file is part of GNU Emacs.
@@ -46,7 +46,7 @@
 
 ;;; Bugs to bug-fortran-mode@erl.mit.edu
 
-(defconst fortran-mode-version "version 1.30.5")
+(defconst fortran-mode-version "version 1.30.5.1")
 
 ;;; Code:
 
@@ -111,8 +111,8 @@ Normally a space.")
   "*Non-nil causes all numbered lines to be treated as possible DO loop ends.")
 
 (defvar fortran-blink-matching-if nil
-  "*From a Fortran ENDIF statement, blink the matching IF statement.
-Also, from an ENDDO statement, blink on matching DO [WHILE] statement.")
+  "*Non-nil causes \\[fortran-indent-line] on ENDIF statement to blink on matching IF.
+Also, from an ENDDO statement blink on matching DO [WHILE] statement.")
 
 (defvar fortran-continuation-string "$"
   "*Single-character string used for Fortran continuation lines.
@@ -135,17 +135,17 @@ Normally $.")
 
 (defvar fortran-column-ruler-fixed
   "0   4 6  10        20        30        40        5\
-0        60        70\n\
-[   ]|{   |    |    |    |    |    |    |    |    \
-|    |    |    |    |}\n"
+\0        60        70\n\
+\[   ]|{   |    |    |    |    |    |    |    |    \
+\|    |    |    |    |}\n"
   "*String displayed above current line by \\[fortran-column-ruler].
 This variable used in fixed format mode.")
 
 (defvar fortran-column-ruler-tab
   "0       810        20        30        40        5\
-0        60        70\n\
-[   ]|  { |    |    |    |    |    |    |    |    \
-|    |    |    |    |}\n"
+\0        60        70\n\
+\[   ]|  { |    |    |    |    |    |    |    |    \
+\|    |    |    |    |}\n"
   "*String displayed above current line by \\[fortran-column-ruler].
 This variable used in TAB format mode.")
 
@@ -177,7 +177,118 @@ This variable used in TAB format mode.")
   (modify-syntax-entry ?\\ "/" fortran-mode-syntax-table)
   (modify-syntax-entry ?. "w" fortran-mode-syntax-table)
   (modify-syntax-entry ?_ "w" fortran-mode-syntax-table)
+  (modify-syntax-entry ?\! "<" fortran-mode-syntax-table)
   (modify-syntax-entry ?\n ">" fortran-mode-syntax-table))
+
+;; Comments are real pain in Fortran because there is no way to represent the
+;; standard comment syntax in an Emacs syntax table (we can for VAX-style).
+;; Therefore an unmatched quote in a standard comment will throw fontification
+;; off on the wrong track.  So we do syntactic fontification with regexps.
+
+;; Regexps done by simon@gnu with help from Ulrik Dickow <dickow@nbi.dk> and
+;; probably others Si's forgotten about (sorry).
+
+(defconst fortran-font-lock-keywords-1
+  (let ((comment-chars "c!*"))
+    (list
+     ;;
+     ;; Fontify comments and strings.  We assume that strings cannot be quoted.
+     (cons (concat "^[" comment-chars "].*") 'font-lock-comment-face)
+     '(fortran-match-!-comment . font-lock-comment-face)
+     (list (concat "^[^" comment-chars "\t]" (make-string 71 ?.) "\\(.*\\)")
+           '(1 font-lock-comment-face))
+     '("'[^'\n]*'?" . font-lock-string-face)
+     ;;
+     ;; Program, subroutine and function declarations, plus calls.
+     (list (concat "\\<\\(block[ \t]*data\\|call\\|entry\\|function\\|"
+                   "program\\|subroutine\\)\\>[ \t]*\\(\\sw+\\)?")
+           '(1 font-lock-keyword-face)
+           '(2 font-lock-function-name-face nil t))))
+  "For consideration as a value of `fortran-font-lock-keywords'.
+This does fairly subdued highlighting.")
+
+(defconst fortran-font-lock-keywords-2
+  (append fortran-font-lock-keywords-1
+   (let ((type-types
+;     (make-regexp
+;      (let ((simple-types '("character" "byte" "integer" "logical"
+;			    "none" "real" "complex"
+;			    "double[ \t]*precision" "double[ \t]*complex"))
+;	    (structured-types '("structure" "union" "map"))
+;	    (other-types '("record" "dimension" "parameter" "common" "save"
+;			   "external" "intrinsic" "data" "equivalence")))
+;	(append
+;	 (mapcar (lambda (x) (concat "implicit[ \t]*" x)) simple-types)
+;	 simple-types
+;	 (mapcar (lambda (x) (concat "end[ \t]*" x)) structured-types)
+;	 structured-types
+;	 other-types)))
+	  (concat "byte\\|c\\(haracter\\|om\\(mon\\|plex\\)\\)\\|"
+                  "d\\(ata\\|imension\\|ouble"
+                  "[ \t]*\\(complex\\|precision\\)\\)\\|"
+                  "e\\(nd[ \t]*\\(map\\|structure\\|union\\)\\|"
+                  "quivalence\\|xternal\\)\\|"
+                  "i\\(mplicit[ \t]*\\(byte\\|"
+                  "c\\(haracter\\|omplex\\)\\|"
+                  "double[ \t]*\\(complex\\|precision\\)\\|"
+                  "integer\\|logical\\|none\\|real\\)\\|"
+                  "nt\\(eger\\|rinsic\\)\\)\\|"
+                  "logical\\|map\\|none\\|parameter\\|re\\(al\\|cord\\)\\|"
+                  "s\\(ave\\|tructure\\)\\|union"))
+	 (fkeywords
+;	  ("continue" "format" "end" "enddo" "if" "then" "else" "endif"
+;	   "elseif" "while" "inquire" "stop" "return" "include" "open"
+;	   "close" "read" "write" "format" "print")
+	  (concat "c\\(lose\\|ontinue\\)\\|"
+		  "e\\(lse\\(\\|if\\)\\|nd\\(\\|do\\|if\\)\\)\\|format\\|"
+		  "i\\(f\\|n\\(clude\\|quire\\)\\)\\|open\\|print\\|"
+		  "re\\(ad\\|turn\\)\\|stop\\|then\\|w\\(hile\\|rite\\)"))
+	 (flogicals
+;	  ("and" "or" "not" "lt" "le" "eq" "ge" "gt" "ne" "true" "false")
+	  "and\\|eq\\|false\\|g[et]\\|l[et]\\|n\\(e\\|ot\\)\\|or\\|true"))
+     (list
+      ;;
+      ;; Fontify types and variable names (but not length specs or `/'s).
+      (list (concat "\\<\\(" type-types "\\)\\>[0-9 \t/*]*\\(\\sw+\\)?")
+	    '(1 font-lock-type-face)
+	    '(15 font-lock-variable-name-face nil t))
+      ;;
+      ;; Fontify all builtin keywords (except logical, do and goto; see below).
+      (concat "\\<\\(" fkeywords "\\)\\>")
+      ;;
+      ;; Fontify all builtin operators.
+      (concat "\\.\\(" flogicals "\\)\\.")
+      ;;
+      ;; Fontify do/goto keywords and targets, and goto tags.
+      (list "\\<\\(do\\|go *to\\)\\>[ \t]*\\([0-9]+\\)?"
+	    '(1 font-lock-keyword-face)
+	    '(2 font-lock-reference-face nil t))
+      (cons "^ *\\([0-9]+\\)" 'font-lock-reference-face))))
+  "For consideration as a value of `fortran-font-lock-keywords'.
+This does a lot more highlighting.")
+
+(defconst fortran-font-lock-keywords-3
+  (append fortran-font-lock-keywords-2
+   (list
+    ;;
+    ;; Fontify goto-like `err=label'/`end=label' in read/write statements.
+    (list ", *\\(e\\(nd\\|rr\\)\\)\\> *\\(= *\\([0-9]+\\)\\)?"
+          '(1 font-lock-keyword-face)
+          '(4 font-lock-reference-face nil t))
+    ;;
+    ;; Highlight a standard continuation character and in a TAB-formatted line.
+    '("^     \\([^ 0]\\)" 1 font-lock-string-face)
+    '("^\t\\([1-9]\\)" 1 font-lock-string-face)))
+  "For consideration as a value of `fortran-font-lock-keywords'.
+This does even more highlighting.")
+
+(defvar fortran-font-lock-keywords (cond ((null font-lock-maximum-decoration)
+					  fortran-font-lock-keywords-1)
+					 ((eq font-lock-maximum-decoration 2)
+					  fortran-font-lock-keywords-2)
+					 (t
+					  fortran-font-lock-keywords-3))
+  "Additional expressions to highlight in Fortran mode.")
 
 (defvar fortran-mode-map () 
   "Keymap used in Fortran mode.")
@@ -326,9 +437,9 @@ Variables controlling indentation style and extra features:
     Non-nil causes all numbered lines to be treated as possible \"continue\"
     statements.  (default nil)
  fortran-blink-matching-if 
-    From a Fortran ENDIF statement, blink the matching IF statement.
-    Also, from an ENDDO statement, blink on matching DO [WHILE] statement.
-    (default nil)
+    Non-nil causes \\[fortran-indent-line] on an ENDIF statement to blink on
+    matching IF.  Also, from an ENDDO statement, blink on matching DO [WHILE]
+    statement.  (default nil)
  fortran-continuation-string
     Single-character string to be inserted in column 5 of a continuation
     line.  (default \"$\")
@@ -354,6 +465,8 @@ with no args, if that value is non-nil."
   (setq fortran-startup-message nil)
   (setq local-abbrev-table fortran-mode-abbrev-table)
   (set-syntax-table fortran-mode-syntax-table)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(fortran-font-lock-keywords t t))
   (make-local-variable 'fortran-break-before-delimiters)
   (setq fortran-break-before-delimiters t)
   (make-local-variable 'indent-line-function)
@@ -680,49 +793,23 @@ non-comment Fortran statement in the file, and nil otherwise."
  	'last-statement)))
 
 (defun fortran-blink-matching-if ()
-  "From a Fortran ENDIF statement, blink the matching IF statement."
-  (let ((count 1) (top-of-window (window-start)) matching-if
+  ;; From a Fortran ENDIF statement, blink the matching IF statement.
+  (let ((top-of-window (window-start)) matching-if
 	(endif-point (point)) message)
     (if (save-excursion (beginning-of-line)
 			(skip-chars-forward " \t0-9")
 			(looking-at "end[ \t]*if\\b"))
 	(progn
-	  (save-excursion
-	    (while (and (not (= count 0))
-			(not (eq (fortran-previous-statement)
-				 'first-statement))
-			(not (looking-at
-			      "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
-					; Keep local to subprogram
-	      (skip-chars-forward " \t0-9")
-	      (cond ((looking-at "if[ \t]*(")
-		     (save-excursion
-		       (if (or
-			    (looking-at ".*)[ \t]*then\\b[ \t]*[^ \t(=a-z0-9]")
-			    (let (then-test);multi-line if-then
-			      (while
-				  (and (= (forward-line 1) 0)
-					;search forward for then
-				       (or (looking-at "     [^ 0\n]")
-					   (looking-at "\t[1-9]"))
-				       (not
-					(setq
-					 then-test
-					 (looking-at
-					  ".*then\\b[ \t]*[^ \t(=a-z0-9]")))))
-			      then-test))
-			   (setq count (- count 1)))))
-		    ((looking-at "end[ \t]*if\\b")
-		     (setq count (+ count 1)))))
-	    (if (not (= count 0))
-		(setq message "No matching if.")
-	      (if (< (point) top-of-window)
-		  (setq message (concat "Matches " (buffer-substring
-						    (progn (beginning-of-line)
-							   (point))
-						    (progn (end-of-line)
-							   (point)))))
-		(setq matching-if (point)))))
+          (if (not (setq matching-if (fortran-beginning-if)))
+              (setq message "No matching if.")
+            (if (< matching-if top-of-window)
+                (save-excursion
+                  (goto-char matching-if)
+                  (beginning-of-line)
+                  (setq message
+                        (concat "Matches "
+                                (buffer-substring
+                                 (point) (progn (end-of-line) (point))))))))
 	  (if message
 	      (message "%s" message)
 	    (goto-char matching-if)
@@ -732,38 +819,205 @@ non-comment Fortran statement in the file, and nil otherwise."
 (defun fortran-blink-matching-do ()
   ;; From a Fortran ENDDO statement, blink on the matching DO or DO WHILE
   ;; statement.  This is basically copied from fortran-blink-matching-if.
-  (let ((count 1) (top-of-window (window-start)) matching-do
+  (let ((top-of-window (window-start)) matching-do
 	(enddo-point (point)) message)
     (if (save-excursion (beginning-of-line)
 			(skip-chars-forward " \t0-9")
 			(looking-at "end[ \t]*do\\b"))
 	(progn
-	  (save-excursion
-	    (while (and (not (= count 0))
-			(not (eq (fortran-previous-statement)
-				 'first-statement))
-			(not (looking-at
-			      "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
-					; Keep local to subprogram
-	      (skip-chars-forward " \t0-9")
-	      (cond ((looking-at "do[ \t]+[^0-9]")
-                     (setq count (- count 1)))
-		    ((looking-at "end[ \t]*do\\b")
-		     (setq count (+ count 1)))))
-	    (if (not (= count 0))
-		(setq message "No matching do")
-	      (if (< (point) top-of-window)
-		  (setq message (concat "Matches " (buffer-substring
-						    (progn (beginning-of-line)
-							   (point))
-						    (progn (end-of-line)
-							   (point)))))
-		(setq matching-do (point)))))
+          (if (not (setq matching-do (fortran-beginning-do)))
+              (setq message "No matching do.")
+            (if (< matching-do top-of-window)
+                (save-excursion
+                  (goto-char matching-do)
+                  (beginning-of-line)
+                  (setq message
+                        (concat "Matches "
+                                (buffer-substring
+                                 (point) (progn (end-of-line) (point))))))))
 	  (if message
 	      (message "%s" message)
 	    (goto-char matching-do)
 	    (sit-for 1)
 	    (goto-char enddo-point))))))
+
+(defun fortran-mark-do ()
+  "Put mark at end of Fortran DO [WHILE]-ENDDO construct, point at beginning. 
+The marks are pushed."
+  (interactive)
+  (let (enddo-point do-point)
+    (if (setq enddo-point (fortran-end-do))
+        (if (not (setq do-point (fortran-beginning-do)))
+            (message "No matching do.")
+          ;; Set mark, move point.
+          (goto-char enddo-point)
+          (push-mark)
+          (goto-char do-point)))))
+
+(defun fortran-end-do ()
+  ;; Search forward for first unmatched ENDDO.  Return point or nil.
+  (if (save-excursion (beginning-of-line)
+                      (skip-chars-forward " \t0-9")
+                      (looking-at "end[ \t]*do\\b"))
+      ;; Sitting on one.
+      (match-beginning 0)
+    ;; Search for one.
+    (save-excursion
+      (let ((count 1))
+        (while (and (not (= count 0))
+                    (not (eq (fortran-next-statement) 'last-statement))
+                    ;; Keep local to subprogram
+                    (not (looking-at "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
+
+          (skip-chars-forward " \t0-9")
+          (cond ((looking-at "end[ \t]*do\\b")
+                 (setq count (- count 1)))
+                ((looking-at "do[ \t]+[^0-9]")
+                 (setq count (+ count 1)))))
+        (and (= count 0)
+             ;; All pairs accounted for.
+             (point))))))
+
+(defun fortran-beginning-do ()
+  ;; Search backwards for first unmatched DO [WHILE].  Return point or nil.
+  (if (save-excursion (beginning-of-line)
+                      (skip-chars-forward " \t0-9")
+                      (looking-at "do[ \t]+"))
+      ;; Sitting on one.
+      (match-beginning 0)
+    ;; Search for one.
+    (save-excursion
+      (let ((count 1))
+        (while (and (not (= count 0))
+                    (not (eq (fortran-previous-statement) 'first-statement))
+                    ;; Keep local to subprogram
+                    (not (looking-at "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
+
+          (skip-chars-forward " \t0-9")
+          (cond ((looking-at "do[ \t]+[^0-9]")
+                 (setq count (- count 1)))
+                ((looking-at "end[ \t]*do\\b")
+                 (setq count (+ count 1)))))
+
+        (and (= count 0)
+             ;; All pairs accounted for.
+             (point))))))
+
+(defun fortran-mark-if ()
+  "Put mark at end of Fortran IF-ENDIF construct, point at beginning.
+The marks are pushed."
+  (interactive)
+  (let (endif-point if-point)
+    (if (setq endif-point (fortran-end-if))
+        (if (not (setq if-point (fortran-beginning-if)))
+            (message "No matching if.")
+          ;; Set mark, move point.
+          (goto-char endif-point)
+          (push-mark)
+          (goto-char if-point)))))
+
+(defun fortran-end-if ()
+  ;; Search forwards for first unmatched ENDIF.  Return point or nil.
+  (if (save-excursion (beginning-of-line)
+                      (skip-chars-forward " \t0-9")
+                      (looking-at "end[ \t]*if\\b"))
+      ;; Sitting on one.
+      (match-beginning 0)
+    ;; Search for one.  The point has been already been moved to first
+    ;; letter on line but this should not cause troubles.
+    (save-excursion
+      (let ((count 1))
+        (while (and (not (= count 0))
+                    (not (eq (fortran-next-statement) 'last-statement))
+                    ;; Keep local to subprogram.
+                    (not (looking-at
+                          "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
+
+          (skip-chars-forward " \t0-9")
+          (cond ((looking-at "end[ \t]*if\\b")
+                 (setq count (- count 1)))
+
+                ((looking-at "if[ \t]*(")
+                 (save-excursion
+                   (if (or
+                        (looking-at ".*)[ \t]*then\\b[ \t]*[^ \t(=a-z0-9]")
+                        (let (then-test) ; Multi-line if-then.
+                          (while
+                              (and (= (forward-line 1) 0)
+                                   ;; Search forward for then.
+                                   (or (looking-at "     [^ 0\n]")
+                                       (looking-at "\t[1-9]"))
+                                   (not
+                                    (setq then-test
+                                          (looking-at
+                                           ".*then\\b[ \t]*[^ \t(=a-z0-9]")))))
+                          then-test))
+                       (setq count (+ count 1)))))))
+
+        (and (= count 0)
+             ;; All pairs accounted for.
+             (point))))))
+
+(defun fortran-beginning-if ()
+  ;; Search backwards for first unmatched IF-THEN.  Return point or nil.
+  (if (save-excursion
+        ;; May be sitting on multi-line if-then statement, first move to
+        ;; beginning of current statement.  Note: `fortran-previous-statement'
+        ;; moves to previous statement *unless* current statement is first
+        ;; one.  Only move forward if not first-statement.
+        (if (not (eq (fortran-previous-statement) 'first-statement))
+            (fortran-next-statement))
+        (skip-chars-forward " \t0-9")
+        (and
+         (looking-at "if[ \t]*(")
+         (save-match-data
+           (or (looking-at ".*)[ \t]*then\\b[ \t]*[^ \t(=a-z0-9]")
+               ;; Multi-line if-then.
+               (let (then-test)
+                 (while
+                     (and (= (forward-line 1) 0)
+                          ;; Search forward for then.
+                          (or (looking-at "     [^ 0\n]")
+                              (looking-at "\t[1-9]"))
+                          (not
+                           (setq then-test
+                                 (looking-at
+                                  ".*then\\b[ \t]*[^ \t(=a-z0-9]")))))
+                 then-test)))))
+      ;; Sitting on one.
+      (match-beginning 0)
+    ;; Search for one.
+    (save-excursion
+      (let ((count 1))
+        (while (and (not (= count 0))
+                    (not (eq (fortran-previous-statement) 'first-statement))
+                    ;; Keep local to subprogram.
+                    (not (looking-at
+                          "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
+
+          (skip-chars-forward " \t0-9")
+          (cond ((looking-at "if[ \t]*(")
+                 (save-excursion
+                   (if (or
+                        (looking-at ".*)[ \t]*then\\b[ \t]*[^ \t(=a-z0-9]")
+                        (let (then-test) ; Multi-line if-then.
+                          (while
+                              (and (= (forward-line 1) 0)
+                                   ;; Search forward for then.
+                                   (or (looking-at "     [^ 0\n]")
+                                       (looking-at "\t[1-9]"))
+                                   (not
+                                    (setq then-test
+                                          (looking-at
+                                           ".*then\\b[ \t]*[^ \t(=a-z0-9]")))))
+                          then-test))
+                       (setq count (- count 1)))))
+                ((looking-at "end[ \t]*if\\b")
+                 (setq count (+ count 1)))))
+
+        (and (= count 0)
+             ;; All pairs accounted for.
+             (point))))))
 
 (defun fortran-indent-line ()
   "Indents current Fortran line based on its contents and on previous lines."
@@ -1036,10 +1290,9 @@ Otherwise return a nil."
 						   (point))))
 	    (beginning-of-line)
 	    (and (re-search-backward
-		  (concat
-		   "\\(^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]\\)\\|\\(^[ \t0-9]*do\
-[ \t]*0*"
-		   charnum "\\b\\)\\|\\(^[ \t]*0*" charnum "\\b\\)")
+		  (concat "\\(^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]\\)\\|"
+			  "\\(^[ \t0-9]*do[ \t]*0*" charnum "\\b\\)\\|"
+			  "\\(^[ \t]*0*" charnum "\\b\\)")
 		  nil t)
 		 (looking-at (concat "^[ \t0-9]*do[ \t]*0*" charnum))))))))
 
@@ -1051,25 +1304,41 @@ Return t if `comment-start-skip' found, nil if not."
 ;;; moves point even if comment-start-skip is inside a string-constant.
 ;;; Some code expects certain values for match-beginning and end
   (interactive)
-  (let ((save-match-beginning) (save-match-end))
-    (if (save-excursion 
+  (if (save-excursion
+	(re-search-forward comment-start-skip
+			   (save-excursion (end-of-line) (point)) t))
+      (let ((save-match-beginning (match-beginning 0))
+	    (save-match-end (match-end 0)))
+	(if (fortran-is-in-string-p (match-beginning 0))
+	    (save-excursion
+	      (goto-char save-match-end)
+	      (fortran-find-comment-start-skip)) ; recurse for rest of line
+	  (goto-char save-match-beginning)
 	  (re-search-forward comment-start-skip
-			     (save-excursion (end-of-line) (point)) t))
-	(progn
-	  (setq save-match-beginning (match-beginning 0))
-	  (setq save-match-end (match-end 0))
-	  (if (fortran-is-in-string-p (match-beginning 0))
-	      (progn
-		(save-excursion
-		  (goto-char save-match-end)
-		  (fortran-find-comment-start-skip)) ; recurse for rest of line
-		)
-	    (goto-char save-match-beginning)
-	    (re-search-forward comment-start-skip
-			       (save-excursion (end-of-line) (point)) t)
-	    (goto-char (match-end 0))
-	    t))
-      nil)))
+			     (save-excursion (end-of-line) (point)) t)
+	  (goto-char (match-end 0))
+	  t))
+    nil))
+
+;;;From: simon@gnu (Simon Marshall)
+;;; Find the next ! not in a string.
+(defun fortran-match-!-comment (limit)
+  (let (found)
+    (while (and (setq found (search-forward "!" limit t))
+                (fortran-is-in-string-p (point))))
+    (if (not found)
+	nil
+      ;; Cheaper than `looking-at' "!.*".
+      (store-match-data
+       (list (1- (point)) (progn (end-of-line) (min (point) limit))))
+      t)))
+
+;; The above function is about 10% faster than the below...
+;;(defun fortran-match-!-comment (limit)
+;;  (let (found)
+;;    (while (and (setq found (re-search-forward "!.*" limit t))
+;;                (fortran-is-in-string-p (match-beginning 0))))
+;;    found))
 
 ;;;From: ralf@up3aud1.gwdg.de (Ralf Fassel)
 ;;; Test if TAB format continuation lines work.
@@ -1147,8 +1416,7 @@ automatically breaks the line at a previous space."
 		     (> (prefix-numeric-value arg) 0))
 		   'fortran-indent-line
 		 nil))
-    ;; update mode-line
-    (set-buffer-modified-p (buffer-modified-p))))
+    (force-mode-line-update)))
 
 (defun fortran-do-auto-fill ()
   (interactive)

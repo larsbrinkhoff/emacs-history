@@ -1,7 +1,7 @@
 \input texinfo			@c -*-texinfo-*-
 @c documentation for forms-mode
 @c Written by Johan Vromans, and edited by Richard Stallman
-@c $Id: forms.texi,v 1.5 1994/07/25 20:45:20 jv Exp $
+@c $Id: forms.texi,v 1.7 1994/10/15 10:58:31 jv Exp $
 
 @comment %**start of header (This is for running Texinfo on a region.)
 @setfilename ../info/forms
@@ -39,14 +39,14 @@ paragraph not being relevant to the printed manual).
 @sp 4
 @center Forms-Mode version 2
 @sp 1
-@center July 1994
+@center January 1995
 @sp 5
 @center Johan Vromans
 @center @i{jv@@nl.net}
 @page
 
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1989, 1990, 1991, 1993 Free Software Foundation, Inc.
+Copyright @copyright{} 1989, 1995 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -109,8 +109,8 @@ As you can see, the familiar fields from the entry for the super user
 are all there, but instead of being colon-separated on one single line,
 they make up a forms.
 
-The contents of the forms consists of the contents of the fields of the
-record (e.g., @samp{root}, @samp{0}, @samp{1}, @samp{Super User})
+The contents of the forms consist of the contents of the fields of the
+record (e.g. @samp{root}, @samp{0}, @samp{1}, @samp{Super User})
 interspersed with normal text (e.g @samp{User : }, @samp{Uid: }).
 
 If you modify the contents of the fields, Forms mode will analyze your
@@ -185,6 +185,9 @@ Forms mode, you can access most of the commands without the @kbd{C-c}
 prefix, but you must type ordinary letters instead of control
 characters; for example, type @kbd{n} instead of @kbd{C-c C-n}.
 
+If your Emacs has been built with X-toolkit support, Forms mode will
+provide its own menu with a number of Forms mode commands.
+
 @table @kbd
 @findex forms-next-record
 @kindex C-c C-n
@@ -252,12 +255,19 @@ Delete the current record (@code{forms-delete-record}).  You are
 prompted for confirmation before the record is deleted unless a numeric
 argument has been provided.
 
-@findex forms-search
+@findex forms-search-forward
 @kindex C-c C-s @var{regexp} @key{RET}
 @item C-c C-s @var{regexp} @key{RET}
-Search for @var{regexp} in all records following this one
-(@code{forms-search}).  If found, this record is shown.  If you give an
-empty argument, the previous regexp is used again.
+Search forward for @var{regexp} in all records following this one
+(@code{forms-search-forward}).  If found, this record is shown.
+If you give an empty argument, the previous regexp is used again.
+
+@findex forms-search-backward
+@kindex C-c C-s @var{regexp} @key{RET}
+@item C-c C-s @var{regexp} @key{RET}
+Search backward for @var{regexp} in all records following this one
+(@code{forms-search-backward}).  If found, this record is shown.
+If you give an empty argument, the previous regexp is used again.
 
 @ignore
 @findex forms-exit
@@ -282,6 +292,11 @@ Similar to @code{forms-next-field} but moves backwards.
 Forms mode replacement for @code{save-buffer}. When executed in the
 forms buffer it will save the contents of the (modified) data buffer
 instead. In Forms mode this function will be bound to @kbd{C-x C-s}.
+
+@findex forms-print
+@item M-x forms-print
+This command can be used to make a formatted print
+of the contents of the data file.
 
 @end table
 
@@ -688,7 +703,7 @@ so you'd better think twice before using this.
 
 The default format for the data file, using @code{"\t"} to separate
 fields and @code{"\^k"} to separate lines within a field, matches the
-file format of some popular database programs, such as FileMaker.  So
+file format of some popular database programs, e.g. FileMaker.  So
 @code{forms-mode} can decrease the need to use proprietary software.
 
 @node Error Messages
@@ -905,6 +920,7 @@ Jonathan I. Kamens,
 Per Cederqvist  (@code{ceder@@signum.se}),
 Michael Lipka (@code{lipka@@lip.hanse.de}),
 Andy Piper (@code{ajp@@eng.cam.ac.uk}),
+Frederic Pierresteguy  (@code{F.Pierresteguy@@frcl.bull.fr}),
 Ignatios Souvatzis
 and Richard Stallman (@code{rms@@gnu.ai.mit.edu}).
 

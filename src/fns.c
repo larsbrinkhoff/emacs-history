@@ -1,11 +1,11 @@
 /* Random utility Lisp functions.
-   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 93, 94, 95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -32,10 +32,16 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "keyboard.h"
 #include "intervals.h"
 
+#ifndef NULL
+#define NULL (void *)0
+#endif
+
+extern Lisp_Object Flookup_key ();
+
 Lisp_Object Qstring_lessp, Qprovide, Qrequire;
 Lisp_Object Qyes_or_no_p_history;
 
-static Lisp_Object internal_equal ();
+static int internal_equal ();
 
 DEFUN ("identity", Fidentity, Sidentity, 1, 1, 0,
   "Return the argument unchanged.")
@@ -45,46 +51,43 @@ DEFUN ("identity", Fidentity, Sidentity, 1, 1, 0,
   return arg;
 }
 
+extern long get_random ();
+extern void seed_random ();
+extern long time ();
+
 DEFUN ("random", Frandom, Srandom, 0, 1, 0,
   "Return a pseudo-random number.\n\
-On most systems all integers representable in Lisp are equally likely.\n\
-  This is 24 bits' worth.\n\
-With argument N, return random number in interval [0,N).\n\
+All integers representable in Lisp are equally likely.\n\
+  On most systems, this is 28 bits' worth.\n\
+With positive integer argument N, return random number in interval [0,N).\n\
 With argument t, set the random number seed from the current time and pid.")
   (limit)
      Lisp_Object limit;
 {
-  int val;
+  EMACS_INT val;
+  Lisp_Object lispy_val;
   unsigned long denominator;
-  extern long random ();
-  extern srandom ();
-  extern long time ();
 
   if (EQ (limit, Qt))
-    srandom (getpid () + time (0));
-  if (XTYPE (limit) == Lisp_Int && XINT (limit) > 0)
+    seed_random (getpid () + time (NULL));
+  if (NATNUMP (limit) && XFASTINT (limit) != 0)
     {
-      if (XINT (limit) >= 0x40000000)
-	/* This case may occur on 64-bit machines.  */
-	val = random () % XINT (limit);
-      else
-	{
-	  /* Try to take our random number from the higher bits of VAL,
-	     not the lower, since (says Gentzel) the low bits of `random'
-	     are less random than the higher ones.  We do this by using the
-	     quotient rather than the remainder.  At the high end of the RNG
-	     it's possible to get a quotient larger than limit; discarding
-	     these values eliminates the bias that would otherwise appear
-	     when using a large limit.  */
-	  denominator = (unsigned long)0x40000000 / XFASTINT (limit);
-	  do
-	    val = (random () & 0x3fffffff) / denominator;
-	  while (val >= limit);
-	}
+      /* Try to take our random number from the higher bits of VAL,
+	 not the lower, since (says Gentzel) the low bits of `random'
+	 are less random than the higher ones.  We do this by using the
+	 quotient rather than the remainder.  At the high end of the RNG
+	 it's possible to get a quotient larger than limit; discarding
+	 these values eliminates the bias that would otherwise appear
+	 when using a large limit.  */
+      denominator = ((unsigned long)1 << VALBITS) / XFASTINT (limit);
+      do
+	val = get_random () / denominator;
+      while (val >= XFASTINT (limit));
     }
   else
-    val = random ();
-  return make_number (val);
+    val = get_random ();
+  XSETINT (lispy_val, val);
+  return lispy_val;
 }
 
 /* Random data-structure functions */
@@ -99,43 +102,43 @@ A byte-code function object is also allowed.")
   register int i;
 
  retry:
-  if (XTYPE (obj) == Lisp_Vector || XTYPE (obj) == Lisp_String
-      || XTYPE (obj) == Lisp_Compiled)
-    return Farray_length (obj);
+  if (STRINGP (obj))
+    XSETFASTINT (val, XSTRING (obj)->size);
+  else if (VECTORP (obj))
+    XSETFASTINT (val, XVECTOR (obj)->size);
+  else if (COMPILEDP (obj))
+    XSETFASTINT (val, XVECTOR (obj)->size & PSEUDOVECTOR_SIZE_MASK);
   else if (CONSP (obj))
     {
-      for (i = 0, tail = obj; !NILP(tail); i++)
+      for (i = 0, tail = obj; !NILP (tail); i++)
 	{
 	  QUIT;
 	  tail = Fcdr (tail);
 	}
 
-      XFASTINT (val) = i;
-      return val;
+      XSETFASTINT (val, i);
     }
-  else if (NILP(obj))
-    {
-      XFASTINT (val) = 0;
-      return val;
-    }
+  else if (NILP (obj))
+    XSETFASTINT (val, 0);
   else
     {
       obj = wrong_type_argument (Qsequencep, obj);
       goto retry;
     }
+  return val;
 }
 
 DEFUN ("string-equal", Fstring_equal, Sstring_equal, 2, 2, 0,
   "T if two strings have identical contents.\n\
-Case is significant.\n\
+Case is significant, but text properties are ignored.\n\
 Symbols are also allowed; their print names are used instead.")
   (s1, s2)
      register Lisp_Object s1, s2;
 {
-  if (XTYPE (s1) == Lisp_Symbol)
-    XSETSTRING (s1, XSYMBOL (s1)->name), XSETTYPE (s1, Lisp_String);
-  if (XTYPE (s2) == Lisp_Symbol)
-    XSETSTRING (s2, XSYMBOL (s2)->name), XSETTYPE (s2, Lisp_String);
+  if (SYMBOLP (s1))
+    XSETSTRING (s1, XSYMBOL (s1)->name);
+  if (SYMBOLP (s2))
+    XSETSTRING (s2, XSYMBOL (s2)->name);
   CHECK_STRING (s1, 0);
   CHECK_STRING (s2, 1);
 
@@ -156,10 +159,10 @@ Symbols are also allowed; their print names are used instead.")
   register unsigned char *p1, *p2;
   register int end;
 
-  if (XTYPE (s1) == Lisp_Symbol)
-    XSETSTRING (s1, XSYMBOL (s1)->name), XSETTYPE (s1, Lisp_String);
-  if (XTYPE (s2) == Lisp_Symbol)
-    XSETSTRING (s2, XSYMBOL (s2)->name), XSETTYPE (s2, Lisp_String);
+  if (SYMBOLP (s1))
+    XSETSTRING (s1, XSYMBOL (s1)->name);
+  if (SYMBOLP (s2))
+    XSETSTRING (s2, XSYMBOL (s2)->name);
   CHECK_STRING (s1, 0);
   CHECK_STRING (s2, 1);
 
@@ -194,6 +197,22 @@ concat2 (s1, s2)
 #endif /* NO_ARG_ARRAY */
 }
 
+/* ARGSUSED */
+Lisp_Object
+concat3 (s1, s2, s3)
+     Lisp_Object s1, s2, s3;
+{
+#ifdef NO_ARG_ARRAY
+  Lisp_Object args[3];
+  args[0] = s1;
+  args[1] = s2;
+  args[2] = s3;
+  return concat (3, args, Lisp_String, 0);
+#else
+  return concat (3, &s1, Lisp_String, 0);
+#endif /* NO_ARG_ARRAY */
+}
+
 DEFUN ("append", Fappend, Sappend, 0, MANY, 0,
   "Concatenate all the arguments and make the result a list.\n\
 The result is a list whose elements are the elements of all the arguments.\n\
@@ -209,8 +228,12 @@ The last argument is not copied, just used as the tail of the new list.")
 DEFUN ("concat", Fconcat, Sconcat, 0, MANY, 0,
   "Concatenate all the arguments and make the result a string.\n\
 The result is a string whose elements are the elements of all the arguments.\n\
-Each argument may be a string, a list of characters (integers),\n\
-or a vector of characters (integers).")
+Each argument may be a string or a list or vector of characters (integers).\n\
+\n\
+Do not use individual integers as arguments!\n\
+The behavior of `concat' in that case will be changed later!\n\
+If your program passes an integer as an argument to `concat',\n\
+you should change it right away not to do so.")
   (nargs, args)
      int nargs;
      Lisp_Object *args;
@@ -226,7 +249,7 @@ Each argument may be a list, vector or string.")
      int nargs;
      Lisp_Object *args;
 {
-  return concat (nargs, args, Lisp_Vector, 0);
+  return concat (nargs, args, Lisp_Vectorlike, 0);
 }
 
 DEFUN ("copy-sequence", Fcopy_sequence, Scopy_sequence, 1, 1, 0,
@@ -237,7 +260,7 @@ with the original.")
      Lisp_Object arg;
 {
   if (NILP (arg)) return arg;
-  if (!CONSP (arg) && XTYPE (arg) != Lisp_Vector && XTYPE (arg) != Lisp_String)
+  if (!CONSP (arg) && !VECTORP (arg) && !STRINGP (arg))
     arg = wrong_type_argument (Qsequencep, arg);
   return concat (1, &arg, CONSP (arg) ? Lisp_Cons : XTYPE (arg), 0);
 }
@@ -271,11 +294,10 @@ concat (nargs, args, target_type, last_special)
   for (argnum = 0; argnum < nargs; argnum++)
     {
       this = args[argnum];
-      if (!(CONSP (this) || NILP (this)
-	    || XTYPE (this) == Lisp_Vector || XTYPE (this) == Lisp_String
-	    || XTYPE (this) == Lisp_Compiled))
+      if (!(CONSP (this) || NILP (this) || VECTORP (this) || STRINGP (this)
+	    || COMPILEDP (this)))
 	{
-	  if (XTYPE (this) == Lisp_Int)
+	  if (INTEGERP (this))
             args[argnum] = Fnumber_to_string (this);
 	  else
 	    args[argnum] = wrong_type_argument (Qsequencep, this);
@@ -289,11 +311,11 @@ concat (nargs, args, target_type, last_special)
       leni += XFASTINT (len);
     }
 
-  XFASTINT (len) = leni;
+  XSETFASTINT (len, leni);
 
   if (target_type == Lisp_Cons)
     val = Fmake_list (len, Qnil);
-  else if (target_type == Lisp_Vector)
+  else if (target_type == Lisp_Vectorlike)
     val = Fmake_vector (len, Qnil);
   else
     val = Fmake_string (len, len);
@@ -319,7 +341,7 @@ concat (nargs, args, target_type, last_special)
       if (!CONSP (this))
 	thislen = Flength (this), thisleni = XINT (thislen);
 
-      if (XTYPE (this) == Lisp_String && XTYPE (val) == Lisp_String
+      if (STRINGP (this) && STRINGP (val)
 	  && ! NULL_INTERVAL_P (XSTRING (this)->intervals))
 	{
 	  copy_text_properties (make_number (0), thislen, this,
@@ -338,8 +360,8 @@ concat (nargs, args, target_type, last_special)
 	  else
 	    {
 	      if (thisindex >= thisleni) break;
-	      if (XTYPE (this) == Lisp_String)
-		XFASTINT (elt) = XSTRING (this)->data[thisindex++];
+	      if (STRINGP (this))
+		XSETFASTINT (elt, XSTRING (this)->data[thisindex++]);
 	      else
 		elt = XVECTOR (this)->contents[thisindex++];
 	    }
@@ -351,11 +373,11 @@ concat (nargs, args, target_type, last_special)
 	      prev = tail;
 	      tail = XCONS (tail)->cdr;
 	    }
-	  else if (XTYPE (val) == Lisp_Vector)
+	  else if (VECTORP (val))
 	    XVECTOR (val)->contents[toindex++] = elt;
 	  else
 	    {
-	      while (XTYPE (elt) != Lisp_Int)
+	      while (!INTEGERP (elt))
 		elt = wrong_type_argument (Qintegerp, elt);
 	      {
 #ifdef MASSC_REGISTER_BUG
@@ -468,10 +490,9 @@ DEFUN ("elt", Felt, Selt, 2, 2, 0,
   CHECK_NUMBER (n, 0);
   while (1)
     {
-      if (XTYPE (seq) == Lisp_Cons || NILP (seq))
+      if (CONSP (seq) || NILP (seq))
 	return Fcar (Fnthcdr (n, seq));
-      else if (XTYPE (seq) == Lisp_String
-	       || XTYPE (seq) == Lisp_Vector)
+      else if (STRINGP (seq) || VECTORP (seq))
 	return Faref (seq, n);
       else
 	seq = wrong_type_argument (Qsequencep, seq);
@@ -558,7 +579,7 @@ assq_no_quit (key, list)
 
 DEFUN ("assoc", Fassoc, Sassoc, 2, 2, 0,
   "Return non-nil if KEY is `equal' to the car of an element of LIST.\n\
-The value is actually the element of LIST whose car is KEY.")
+The value is actually the element of LIST whose car equals KEY.")
   (key, list)
      register Lisp_Object key;
      Lisp_Object list;
@@ -591,6 +612,26 @@ The value is actually the element of LIST whose cdr is ELT.")
       if (!CONSP (elt)) continue;
       tem = Fcdr (elt);
       if (EQ (key, tem)) return elt;
+      QUIT;
+    }
+  return Qnil;
+}
+
+DEFUN ("rassoc", Frassoc, Srassoc, 2, 2, 0,
+  "Return non-nil if KEY is `equal' to the cdr of an element of LIST.\n\
+The value is actually the element of LIST whose cdr equals KEY.")
+  (key, list)
+     register Lisp_Object key;
+     Lisp_Object list;
+{
+  register Lisp_Object tail;
+  for (tail = list; !NILP (tail); tail = Fcdr (tail))
+    {
+      register Lisp_Object elt, tem;
+      elt = Fcar (tail);
+      if (!CONSP (elt)) continue;
+      tem = Fequal (Fcdr (elt), key);
+      if (!NILP (tem)) return elt;
       QUIT;
     }
   return Qnil;
@@ -797,15 +838,19 @@ merge (org_l1, org_l2, pred)
     }
 }
 
-DEFUN ("get", Fget, Sget, 2, 2, 0,
-  "Return the value of SYMBOL's PROPNAME property.\n\
-This is the last VALUE stored with `(put SYMBOL PROPNAME VALUE)'.")
-  (sym, prop)
-     Lisp_Object sym;
+
+DEFUN ("plist-get", Fplist_get, Splist_get, 2, 2, 0,
+       "Extract a value from a property list.\n\
+PLIST is a property list, which is a list of the form\n\
+\(PROP1 VALUE1 PROP2 VALUE2...).  This function returns the value\n\
+corresponding to the given PROP, or nil if PROP is not\n\
+one of the properties on the list.")
+  (val, prop)
+     Lisp_Object val;
      register Lisp_Object prop;
 {
   register Lisp_Object tail;
-  for (tail = Fsymbol_plist (sym); !NILP (tail); tail = Fcdr (Fcdr (tail)))
+  for (tail = val; !NILP (tail); tail = Fcdr (Fcdr (tail)))
     {
       register Lisp_Object tem;
       tem = Fcar (tail);
@@ -815,31 +860,60 @@ This is the last VALUE stored with `(put SYMBOL PROPNAME VALUE)'.")
   return Qnil;
 }
 
-DEFUN ("put", Fput, Sput, 3, 3, 0,
-  "Store SYMBOL's PROPNAME property with value VALUE.\n\
-It can be retrieved with `(get SYMBOL PROPNAME)'.")
-  (sym, prop, val)
-     Lisp_Object sym;
-     register Lisp_Object prop;
-     Lisp_Object val;
+DEFUN ("get", Fget, Sget, 2, 2, 0,
+  "Return the value of SYMBOL's PROPNAME property.\n\
+This is the last value stored with `(put SYMBOL PROPNAME VALUE)'.")
+  (symbol, propname)
+     Lisp_Object symbol, propname;
+{
+  CHECK_SYMBOL (symbol, 0);
+  return Fplist_get (XSYMBOL (symbol)->plist, propname);
+}
+
+DEFUN ("plist-put", Fplist_put, Splist_put, 3, 3, 0,
+  "Change value in PLIST of PROP to VAL.\n\
+PLIST is a property list, which is a list of the form\n\
+\(PROP1 VALUE1 PROP2 VALUE2 ...).  PROP is a symbol and VAL is any object.\n\
+If PROP is already a property on the list, its value is set to VAL,\n\
+otherwise the new PROP VAL pair is added.  The new plist is returned;\n\
+use `(setq x (plist-put x prop val))' to be sure to use the new value.\n\
+The PLIST is modified by side effects.")
+  (plist, prop, val)
+    Lisp_Object plist;
+    register Lisp_Object prop;
+    Lisp_Object val;
 {
   register Lisp_Object tail, prev;
   Lisp_Object newcell;
   prev = Qnil;
-  for (tail = Fsymbol_plist (sym); !NILP (tail); tail = Fcdr (Fcdr (tail)))
+  for (tail = plist; CONSP (tail) && CONSP (XCONS (tail)->cdr);
+       tail = XCONS (XCONS (tail)->cdr)->cdr)
     {
-      register Lisp_Object tem;
-      tem = Fcar (tail);
-      if (EQ (prop, tem))
-	return Fsetcar (Fcdr (tail), val);
+      if (EQ (prop, XCONS (tail)->car))
+	{
+	  Fsetcar (XCONS (tail)->cdr, val);
+	  return plist;
+	}
       prev = tail;
     }
   newcell = Fcons (prop, Fcons (val, Qnil));
   if (NILP (prev))
-    Fsetplist (sym, newcell);
+    return newcell;
   else
-    Fsetcdr (Fcdr (prev), newcell);
-  return val;
+    Fsetcdr (XCONS (prev)->cdr, newcell);
+  return plist;
+}
+
+DEFUN ("put", Fput, Sput, 3, 3, 0,
+  "Store SYMBOL's PROPNAME property with value VALUE.\n\
+It can be retrieved with `(get SYMBOL PROPNAME)'.")
+  (symbol, propname, value)
+     Lisp_Object symbol, propname, value;
+{
+  CHECK_SYMBOL (symbol, 0);
+  XSYMBOL (symbol)->plist
+    = Fplist_put (XSYMBOL (symbol)->plist, propname, value);
+  return value;
 }
 
 DEFUN ("equal", Fequal, Sequal, 2, 2, 0,
@@ -853,66 +927,105 @@ Symbols must match exactly.")
   (o1, o2)
      register Lisp_Object o1, o2;
 {
-  return internal_equal (o1, o2, 0);
+  return internal_equal (o1, o2, 0) ? Qt : Qnil;
 }
 
-static Lisp_Object
+static int
 internal_equal (o1, o2, depth)
      register Lisp_Object o1, o2;
      int depth;
 {
   if (depth > 200)
     error ("Stack overflow in equal");
-do_cdr:
+
+ tail_recurse:
   QUIT;
-  if (EQ (o1, o2)) return Qt;
+  if (EQ (o1, o2))
+    return 1;
+  if (XTYPE (o1) != XTYPE (o2))
+    return 0;
+
+  switch (XTYPE (o1))
+    {
 #ifdef LISP_FLOAT_TYPE
-  if (FLOATP (o1) && FLOATP (o2))
-    return (extract_float (o1) == extract_float (o2)) ? Qt : Qnil;
+    case Lisp_Float:
+      return (extract_float (o1) == extract_float (o2));
 #endif
-  if (XTYPE (o1) != XTYPE (o2)) return Qnil;
-  if (XTYPE (o1) == Lisp_Cons
-      || XTYPE (o1) == Lisp_Overlay)
-    {
-      Lisp_Object v1;
-      v1 = internal_equal (Fcar (o1), Fcar (o2), depth + 1);
-      if (NILP (v1))
-	return v1;
-      o1 = Fcdr (o1), o2 = Fcdr (o2);
-      goto do_cdr;
-    }
-  if (XTYPE (o1) == Lisp_Marker)
-    {
-      return ((XMARKER (o1)->buffer == XMARKER (o2)->buffer
-	      && (XMARKER (o1)->buffer == 0
-		  || XMARKER (o1)->bufpos == XMARKER (o2)->bufpos))
-	      ? Qt : Qnil);
-    }
-  if (XTYPE (o1) == Lisp_Vector
-      || XTYPE (o1) == Lisp_Compiled)
-    {
-      register int index;
-      if (XVECTOR (o1)->size != XVECTOR (o2)->size)
-	return Qnil;
-      for (index = 0; index < XVECTOR (o1)->size; index++)
+
+    case Lisp_Cons:
+      if (!internal_equal (XCONS (o1)->car, XCONS (o2)->car, depth + 1))
+	return 0;
+      o1 = XCONS (o1)->cdr;
+      o2 = XCONS (o2)->cdr;
+      goto tail_recurse;
+
+    case Lisp_Misc:
+      if (XMISCTYPE (o1) != XMISCTYPE (o2))
+	return 0;
+      if (OVERLAYP (o1))
 	{
-	  Lisp_Object v, v1, v2;
-	  v1 = XVECTOR (o1)->contents [index];
-	  v2 = XVECTOR (o2)->contents [index];
-	  v = internal_equal (v1, v2, depth + 1);
-	  if (NILP (v)) return v;
+	  if (!internal_equal (OVERLAY_START (o1), OVERLAY_START (o1),
+			       depth + 1)
+	      || !internal_equal (OVERLAY_END (o1), OVERLAY_END (o1),
+				  depth + 1))
+	    return 0;
+	  o1 = XOVERLAY (o1)->plist;
+	  o2 = XOVERLAY (o2)->plist;
+	  goto tail_recurse;
 	}
-      return Qt;
-    }
-  if (XTYPE (o1) == Lisp_String)
-    {
+      if (MARKERP (o1))
+	{
+	  return (XMARKER (o1)->buffer == XMARKER (o2)->buffer
+		  && (XMARKER (o1)->buffer == 0
+		      || XMARKER (o1)->bufpos == XMARKER (o2)->bufpos));
+	}
+      break;
+
+    case Lisp_Vectorlike:
+      {
+	register int i, size;
+	size = XVECTOR (o1)->size;
+	/* Pseudovectors have the type encoded in the size field, so this test
+	   actually checks that the objects have the same type as well as the
+	   same size.  */
+	if (XVECTOR (o2)->size != size)
+	  return 0;
+	/* But only true vectors and compiled functions are actually sensible
+	   to compare, so eliminate the others now.  */
+	if (size & PSEUDOVECTOR_FLAG)
+	  {
+	    if (!(size & PVEC_COMPILED))
+	      return 0;
+	    size &= PSEUDOVECTOR_SIZE_MASK;
+	  }
+	for (i = 0; i < size; i++)
+	  {
+	    Lisp_Object v1, v2;
+	    v1 = XVECTOR (o1)->contents [i];
+	    v2 = XVECTOR (o2)->contents [i];
+	    if (!internal_equal (v1, v2, depth + 1))
+	      return 0;
+	  }
+	return 1;
+      }
+      break;
+
+    case Lisp_String:
       if (XSTRING (o1)->size != XSTRING (o2)->size)
-	return Qnil;
-      if (bcmp (XSTRING (o1)->data, XSTRING (o2)->data, XSTRING (o1)->size))
-	return Qnil;
-      return Qt;
+	return 0;
+      if (bcmp (XSTRING (o1)->data, XSTRING (o2)->data,
+		XSTRING (o1)->size))
+	return 0;
+#ifdef USE_TEXT_PROPERTIES
+      /* If the strings have intervals, verify they match;
+	 if not, they are unequal.  */
+      if ((XSTRING (o1)->intervals != 0 || XSTRING (o2)->intervals != 0)
+	  && ! compare_string_intervals (o1, o2))
+	return 0;
+#endif
+      return 1;
     }
-  return Qnil;
+  return 0;
 }
 
 DEFUN ("fillarray", Ffillarray, Sfillarray, 2, 2, 0,
@@ -922,14 +1035,14 @@ DEFUN ("fillarray", Ffillarray, Sfillarray, 2, 2, 0,
 {
   register int size, index, charval;
  retry:
-  if (XTYPE (array) == Lisp_Vector)
+  if (VECTORP (array))
     {
       register Lisp_Object *p = XVECTOR (array)->contents;
       size = XVECTOR (array)->size;
       for (index = 0; index < size; index++)
 	p[index] = item;
     }
-  else if (XTYPE (array) == Lisp_String)
+  else if (STRINGP (array))
     {
       register unsigned char *p = XSTRING (array)->data;
       CHECK_NUMBER (item, 1);
@@ -1028,7 +1141,7 @@ mapcar1 (leni, vals, fn, seq)
   /* We need not explicitly protect `tail' because it is used only on lists, and
     1) lists are not relocated and 2) the list is marked via `seq' so will not be freed */
 
-  if (XTYPE (seq) == Lisp_Vector)
+  if (VECTORP (seq))
     {
       for (i = 0; i < leni; i++)
 	{
@@ -1036,11 +1149,11 @@ mapcar1 (leni, vals, fn, seq)
 	  vals[i] = call1 (fn, dummy);
 	}
     }
-  else if (XTYPE (seq) == Lisp_String)
+  else if (STRINGP (seq))
     {
       for (i = 0; i < leni; i++)
 	{
-	  XFASTINT (dummy) = XSTRING (seq)->data[i];
+	  XSETFASTINT (dummy, XSTRING (seq)->data[i]);
 	  vals[i] = call1 (fn, dummy);
 	}
     }
@@ -1153,7 +1266,7 @@ Also accepts Space to mean yes, or Delete to mean no.")
 	}
 #endif
       cursor_in_echo_area = 1;
-      message ("%s(y or n) ", XSTRING (xprompt)->data);
+      message_nolog ("%s(y or n) ", XSTRING (xprompt)->data);
 
       obj = read_filtered_event (1, 0, 0);
       cursor_in_echo_area = 0;
@@ -1182,6 +1295,10 @@ Also accepts Space to mean yes, or Delete to mean no.")
 	}
       else if (EQ (def, intern ("quit")))
 	Vquit_flag = Qt;
+      /* We want to exit this command for exit-prefix,
+	 and this is the only way to do it.  */
+      else if (EQ (def, intern ("exit-prefix")))
+	Vquit_flag = Qt;
 
       QUIT;
 
@@ -1203,7 +1320,8 @@ Also accepts Space to mean yes, or Delete to mean no.")
   if (! noninteractive)
     {
       cursor_in_echo_area = -1;
-      message ("%s(y or n) %c", XSTRING (xprompt)->data, answer ? 'y' : 'n');
+      message_nolog ("%s(y or n) %c",
+		     XSTRING (xprompt)->data, answer ? 'y' : 'n');
       cursor_in_echo_area = ocech;
     }
 
@@ -1229,7 +1347,7 @@ DEFUN ("yes-or-no-p", Fyes_or_no_p, Syes_or_no_p, 1, 1, 0,
 Takes one argument, which is the string to display to ask the question.\n\
 It should end in a space; `yes-or-no-p' adds `(yes or no) ' to it.\n\
 The user must confirm the answer with RET,\n\
-and can edit it until it as been confirmed.")
+and can edit it until it has been confirmed.")
   (prompt)
      Lisp_Object prompt;
 {
@@ -1410,12 +1528,15 @@ Used by `featurep' and `require', and altered by `provide'.");
   defsubr (&Sassq);
   defsubr (&Sassoc);
   defsubr (&Srassq);
+  defsubr (&Srassoc);
   defsubr (&Sdelq);
   defsubr (&Sdelete);
   defsubr (&Snreverse);
   defsubr (&Sreverse);
   defsubr (&Ssort);
+  defsubr (&Splist_get);
   defsubr (&Sget);
+  defsubr (&Splist_put);
   defsubr (&Sput);
   defsubr (&Sequal);
   defsubr (&Sfillarray);

@@ -5,7 +5,7 @@
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Maintainer: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Created: 14 Jul 1992
-;; Version: $Id: lisp-mnt.el,v 1.9 1994/06/17 19:59:09 rms Exp $
+;; Version: $Id: lisp-mnt.el,v 1.11 1995/06/15 20:42:24 kwzh Exp $
 ;; Keywords: docs
 ;; X-Bogus-Bureaucratic-Cruft: Gruad will get you if you don't watch out!
 
@@ -13,7 +13,7 @@
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -87,7 +87,7 @@
 ;; author *is* one of the maintainers.)
 ;; 
 ;;    * Keywords line --- used by the finder code (now under construction)
-;; for finding elisp code related to a topic.
+;; for finding Emacs Lisp code related to a topic.
 ;;
 ;;    * X-Bogus-Bureaucratic-Cruft line --- this is a joke and an example
 ;; of a comment header.  Headers starting with `X-' should never be used
@@ -100,7 +100,7 @@
 ;;    * Change log line --- optional, exists to terminate the commentary
 ;; section and start a change-log part, if one exists.
 ;; 
-;;    * Code line --- exists so elisp can know where commentary and/or
+;;    * Code line --- exists so Lisp can know where commentary and/or
 ;; change-log sections end.
 ;; 
 ;;    * Footer line --- marks end-of-file so it can be distinguished from

@@ -1,11 +1,11 @@
 /* Lisp functions pertaining to editing.
-   Copyright (C) 1985,86,87,89,93,94 Free Software Foundation, Inc.
+   Copyright (C) 1985,86,87,89,93,94,95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -38,12 +38,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
+extern void insert_from_buffer ();
+static long difftm ();
+
 /* Some static data, and a function to initialize it for each run */
 
 Lisp_Object Vsystem_name;
-Lisp_Object Vuser_real_name;	/* login name of current user ID */
-Lisp_Object Vuser_full_name;	/* full name of current user */
-Lisp_Object Vuser_name;		/* user name from LOGNAME or USER */
+Lisp_Object Vuser_real_login_name;	/* login name of current user ID */
+Lisp_Object Vuser_full_name;		/* full name of current user */
+Lisp_Object Vuser_login_name;		/* user name from LOGNAME or USER */
 
 void
 init_editfns ()
@@ -64,25 +67,36 @@ init_editfns ()
 #endif /* not CANNOT_DUMP */
 
   pw = (struct passwd *) getpwuid (getuid ());
-  Vuser_real_name = build_string (pw ? pw->pw_name : "unknown");
+#ifdef MSDOS
+  /* We let the real user name default to "root" because that's quite
+     accurate on MSDOG and because it lets Emacs find the init file.
+     (The DVX libraries override the Djgpp libraries here.)  */
+  Vuser_real_login_name = build_string (pw ? pw->pw_name : "root");
+#else
+  Vuser_real_login_name = build_string (pw ? pw->pw_name : "unknown");
+#endif
 
   /* Get the effective user name, by consulting environment variables,
      or the effective uid if those are unset.  */
   user_name = (char *) getenv ("LOGNAME");
   if (!user_name)
+#ifdef WINDOWSNT
+    user_name = (char *) getenv ("USERNAME");	/* it's USERNAME on NT */
+#else  /* WINDOWSNT */
     user_name = (char *) getenv ("USER");
+#endif /* WINDOWSNT */
   if (!user_name)
     {
       pw = (struct passwd *) getpwuid (geteuid ());
       user_name = (char *) (pw ? pw->pw_name : "unknown");
     }
-  Vuser_name = build_string (user_name);
+  Vuser_login_name = build_string (user_name);
 
   /* If the user name claimed in the environment vars differs from
      the real uid, use the claimed name to find the full name.  */
-  tem = Fstring_equal (Vuser_name, Vuser_real_name);
+  tem = Fstring_equal (Vuser_login_name, Vuser_real_login_name);
   if (NILP (tem))
-    pw = (struct passwd *) getpwnam (XSTRING (Vuser_name)->data);
+    pw = (struct passwd *) getpwnam (XSTRING (Vuser_login_name)->data);
   
   p = (unsigned char *) (pw ? USER_FULL_NAME : "unknown");
   q = (unsigned char *) index (p, ',');
@@ -90,19 +104,24 @@ init_editfns ()
   
 #ifdef AMPERSAND_FULL_NAME
   p = XSTRING (Vuser_full_name)->data;
-  q = (char *) index (p, '&');
+  q = (unsigned char *) index (p, '&');
   /* Substitute the login name for the &, upcasing the first character.  */
   if (q)
     {
-      r = (char *) alloca (strlen (p) + XSTRING (Vuser_name)->size + 1);
+      r = (unsigned char *) alloca (strlen (p)
+				    + XSTRING (Vuser_login_name)->size + 1);
       bcopy (p, r, q - p);
       r[q - p] = 0;
-      strcat (r, XSTRING (Vuser_name)->data);
+      strcat (r, XSTRING (Vuser_login_name)->data);
       r[q - p] = UPCASE (r[q - p]);
       strcat (r, q + 1);
       Vuser_full_name = build_string (r);
     }
 #endif /* AMPERSAND_FULL_NAME */
+
+  p = (unsigned char *) getenv ("NAME");
+  if (p)
+    Vuser_full_name = build_string (p);
 }
 
 DEFUN ("char-to-string", Fchar_to_string, Schar_to_string, 1, 1, 0,
@@ -128,9 +147,9 @@ DEFUN ("string-to-char", Fstring_to_char, Sstring_to_char, 1, 1, 0,
 
   p = XSTRING (str);
   if (p->size)
-    XFASTINT (val) = ((unsigned char *) p->data)[0];
+    XSETFASTINT (val, ((unsigned char *) p->data)[0]);
   else
-    XFASTINT (val) = 0;
+    XSETFASTINT (val, 0);
   return val;
 }
 
@@ -150,7 +169,7 @@ Beginning of buffer is position (point-min)")
   ()
 {
   Lisp_Object temp;
-  XFASTINT (temp) = point;
+  XSETFASTINT (temp, point);
   return temp;
 }
 
@@ -357,7 +376,7 @@ DEFUN ("buffer-size", Fbufsize, Sbufsize, 0, 0, 0,
   ()
 {
   Lisp_Object temp;
-  XFASTINT (temp) = Z - BEG;
+  XSETFASTINT (temp, Z - BEG);
   return temp;
 }
 
@@ -367,7 +386,7 @@ This is 1, unless narrowing (a buffer restriction) is in effect.")
   ()
 {
   Lisp_Object temp;
-  XFASTINT (temp) = BEGV;
+  XSETFASTINT (temp, BEGV);
   return temp;
 }
 
@@ -386,7 +405,7 @@ is in effect, in which case it is less.")
   ()
 {
   Lisp_Object temp;
-  XFASTINT (temp) = ZV;
+  XSETFASTINT (temp, ZV);
   return temp;
 }
 
@@ -406,9 +425,9 @@ At the end of the buffer or accessible region, return 0.")
 {
   Lisp_Object temp;
   if (point >= ZV)
-    XFASTINT (temp) = 0;
+    XSETFASTINT (temp, 0);
   else
-    XFASTINT (temp) = FETCH_CHAR (point);
+    XSETFASTINT (temp, FETCH_CHAR (point));
   return temp;
 }
 
@@ -419,9 +438,9 @@ At the beginning of the buffer or accessible region, return 0.")
 {
   Lisp_Object temp;
   if (point <= BEGV)
-    XFASTINT (temp) = 0;
+    XSETFASTINT (temp, 0);
   else
-    XFASTINT (temp) = FETCH_CHAR (point - 1);
+    XSETFASTINT (temp, FETCH_CHAR (point - 1));
   return temp;
 }
 
@@ -479,18 +498,34 @@ If POS is out of range, the value is nil.")
   n = XINT (pos);
   if (n < BEGV || n >= ZV) return Qnil;
 
-  XFASTINT (val) = FETCH_CHAR (n);
+  XSETFASTINT (val, FETCH_CHAR (n));
   return val;
 }
 
-DEFUN ("user-login-name", Fuser_login_name, Suser_login_name, 0, 0, 0,
+DEFUN ("user-login-name", Fuser_login_name, Suser_login_name, 0, 1, 0,
   "Return the name under which the user logged in, as a string.\n\
 This is based on the effective uid, not the real uid.\n\
 Also, if the environment variable LOGNAME or USER is set,\n\
-that determines the value of this function.")
-  ()
+that determines the value of this function.\n\n\
+If optional argument UID is an integer, return the login name of the user\n\
+with that uid, or nil if there is no such user.")
+  (uid)
+     Lisp_Object uid;
 {
-  return Vuser_name;
+  struct passwd *pw;
+
+  /* Set up the user name info if we didn't do it before.
+     (That can happen if Emacs is dumpable
+     but you decide to run `temacs -l loadup' and not dump.  */
+  if (INTEGERP (Vuser_login_name))
+    init_editfns ();
+
+  if (NILP (uid))
+    return Vuser_login_name;
+
+  CHECK_NUMBER (uid, 0);
+  pw = (struct passwd *) getpwuid (XINT (uid));
+  return (pw ? build_string (pw->pw_name) : Qnil);
 }
 
 DEFUN ("user-real-login-name", Fuser_real_login_name, Suser_real_login_name,
@@ -500,7 +535,12 @@ This ignores the environment variables LOGNAME and USER, so it differs from\n\
 `user-login-name' when running under `su'.")
   ()
 {
-  return Vuser_real_name;
+  /* Set up the user name info if we didn't do it before.
+     (That can happen if Emacs is dumpable
+     but you decide to run `temacs -l loadup' and not dump.  */
+  if (INTEGERP (Vuser_login_name))
+    init_editfns ();
+  return Vuser_real_login_name;
 }
 
 DEFUN ("user-uid", Fuser_uid, Suser_uid, 0, 0, 0,
@@ -560,9 +600,9 @@ resolution finer than a second.")
   Lisp_Object result[3];
 
   EMACS_GET_TIME (t);
-  XSET (result[0], Lisp_Int, (EMACS_SECS (t) >> 16) & 0xffff);
-  XSET (result[1], Lisp_Int, (EMACS_SECS (t) >> 0)  & 0xffff);
-  XSET (result[2], Lisp_Int, EMACS_USECS (t));
+  XSETINT (result[0], (EMACS_SECS (t) >> 16) & 0xffff);
+  XSETINT (result[1], (EMACS_SECS (t) >> 0)  & 0xffff);
+  XSETINT (result[2], EMACS_USECS (t));
 
   return Flist (3, result);
 }
@@ -581,12 +621,217 @@ lisp_time_argument (specified_time, result)
       high = Fcar (specified_time);
       CHECK_NUMBER (high, 0);
       low = Fcdr (specified_time);
-      if (XTYPE (low) == Lisp_Cons)
+      if (CONSP (low))
 	low = Fcar (low);
       CHECK_NUMBER (low, 0);
       *result = (XINT (high) << 16) + (XINT (low) & 0xffff);
       return *result >> 16 == XINT (high);
     }
+}
+
+DEFUN ("format-time-string", Fformat_time_string, Sformat_time_string, 2, 2, 0,
+  "Use FORMAT-STRING to format the time TIME.\n\
+TIME is specified as (HIGH LOW . IGNORED) or (HIGH . LOW), as from\n\
+`current-time' and `file-attributes'.\n\
+FORMAT-STRING may contain %-sequences to substitute parts of the time.\n\
+%a is replaced by the abbreviated name of the day of week.\n\
+%A is replaced by the full name of the day of week.\n\
+%b is replaced by the abbreviated name of the month.\n\
+%B is replaced by the full name of the month.\n\
+%c is a synonym for \"%x %X\".\n\
+%C is a locale-specific synonym, which defaults to \"%A, %B %e, %Y\" in the C locale.\n\
+%d is replaced by the day of month, zero-padded.\n\
+%D is a synonym for \"%m/%d/%y\".\n\
+%e is replaced by the day of month, blank-padded.\n\
+%h is a synonym for \"%b\".\n\
+%H is replaced by the hour (00-23).\n\
+%I is replaced by the hour (00-12).\n\
+%j is replaced by the day of the year (001-366).\n\
+%k is replaced by the hour (0-23), blank padded.\n\
+%l is replaced by the hour (1-12), blank padded.\n\
+%m is replaced by the month (01-12).\n\
+%M is replaced by the minut (00-59).\n\
+%n is a synonym for \"\\n\".\n\
+%p is replaced by AM or PM, as appropriate.\n\
+%r is a synonym for \"%I:%M:%S %p\".\n\
+%R is a synonym for \"%H:%M\".\n\
+%S is replaced by the seconds (00-60).\n\
+%t is a synonym for \"\\t\".\n\
+%T is a synonym for \"%H:%M:%S\".\n\
+%U is replaced by the week of the year (01-52), first day of week is Sunday.\n\
+%w is replaced by the day of week (0-6), Sunday is day 0.\n\
+%W is replaced by the week of the year (01-52), first day of week is Monday.\n\
+%x is a locale-specific synonym, which defaults to \"%D\" in the C locale.\n\
+%X is a locale-specific synonym, which defaults to \"%T\" in the C locale.\n\
+%y is replaced by the year without century (00-99).\n\
+%Y is replaced by the year with century.\n\
+%Z is replaced by the time zone abbreviation.\n\
+\n\
+The number of options reflects the `strftime' function.")
+  (format_string, time)
+     Lisp_Object format_string, time;
+{
+  time_t value;
+  int size;
+
+  CHECK_STRING (format_string, 1);
+
+  if (! lisp_time_argument (time, &value))
+    error ("Invalid time specification");
+
+  /* This is probably enough.  */
+  size = XSTRING (format_string)->size * 6 + 50;
+
+  while (1)
+    {
+      char *buf = (char *) alloca (size);
+      if (emacs_strftime (buf, size, XSTRING (format_string)->data,
+			  localtime (&value)))
+	return build_string (buf);
+      /* If buffer was too small, make it bigger.  */
+      size *= 2;
+    }
+}
+
+DEFUN ("decode-time", Fdecode_time, Sdecode_time, 0, 1, 0,
+  "Decode a time value as (SEC MINUTE HOUR DAY MONTH YEAR DOW DST ZONE).\n\
+The optional SPECIFIED-TIME should be a list of (HIGH LOW . IGNORED)\n\
+or (HIGH . LOW), as from `current-time' and `file-attributes', or `nil'\n\
+to use the current time.  The list has the following nine members:\n\
+SEC is an integer between 0 and 59.  MINUTE is an integer between 0 and 59.\n\
+HOUR is an integer between 0 and 23.  DAY is an integer between 1 and 31.\n\
+MONTH is an integer between 1 and 12.  YEAR is an integer indicating the\n\
+four-digit year.  DOW is the day of week, an integer between 0 and 6, where\n\
+0 is Sunday.  DST is t if daylight savings time is effect, otherwise nil.\n\
+ZONE is an integer indicating the number of seconds east of Greenwich.\n\
+(Note that Common Lisp has different meanings for DOW and ZONE.)")
+  (specified_time)
+     Lisp_Object specified_time;
+{
+  time_t time_spec;
+  struct tm save_tm;
+  struct tm *decoded_time;
+  Lisp_Object list_args[9];
+  
+  if (! lisp_time_argument (specified_time, &time_spec))
+    error ("Invalid time specification");
+
+  decoded_time = localtime (&time_spec);
+  XSETFASTINT (list_args[0], decoded_time->tm_sec);
+  XSETFASTINT (list_args[1], decoded_time->tm_min);
+  XSETFASTINT (list_args[2], decoded_time->tm_hour);
+  XSETFASTINT (list_args[3], decoded_time->tm_mday);
+  XSETFASTINT (list_args[4], decoded_time->tm_mon + 1);
+  XSETFASTINT (list_args[5], decoded_time->tm_year + 1900);
+  XSETFASTINT (list_args[6], decoded_time->tm_wday);
+  list_args[7] = (decoded_time->tm_isdst)? Qt : Qnil;
+
+  /* Make a copy, in case gmtime modifies the struct.  */
+  save_tm = *decoded_time;
+  decoded_time = gmtime (&time_spec);
+  if (decoded_time == 0)
+    list_args[8] = Qnil;
+  else
+    XSETINT (list_args[8], difftm (&save_tm, decoded_time));
+  return Flist (9, list_args);
+}
+
+static char days_per_month[11]
+  = { 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31 };
+
+DEFUN ("encode-time", Fencode_time, Sencode_time, 6, 7, 0,
+  "Convert SEC, MINUTE, HOUR, DAY, MONTH, YEAR and ZONE to internal time.\n\
+This is the reverse operation of `decode-time', which see.  ZONE defaults\n\
+to the current time zone and daylight savings time if not specified; if\n\
+specified, it can be either a list (as from `current-time-zone') or an\n\
+integer (as from `decode-time'), and is applied without consideration for\n\
+daylight savings time.\n\
+Year numbers less than 100 are treated just like other year numbers.\n\
+If you want them to stand for years above 1900, you must do that yourself.")
+  (sec, minute, hour, day, month, year, zone)
+     Lisp_Object sec, minute, hour, day, month, year, zone;
+{
+  time_t time;
+  int fullyear, mon, days, seconds, tz = 0;
+
+  CHECK_NATNUM (sec, 0);
+  CHECK_NATNUM (minute, 1);
+  CHECK_NATNUM (hour, 2);
+  CHECK_NATNUM (day, 3);
+  CHECK_NATNUM (month, 4);
+  CHECK_NATNUM (year, 5);
+
+  fullyear = XINT (year);
+
+  /* Adjust incoming datespec to epoch = March 1, year 0.
+     The "date" March 1, year 0, is an abstraction used purely for its
+     computational convenience; year 0 never existed.  */
+  mon = XINT (month) - 1 + 10;
+  fullyear += mon/12 - 1;
+  mon %= 12;
+
+  days = XINT (day) - 1;		/* day of month */
+  while (mon-- > 0)			/* day of year */
+    days += days_per_month[mon];
+  days += 146097 * (fullyear/400);	/* 400 years = 146097 days */
+  fullyear %= 400;
+  days += 36524 * (fullyear/100);	/* 100 years = 36524 days */
+  fullyear %= 100;
+  days += 1461 * (fullyear/4);		/* 4 years = 1461 days */
+  fullyear %= 4;
+  days += 365 * fullyear;		/* 1 year = 365 days */
+
+  /* Adjust computed datespec to epoch = January 1, 1970.  */
+  days += 59;				/* March 1 is 59th day.  */
+  days -= 719527;			/* 1970 years = 719527 days */
+
+  seconds = XINT (sec) + 60 * XINT (minute) + 3600 * XINT (hour);
+
+  if (sizeof (time_t) == 4
+      && ((days+(seconds/86400) > 24854) || (days+(seconds/86400) < -24854)))
+    error ("the specified time is outside the representable range");
+
+  time = days * 86400 + seconds;
+
+  /* We have the correct value for UTC.  Adjust for timezones.  */
+  if (NILP (zone))
+    {
+      struct tm gmt, *t;
+      time_t adjusted_time;
+      int adjusted_tz;
+      /* If the system does not use timezones, gmtime returns 0, and we
+	 already have the correct value, by definition.  */
+      if ((t = gmtime (&time)) != 0)
+	{
+	  gmt = *t;
+	  t = localtime (&time);
+	  tz = difftm (t, &gmt);
+	  /* The timezone returned is that at the specified Universal Time,
+	     not the local time, which is what we want.  Adjust, repeat.  */
+	  adjusted_time = time - tz;
+	  gmt = *gmtime (&adjusted_time); /* this is safe now */
+	  t = localtime (&adjusted_time);
+	  adjusted_tz = difftm (t, &gmt);
+	  /* In case of discrepancy, adjust again for extra accuracy.  */
+	  if (adjusted_tz != tz)
+	    {
+	      adjusted_time = time - adjusted_tz;
+	      gmt = *gmtime (&adjusted_time);
+	      t = localtime (&adjusted_time);
+	      adjusted_tz = difftm (t, &gmt);
+	    }
+	  tz = adjusted_tz;
+	}
+    }
+  else 
+    {
+      if (CONSP (zone))
+	zone = Fcar (zone);
+      CHECK_NUMBER (zone, 6);
+      tz = XINT (zone);
+    }
+
+  return make_time (time - tz);
 }
 
 DEFUN ("current-time-string", Fcurrent_time_string, Scurrent_time_string, 0, 1, 0,
@@ -729,12 +974,12 @@ Any other markers at the point of insertion remain before the text.")
     {
       tem = args[argnum];
     retry:
-      if (XTYPE (tem) == Lisp_Int)
+      if (INTEGERP (tem))
 	{
 	  str[0] = XINT (tem);
 	  insert (str, 1);
 	}
-      else if (XTYPE (tem) == Lisp_String)
+      else if (STRINGP (tem))
 	{
 	  insert_from_string (tem, 0, XSTRING (tem)->size, 0);
 	}
@@ -765,12 +1010,12 @@ Any other markers at the point of insertion remain before the text.")
     {
       tem = args[argnum];
     retry:
-      if (XTYPE (tem) == Lisp_Int)
+      if (INTEGERP (tem))
 	{
 	  str[0] = XINT (tem);
 	  insert_and_inherit (str, 1);
 	}
-      else if (XTYPE (tem) == Lisp_String)
+      else if (STRINGP (tem))
 	{
 	  insert_from_string (tem, 0, XSTRING (tem)->size, 1);
 	}
@@ -800,12 +1045,12 @@ Any other markers at the point of insertion also end up after the text.")
     {
       tem = args[argnum];
     retry:
-      if (XTYPE (tem) == Lisp_Int)
+      if (INTEGERP (tem))
 	{
 	  str[0] = XINT (tem);
 	  insert_before_markers (str, 1);
 	}
-      else if (XTYPE (tem) == Lisp_String)
+      else if (STRINGP (tem))
 	{
 	  insert_from_string_before_markers (tem, 0, XSTRING (tem)->size, 0);
 	}
@@ -837,12 +1082,12 @@ Any other markers at the point of insertion also end up after the text.")
     {
       tem = args[argnum];
     retry:
-      if (XTYPE (tem) == Lisp_Int)
+      if (INTEGERP (tem))
 	{
 	  str[0] = XINT (tem);
 	  insert_before_markers_and_inherit (str, 1);
 	}
-      else if (XTYPE (tem) == Lisp_String)
+      else if (STRINGP (tem))
 	{
 	  insert_from_string_before_markers (tem, 0, XSTRING (tem)->size, 1);
 	}
@@ -888,7 +1133,12 @@ from adjoining text, if those properties are sticky.")
       n -= strlen;
     }
   if (n > 0)
-    insert (string, n);
+    {
+      if (!NILP (inherit))
+	insert_and_inherit (string, n);
+      else
+	insert (string, n);
+    }
   return Qnil;
 }
 
@@ -948,7 +1198,9 @@ they can be in either order.")
 }
 
 DEFUN ("buffer-string", Fbuffer_string, Sbuffer_string, 0, 0, 0,
-  "Return the contents of the current buffer as a string.")
+  "Return the contents of the current buffer as a string.\n\
+If narrowing is in effect, this function returns only the visible part\n\
+of the buffer.")
   ()
 {
   return make_buffer_string (BEGV, ZV);
@@ -963,7 +1215,7 @@ They default to the beginning and the end of BUFFER.")
   (buf, b, e)
      Lisp_Object buf, b, e;
 {
-  register int beg, end, temp, len, opoint, start;
+  register int beg, end, temp;
   register struct buffer *bp;
   Lisp_Object buffer;
 
@@ -990,36 +1242,10 @@ They default to the beginning and the end of BUFFER.")
   if (beg > end)
     temp = beg, beg = end, end = temp;
 
-  /* Move the gap or create enough gap in the current buffer.  */
-
-  if (point != GPT)
-    move_gap (point);
-  if (GAP_SIZE < end - beg)
-    make_gap (end - beg - GAP_SIZE);
-
-  len = end - beg;
-  start = beg;
-  opoint = point;
-
-  if (!(BUF_BEGV (bp) <= beg
-	&& beg <= end
-        && end <= BUF_ZV (bp)))
+  if (!(BUF_BEGV (bp) <= beg && end <= BUF_ZV (bp)))
     args_out_of_range (b, e);
 
-  /* Now the actual insertion will not do any gap motion,
-     so it matters not if BUF is the current buffer.  */
-  if (beg < BUF_GPT (bp))
-    {
-      insert (BUF_CHAR_ADDRESS (bp, beg), min (end, BUF_GPT (bp)) - beg);
-      beg = min (end, BUF_GPT (bp));
-    }
-  if (beg < end)
-    insert (BUF_CHAR_ADDRESS (bp, beg), end - beg);
-
-  /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  graft_intervals_into_buffer (copy_intervals (bp->intervals, start, len),
-			       opoint, len, current_buffer, 0);
-
+  insert_from_buffer (bp, beg, end - beg, 0);
   return Qnil;
 }
 
@@ -1145,6 +1371,13 @@ determines whether case is significant or ignored.")
   return make_number (0);
 }
 
+static Lisp_Object
+subst_char_in_region_unwind (arg)
+     Lisp_Object arg;
+{
+  return current_buffer->undo_list = arg;
+}
+
 DEFUN ("subst-char-in-region", Fsubst_char_in_region,
   Ssubst_char_in_region, 4, 5, 0,
   "From START to END, replace FROMCHAR with TOCHAR each time it occurs.\n\
@@ -1155,6 +1388,7 @@ and don't mark the buffer as really changed.")
 {
   register int pos, stop, look;
   int changed = 0;
+  int count = specpdl_ptr - specpdl;
 
   validate_region (&start, &end);
   CHECK_NUMBER (fromchar, 2);
@@ -1163,6 +1397,16 @@ and don't mark the buffer as really changed.")
   pos = XINT (start);
   stop = XINT (end);
   look = XINT (fromchar);
+
+  /* If we don't want undo, turn off putting stuff on the list.
+     That's faster than getting rid of things,
+     and it prevents even the entry for a first change.  */
+  if (!NILP (noundo))
+    {
+      record_unwind_protect (subst_char_in_region_unwind,
+			     current_buffer->undo_list);
+      current_buffer->undo_list = Qt;
+    }
 
   while (pos < stop)
     {
@@ -1174,8 +1418,8 @@ and don't mark the buffer as really changed.")
 
 	      if (! NILP (noundo))
 		{
-		  if (MODIFF - 1 == current_buffer->save_modified)
-		    current_buffer->save_modified++;
+		  if (MODIFF - 1 == SAVE_MODIFF)
+		    SAVE_MODIFF++;
 		  if (MODIFF - 1 == current_buffer->auto_save_modified)
 		    current_buffer->auto_save_modified++;
 		}
@@ -1194,6 +1438,7 @@ and don't mark the buffer as really changed.")
     signal_after_change (XINT (start),
 			 stop - XINT (start), stop - XINT (start));
 
+  unbind_to (count, Qnil);
   return Qnil;
 }
 
@@ -1241,7 +1486,7 @@ for the character with code N.  Returns the number of characters changed.")
 	}
     }
 
-  XFASTINT (z) = cnt;
+  XSETFASTINT (z, cnt);
   return (z);
 }
 
@@ -1282,16 +1527,13 @@ or markers) bounding the text that should remain visible.")
   (b, e)
      register Lisp_Object b, e;
 {
-  register int i;
-
   CHECK_NUMBER_COERCE_MARKER (b, 0);
   CHECK_NUMBER_COERCE_MARKER (e, 1);
 
   if (XINT (b) > XINT (e))
     {
-      i = XFASTINT (b);
-      b = e;
-      XFASTINT (e) = i;
+      Lisp_Object tem;
+      tem = b;  b = e;  e = tem;
     }
 
   if (!(BEG <= XINT (b) && XINT (b) <= XINT (e) && XINT (e) <= Z))
@@ -1316,8 +1558,8 @@ save_restriction_save ()
   /* Note: I tried using markers here, but it does not win
      because insertion at the end of the saved region
      does not advance mh and is considered "outside" the saved region. */
-  XFASTINT (bottom) = BEGV - BEG;
-  XFASTINT (top) = Z - ZV;
+  XSETFASTINT (bottom, BEGV - BEG);
+  XSETFASTINT (top, Z - ZV);
 
   return Fcons (Fcurrent_buffer (), Fcons (bottom, top));
 }
@@ -1429,6 +1671,86 @@ minibuffer contents show.")
     }
 }
 
+DEFUN ("message-box", Fmessage_box, Smessage_box, 1, MANY, 0,
+  "Display a message, in a dialog box if possible.\n\
+If a dialog box is not available, use the echo area.\n\
+The first argument is a control string.\n\
+It may contain %s or %d or %c to print successive following arguments.\n\
+%s means print an argument as a string, %d means print as number in decimal,\n\
+%c means print a number as a single character.\n\
+The argument used by %s must be a string or a symbol;\n\
+the argument used by %d or %c must be a number.\n\
+If the first argument is nil, clear any existing message; let the\n\
+minibuffer contents show.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+  if (NILP (args[0]))
+    {
+      message (0);
+      return Qnil;
+    }
+  else
+    {
+      register Lisp_Object val;
+      val = Fformat (nargs, args);
+#ifdef HAVE_X_MENU
+      {
+	Lisp_Object pane, menu, obj;
+	struct gcpro gcpro1;
+	pane = Fcons (Fcons (build_string ("OK"), Qt), Qnil);
+	GCPRO1 (pane);
+	menu = Fcons (val, pane);
+	obj = Fx_popup_dialog (Qt, menu);
+	UNGCPRO;
+	return val;
+      }
+#else
+      /* Copy the data so that it won't move when we GC.  */
+      if (! message_text)
+	{
+	  message_text = (char *)xmalloc (80);
+	  message_length = 80;
+	}
+      if (XSTRING (val)->size > message_length)
+	{
+	  message_length = XSTRING (val)->size;
+	  message_text = (char *)xrealloc (message_text, message_length);
+	}
+      bcopy (XSTRING (val)->data, message_text, XSTRING (val)->size);
+      message2 (message_text, XSTRING (val)->size);
+      return val;
+#endif
+    }
+}
+#ifdef HAVE_X_MENU
+extern Lisp_Object last_nonmenu_event;
+#endif
+DEFUN ("message-or-box", Fmessage_or_box, Smessage_or_box, 1, MANY, 0,
+  "Display a message in a dialog box or in the echo area.\n\
+If this command was invoked with the mouse, use a dialog box.\n\
+Otherwise, use the echo area.\n\
+\n\
+The first argument is a control string.\n\
+It may contain %s or %d or %c to print successive following arguments.\n\
+%s means print an argument as a string, %d means print as number in decimal,\n\
+%c means print a number as a single character.\n\
+The argument used by %s must be a string or a symbol;\n\
+the argument used by %d or %c must be a number.\n\
+If the first argument is nil, clear any existing message; let the\n\
+minibuffer contents show.")
+  (nargs, args)
+     int nargs;
+     Lisp_Object *args;
+{
+#ifdef HAVE_X_MENU
+  if (NILP (last_nonmenu_event) || CONSP (last_nonmenu_event))
+    return Fmessage_box (nargs, args);
+#endif
+  return Fmessage (nargs, args);
+}
+
 DEFUN ("format", Fformat, Sformat, 1, MANY, 0,
   "Format a string out of a control-string and arguments.\n\
 The first argument is a control string.\n\
@@ -1485,12 +1807,12 @@ Use %% to put a single % into the output.")
 	    args[n] = tem;
 	    goto string;
 	  }
-	else if (XTYPE (args[n]) == Lisp_Symbol)
+	else if (SYMBOLP (args[n]))
 	  {
-	    XSET (args[n], Lisp_String, XSYMBOL (args[n])->name);
+	    XSETSTRING (args[n], XSYMBOL (args[n])->name);
 	    goto string;
 	  }
-	else if (XTYPE (args[n]) == Lisp_String)
+	else if (STRINGP (args[n]))
 	  {
 	  string:
 	    if (*format != 's' && *format != 'S')
@@ -1498,7 +1820,7 @@ Use %% to put a single % into the output.")
 	    total += XSTRING (args[n])->size;
 	  }
 	/* Would get MPV otherwise, since Lisp_Int's `point' to low memory.  */
-	else if (XTYPE (args[n]) == Lisp_Int && *format != 's')
+	else if (INTEGERP (args[n]) && *format != 's')
 	  {
 #ifdef LISP_FLOAT_TYPE
 	    /* The following loop assumes the Lisp type indicates
@@ -1508,14 +1830,14 @@ Use %% to put a single % into the output.")
 	    if (*format == 'e' || *format == 'f' || *format == 'g')
 	      args[n] = Ffloat (args[n]);
 #endif
-	    total += 10;
+	    total += 30;
 	  }
 #ifdef LISP_FLOAT_TYPE
-	else if (XTYPE (args[n]) == Lisp_Float && *format != 's')
+	else if (FLOATP (args[n]) && *format != 's')
 	  {
 	    if (! (*format == 'e' || *format == 'f' || *format == 'g'))
 	      args[n] = Ftruncate (args[n]);
-	    total += 20;
+	    total += 30;
 	  }
 #endif
 	else
@@ -1542,14 +1864,14 @@ Use %% to put a single % into the output.")
       {
 	if (n >= nargs)
 	  strings[i++] = (unsigned char *) "";
-	else if (XTYPE (args[n]) == Lisp_Int)
+	else if (INTEGERP (args[n]))
 	  /* We checked above that the corresponding format effector
 	     isn't %s, which would cause MPV.  */
 	  strings[i++] = (unsigned char *) XINT (args[n]);
 #ifdef LISP_FLOAT_TYPE
-	else if (XTYPE (args[n]) == Lisp_Float)
+	else if (FLOATP (args[n]))
 	  {
-	    union { double d; int half[2]; } u;
+	    union { double d; char *half[2]; } u;
 
 	    u.d = XFLOAT (args[n])->data;
 	    strings[i++] = (unsigned char *) u.half[0];
@@ -1582,7 +1904,7 @@ Use %% to put a single % into the output.")
 Lisp_Object
 #ifdef NO_ARG_ARRAY
 format1 (string1, arg0, arg1, arg2, arg3, arg4)
-     int arg0, arg1, arg2, arg3, arg4;
+     EMACS_INT arg0, arg1, arg2, arg3, arg4;
 #else
 format1 (string1)
 #endif
@@ -1590,15 +1912,15 @@ format1 (string1)
 {
   char buf[100];
 #ifdef NO_ARG_ARRAY
-  int args[5];
+  EMACS_INT args[5];
   args[0] = arg0;
   args[1] = arg1;
   args[2] = arg2;
   args[3] = arg3;
   args[4] = arg4;
-  doprnt (buf, sizeof buf, string1, 0, 5, args);
+  doprnt (buf, sizeof buf, string1, (char *)0, 5, args);
 #else
-  doprnt (buf, sizeof buf, string1, 0, 5, &string1 + 1);
+  doprnt (buf, sizeof buf, string1, (char *)0, 5, &string1 + 1);
 #endif
   return build_string (buf);
 }
@@ -1666,7 +1988,7 @@ transpose_markers (start1, end1, start2, end2)
   amt1 = (end2 - start2) + (start2 - end1);
   amt2 = (end1 - start1) + (start2 - end1);
 
-  for (marker = current_buffer->markers; !NILP (marker);
+  for (marker = BUF_MARKERS (current_buffer); !NILP (marker);
        marker = XMARKER (marker)->chain)
     {
       mpos = Fmarker_position (marker);
@@ -1702,7 +2024,7 @@ Transposing beyond buffer boundaries is an error.")
 
 #ifdef USE_TEXT_PROPERTIES
   INTERVAL cur_intv, tmp_interval1, tmp_interval_mid, tmp_interval2;
-  cur_intv = current_buffer->intervals;
+  cur_intv = BUF_INTERVALS (current_buffer);
 #endif /* USE_TEXT_PROPERTIES */
 
   validate_region (&startr1, &endr1);
@@ -1956,10 +2278,17 @@ Transposing beyond buffer boundaries is an error.")
 void
 syms_of_editfns ()
 {
-  staticpro (&Vuser_name);
-  staticpro (&Vuser_full_name);
-  staticpro (&Vuser_real_name);
-  staticpro (&Vsystem_name);
+  DEFVAR_LISP ("system-name", &Vsystem_name,
+	       "The name of the machine Emacs is running on.");
+  
+  DEFVAR_LISP ("user-full-name", &Vuser_full_name,
+	       "The full name of the user logged in.");
+
+  DEFVAR_LISP ("user-login-name", &Vuser_login_name,
+	       "The user's name, taken from environment variables if possible.");
+
+  DEFVAR_LISP ("user-real-login-name", &Vuser_real_login_name,
+	       "The user's name, based upon the real uid only.");
 
   defsubr (&Schar_equal);
   defsubr (&Sgoto_char);
@@ -2003,10 +2332,15 @@ syms_of_editfns ()
   defsubr (&Suser_full_name);
   defsubr (&Semacs_pid);
   defsubr (&Scurrent_time);
+  defsubr (&Sformat_time_string);
+  defsubr (&Sdecode_time);
+  defsubr (&Sencode_time);
   defsubr (&Scurrent_time_string);
   defsubr (&Scurrent_time_zone);
   defsubr (&Ssystem_name);
   defsubr (&Smessage);
+  defsubr (&Smessage_box);
+  defsubr (&Smessage_or_box);
   defsubr (&Sformat);
 
   defsubr (&Sinsert_buffer_substring);

@@ -1,12 +1,12 @@
 ;;; tex-mode.el --- TeX, LaTeX, and SliTeX mode commands.
 
-;; Copyright (C) 1985, 1986, 1989, 1992, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 89, 92, 94, 95 Free Software Foundation, Inc.
 
-;; Maintainer: Edward M. Reingold <reingold@cs.uiuc.edu>
+;; Maintainer: FSF
 ;; Keywords: tex
 
 ;; Contributions over the years by William F. Schelter, Dick King,
-;; Stephen Gildea, Michael Prange, and Jacob Gore.
+;; Stephen Gildea, Michael Prange, Jacob Gore, and Edward M. Reingold.
 
 ;; This file is part of GNU Emacs.
 
@@ -216,15 +216,17 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
   (define-key tex-mode-map "\C-c\C-o" 'tex-latex-block)
   (define-key tex-mode-map "\C-c\C-e" 'tex-close-latex-block)
   (define-key tex-mode-map "\C-c\C-u" 'tex-goto-last-unclosed-latex-block)
+  (define-key tex-mode-map [menu-bar tex tex-bibtex-file]
+    '("BibTeX File" . tex-bibtex-file))
   (define-key tex-mode-map [menu-bar tex tex-validate-region]
     '("Validate Region" . tex-validate-region))
   (define-key tex-mode-map [menu-bar tex validate-tex-buffer]
     '("Validate Buffer" . validate-tex-buffer))
   (define-key tex-mode-map [menu-bar tex tex-region]
-    '("Tex Region" . tex-region))
+    '("TeX Region" . tex-region))
   (define-key tex-mode-map [menu-bar tex tex-buffer]
-    '("Tex Buffer" . tex-buffer))
-  (define-key tex-mode-map [menu-bar tex tex-file] '("Tex File" . tex-file)))
+    '("TeX Buffer" . tex-buffer))
+  (define-key tex-mode-map [menu-bar tex tex-file] '("TeX File" . tex-file)))
 
 (put 'tex-region 'menu-enable 'mark-active)
 (put 'tex-validate-region 'menu-enable 'mark-active)
@@ -237,9 +239,9 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
 
 (defvar tex-shell-map nil
   "Keymap for the TeX shell.
-Inherits `comint-mode-map' with a few additions.")
+Inherits `shell-mode-map' with a few additions.")
 
-(defvar compare-windows-whitespace nil)	; Pacify the byte-compiler
+(defvar compare-windows-whitespace)	; Pacify the byte-compiler
 
 ;;; This would be a lot simpler if we just used a regexp search,
 ;;; but then it would be too slow.
@@ -261,7 +263,7 @@ says which mode to use."
 				    (beginning-of-line)
 				    (search-forward "%" search-end t))))))
       (if (and slash (not comment))
-	  (setq mode (if (looking-at "documentstyle\\|documentclass")
+	  (setq mode (if (looking-at "documentstyle\\|documentclass\\|begin\\b\\|NeedsTeXFormat{LaTeX")
                          (if (looking-at
 			      "document\\(style\\|class\\)\\(\\[.*\\]\\)?{slides}")
                              'slitex-mode
@@ -381,24 +383,24 @@ subshell is initiated, `tex-shell-hook' is run."
   ;; A line containing just $$ is treated as a paragraph separator.
   ;; A line starting with $$ starts a paragraph,
   ;; but does not separate paragraphs if it has more stuff on it.
-  (setq paragraph-start "^[ \t]*$\\|^[\f%]\\|^[ \t]*\\$\\$\\|\
-^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|^\\\\\\]\\|\
-^\\\\chapter\\>\\|^\\\\section\\>\\|\
-^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
-^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
-^\\\\item\\>\\|^\\\\bibitem\\>\\|^\\\\newline\\>\\|^\\\\noindent\\>\\|\
-^\\\\[a-z]*space\\>\\|^\\\\[a-z]*skip\\>\\|\
-^\\\\newpage\\>\\|^\\\\[a-z]*page\\|^\\\\footnote\\>\\|\
-^\\\\marginpar\\>\\|^\\\\parbox\\>\\|^\\\\caption\\>")
-  (setq paragraph-separate "^[ \t]*$\\|^[\f%]\\|^[ \t]*\\$\\$[ \t]*$\\|\
-^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|^\\\\\\]\\|\
-^\\\\chapter\\>\\|^\\\\section\\>\\|\
-^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
-^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
-^\\\\item[ \t]*$\\|^\\\\bibitem[ \t]*$\\|^\\\\newline[ \t]*$\\|^\\\\noindent[ \t]*$\\|\
-^\\\\[a-z]*space[ \t]*$\\|^\\\\[a-z]*skip[ \t]*$\\|\
-^\\\\newpage[ \t]*$\\|^\\\\[a-z]*page[a-z]*[ \t]*$\\|^\\\\footnote[ \t]*$\\|\
-^\\\\marginpar[ \t]*$\\|^\\\\parbox[ \t]*$\\|^\\\\caption[ \t]*$")
+  (setq paragraph-start "[ \t]*$\\|[\f%]\\|[ \t]*\\$\\$\\|\
+\\\\begin\\>\\|\\\\label\\>\\|\\\\end\\>\\|\\\\\\[\\|\\\\\\]\\|\
+\\\\chapter\\>\\|\\\\section\\>\\|\
+\\\\subsection\\>\\|\\\\subsubsection\\>\\|\
+\\\\paragraph\\>\\|\\\\subparagraph\\>\\|\
+\\\\item\\>\\|\\\\bibitem\\>\\|\\\\newline\\>\\|\\\\noindent\\>\\|\
+\\\\[a-z]*space\\>\\|\\\\[a-z]*skip\\>\\|\
+\\\\newpage\\>\\|\\\\[a-z]*page\\|\\\\footnote\\>\\|\
+\\\\marginpar\\>\\|\\\\parbox\\>\\|\\\\caption\\>")
+  (setq paragraph-separate "[ \t]*$\\|[\f%]\\|[ \t]*\\$\\$[ \t]*$\\|\
+\\\\begin\\>\\|\\\\label\\>\\|\\\\end\\>\\|\\\\\\[\\|\\\\\\]\\|\
+\\\\chapter\\>\\|\\\\section\\>\\|\
+\\\\subsection\\>\\|\\\\subsubsection\\>\\|\
+\\\\paragraph\\>\\|\\\\subparagraph\\>\\|\
+\\(\\\\item\\|\\\\bibitem\\|\\\\newline\\|\\\\noindent\\|\
+\\\\[a-z]*space\\|\\\\[a-z]*skip\\|\
+\\\\newpage\\|\\\\[a-z]*page[a-z]*\\|\\\\footnote\\|\
+\\\\marginpar\\|\\\\parbox\\|\\\\caption\\)[ \t]*\\($\\|%\\)")
   (run-hooks 'text-mode-hook 'tex-mode-hook 'latex-mode-hook))
 
 ;;;###autoload
@@ -454,24 +456,24 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
   ;; A line containing just $$ is treated as a paragraph separator.
   ;; A line starting with $$ starts a paragraph,
   ;; but does not separate paragraphs if it has more stuff on it.
-  (setq paragraph-start "^[ \t]*$\\|^[\f%]\\|^[ \t]*\\$\\$\\|\
-^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|^\\\\\\]\\|\
-^\\\\chapter\\>\\|^\\\\section\\>\\|\
-^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
-^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
-^\\\\item\\>\\|^\\\\bibitem\\>\\|^\\\\newline\\>\\|^\\\\noindent\\>\\|\
-^\\\\[a-z]*space\\>\\|^\\\\[a-z]*skip\\>\\|\
-^\\\\newpage\\>\\|^\\\\[a-z]*page\\|^\\\\footnote\\>\\|\
-^\\\\marginpar\\>\\|^\\\\parbox\\>\\|^\\\\caption\\>")
-  (setq paragraph-separate "^[ \t]*$\\|^[\f%]\\|^[ \t]*\\$\\$[ \t]*$\\|\
-^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|^\\\\\\]\\|\
-^\\\\chapter\\>\\|^\\\\section\\>\\|\
-^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
-^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
-^\\\\item[ \t]*$\\|^\\\\bibitem[ \t]*$\\|^\\\\newline[ \t]*$\\|^\\\\noindent[ \t]*$\\|\
-^\\\\[a-z]*space[ \t]*$\\|^\\\\[a-z]*skip[ \t]*$\\|\
-^\\\\newpage[ \t]*$\\|^\\\\[a-z]*page[a-z]*[ \t]*$\\|^\\\\footnote[ \t]*$\\|\
-^\\\\marginpar[ \t]*$\\|^\\\\parbox[ \t]*$\\|^\\\\caption[ \t]*$")
+  (setq paragraph-start "[ \t]*$\\|[\f%]\\|[ \t]*\\$\\$\\|\
+\\\\begin\\>\\|\\\\label\\>\\|\\\\end\\>\\|\\\\\\[\\|\\\\\\]\\|\
+\\\\chapter\\>\\|\\\\section\\>\\|\
+\\\\subsection\\>\\|\\\\subsubsection\\>\\|\
+\\\\paragraph\\>\\|\\\\subparagraph\\>\\|\
+\\\\item\\>\\|\\\\bibitem\\>\\|\\\\newline\\>\\|\\\\noindent\\>\\|\
+\\\\[a-z]*space\\>\\|\\\\[a-z]*skip\\>\\|\
+\\\\newpage\\>\\|\\\\[a-z]*page\\|\\\\footnote\\>\\|\
+\\\\marginpar\\>\\|\\\\parbox\\>\\|\\\\caption\\>")
+  (setq paragraph-separate "[ \t]*$\\|[\f%]\\|[ \t]*\\$\\$[ \t]*$\\|\
+\\\\begin\\>\\|\\\\label\\>\\|\\\\end\\>\\|\\\\\\[\\|\\\\\\]\\|\
+\\\\chapter\\>\\|\\\\section\\>\\|\
+\\\\subsection\\>\\|\\\\subsubsection\\>\\|\
+\\\\paragraph\\>\\|\\\\subparagraph\\>\\|\
+\\\\item[ \t]*$\\|\\\\bibitem[ \t]*$\\|\\\\newline[ \t]*$\\|\\\\noindent[ \t]*$\\|\
+\\\\[a-z]*space[ \t]*$\\|\\\\[a-z]*skip[ \t]*$\\|\
+\\\\newpage[ \t]*$\\|\\\\[a-z]*page[a-z]*[ \t]*$\\|\\\\footnote[ \t]*$\\|\
+\\\\marginpar[ \t]*$\\|\\\\parbox[ \t]*$\\|\\\\caption[ \t]*$")
   (run-hooks
    'text-mode-hook 'tex-mode-hook 'latex-mode-hook 'slitex-mode-hook))
 
@@ -502,11 +504,11 @@ Entering SliTeX mode runs the hook `text-mode-hook', then the hook
     (set-syntax-table tex-mode-syntax-table))
   (make-local-variable 'paragraph-start)
   ;; A line containing just $$ is treated as a paragraph separator.
-  (setq paragraph-start "^[ \t]*$\\|^[\f\\\\%]\\|^[ \t]*\\$\\$")
+  (setq paragraph-start "[ \t]*$\\|[\f\\\\%]\\|[ \t]*\\$\\$")
   (make-local-variable 'paragraph-separate)
   ;; A line starting with $$ starts a paragraph,
   ;; but does not separate paragraphs if it has more stuff on it.
-  (setq paragraph-separate "^[ \t]*$\\|^[\f\\\\%]\\|^[ \t]*\\$\\$[ \t]*$")
+  (setq paragraph-separate "[ \t]*$\\|[\f\\\\%]\\|[ \t]*\\$\\$[ \t]*$")
   (make-local-variable 'comment-start)
   (setq comment-start "%")
   (make-local-variable 'comment-start-skip)
@@ -824,12 +826,18 @@ line numbers for the errors."
     (let ((proc (get-process "tex-shell")))
       (set-process-sentinel proc 'tex-shell-sentinel)
       (process-kill-without-query proc)
-      (setq tex-shell-map (copy-keymap shell-mode-map))
+      (setq comint-prompt-regexp shell-prompt-pattern)
+      (setq tex-shell-map (nconc (make-sparse-keymap) shell-mode-map))
       (tex-define-common-keys tex-shell-map)
       (use-local-map tex-shell-map)
       (run-hooks 'tex-shell-hook)
       (while (zerop (buffer-size))
-          (sleep-for 1)))))
+	(sleep-for 1)))))
+
+(defun tex-display-shell ()
+  "Make the TeX shell buffer visible in a window."
+  (display-buffer (process-buffer (get-process "tex-shell")))
+  (tex-recenter-output-buffer nil))
 
 (defun tex-shell-sentinel (proc msg)
   (cond ((null (buffer-name (process-buffer proc)))
@@ -919,7 +927,6 @@ The value of `tex-command' specifies the command to use to run TeX."
   (if (tex-shell-running)
       (tex-kill-job)
     (tex-start-shell))
-  (display-buffer (process-buffer (get-process "tex-shell")))
   (or tex-zap-file
       (setq tex-zap-file (tex-generate-zap-file-name)))
   (let* ((temp-buffer (get-buffer-create " TeX-Output-Buffer"))
@@ -931,7 +938,9 @@ The value of `tex-command' specifies the command to use to run TeX."
          (zap-directory
           (file-name-as-directory (expand-file-name tex-directory)))
          (tex-out-file (concat zap-directory tex-zap-file)))
-    (tex-delete-last-temp-files t)
+    ;; Don't delete temp files if we do the same buffer twice in a row.
+    (or (eq (current-buffer) tex-last-buffer-texed)
+	(tex-delete-last-temp-files t))
     ;; Write the new temp file.
     (save-excursion
       (save-restriction
@@ -967,6 +976,7 @@ The value of `tex-command' specifies the command to use to run TeX."
     (setq tex-last-temp-file tex-out-file)
     (tex-send-command tex-shell-cd-command zap-directory)
     (tex-send-command tex-command tex-out-file)
+    (tex-display-shell)
     (setq tex-print-file tex-out-file)
     (setq tex-last-buffer-texed (current-buffer))))
 
@@ -992,9 +1002,9 @@ This function is more useful than \\[tex-buffer] when you need the
     (if (tex-shell-running)
         (tex-kill-job)
       (tex-start-shell))
-    (display-buffer (process-buffer (get-process "tex-shell")))
     (tex-send-command tex-shell-cd-command file-dir)
     (tex-send-command tex-command tex-out-file))
+  (tex-display-shell)
   (setq tex-last-buffer-texed (current-buffer))
   (setq tex-print-file (buffer-file-name)))
 
@@ -1057,9 +1067,11 @@ is provided, use the alternative command, `tex-alt-dvi-print-command'."
   (let ((print-file-name-dvi (tex-append tex-print-file ".dvi"))
 	test-name)
     (if (and (not (equal (current-buffer) tex-last-buffer-texed))
+	     (buffer-file-name)
+	     ;; Check that this buffer's printed file is up to date.
 	     (file-newer-than-file-p
 	      (setq test-name (tex-append (buffer-file-name) ".dvi"))
-	      print-file-name-dvi))
+	      (buffer-file-name)))
 	(setq print-file-name-dvi test-name))
     (if (not (file-exists-p print-file-name-dvi))
         (error "No appropriate `.dvi' file could be found")
@@ -1069,15 +1081,19 @@ is provided, use the alternative command, `tex-alt-dvi-print-command'."
 
 (defun tex-alt-print ()
   "Print the .dvi file made by \\[tex-region], \\[tex-buffer] or \\[tex-file].
-Runs the shell command defined by tex-alt-dvi-print-command."
+Runs the shell command defined by `tex-alt-dvi-print-command'."
   (interactive)
   (tex-print t))
 
 (defun tex-view ()
   "Preview the last `.dvi' file made by running TeX under Emacs.
 This means, made using \\[tex-region], \\[tex-buffer] or \\[tex-file].
-The variable `tex-dvi-view-command' specifies the shell command for preview."
+The variable `tex-dvi-view-command' specifies the shell command for preview.
+You must set that variable yourself before using this command,
+because there is no standard value that would generally work."
   (interactive)
+  (or tex-dvi-view-command
+      (error "You must set `tex-dvi-view-command'"))
   (let ((tex-dvi-print-command tex-dvi-view-command))
     (tex-print)))
 
@@ -1089,19 +1105,22 @@ so normally SUFFIX starts with one."
   (if (stringp file-name)
       (let ((file (file-name-nondirectory file-name))
 	    trial-name)
-	;; try spliting on first period
+	;; Try spliting on last period.
+	;; The first-period split can get fooled when two files
+	;; named a.tex and a.b.tex are both tex'd;
+	;; the last-period split must be right if it matches at all.
 	(setq trial-name
 	      (concat (file-name-directory file-name)
 		      (substring file 0
-				 (string-match "\\." file))
+				 (string-match "\\.[^.]*$" file))
 		      suffix))
 	(if (or (file-exists-p trial-name)
 		(file-exists-p (concat trial-name ".aux"))) ;for BibTeX files
 	    trial-name
-	  ;; not found, so split on last period
+	  ;; Not found, so split on first period.
 	  (concat (file-name-directory file-name)
 		  (substring file 0
-			     (string-match "\\.[^.]*$" file))
+			     (string-match "\\." file))
 		  suffix)))
     " "))
 
@@ -1112,8 +1131,8 @@ Runs the shell command defined by `tex-show-queue-command'."
   (if (tex-shell-running)
       (tex-kill-job)
     (tex-start-shell))
-  (display-buffer (process-buffer (get-process "tex-shell")))
-  (tex-send-command tex-show-queue-command))
+  (tex-send-command tex-show-queue-command)
+  (tex-display-shell))
 
 (defun tex-bibtex-file ()
   "Run BibTeX on the current buffer's file."
@@ -1121,12 +1140,12 @@ Runs the shell command defined by `tex-show-queue-command'."
   (if (tex-shell-running)
       (tex-kill-job)
     (tex-start-shell))
-  (display-buffer (process-buffer (get-process "tex-shell")))
   (let ((tex-out-file
          (tex-append (file-name-nondirectory (buffer-file-name)) ""))
 	(file-dir (file-name-directory (buffer-file-name))))
     (tex-send-command tex-shell-cd-command file-dir)
-    (tex-send-command tex-bibtex-command tex-out-file)))
+    (tex-send-command tex-bibtex-command tex-out-file))
+  (tex-display-shell))
 
 (run-hooks 'tex-mode-load-hook)
 

@@ -31,9 +31,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* GEC63 is big-endian: lowest numbered byte is most significant. */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define WORDS_BIG_ENDIAN
 
 /* Say this machine is a 68000 */
 
@@ -56,9 +57,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef TERMCAP
 #define TERMINFO
 
+#define NO_REMAP
+
+/* The rest of the file certainly needs updating for Emacs 19.29!  */
+
 /* Define sizes of portions of a Lisp_Object.  */
-#define VALBITS 22
-#define GCTYPEBITS 5
+#define VALBITS 24
 
 #define VALAMASK (((1<<VALBITS) - 1)| 0xF0000000L)
 
@@ -66,13 +70,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define XSETTYPE(a, b) ((a)  =  ((a) & VALAMASK)  +  ((int)(b) << VALBITS))
 
 #define XPNTR(a) ((a) & VALAMASK)
-#define XSETPNTR(a, b) ((a) = ((a) & ~VALAMASK)  +  ((b) & VALAMASK))
 
 #define XSET(var, type, ptr) \
    ((var) = ((int)(type) << VALBITS) + ((int) (ptr) & VALAMASK))
 
 /* Move some garbage-collector flag bits to different bit positions.  */
 #define ARRAY_MARK_FLAG (1 << 27)
-#define DONT_COPY_FLAG (1 << 26)
-
-#define NO_REMAP

@@ -104,7 +104,7 @@ the layout specification.
 
 You can associate a particular outline layout with a file by setting
 this var via the file's local variables.  For example, the following
-lines at the bottom of an elisp file:
+lines at the bottom of an Emacs Lisp file:
 
 ;;;Local variables:
 ;;;outline-layout: \(0 : -1 -1 0\)
@@ -349,7 +349,7 @@ will be used as is.")
         (">" outline-shift-in)
         ("<" outline-shift-out)
         ("\C-m" outline-rebullet-topic)
-        ("b" outline-rebullet-current-heading)
+        ("*" outline-rebullet-current-heading)
         ("#" outline-number-siblings)
         ("\C-k" outline-kill-line t)
         ("\C-y" outline-yank t)
@@ -886,7 +886,7 @@ C-c <	outline-shift-out	... less deep.
 C-c<CR>	outline-rebullet-topic	Reconcile bullets of topic and its' offspring
 				- distinctive bullets are not changed, others
 				  alternated according to nesting depth.
-C-c b	outline-rebullet-current-heading Prompt for alternate bullet for
+C-c *	outline-rebullet-current-heading Prompt for alternate bullet for
 					 current topic.
 C-c #	outline-number-siblings	Number bullets of topic and siblings - the
 				offspring are not affected.  With repeat
@@ -1157,11 +1157,11 @@ OPEN:	A topic that is not closed, though its' offspring or body may be."
       ;; Paragraphs are broken by topic headlines.
       (make-local-variable 'paragraph-start)
       (outline-resumptions 'paragraph-start
-			  (list (concat paragraph-start "\\|^\\("
+			  (list (concat paragraph-start "\\|\\("
 					outline-regexp "\\)")))
       (make-local-variable 'paragraph-separate)
       (outline-resumptions 'paragraph-separate
-			  (list (concat paragraph-separate "\\|^\\("
+			  (list (concat paragraph-separate "\\|\\("
 					outline-regexp "\\)")))
 
       (or (assq 'outline-mode minor-mode-alist)

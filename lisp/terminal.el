@@ -25,7 +25,6 @@
 ;;; Code:
 
 ;;>>TODO
-;;>> terminfo?
 ;;>> ** Nothing can be done about emacs' meta-lossage **
 ;;>>  (without redoing keymaps `sanely' -- ask Mly for details)
 
@@ -77,6 +76,7 @@ performance.")
     nil
   (let ((map (make-sparse-keymap)))
     (define-key map [t] 'te-pass-through)
+    (define-key map [switch-frame] 'handle-switch-frame)
     (define-key map "\e" terminal-meta-map)
     ;(define-key map "\C-l"
     ;  '(lambda () (interactive) (te-pass-through) (redraw-display)))
@@ -159,6 +159,9 @@ performance.")
 (defvar te-more-old-mode-line-format nil)
 (defvar te-pending-output-info nil)
 
+;; Required to support terminfo systems
+(defconst te-terminal-name-prefix "emacs-virtual")
+(defvar te-terminal-name nil)
 
 ;;;;  escape map
 
@@ -172,9 +175,9 @@ performance.")
 	  (use-global-map terminal-escape-map)
 	  (use-local-map terminal-escape-map)
 	  (setq s (read-key-sequence
-		    (if prefix-arg
+		    (if current-prefix-arg
 			(format "Emacs Terminal escape> %d "
-				(prefix-numeric-value prefix-arg))
+				(prefix-numeric-value current-prefix-arg))
 		        "Emacs Terminal escape> "))))
       (use-global-map global)
       (use-local-map local))
@@ -432,7 +435,7 @@ lets you type a terminal emulator command."
 	     (setq last-input-char (get last-input-char 'ascii-character)))
 	 ;; Convert meta characters to 8-bit form for transmission.
 	 (if (and (integerp last-input-char)
-		  (not (zerop (logand last-input-char (lsh 1 23)))))
+		  (not (zerop (logand last-input-char ?\M-\^@))))
 	     (setq last-input-char (+ 128 (logand last-input-char 127))))
 	 ;; Now ignore all but actual characters.
 	 ;; (It ought to be possible to send through function
@@ -496,7 +499,7 @@ together with a command \\<terminal-edit-map>to return to terminal emulation: \\
   "Start editing the terminal emulator buffer with ordinary Emacs commands."
   (interactive)
   (terminal-edit-mode)
-  (set-buffer-modified-p (buffer-modified-p))
+  (force-mode-line-update)
   ;; Make mode line update.
   (if (eq (key-binding "\C-c\C-c") 'terminal-cease-edit)
       (message "Editing: Type C-c C-c to return to Terminal")
@@ -586,7 +589,7 @@ together with a command \\<terminal-edit-map>to return to terminal emulation: \\
   (set-process-filter te-process te-more-old-filter)
   (goto-char te-more-old-point)
   (setq mode-line-format te-more-old-mode-line-format)
-  (set-buffer-modified-p (buffer-modified-p))
+  (force-mode-line-update)
   (let ((buffer-read-only nil))
     (cond ((eobp))
 	  (terminal-more-break-insertion
@@ -990,8 +993,7 @@ move to start of new line, clear to end of line."
 	  (setq te-pending-output-info "")
 	(setq te-pending-output-info (format "(%dK chars output pending) "
 					     (/ (+ length 512) 1024))))))
-  ;; update mode line
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 
 (defun te-sentinel (process message)
@@ -1047,10 +1049,7 @@ terminal-redisplay-interval.
 
 This function calls the value of terminal-mode-hook if that exists
 and is non-nil after the terminal buffer has been set up and the
-subprocess started.
-
-Presently with `termcap' only; if somebody sends us code to make this
-work with `terminfo' we will try to use it."
+subprocess started."
   (interactive
     (cons (save-excursion
 	    (set-buffer (get-buffer-create "*terminal*"))
@@ -1078,6 +1077,8 @@ work with `terminfo' we will try to use it."
   (if (null height) (setq height (- (window-height (selected-window)) 1)))
   (terminal-mode)
   (setq te-width width te-height height)
+  (setq te-terminal-name (concat te-terminal-name-prefix "-" te-width 
+				 te-height))
   (setq mode-line-buffer-identification
 	(list (format "Emacs terminal %dx%d: %%b  " te-width te-height)
 	      'te-pending-output-info))
@@ -1089,44 +1090,22 @@ work with `terminfo' we will try to use it."
 	  (delete-process process)
 	(error "Process %s not killed" (process-name process)))))
   (condition-case err
-      (let ((termcap
-             ;; Because of Unix Brain Death(tm), we can't change
-             ;;  the terminal type of a running process, and so
-             ;;  terminal size and scrollability are wired-down
-             ;;  at this point.  ("Detach?  What's that?")
-             (concat (format "emacs-virtual:co#%d:li#%d:%s"
-                             ;; Sigh.  These can't be dynamically changed.
-                             te-width te-height (if terminal-scrolling
-                                                    "" "ns:"))
-                     ;;-- Basic things
-                     ;; cursor-motion, bol, forward/backward char
-                     "cm=^p=%+ %+ :cr=^p^a:le=^p^b:nd=^p^f:"
-                     ;; newline, clear eof/eof, audible bell
-                     "nw=^j:ce=^pc:cd=^pC:cl=^p^l:bl=^p^g:"
-                     ;; insert/delete char/line
-                     "IC=^p_%+ :DC=^pd%+ :AL=^p^o%+ :DL=^p^k%+ :"
-                     ;;-- Not-widely-known (ie nonstandard) flags, which mean
-                     ;; o writing in the last column of the last line
-                     ;;   doesn't cause idiotic scrolling, and
-                     ;; o don't use idiotische c-s/c-q sogenannte
-                     ;;   ``flow control'' auf keinen Fall.
-                     "LP:NF:"
-                     ;;-- For stupid or obsolete programs
-                     "ic=^p_!:dc=^pd!:al=^p^o!:dl=^p^k!:ho=^p=  :"
-                     ;;-- For disgusting programs.
-                     ;; (VI? What losers need these, I wonder?)
-                     "im=:ei=:dm=:ed=:mi:do=^p^j:nl=^p^j:bs:")))
-	(let ((process-environment
-	       (cons "TERM=emacs-virtual"
-		     (cons (concat "TERMCAP=" termcap)
-			   process-environment))))
-	  (setq te-process
-		(start-process "terminal-emulator" (current-buffer)
-			       "/bin/sh" "-c"
-			       (format "%s; exec %s"
-				       te-stty-string
-				       (mapconcat 'te-quote-arg-for-sh
-						  (cons program args) " ")))))
+      (let ((process-environment
+	     (cons (concat "TERM=" te-terminal-name)
+		   (cons (concat "TERMCAP=" (te-create-termcap))
+			 (cons (concat "TERMINFO=" (te-create-terminfo))
+			       process-environment)))))
+	(setq te-process
+	      (start-process "terminal-emulator" (current-buffer)
+			     "/bin/sh" "-c"
+			     ;; Yuck!!! Start a shell to set some terminal
+			     ;; control characteristics.  Then start the
+			     ;; "env" program to setup the terminal type
+			     ;; Then finally start the program we wanted.
+			     (format "%s; exec %s"
+				     te-stty-string
+				     (mapconcat 'te-quote-arg-for-sh
+						(cons program args) " ")))) 
 	(set-process-filter te-process 'te-filter)
 	(set-process-sentinel te-process 'te-sentinel))
     (error (fundamental-mode)
@@ -1237,6 +1216,74 @@ of the terminal-emulator"
 					     (1+ end)))
 		   start (1+ end)))
 	   (concat "\"" harder "\"")))))
+
+(defun te-create-terminfo ()
+  "Create and compile a terminfo entry for the virtual terminal. This is kept 
+in the /tmp directory"
+  (if (and system-uses-terminfo
+	   (not (file-exists-p (concat  "/tmp/" 
+					(substring te-terminal-name-prefix 0 1)
+					"/" te-terminal-name))))
+    (let ( (terminfo 
+	    (concat 
+	     (format "%s,mir, xon,cols#%d, lines#%d,"
+		     te-terminal-name te-width te-height)
+	     "bel=^P^G, clear=^P\\f, cr=^P^A, cub1=^P^B, cud1=^P\\n,"
+	     "cuf1=^P^F, cup=^P=%p1%'\\s'%+%c%p2%'\\s'%+%c,"
+	     "dch=^Pd%p1%'\\s'%+%c, dch1=^Pd!, dl=^P^K%p1%'\\s'%+%c,"
+	     "dl1=^P^K!, ed=^PC, el=^Pc, home=^P=\\s\\s,"
+	     "ich=^P_%p1%'\\s'%+%c, ich1=^P_!, il=^P^O%p1%'\\s'%+%c,"
+	     "il1=^P^O!, ind=^P\\n, nel=\\n,"))
+	   (file-name (concat "/tmp/" te-terminal-name ".tif")) )
+      (save-excursion
+	(set-buffer (create-file-buffer file-name))
+	(insert terminfo)
+	(write-file file-name)
+	(kill-buffer nil)
+	)
+      (let ( (process-environment 
+	      (cons (concat "TERMINFO=" "/tmp")
+		    process-environment)) )
+	(set-process-sentinel (start-process "tic" nil "tic" file-name)
+			      'te-tic-sentinel))))
+    "/tmp"
+)
+
+(defun te-create-termcap ()
+  "Create a termcap entry for the virtual terminal"
+  ;; Because of Unix Brain Death(tm), we can't change
+  ;;  the terminal type of a running process, and so
+  ;;  terminal size and scrollability are wired-down
+  ;;  at this point.  ("Detach?  What's that?")
+  (concat (format "%s:co#%d:li#%d:%s"
+		  ;; Sigh.  These can't be dynamically changed.
+		  te-terminal-name te-width te-height (if terminal-scrolling
+					 "" "ns:"))
+	  ;;-- Basic things
+	  ;; cursor-motion, bol, forward/backward char
+	  "cm=^p=%+ %+ :cr=^p^a:le=^p^b:nd=^p^f:"
+	  ;; newline, clear eof/eof, audible bell
+	  "nw=^j:ce=^pc:cd=^pC:cl=^p^l:bl=^p^g:"
+	  ;; insert/delete char/line
+	  "IC=^p_%+ :DC=^pd%+ :AL=^p^o%+ :DL=^p^k%+ :"
+	  ;;-- Not-widely-known (ie nonstandard) flags, which mean
+	  ;; o writing in the last column of the last line
+	  ;;   doesn't cause idiotic scrolling, and
+	  ;; o don't use idiotische c-s/c-q sogenannte
+	  ;;   ``flow control'' auf keinen Fall.
+	  "LP:NF:"
+	  ;;-- For stupid or obsolete programs
+	  "ic=^p_!:dc=^pd!:al=^p^o!:dl=^p^k!:ho=^p=  :"
+	  ;;-- For disgusting programs.
+	  ;; (VI? What losers need these, I wonder?)
+	  "im=:ei=:dm=:ed=:mi:do=^p^j:nl=^p^j:bs:")
+)
+
+(defun te-tic-sentinel (proc state-change)
+  "If tic has finished, delete the .tif file"
+  (if (equal state-change "finished
+")
+      (delete-file (concat "/tmp/" te-terminal-name ".tif"))))
 
 (provide 'terminal)
 

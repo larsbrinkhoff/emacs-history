@@ -31,14 +31,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* Define BIG_ENDIAN iff lowest-numbered byte in a word
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
-/* This conflicts with something in the system headers,
-   and isn't currently used, since NO_UNION_TYPE is defined.  */
-#if 0
-#define BIG_ENDIAN
-#endif
+#define WORDS_BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -119,12 +115,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Here override various assumptions in ymakefile */
 
+#ifdef AIXHFT
 #define OBJECTS_MACHINE hftctl.o
+#endif
+
 #define C_SWITCH_MACHINE -D_BSD
 
 #ifdef AIX3_2
+/* -lpthreads seems to be necessary for Xlib in X11R6, and should be harmless
+   on older versions of X where it happens to exist.  */
+#ifdef HAVE_LIBPTHREADS
+#define LIBS_MACHINE -lrts -lIM -liconv -lpthreads
+#else
 /* IBM's X11R5 use -lIM and -liconv in AIX 3.2.2.  */
 #define LIBS_MACHINE -lrts -lIM -liconv
+#endif
 #else
 #define LIBS_MACHINE -lIM
 #endif

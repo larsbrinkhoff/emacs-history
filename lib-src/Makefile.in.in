@@ -51,8 +51,8 @@ bindir=@bindir@
 # Where to install and expect executable files to be run by Emacs
 # rather than directly by users, and other architecture-dependent
 # data.  ${archlibdir} is usually below this.  This is set with the
-# --libdir option to `../configure'.
-libdir=@libdir@
+# --libexecdir option to `../configure'.
+libexecdir=@libexecdir@
 
 # Where to find the source code.  This is set by the configure
 # script's `--srcdir' option.  However, the value of ${srcdir} in
@@ -60,6 +60,9 @@ libdir=@libdir@
 # since the variable here has `/lib-src' added at the end.
 srcdir=@srcdir@
 VPATH=@srcdir@
+
+# The top-level source directory, also set by configure.
+top_srcdir=@top_srcdir@
 
 # ==================== Emacs-specific directories ====================
 
@@ -89,8 +92,10 @@ INSTALLABLE_SCRIPTS = rcs-checkin
 
 # Things that Emacs runs internally, or during the build process,
 #  which should not be installed in bindir.
-UTILITIES= test-distrib make-path wakeup profile make-docfile digest-doc \
+UTILITIES= wakeup profile digest-doc \
 	sorted-doc movemail cvtmail fakemail yow emacsserver hexl timer
+
+DONT_INSTALL= test-distrib make-docfile
 
 # Like UTILITIES, but they're not system-dependent, and should not be
 #  deleted by the distclean target.
@@ -98,8 +103,32 @@ SCRIPTS= rcs2log vcdiff
 
 EXECUTABLES= ${UTILITIES} ${INSTALLABLES} ${SCRIPTS} ${INSTALLABLE_SCRIPTS}
 
-SOURCES = COPYING ChangeLog Makefile.in README aixcc.lex emacs.csh \
+SOURCES = COPYING ChangeLog Makefile.in README emacs.csh \
 	makedoc.com *.[chy] rcs2log vcdiff
+
+# Additional -D flags for movemail (add to MOVE_FLAGS if desired):
+# MAIL_USE_POP		Support mail retrieval from a POP mailbox.
+# MAIL_USE_MMDF		Support MMDF mailboxes.
+# MAIL_USE_FLOCK	Use flock for file locking (see the comments
+#			about locking in movemail.c)
+# MAIL_UNLINK_SPOOL	Unlink the user's spool mailbox after reading
+#			it (instead of just emptying it).
+# KERBEROS		Support Kerberized POP.
+# KRB5			Support Kerberos Version 5 pop instead of
+#			Version 4 (define this in addition to
+#			KERBEROS).
+# HESIOD		Support Hesiod lookups of user mailboxes.
+# MAILHOST		A string, the host name of the default POP
+#			mail host for the site.
+MOVE_FLAGS=
+
+# Additional libraries for movemail:
+# For KERBEROS
+# MOVE_LIBS= -lkrb -ldes -lcom_err
+# For KERBEROS + KRB5
+# MOVE_LIBS= -lkrb5 -lcrypto -lisode -lcom_err
+# Add "-lhesiod" if HESIOD is defined.
+MOVE_LIBS=
 
 # ========================== start of cpp stuff =======================
 /* From here on, comments must be done in C syntax.  */
@@ -158,7 +187,8 @@ LINK_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -Demacs -DHAVE_CONFIG_H \
    -I. -I../src -I${srcdir} -I${srcdir}/../src ${LDFLAGS} ${CFLAGS}
 CPP_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -Demacs -DHAVE_CONFIG_H \
    -I. -I../src -I${srcdir} -I${srcdir}/../src ${CPPFLAGS} ${CFLAGS}
-ALLOCA_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -DHAVE_CONFIG_H \
+/* This is all of CPP_CFLAGS except -Demacs.  */
+BASE_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -DHAVE_CONFIG_H \
    -I. -I../src -I${srcdir} -I${srcdir}/../src ${CPPFLAGS} ${CFLAGS}
 
 /* This is the default compilation command.
@@ -168,7 +198,7 @@ ALLOCA_CFLAGS = C_SWITCH_SYSTEM C_SWITCH_MACHINE -DHAVE_CONFIG_H \
 .c.o:
 	${CC} -c ${CPP_CFLAGS} $<
 
-all: ${UTILITIES} ${INSTALLABLES}
+all: ${DONT_INSTALL} ${UTILITIES} ${INSTALLABLES}
 
 #ifdef MOVEMAIL_NEEDS_BLESSING
 blessmail:
@@ -194,7 +224,7 @@ maybe-blessmail: BLESSMAIL
 ${archlibdir}: all
 	@echo
 	@echo "Installing utilities run internally by Emacs."
-	./make-path ${archlibdir}
+	$(top_srcdir)/mkinstalldirs ${archlibdir}
 	if [ `(cd ${archlibdir} && /bin/pwd)` != `/bin/pwd` ]; then \
 	  for file in ${UTILITIES}; do \
 	    (cd ..; $(INSTALL_PROGRAM) lib-src/$$file ${archlibdir}/$$file) ; \
@@ -229,16 +259,17 @@ mostlyclean:
 	-rm -f core *.o
 
 clean: mostlyclean
-	-rm -f ${INSTALLABLES} ${UTILITIES}
+	-rm -f ${INSTALLABLES} ${UTILITIES} ${DONT_INSTALL}
+	-rm -f ../etc/DOC* *.tab.c *.tab.h
 
 distclean: clean
-	-rm -f ../etc/DOC* *.tab.c *.tab.h aixcc.c TAGS
+	-rm -f TAGS
 	-rm -f Makefile Makefile.in blessmail
 
-realclean: distclean
+maintainer-clean: distclean
 	true
 
-extraclean: realclean
+extraclean: maintainer-clean
 	-rm -f *~ \#*
 
 unlock:
@@ -269,10 +300,21 @@ getopt.o: ${srcdir}/getopt.c ${srcdir}/getopt.h
 getopt1.o: ${srcdir}/getopt1.c ${srcdir}/getopt.h
 	${CC} -c ${CPP_CFLAGS} ${srcdir}/getopt1.c
 alloca.o: ${srcdir}/alloca.c
-	${CC} -c ${ALLOCA_CFLAGS} ${srcdir}/alloca.c
+	${CC} -c ${BASE_CFLAGS} ${srcdir}/alloca.c
 
-etags: ${srcdir}/etags.c $(GETOPTDEPS) ../src/config.h
-	$(CC) ${ALL_CFLAGS} -DVERSION="\"${version}\"" ${srcdir}/etags.c $(GETOPTOBJS) $(LOADLIBES) -o etags
+#ifdef REGEXP_IN_LIBC
+REGEXPOBJ =
+REGEXPDEPS =
+#else
+REGEXPOBJ = regex.o
+REGEXPDEPS = $(REGEXPOBJ) ../src/regex.h
+#endif
+
+regex.o: ../src/regex.c ../src/regex.h
+	${CC} -c ${BASE_CFLAGS} -DCONFIG_BROKETS -DINHIBIT_STRING_HEADER ${srcdir}/../src/regex.c
+
+etags: ${srcdir}/etags.c $(GETOPTDEPS) $(REGEXPDEPS) ../src/config.h
+	$(CC) ${ALL_CFLAGS} -DVERSION="\"${version}\"" -DETAGS_REGEXPS ${srcdir}/etags.c $(GETOPTOBJS) $(REGEXPOBJ) $(LOADLIBES) -o etags
 
 /* We depend on etags to assure that parallel makes don't write two
    etags.o files on top of each other.  */
@@ -297,8 +339,14 @@ sorted-doc: ${srcdir}/sorted-doc.c ${ALLOCA}
 b2m: ${srcdir}/b2m.c ../src/config.h
 	$(CC) ${ALL_CFLAGS} ${srcdir}/b2m.c $(LOADLIBES) -o b2m 
 
-movemail: ${srcdir}/movemail.c ../src/config.h
-	$(CC) ${ALL_CFLAGS} ${srcdir}/movemail.c $(LOADLIBES) -o movemail
+movemail: movemail.o pop.o
+	$(CC) ${LINK_CFLAGS} ${MOVE_FLAGS} movemail.o pop.o $(LOADLIBES) $(MOVE_LIBS) -o movemail
+
+movemail.o: ${srcdir}/movemail.c ../src/config.h
+	$(CC) -c ${CPP_CFLAGS} ${MOVE_FLAGS} ${srcdir}/movemail.c
+
+pop.o: ${srcdir}/pop.c
+	$(CC) -c ${CPP_CFLAGS} ${MOVE_FLAGS} ${srcdir}/pop.c
 
 cvtmail: ${srcdir}/cvtmail.c
 	$(CC) ${ALL_CFLAGS} ${srcdir}/cvtmail.c $(LOADLIBES) -o cvtmail
@@ -328,9 +376,6 @@ timer.o: ${srcdir}/timer.c ../src/config.h
 timer: ${TIMEROBJS}
 	$(CC) $(LINK_CFLAGS) ${TIMEROBJS} $(LOADLIBES) -o timer
 
-make-path: ${srcdir}/make-path.c ../src/config.h
-	$(CC) $(ALL_CFLAGS) ${srcdir}/make-path.c -o make-path
-
 /* These are NOT included in INSTALLABLES or UTILITIES.
    See ../src/Makefile.in.in.  */
 emacstool: ${srcdir}/emacstool.c
@@ -351,10 +396,3 @@ xveterm: ${srcdir}/emacstool.c
 	$(CC) -o xveterm -DXVIEW -DTTERM ${ALL_CFLAGS} ${srcdir}/emacstool.c \
 	  -lxview -lolgx -lX  -I$(OPENWINHOME)/include -L$(OPENWINHOME)/lib \
 	  $(LOADLIBES)
-
-aixcc: ${srcdir}/aixcc.c
-	$(CC) $(ALL_CFLAGS) -o aixcc ${srcdir}/aixcc.c
-
-aixcc.c: ${srcdir}/aixcc.lex
-	lex ${srcdir}/aixcc.lex
-	mv lex.yy.c aixcc.c

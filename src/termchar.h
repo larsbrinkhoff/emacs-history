@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -30,6 +30,8 @@ extern int line_ins_del_ok;	/* Terminal can insert and delete lines */
 extern int char_ins_del_ok;	/* Terminal can insert and delete chars */
 extern int scroll_region_ok;	/* Terminal supports setting the scroll
 				   window */
+extern int scroll_region_cost;	/* Cost of setting the scroll window,
+				   measured in characters */
 extern int memory_below_frame;	/* Terminal remembers lines scrolled
 				   off bottom */
 extern int fast_clear_end_of_line; /* Terminal has a `ce' string */

@@ -3,10 +3,8 @@
 ;; Copyright (C) 1991 Free Software Foundation, Inc.
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
-;; Last-Modified: 14 Jul 1992
+;; Maintainer: FSF
 ;; Keywords: tools, languages
-
-;; 	@(#)asm-mode.el	1.7
 
 ;; This file is part of GNU Emacs.
 
@@ -35,15 +33,16 @@
 ;;
 ;;	TAB		tab to next tab stop
 ;;	:		outdent preceding label, tab to tab stop
-;;	;		place or move comment
+;;	comment char	place or move comment
+;;			asm-comment-char specifies which character this is;
+;;			you can use a different character in different
+;;			Asm mode buffers.
 ;;	C-j, C-m	newline and tab to tab stop
 ;;
 ;; Code is indented to the first tab stop level.
-;; The ; key inserts copies of the value of asm-comment-char at an
-;; appropriate spot.
 
 ;; This mode runs two hooks:
-;;   1) An asm-set-comment-hook before the part of the initialization
+;;   1) An asm-mode-set-comment-hook before the part of the initialization
 ;; depending on asm-comment-char, and
 ;;   2) an asm-mode-hook at the end of initialization.
 
@@ -65,12 +64,18 @@
 (if asm-mode-map
     nil
   (setq asm-mode-map (make-sparse-keymap))
-  (define-key asm-mode-map ";"		'asm-comment)
+  ;; Note that the comment character isn't set up until asm-mode is called.
   (define-key asm-mode-map ":"		'asm-colon)
   (define-key asm-mode-map "\C-i"	'tab-to-tab-stop)
   (define-key asm-mode-map "\C-j"	'asm-newline)
   (define-key asm-mode-map "\C-m"	'asm-newline)
   )
+
+(defconst asm-font-lock-keywords
+ '(("^\\(\\(\\sw\\|\\s_\\)+\\)\\>:?[ \t]*\\(\\sw+\\)?"
+    (1 font-lock-function-name-face) (3 font-lock-keyword-face nil t))
+   ("^\\s +\\(\\(\\sw\\|\\s_\\)+\\)" 1 font-lock-keyword-face))
+ "Additional expressions to highlight in Assembler mode.")
 
 (defvar asm-code-level-empty-comment-pattern nil)
 (defvar asm-flush-left-empty-comment-pattern nil)
@@ -89,8 +94,8 @@ Features a private abbrev table and the following bindings:
 The character used for making comments is set by the variable
 `asm-comment-char' (which defaults to `?;').
 
-Alternatively, you may set this variable in `asm-set-comment-hook', which is
-called near the beginning of mode initialization.
+Alternatively, you may set this variable in `asm-mode-set-comment-hook',
+which is called near the beginning of mode initialization.
 
 Turning on Asm mode runs the hook `asm-mode-hook' at the end of initialization.
 
@@ -99,14 +104,21 @@ Special commands:
 "
   (interactive)
   (kill-all-local-variables)
-  (use-local-map asm-mode-map)
   (setq mode-name "Assembler")
   (setq major-mode 'asm-mode)
   (setq local-abbrev-table asm-mode-abbrev-table)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(asm-font-lock-keywords))
   (make-local-variable 'asm-mode-syntax-table)
   (setq asm-mode-syntax-table (make-syntax-table))
   (set-syntax-table asm-mode-syntax-table)
+
   (run-hooks 'asm-mode-set-comment-hook)
+  ;; Make our own local child of asm-mode-map
+  ;; so we can define our own comment character.
+  (use-local-map (nconc (make-sparse-keymap) asm-mode-map))
+  (local-set-key (vector asm-comment-char) 'asm-comment)
+
   (modify-syntax-entry	asm-comment-char
 			"<" asm-mode-syntax-table)
   (modify-syntax-entry	?\n
@@ -125,9 +137,7 @@ Special commands:
   (make-local-variable 'comment-column)
   (setq comment-column 32)
   (setq fill-prefix "\t")
-  (run-hooks 'asm-mode-hook)
-  )
-
+  (run-hooks 'asm-mode-hook))
 
 (defun asm-colon ()
   "Insert a colon; if it follows a label, delete the label's indentation."

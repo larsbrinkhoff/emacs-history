@@ -37,9 +37,10 @@ NOTE-END  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* 16000 is little-endian (lowest-numbered byte is least significant) */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-/* #define BIG_ENDIAN */  /* So don't define this.  */
+#undef WORDS_BIG_ENDIAN
 
 /* Say this machine is a 16000 */
 

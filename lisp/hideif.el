@@ -4,7 +4,7 @@
 
 ;; Author: Dan LaLiberte <liberte@a.cs.uiuc.edu>
 ;; Maintainer: FSF
-;; Keywords: c
+;; Keywords: c, outlines
 
 ;; This file is part of GNU Emacs.
 
@@ -32,7 +32,7 @@
 ;;; has a value.  To explicitly hide ifdefs using a buffer-local
 ;;; define list (default empty), type
 ;;;
-;;; M-x hide-ifdefs  or C-c h
+;;; M-x hide-ifdefs  or C-c @ h
 ;;;
 ;;; Hide-ifdef suppresses the display of code that the preprocessor wouldn't
 ;;; pass through.  The support of constant expressions in #if lines is 
@@ -46,14 +46,14 @@
 ;;; selective-display-ellipses to nil.  But this can be dangerous.
 ;;; You can make your buffer read-only while hide-ifdef-hiding by setting
 ;;; hide-ifdef-read-only to a non-nil value.  You can toggle this 
-;;; variable with hide-ifdef-toggle-read-only (C-c C-q).
+;;; variable with hide-ifdef-toggle-read-only (C-c @ C-q).
 ;;;
 ;;; You can undo the effect of hide-ifdefs by typing
 ;;;
-;;; M-x show-ifdefs  or C-c s
+;;; M-x show-ifdefs  or C-c @ s
 ;;;
-;;; Use M-x hide-ifdef-define (C-c d) to define a symbol.
-;;; Use M-x hide-ifdef-undef (C-c u) to undefine a symbol.
+;;; Use M-x hide-ifdef-define (C-c @ d) to define a symbol.
+;;; Use M-x hide-ifdef-undef (C-c @ u) to undefine a symbol.
 ;;;
 ;;; If you define or undefine a symbol while hide-ifdef-mode is in effect,
 ;;; the display will be updated.  Only the define list for the current
@@ -75,7 +75,7 @@
 ;;;	 (hide-ifdef-use-define-alist 'list2) ; use list2 by default
 ;;;	 ))
 ;;;
-;;; You can call hide-ifdef-use-define-alist (C-c u) at any time to specify
+;;; You can call hide-ifdef-use-define-alist (C-c @ u) at any time to specify
 ;;; another list to use.
 ;;;
 ;;; To cause ifdefs to be hidden as soon as hide-ifdef-mode is called,
@@ -107,38 +107,6 @@
 ;;; I will continue to upgrade hide-ifdef-mode
 ;;; with your contributions.
 
-;;; Change Log:
-;;;
-;;; Revision 1.7  88/02/16  03:12:58  liberte
-;;; Fixed comments and doc strings.
-;;; Added optional prefix arg for ifdef motion commands.
-;;; 
-;;; Revision 1.6  88/02/05  00:36:18  liberte
-;;; Bug fixes.
-;;; 1. A multi-line comment that starts on an #ifdef line
-;;;    now ends on that line.
-;;; 2. Fix bad function name: hide-hif-ifdef-toggle-read-only
-;;; 3. Make ifdef-block hiding work outside of ifdefs.
-;;; 
-;;; Revision 1.5  88/01/31  23:19:31  liberte
-;;; Major clean up.
-;;;   Prefix internal names with "hif-".
-;;; 
-;;; Revision 1.4  88/01/30  14:09:38  liberte
-;;; Add hide-ifdef-hiding and hide-ifdef-mode to minor-mode-alist.
-;;; 
-;;; Revision 1.3  88/01/29  00:38:19  liberte
-;;; Fix three bugs.
-;;; 1. Function "defined" is just like lookup.
-;;; 2. Skip to newline or cr in case text is hidden.
-;;; 3. Use car of token list if just one symbol.
-;;;
-;;; Revision 1.2  88/01/28  23:32:46  liberte
-;;; Use hide-ifdef-mode-prefix-key.
-;;; Copy current-local-map so other buffers do not get
-;;; hide-ifdef-mode bindings.
-;;;
-
 ;;; Code:
 
 (defvar hide-ifdef-mode-submap nil
@@ -147,20 +115,20 @@
 (defvar hide-ifdef-mode-map nil
   "Keymap used with Hide-Ifdef mode.")
 
-(defconst hide-ifdef-mode-prefix-key "\C-c"
+(defconst hide-ifdef-mode-prefix-key "\C-c@"
   "Prefix key for all Hide-Ifdef mode commands.")
 
 ;; Set up the submap that goes after the prefix key.
 (if hide-ifdef-mode-submap
     ()				; dont redefine it.
   (setq hide-ifdef-mode-submap (make-sparse-keymap))
-  (define-key hide-ifdef-mode-submap "\ed" 'hide-ifdef-define)
-  (define-key hide-ifdef-mode-submap "\eu" 'hide-ifdef-undef)
-  (define-key hide-ifdef-mode-submap "\eD" 'hide-ifdef-set-define-alist)
-  (define-key hide-ifdef-mode-submap "\eU" 'hide-ifdef-use-define-alist)
+  (define-key hide-ifdef-mode-submap "d" 'hide-ifdef-define)
+  (define-key hide-ifdef-mode-submap "u" 'hide-ifdef-undef)
+  (define-key hide-ifdef-mode-submap "D" 'hide-ifdef-set-define-alist)
+  (define-key hide-ifdef-mode-submap "U" 'hide-ifdef-use-define-alist)
 
-  (define-key hide-ifdef-mode-submap "\eh" 'hide-ifdefs)
-  (define-key hide-ifdef-mode-submap "\es" 'show-ifdefs)
+  (define-key hide-ifdef-mode-submap "h" 'hide-ifdefs)
+  (define-key hide-ifdef-mode-submap "s" 'show-ifdefs)
   (define-key hide-ifdef-mode-submap "\C-d" 'hide-ifdef-block)
   (define-key hide-ifdef-mode-submap "\C-s" 'show-ifdef-block)
 
@@ -178,10 +146,6 @@
   (setq hide-ifdef-mode-map (make-sparse-keymap))
   (define-key hide-ifdef-mode-map hide-ifdef-mode-prefix-key
     hide-ifdef-mode-submap))
-
-(defun hif-update-mode-line ()
-  "Update mode-line by setting buffer-modified to itself."
-  (set-buffer-modified-p (buffer-modified-p)))
 
 (defvar hide-ifdef-mode nil
   "Non-nil when hide-ifdef-mode is activated.")
@@ -372,7 +336,8 @@ that form should be displayed.")
   )
 
 ; pattern to match initial identifier, !, &&, ||, (, or ).
-(defconst hif-token-regexp "^\\(!\\|&&\\|||\\|[()]\\|\\w+\\)")
+; Added ==, + and -: garyo@avs.com 8/9/94
+(defconst hif-token-regexp "^\\(!\\|&&\\|||\\|[!=]=\\|[()+-]\\|\\w+\\)")
 (defconst hif-end-of-comment "\\*/")
 
 
@@ -418,13 +383,16 @@ that form should be displayed.")
 		       (cond
 			((string-equal token "||") 'or)
 			((string-equal token "&&") 'and)
+			((string-equal token "==") 'equal)
+			((string-equal token "!=") 'hif-notequal)
 			((string-equal token "!")  'not)
 			((string-equal token "defined") 'hif-defined)
 			((string-equal token "(") 'lparen)
 			((string-equal token ")") 'rparen)
+			((string-equal token "+") 'hif-plus)
+			((string-equal token "-") 'hif-minus)
 			(t (intern token)))
 		       token-list))))
-
 	     (t (error "Bad #if expression: %s" expr-string)))))
       (set-syntax-table current-syntax-table))
     (nreverse token-list)))
@@ -432,6 +400,7 @@ that form should be displayed.")
 ;;;-----------------------------------------------------------------
 ;;; Translate C preprocessor #if expressions using recursive descent.
 ;;; This parser is limited to the operators &&, ||, !, and "defined".
+;;; Added ==, !=, +, and -.  Gary Oberbrunner, garyo@avs.com, 8/9/94
 
 (defun hif-parse-if-exp (token-list)
   "Parse the TOKEN-LIST.  Return translated list in prefix form."
@@ -458,13 +427,35 @@ that form should be displayed.")
 
 (defun hif-term ()
   "Parse a term of the form
-       term : factor | term '&&' factor."
-  (let ((result (hif-factor)))
+       term : eq-expr | term '&&' eq-expr."
+  (let ((result (hif-eq-expr)))
     (while (eq token 'and)
       (hif-nexttoken)
-      (setq result (list 'and result (hif-factor))))
+      (setq result (list 'and result (hif-eq-expr))))
     result))
 
+(defun hif-eq-expr ()
+  "Parse a term of the form
+       eq-expr : math | eq-expr '=='|'!=' math."
+  (let ((result (hif-math))
+	(eq-token nil))
+    (while (or (eq token 'equal) (eq token 'hif-notequal))
+      (setq eq-token token)
+      (hif-nexttoken)
+      (setq result (list eq-token result (hif-math))))
+    result))
+
+(defun hif-math ()
+  "Parse an expression of the form
+       math : factor | math '+|-' factor."
+  (let ((result (hif-factor))
+	(math-op nil))
+    (while (or (eq  token 'hif-plus) (eq token 'hif-minus))
+      (setq math-op token)
+      (hif-nexttoken)
+      (setq result (list math-op result (hif-factor))))
+  result))
+  
 (defun hif-factor ()
   "Parse a factor of the form
        factor : '!' factor | '(' expr ')' | 'defined(' id ')' | id."
@@ -504,6 +495,24 @@ that form should be displayed.")
 	(` (hif-lookup (quote (, ident))))
 	))
     ))
+
+(defun hif-mathify (val)
+  "Treat VAL as a number: if it's t or nil, use 1 or 0."
+  (cond ((eq val t)
+	 1)
+	((null val)
+	 0)
+	(t val)))
+
+(defun hif-plus (a b)
+  "Like ordinary plus but treat t and nil as 1 and 0."
+  (+ (hif-mathify a) (hif-mathify b)))
+(defun hif-minus (a b)
+  "Like ordinary minus but treat t and nil as 1 and 0."
+  (- (hif-mathify a) (hif-mathify b)))
+(defun hif-notequal (a b)
+  "Like (not (equal A B)) but as one symbol."
+  (not (equal a b)))
 
 ;;;----------- end of parser -----------------------
 
@@ -880,7 +889,7 @@ is first activated.")
 	   (if hide-ifdef-read-only "ON" "OFF"))
   (if hide-ifdef-hiding
       (setq buffer-read-only (or hide-ifdef-read-only hif-outside-read-only)))
-  (hif-update-mode-line))
+  (force-mode-line-update))
 
 (defun hide-ifdef-toggle-outside-read-only ()
   "Replacement for `toggle-read-only' within Hide Ifdef mode."
@@ -892,13 +901,13 @@ is first activated.")
 	(or (and hide-ifdef-hiding hide-ifdef-read-only)
 	    hif-outside-read-only)
 	)
-  (hif-update-mode-line))
+  (force-mode-line-update))
 
       
 (defun hide-ifdef-define (var)
   "Define a VAR so that #ifdef VAR would be included."
   (interactive "SDefine what? ")
-  (hif-set-var var t)
+  (hif-set-var var 1)
   (if hide-ifdef-hiding (hide-ifdefs)))
 
 (defun hide-ifdef-undef (var)

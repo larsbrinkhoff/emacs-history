@@ -503,26 +503,37 @@ In version 18, the HISTORY argument is ignored."
       (read-string prompt initial-contents)
     (read-string prompt initial-contents)))
 
-(defun sc-submatch (matchnum &optional string)
-  "Returns `match-beginning' and `match-end' sub-expression for MATCHNUM.
+(if (fboundp 'match-string)
+    (defalias 'sc-submatch 'match-string)
+  (defun sc-submatch (matchnum &optional string)
+    "Returns `match-beginning' and `match-end' sub-expression for MATCHNUM.
 If optional STRING is provided, take sub-expression using `substring'
 of argument, otherwise use `buffer-substring' on current buffer.  Note
 that `match-data' must have already been generated and no error
 checking is performed by this function."
-  (if string
-      (substring string (match-beginning matchnum) (match-end matchnum))
-    (buffer-substring (match-beginning matchnum) (match-end matchnum))))
+    (if string
+	(substring string (match-beginning matchnum) (match-end matchnum))
+      (buffer-substring (match-beginning matchnum) (match-end matchnum)))))
 
-(defun sc-member (elt list)
-  "Like `memq', but uses `equal' instead of `eq'.
+(if (fboundp 'member)
+    (defalias 'sc-member 'member)
+  (defun sc-member (elt list)
+    "Like `memq', but uses `equal' instead of `eq'.
 Emacs19 has a builtin function `member' which does exactly this."
-  (catch 'elt-is-member
-    (while list
-      (if (equal elt (car list))
-	  (throw 'elt-is-member list))
-      (setq list (cdr list)))))
-(and (memq 'v19 sc-emacs-features)
-     (fset 'sc-member 'member))
+    (catch 'elt-is-member
+      (while list
+	(if (equal elt (car list))
+	    (throw 'elt-is-member list))
+	(setq list (cdr list))))))
+
+;; One day maybe Emacs will have this...
+(if (fboundp 'string-text)
+    (defalias 'sc-string-text 'string-text)
+  (defun sc-string-text (string)
+    "Return STRING with all text properties removed."
+    (let ((string (copy-sequence string)))
+      (set-text-properties 0 (length string) nil string)
+      string)))
 
 (defun sc-ask (alist)
   "Ask a question in the minibuffer requiring a single character answer.
@@ -645,8 +656,8 @@ the list should be unique."
 If optional ATTRIBS-P is non-nil, the key/value pair is placed in
 `sc-attributions' too."
   (if (string-match "^\\(\\S *\\)\\s *:\\s +\\(.*\\)$" curline)
-      (let* ((key (downcase (sc-submatch 1 curline)))
-	     (val (sc-submatch 2 curline))
+      (let* ((key (downcase (sc-string-text (sc-submatch 1 curline))))
+	     (val (sc-string-text (sc-submatch 2 curline)))
 	     (keyval (cons key val)))
 	(setq sc-mail-info (cons keyval sc-mail-info))
 	(if attribs-p
@@ -658,7 +669,8 @@ If optional ATTRIBS-P is non-nil, the key/value pair is placed in
   "Append a continuation line onto the last fetched mail field's info."
   (let ((keyval (car sc-mail-info)))
     (if (and keyval (string-match "^\\s *\\(.*\\)$" curline))
-	(setcdr keyval (concat (cdr keyval) " " (sc-submatch 1 curline)))))
+	(setcdr keyval (concat (cdr keyval) " "
+			       (sc-string-text (sc-submatch 1 curline))))))
   nil)
 
 (defun sc-mail-error-in-mail-field ()
@@ -1407,7 +1419,8 @@ non-nil."
   (if (not (bobp))
       (if (and (eolp)
 	       (progn (forward-line -1)
-		      (or (looking-at mail-header-separator)
+		      (or (looking-at
+			   (concat "^" (regexp-quote mail-header-separator) "$"))
 			  (and (eq major-mode 'mh-letter-mode)
 			       (mh-in-header-p)))))
 	  (progn (forward-line)
@@ -1686,7 +1699,7 @@ entered, regardless of the value of `sc-electric-references-p'.  See
   (setq sc-fixup-whitespace-p (not sc-fixup-whitespace-p)
 	sc-auto-fill-region-p (not sc-auto-fill-region-p))
   (sc-set-mode-string)
-  (set-buffer-modified-p (buffer-modified-p)))
+  (force-mode-line-update))
 
 (defun sc-toggle-var (variable)
   "Boolean toggle VARIABLE's value.
@@ -1725,6 +1738,9 @@ help window."
 				  var
 				  'variable-documentation)
 				  1))
+	       (save-excursion
+		 (set-buffer standard-output)
+		 (help-mode))
 	       nil)))))
     (set var (eval-minibuffer (format "Set %s to value: " var))))
   (sc-set-mode-string))

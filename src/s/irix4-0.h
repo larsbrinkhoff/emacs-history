@@ -8,15 +8,17 @@
 #include <alloca.h>
 #endif
 
-#undef IRIS_UTIME
 #undef NEED_SIOCTL
+
+/* Include unistd.h, even though we don't define POSIX.  */
+#define NEED_UNISTD_H
 
 /* Make process_send_signal work by "typing" a signal character on the pty.  */
 #define SIGNALS_VIA_CHARACTERS
 
 /* use K&R C */
 #ifndef __GNUC__
-#define C_SWITCH_MACHINE -cckr
+#define C_SWITCH_SYSTEM -cckr
 #endif
 
 /* SGI has all the fancy wait stuff, but we can't include sys/wait.h

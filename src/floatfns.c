@@ -180,17 +180,19 @@ static char *float_error_fn_name;
 #define FLOAT_TO_INT(x, i, name, num)					\
   do									\
     {									\
-      if ((x) >= (1 << (VALBITS-1)) || (x) <= - (1 << (VALBITS-1)) - 1)	\
+      if ((x) >= (((EMACS_INT) 1) << (VALBITS-1)) ||			\
+	  (x) <= - (((EMACS_INT) 1) << (VALBITS-1)) - 1)		\
 	range_error (name, num);					\
-      XSET (i, Lisp_Int,  (int)(x));					\
+      XSETINT (i,  (EMACS_INT)(x));					\
     }									\
   while (0)
 #define FLOAT_TO_INT2(x, i, name, num1, num2)				\
   do									\
     {									\
-      if ((x) >= (1 << (VALBITS-1)) || (x) <= - (1 << (VALBITS-1)) - 1)	\
+      if ((x) >= (((EMACS_INT) 1) << (VALBITS-1)) ||			\
+	  (x) <= - (((EMACS_INT) 1) << (VALBITS-1)) - 1)		\
 	range_error2 (name, num1, num2);				\
-      XSET (i, Lisp_Int,  (int)(x));					\
+      XSETINT (i,  (EMACS_INT)(x));					\
     }									\
   while (0)
 
@@ -215,7 +217,7 @@ extract_float (num)
 {
   CHECK_NUMBER_OR_FLOAT (num, 0);
 
-  if (XTYPE (num) == Lisp_Float)
+  if (FLOATP (num))
     return XFLOAT (num)->data;
   return (double) XINT (num);
 }
@@ -442,8 +444,8 @@ DEFUN ("expt", Fexpt, Sexpt, 2, 2, 0,
 
   CHECK_NUMBER_OR_FLOAT (arg1, 0);
   CHECK_NUMBER_OR_FLOAT (arg2, 0);
-  if (XTYPE (arg1) == Lisp_Int     /* common lisp spec */
-      && XTYPE (arg2) == Lisp_Int) /* don't promote, if both are ints */
+  if (INTEGERP (arg1)     /* common lisp spec */
+      && INTEGERP (arg2)) /* don't promote, if both are ints */
     {				/* this can be improved by pre-calculating */
       int acc, x, y;		/* some binary powers of x then accumulating */
       Lisp_Object val;
@@ -471,11 +473,11 @@ DEFUN ("expt", Fexpt, Sexpt, 2, 2, 0,
 	      y = (unsigned)y >> 1;
 	    }
 	}
-      XSET (val, Lisp_Int, acc);
+      XSETINT (val, acc);
       return val;
     }
-  f1 = (XTYPE (arg1) == Lisp_Float) ? XFLOAT (arg1)->data : XINT (arg1);
-  f2 = (XTYPE (arg2) == Lisp_Float) ? XFLOAT (arg2)->data : XINT (arg2);
+  f1 = FLOATP (arg1) ? XFLOAT (arg1)->data : XINT (arg1);
+  f2 = FLOATP (arg2) ? XFLOAT (arg2)->data : XINT (arg2);
   /* Really should check for overflow, too */
   if (f1 == 0.0 && f2 == 0.0)
     f1 = 1.0;
@@ -643,10 +645,10 @@ DEFUN ("abs", Fabs, Sabs, 1, 1, 0,
 {
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
-  if (XTYPE (arg) == Lisp_Float)
+  if (FLOATP (arg))
     IN_FLOAT (arg = make_float (fabs (XFLOAT (arg)->data)), "abs", arg);
   else if (XINT (arg) < 0)
-    XSETINT (arg, - XFASTINT (arg));
+    XSETINT (arg, - XINT (arg));
 
   return arg;
 }
@@ -658,7 +660,7 @@ DEFUN ("float", Ffloat, Sfloat, 1, 1, 0,
 {
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
-  if (XTYPE (arg) == Lisp_Int)
+  if (INTEGERP (arg))
     return make_float ((double) XINT (arg));
   else				/* give 'em the same float back */
     return arg;
@@ -671,7 +673,7 @@ This is the same as the exponent of a float.")
      Lisp_Object arg;
 {
   Lisp_Object val;
-  int value;
+  EMACS_INT value;
   double f = extract_float (arg);
 
   if (f == 0.0)
@@ -682,8 +684,9 @@ This is the same as the exponent of a float.")
       IN_FLOAT (value = logb (f), "logb", arg);
 #else
 #ifdef HAVE_FREXP
-      IN_FLOAT (frexp (f, &value), "logb", arg);
-      value--;
+      int ivalue;
+      IN_FLOAT (frexp (f, &ivalue), "logb", arg);
+      value = ivalue - 1;
 #else
       int i;
       double d;
@@ -707,7 +710,7 @@ This is the same as the exponent of a float.")
 #endif
 #endif
     }
-  XSET (val, Lisp_Int, value);
+  XSETINT (val, value);
   return val;
 }
 
@@ -720,7 +723,7 @@ DEFUN ("ceiling", Fceiling, Sceiling, 1, 1, 0,
 {
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
-  if (XTYPE (arg) == Lisp_Float)
+  if (FLOATP (arg))
     {
       double d;
 
@@ -749,13 +752,12 @@ With optional DIVISOR, return the largest integer no greater than ARG/DIVISOR.")
       CHECK_NUMBER_OR_FLOAT (divisor, 1);
 
 #ifdef LISP_FLOAT_TYPE
-      if (XTYPE (arg) == Lisp_Float || XTYPE (divisor) == Lisp_Float)
+      if (FLOATP (arg) || FLOATP (divisor))
 	{
 	  double f1, f2;
 
-	  f1 = XTYPE (arg) == Lisp_Float ? XFLOAT (arg)->data : XINT (arg);
-	  f2 = (XTYPE (divisor) == Lisp_Float
-		? XFLOAT (divisor)->data : XINT (divisor));
+	  f1 = FLOATP (arg) ? XFLOAT (arg)->data : XINT (arg);
+	  f2 = (FLOATP (divisor) ? XFLOAT (divisor)->data : XINT (divisor));
 	  if (f2 == 0)
 	    Fsignal (Qarith_error, Qnil);
 
@@ -777,12 +779,12 @@ With optional DIVISOR, return the largest integer no greater than ARG/DIVISOR.")
 	    ? (i1 <= 0  ?  -i1 / -i2  :  -1 - ((i1 - 1) / -i2))
 	    : (i1 < 0  ?  -1 - ((-1 - i1) / i2)  :  i1 / i2));
 
-      XSET (arg, Lisp_Int, i1);
+      XSETINT (arg, i1);
       return arg;
     }
 
 #ifdef LISP_FLOAT_TYPE
-  if (XTYPE (arg) == Lisp_Float)
+  if (FLOATP (arg))
     {
       double d;
       IN_FLOAT (d = floor (XFLOAT (arg)->data), "floor", arg);
@@ -802,7 +804,7 @@ DEFUN ("round", Fround, Sround, 1, 1, 0,
 {
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
-  if (XTYPE (arg) == Lisp_Float)
+  if (FLOATP (arg))
     {
       double d;
 
@@ -822,7 +824,7 @@ Rounds the value toward zero.")
 {
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
-  if (XTYPE (arg) == Lisp_Float)
+  if (FLOATP (arg))
     {
       double d;
 

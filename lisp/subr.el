@@ -1,6 +1,6 @@
 ;;; subr.el --- basic lisp subroutines for Emacs
 
-;;; Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1986, 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,8 +28,9 @@
 A call of the form (lambda ARGS DOCSTRING INTERACTIVE BODY) is
 self-quoting; the result of evaluating the lambda expression is the
 expression itself.  The lambda expression may then be treated as a
-function, i. e. stored as the function value of a symbol, passed to
-funcall or mapcar, etcetera.
+function, i.e., stored as the function value of a symbol, passed to
+funcall or mapcar, etc.
+
 ARGS should take the same form as an argument list for a `defun'.
 DOCSTRING should be a string, as described for `defun'.  It may be omitted.
 INTERACTIVE should be a call to the function `interactive', which see.
@@ -50,61 +51,6 @@ BODY should be a list of lisp expressions."
 ;;				 (cons 'lambda (cons args body)))
 ;;		     'args))))
 
-
-;;;; Window tree functions.
-
-(defun one-window-p (&optional nomini all-frames)
-  "Returns non-nil if the selected window is the only window (in its frame).
-Optional arg NOMINI non-nil means don't count the minibuffer
-even if it is active.
-
-The optional arg ALL-FRAMES t means count windows on all frames.
-If it is `visible', count windows on all visible frames.
-ALL-FRAMES nil or omitted means count only the selected frame, 
-plus the minibuffer it uses (which may be on another frame).
-If ALL-FRAMES is neither nil nor t, count only the selected frame."
-  (let ((base-window (selected-window)))
-    (if (and nomini (eq base-window (minibuffer-window)))
-	(setq base-window (next-window base-window)))
-    (eq base-window
-	(next-window base-window (if nomini 'arg) all-frames))))
-
-(defun walk-windows (proc &optional minibuf all-frames)
-  "Cycle through all visible windows, calling PROC for each one.
-PROC is called with a window as argument.
-Optional second arg MINIBUF t means count the minibuffer window
-even if not active.  If MINIBUF is neither t nor nil it means
-not to count the minibuffer even if it is active.
-
-Optional third arg ALL-FRAMES, if t, means include all frames.
-ALL-FRAMES nil or omitted means cycle within the selected frame,
-but include the minibuffer window (if MINIBUF says so) that that
-frame uses, even if it is on another frame.
-If ALL-FRAMES is neither nil nor t, stick strictly to the selected frame."
-  ;; If we start from the minibuffer window, don't fail to come back to it.
-  (if (window-minibuffer-p (selected-window))
-      (setq minibuf t))
-  (let* ((walk-windows-start (selected-window))
-	 (walk-windows-current walk-windows-start))
-    (while (progn
-	     (setq walk-windows-current
-		   (next-window walk-windows-current minibuf all-frames))
-	     (funcall proc walk-windows-current)
-	     (not (eq walk-windows-current walk-windows-start))))))
-
-(defun minibuffer-window-active-p (window)
-  "Return t if WINDOW (a minibuffer window) is now active."
-  ;; nil nil means include WINDOW's frame
-  ;; and other frames using WINDOW as minibuffer,
-  ;; and include minibuffer if active.
-  (let ((prev (previous-window window nil nil)))
-    ;; If PREV equals WINDOW, WINDOW must be on a minibuffer-only frame
-    ;; and it's not currently being used.  So return nil.
-    (and (not (eq window prev))
-	 (let ((should-be-same (next-window prev nil nil)))
-	   ;; If next-window doesn't reverse previous-window,
-	   ;; WINDOW must be outside the cycle specified by nil nil.
-	   (eq should-be-same window)))))
 
 ;;;; Keymap support.
 
@@ -178,8 +124,11 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 		(setq inner-def (symbol-function inner-def)))
 	      (if (eq defn olddef)
 		  (define-key keymap prefix1 (nconc (nreverse skipped) newdef))
-		;; Avoid recursively rescanning a keymap being scanned.
 		(if (and (keymapp defn)
+			 ;; Avoid recursively scanning
+			 ;; where KEYMAP does not have a submap.
+			 (keymapp (lookup-key keymap prefix1))
+			 ;; Avoid recursively rescanning keymap being scanned.
 			 (not (memq inner-def
 				    key-substitution-in-progress)))
 		    ;; If this one isn't being scanned already,
@@ -212,6 +161,7 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 			(define-key keymap prefix1
 			  (nconc (nreverse skipped) newdef))
 		      (if (and (keymapp defn)
+			       (keymapp (lookup-key keymap prefix1))
 			       (not (memq inner-def
 					  key-substitution-in-progress)))
 			  (substitute-key-definition olddef newdef keymap
@@ -306,12 +256,10 @@ The normal global definition of the character C-x indirects to this keymap.")
 
 ;;;; Event manipulation functions.
 
-;; This code exists specifically to make sure that the
-;; resulting number does not appear in the .elc file.
-;; The number is negative on most machines, but not on all!
-(defconst listify-key-sequence-1
-   (lsh 1 7))
-(setq listify-key-sequence-1 (logior (lsh 1 23) listify-key-sequence-1))
+;; The call to `read' is to ensure that the value is computed at load time
+;; and not compiled into the .elc file.  The value is negative on most
+;; machines, but not on all!
+(defconst listify-key-sequence-1 (logior 128 (read "?\\M-\\^@")))
 
 (defun listify-key-sequence (key)
   "Convert a key sequence to a list of events."
@@ -343,19 +291,19 @@ and `down'."
     (if (symbolp type)
 	(cdr (get type 'event-symbol-elements))
       (let ((list nil))
-	(or (zerop (logand type (lsh 1 23)))
+	(or (zerop (logand type ?\M-\^@))
 	    (setq list (cons 'meta list)))
-	(or (and (zerop (logand type (lsh 1 22)))
+	(or (and (zerop (logand type ?\C-\^@))
 		 (>= (logand type 127) 32))
 	    (setq list (cons 'control list)))
-	(or (and (zerop (logand type (lsh 1 21)))
+	(or (and (zerop (logand type ?\S-\^@))
 		 (= (logand type 255) (downcase (logand type 255))))
 	    (setq list (cons 'shift list)))
-	(or (zerop (logand type (lsh 1 20)))
+	(or (zerop (logand type ?\H-\^@))
 	    (setq list (cons 'hyper list)))
-	(or (zerop (logand type (lsh 1 19)))
+	(or (zerop (logand type ?\s-\^@))
 	    (setq list (cons 'super list)))
-	(or (zerop (logand type (lsh 1 18)))
+	(or (zerop (logand type ?\A-\^@))
 	    (setq list (cons 'alt list)))
 	list))))
 
@@ -505,17 +453,26 @@ These symbols are processed in the order specified.
 If a hook symbol has a non-nil value, that value may be a function
 or a list of functions to be called to run the hook.
 If the value is a function, it is called with no arguments.
-If it is a list, the elements are called, in order, with no arguments."
+If it is a list, the elements are called, in order, with no arguments.
+
+To make a hook variable buffer-local, use `make-local-hook', not
+`make-local-variable'."
   (while hooklist
     (let ((sym (car hooklist)))
       (and (boundp sym)
 	   (symbol-value sym)
 	   (let ((value (symbol-value sym)))
 	     (if (and (listp value) (not (eq (car value) 'lambda)))
-		 (let ((functions value))
-		   (while value
-		     (funcall (car value))
-		     (setq value (cdr value))))
+		 (while value
+		   (if (eq (car value) t)
+		       ;; t indicates this hook has a local binding;
+		       ;; it means to run the global binding too.
+		       (let ((functions (default-value sym)))
+			 (while functions
+			   (funcall (car functions))
+			   (setq functions (cdr functions))))
+		     (funcall (car value)))
+		   (setq value (cdr value)))
 	       (funcall value)))))
     (setq hooklist (cdr hooklist))))
 
@@ -528,71 +485,218 @@ the given arguments and its return value is returned.  If it is a list
 of functions, those functions are called, in order,
 with the given arguments ARGS.
 It is best not to depend on the value return by `run-hook-with-args',
-as that may change."
+as that may change.
+
+To make a hook variable buffer-local, use `make-local-hook', not
+`make-local-variable'."
   (and (boundp hook)
        (symbol-value hook)
        (let ((value (symbol-value hook)))
 	 (if (and (listp value) (not (eq (car value) 'lambda)))
-	     (mapcar '(lambda (foo) (apply foo args))
-		     value)
+	     (while value
+	       (if (eq (car value) t)
+		   ;; t indicates this hook has a local binding;
+		   ;; it means to run the global binding too.
+		   (let ((functions (default-value hook)))
+		     (while functions
+		       (apply (car functions) args)
+		       (setq functions (cdr functions))))
+		 (apply (car value) args))
+	       (setq value (cdr value)))
 	   (apply value args)))))
+
+(defun run-hook-with-args-until-success (hook &rest args)
+  "Run HOOK with the specified arguments ARGS.
+HOOK should be a symbol, a hook variable.  Its value should
+be a list of functions.  We call those functions, one by one,
+passing arguments ARGS to each of them, until one of them
+returns a non-nil value.  Then we return that value.
+If all the functions return nil, we return nil.
+
+To make a hook variable buffer-local, use `make-local-hook', not
+`make-local-variable'."
+  (and (boundp hook)
+       (symbol-value hook)
+       (let ((value (symbol-value hook))
+	     success)
+	 (while (and value (not success))
+	   (if (eq (car value) t)
+	       ;; t indicates this hook has a local binding;
+	       ;; it means to run the global binding too.
+	       (let ((functions (default-value hook)))
+		 (while (and functions (not success))
+		   (setq success (apply (car functions) args))
+		   (setq functions (cdr functions))))
+	     (setq success (apply (car value) args)))
+	   (setq value (cdr value)))
+	 success)))
+
+(defun run-hook-with-args-until-failure (hook &rest args)
+  "Run HOOK with the specified arguments ARGS.
+HOOK should be a symbol, a hook variable.  Its value should
+be a list of functions.  We call those functions, one by one,
+passing arguments ARGS to each of them, until one of them
+returns nil.  Then we return nil.
+If all the functions return non-nil, we return non-nil.
+
+To make a hook variable buffer-local, use `make-local-hook', not
+`make-local-variable'."
+  ;; We must return non-nil if there are no hook functions!
+  (or (not (boundp hook))
+      (not (symbol-value hook))
+      (let ((value (symbol-value hook))
+	    (success t))
+	(while (and value success)
+	  (if (eq (car value) t)
+	      ;; t indicates this hook has a local binding;
+	      ;; it means to run the global binding too.
+	      (let ((functions (default-value hook)))
+		(while (and functions success)
+		  (setq success (apply (car functions) args))
+		  (setq functions (cdr functions))))
+	    (setq success (apply (car value) args)))
+	  (setq value (cdr value)))
+	success)))
 
 ;; Tell C code how to call this function.
 (defconst run-hooks 'run-hooks
   "Variable by which C primitives find the function `run-hooks'.
 Don't change it.")
 
-(defun add-hook (hook function &optional append)
+(defun make-local-hook (hook)
+  "Make the hook HOOK local to the current buffer.
+When a hook is local, its local and global values
+work in concert: running the hook actually runs all the hook
+functions listed in *either* the local value *or* the global value
+of the hook variable.
+
+This function works by making `t' a member of the buffer-local value,
+which acts as a flag to run the hook functions in the default value as
+well.  This works for all normal hooks, but does not work for most
+non-normal hooks yet.  We will be changing the callers of non-normal
+hooks so that they can handle localness; this has to be done one by
+one.
+
+This function does nothing if HOOK is already local in the current
+buffer.
+
+Do not use `make-local-variable' to make a hook variable buffer-local."
+  (if (local-variable-p hook)
+      nil
+    (or (boundp hook) (set hook nil))
+    (make-local-variable hook)
+    (set hook (list t))))
+
+(defun add-hook (hook function &optional append local)
   "Add to the value of HOOK the function FUNCTION.
 FUNCTION is not added if already present.
 FUNCTION is added (if necessary) at the beginning of the hook list
 unless the optional argument APPEND is non-nil, in which case
 FUNCTION is added at the end.
 
+The optional fourth argument, LOCAL, if non-nil, says to modify
+the hook's buffer-local value rather than its default value.
+This makes no difference if the hook is not buffer-local.
+To make a hook variable buffer-local, always use
+`make-local-hook', not `make-local-variable'.
+
 HOOK should be a symbol, and FUNCTION may be any valid function.  If
 HOOK is void, it is first set to nil.  If HOOK's value is a single
 function, it is changed to a list of functions."
   (or (boundp hook) (set hook nil))
+  (or (default-boundp hook) (set-default hook nil))
   ;; If the hook value is a single function, turn it into a list.
   (let ((old (symbol-value hook)))
     (if (or (not (listp old)) (eq (car old) 'lambda))
 	(set hook (list old))))
-  (or (if (consp function)
-	  (member function (symbol-value hook))
-	(memq function (symbol-value hook)))
-      (set hook 
-	   (if append
-	       (nconc (symbol-value hook) (list function))
-	     (cons function (symbol-value hook))))))
+  (if (or local
+	  ;; Detect the case where make-local-variable was used on a hook
+	  ;; and do what we used to do.
+	  (and (local-variable-if-set-p hook)
+	       (not (memq t (symbol-value hook)))))
+      ;; Alter the local value only.
+      (or (if (consp function)
+	      (member function (symbol-value hook))
+	    (memq function (symbol-value hook)))
+	  (set hook 
+	       (if append
+		   (append (symbol-value hook) (list function))
+		 (cons function (symbol-value hook)))))
+    ;; Alter the global value (which is also the only value,
+    ;; if the hook doesn't have a local value).
+    (or (if (consp function)
+	    (member function (default-value hook))
+	  (memq function (default-value hook)))
+	(set-default hook 
+		     (if append
+			 (append (default-value hook) (list function))
+		       (cons function (default-value hook)))))))
 
-(defun remove-hook (hook function)
+(defun remove-hook (hook function &optional local)
   "Remove from the value of HOOK the function FUNCTION.
 HOOK should be a symbol, and FUNCTION may be any valid function.  If
 FUNCTION isn't the value of HOOK, or, if FUNCTION doesn't appear in the
-list of hooks to run in HOOK, then nothing is done.  See `add-hook'."
+list of hooks to run in HOOK, then nothing is done.  See `add-hook'.
+
+The optional third argument, LOCAL, if non-nil, says to modify
+the hook's buffer-local value rather than its default value.
+This makes no difference if the hook is not buffer-local.
+To make a hook variable buffer-local, always use
+`make-local-hook', not `make-local-variable'."
   (if (or (not (boundp hook))		;unbound symbol, or
+	  (not (default-boundp 'hook))
 	  (null (symbol-value hook))	;value is nil, or
 	  (null function))		;function is nil, then
       nil				;Do nothing.
-    (let ((hook-value (symbol-value hook)))
-      (if (consp hook-value)
-	  (setq hook-value (delete function hook-value))
-	(if (equal hook-value function)
-	    (setq hook-value nil)))
-      (set hook hook-value))))
+    (if (or local
+	    ;; Detect the case where make-local-variable was used on a hook
+	    ;; and do what we used to do.
+	    (and (local-variable-p hook)
+		 (not (memq t (symbol-value hook)))))
+	(let ((hook-value (symbol-value hook)))
+	  (if (consp hook-value)
+	      (if (member function hook-value)
+		  (setq hook-value (delete function (copy-sequence hook-value))))
+	    (if (equal hook-value function)
+		(setq hook-value nil)))
+	  (set hook hook-value))
+      (let ((hook-value (default-value hook)))
+	(if (consp hook-value)
+	    (if (member function hook-value)
+		(setq hook-value (delete function (copy-sequence hook-value))))
+	  (if (equal hook-value function)
+	      (setq hook-value nil)))
+	(set-default hook hook-value)))))
+
+(defun add-to-list (list-var element)
+  "Add to the value of LIST-VAR the element ELEMENT if it isn't there yet.
+If you want to use `add-to-list' on a variable that is not defined
+until a certain package is loaded, you should put the call to `add-to-list'
+into a hook function that will be run only after loading the package.
+`eval-after-load' provides one way to do this.  In some cases
+other hooks, such as major mode hooks, can do the job."
+  (or (member element (symbol-value list-var))
+      (set list-var (cons element (symbol-value list-var)))))
 
 ;;;; Specifying things to do after certain files are loaded.
 
 (defun eval-after-load (file form)
   "Arrange that, if FILE is ever loaded, FORM will be run at that time.
 This makes or adds to an entry on `after-load-alist'.
+If FILE is already loaded, evaluate FORM right now.
 It does nothing if FORM is already on the list for FILE.
 FILE should be the name of a library, with no directory name."
+  ;; Make sure there is an element for FILE.
   (or (assoc file after-load-alist)
       (setq after-load-alist (cons (list file) after-load-alist)))
+  ;; Add FORM to the element if it isn't there.
   (let ((elt (assoc file after-load-alist)))
     (or (member form (cdr elt))
-	(nconc elt (list form))))
+	(progn
+	  (nconc elt (list form))
+	  ;; If the file has been loaded already, run FORM right away.
+	  (and (assoc file load-history)
+	       (eval form)))))
   form)
 
 (defun eval-next-after-load (file)
@@ -609,10 +713,14 @@ FILE should be the name of a library, with no directory name."
 digit, we read up to two more octal digits and return the character
 represented by the octal number consisting of those digits.
 Optional argument PROMPT specifies a string to use to prompt the user."
-  (let ((count 0) (code 0) char)
+  (let ((message-log-max nil) (count 0) (code 0) char)
     (while (< count 3)
       (let ((inhibit-quit (zerop count))
-	    (help-form nil))
+	    ;; Don't let C-h get the help message--only help function keys.
+	    (help-char nil)
+	    (help-form
+	     "Type the special character you want to use,
+or three octal digits representing its character code."))
 	(and prompt (message "%s-" prompt))
 	(setq char (read-char))
 	(if inhibit-quit (setq quit-flag nil)))
@@ -626,7 +734,7 @@ Optional argument PROMPT specifies a string to use to prompt the user."
 	     (setq unread-command-events (list char) count 259))
 	    (t (setq code char count 259))))
     ;; Turn a meta-character into a character with the 0200 bit set.
-    (logior (if (/= (logand code (lsh 1 23)) 0) 128 0)
+    (logior (if (/= (logand code ?\M-\^@) 0) 128 0)
 	    (logand 255 code))))
 
 (defun force-mode-line-update (&optional all)
@@ -681,6 +789,18 @@ If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
 
 ;;;; Miscellanea.
 
+;; A number of major modes set this locally.
+;; Give it a global value to avoid compiler warnings.
+(defvar font-lock-defaults nil)
+
+;; Avoid compiler warnings about this variable,
+;; which has a special meaning on certain system types.
+(defvar buffer-file-type nil
+  "Non-nil if the visited file is a binary file.
+This variable is meaningful on MS-DOG and Windows NT.
+On those systems, it is automatically local in every buffer.
+On other systems, this variable is normally always nil.")
+
 (defun ignore (&rest ignore)
   "Do nothing and return nil.
 This function accepts any number of arguments, but ignores them."
@@ -706,31 +826,53 @@ BUFFER is the buffer or (buffer-name) to associate with the process.
 Third arg is command name, the name of a shell command.
 Remaining arguments are the arguments for the command.
 Wildcards and redirection are handled as usual in the shell."
-  (if (eq system-type 'vax-vms)
-      (apply 'start-process name buffer args)
-    (start-process name buffer shell-file-name "-c"
-		   (concat "exec " (mapconcat 'identity args " ")))))
+  (cond
+   ((eq system-type 'vax-vms)
+    (apply 'start-process name buffer args))
+   ;; We used to use `exec' to replace the shell with the command,
+   ;; but that failed to handle (...) and semicolon, etc.
+   (t
+    (start-process name buffer shell-file-name shell-command-switch
+		   (mapconcat 'identity args " ")))))
 
 (defmacro save-match-data (&rest body)
   "Execute the BODY forms, restoring the global value of the match data."
   (let ((original (make-symbol "match-data")))
-    (list
-     'let (list (list original '(match-data)))
-     (list 'unwind-protect
-           (cons 'progn body)
-           (list 'store-match-data original)))))
+    (list 'let (list (list original '(match-data)))
+	  (list 'unwind-protect
+		(cons 'progn body)
+		(list 'store-match-data original)))))
+
+(defun match-string (num &optional string)
+  "Return string of text matched by last search.
+NUM specifies which parenthesized expression in the last regexp.
+ Value is nil if NUMth pair didn't match, or there were less than NUM pairs.
+Zero means the entire text matched by the whole regexp or whole string.
+STRING should be given if the last search was by `string-match' on STRING."
+  (if (match-beginning num)
+      (if string
+	  (substring string (match-beginning num) (match-end num))
+	(buffer-substring (match-beginning num) (match-end num)))))
+
+(defun buffer-substring-no-properties (beg end)
+  "Return the text from BEG to END, without text properties, as a string."
+  (let ((string (buffer-substring beg end)))
+    (set-text-properties 0 (length string) nil string)
+    string))
 
 (defun shell-quote-argument (argument)
   "Quote an argument for passing as argument to an inferior shell."
   ;; Quote everything except POSIX filename characters.
   ;; This should be safe enough even for really weird shells.
-  (let ((result "") (start 0) end)
-    (while (string-match "[^-0-9a-zA-Z_./]" argument start)
-      (setq end (match-beginning 0)
-	    result (concat result (substring argument start end)
-			   "\\" (substring argument end (1+ end)))
-	    start (1+ end)))
-    (concat result (substring argument start))))
+  (if (eq system-type 'windows-nt)
+      (concat "\"" argument "\"")
+    (let ((result "") (start 0) end)
+      (while (string-match "[^-0-9a-zA-Z_./]" argument start)
+	(setq end (match-beginning 0)
+	      result (concat result (substring argument start end)
+			     "\\" (substring argument end (1+ end)))
+	      start (1+ end)))
+      (concat result (substring argument start)))))
 
 (defun make-syntax-table (&optional oldtable)
   "Return a new syntax table.
@@ -757,6 +899,60 @@ syntax table; other characters are copied from the standard syntax table."
 	(aset table i 13)
 	(setq i (1+ i)))
       table)))
+
+(defun global-set-key (key command)
+  "Give KEY a global binding as COMMAND.
+COMMAND is a symbol naming an interactively-callable function.
+KEY is a key sequence (a string or vector of characters or event types).
+Non-ASCII characters with codes above 127 (such as ISO Latin-1)
+can be included if you use a vector.
+Note that if KEY has a local binding in the current buffer
+that local binding will continue to shadow any global binding."
+  (interactive "KSet key globally: \nCSet key %s to command: ")
+  (or (vectorp key) (stringp key)
+      (signal 'wrong-type-argument (list 'arrayp key)))
+  (define-key (current-global-map) key command)
+  nil)
+
+(defun local-set-key (key command)
+  "Give KEY a local binding as COMMAND.
+COMMAND is a symbol naming an interactively-callable function.
+KEY is a key sequence (a string or vector of characters or event types).
+Non-ASCII characters with codes above 127 (such as ISO Latin-1)
+can be included if you use a vector.
+The binding goes in the current buffer's local map,
+which in most cases is shared with all other buffers in the same major mode."
+  (interactive "KSet key locally: \nCSet key %s locally to command: ")
+  (let ((map (current-local-map)))
+    (or map
+	(use-local-map (setq map (make-sparse-keymap))))
+    (or (vectorp key) (stringp key)
+	(signal 'wrong-type-argument (list 'arrayp key)))
+    (define-key map key command))
+  nil)
+
+(defun global-unset-key (key)
+  "Remove global binding of KEY.
+KEY is a string representing a sequence of keystrokes."
+  (interactive "kUnset key globally: ")
+  (global-set-key key nil))
+
+(defun local-unset-key (key)
+  "Remove local binding of KEY.
+KEY is a string representing a sequence of keystrokes."
+  (interactive "kUnset key locally: ")
+  (if (current-local-map)
+      (local-set-key key nil))
+  nil)
+
+;; We put this here instead of in frame.el so that it's defined even on
+;; systems where frame.el isn't loaded.
+(defun frame-configuration-p (object)
+  "Return non-nil if OBJECT seems to be a frame configuration.
+Any list whose car is `frame-configuration' is assumed to be a frame
+configuration."
+  (and (consp object)
+       (eq (car object) 'frame-configuration)))
 
 ;; now in fns.c
 ;(defun nth (n list)

@@ -44,9 +44,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* SCO has termios.  */
 #define HAVE_TERMIOS
 
-/* SCO has timeval.  */
-#define HAVE_TIMEVAL
-
 /* SCO has ptys with unusual names.  */
 #define HAVE_PTYS
 
@@ -62,6 +59,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    for that.  */
 #ifdef HAVE_X_WINDOWS
 #define HAVE_SOCKETS
+#endif
+
+/* Must use 'cc' to link when build with motif toolkit. */
+#ifndef __GNUC__
+#define LINKER cc
 #endif
 
 /* This is safe since we already assumed HAVE_SOCKET
@@ -129,3 +131,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* wjs@wang.com (William Smith) says this is needed on 3.2.4.2.  */
 #define POSIX_SIGNALS
+
+/* wjs@wiis.wang.com says SCO 3.2 v4.2 "has sockets",
+   but only for network connections.
+   It doesn't have the kind of sockets that emacsclient.c
+   and emacsserver.c would use.  */
+#define NO_SOCKETS_IN_FILE_SYSTEM

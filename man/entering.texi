@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Entering Emacs, Exiting, Text Characters, Top
 @chapter Entering and Exiting Emacs
@@ -106,8 +106,8 @@ failing to support job control properly, but that is a matter of taste.)
 dedicated X windows, @kbd{C-z} has a different meaning.  Suspending an
 applications that uses its own X windows is not meaningful or useful.
 Instead, @kbd{C-z} runs the command @code{iconify-or-deiconify-frame},
-which temporarily closes up the selected Emacs frame.  The way to get
-back to a shell window is with the window manager.
+which temporarily closes up the selected Emacs frame (@pxref{Frames}).
+The way to get back to a shell window is with the window manager.
 
 @kindex C-x C-c
 @findex save-buffers-kill-emacs

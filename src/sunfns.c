@@ -15,7 +15,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -364,9 +364,9 @@ sun_item_create (Pair)
   String = Fcar(Pair);
   CHECK_STRING(String, 0);
   Value = Fcdr(Pair);
-  if(XTYPE(Value) == Lisp_Symbol)
+  if (SYMBOLP (Value))
     Value = XSYMBOL(Value)->value;
-  if(XTYPE(Value) == Lisp_Vector) {
+  if (VECTORP (Value)) {
     submenu = sun_menu_create (Value);
     menu_item = menu_create_item
       (MENU_RELEASE, MENU_PULLRIGHT_ITEM, XSTRING(String)->data, submenu, 0);

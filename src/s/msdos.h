@@ -39,6 +39,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifndef MSDOS
 #define MSDOS
 #endif
+
+#define DOS_NT	/* MSDOS or WINDOWSNT */
 #undef BSD
 #undef VMS
 
@@ -79,19 +81,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
   if system supports pty's.  'a' means it is /dev/ptya0  */
 
 /* #define FIRST_PTY_LETTER 'a' */
-
-/*
- *	Define HAVE_TIMEVAL if the system supports the BSD style clock values.
- *	Look in <sys/time.h> for a timeval structure.
- */
-
-#define HAVE_TIMEVAL
-
-/*
- *	Define HAVE_SELECT if the system supports the `select' system call.
- */
-
-/* #define HAVE_SELECT */
 
 /*
  *	Define HAVE_PTYS if the system supports pty devices.
@@ -149,13 +138,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    your system and must be used only through an encapsulation
    (Which you should place, by convention, in sysdep.c).  */
 
-/* Some compilers tend to put everything declared static
-   into the initialized data area, which becomes pure after dumping Emacs.
-   On these systems, you must #define static as nothing to foil this.
-   Note that emacs carefully avoids static vars inside functions.  */
-
-/* #define static */
-
 /* we use djgcc's malloc */
 /* #define SYSTEM_MALLOC */
 /* setjmp and longjmp can safely replace _setjmp and _longjmp,
@@ -165,9 +147,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define _longjmp longjmp
 
 #define NO_MODE_T
-
-/* we can use dj's getpagesize() */
-#define HAVE_GETPAGESIZE
 
 /* New chdir () routine. */
 #ifdef chdir
@@ -182,7 +161,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define ORDINARY_LINK
 
-/* command.com does not under stand `...` so we define this.  */
+/* command.com does not understand `...` so we define this.  */
 #define LIB_GCC -Lgcc
 #define DONT_NEED_ENVIRON
 #define SEPCHAR ';'
@@ -220,13 +199,34 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    likes that */
 #define FILE_SYSTEM_CASE Fdowncase
 
+/* Define this to be the separator between devices and paths */
+#define DEVICE_SEP ':'
+
+/* We'll support either convention on MSDOG.  */
+#define IS_DIRECTORY_SEP(_c_) ((_c_) == '/' || (_c_) == '\\')
+#define IS_ANY_SEP(_c_) (IS_DIRECTORY_SEP (_c_) || IS_DEVICE_SEP (_c_))
+
 /* bcopy under djgpp is quite safe */
 #define GAP_USE_BCOPY
 #define BCOPY_UPWARD_SAFE 1
 #define BCOPY_DOWNWARD_SAFE 1
 
-/* We need a little extra space, see ../../lisp/loadup.el */
-#define PURESIZE 240000
+/* Mode line description of a buffer's type.  */
+#define MODE_LINE_BINARY_TEXT(buf) (NILP(buf->buffer_file_type) ? "T" : "B")
 
 /* We have (the code to control) a mouse.  */
 #define HAVE_MOUSE
+
+/* We have support for faces.  */
+#define HAVE_FACES
+
+/* Define one of these for easier conditionals.  */
+#ifdef HAVE_X_WINDOWS
+/* We need a little extra space, see ../../lisp/loadup.el */
+#define SYSTEM_PURESIZE_EXTRA 15000
+#define HAVE_X11R5
+#define LIBX11_SYSTEM -lxext -lsys
+#else
+/* We need a little extra space, see ../../lisp/loadup.el */
+#define SYSTEM_PURESIZE_EXTRA 68000
+#endif

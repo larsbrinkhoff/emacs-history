@@ -16,6 +16,8 @@
 #ifndef __GNUC__
 /* Make room for enough symbols, so dispnew.c does not fail.  */
 #define C_SWITCH_SYSTEM -Wp,-H200000 -D_BSD
+#else
+#define C_SWITCH_SYSTEM -D_BSD
 #endif
 
 #if 0 /* These definitions run into a bug in hpux
@@ -26,3 +28,17 @@
 #define HAVE_TERMIOS
 #define NO_TERMIO
 #endif
+
+/* According to ngorelic@speclab.cr.usgs.gov,
+   references to the X11R4 directoriess in these variables
+   (inherited from hpux8.h)
+   cause the wrong libraries to be found,
+   and the options to specify the X11R5 directories are unnecessary
+   since the R5 files are found without them.  */
+#undef LIB_X11_LIB
+#undef C_SWITCH_X_SYSTEM
+#undef LD_SWITCH_X_DEFAULT
+/* However, HPUX 9 has Motif includes in a strange place.
+   So search that place.  */
+#define C_SWITCH_X_SYSTEM -I/usr/include/Motif1.2
+#define LD_SWITCH_X_DEFAULT -L/usr/lib/Motif1.2

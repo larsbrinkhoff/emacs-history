@@ -35,7 +35,7 @@
 This documents the ``extra'' features for Dired Mode for GNU Emacs 19 found in
 the file @file{dired-x.el}.
 
-Copyright @copyright{} 1993, 1994 Free Software Foundation
+Copyright @copyright{} 1993, 1994 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of this
 manual provided the copyright notice and this permission notice are
@@ -196,32 +196,32 @@ Some features provided by Dired Extra
 @enumerate
 @item
 Omitting of uninteresting files from dired listing. 
-@itemize
+@itemize @bullet
 @xref{Omitting Files in Dired}
 @end itemize
 @item
 Local variables for dired directories.
-@itemize
+@itemize @bullet
 @xref{Local Variables}
 @end itemize
 @item
 Guessing shell commands in dired buffers.
-@itemize
+@itemize @bullet
 @xref{Shell Command Guessing}
 @end itemize
 @item
 Running dired command in non-dired buffers.
-@itemize
+@itemize @bullet
 @xref{Virtual Dired}
 @end itemize
 @item
 Finding a file mentioned in a buffer
-@itemize
+@itemize @bullet
 @xref{Find File At Point}
 @end itemize
 @item
 Commands using file marking.
-@itemize
+@itemize @bullet
 @xref{Advanced Mark Commands}
 @end itemize
 @end enumerate
@@ -283,13 +283,17 @@ In your @file{.emacs} file in your home directory, or in the system-wide
 initialization file @file{default.el} in the @file{site-lisp} directory, put
 
 @example
-(add-hook 'dired-load-hook 
+(add-hook 'dired-load-hook
           (function (lambda ()
                       (load "dired-x")
-                      ;; Set dired-x variables here.  For example:
+                      ;; Set dired-x global variables here.  For example:
                       ;; (setq dired-guess-shell-gnutar "gtar")
-                      ;; (setq dired-omit-files-p t)
                       ;; (setq dired-x-hands-off-my-keys nil)
+                      )))
+(add-hook 'dired-mode-hook
+          (function (lambda ()
+                      ;; Set dired-x buffer-local variables here.  For example:
+                      ;; (setq dired-omit-files-p t)
                       )))
 @end example
 

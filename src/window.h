@@ -1,5 +1,5 @@
 /* Window definitions for GNU Emacs.
-   Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -75,7 +75,7 @@ struct window
   {
     /* The first two fields are really the header of a vector */
     /* The window code does not refer to them.  */
-    int size;
+    EMACS_INT size;
     struct Lisp_Vector *vec_next;
     /* The frame this window is on.  */
     Lisp_Object frame;
@@ -170,6 +170,9 @@ struct window
     /* If we have highlighted the region (or any part of it),
        this is the mark position that we used, as an integer.  */
     Lisp_Object region_showing;
+    /* The column number currently displayed in this window's mode line,
+       or nil if column numbers are not being displayed.  */
+    Lisp_Object column_number_displayed;
   };
 
 /* 1 if W is a minibuffer window.  */
@@ -254,7 +257,7 @@ extern int minibuf_level;
 /* true iff we should redraw the mode lines on the next redisplay.  */
 extern int update_mode_lines;
 
-/* Minimum value of GPT since last redisplay that finished.  */
+/* Minimum value of GPT - BEG since last redisplay that finished.  */
 
 extern int beg_unchanged;
 
@@ -263,7 +266,7 @@ extern int beg_unchanged;
 extern int end_unchanged;
 
 /* MODIFF as of last redisplay that finished;
-   if it matches MODIFF, beg_unchanged and end_unchangedn
+   if it matches MODIFF, beg_unchanged and end_unchanged
    contain no useful information.  */
 extern int unchanged_modified;
 

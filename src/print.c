@@ -1,5 +1,5 @@
 /* Lisp object printing and output streams.
-   Copyright (C) 1985, 1986, 1988, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 88, 93, 94, 95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -30,6 +30,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "process.h"
 #include "dispextern.h"
 #include "termchar.h"
+#include "keyboard.h"
 #endif /* not standalone */
 
 #ifdef USE_TEXT_PROPERTIES
@@ -65,10 +66,11 @@ int print_escape_newlines;
 
 Lisp_Object Qprint_escape_newlines;
 
-/* Nonzero means print newline before next minibuffer message.
+/* Nonzero means print newline to stdout before next minibuffer message.
    Defined in xdisp.c */
 
 extern int noninteractive_need_newline;
+
 #ifdef MAX_PRINT_CHARS
 static int print_chars;
 static int max_print;
@@ -144,11 +146,11 @@ glyph_to_str_cpy (glyphs, str)
 #define PRINTPREPARE						\
    original = printcharfun;					\
    if (NILP (printcharfun)) printcharfun = Qt;			\
-   if (XTYPE (printcharfun) == Lisp_Buffer)			\
+   if (BUFFERP (printcharfun))					\
      { if (XBUFFER (printcharfun) != current_buffer)		\
 	 Fset_buffer (printcharfun);				\
        printcharfun = Qnil;}					\
-   if (XTYPE (printcharfun) == Lisp_Marker)			\
+   if (MARKERP (printcharfun))					\
      { if (!(XMARKER (original)->buffer))			\
          error ("Marker does not point anywhere");		\
        if (XMARKER (original)->buffer != current_buffer)	\
@@ -159,7 +161,7 @@ glyph_to_str_cpy (glyphs, str)
        printcharfun = Qnil;}
 
 #define PRINTFINISH					\
-   if (XTYPE (original) == Lisp_Marker)			\
+   if (MARKERP (original))				\
      Fset_marker (original, make_number (point), Qnil);	\
    if (old_point >= 0)					\
      SET_PT (old_point + (old_point >= start_point	\
@@ -206,12 +208,14 @@ printchar (ch, fun)
       if (echo_area_glyphs != FRAME_MESSAGE_BUF (mini_frame)
 	  || !message_buf_print)
 	{
+	  message_log_maybe_newline ();
 	  echo_area_glyphs = FRAME_MESSAGE_BUF (mini_frame);
 	  printbufidx = 0;
 	  echo_area_glyphs_length = 0;
 	  message_buf_print = 1;
 	}
 
+      message_dolog (&ch, 1, 0);
       if (printbufidx < FRAME_WIDTH (mini_frame) - 1)
 	FRAME_MESSAGE_BUF (mini_frame)[printbufidx++] = ch;
       FRAME_MESSAGE_BUF (mini_frame)[printbufidx] = 0;
@@ -221,7 +225,7 @@ printchar (ch, fun)
     }
 #endif /* not standalone */
 
-  XFASTINT (ch1) = ch;
+  XSETFASTINT (ch1, ch);
   call1 (fun, ch1);
 }
 
@@ -263,12 +267,14 @@ strout (ptr, size, printcharfun)
       if (echo_area_glyphs != FRAME_MESSAGE_BUF (mini_frame)
 	  || !message_buf_print)
 	{
+	  message_log_maybe_newline ();
 	  echo_area_glyphs = FRAME_MESSAGE_BUF (mini_frame);
 	  printbufidx = 0;
 	  echo_area_glyphs_length = 0;
 	  message_buf_print = 1;
 	}
 
+      message_dolog (ptr, i, 0);
       if (i > FRAME_WIDTH (mini_frame) - printbufidx - 1)
 	i = FRAME_WIDTH (mini_frame) - printbufidx - 1;
       bcopy (ptr, &FRAME_MESSAGE_BUF (mini_frame) [printbufidx], i);
@@ -382,10 +388,11 @@ temp_output_buffer_setup (bufname)
 
   Fset_buffer (Fget_buffer_create (build_string (bufname)));
 
+  current_buffer->directory = old->directory;
   current_buffer->read_only = Qnil;
   Ferase_buffer ();
 
-  XSET (buf, Lisp_Buffer, current_buffer);
+  XSETBUFFER (buf, current_buffer);
   specbind (Qstandard_output, buf);
 
   set_buffer_internal (old);
@@ -638,7 +645,7 @@ float_to_string (buf, data)
   int width;
       
   if (NILP (Vfloat_output_format)
-      || XTYPE (Vfloat_output_format) != Lisp_String)
+      || !STRINGP (Vfloat_output_format))
   lose:
     {
       sprintf (buf, "%.17g", data);
@@ -661,17 +668,19 @@ float_to_string (buf, data)
       /* Check the width specification.  */
       width = -1;
       if ('0' <= *cp && *cp <= '9')
-	for (width = 0; (*cp >= '0' && *cp <= '9'); cp++)
-	  width = (width * 10) + (*cp - '0');
+	{
+	  width = 0;
+	  do
+	    width = (width * 10) + (*cp++ - '0');
+	  while (*cp >= '0' && *cp <= '9');
+
+	  /* A precision of zero is valid only for %f.  */
+	  if (width > DBL_DIG
+	      || (width == 0 && *cp != 'f'))
+	    goto lose;
+	}
 
       if (*cp != 'e' && *cp != 'f' && *cp != 'g')
-	goto lose;
-
-      /* A precision of zero is valid for %f; everything else requires
-	 at least one.  Width may be omitted anywhere.  */
-      if (width != -1
-	  && (width < (*cp != 'f')
-	      || width > DBL_DIG))
 	goto lose;
 
       if (cp[1] != 0)
@@ -719,8 +728,7 @@ print (obj, printcharfun, escapeflag)
 #if 1  /* I'm not sure this is really worth doing.  */
   /* Detect circularities and truncate them.
      No need to offer any alternative--this is better than an error.  */
-  if (XTYPE (obj) == Lisp_Cons || XTYPE (obj) == Lisp_Vector
-      || XTYPE (obj) == Lisp_Compiled)
+  if (CONSP (obj) || VECTORP (obj) || COMPILEDP (obj))
     {
       int i;
       for (i = 0; i < print_depth; i++)
@@ -746,20 +754,16 @@ print (obj, printcharfun, escapeflag)
     }
 #endif /* MAX_PRINT_CHARS */
 
-#ifdef SWITCH_ENUM_BUG
-  switch ((int) XTYPE (obj))
-#else
-  switch (XTYPE (obj))
-#endif
+  switch (XGCTYPE (obj))
     {
-    default:
-      /* We're in trouble if this happens!
-	 Probably should just abort () */
-      strout ("#<EMACS BUG: INVALID DATATYPE ", -1, printcharfun);
-      sprintf (buf, "(#o%3o)", (int) XTYPE (obj));
+    case Lisp_Int:
+      if (sizeof (int) == sizeof (EMACS_INT))
+	sprintf (buf, "%d", XINT (obj));
+      else if (sizeof (long) == sizeof (EMACS_INT))
+	sprintf (buf, "%ld", XINT (obj));
+      else
+	abort ();
       strout (buf, -1, printcharfun);
-      strout (" Save your buffers immediately and please report this bug>",
-	      -1, printcharfun);
       break;
 
 #ifdef LISP_FLOAT_TYPE
@@ -771,12 +775,7 @@ print (obj, printcharfun, escapeflag)
 	strout (pigbuf, -1, printcharfun);
       }
       break;
-#endif /* LISP_FLOAT_TYPE */
-
-    case Lisp_Int:
-      sprintf (buf, "%d", XINT (obj));
-      strout (buf, -1, printcharfun);
-      break;
+#endif
 
     case Lisp_String:
       if (!escapeflag)
@@ -842,7 +841,7 @@ print (obj, printcharfun, escapeflag)
 	register unsigned char c;
 
 	if (p != end && (*p == '-' || *p == '+')) p++;
-        if (p == end)
+	if (p == end)
 	  confusing = 0;
 	else
 	  {
@@ -870,151 +869,245 @@ print (obj, printcharfun, escapeflag)
 
     case Lisp_Cons:
       /* If deeper than spec'd depth, print placeholder.  */
-      if (XTYPE (Vprint_level) == Lisp_Int
+      if (INTEGERP (Vprint_level)
 	  && print_depth > XINT (Vprint_level))
+	strout ("...", -1, printcharfun);
+      else
 	{
-	  strout ("...", -1, printcharfun);
-	  break;
-	}
-
-      PRINTCHAR ('(');
-      {
-	register int i = 0;
-	register int max = 0;
-
-	if (XTYPE (Vprint_length) == Lisp_Int)
-	  max = XINT (Vprint_length);
-	/* Could recognize circularities in cdrs here,
-	   but that would make printing of long lists quadratic.
-	   It's not worth doing.  */
-	while (CONSP (obj))
+	  PRINTCHAR ('(');
 	  {
-	    if (i++)
-	      PRINTCHAR (' ');
-	    if (max && i > max)
+	    register int i = 0;
+	    register int max = 0;
+
+	    if (INTEGERP (Vprint_length))
+	      max = XINT (Vprint_length);
+	    /* Could recognize circularities in cdrs here,
+	       but that would make printing of long lists quadratic.
+	       It's not worth doing.  */
+	    while (CONSP (obj))
 	      {
-		strout ("...", 3, printcharfun);
-		break;
+		if (i++)
+		  PRINTCHAR (' ');
+		if (max && i > max)
+		  {
+		    strout ("...", 3, printcharfun);
+		    break;
+		  }
+		print (Fcar (obj), printcharfun, escapeflag);
+		obj = Fcdr (obj);
 	      }
-	    print (Fcar (obj), printcharfun, escapeflag);
-	    obj = Fcdr (obj);
 	  }
-      }
-      if (!NILP (obj) && !CONSP (obj))
-	{
-	  strout (" . ", 3, printcharfun);
-	  print (obj, printcharfun, escapeflag);
+	  if (!NILP (obj) && !CONSP (obj))
+	    {
+	      strout (" . ", 3, printcharfun);
+	      print (obj, printcharfun, escapeflag);
+	    }
+	  PRINTCHAR (')');
 	}
-      PRINTCHAR (')');
       break;
 
-    case Lisp_Compiled:
-      strout ("#", -1, printcharfun);
-    case Lisp_Vector:
-      PRINTCHAR ('[');
-      {
-	register int i;
-	register Lisp_Object tem;
-	for (i = 0; i < XVECTOR (obj)->size; i++)
+    case Lisp_Vectorlike:
+      if (PROCESSP (obj))
+	{
+	  if (escapeflag)
+	    {
+	      strout ("#<process ", -1, printcharfun);
+	      print_string (XPROCESS (obj)->name, printcharfun);
+	      PRINTCHAR ('>');
+	    }
+	  else
+	    print_string (XPROCESS (obj)->name, printcharfun);
+	}
+      else if (SUBRP (obj))
+	{
+	  strout ("#<subr ", -1, printcharfun);
+	  strout (XSUBR (obj)->symbol_name, -1, printcharfun);
+	  PRINTCHAR ('>');
+	}
+#ifndef standalone
+      else if (WINDOWP (obj))
+	{
+	  strout ("#<window ", -1, printcharfun);
+	  sprintf (buf, "%d", XFASTINT (XWINDOW (obj)->sequence_number));
+	  strout (buf, -1, printcharfun);
+	  if (!NILP (XWINDOW (obj)->buffer))
+	    {
+	      strout (" on ", -1, printcharfun);
+	      print_string (XBUFFER (XWINDOW (obj)->buffer)->name, printcharfun);
+	    }
+	  PRINTCHAR ('>');
+	}
+      else if (BUFFERP (obj))
+	{
+	  if (NILP (XBUFFER (obj)->name))
+	    strout ("#<killed buffer>", -1, printcharfun);
+	  else if (escapeflag)
+	    {
+	      strout ("#<buffer ", -1, printcharfun);
+	      print_string (XBUFFER (obj)->name, printcharfun);
+	      PRINTCHAR ('>');
+	    }
+	  else
+	    print_string (XBUFFER (obj)->name, printcharfun);
+	}
+      else if (WINDOW_CONFIGURATIONP (obj))
+	{
+	  strout ("#<window-configuration>", -1, printcharfun);
+	}
+#ifdef MULTI_FRAME
+      else if (FRAMEP (obj))
+	{
+	  strout ((FRAME_LIVE_P (XFRAME (obj))
+		   ? "#<frame " : "#<dead frame "),
+		  -1, printcharfun);
+	  print_string (XFRAME (obj)->name, printcharfun);
+	  sprintf (buf, " 0x%lx", (unsigned long) (XFRAME (obj)));
+	  strout (buf, -1, printcharfun);
+	  PRINTCHAR ('>');
+	}
+#endif
+#endif /* not standalone */
+      else
+	{
+	  int size = XVECTOR (obj)->size;
+	  if (COMPILEDP (obj))
+	    {
+	      PRINTCHAR ('#');
+	      size &= PSEUDOVECTOR_SIZE_MASK;
+	    }
+	  if (size & PSEUDOVECTOR_FLAG)
+	    goto badtype;
+
+	  PRINTCHAR ('[');
 	  {
-	    if (i) PRINTCHAR (' ');
-	    tem = XVECTOR (obj)->contents[i];
-	    print (tem, printcharfun, escapeflag);
+	    register int i;
+	    register Lisp_Object tem;
+	    for (i = 0; i < size; i++)
+	      {
+		if (i) PRINTCHAR (' ');
+		tem = XVECTOR (obj)->contents[i];
+		print (tem, printcharfun, escapeflag);
+	      }
 	  }
-      }
-      PRINTCHAR (']');
+	  PRINTCHAR (']');
+	}
       break;
 
 #ifndef standalone
-    case Lisp_Buffer:
-      if (NILP (XBUFFER (obj)->name))
-	strout ("#<killed buffer>", -1, printcharfun);
-      else if (escapeflag)
+    case Lisp_Misc:
+      switch (XMISCTYPE (obj))
 	{
-	  strout ("#<buffer ", -1, printcharfun);
-	  print_string (XBUFFER (obj)->name, printcharfun);
+	case Lisp_Misc_Marker:
+	  strout ("#<marker ", -1, printcharfun);
+	  if (!(XMARKER (obj)->buffer))
+	    strout ("in no buffer", -1, printcharfun);
+	  else
+	    {
+	      sprintf (buf, "at %d", marker_position (obj));
+	      strout (buf, -1, printcharfun);
+	      strout (" in ", -1, printcharfun);
+	      print_string (XMARKER (obj)->buffer->name, printcharfun);
+	    }
 	  PRINTCHAR ('>');
-	}
-      else
-	print_string (XBUFFER (obj)->name, printcharfun);
-      break;
+	  break;
 
-    case Lisp_Process:
-      if (escapeflag)
-	{
-	  strout ("#<process ", -1, printcharfun);
-	  print_string (XPROCESS (obj)->name, printcharfun);
+	case Lisp_Misc_Overlay:
+	  strout ("#<overlay ", -1, printcharfun);
+	  if (!(XMARKER (OVERLAY_START (obj))->buffer))
+	    strout ("in no buffer", -1, printcharfun);
+	  else
+	    {
+	      sprintf (buf, "from %d to %d in ",
+		       marker_position (OVERLAY_START (obj)),
+		       marker_position (OVERLAY_END   (obj)));
+	      strout (buf, -1, printcharfun);
+	      print_string (XMARKER (OVERLAY_START (obj))->buffer->name,
+			    printcharfun);
+	    }
 	  PRINTCHAR ('>');
-	}
-      else
-	print_string (XPROCESS (obj)->name, printcharfun);
-      break;
+	  break;
 
-    case Lisp_Window:
-      strout ("#<window ", -1, printcharfun);
-      sprintf (buf, "%d", XFASTINT (XWINDOW (obj)->sequence_number));
-      strout (buf, -1, printcharfun);
-      if (!NILP (XWINDOW (obj)->buffer))
-	{
-	  strout (" on ", -1, printcharfun);
-	  print_string (XBUFFER (XWINDOW (obj)->buffer)->name, printcharfun);
-	}
-      PRINTCHAR ('>');
-      break;
+      /* Remaining cases shouldn't happen in normal usage, but let's print
+	 them anyway for the benefit of the debugger.  */
+	case Lisp_Misc_Free:
+	  strout ("#<misc free cell>", -1, printcharfun);
+	  break;
 
-    case Lisp_Window_Configuration:
-      strout ("#<window-configuration>", -1, printcharfun);
-      break;
-
-#ifdef MULTI_FRAME
-    case Lisp_Frame:
-      strout ((FRAME_LIVE_P (XFRAME (obj))
-	       ? "#<frame " : "#<dead frame "),
-	      -1, printcharfun);
-      print_string (XFRAME (obj)->name, printcharfun);
-      sprintf (buf, " 0x%x", (unsigned int) (XFRAME (obj)));
-      strout (buf, -1, printcharfun);
-      strout (">", -1, printcharfun);
-      break;
-#endif /* MULTI_FRAME */
-
-    case Lisp_Marker:
-      strout ("#<marker ", -1, printcharfun);
-      if (!(XMARKER (obj)->buffer))
-	strout ("in no buffer", -1, printcharfun);
-      else
-	{
-	  sprintf (buf, "at %d", marker_position (obj));
+	case Lisp_Misc_Intfwd:
+	  sprintf (buf, "#<intfwd to %d>", *XINTFWD (obj)->intvar);
 	  strout (buf, -1, printcharfun);
-	  strout (" in ", -1, printcharfun);
-	  print_string (XMARKER (obj)->buffer->name, printcharfun);
-	}
-      PRINTCHAR ('>');
-      break;
+	  break;
 
-    case Lisp_Overlay:
-      strout ("#<overlay ", -1, printcharfun);
-      if (!(XMARKER (OVERLAY_START (obj))->buffer))
-	strout ("in no buffer", -1, printcharfun);
-      else
-	{
-	  sprintf (buf, "from %d to %d in ",
-		   marker_position (OVERLAY_START (obj)),
-		   marker_position (OVERLAY_END   (obj)));
+	case Lisp_Misc_Boolfwd:
+	  sprintf (buf, "#<boolfwd to %s>",
+		   (*XBOOLFWD (obj)->boolvar ? "t" : "nil"));
 	  strout (buf, -1, printcharfun);
-	  print_string (XMARKER (OVERLAY_START (obj))->buffer->name,
-			printcharfun);
-	}
-      PRINTCHAR ('>');
-      break;
+	  break;
 
+	case Lisp_Misc_Objfwd:
+	  strout (buf, "#<objfwd to ", -1, printcharfun);
+	  print (*XOBJFWD (obj)->objvar, printcharfun, escapeflag);
+	  PRINTCHAR ('>');
+	  break;
+
+	case Lisp_Misc_Buffer_Objfwd:
+	  strout (buf, "#<buffer_objfwd to ", -1, printcharfun);
+	  print (*(Lisp_Object *)((char *)current_buffer
+				  + XBUFFER_OBJFWD (obj)->offset),
+		 printcharfun, escapeflag);
+	  PRINTCHAR ('>');
+	  break;
+
+	case Lisp_Misc_Kboard_Objfwd:
+	  strout (buf, "#<kboard_objfwd to ", -1, printcharfun);
+	  print (*(Lisp_Object *)((char *) current_kboard
+				  + XKBOARD_OBJFWD (obj)->offset),
+		 printcharfun, escapeflag);
+	  PRINTCHAR ('>');
+	  break;
+
+	case Lisp_Misc_Buffer_Local_Value:
+	  strout ("#<buffer_local_value ", -1, printcharfun);
+	  goto do_buffer_local;
+	case Lisp_Misc_Some_Buffer_Local_Value:
+	  strout ("#<some_buffer_local_value ", -1, printcharfun);
+	do_buffer_local:
+	  strout ("[realvalue] ", -1, printcharfun);
+	  print (XBUFFER_LOCAL_VALUE (obj)->car, printcharfun, escapeflag);
+	  strout ("[buffer] ", -1, printcharfun);
+	  print (XCONS (XBUFFER_LOCAL_VALUE (obj)->cdr)->car,
+		 printcharfun, escapeflag);
+	  strout ("[alist-elt] ", -1, printcharfun);
+	  print (XCONS (XCONS (XBUFFER_LOCAL_VALUE (obj)->cdr)->cdr)->car,
+		 printcharfun, escapeflag);
+	  strout ("[default-value] ", -1, printcharfun);
+	  print (XCONS (XCONS (XBUFFER_LOCAL_VALUE (obj)->cdr)->cdr)->cdr,
+		 printcharfun, escapeflag);
+	  PRINTCHAR ('>');
+	  break;
+
+	default:
+	  goto badtype;
+	}
+      break;
 #endif /* standalone */
 
-    case Lisp_Subr:
-      strout ("#<subr ", -1, printcharfun);
-      strout (XSUBR (obj)->symbol_name, -1, printcharfun);
-      PRINTCHAR ('>');
-      break;
+    default:
+    badtype:
+      {
+	/* We're in trouble if this happens!
+	   Probably should just abort () */
+	strout ("#<EMACS BUG: INVALID DATATYPE ", -1, printcharfun);
+	if (MISCP (obj))
+	  sprintf (buf, "(MISC 0x%04x)", (int) XMISCTYPE (obj));
+	else if (VECTORLIKEP (obj))
+	  sprintf (buf, "(PVEC 0x%08x)", (int) XVECTOR (obj)->size);
+	else
+	  sprintf (buf, "(0x%02x)", (int) XTYPE (obj));
+	strout (buf, -1, printcharfun);
+	strout (" Save your buffers immediately and please report this bug>",
+		-1, printcharfun);
+      }
     }
 
   print_depth--;

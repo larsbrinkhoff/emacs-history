@@ -1,5 +1,5 @@
 /* Interfaces to system-dependent kernel and library entries.
-   Copyright (C) 1985, 86, 87, 88, 93, 94 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 88, 93, 94, 95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -40,6 +40,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef read
 #undef write
 
+#ifdef WINDOWSNT
+#define read _read
+#define write _write
+#include <windows.h>
+extern int errno;
+#endif /* not WINDOWSNT */
+
 #ifndef close
 #define sys_close close
 #else 
@@ -67,6 +74,11 @@ extern int h_errno;
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+
+/* Get _POSIX_VDISABLE, if it is available.  */
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida, MW Aug 1993 */
 #include <dos.h>
@@ -97,7 +109,7 @@ extern int errno;
 #ifndef RAB$C_BID
 #include <rab.h>
 #endif
-#define	MAXIOSIZE ( 32 * PAGESIZE )	/* Don't I/O more than 32 blocks at a time */
+#define MAXIOSIZE (32 * PAGESIZE) /* Don't I/O more than 32 blocks at a time */
 #endif /* VMS */
 
 #ifndef BSD4_1
@@ -111,15 +123,6 @@ extern int errno;
 #endif
 #endif
 #endif /* not 4.1 bsd */
-
-#ifdef BROKEN_FASYNC
-/* On some systems (DGUX comes to mind real fast) FASYNC causes
-   background writes to the terminal to stop all processes in the
-   process group when invoked under the csh (and probably any shell
-   with job control). This stops Emacs dead in its tracks when coming
-   up under X11. */
-#undef FASYNC
-#endif
 
 #ifndef MSDOS
 #include <sys/ioctl.h>
@@ -159,12 +162,38 @@ extern int quit_char;
 #include "dispextern.h"
 #include "process.h"
 
+#ifdef WINDOWSNT
+#include <direct.h>
+/* In process.h which conflicts with the local copy.  */
+#define _P_WAIT 0
+int _CRTAPI1 _spawnlp (int, const char *, const char *, ...);
+int _CRTAPI1 _getpid (void);
+#endif
+
 #ifdef NONSYSTEM_DIR_LIBRARY
 #include "ndir.h"
 #endif /* NONSYSTEM_DIR_LIBRARY */
 
 #include "syssignal.h"
 #include "systime.h"
+#ifdef HAVE_UTIME_H
+#include <utime.h>
+#endif
+
+#ifndef HAVE_UTIMES
+#ifndef HAVE_STRUCT_UTIMBUF
+/* We want to use utime rather than utimes, but we couldn't find the
+   structure declaration.  We'll use the traditional one.  */
+struct utimbuf {
+  long actime;
+  long modtime;
+};
+#endif
+#endif
+
+#ifndef VFORK_RETURN_TYPE
+#define VFORK_RETURN_TYPE int
+#endif
 
 /* LPASS8 is new in 4.3, and makes cbreak mode provide all 8 bits.  */
 #ifndef LPASS8
@@ -188,10 +217,9 @@ static int baud_convert[] =
 extern short ospeed;
 
 /* The file descriptor for Emacs's input terminal.
-   Under Unix, this is normaly zero except when using X;
-   under VMS, we place the input channel number here.
-   This allows us to write more code that works for both VMS and Unix.  */
-static int input_fd;
+   Under Unix, this is normally zero except when using X;
+   under VMS, we place the input channel number here.  */
+int input_fd;
 
 /* Specify a different file descriptor for further input operations.  */
 
@@ -206,6 +234,7 @@ change_input_fd (fd)
 
 discard_tty_input ()
 {
+#ifndef WINDOWSNT
   struct emacs_tty buf;
 
   if (noninteractive)
@@ -228,15 +257,16 @@ discard_tty_input ()
     ioctl (input_fd, TIOCFLUSH, &zero);
   }
 #else /* not Apollo */
-#ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
+#ifdef MSDOS    /* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
   while (dos_keyread () != -1)
-  	;
+    ;
 #else /* not MSDOS */
   EMACS_GET_TTY (input_fd, &buf);
   EMACS_SET_TTY (input_fd, &buf, 0);
 #endif /* not MSDOS */
 #endif /* not Apollo */
 #endif /* not VMS */
+#endif /* not WINDOWSNT */
 }
 
 #ifdef SIGTSTP
@@ -247,6 +277,9 @@ discard_tty_input ()
 stuff_char (c)
      char c;
 {
+  if (read_socket_hook)
+    return;
+
 /* Should perhaps error if in batch mode */
 #ifdef TIOCSTI
   ioctl (input_fd, TIOCSTI, &c);
@@ -263,9 +296,9 @@ init_baud_rate ()
     ospeed = 0;
   else
     {
-#ifdef MSDOS
+#ifdef DOS_NT
     ospeed = 15;
-#else
+#else  /* not DOS_NT */
 #ifdef VMS
       struct sensemode sg;
 
@@ -305,11 +338,11 @@ init_baud_rate ()
 #endif /* not HAVE_TERMIO */
 #endif /* not HAVE_TERMIOS */
 #endif /* not VMS */
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
     }
    
   baud_rate = (ospeed < sizeof baud_convert / sizeof baud_convert[0]
- 	       ? baud_convert[ospeed] : 9600);
+	       ? baud_convert[ospeed] : 9600);
   if (baud_rate == 0)
     baud_rate = 1200;
 }
@@ -339,7 +372,7 @@ wait_without_blocking ()
 #endif /* not subprocesses */
 
 int wait_debugging;   /* Set nonzero to make following function work under dbx
-		         (at least for bsd).  */
+			 (at least for bsd).  */
 
 SIGTYPE
 wait_for_termination_signal ()
@@ -370,7 +403,7 @@ wait_for_termination (pid)
 	 if that causes the problem to go away or get worse.  */
       sigsetmask (sigmask (SIGCHLD));
       if (0 > kill (pid, 0))
-        {
+	{
 	  sigsetmask (SIGEMPTYMASK);
 	  kill (getpid (), SIGCHLD);
 	  break;
@@ -385,7 +418,7 @@ wait_for_termination (pid)
 	break;
       wait (0);
 #else /* neither BSD nor UNIPLUS: random sysV */
-#ifdef POSIX_SIGNALS	/* would this work for LINUX as well? */
+#ifdef POSIX_SIGNALS    /* would this work for LINUX as well? */
       sigblock (sigmask (SIGCHLD));
       if (0 > kill (pid, 0))
 	{
@@ -403,12 +436,17 @@ wait_for_termination (pid)
 	}
       sigpause (SIGCHLD);
 #else /* not HAVE_SYSV_SIGPAUSE */
+#ifdef WINDOWSNT
+      wait (0);
+      break;
+#else /* not WINDOWSNT */
       if (0 > kill (pid, 0))
 	break;
       /* Using sleep instead of pause avoids timing error.
 	 If the inferior dies just before the sleep,
 	 we lose just one second.  */
       sleep (1);
+#endif /* not WINDOWSNT */
 #endif /* not HAVE_SYSV_SIGPAUSE */
 #endif /* not POSIX_SIGNALS */
 #endif /* not UNIPLUS */
@@ -466,7 +504,7 @@ flush_pending_output (channel)
 child_setup_tty (out)
      int out;
 {
-#ifndef MSDOS
+#ifndef DOS_NT
   struct emacs_tty s;
 
   EMACS_GET_TTY (out, &s);
@@ -495,8 +533,8 @@ child_setup_tty (out)
 
   s.main.c_lflag |= ICANON;	/* Enable erase/kill and eof processing */
   s.main.c_cc[VEOF] = 04;	/* insure that EOF is Control-D */
-  s.main.c_cc[VERASE] = 0377;	/* disable erase processing */
-  s.main.c_cc[VKILL] = 0377;	/* disable kill processing */
+  s.main.c_cc[VERASE] = CDISABLE;	/* disable erase processing */
+  s.main.c_cc[VKILL] = CDISABLE;	/* disable kill processing */
 
 #ifdef HPUX
   s.main.c_cflag = (s.main.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
@@ -554,18 +592,11 @@ child_setup_tty (out)
     ioctl (out, FIOASYNC, &zero);
   }
 #endif /* RTU */
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
 }
 #endif /* not VMS */
 
 #endif /* subprocesses */
-
-/*ARGSUSED*/
-setpgrp_of_tty (pid)
-     int pid;
-{
-  EMACS_SET_TTY_PGRP (input_fd, &pid);
-}
 
 /* Record a signal code and the handler for it.  */
 struct save_signal
@@ -672,11 +703,10 @@ sys_subshell ()
      which somehow wedges the hp compiler.  So instead...  */
 
   dir = intern ("default-directory");
-  /* Can't use NILP */
-  if (XFASTINT (Fboundp (dir)) == XFASTINT (Qnil))
+  if (NILP (Fboundp (dir)))
     goto xyzzy;
   dir = Fsymbol_value (dir);
-  if (XTYPE (dir) != Lisp_String)
+  if (!STRINGP (dir))
     goto xyzzy;
 
   dir = expand_and_dir_to_file (Funhandled_file_name_directory (dir), Qnil);
@@ -687,15 +717,19 @@ sys_subshell ()
   str[len] = 0;
  xyzzy:
 
+#ifdef WINDOWSNT
+  pid = -1;
+#else /* not WINDOWSNT */
   pid = vfork ();
 
   if (pid == -1)
     error ("Can't spawn subshell");
   if (pid == 0)
+#endif /* not WINDOWSNT */
     {
       char *sh;
 
-#ifdef MSDOS	/* MW, Aug 1993 */
+#ifdef MSDOS    /* MW, Aug 1993 */
       getwd (oldwd);
 #endif
       sh = (char *) egetenv ("SHELL");
@@ -719,15 +753,24 @@ sys_subshell ()
       }
 #endif
 
-#ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida */
+#ifdef MSDOS    /* Demacs 1.1.2 91/10/20 Manabu Higashida */
       st = system (sh);
       chdir (oldwd);
       if (st)
-        report_file_error ("Can't execute subshell", Fcons (build_string (sh), Qnil));
+	report_file_error ("Can't execute subshell", Fcons (build_string (sh), Qnil));
 #else /* not MSDOS */
+#ifdef  WINDOWSNT
+      /* Waits for process completion */
+      pid = _spawnlp (_P_WAIT, sh, sh, NULL);
+      if (pid == -1)
+	write (1, "Can't execute subshell", 22);
+
+      take_console ();
+#else   /* not WINDOWSNT */
       execlp (sh, sh, 0);
       write (1, "Can't execute subshell", 22);
       _exit (1);
+#endif  /* not WINDOWSNT */
 #endif /* not MSDOS */
     }
 
@@ -763,12 +806,14 @@ restore_signal_handlers (saved_handlers)
 
 int old_fcntl_flags;
 
-init_sigio ()
+init_sigio (fd)
+     int fd;
 {
 #ifdef FASYNC
-  old_fcntl_flags = fcntl (input_fd, F_GETFL, 0) & ~FASYNC;
+  old_fcntl_flags = fcntl (fd, F_GETFL, 0) & ~FASYNC;
+  fcntl (fd, F_SETFL, old_fcntl_flags | FASYNC);
 #endif
-  request_sigio ();
+  interrupts_deferred = 0;
 }
 
 reset_sigio ()
@@ -780,6 +825,9 @@ reset_sigio ()
 
 request_sigio ()
 {
+  if (read_socket_hook)
+    return;
+
 #ifdef SIGWINCH
   sigunblock (sigmask (SIGWINCH));
 #endif
@@ -790,6 +838,9 @@ request_sigio ()
 
 unrequest_sigio ()
 {
+  if (read_socket_hook)
+    return;
+
 #ifdef SIGWINCH
   sigblock (sigmask (SIGWINCH));
 #endif
@@ -803,6 +854,10 @@ unrequest_sigio ()
 request_sigio ()
 {
   int on = 1;
+
+  if (read_socket_hook)
+    return;
+
   ioctl (input_fd, FIOASYNC, &on);
   interrupts_deferred = 0;
 }
@@ -810,6 +865,9 @@ request_sigio ()
 unrequest_sigio ()
 {
   int off = 0;
+
+  if (read_socket_hook)
+    return;
 
   ioctl (input_fd, FIOASYNC, &off);
   interrupts_deferred = 1;
@@ -826,6 +884,9 @@ request_sigio ()
   int on = 1;
   sigset_t st;
 
+  if (read_socket_hook)
+    return;
+
   sigemptyset(&st);
   sigaddset(&st, SIGIO);
   ioctl (input_fd, FIOASYNC, &on);
@@ -837,6 +898,9 @@ unrequest_sigio ()
 {
   int off = 0;
 
+  if (read_socket_hook)
+    return;
+
   ioctl (input_fd, FIOASYNC, &off);
   interrupts_deferred = 1;
 }
@@ -845,11 +909,17 @@ unrequest_sigio ()
 
 request_sigio ()
 {
+  if (read_socket_hook)
+    return;
+
   croak ("request_sigio");
 }
  
 unrequest_sigio ()
 {
+  if (read_socket_hook)
+    return;
+
   croak ("unrequest_sigio");
 }
  
@@ -937,11 +1007,11 @@ emacs_get_tty (fd, settings)
     return -1;
 
 #else
-#ifndef MSDOS
+#ifndef DOS_NT
   /* I give up - I hope you have the BSD ioctls.  */
   if (ioctl (fd, TIOCGETP, &settings->main) < 0)
     return -1;
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
 #endif
 #endif
 #endif
@@ -965,15 +1035,14 @@ emacs_get_tty (fd, settings)
 
 
 /* Set the parameters of the tty on FD according to the contents of
-   *SETTINGS.  If WAITP is non-zero, we wait for all queued output to
-   be written before making the change; otherwise, we forget any
-   queued input and make the change immediately.
+   *SETTINGS.  If FLUSHP is non-zero, we discard input.
    Return 0 if all went well, and -1 if anything failed.  */
+
 int
-emacs_set_tty (fd, settings, waitp)
+emacs_set_tty (fd, settings, flushp)
      int fd;
      struct emacs_tty *settings;
-     int waitp;
+     int flushp;
 {
   /* Set the primary parameters - baud rate, character size, etcetera.  */
 #ifdef HAVE_TCATTR
@@ -987,7 +1056,7 @@ emacs_set_tty (fd, settings, waitp)
      AIX requires this to keep tty from hanging occasionally."  */
   /* This make sure that we don't loop indefinitely in here.  */
   for (i = 0 ; i < 10 ; i++)
-    if (tcsetattr (fd, waitp ? TCSAFLUSH : TCSADRAIN, &settings->main) < 0)
+    if (tcsetattr (fd, flushp ? TCSAFLUSH : TCSADRAIN, &settings->main) < 0)
       {
 	if (errno == EINTR)
 	  continue;
@@ -1017,7 +1086,7 @@ emacs_set_tty (fd, settings, waitp)
 #else
 #ifdef HAVE_TERMIO
   /* The SYSV-style interface?  */
-  if (ioctl (fd, waitp ? TCSETAW : TCSETAF, &settings->main) < 0)
+  if (ioctl (fd, flushp ? TCSETAF : TCSETAW, &settings->main) < 0)
     return -1;
 
 #else
@@ -1029,11 +1098,11 @@ emacs_set_tty (fd, settings, waitp)
     return -1;
 
 #else
-#ifndef MSDOS
+#ifndef DOS_NT
   /* I give up - I hope you have the BSD ioctls.  */
-  if (ioctl (fd, (waitp) ? TIOCSETP : TIOCSETN, &settings->main) < 0)
+  if (ioctl (fd, (flushp) ? TIOCSETP : TIOCSETN, &settings->main) < 0)
     return -1;
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
 
 #endif
 #endif
@@ -1060,7 +1129,11 @@ emacs_set_tty (fd, settings, waitp)
 /* The initial tty mode bits */
 struct emacs_tty old_tty;
 
-int term_initted;		/* 1 if outer tty status has been recorded */
+/* 1 if we have been through init_sys_modes.  */
+int term_initted;
+
+/* 1 if outer tty status has been recorded.  */
+int old_tty_valid;
 
 #ifdef BSD4_1
 /* BSD 4.1 needs to keep track of the lmode bits in order to start
@@ -1142,10 +1215,16 @@ init_sys_modes ()
     narrow_foreground_group ();
 #endif
 
-  EMACS_GET_TTY (input_fd, &old_tty);
-
+#ifdef HAVE_X_WINDOWS
+  /* Emacs' window system on MSDOG uses the `internal terminal' and therefore
+     needs the initialization code below.  */
   if (!read_socket_hook && EQ (Vwindow_system, Qnil))
+#endif
     {
+      EMACS_GET_TTY (input_fd, &old_tty);
+
+      old_tty_valid = 1;
+
       tty = old_tty;
 
 #if defined (HAVE_TERMIO) || defined (HAVE_TERMIOS)
@@ -1223,9 +1302,14 @@ init_sys_modes ()
       tty.main.c_cc[VSTOP] = CDISABLE;
 #endif /* VSTOP */
 #endif /* mips or HAVE_TCATTR */
+#ifdef SET_LINE_DISCIPLINE
+      /* Need to explicitely request TERMIODISC line discipline or
+         Ultrix's termios does not work correctly.  */
+      tty.main.c_line = SET_LINE_DISCIPLINE;
+#endif
 #ifdef AIX
 #ifndef IBMR2AIX
-      /* AIX enhanced edit loses NULs, so disable it */
+      /* AIX enhanced edit loses NULs, so disable it.  */
       tty.main.c_line = 0;
       tty.main.c_iflag &= ~ASCEDIT;
 #else
@@ -1252,12 +1336,12 @@ init_sys_modes ()
 	tty.main.tt_char &= ~TT$M_TTSYNC;
       tty.main.tt2_char |= TT2$M_PASTHRU | TT2$M_XON;
 #else /* not VMS (BSD, that is) */
-#ifndef MSDOS
+#ifndef DOS_NT
       tty.main.sg_flags &= ~(ECHO | CRMOD | XTABS);
       if (meta_key)
 	tty.main.sg_flags |= ANYP;
       tty.main.sg_flags |= interrupt_input ? RAW : CBREAK;
-#endif
+#endif /* not DOS_NT */
 #endif /* not VMS (BSD, that is) */
 #endif /* not HAVE_TERMIO */
 
@@ -1296,7 +1380,8 @@ init_sys_modes ()
       tty.ltchars = new_ltchars;
 #endif /* HAVE_LTCHARS */
 #ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida, MW Aug 1993 */
-      internal_terminal_init ();
+      if (!term_initted)
+	internal_terminal_init ();
       dos_ttraw ();
 #endif
 
@@ -1314,7 +1399,13 @@ init_sys_modes ()
 #endif
 #endif
 
-#ifdef AIX
+#if defined (HAVE_TERMIOS) || defined (HPUX9)
+#ifdef TCOON
+      if (!flow_control) tcflow (input_fd, TCOON);
+#endif
+#endif
+
+#ifdef AIXHFT
       hft_init ();
 #ifdef IBMR2AIX
       {
@@ -1326,7 +1417,7 @@ init_sys_modes ()
 	  write (1, "\033[20l", 5);
       }
 #endif
-#endif
+#endif /* AIXHFT */
 
 #ifdef VMS
 /*  Appears to do nothing when in PASTHRU mode.
@@ -1345,7 +1436,7 @@ init_sys_modes ()
     {
       old_fcntl_owner = fcntl (input_fd, F_GETOWN, 0);
       fcntl (input_fd, F_SETOWN, getpid ());
-      init_sigio ();
+      init_sigio (input_fd);
     }
 #endif /* F_GETOWN */
 #endif /* F_SETOWN_BUG */
@@ -1353,7 +1444,7 @@ init_sys_modes ()
 
 #ifdef BSD4_1
   if (interrupt_input)
-    init_sigio ();
+    init_sigio (input_fd);
 #endif
 
 #ifdef VMS  /* VMS sometimes has this symbol but lacks setvbuf.  */
@@ -1506,13 +1597,26 @@ reset_sys_modes ()
     }
   if (!term_initted)
     return;
+#ifdef HAVE_X_WINDOWS
+  /* Emacs' window system on MSDOG uses the `internal terminal' and therefore
+     needs the clean-up code below.  */
   if (read_socket_hook || !EQ (Vwindow_system, Qnil))
     return;
+#endif
   cursor_to (FRAME_HEIGHT (selected_frame) - 1, 0);
+#ifdef MSDOS
+  if (!EQ (Vwindow_system, Qnil))
+    {
+      /* Change to grey on white.  */
+      putchar ('\e');
+      putchar ('A');
+      putchar (7);
+    }
+#endif
   clear_end_of_line (FRAME_WIDTH (selected_frame));
   /* clear_end_of_line may move the cursor */
   cursor_to (FRAME_HEIGHT (selected_frame) - 1, 0);
-#ifdef IBMR2AIX
+#if defined (IBMR2AIX) && defined (AIXHFT)
   {
     /* HFT devices normally use ^J as a LF/CR.  We forced it to 
        do the LF only.  Now, we need to reset it. */
@@ -1551,14 +1655,22 @@ reset_sys_modes ()
     reset_sigio ();
 #endif /* BSD4_1 */
 
-  while (EMACS_SET_TTY (input_fd, &old_tty, 0) < 0 && errno == EINTR)
-    ;
+  if (old_tty_valid)
+    while (EMACS_SET_TTY (input_fd, &old_tty, 0) < 0 && errno == EINTR)
+      ;
 
 #ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida */
   dos_ttcooked ();
 #endif
 
-#ifdef AIX
+#ifdef SET_LINE_DISCIPLINE
+  /* Ultrix's termios *ignores* any line discipline except TERMIODISC.
+     A different old line discipline is therefore not restored, yet.
+     Restore the old line discipline by hand.  */
+  ioctl (0, TIOCSETD, &old_tty.main.c_line);
+#endif
+
+#ifdef AIXHFT
   hft_reset ();
 #endif
 
@@ -1699,12 +1811,8 @@ kbd_input_ast ()
     {
       struct input_event e;
       e.kind = ascii_keystroke;
-      XSET (e.code, Lisp_Int, c);
-#ifdef MULTI_FRAME
-      XSET(e.frame_or_window, Lisp_Frame, selected_frame);
-#else
-      e.frame_or_window = Qnil;
-#endif
+      XSETINT (e.code, c);
+      XSETFRAME (e.frame_or_window, selected_frame);
       kbd_buffer_store_event (&e);
     }
   if (input_available_clear_time)
@@ -1832,7 +1940,8 @@ sys_sleep (timeval)
     SYS$WAITFR (timer_ef);	  /* Wait for timer expiry only */
 }
 
-init_sigio ()
+init_sigio (fd)
+     int fd;
 {
   request_sigio ();
 }
@@ -1875,7 +1984,7 @@ unrequest_sigio ()
  *
  */
 
-#if !defined (CANNOT_UNEXEC) && !defined (HAVE_TEXT_START)
+#ifndef HAVE_TEXT_START
 char *
 start_of_text ()
 {
@@ -1891,7 +2000,7 @@ start_of_text ()
 #endif /* GOULD */
 #endif /* TEXT_START */
 }
-#endif /* not CANNOT_UNEXEC and not HAVE_TEXT_START */
+#endif /* not HAVE_TEXT_START */
 
 /*
  *	Return the address of the start of the data segment prior to
@@ -2018,7 +2127,7 @@ init_system_name ()
   uname (&uts);
   Vsystem_name = build_string (uts.nodename);
 #else /* HAVE_GETHOSTNAME */
-  int hostname_size = 256;
+  unsigned int hostname_size = 256;
   char *hostname = (char *) alloca (hostname_size);
 
   /* Try to get the host name; if the buffer is too short, try
@@ -2103,9 +2212,12 @@ init_system_name ()
 }
 
 #ifndef VMS
-#ifndef HAVE_SELECT
+#if !defined (HAVE_SELECT) || defined (BROKEN_SELECT_NON_X)
 
-#ifdef HAVE_X_WINDOWS
+#include "sysselect.h"
+#undef select
+
+#if defined (HAVE_X_WINDOWS) && !defined (HAVE_SELECT)
 /* Cause explanatory error message at compile time,
    since the select emulation is not good enough for X.  */
 int *x = &x_windows_lose_if_no_select_system_call;
@@ -2140,15 +2252,18 @@ select_alarm ()
     longjmp (read_alarm_throw, 1);
 }
 
+#ifndef WINDOWSNT
 /* Only rfds are checked.  */
 int
-select (nfds, rfds, wfds, efds, timeout)
+sys_select (nfds, rfds, wfds, efds, timeout)
      int nfds;
-     int *rfds, *wfds, *efds, *timeout;
+     SELECT_TYPE *rfds, *wfds, *efds;
+     EMACS_TIME *timeout;
 {
-  int ravail = 0, orfds = 0, old_alarm;
-  int timeoutval = timeout ? *timeout : 100000;
-  int *local_timeout = &timeoutval;
+  int ravail = 0, old_alarm;
+  SELECT_TYPE orfds;
+  int timeoutval;
+  int *local_timeout;
   extern int proc_buffered_char[];
 #ifndef subprocesses
   int process_tick = 0, update_tick = 0;
@@ -2158,43 +2273,58 @@ select (nfds, rfds, wfds, efds, timeout)
   SIGTYPE (*old_trap) ();
   unsigned char buf;
 
+#if defined (HAVE_SELECT) && defined (HAVE_X_WINDOWS)
+  /* If we're using X, then the native select will work; we only need the
+     emulation for non-X usage.  */
+  if (!NILP (Vwindow_system))
+    return select (nfds, rfds, wfds, efds, timeout);
+#endif
+  timeoutval = timeout ? EMACS_SECS (*timeout) : 100000;
+  local_timeout = &timeoutval;
+  FD_ZERO (&orfds);
   if (rfds)
     {
       orfds = *rfds;
-      *rfds = 0;
+      FD_ZERO (rfds);
     }
   if (wfds)
-    *wfds = 0;
+    FD_ZERO (wfds);
   if (efds)
-    *efds = 0;
+    FD_ZERO (efds);
 
   /* If we are looking only for the terminal, with no timeout,
      just read it and wait -- that's more efficient.  */
-  if (orfds == 1 && *local_timeout == 100000 && process_tick == update_tick)
+  if (*local_timeout == 100000 && process_tick == update_tick
+      && FD_ISSET (0, &orfds))
     {
+      int fd;
+      for (fd = 1; fd < nfds; ++fd)
+	if (FD_ISSET (fd, &orfds))
+	  goto hardway;
       if (! detect_input_pending ())
 	read_input_waiting ();
-      *rfds = 1;
+      FD_SET (0, rfds);
       return 1;
     }
 
+ hardway:
   /* Once a second, till the timer expires, check all the flagged read
    * descriptors to see if any input is available.  If there is some then
    * set the corresponding bit in the return copy of rfds.
    */ 
   while (1)
     {
-      register int to_check, bit, fd;
+      register int to_check, fd;
 
       if (rfds)
 	{
-	  for (to_check = nfds, bit = 1, fd = 0; --to_check >= 0; bit <<= 1, fd++)
+	  for (to_check = nfds, fd = 0; --to_check >= 0; fd++)
 	    {
-	      if (orfds & bit)
+	      if (FD_ISSET (fd, &orfds))
 		{
 		  int avail = 0, status = 0;
 
-		  if (bit == 1)
+		  if (fd == 0)
 		    avail = detect_input_pending (); /* Special keyboard handler */
 		  else
 		    {
@@ -2219,7 +2349,7 @@ select (nfds, rfds, wfds, efds, timeout)
 		    }
 		  if (status >= 0 && avail > 0)
 		    {
-		      (*rfds) |= bit;
+		      FD_SET (fd, rfds);
 		      ravail++;
 		    }
 		}
@@ -2236,13 +2366,13 @@ select (nfds, rfds, wfds, efds, timeout)
 	     && process_tick == update_tick)
 	{
 #ifdef MSDOS
-	  sleep_or_kbd_hit (SELECT_PAUSE, (orfds & 1) != 0);
+	  sleep_or_kbd_hit (SELECT_PAUSE, FD_ISSET (0, &orfds) != 0);
 	  select_alarm ();
 #else /* not MSDOS */
 	  /* If we are interested in terminal input,
 	     wait by reading the terminal.
 	     That makes instant wakeup for terminal input at least.  */
-	  if (orfds & 1)
+	  if (FD_ISSET (0, &orfds))
 	    {
 	      read_input_waiting ();
 	      if (detect_input_pending ())
@@ -2270,6 +2400,7 @@ select (nfds, rfds, wfds, efds, timeout)
     }
   return ravail;
 }
+#endif /* not WINDOWSNT */
 
 /* Read keyboard input into the standard buffer,
    waiting for at least one character.  */
@@ -2304,7 +2435,7 @@ read_input_waiting ()
 	  /* Don't look at input that follows a C-g too closely.
 	     This reduces lossage due to autorepeat on C-g.  */
 	  if (buf[i].kind == ascii_keystroke
-	      && XINT(buf[i].code) == quit_char)
+	      && buf[i].code == quit_char)
 	    break;
 	}
     }
@@ -2315,7 +2446,7 @@ read_input_waiting ()
 
       /* Scan the chars for C-g and store them in kbd_buffer.  */
       e.kind = ascii_keystroke;
-      e.frame_or_window = selected_frame;
+      XSETFRAME (e.frame_or_window, selected_frame);
       e.modifiers = 0;
       for (i = 0; i < nread; i++)
 	{
@@ -2330,7 +2461,7 @@ read_input_waiting ()
 		buf[i] &= ~0x80;
 	    }
 
-	  XSET (e.code, Lisp_Int, buf[i]);
+	  XSETINT (e.code, buf[i]);
 	  kbd_buffer_store_event (&e);
 	  /* Don't look at input that follows a C-g too closely.
 	     This reduces lossage due to autorepeat on C-g.  */
@@ -2363,12 +2494,13 @@ sys_open (path, oflag, mode)
     return open (path, oflag);
 }
 
-init_sigio ()
+init_sigio (fd)
+     int fd;
 {
   if (noninteractive)
     return;
   lmode = LINTRUP | lmode;
-  ioctl (0, TIOCLSET, &lmode);
+  ioctl (fd, TIOCLSET, &lmode);
 }
 
 reset_sigio ()
@@ -2523,124 +2655,80 @@ sys_sigsetmask (sigset_t new_mask)
 
 #endif /* POSIX_SIGNALS */
 
-#ifndef BSTRING
+#ifndef HAVE_RANDOM
+#ifdef random
+#define HAVE_RANDOM
+#endif
+#endif
 
-#ifndef bzero
+/* Figure out how many bits the system's random number generator uses.
+   `random' and `lrand48' are assumed to return 31 usable bits.
+   BSD `rand' returns a 31 bit value but the low order bits are unusable;
+   so we'll shift it and treat it like the 15-bit USG `rand'.  */
+
+#ifndef RAND_BITS
+# ifdef HAVE_RANDOM
+#  define RAND_BITS 31
+# else /* !HAVE_RANDOM */
+#  ifdef HAVE_LRAND48
+#   define RAND_BITS 31
+#   define random lrand48
+#  else /* !HAVE_LRAND48 */
+#   define RAND_BITS 15
+#   if RAND_MAX == 32767
+#    define random rand
+#   else /* RAND_MAX != 32767 */
+#    if RAND_MAX == 2147483647
+#     define random() (rand () >> 16)
+#    else /* RAND_MAX != 2147483647 */
+#     ifdef USG
+#      define random rand
+#     else
+#      define random() (rand () >> 16)
+#     endif /* !BSD */
+#    endif /* RAND_MAX != 2147483647 */
+#   endif /* RAND_MAX != 32767 */
+#  endif /* !HAVE_LRAND48 */
+# endif /* !HAVE_RANDOM */
+#endif /* !RAND_BITS */
 
 void
-bzero (b, length)
-     register char *b;
-     register int length;
+seed_random (arg)
+     long arg;
 {
-#ifdef VMS
-  short zero = 0;
-  long max_str = 65535;
-
-  while (length > max_str) {
-    (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
-    length -= max_str;
-    b += max_str;
-  }
-  max_str = length;
-  (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
+#ifdef HAVE_RANDOM
+  srandom ((unsigned int)arg);
 #else
-  while (length-- > 0)
-    *b++ = 0;
-#endif /* not VMS */
+# ifdef HAVE_LRAND48
+  srand48 (arg);
+# else
+  srand ((unsigned int)arg);
+# endif
+#endif
 }
-
-#endif /* no bzero */
-
-#ifndef bcopy
-/* Saying `void' requires a declaration, above, where bcopy is used
-   and that declaration causes pain for systems where bcopy is a macro.  */
-bcopy (b1, b2, length)
-     register char *b1;
-     register char *b2;
-     register int length;
-{
-#ifdef VMS
-  long max_str = 65535;
-
-  while (length > max_str) {
-    (void) LIB$MOVC3 (&max_str, b1, b2);
-    length -= max_str;
-    b1 += max_str;
-    b2 += max_str;
-  }
-  max_str = length;
-  (void) LIB$MOVC3 (&length, b1, b2);
-#else
-  while (length-- > 0)
-    *b2++ = *b1++;
-#endif /* not VMS */
-}
-#endif /* no bcopy */
-
-#ifndef bcmp
-int
-bcmp (b1, b2, length)	/* This could be a macro! */
-     register char *b1;
-     register char *b2;
-     register int length;
-{
-#ifdef VMS
-  struct dsc$descriptor_s src1 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b1};
-  struct dsc$descriptor_s src2 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b2};
-
-  return STR$COMPARE (&src1, &src2);
-#else
-  while (length-- > 0)
-    if (*b1++ != *b2++)
-      return 1;
-
-  return 0;
-#endif /* not VMS */
-}
-#endif /* no bcmp */
-
-#endif /* not BSTRING */
-
-#ifndef HAVE_RANDOM
-#ifndef random 
 
 /*
- *	The BSD random returns numbers in the range of
- *	0 to 2e31 - 1.  The USG rand returns numbers in the
- *	range of 0 to 2e15 - 1.  This is probably not significant
- *	in this usage.
+ * Build a full Emacs-sized word out of whatever we've got.
+ * This suffices even for a 64-bit architecture with a 15-bit rand.
  */
-  
 long
-random ()
+get_random ()
 {
-#ifdef HAVE_LRAND48
-  return lrand48 ();
-#else
-/* The BSD rand returns numbers in the range of 0 to 2e31 - 1,
-   with unusable least significant bits.  The USG rand returns
-   numbers in the range of 0 to 2e15 - 1, all usable.  Let us
-   build a usable 30 bit number from either.  */
-#ifdef USG
-  return (rand () << 15) + rand ();
-#else
-  return (rand () & 0x3fff8000) + (rand () >> 16);
-#endif
-#endif
+  long val = random ();
+#if VALBITS > RAND_BITS
+  val = (val << RAND_BITS) ^ random ();
+#if VALBITS > 2*RAND_BITS
+  val = (val << RAND_BITS) ^ random ();
+#if VALBITS > 3*RAND_BITS
+  val = (val << RAND_BITS) ^ random ();
+#if VALBITS > 4*RAND_BITS
+  val = (val << RAND_BITS) ^ random ();
+#endif /* need at least 5 */
+#endif /* need at least 4 */
+#endif /* need at least 3 */
+#endif /* need at least 2 */
+  return val & ((1L << VALBITS) - 1);
 }
-
-srandom (arg)
-     int arg;
-{
-#ifdef HAVE_LRAND48
-  srand48 (arg);
-#else
-  srand (arg);
-#endif
-}
-
-#endif /* no random */
-#endif /* not HAVE_RANDOM */
 
 #ifdef WRONG_NAME_INSQUE
 
@@ -2759,6 +2847,7 @@ char *sys_errlist[] =
 #endif /* VMS */
 
 #ifndef HAVE_STRERROR
+#ifndef WINDOWSNT
 char *
 strerror (errnum)
      int errnum;
@@ -2770,7 +2859,7 @@ strerror (errnum)
     return sys_errlist[errnum];
   return (char *) "Unknown error";
 }
-
+#endif /* not WINDOWSNT */
 #endif /* ! HAVE_STRERROR */
 
 #ifdef INTERRUPTIBLE_OPEN
@@ -2851,16 +2940,17 @@ sys_write (fildes, buf, nbyte)
 #endif /* INTERRUPTIBLE_IO */
 
 #ifndef HAVE_VFORK
-
+#ifndef WINDOWSNT
 /*
- *	Substitute fork for vfork on USG flavors.
+ *      Substitute fork for vfork on USG flavors.
  */
 
+VFORK_RETURN_TYPE
 vfork ()
 {
   return (fork ());
 }
-
+#endif /* not WINDOWSNT */
 #endif /* not HAVE_VFORK */
 
 #ifdef USG
@@ -2912,10 +3002,12 @@ char *sys_siglist[NSIG + 1] =
   "LAN I/O interrupt",			/* 25 SIGAIO */
   "PTY I/O interrupt",			/* 26 SIGPTY */
   "I/O intervention required",		/* 27 SIGIOINT */
+#ifdef AIXHFT
   "HFT grant",				/* 28 SIGGRANT */
   "HFT retract",			/* 29 SIGRETRACT */
   "HFT sound done",			/* 30 SIGSOUND */
   "HFT input ready",			/* 31 SIGMSG */
+#endif
 #else /* not AIX */
   "bogus signal",			/* 0 */
   "hangup",				/* 1  SIGHUP */
@@ -3022,37 +3114,6 @@ rename (from, to)
 }
 
 #endif
-
-#ifdef MISSING_UTIMES
-
-/* HPUX (among others) sets HAVE_TIMEVAL but does not implement utimes.  */
-
-utimes ()
-{
-}
-#endif
-
-#ifdef IRIS_UTIME
-
-/* The IRIS (3.5) has timevals, but uses sys V utime, and doesn't have the
-   utimbuf structure defined anywhere but in the man page. */
-
-struct utimbuf
- {
-   long actime;
-   long modtime;
- };
-
-utimes (name, tvp)
-     char *name;
-     struct timeval tvp[];
-{
-  struct utimbuf utb;
-  utb.actime  = tvp[0].tv_sec;
-  utb.modtime = tvp[1].tv_sec;
-  utime (name, &utb);
-}
-#endif /* IRIS_UTIME */
 
 
 #ifdef HPUX
@@ -3393,6 +3454,24 @@ readdirver (dirp)
 #endif /* NONSYSTEM_DIR_LIBRARY */
 
 
+int
+set_file_times (filename, atime, mtime)
+     char *filename;
+     EMACS_TIME atime, mtime;
+{
+#ifdef HAVE_UTIMES
+  struct timeval tv[2];
+  tv[0] = atime;
+  tv[1] = mtime;
+  return utimes (filename, tv);
+#else /* not HAVE_UTIMES */
+  struct utimbuf utb;
+  utb.actime = EMACS_SECS (atime);
+  utb.modtime = EMACS_SECS (mtime);
+  return utime (filename, &utb);
+#endif /* not HAVE_UTIMES */
+}
+
 /* mkdir and rmdir functions, for systems which don't have them.  */
 
 #ifndef HAVE_MKDIR
@@ -3505,17 +3584,17 @@ rmdir (dpath)
 	  dup2 (fd, 1);
 	  dup2 (fd, 2);
         }
-      wait_for_termination (cpid);
-  if (synch_process_death != 0 || synch_process_retcode != 0)
-      return -1;		/* /bin/rmdir failed */
+      execl ("/bin/rmdir", "rmdir", dpath, (char *) 0);
+      _exit (-1);		/* Can't exec /bin/rmdir */
+
     default:			/* Parent process */
-      while (cpid != wait (&status));	/* Wait for kid to finish */
+      wait_for_termination (cpid);
     }
 
-  if (WIFSIGNALED (status) || WEXITSTATUS (status) != 0)
+  if (synch_process_death != 0 || synch_process_retcode != 0)
     {
       errno = EIO;		/* We don't know why, but */
-      return -1;		/* /bin/mkdir failed */
+      return -1;		/* /bin/rmdir failed */
     }
 
   return 0;
@@ -3633,8 +3712,8 @@ sys_access (path, mode)
 #else /* not VMS4_4 */
 
 #include <prvdef.h>
-#define	ACE$M_WRITE	2
-#define	ACE$C_KEYID	1
+#define ACE$M_WRITE     2
+#define ACE$C_KEYID     1
 
 static unsigned short memid, grpid;
 static unsigned int uic;
@@ -3667,13 +3746,13 @@ sys_access (filename, type)
       grpid = uic >> 16;
     }
 
-  if (type != 2)		/* not checking write access */
+  if (type != 2)                /* not checking write access */
     return access (filename, type);
 
   /* Check write protection. */
     
-#define	CHECKPRIV(bit)    (prvmask.bit)
-#define	WRITEABLE(field)  (! ((xab.xab$w_pro >> field) & XAB$M_NOWRITE))
+#define CHECKPRIV(bit)    (prvmask.bit)
+#define WRITEABLE(field)  (! ((xab.xab$w_pro >> field) & XAB$M_NOWRITE))
 
   /* Find privilege bits */
   status = SYS$SETPRV (0, 0, 0, prvmask);
@@ -4778,7 +4857,7 @@ srandom (seed)
 }
 #endif /* VMS */
 
-#ifdef AIX
+#ifdef AIXHFT
 
 /* Called from init_sys_modes.  */
 hft_init ()
@@ -4870,4 +4949,111 @@ hft_reset ()
   hftctl (0, HFSKBD, &buf);
 }
 
-#endif /* AIX */
+#endif /* AIXHFT */
+
+#ifdef USE_DL_STUBS
+
+/* These are included on Sunos 4.1 when we do not use shared libraries.
+   X11 libraries may refer to these functions but (we hope) do not
+   actually call them.  */
+
+void *
+dlopen ()
+{
+  return 0;
+}
+
+void *
+dlsym ()
+{
+  return 0;
+}
+
+int
+dlclose ()
+{
+  return -1;
+}
+
+#endif /* USE_DL_STUBS */
+
+#ifndef BSTRING
+
+#ifndef bzero
+
+void
+bzero (b, length)
+     register char *b;
+     register int length;
+{
+#ifdef VMS
+  short zero = 0;
+  long max_str = 65535;
+
+  while (length > max_str) {
+    (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
+    length -= max_str;
+    b += max_str;
+  }
+  max_str = length;
+  (void) LIB$MOVC5 (&zero, &zero, &zero, &max_str, b);
+#else
+  while (length-- > 0)
+    *b++ = 0;
+#endif /* not VMS */
+}
+
+#endif /* no bzero */
+#endif /* BSTRING */
+
+#if (!defined (BSTRING) && !defined (bcopy)) || defined (NEED_BCOPY)
+#undef bcopy
+
+/* Saying `void' requires a declaration, above, where bcopy is used
+   and that declaration causes pain for systems where bcopy is a macro.  */
+bcopy (b1, b2, length)
+     register char *b1;
+     register char *b2;
+     register int length;
+{
+#ifdef VMS
+  long max_str = 65535;
+
+  while (length > max_str) {
+    (void) LIB$MOVC3 (&max_str, b1, b2);
+    length -= max_str;
+    b1 += max_str;
+    b2 += max_str;
+  }
+  max_str = length;
+  (void) LIB$MOVC3 (&length, b1, b2);
+#else
+  while (length-- > 0)
+    *b2++ = *b1++;
+#endif /* not VMS */
+}
+#endif /* (defined (BSTRING) && !defined (bcopy)) || defined (NEED_BCOPY) */
+
+#ifndef BSTRING
+#ifndef bcmp
+int
+bcmp (b1, b2, length)	/* This could be a macro! */
+     register char *b1;
+     register char *b2;
+     register int length;
+{
+#ifdef VMS
+  struct dsc$descriptor_s src1 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b1};
+  struct dsc$descriptor_s src2 = {length, DSC$K_DTYPE_T, DSC$K_CLASS_S, b2};
+
+  return STR$COMPARE (&src1, &src2);
+#else
+  while (length-- > 0)
+    if (*b1++ != *b2++)
+      return 1;
+
+  return 0;
+#endif /* not VMS */
+}
+#endif /* no bcmp */
+#endif /* not BSTRING */

@@ -74,7 +74,8 @@ With arg, enable flow control mode if arg is positive, otherwise disable."
     ;; Tell emacs to pass C-s and C-q to OS.
     (set-input-mode nil t (nth 2 (current-input-mode)))
     ;; Initialize translate table, saving previous mappings, if any.
-    (let ((the-table (make-string 128 0)))
+    (let ((the-table (make-string (max 128 (length keyboard-translate-table))
+				  0)))
       (let ((i 0)
 	    (j (length keyboard-translate-table)))
 	(while (< i j)
@@ -93,7 +94,11 @@ With arg, enable flow control mode if arg is positive, otherwise disable."
     (message (concat 
 	      "XON/XOFF adjustment for " 
 	      (getenv "TERM") 
-	      ":  use C-\\ for C-s  and  use C-^ for C-q."))
+	      ": use "
+	      (single-key-description flow-control-c-s-replacement)
+	      " for C-s, and use "
+	      (single-key-description flow-control-c-q-replacement)
+	      " for C-q"))
     (sleep-for 2)))			; Give user a chance to see message.
 
 ;;;###autoload

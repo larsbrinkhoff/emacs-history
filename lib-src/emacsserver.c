@@ -1,5 +1,5 @@
 /* Communication subprocess for GNU Emacs acting as server.
-   Copyright (C) 1986, 1987, 1992 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -33,7 +33,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef signal
 
 
-#if !defined(HAVE_SOCKETS) && !defined(HAVE_SYSVIPC)
+#if !defined (HAVE_SOCKETS) && !defined (HAVE_SYSVIPC)
 #include <stdio.h>
 
 main ()
@@ -45,7 +45,7 @@ main ()
 
 #else /* HAVE_SOCKETS or HAVE_SYSVIPC */
 
-#if ! defined (HAVE_SYSVIPC)
+#if defined (HAVE_SOCKETS) && ! defined (NO_SOCKETS_IN_FILE_SYSTEM)
 /* BSD code is very different from SYSV IPC code */
 
 #include <sys/types.h>
@@ -57,6 +57,28 @@ main ()
 #include <errno.h>
 
 extern int errno;
+
+/* Copied from src/process.c */
+#ifdef FD_SET
+/* We could get this from param.h, but better not to depend on finding that.
+   And better not to risk that it might define other symbols used in this
+   file.  */
+#ifdef FD_SETSIZE
+#define MAXDESC FD_SETSIZE
+#else
+#define MAXDESC 64
+#endif
+#define SELECT_TYPE fd_set
+#else /* no FD_SET */
+#define MAXDESC 32
+#define SELECT_TYPE int
+
+/* Define the macros to access a single-int bitmap of descriptors.  */
+#define FD_SET(n, p) (*(p) |= (1 << (n)))
+#define FD_CLR(n, p) (*(p) &= ~(1 << (n)))
+#define FD_ISSET(n, p) (*(p) & (1 << (n)))
+#define FD_ZERO(p) (*(p) = 0)
+#endif /* no FD_SET */
 
 main ()
 {
@@ -104,7 +126,9 @@ main ()
       exit (1);
     }
   strcpy (server.sun_path, homedir);
-  strcat (server.sun_path, "/.emacs_server");
+  strcat (server.sun_path, "/.emacs-server-");
+  gethostname (system_name, sizeof (system_name));
+  strcat (server.sun_path, system_name);
   /* Delete anyone else's old server.  */
   unlink (server.sun_path);
 #endif
@@ -129,15 +153,17 @@ main ()
   signal (SIGPIPE, SIG_IGN);
   for (;;)
     {
-      int rmask = (1 << s) + 1;
-      if (select (s + 1, (fd_set *)&rmask, 0, 0, 0) < 0)
+      SELECT_TYPE rmask;
+      FD_ZERO (&rmask);
+      FD_SET (0, &rmask);
+      FD_SET (s, &rmask);
+      if (select (s + 1, &rmask, 0, 0, 0) < 0)
 	perror ("select");
-      if (rmask & (1 << s))	/* client sends list of filenames */
+      if (FD_ISSET (s, &rmask))	/* client sends list of filenames */
 	{
 	  fromlen = sizeof (fromunix);
 	  fromunix.sun_family = AF_UNIX;
-	  infd = accept (s, (struct sockaddr *) &fromunix,
-			 (size_t *) &fromlen);
+	  infd = accept (s, (struct sockaddr *) &fromunix, &fromlen);
 	  if (infd < 0)
 	    {
 	      if (errno == EMFILE || errno == ENFILE)
@@ -186,7 +212,7 @@ main ()
 	  fflush (infile);
 	  continue;
 	}
-      else if (rmask & 1) /* emacs sends codeword, fd, and string message */
+      else if (FD_ISSET (0, &rmask)) /* emacs sends codeword, fd, and string message */
 	{
 	  /* Read command codeword and fd */
 	  clearerr (stdin);
@@ -228,6 +254,14 @@ main ()
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <setjmp.h>
+#include <errno.h>
+#include <sys/utsname.h>
+
+struct utsname system_name;
+
+#ifndef errno
+extern int errno;
+#endif
 
 jmp_buf msgenv;
 
@@ -256,7 +290,7 @@ main ()
   FILE *infile;
 
   /*
-   * Create a message queue using ~/.emacs_server as the path for ftok
+   * Create a message queue using ~/.emacs-server as the path for ftok
    */
   if ((homedir = getenv ("HOME")) == NULL)
     {
@@ -264,7 +298,14 @@ main ()
       exit (1);
     }
   strcpy (string, homedir);
-  strcat (string, "/.emacs_server");
+#ifndef HAVE_LONG_FILE_NAMES
+  /* If file names are short, we can't fit the host name.  */
+  strcat (string, "/.emacs-server");
+#else
+  strcat (string, "/.emacs-server-");
+  uname (&system_name);
+  strcat (string, system_name.nodename);
+#endif
   creat (string, 0600);
   key = ftok (string, 1);	/* unlikely to be anyone else using it */
   s = msgget (key, 0600 | IPC_CREAT);
@@ -279,11 +320,13 @@ main ()
   if (setjmp (msgenv))
     {
       msgctl (s, IPC_RMID, 0);
-      kill (p, SIGKILL);
+      if (p > 0)
+	kill (p, SIGKILL);
       exit (0);
     }
   signal (SIGTERM, msgcatch);
   signal (SIGINT, msgcatch);
+  signal (SIGHUP, msgcatch);
   if (p > 0)
     {
       /* This is executed in the original process that did the fork above.  */
@@ -325,6 +368,10 @@ main ()
     {
       if ((fromlen = msgrcv (s, msgp, BUFSIZ - 1, 1, 0)) < 0)
         {
+#ifdef EINTR
+	  if (errno == EINTR)
+	    continue;
+#endif
 	  perror ("msgrcv");
 	  exit (1);
         }

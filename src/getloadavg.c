@@ -1,5 +1,5 @@
 /* Get the system load averages.
-   Copyright (C) 1985, 86, 87, 88, 89, 91, 92, 93, 1994
+   Copyright (C) 1985, 86, 87, 88, 89, 91, 92, 93, 1994, 1995
    	Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
@@ -38,6 +38,7 @@
 
    apollo
    BSD				Real BSD, not just BSD-like.
+   convex
    DGUX
    eunice			UNIX emulator under VMS.
    hpux
@@ -59,6 +60,11 @@
    We also #define LDAV_PRIVILEGED if a program will require
    special installation to be able to call getloadavg.  */
 
+/* This should always be first.  */
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <sys/types.h>
 
 /* Both the Emacs and non-Emacs sections want this.  Some
@@ -68,17 +74,6 @@
 #include <sys/param.h>
 #endif
 
-
-#ifdef HAVE_CONFIG_H
-#if defined (emacs) || defined (CONFIG_BROKETS)
-/* We use <config.h> instead of "config.h" so that a compilation
-   using -I. -I$srcdir will use ./config.h rather than $srcdir/config.h
-   (which it would do because it found this file in $srcdir).  */
-#include <config.h>
-#else
-#include "config.h"
-#endif
-#endif
 
 /* Exclude all the code except the test program at the end
    if the system has its own `getloadavg' function.
@@ -149,6 +144,7 @@ extern int errno;
 
 #if defined (__osf__) && (defined (__alpha) || defined (__alpha__))
 #define OSF_ALPHA
+#include <sys/table.h>
 #endif
 
 #if defined (__osf__) && (defined (mips) || defined (__mips__))
@@ -211,6 +207,21 @@ extern int errno;
 #define LOAD_AVE_TYPE long
 #endif
 
+#if defined(alliant) && defined(i860) /* Alliant FX/2800 */
+#define LOAD_AVE_TYPE long
+#endif
+
+#ifdef _AIX
+#define LOAD_AVE_TYPE long
+#endif
+
+#ifdef convex
+#define LOAD_AVE_TYPE double
+#ifndef LDAV_CVT
+#define LDAV_CVT(n) (n)
+#endif
+#endif
+
 #endif /* No LOAD_AVE_TYPE.  */
 
 #ifdef OSF_ALPHA
@@ -218,6 +229,13 @@ extern int errno;
    according to ghazi@noc.rutgers.edu.  */
 #undef FSCALE
 #define FSCALE 1024.0
+#endif
+
+#if defined(alliant) && defined(i860) /* Alliant FX/2800 */
+/* <sys/param.h> defines an incorrect value for FSCALE on an
+   Alliant FX/2800 Concentrix 2.2, according to ghazi@noc.rutgers.edu.  */
+#undef FSCALE
+#define FSCALE 100.0
 #endif
 
 
@@ -246,6 +264,10 @@ extern int errno;
 
 #ifdef tek4300
 #define FSCALE 100.0
+#endif
+
+#ifdef _AIX
+#define FSCALE 65536.0
 #endif
 
 #endif	/* Not FSCALE.  */
@@ -297,11 +319,19 @@ extern int errno;
 #define NLIST_STRUCT
 #endif
 
-#ifdef tex4300
+#ifdef tek4300
 #define NLIST_STRUCT
 #endif
 
 #ifdef butterfly
+#define NLIST_STRUCT
+#endif
+
+#if defined(alliant) && defined(i860) /* Alliant FX/2800 */
+#define NLIST_STRUCT
+#endif
+
+#ifdef _AIX
 #define NLIST_STRUCT
 #endif
 
@@ -330,7 +360,7 @@ extern int errno;
 #define LDAV_SYMBOL "_Loadavg"
 #endif
 
-#if !defined(LDAV_SYMBOL) && ((defined(hpux) && !defined(hp9000s300)) || defined(_SEQUENT_) || defined(SVR4) || defined(ISC) || defined(sgi) || (defined (ardent) && defined (titan)))
+#if !defined(LDAV_SYMBOL) && ((defined(hpux) && !defined(hp9000s300)) || defined(_SEQUENT_) || defined(SVR4) || defined(ISC) || defined(sgi) || (defined (ardent) && defined (titan)) || defined (_AIX))
 #define LDAV_SYMBOL "avenrun"
 #endif
 
@@ -702,6 +732,18 @@ getloadavg (loadavg, nelem)
        : (load_ave.tl_avenrun.l[0] / (double) load_ave.tl_lscale));
 #endif	/* OSF_MIPS */
 
+#if !defined (LDAV_DONE) && defined (OSF_ALPHA)
+#define LDAV_DONE
+
+  struct tbl_loadavg load_ave;
+  table (TBL_LOADAVG, 0, &load_ave, 1, sizeof (load_ave));
+  for (elem = 0; elem < nelem; elem++)
+    loadavg[elem]
+      = (load_ave.tl_lscale == 0
+       ? load_ave.tl_avenrun.d[elem]
+       : (load_ave.tl_avenrun.l[elem] / (double) load_ave.tl_lscale));
+#endif /* OSF_ALPHA */
+
 #if !defined (LDAV_DONE) && defined (VMS)
   /* VMS specific code -- read from the Load Ave driver.  */
 
@@ -768,23 +810,29 @@ getloadavg (loadavg, nelem)
 #endif /* NLIST_STRUCT */
 
 #ifndef SUNOS_5
-      if (nlist (KERNEL_FILE, nl) >= 0)
-	/* Omit "&& nl[0].n_type != 0 " -- it breaks on Sun386i.  */
-	{
-#ifdef FIXUP_KERNEL_SYMBOL_ADDR
-	  FIXUP_KERNEL_SYMBOL_ADDR (nl);
+      if (
+#ifndef _AIX
+	  nlist (KERNEL_FILE, nl)
+#else  /* _AIX */
+	  knlist (nl, 1, sizeof (nl[0]))
 #endif
-	  offset = nl[0].n_value;
-	}
-#endif  /* !SUNOS_5 */
-#else /* sgi */
-      int ldav_off;
+	  >= 0)
+	  /* Omit "&& nl[0].n_type != 0 " -- it breaks on Sun386i.  */
+	  {
+#ifdef FIXUP_KERNEL_SYMBOL_ADDR
+	    FIXUP_KERNEL_SYMBOL_ADDR (nl);
+#endif
+	    offset = nl[0].n_value;
+	  }
+#endif /* !SUNOS_5 */
+#else  /* sgi */
+	  int ldav_off;
 
-      ldav_off = sysmp (MP_KERNADDR, MPKA_AVENRUN);
-      if (ldav_off != -1)
-	offset = (long) ldav_off & 0x7fffffff;
+	  ldav_off = sysmp (MP_KERNADDR, MPKA_AVENRUN);
+	  if (ldav_off != -1)
+	  offset = (long) ldav_off & 0x7fffffff;
 #endif /* sgi */
-    }
+	}
 
   /* Make sure we have /dev/kmem open.  */
   if (!getloadavg_initialized)

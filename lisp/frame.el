@@ -43,7 +43,7 @@ a minibuffer frame on your own, one is created according to
 
 You can specify geometry-related options for just the initial frame
 by setting this variable in your `.emacs' file; however, they won't
-take affect until Emacs reads `.emacs', which happens after first creating
+take effect until Emacs reads `.emacs', which happens after first creating
 the frame.  If you want the frame to have the proper geometry as soon
 as it appears, you need to use this three-step process:
 * Specify X resources to give the geometry you want.
@@ -71,7 +71,7 @@ These supersede the values given in `default-frame-alist'.")
       (function (lambda ()
 		  (make-frame pop-up-frame-alist))))
 
-(defvar special-display-frame-alist 
+(defvar special-display-frame-alist
   '((height . 14) (width . 80) (unsplittable . t))
   "*Alist of frame parameters used when creating special frames.
 Special frames are used for buffers whose names are in
@@ -84,34 +84,53 @@ These supersede the values given in `default-frame-alist'.")
 ;; Display BUFFER in its own frame, reusing an existing window if any.
 ;; Return the window chosen.
 ;; Currently we do not insist on selecting the window within its frame.
-(defun special-display-popup-frame (buffer)
-  (let ((window (get-buffer-window buffer t)))
-    (if window
-	;; If we have a window already, make it visible.
-	(let ((frame (window-frame window)))
-	  (make-frame-visible frame)
-	  (raise-frame frame)
-	  window)
-      ;; If no window yet, make one in a new frame.
-      (let ((frame (make-frame special-display-frame-alist)))
-	(set-window-buffer (frame-selected-window frame) buffer)
-	(set-window-dedicated-p (frame-selected-window frame) t)
-	(frame-selected-window frame)))))
+;; If ARGS is an alist, use it as a list of frame parameter specs.
+;; If ARGS is a list whose car is a symbol,
+;; use (car ARGS) as a function to do the work.
+;; Pass it BUFFER as first arg, and (cdr ARGS) gives the rest of the args.
+(defun special-display-popup-frame (buffer &optional args)
+  (if (and args (symbolp (car args)))
+      (apply (car args) buffer (cdr args))
+    (let ((window (get-buffer-window buffer t)))
+      (if window
+	  ;; If we have a window already, make it visible.
+	  (let ((frame (window-frame window)))
+	    (make-frame-visible frame)
+	    (raise-frame frame)
+	    window)
+	;; If no window yet, make one in a new frame.
+	(let ((frame (make-frame (append args special-display-frame-alist))))
+	  (set-window-buffer (frame-selected-window frame) buffer)
+	  (set-window-dedicated-p (frame-selected-window frame) t)
+	  (frame-selected-window frame))))))
 
-(setq special-display-function 'special-display-popup-frame)
+;; Handle delete-frame events from the X server.
+(defun handle-delete-frame (event)
+  (interactive "e")
+  (let ((frame (posn-window (event-start event)))
+	(i 0)
+	(tail (frame-list)))
+    (while tail
+      (and (frame-visible-p (car tail))
+	   (not (eq (car tail) frame))
+	  (setq i (1+ i)))
+      (setq tail (cdr tail)))
+    (if (> i 0)
+	(delete-frame frame t)
+      (kill-emacs))))
 
 ;;;; Arrangement of frames at startup
 
 ;;; 1) Load the window system startup file from the lisp library and read the
 ;;; high-priority arguments (-q and the like).  The window system startup
 ;;; file should create any frames specified in the window system defaults.
-;;; 
+;;;
 ;;; 2) If no frames have been opened, we open an initial text frame.
 ;;;
 ;;; 3) Once the init file is done, we apply any newly set parameters
 ;;; in initial-frame-alist to the frame.
 
-;; These are now called explicitly at the proper times, 
+;; These are now called explicitly at the proper times,
 ;; since that is easier to understand.
 ;; Actually using hooks within Emacs is bad for future maintenance. --rms.
 ;; (add-hook 'before-init-hook 'frame-initialize)
@@ -129,10 +148,13 @@ These supersede the values given in `default-frame-alist'.")
 ;;; file - if there is no frame with a minibuffer open now, create
 ;;; one to display messages while loading the init file.
 (defun frame-initialize ()
-  
+
   ;; Are we actually running under a window system at all?
   (if (and window-system (not noninteractive))
       (progn
+	;; Turn on special-display processing only if there's a window system.
+	(setq special-display-function 'special-display-popup-frame)
+
 	;; If there is no frame with a minibuffer besides the terminal
 	;; frame, then we need to create the opening frame.  Make sure
 	;; it has a minibuffer, but let initial-frame-alist omit the
@@ -160,30 +182,34 @@ These supersede the values given in `default-frame-alist'.")
 	      ;; because that would override explicit user resizing.
 	      (setq initial-frame-alist
 		    (frame-remove-geometry-params initial-frame-alist))))
-	;; At this point, we know that we have a frame open, so we 
+	;; At this point, we know that we have a frame open, so we
 	;; can delete the terminal frame.
 	(delete-frame terminal-frame)
 	(setq terminal-frame nil))
-    
-    ;; No, we're not running a window system.  Arrange to cause errors.
+
+    ;; No, we're not running a window system.  Use make-terminal-frame if
+    ;; we support that feature, otherwise arrange to cause errors.
     (setq frame-creation-function
-	  (function
-	   (lambda (parameters)
-	     (error
-	      "Can't create multiple frames without a window system"))))))
-					
+	  (if (fboundp 'make-terminal-frame)
+	      'make-terminal-frame
+	    (function
+	     (lambda (parameters)
+	       (error
+		"Can't create multiple frames without a window system")))))))
+
 ;;; startup.el calls this function after loading the user's init
 ;;; file.  Now default-frame-alist and initial-frame-alist contain
 ;;; information to which we must react; do what needs to be done.
 (defun frame-notice-user-settings ()
 
   ;; Make menu-bar-mode and default-frame-alist consistent.
-  (let ((default (assq 'menu-bar-lines default-frame-alist)))
-    (if default
-	(setq menu-bar-mode (not (eq (cdr default) 0)))
-      (setq default-frame-alist
-	    (cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
-		  default-frame-alist))))
+  (if (boundp 'menu-bar-mode)
+      (let ((default (assq 'menu-bar-lines default-frame-alist)))
+	(if default
+	    (setq menu-bar-mode (not (eq (cdr default) 0)))
+	  (setq default-frame-alist
+		(cons (cons 'menu-bar-lines (if menu-bar-mode 1 0))
+		      default-frame-alist)))))
 
   ;; Creating and deleting frames may shift the selected frame around,
   ;; and thus the current buffer.  Protect against that.  We don't
@@ -220,9 +246,13 @@ These supersede the values given in `default-frame-alist'.")
 	      (while (not (cdr (assq 'visibility
 				     (frame-parameters frame-initial-frame))))
 		(sleep-for 1))
+	      (setq parms (frame-parameters frame-initial-frame))
+	      ;; Get rid of `name' unless it was specified explicitly before.
+	      (or (assq 'name frame-initial-frame-alist)
+		  (setq parms (delq (assq 'name parms) parms)))
 	      (setq parms (append initial-frame-alist
 				  default-frame-alist
-				  (frame-parameters frame-initial-frame)
+				  parms
 				  nil))
 	      ;; Get rid of `reverse', because that was handled
 	      ;; when we first made the frame.
@@ -239,13 +269,14 @@ These supersede the values given in `default-frame-alist'.")
 		    (make-frame
 		     ;; Use the geometry args that created the existing
 		     ;; frame, rather than the parms we get for it.
-		     (append frame-initial-geometry-arguments parms)))
+		     (append frame-initial-geometry-arguments
+			     '((user-size . t) (user-position . t))
+			     parms)))
 	      ;; The initial frame, which we are about to delete, may be
 	      ;; the only frame with a minibuffer.  If it is, create a
 	      ;; new one.
 	      (or (delq frame-initial-frame (minibuffer-frame-list))
-		  (make-frame (append minibuffer-frame-alist
-				     '((minibuffer . only)))))
+		  (make-initial-minibuffer-frame nil))
 
 	      ;; If the initial frame is serving as a surrogate
 	      ;; minibuffer frame for any frames, we need to wean them
@@ -316,10 +347,10 @@ These supersede the values given in `default-frame-alist'.")
 	    ;; manually.
 	    (while tail
 	      (let (newval oldval)
-		(setq oldval (cdr (assq (car (car tail))
-					frame-initial-frame-alist)))
+		(setq oldval (assq (car (car tail))
+				   frame-initial-frame-alist))
 		(setq newval (cdr (assq (car (car tail)) allparms)))
-		(or (eq oldval newval)
+		(or (and oldval (eq (cdr oldval) newval))
 		    (setq newparms
 			  (cons (cons (car (car tail)) newval) newparms))))
 	      (setq tail (cdr tail)))
@@ -335,6 +366,12 @@ These supersede the values given in `default-frame-alist'.")
     ;; Make sure the initial frame can be GC'd if it is ever deleted.
     ;; Make sure frame-notice-user-settings does nothing if called twice.
     (setq frame-initial-frame nil)))
+
+(defun make-initial-minibuffer-frame (display)
+  (let ((parms (append minibuffer-frame-alist '((minibuffer . only)))))
+    (if display
+	(make-frame-on-display display parms)
+      (make-frame parms))))
 
 ;; Delete from ALIST all elements whose car is KEY.
 ;; Return the modified alist.
@@ -372,14 +409,22 @@ These supersede the values given in `default-frame-alist'.")
 				  (> (minibuffer-depth) 0)
 				  t)))
 
+(defun make-frame-on-display (display &optional parameters)
+  "Make a frame on display DISPLAY.
+The optional second argument PARAMETERS specifies additional frame parameters."
+  (interactive "sMake frame on display: ")
+  (make-frame (cons (cons 'display display) parameters)))
+
 ;; Alias, kept temporarily.
 (defalias 'new-frame 'make-frame)
 (defun make-frame (&optional parameters)
   "Create a new frame, displaying the current buffer.
 
 Optional argument PARAMETERS is an alist of parameters for the new
-frame.  Specifically, PARAMETERS is a list of pairs, each having one
-of the following forms:
+frame.  Specifically, PARAMETERS is a list of pairs, each having
+the form (NAME . VALUE).
+
+Here are some of the parameters allowed (not a complete list):
 
 \(name . STRING)	- The frame should be named STRING.
 
@@ -460,7 +505,8 @@ A negative ARG moves in the opposite order."
     (raise-frame frame)
     (select-frame frame)
     (set-mouse-position (selected-frame) (1- (frame-width)) 0)
-    (unfocus-frame)))
+    (if (fboundp 'unfocus-frame)
+	(unfocus-frame))))
 
 ;;;; Frame configurations
 
@@ -499,7 +545,7 @@ is given and non-nil, the unwanted frames are iconified instead."
 		     (progn
 		       (modify-frame-parameters
 			frame
-			;; Since we can't set a frame's minibuffer status, 
+			;; Since we can't set a frame's minibuffer status,
 			;; we might as well omit the parameter altogether.
 			(let* ((parms (nth 1 parameters))
 			       (mini (assq 'minibuffer parms)))
@@ -515,14 +561,6 @@ is given and non-nil, the unwanted frames are iconified instead."
 	;; for where to put it.
 	(mapcar 'iconify-frame frames-to-delete)
       (mapcar 'delete-frame frames-to-delete))))
-
-(defun frame-configuration-p (object)
-  "Return non-nil if OBJECT seems to be a frame configuration.
-Any list whose car is `frame-configuration' is assumed to be a frame
-configuration."
-  (and (consp object)
-       (eq (car object) 'frame-configuration)))
-
 
 ;;;; Convenience functions for accessing and interactively changing
 ;;;; frame parameters.
@@ -551,14 +589,16 @@ When called interactively, prompt for the name of the font to use."
 When called interactively, prompt for the name of the color to use."
   (interactive "sColor: ")
   (modify-frame-parameters (selected-frame)
-			   (list (cons 'background-color color-name))))
+			   (list (cons 'background-color color-name)))
+  (frame-update-face-colors (selected-frame)))
 
 (defun set-foreground-color (color-name)
   "Set the foreground color of the selected frame to COLOR.
 When called interactively, prompt for the name of the color to use."
   (interactive "sColor: ")
   (modify-frame-parameters (selected-frame)
-			   (list (cons 'foreground-color color-name))))
+			   (list (cons 'foreground-color color-name)))
+  (frame-update-face-colors (selected-frame)))
 
 (defun set-cursor-color (color-name)
   "Set the text cursor color of the selected frame to COLOR.

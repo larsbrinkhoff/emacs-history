@@ -1,7 +1,7 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
-@node Screen, User Input, Concept Index, Top
+@node Screen, User Input, Acknowledgments, Top
 @chapter The Organization of the Screen
 @cindex screen
 @cindex parts of the screen
@@ -12,7 +12,7 @@ On the X Window System, Emacs creates its own X windows to use.  We use
 the term @dfn{frame} to mean an entire text-only screen or an entire X
 window used by Emacs.  Emacs uses both kinds of frames in the same way
 to display your editing.  Emacs normally starts out with just one frame,
-but under X you can create additional frames if you wish.  @xref{Frames}.
+but you can create additional frames if you wish.  @xref{Frames}.
 
   When you start Emacs, the entire frame except for the last line is
 devoted to the text you are editing.  This area is called @dfn{window}.
@@ -131,6 +131,22 @@ prints a message describing the character position of point in the text
 and its current column in the window.  Commands that take a long time
 often display messages ending in @samp{...} while they are working, and
 add @samp{done} at the end when they are finished.
+
+@cindex @samp{*Messages*} buffer
+@cindex saved echo area messages
+@cindex messages saved from echo area
+  Echo area informative messages appear also in a buffer named
+@samp{*Messages*}.  If you miss a message that appears briefly on the
+screen, you can switch to the @samp{*Messages*} buffer to see it again.
+Garbage collection messages are omitted from @samp{*Messages*}, and
+successive progress messages are often collapsed into one.
+
+@vindex message-log-max
+  The size of @samp{*Messages*} is limited to a certain number of lines.
+The variable @code{message-log-max} specifies how many lines.  Once the
+buffer has that many lines, each line added at the end deletes one line
+from the beginning.  @xref{Variables}, for how to set variables such as
+@code{message-log-max}.
 
   The echo area is also used to display the @dfn{minibuffer}, a window that
 is used for reading arguments to commands, such as the name of a file to be

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Help, Mark, M-x, Top
 @chapter Help
@@ -12,13 +12,13 @@ character, @kbd{C-h}.  @kbd{C-h} is a prefix key that is used only for
 documentation-printing commands.  The characters that you can type after
 @kbd{C-h} are called @dfn{help options}.  One help option is @kbd{C-h};
 that is how you ask for help about using @kbd{C-h}.  To cancel, type
-@kbd{C-g}.
+@kbd{C-g}.  The function key @key{F1} is equivalent to @kbd{C-h}.
 
   @kbd{C-h C-h} displays a list of the possible help options, each with
 a brief description.  Before you type a help option, you can use
 @key{SPC} or @key{DEL} to scroll through the list.
 
-  @kbd{C-h} means ``help'' in various other contexts as well.  For
+  @kbd{C-h} or @key{F1} means ``help'' in various other contexts as well.  For
 example, in @code{query-replace}, it describes the options available.
 After a prefix key, it displays a list of the alternatives that can
 follow the prefix key.  (A few prefix keys don't support this because
@@ -160,10 +160,10 @@ x)}, the innermost list containing point is the one that starts with
 @code{make-vector}.
 
   @kbd{C-h f} is often useful just to verify that you have the right
-spelling for the function name.  If @kbd{C-h f} mentions a default in
-the prompt, you have typed the name of a defined Lisp function.  If that
-is all you want to know, just type @kbd{C-g} to cancel the @kbd{C-h f}
-command, then go on editing.
+spelling for the function name.  If @kbd{C-h f} mentions a name from the
+buffer as the default, that name must be defined as a Lisp function.  If
+that is all you want to know, just type @kbd{C-g} to cancel the @kbd{C-h
+f} command, then go on editing.
 
 @kindex C-h w
 @findex where-is
@@ -209,10 +209,10 @@ technique for picking @code{apropos} strings.
 
 @quotation
 char, line, word, sentence, paragraph, region, page, sexp, list, defun,
-rect, buffer, frame, window, file, dir, register, mode, beginning, end,
+rect, buffer, frame, window, face, file, dir, register, mode, beginning, end,
 forward, backward, next, previous, up, down, search, goto, kill, delete,
 mark, insert, yank, fill, indent, case, change, set, what, list, find,
-view, describe.
+view, describe, default.
 @end quotation
 
 @findex apropos
@@ -246,6 +246,10 @@ C and C++ language support.
 Calendar and time management support.
 @item comm
 Communications, networking, remote access to files.
+@item data
+Support for editing files of data.
+@item debugging
+Support for debugging programs.
 @item docs
 Support for Emacs documentation.
 @item emulations
@@ -254,12 +258,16 @@ Emulations of other editors.
 Emacs Lisp language extensions.
 @item faces
 Support for using faces (fonts and colors; @pxref{Faces}).
+@item frames
+Support for Emacs frames and window systems.
 @item games
 Games, jokes and amusements.
 @item hardware
 Support for interfacing with exotic hardware.
 @item help
 Support for on-line help systems.
+@item hypermedia
+Support for links within text, or other media types.
 @item i18n
 Internationalization and alternate character-set support.
 @item internal
@@ -274,10 +282,16 @@ Libraries local to your site.
 Maintenance aids for the Emacs development group.
 @item mail
 Modes for electronic-mail handling.
+@item matching
+Searching and matching.
 @item news
 Support for netnews reading and posting.
 @item non-text
 Support for editing files that are not ordinary text.
+@item oop
+Support for object-oriented programming.
+@item outlines
+Hierarchical outlining.
 @item processes
 Process, subshell, compilation, and job control support.
 @item terminals
@@ -360,7 +374,7 @@ actually @kbd{C-M-h}, which marks a defun.)
 @findex describe-distribution
 @kindex C-h C-w
 @findex describe-no-warranty
-@cindex C-h C-p
+@kindex C-h C-p
 @findex describe-project
   The other @kbd{C-h} options display various files of useful
 information.  @kbd{C-h C-w} displays the full details on the complete

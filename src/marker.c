@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -34,7 +34,7 @@ Returns nil if MARKER points into a dead buffer.")
   CHECK_MARKER (marker, 0);
   if (XMARKER (marker)->buffer)
     {
-      XSET (buf, Lisp_Buffer, XMARKER (marker)->buffer);
+      XSETBUFFER (buf, XMARKER (marker)->buffer);
       /* Return marker's buffer only if it is not dead.  */
       if (!NILP (XBUFFER (buf)->name))
 	return buf;
@@ -65,7 +65,7 @@ DEFUN ("marker-position", Fmarker_position, Smarker_position, 1, 1, 0,
       if (i < BUF_BEG (buf) || i > BUF_Z (buf))
 	abort ();
 
-      XFASTINT (pos) = i;
+      XSETFASTINT (pos, i);
       return pos;
     }
   return Qnil;
@@ -88,7 +88,7 @@ Returns MARKER.")
   /* If position is nil or a marker that points nowhere,
      make this marker point nowhere.  */
   if (NILP (pos)
-      || (XTYPE (pos) == Lisp_Marker && !XMARKER (pos)->buffer))
+      || (MARKERP (pos) && !XMARKER (pos)->buffer))
     {
       unchain_marker (marker);
       return marker;
@@ -122,9 +122,9 @@ Returns MARKER.")
   if (m->buffer != b)
     {
       unchain_marker (marker);
-      m->chain = b->markers;
-      b->markers = marker;
       m->buffer = b;
+      m->chain = BUF_MARKERS (b);
+      BUF_MARKERS (b) = marker;
     }
   
   return marker;
@@ -145,7 +145,7 @@ set_marker_restricted (marker, pos, buffer)
   /* If position is nil or a marker that points nowhere,
      make this marker point nowhere.  */
   if (NILP (pos) ||
-      (XTYPE (pos) == Lisp_Marker && !XMARKER (pos)->buffer))
+      (MARKERP (pos) && !XMARKER (pos)->buffer))
     {
       unchain_marker (marker);
       return marker;
@@ -180,9 +180,9 @@ set_marker_restricted (marker, pos, buffer)
   if (m->buffer != b)
     {
       unchain_marker (marker);
-      m->chain = b->markers;
-      b->markers = marker;
       m->buffer = b;
+      m->chain = BUF_MARKERS (b);
+      BUF_MARKERS (b) = marker;
     }
   
   return marker;
@@ -196,7 +196,7 @@ unchain_marker (marker)
      register Lisp_Object marker;
 {
   register Lisp_Object tail, prev, next;
-  register int omark;
+  register EMACS_INT omark;
   register struct buffer *b;
 
   b = XMARKER (marker)->buffer;
@@ -206,7 +206,7 @@ unchain_marker (marker)
   if (EQ (b->name, Qnil))
     abort ();
 
-  tail = b->markers;
+  tail = BUF_MARKERS (b);
   prev = Qnil;
   while (XSYMBOL (tail) != XSYMBOL (Qnil))
     {
@@ -217,11 +217,12 @@ unchain_marker (marker)
 	{
 	  if (NILP (prev))
 	    {
-	      b->markers = next;
-	      /* Deleting first marker from the buffer's chain.
-		 Crash if new first marker in chain does not say
-		 it belongs to this buffer.  */
-	      if (!EQ (next, Qnil) && b != XMARKER (next)->buffer)
+	      BUF_MARKERS (b) = next;
+	      /* Deleting first marker from the buffer's chain.  Crash
+		 if new first marker in chain does not say it belongs
+		 to the same buffer, or at least that they have the same
+		 base buffer.  */
+	      if (!NILP (next) && b->text != XMARKER (next)->buffer->text)
 		abort ();
 	    }
 	  else
@@ -239,6 +240,9 @@ unchain_marker (marker)
   XMARKER (marker)->buffer = 0;
 }
 
+/* Return the buffer position of marker MARKER, as a C integer.  */
+
+int
 marker_position (marker)
      Lisp_Object marker;
 {
@@ -271,14 +275,11 @@ at that position in the current buffer.")
 
   while (1)
     {
-      if (XTYPE (marker) == Lisp_Int
-	  || XTYPE (marker) == Lisp_Marker)
+      if (INTEGERP (marker) || MARKERP (marker))
 	{
 	  new = Fmake_marker ();
 	  Fset_marker (new, marker,
-		       ((XTYPE (marker) == Lisp_Marker)
-			? Fmarker_buffer (marker)
-			: Qnil));
+		       (MARKERP (marker) ? Fmarker_buffer (marker) : Qnil));
 	  return new;
 	}
       else

@@ -221,9 +221,11 @@
       (if (symbolp fn)
 	  (byte-compile-inline-expand (cons fn (cdr form)))
 	(if (byte-code-function-p fn)
-	    (cons (list 'lambda (aref fn 0)
-			(list 'byte-code (aref fn 1) (aref fn 2) (aref fn 3)))
-		  (cdr form))
+	    (progn
+	      (fetch-bytecode fn)
+	      (cons (list 'lambda (aref fn 0)
+			  (list 'byte-code (aref fn 1) (aref fn 2) (aref fn 3)))
+		    (cdr form)))
 	  (if (not (eq (car fn) 'lambda)) (error "%s is not a lambda" name))
 	  (cons fn (cdr form)))))))
 
@@ -938,7 +940,8 @@
 	 form)
 	 ;; The body is nil
 	((eq (car form) 'let)
-	 (append '(progn) (mapcar 'car (mapcar 'cdr (nth 1 form))) '(nil)))
+	 (append '(progn) (mapcar 'car-safe (mapcar 'cdr-safe (nth 1 form)))
+		 '(nil)))
 	(t
 	 (let ((binds (reverse (nth 1 form))))
 	   (list 'let* (reverse (cdr binds)) (nth 1 (car binds)) nil)))))

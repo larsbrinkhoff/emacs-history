@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Building, Abbrevs, Programs, Top
 @chapter Compiling and Testing Programs
@@ -50,7 +50,7 @@ listed in the buffer named @samp{*grep*}.
 Kill the running compilation or @code{grep} subprocess.
 @item C-x `
 Visit the locus of the next compiler error message or @code{grep} match.
-@item C-c C-c
+@item @key{RET}
 Visit the locus of the error message that point is on.
 This command is used in the compilation buffer.
 @item Mouse-2
@@ -95,6 +95,8 @@ compile} asks for confirmation before actually killing a compilation
 that is running.
 
 @findex compile-goto-error
+@cindex Compilation mode
+@cindex mode, Compilation
   The @samp{*compilation*} buffer uses a special major mode, Compilation
 mode.  This mode provides the keys @key{SPC} and @key{DEL} to scroll by
 screenfuls, and @kbd{M-n} and @kbd{M-p} to move to the next or previous
@@ -104,18 +106,21 @@ down to an error message for a different source file.
 @kindex C-x `
 @findex next-error
   You can visit the source for any particular error message by moving
-point in @samp{*compilation*} to that error message and typing @kbd{C-c
-C-c} (@code{compile-goto-error}).  To parse the compiler error messages
-sequentially, type @kbd{C-x `} (@code{next-error}).  The character
-following the @kbd{C-x} is the backquote or ``grave accent,'' not the
-single-quote.  This command is available in all buffers, not just in
-@samp{*compilation*}; it displays the next error message at the top of
-one window and source location of the error in another window.
+point in @samp{*compilation*} to that error message and typing @key{RET}
+(@code{compile-goto-error}).  Or click @kbd{Mouse-2} on the error message;
+you need not switch to the @samp{*compilation*} buffer first.
+
+  To parse the compiler error messages sequentially, type @kbd{C-x `}
+(@code{next-error}).  The character following the @kbd{C-x} is the
+backquote or ``grave accent,'' not the single-quote.  This command is
+available in all buffers, not just in @samp{*compilation*}; it displays
+the next error message at the top of one window and source location of
+the error in another window.
 
   The first time @kbd{C-x `} is used after the start of a compilation,
 it moves to the first error's location.  Subsequent uses of @kbd{C-x `}
 advance down to subsequent errors.  If you visit a specific error
-message with @kbd{C-c C-c} or @kbd{Mouse-2}, subsequent @kbd{C-x `}
+message with @key{RET} or @kbd{Mouse-2}, subsequent @kbd{C-x `}
 commands advance from there.  When @kbd{C-x `} gets to the end of the
 buffer and finds no more error messages to visit, it fails and signals
 an Emacs error.
@@ -130,17 +135,19 @@ grep} with an argument line that contains the same arguments you would
 give @code{grep} when running it normally: a @code{grep}-style regexp
 (usually in single-quotes to quote the shell's special characters)
 followed by file names which may use wildcards.  The output from
-@code{grep} goes in the @samp{*grep*} buffer and the lines that matched
-can be found with @kbd{C-x `} as if they were compilation errors.
+@code{grep} goes in the @samp{*grep*} buffer, and you can find the
+matching lines in the source with @kbd{C-x `} and @key{RET} just like
+compiler errors.
 
-  Note: a shell is used to run the compile command, but the shell is told
-that it should be noninteractive.  This means in particular that the shell
-starts up with no prompt.  If you find your usual shell prompt making an
-unsightly appearance in the @samp{*compilation*} buffer, it means you have
-made a mistake in your shell's init file (@file{.cshrc} or @file{.shrc} or
-@dots{}) by setting the prompt unconditionally.  The shell init file should
-set the prompt only if there already is a prompt.  In csh, here is
-how to do it:
+  Note: a shell is used to run the compile command, but the shell is
+told that it should be noninteractive.  This means in particular that
+the shell starts up with no prompt.  If you find your usual shell prompt
+making an unsightly appearance in the @samp{*compilation*} buffer, it
+means you have made a mistake in your shell's init file by setting the
+prompt unconditionally.  (The init file name may be @file{.profile},
+@file{.cshrc}, @file{.shrc}, or various other things, depending on the
+shell you use.)  The shell init file should set the prompt only if there
+already is a prompt.  In csh, here is how to do it:
 
 @example
 if ($?prompt) set prompt = @dots{}
@@ -163,8 +170,8 @@ method to conditionalize them.
 called Compilation Minor mode.  This lets you parse error messages in
 any buffer, not just a normal compilation output buffer.  Type @kbd{M-x
 compilation-minor-mode} to enable the minor mode.  This defines the keys
-@kbd{C-c C-c} and @kbd{Mouse-2}, as in the Compilation major mode.  In
-an Rlogin buffer (@pxref{Remote Host}), Compilation minor mode
+@key{RET} and @kbd{Mouse-2}, as in the Compilation major mode.  In an
+Rlogin buffer (@pxref{Remote Host}), Compilation minor mode
 automatically accesses remote source files by FTP (@pxref{File Names}).
 
   The MS-DOS ``operating system'' does not support asynchronous
@@ -326,6 +333,7 @@ at full speed (@code{gud-next}).
 @findex gud-stepi
 Execute a single machine instruction (@code{gud-stepi}).
 
+@need 3000
 @item C-c C-r
 @kindex C-c C-r @r{(GUD)}
 @itemx C-x C-a C-r
@@ -593,7 +601,7 @@ editing, for invoking noninteractive functions (functions that are
 not commands).
 
 @table @kbd
-@item M-@key{ESC}
+@item M-:
 Read a single Lisp expression in the minibuffer, evaluate it, and print
 the value in the echo area (@code{eval-expression}).
 @item C-x C-e
@@ -608,22 +616,20 @@ Evaluate all the Lisp expressions in the region.
 Evaluate all the Lisp expressions in the buffer.
 @end table
 
-@kindex M-ESC
+@kindex M-:
 @findex eval-expression
-  @kbd{M-@key{ESC}} (@code{eval-expression}) is the most basic command for evaluating
+  @kbd{M-:} (@code{eval-expression}) is the most basic command for evaluating
 a Lisp expression interactively.  It reads the expression using the
 minibuffer, so you can execute any expression on a buffer regardless of
 what the buffer contains.  When the expression is evaluated, the current
-buffer is once again the buffer that was current when @kbd{M-@key{ESC}} was
+buffer is once again the buffer that was current when @kbd{M-:} was
 typed.
 
-  @kbd{M-@key{ESC}} can easily confuse users who do not understand it,
-especially on keyboards with autorepeat where it can result from holding
-down the @key{ESC} key for too long.  Therefore, @code{eval-expression} is
-normally a disabled command.  Attempting to use this command asks for
-confirmation and gives you the option of enabling it; once you enable the
-command, confirmation will no longer be required for it.
-@xref{Disabling}.@refill
+  @kbd{M-:} can easily confuse users who do not understand it.
+Therefore, @code{eval-expression} is normally a disabled command.
+Attempting to use this command asks for confirmation and gives you the
+option of enabling it; once you enable the command, confirmation will no
+longer be required for it.  @xref{Disabling}.
 
 @kindex C-M-x @r{(Emacs-Lisp mode)}
 @findex eval-defun
@@ -633,13 +639,18 @@ as a Lisp expression and evaluates it.  The value is printed in the echo
 area.  This command is convenient for installing in the Lisp environment
 changes that you have just made in the text of a function definition.
 
+  @kbd{C-M-x} treats @code{defvar} expressions specially.  Normally,
+evaluating a @code{defvar} expression does nothing if the variable it
+defines already has a value.  But @kbd{C-M-x} unconditionally resets the
+variable to the initial value specified in the @code{defvar} expression.
+This special feature is convenient for debugging Lisp programs.
+
 @kindex C-x C-e
 @findex eval-last-sexp
-  The command @kbd{C-x C-e} (@code{eval-last-sexp}) performs a similar job
-but is available in all major modes, not just Emacs-Lisp mode.  It finds
-the sexp before point, reads it as a Lisp expression, evaluates it, and
-prints the value in the echo area.  It is sometimes useful to type in an
-expression and then, with point still after it, type @kbd{C-x C-e}.
+  The command @kbd{C-x C-e} (@code{eval-last-sexp}) evaluates the Lisp
+expression preceding point in the buffer, and displays the value in the
+echo area.  It is available in all major modes, not just Emacs-Lisp
+mode.  It does not treat @code{defvar} specially.
 
   If @kbd{C-M-x} or @kbd{C-x C-e} is given a numeric argument, it
 inserts the value into the current buffer at point, rather than

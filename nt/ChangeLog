@@ -1,0 +1,128 @@
+Mon Jun 19 17:32:51 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.29 released.
+
+	* makefile.nt (addpm.exe): Change WinMainCRTStartup to mainCRTStartup.
+
+Tue Jun 13 22:20:29 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.nt: Define .c to .obj suffix rule.
+	(addpm.obj): Compile directly, use CFLAGS.
+	(addpm.exe): Link from addpm.obj.
+	
+	* makefile.def (MSVCNT11): Defined.
+	(BASE_LIBS) [MSVCNT11]: Use oldnames.lib.
+	(CFLAGS_COMMON): Defined.
+	(CFLAGS) [MSVCNT11]: Define _CRTAPI1 to _cdecl.
+	
+Fri Jun  9 22:09:46 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* emacs.bat.in: Renamed from emacs.bat
+	(emacs_dir): Renamed from emacs_path
+	Definition removed.
+
+	* addpm.c: New file.
+	* makefile.nt (ALL,addpm,addpm.exe,addpm.obj): Defined.
+	(all): Depend upon $(BLD) and $(ALL).
+	(install): Depend upon emacs.bat.
+	Create program item for Emacs.
+	(clean): Delete obj.
+	(emacs.bat): Defined.
+	* makefile.def (EMACS_ICON_PATH,ADDPM): Defined.
+
+Sat May 27 22:15:14 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* ebuild.bat, emacs.bat, fast-install.bat, install.bat:
+	Add carriage returns; necessary for batch files on Win95.
+
+Thu May 25 20:57:08 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* config.w95: Created.
+	* config.h: Changed to config.nt.
+	
+	* makefile.nt (SUBDIRS): Commented out.
+	(all,install,clean): Expand for-loops.
+	(BUILD_CMD,INSTALL_CMD,CLEAN_CMD): Defined.
+
+	* makefile.def (SYS_LIB_DIR,SYS_INC_DIR): Undefined.
+	(ARCH): New definition.
+	(CPU,CONFIG_H,OS_TYPE): Defined.
+	(INCLUDE,LIB): Checked if valid.
+	(ntwin32.mak): Included.
+	(AR,CC,LINK): New definition.
+	(ADVAPI32,libc,BASE_LIBS): Defined.
+	(SYS_LDFLAGS): New definition.
+	Update comments and preprocessor conditionals.
+
+	* emacs.bat (SHELL): Conditionally defined.
+	(HOME): Conditionally defined.
+	(emacs_path,HOME): Update comments.
+	Turn off all echo.
+
+Tue May  9 01:51:06 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* _emacs, config.h, ebuild.bat, emacs.bat, emacs.rc,
+	fast-install.bat, install.bat, makefile.def, makefile.nt, paths.h,
+	inc/pwd.h, inc/sys/dir.h, inc/sys/file.h, inc/sys/ioctl.h,
+	inc/sys/param.h: Removed carriage-returns.
+
+Sat May 06 23:12:45 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.def (CVTRES): Defined.
+
+	* emacs.ico, emacs.rc: New files by Kevin Gallo.
+
+Mon Apr 10 21:23:24 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* src: Removed.
+
+	* src\config.h, src\paths.h: Moved to parent dir, src removed.
+
+Sun Apr 09 13:23:30 1995  Geoff Voelker  <voelker@cs.washington.edu>
+
+	* makefile.def (INSTALL_DIR): Changed to generic directory.
+
+	* emacs.bat: Added arguments when emacs.exe invoked.
+
+	* ebuild.cmd, emacs.cmd, install.cmd: Changed extension to .bat.
+
+Tue Dec 13 17:55:58 1994  voelker  <voelker@cs.washington.edu>
+
+	* makefile.def (CC): In configuration section.
+	(COMPAT_LIB): Defined.
+
+Tue Nov 01 16:31:29 1994  voelker  <voelker@cs.washington.edu>
+
+	* src/paths.h: New file.
+
+	* src/config.h: New file.
+
+	* inc/pwd.h: New file.
+
+	* inc/sys/dir.h: New file.
+
+	* inc/sys/file.h: New file.
+
+	* inc/sys/ioctl.h: New file.
+
+	* inc/sys/param.h: New file.
+
+	* todo: New file.
+
+	* readme: New file.
+
+	* makefile.nt: New file.
+
+        * makefile.def: New file.
+ 
+        * install.cmd: New file.
+
+        * install: New file.
+
+        * fast-install.cmd: New file.
+
+	* emacs.cmd: New file.
+
+	* ebuild.cmd: New file.
+
+	* _emacs: New file.

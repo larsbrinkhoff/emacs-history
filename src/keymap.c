@@ -1,5 +1,5 @@
 /* Manipulation of keymaps
-   Copyright (C) 1985, 86, 87, 88, 93, 94 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 88, 93, 94, 95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -73,6 +73,12 @@ Lisp_Object Vminor_mode_map_alist;
    documentation.  */
 Lisp_Object Vfunction_key_map;
 
+/* A list of all commands given new bindings since a certain time
+   when nil was stored here.
+   This is used to speed up recomputation of menu key equivalents
+   when Emacs starts up.   t means don't record anything here.  */
+Lisp_Object Vdefine_key_rebound_commands;
+
 Lisp_Object Qkeymapp, Qkeymap, Qnon_ascii;
 
 /* A char with the CHAR_META bit set in a vector or the 0200 bit set
@@ -82,7 +88,6 @@ extern Lisp_Object meta_prefix_char;
 
 extern Lisp_Object Voverriding_local_map;
 
-void describe_map_tree ();
 static Lisp_Object define_as_prefix ();
 static Lisp_Object describe_buffer_bindings ();
 static void describe_command ();
@@ -163,8 +168,8 @@ synkey (frommap, fromchar, tomap, tochar)
      int fromchar, tochar;
 {
   Lisp_Object v, c;
-  XSET (v, Lisp_Vector, tomap);
-  XFASTINT (c) = tochar;
+  XSETVECTOR (v, tomap);
+  XSETFASTINT (c, tochar);
   frommap->contents[fromchar] = Fcons (v, c);
 }
 #endif /* 0 */
@@ -214,7 +219,7 @@ get_keymap_1 (object, error, autoload)
   /* Should we do an autoload?  Autoload forms for keymaps have
      Qkeymap as their fifth element.  */
   if (autoload
-      && XTYPE (object) == Lisp_Symbol
+      && SYMBOLP (object)
       && CONSP (tem)
       && EQ (XCONS (tem)->car, Qautoload))
     {
@@ -279,12 +284,12 @@ access_keymap (map, idx, t_ok, noinherit)
 
   /* If idx is a symbol, it might have modifiers, which need to
      be put in the canonical order.  */
-  if (XTYPE (idx) == Lisp_Symbol)
+  if (SYMBOLP (idx))
     idx = reorder_modifiers (idx);
   else if (INTEGERP (idx))
     /* Clobber the high bits that can be present on a machine
        with more than 24 bits of integer.  */
-    XFASTINT (idx) = XINT (idx) & (CHAR_META | (CHAR_META - 1));
+    XSETFASTINT (idx, XINT (idx) & (CHAR_META | (CHAR_META - 1)));
 
   {
     Lisp_Object tail;
@@ -296,16 +301,15 @@ access_keymap (map, idx, t_ok, noinherit)
 	Lisp_Object binding;
 
 	binding = XCONS (tail)->car;
-	switch (XTYPE (binding))
+	if (SYMBOLP (binding))
 	  {
-	  case Lisp_Symbol:
 	    /* If NOINHERIT, stop finding prefix definitions
 	       after we pass a second occurrence of the `keymap' symbol.  */
 	    if (noinherit && EQ (binding, Qkeymap) && ! EQ (tail, map))
 	      noprefix = 1;
-	    break;
-
-	  case Lisp_Cons:
+	  }
+	else if (CONSP (binding))
+	  {
 	    if (EQ (XCONS (binding)->car, idx))
 	      {
 		val = XCONS (binding)->cdr;
@@ -315,19 +319,16 @@ access_keymap (map, idx, t_ok, noinherit)
 	      }
 	    if (t_ok && EQ (XCONS (binding)->car, Qt))
 	      t_binding = XCONS (binding)->cdr;
-	    break;
-
-	  case Lisp_Vector:
-	    if (XTYPE (idx) == Lisp_Int
-		&& XINT (idx) >= 0
-		&& XINT (idx) < XVECTOR (binding)->size)
+	  }
+	else if (VECTORP (binding))
+	  {
+	    if (NATNUMP (idx) && XFASTINT (idx) < XVECTOR (binding)->size)
 	      {
-		val = XVECTOR (binding)->contents[XINT (idx)];
+		val = XVECTOR (binding)->contents[XFASTINT (idx)];
 		if (noprefix && CONSP (val) && EQ (XCONS (val)->car, Qkeymap))
 		  return Qnil;
 		return val;
 	      }
-	    break;
 	  }
 
 	QUIT;
@@ -368,14 +369,13 @@ get_keyelt (object, autoload)
 	 use DEFN.
 	 Keymap alist elements like (CHAR MENUSTRING . DEFN)
 	 will be used by HierarKey menus.  */
-      else if (XTYPE (object) == Lisp_Cons
-	       && XTYPE (XCONS (object)->car) == Lisp_String)
+      else if (CONSP (object)
+	       && STRINGP (XCONS (object)->car))
 	{
 	  object = XCONS (object)->cdr;
 	  /* Also remove a menu help string, if any,
 	     following the menu item name.  */
-	  if (XTYPE (object) == Lisp_Cons
-	      && XTYPE (XCONS (object)->car) == Lisp_String)
+	  if (CONSP (object) && STRINGP (XCONS (object)->car))
 	    object = XCONS (object)->cdr;
 	  /* Also remove the sublist that caches key equivalences, if any.  */
 	  if (CONSP (object)
@@ -400,8 +400,13 @@ store_in_keymap (keymap, idx, def)
      register Lisp_Object idx;
      register Lisp_Object def;
 {
-  if (XTYPE (keymap) != Lisp_Cons
-      || ! EQ (XCONS (keymap)->car, Qkeymap))
+  /* If we are preparing to dump, and DEF is a menu element
+     with a menu item string, copy it to ensure it is not pure.  */
+  if (!NILP (Vpurify_flag) && CONSP (def)
+      && STRINGP (XCONS (def)->car))
+    def = Fcons (XCONS (def)->car, XCONS (def)->cdr);
+
+  if (!CONSP (keymap) || ! EQ (XCONS (keymap)->car, Qkeymap))
     error ("attempt to define a key in a non-keymap");
 
   /* If idx is a list (some sort of mouse click, perhaps?),
@@ -411,12 +416,12 @@ store_in_keymap (keymap, idx, def)
 
   /* If idx is a symbol, it might have modifiers, which need to
      be put in the canonical order.  */
-  if (XTYPE (idx) == Lisp_Symbol)
+  if (SYMBOLP (idx))
     idx = reorder_modifiers (idx);
   else if (INTEGERP (idx))
     /* Clobber the high bits that can be present on a machine
        with more than 24 bits of integer.  */
-    XFASTINT (idx) = XINT (idx) & (CHAR_META | (CHAR_META - 1));
+    XSETFASTINT (idx, XINT (idx) & (CHAR_META | (CHAR_META - 1)));
 
   /* Scan the keymap for a binding of idx.  */
   {
@@ -436,34 +441,31 @@ store_in_keymap (keymap, idx, def)
 	Lisp_Object elt;
 
 	elt = XCONS (tail)->car;
-	switch (XTYPE (elt))
+	if (VECTORP (elt))
 	  {
-	  case Lisp_Vector:
-	    if (XTYPE (idx) == Lisp_Int
-		&& XINT (idx) >= 0 && XINT (idx) < XVECTOR (elt)->size)
+	    if (NATNUMP (idx) && XFASTINT (idx) < XVECTOR (elt)->size)
 	      {
 		XVECTOR (elt)->contents[XFASTINT (idx)] = def;
 		return def;
 	      }
 	    insertion_point = tail;
-	    break;
-
-	  case Lisp_Cons:
+	  }
+	else if (CONSP (elt))
+	  {
 	    if (EQ (idx, XCONS (elt)->car))
 	      {
 		XCONS (elt)->cdr = def;
 		return def;
 	      }
-	    break;
-
-	  case Lisp_Symbol:
+	  }
+	else if (SYMBOLP (elt))
+	  {
 	    /* If we find a 'keymap' symbol in the spine of KEYMAP,
                then we must have found the start of a second keymap
                being used as the tail of KEYMAP, and a binding for IDX
                should be inserted before it.  */
 	    if (EQ (elt, Qkeymap))
 	      goto keymap_end;
-	    break;
 	  }
 
 	QUIT;
@@ -472,8 +474,8 @@ store_in_keymap (keymap, idx, def)
   keymap_end:
     /* We have scanned the entire keymap, and not found a binding for
        IDX.  Let's add one.  */
-    XCONS (insertion_point)->cdr =
-      Fcons (Fcons (idx, def), XCONS (insertion_point)->cdr);
+    XCONS (insertion_point)->cdr
+      = Fcons (Fcons (idx, def), XCONS (insertion_point)->cdr);
   }
 	  
   return def;
@@ -499,7 +501,7 @@ is not copied.")
       Lisp_Object elt;
 
       elt = XCONS (tail)->car;
-      if (XTYPE (elt) == Lisp_Vector)
+      if (VECTORP (elt))
 	{
 	  int i;
 
@@ -507,7 +509,7 @@ is not copied.")
 	  XCONS (tail)->car = elt;
 
 	  for (i = 0; i < XVECTOR (elt)->size; i++)
-	    if (XTYPE (XVECTOR (elt)->contents[i]) != Lisp_Symbol
+	    if (!SYMBOLP (XVECTOR (elt)->contents[i])
 		&& ! NILP (Fkeymapp (XVECTOR (elt)->contents[i])))
 	      XVECTOR (elt)->contents[i] =
 		Fcopy_keymap (XVECTOR (elt)->contents[i]);
@@ -591,17 +593,19 @@ the front of KEYMAP.")
 
   keymap = get_keymap_1 (keymap, 1, 1);
 
-  if (XTYPE (key) != Lisp_Vector
-      && XTYPE (key) != Lisp_String)
+  if (!VECTORP (key) && !STRINGP (key))
     key = wrong_type_argument (Qarrayp, key);
 
   length = XFASTINT (Flength (key));
   if (length == 0)
     return Qnil;
 
+  if (SYMBOLP (def) && !EQ (Vdefine_key_rebound_commands, Qt))
+    Vdefine_key_rebound_commands = Fcons (def, Vdefine_key_rebound_commands);
+
   GCPRO3 (keymap, key, def);
 
-  if (XTYPE (key) == Lisp_Vector)
+  if (VECTORP (key))
     meta_bit = meta_modifier;
   else
     meta_bit = 0x80;
@@ -611,7 +615,10 @@ the front of KEYMAP.")
     {
       c = Faref (key, make_number (idx));
 
-      if (XTYPE (c) == Lisp_Int
+      if (CONSP (c) && lucid_event_type_list_p (c))
+	c = Fevent_convert_list (c);
+
+      if (INTEGERP (c)
 	  && (XINT (c) & meta_bit)
 	  && !metized)
 	{
@@ -620,7 +627,7 @@ the front of KEYMAP.")
 	}
       else
 	{
-	  if (XTYPE (c) == Lisp_Int)
+	  if (INTEGERP (c))
 	    XSETINT (c, XINT (c) & ~meta_bit);
 
 	  metized = 0;
@@ -683,15 +690,14 @@ recognize the default bindings, just as `read-key-sequence' does.")
 
   keymap = get_keymap_1 (keymap, 1, 1);
 
-  if (XTYPE (key) != Lisp_Vector
-      && XTYPE (key) != Lisp_String)
+  if (!VECTORP (key) && !STRINGP (key))
     key = wrong_type_argument (Qarrayp, key);
 
   length = XFASTINT (Flength (key));
   if (length == 0)
     return keymap;
 
-  if (XTYPE (key) == Lisp_Vector)
+  if (VECTORP (key))
     meta_bit = meta_modifier;
   else
     meta_bit = 0x80;
@@ -703,7 +709,10 @@ recognize the default bindings, just as `read-key-sequence' does.")
     {
       c = Faref (key, make_number (idx));
 
-      if (XTYPE (c) == Lisp_Int
+      if (CONSP (c) && lucid_event_type_list_p (c))
+	c = Fevent_convert_list (c);
+
+      if (INTEGERP (c)
 	  && (XINT (c) & meta_bit)
 	  && !metized)
 	{
@@ -712,7 +721,7 @@ recognize the default bindings, just as `read-key-sequence' does.")
 	}
       else
 	{
-	  if (XTYPE (c) == Lisp_Int)
+	  if (INTEGERP (c))
 	    XSETINT (c, XINT (c) & ~meta_bit);
 
 	  metized = 0;
@@ -816,9 +825,9 @@ current_minor_maps (modeptr, mapptr)
   for (alist = Vminor_mode_map_alist;
        CONSP (alist);
        alist = XCONS (alist)->cdr)
-    if (CONSP (assoc = XCONS (alist)->car)
-	&& XTYPE (var = XCONS (assoc)->car) == Lisp_Symbol
-	&& ! EQ ((val = find_symbol_value (var)), Qunbound)
+    if ((assoc = XCONS (alist)->car, CONSP (assoc))
+	&& (var = XCONS (assoc)->car, SYMBOLP (var))
+	&& (val = find_symbol_value (var), ! EQ (val, Qunbound))
 	&& ! NILP (val))
       {
 	if (i >= cmm_size)
@@ -887,10 +896,17 @@ recognize the default bindings, just as `read-key-sequence' does.")
 
   GCPRO1 (key);
 
-  if (!NILP (Voverriding_local_map))
+  if (!NILP (current_kboard->Voverriding_terminal_local_map))
+    {
+      value = Flookup_key (current_kboard->Voverriding_terminal_local_map,
+			   key, accept_default);
+      if (! NILP (value) && !INTEGERP (value))
+	RETURN_UNGCPRO (value);
+    }
+  else if (!NILP (Voverriding_local_map))
     {
       value = Flookup_key (Voverriding_local_map, key, accept_default);
-      if (! NILP (value) && XTYPE (value) != Lisp_Int)
+      if (! NILP (value) && !INTEGERP (value))
 	RETURN_UNGCPRO (value);
     }
   else
@@ -903,21 +919,21 @@ recognize the default bindings, just as `read-key-sequence' does.")
 	if (! NILP (maps[i]))
 	  {
 	    value = Flookup_key (maps[i], key, accept_default);
-	    if (! NILP (value) && XTYPE (value) != Lisp_Int)
+	    if (! NILP (value) && !INTEGERP (value))
 	      RETURN_UNGCPRO (value);
 	  }
 
       if (! NILP (current_buffer->keymap))
 	{
 	  value = Flookup_key (current_buffer->keymap, key, accept_default);
-	  if (! NILP (value) && XTYPE (value) != Lisp_Int)
+	  if (! NILP (value) && !INTEGERP (value))
 	    RETURN_UNGCPRO (value);
 	}
     }
 
   value = Flookup_key (current_global_map, key, accept_default);
   UNGCPRO;
-  if (! NILP (value) && XTYPE (value) != Lisp_Int)
+  if (! NILP (value) && !INTEGERP (value))
     return value;
   
   return Qnil;
@@ -992,7 +1008,7 @@ bindings; see the description of `lookup-key' for more details about this.")
   for (i = j = 0; i < nmaps; i++)
     if (! NILP (maps[i])
 	&& ! NILP (binding = Flookup_key (maps[i], key, accept_default))
-	&& XTYPE (binding) != Lisp_Int)
+	&& !INTEGERP (binding))
       {
 	if (! NILP (get_keymap (binding)))
 	  maps[j++] = Fcons (modes[i], binding);
@@ -1002,76 +1018,6 @@ bindings; see the description of `lookup-key' for more details about this.")
 
   UNGCPRO;
   return Flist (j, maps);
-}
-
-DEFUN ("global-set-key", Fglobal_set_key, Sglobal_set_key, 2, 2,
-  "kSet key globally: \nCSet key %s to command: ",
-  "Give KEY a global binding as COMMAND.\n\
-COMMAND is a symbol naming an interactively-callable function.\n\
-KEY is a key sequence (a string or vector of characters or event types).\n\
-Non-ASCII characters with codes above 127 (such as ISO Latin-1)\n\
-can be included if you use a vector.\n\
-Note that if KEY has a local binding in the current buffer\n\
-that local binding will continue to shadow any global binding.")
-  (keys, function)
-     Lisp_Object keys, function;
-{
-  if (XTYPE (keys) != Lisp_Vector
-      && XTYPE (keys) != Lisp_String)
-    keys = wrong_type_argument (Qarrayp, keys);
-
-  Fdefine_key (current_global_map, keys, function);
-  return Qnil;
-}
-
-DEFUN ("local-set-key", Flocal_set_key, Slocal_set_key, 2, 2,
-  "kSet key locally: \nCSet key %s locally to command: ",
-  "Give KEY a local binding as COMMAND.\n\
-COMMAND is a symbol naming an interactively-callable function.\n\
-KEY is a key sequence (a string or vector of characters or event types).\n\
-Non-ASCII characters with codes above 127 (such as ISO Latin-1)\n\
-can be included if you use a vector.\n\
-The binding goes in the current buffer's local map,\n\
-which in most cases is shared with all other buffers in the same major mode.")
-  (keys, function)
-     Lisp_Object keys, function;
-{
-  register Lisp_Object map;
-  map = current_buffer->keymap;
-  if (NILP (map))
-    {
-      map = Fmake_sparse_keymap (Qnil);
-      current_buffer->keymap = map;
-    }
-
-  if (XTYPE (keys) != Lisp_Vector
-      && XTYPE (keys) != Lisp_String)
-    keys = wrong_type_argument (Qarrayp, keys);
-
-  Fdefine_key (map, keys, function);
-  return Qnil;
-}
-
-DEFUN ("global-unset-key", Fglobal_unset_key, Sglobal_unset_key,
-  1, 1, "kUnset key globally: ",
-  "Remove global binding of KEY.\n\
-KEY is a string representing a sequence of keystrokes.")
-  (keys)
-     Lisp_Object keys;
-{
-  return Fglobal_set_key (keys, Qnil);
-}
-
-DEFUN ("local-unset-key", Flocal_unset_key, Slocal_unset_key, 1, 1,
-  "kUnset key locally: ",
-  "Remove local binding of KEY.\n\
-KEY is a string representing a sequence of keystrokes.")
-  (keys)
-     Lisp_Object keys;
-{
-  if (!NILP (current_buffer->keymap))
-    Flocal_set_key (keys, Qnil);
-  return Qnil;
 }
 
 DEFUN ("define-prefix-command", Fdefine_prefix_command, Sdefine_prefix_command, 1, 2, 0,
@@ -1215,7 +1161,7 @@ then the value includes only maps for prefixes that start with PREFIX.")
 
 	  QUIT;
 
-	  if (XTYPE (elt) == Lisp_Vector)
+	  if (VECTORP (elt))
 	    {
 	      register int i;
 
@@ -1282,7 +1228,7 @@ then the value includes only maps for prefixes that start with PREFIX.")
 		      /* If the last key in thisseq is meta-prefix-char, and
 			 this entry is a binding for an ascii keystroke,
 			 turn it into a meta-ized keystroke.  */
-		      if (is_metized && XTYPE (elt) == Lisp_Int)
+		      if (is_metized && INTEGERP (elt))
 			{
 			  tem = Fcopy_sequence (thisseq);
 			  Faset (tem, last,
@@ -1323,7 +1269,7 @@ then the value includes only maps for prefixes that start with PREFIX.")
 	  for (i = 0; i < prefixlen; i++)
 	    {
 	      Lisp_Object i1;
-	      XFASTINT (i1) = i;
+	      XSETFASTINT (i1, i);
 	      if (!EQ (Faref (thisseq, i1), Faref (prefix, i1)))
 		break;
 	    }
@@ -1351,21 +1297,23 @@ spaces are put between sequence elements, etc.")
   Lisp_Object sep;
   Lisp_Object *args;
 
-  if (XTYPE (keys) == Lisp_String)
+  if (STRINGP (keys))
     {
       Lisp_Object vector;
       vector = Fmake_vector (Flength (keys), Qnil);
       for (i = 0; i < XSTRING (keys)->size; i++)
 	{
 	  if (XSTRING (keys)->data[i] & 0x80)
-	    XFASTINT (XVECTOR (vector)->contents[i])
-	      = meta_modifier | (XSTRING (keys)->data[i] & ~0x80);
+	    XSETFASTINT (XVECTOR (vector)->contents[i],
+			 meta_modifier | (XSTRING (keys)->data[i] & ~0x80));
 	  else
-	    XFASTINT (XVECTOR (vector)->contents[i])
-	      = XSTRING (keys)->data[i];
+	    XSETFASTINT (XVECTOR (vector)->contents[i],
+			 XSTRING (keys)->data[i]);
 	}
       keys = vector;
     }
+  else if (!VECTORP (keys))
+    keys = wrong_type_argument (Qarrayp, keys);
 
   /* In effect, this computes
      (mapconcat 'single-key-description keys " ")
@@ -1505,22 +1453,17 @@ Control characters turn into C-whatever, etc.")
 
   key = EVENT_HEAD (key);
 
-  switch (XTYPE (key))
+  if (INTEGERP (key))		/* Normal character */
     {
-    case Lisp_Int:		/* Normal character */
       *push_key_description (XUINT (key), tem) = 0;
       return build_string (tem);
-
-    case Lisp_Symbol:		/* Function key or event-symbol */
-      return Fsymbol_name (key);
-
-      /* Buffer names in the menubar can trigger this.  */
-    case Lisp_String:
-      return Fcopy_sequence (key);
-
-    default:
-      error ("KEY must be an integer, cons, symbol, or string");
     }
+  else if (SYMBOLP (key))	/* Function key or event-symbol */
+    return Fsymbol_name (key);
+  else if (STRINGP (key))	/* Buffer names in the menubar.  */
+    return Fcopy_sequence (key);
+  else
+    error ("KEY must be an integer, cons, symbol, or string");
 }
 
 char *
@@ -1572,16 +1515,17 @@ static int
 ascii_sequence_p (seq)
      Lisp_Object seq;
 {
-  Lisp_Object i;
+  int i;
   int len = XINT (Flength (seq));
 
-  for (XFASTINT (i) = 0; XFASTINT (i) < len; XFASTINT (i)++)
+  for (i = 0; i < len; i++)
     {
-      Lisp_Object elt;
+      Lisp_Object ii, elt;
 
-      elt = Faref (seq, i);
+      XSETFASTINT (ii, i);
+      elt = Faref (seq, ii);
 
-      if (XTYPE (elt) != Lisp_Int
+      if (!INTEGERP (elt)
 	  || (XUINT (elt) & ~CHAR_META) >= 0x80)
 	return 0;
     }
@@ -1601,10 +1545,10 @@ If KEYMAP is nil, search all the currently active keymaps.\n\
 \n\
 If optional 3rd arg FIRSTONLY is non-nil, return the first key sequence found,\n\
 rather than a list of all possible key sequences.\n\
-If FIRSTONLY is t, avoid key sequences which use non-ASCII\n\
-keys and therefore may not be usable on ASCII terminals.  If FIRSTONLY\n\
-is the symbol `non-ascii', return the first binding found, no matter\n\
-what its components.\n\
+If FIRSTONLY is the symbol `non-ascii', return the first binding found,\n\
+no matter what it is.\n\
+If FIRSTONLY has another non-nil value, prefer sequences of ASCII characters,\n\
+and entirely reject menu bindings.\n\
 \n\
 If optional 4th arg NOINDIRECT is non-nil, don't follow indirections\n\
 to other keymaps or slots.  This makes it possible to search for an\n\
@@ -1617,6 +1561,8 @@ indirect definition itself.")
   Lisp_Object found, sequence;
   int keymap_specified = !NILP (keymap);
   struct gcpro gcpro1, gcpro2, gcpro3, gcpro4, gcpro5;
+  /* 1 means ignore all menu bindings entirely.  */
+  int nomenus = !NILP (firstonly) && !EQ (firstonly, Qnon_ascii);
 
   if (! keymap_specified)
     {
@@ -1692,11 +1638,11 @@ indirect definition itself.")
 
 	  /* Set key and binding to the current key and binding, and
 	     advance map and i to the next binding.  */
-	  if (XTYPE (elt) == Lisp_Vector)
+	  if (VECTORP (elt))
 	    {
 	      /* In a vector, look at each element.  */
 	      binding = XVECTOR (elt)->contents[i];
-	      XFASTINT (key) = i;
+	      XSETFASTINT (key, i);
 	      i++;
 
 	      /* If we've just finished scanning a vector, advance map
@@ -1725,12 +1671,33 @@ indirect definition itself.")
 
 	  /* Search through indirections unless that's not wanted.  */
 	  if (NILP (noindirect))
-	    binding = get_keyelt (binding, 0);
+	    {
+	      if (nomenus)
+		{
+		  while (1)
+		    {
+		      Lisp_Object map, tem;
+		      /* If the contents are (KEYMAP . ELEMENT), go indirect.  */
+		      map = get_keymap_1 (Fcar_safe (definition), 0, 0);
+		      tem = Fkeymapp (map);
+		      if (!NILP (tem))
+			definition = access_keymap (map, Fcdr (definition), 0, 0);
+		      else
+			break;
+		    }
+		  /* If the contents are (STRING ...), reject.  */
+		  if (CONSP (definition)
+		      && STRINGP (XCONS (definition)->car))
+		    continue;
+		}
+	      else
+		binding = get_keyelt (binding, 0);
+	    }
 
 	  /* End this iteration if this element does not match
 	     the target.  */
 
-	  if (XTYPE (definition) == Lisp_Cons)
+	  if (CONSP (definition))
 	    {
 	      Lisp_Object tem;
 	      tem = Fequal (binding, definition);
@@ -1743,7 +1710,7 @@ indirect definition itself.")
 
 	  /* We have found a match.
 	     Construct the key sequence where we found it.  */
-	  if (XTYPE (key) == Lisp_Int && last_is_meta)
+	  if (INTEGERP (key) && last_is_meta)
 	    {
 	      sequence = Fcopy_sequence (this);
 	      Faset (sequence, last, make_number (XINT (key) | meta_modifier));
@@ -1763,9 +1730,9 @@ indirect definition itself.")
 	  if (keymap_specified)
 	    {
 	      binding = Flookup_key (keymap, sequence, Qnil);
-	      if (!NILP (binding) && XTYPE (binding) != Lisp_Int)
+	      if (!NILP (binding) && !INTEGERP (binding))
 		{
-		  if (XTYPE (definition) == Lisp_Cons)
+		  if (CONSP (definition))
 		    {
 		      Lisp_Object tem;
 		      tem = Fequal (binding, definition);
@@ -1824,7 +1791,7 @@ then we display only bindings that start with that prefix.")
      Lisp_Object prefix;
 {
   register Lisp_Object thisbuf;
-  XSET (thisbuf, Lisp_Buffer, current_buffer);
+  XSETBUFFER (thisbuf, current_buffer);
   internal_with_output_to_temp_buffer ("*Help*",
 				       describe_buffer_bindings,
 				       Fcons (thisbuf, prefix));
@@ -1855,7 +1822,7 @@ nominal         alternate\n\
   Fset_buffer (Vstandard_output);
 
   /* Report on alternates for keys.  */
-  if (XTYPE (Vkeyboard_translate_table) == Lisp_String)
+  if (STRINGP (Vkeyboard_translate_table))
     {
       int c;
       unsigned char *translate = XSTRING (Vkeyboard_translate_table)->data;
@@ -1892,7 +1859,8 @@ nominal         alternate\n\
     /* Temporarily switch to descbuf, so that we can get that buffer's
        minor modes correctly.  */
     Fset_buffer (descbuf);
-    if (!NILP (Voverriding_local_map))
+    if (!NILP (current_kboard->Voverriding_terminal_local_map)
+	|| !NILP (Voverriding_local_map))
       nmaps = 0;
     else
       nmaps = current_minor_maps (&modes, &maps);
@@ -1907,7 +1875,7 @@ nominal         alternate\n\
 	   because it takes care of other features when doing so.  */
 	char *title, *p;
 
-	if (XTYPE (modes[i]) != Lisp_Symbol)
+	if (!SYMBOLP (modes[i]))
 	  abort();
 
 	p = title = (char *) alloca (40 + XSYMBOL (modes[i])->name->size);
@@ -1926,7 +1894,9 @@ nominal         alternate\n\
   }
 
   /* Print the (major mode) local map.  */
-  if (!NILP (Voverriding_local_map))
+  if (!NILP (current_kboard->Voverriding_terminal_local_map))
+    start1 = current_kboard->Voverriding_terminal_local_map;
+  else if (!NILP (Voverriding_local_map))
     start1 = Voverriding_local_map;
   else
     start1 = XBUFFER (descbuf)->keymap;
@@ -1941,6 +1911,7 @@ nominal         alternate\n\
   describe_map_tree (current_global_map, 0, shadow, prefix,
 		     "Global Bindings", 0);
 
+  call0 (intern ("help-mode"));
   Fset_buffer (descbuf);
   UNGCPRO;
   return Qnil;
@@ -2030,10 +2001,8 @@ key             binding\n\
 
 	  /* If the sequence by which we reach this keymap is zero-length,
 	     then the shadow map for this keymap is just SHADOW.  */
-	  if ((XTYPE (prefix) == Lisp_String
-	       && XSTRING (prefix)->size == 0)
-	      || (XTYPE (prefix) == Lisp_Vector
-		  && XVECTOR (prefix)->size == 0))
+	  if ((STRINGP (prefix) && XSTRING (prefix)->size == 0)
+	      || (VECTORP (prefix) && XVECTOR (prefix)->size == 0))
 	    ;
 	  /* If the sequence by which we reach this keymap actually has
 	     some elements, then the sequence's definition in SHADOW is
@@ -2041,7 +2010,7 @@ key             binding\n\
 	  else
 	    {
 	      shmap = Flookup_key (shmap, Fcar (elt), Qt);
-	      if (XTYPE (shmap) == Lisp_Int)
+	      if (INTEGERP (shmap))
 		shmap = Qnil;
 	    }
 
@@ -2075,9 +2044,9 @@ describe_command (definition)
 
   Findent_to (make_number (16), make_number (1));
 
-  if (XTYPE (definition) == Lisp_Symbol)
+  if (SYMBOLP (definition))
     {
-      XSET (tem1, Lisp_String, XSYMBOL (definition)->name);
+      XSETSTRING (tem1, XSYMBOL (definition)->name);
       insert1 (tem1);
       insert_string ("\n");
     }
@@ -2156,9 +2125,9 @@ describe_map (map, keys, elt_describer, partial, shadow, seen)
     {
       QUIT;
 
-      if (XTYPE (XCONS (tail)->car) == Lisp_Vector)
+      if (VECTORP (XCONS (tail)->car))
 	describe_vector (XCONS (tail)->car,
-			 elt_prefix, elt_describer, partial, shadow);
+			 elt_prefix, elt_describer, partial, shadow, map);
       else if (CONSP (XCONS (tail)->car))
 	{
 	  event = XCONS (XCONS (tail)->car)->car;
@@ -2172,7 +2141,7 @@ describe_map (map, keys, elt_describer, partial, shadow, seen)
 
 	  /* Don't show undefined commands or suppressed commands.  */
 	  if (NILP (definition)) continue;
-	  if (XTYPE (definition) == Lisp_Symbol && partial)
+	  if (SYMBOLP (definition) && partial)
 	    {
 	      tem = Fget (definition, suppress);
 	      if (!NILP (tem))
@@ -2243,34 +2212,37 @@ This is text showing the elements of vector matched against indices.")
 
   specbind (Qstandard_output, Fcurrent_buffer ());
   CHECK_VECTOR (vector, 0);
-  describe_vector (vector, Qnil, describe_vector_princ, 0, Qnil);
+  describe_vector (vector, Qnil, describe_vector_princ, 0, Qnil, Qnil);
 
   return unbind_to (count, Qnil);
 }
 
-describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
+describe_vector (vector, elt_prefix, elt_describer,
+		 partial, shadow, entire_map)
      register Lisp_Object vector;
      Lisp_Object elt_prefix;
      int (*elt_describer) ();
      int partial;
      Lisp_Object shadow;
+     Lisp_Object entire_map;
 {
   Lisp_Object this;
   Lisp_Object dummy;
-  Lisp_Object tem1, tem2;
+  Lisp_Object definition;
+  Lisp_Object tem2;
   register int i;
   Lisp_Object suppress;
   Lisp_Object kludge;
   int first = 1;
   struct gcpro gcpro1, gcpro2, gcpro3;
 
-  tem1 = Qnil;
+  definition = Qnil;
 
   /* This vector gets used to present single keys to Flookup_key.  Since
      that is done once per vector element, we don't want to cons up a
      fresh vector every time.  */
   kludge = Fmake_vector (make_number (1), Qnil);
-  GCPRO3 (elt_prefix, tem1, kludge);
+  GCPRO3 (elt_prefix, definition, kludge);
 
   if (partial)
     suppress = intern ("suppress-keymap");
@@ -2278,20 +2250,19 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
   for (i = 0; i < XVECTOR (vector)->size; i++)
     {
       QUIT;
-      tem1 = get_keyelt (XVECTOR (vector)->contents[i], 0);
+      definition = get_keyelt (XVECTOR (vector)->contents[i], 0);
 
-      if (NILP (tem1)) continue;      
+      if (NILP (definition)) continue;      
 
       /* Don't mention suppressed commands.  */
-      if (XTYPE (tem1) == Lisp_Symbol && partial)
+      if (SYMBOLP (definition) && partial)
 	{
-	  this = Fget (tem1, suppress);
+	  this = Fget (definition, suppress);
 	  if (!NILP (this))
 	    continue;
 	}
 
-      /* If this command in this map is shadowed by some other map,
-	 ignore it.  */
+      /* If this binding is shadowed by some other map, ignore it.  */
       if (!NILP (shadow))
 	{
 	  Lisp_Object tem;
@@ -2300,6 +2271,19 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 	  tem = shadow_lookup (shadow, kludge, Qt);
 
 	  if (!NILP (tem)) continue;
+	}
+
+      /* Ignore this definition if it is shadowed by an earlier
+	 one in the same keymap.  */
+      if (!NILP (entire_map))
+	{
+	  Lisp_Object tem;
+
+	  XVECTOR (kludge)->contents[0] = make_number (i);
+	  tem = Flookup_key (entire_map, kludge, Qt);
+
+	  if (! EQ (tem, definition))
+	    continue;
 	}
 
       if (first)
@@ -2313,7 +2297,7 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 	insert1 (elt_prefix);
 
       /* Get the string to describe the character I, and print it.  */
-      XFASTINT (dummy) = i;
+      XSETFASTINT (dummy, i);
 
       /* THIS gets the string to describe the character DUMMY.  */
       this = Fsingle_key_description (dummy);
@@ -2322,7 +2306,7 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
       /* Find all consecutive characters that have the same definition.  */
       while (i + 1 < XVECTOR (vector)->size
 	     && (tem2 = get_keyelt (XVECTOR (vector)->contents[i+1], 0),
-		 EQ (tem2, tem1)))
+		 EQ (tem2, definition)))
 	i++;
 
       /* If we have a range of more than one character,
@@ -2334,14 +2318,14 @@ describe_vector (vector, elt_prefix, elt_describer, partial, shadow)
 	  if (!NILP (elt_prefix))
 	    insert1 (elt_prefix);
 
-	  XFASTINT (dummy) = i;
+	  XSETFASTINT (dummy, i);
 	  insert1 (Fsingle_key_description (dummy));
 	}
 
       /* Print a description of the definition of this character.
 	 elt_describer will take care of spacing out far enough
 	 for alignment purposes.  */
-      (*elt_describer) (tem1);
+      (*elt_describer) (definition);
     }
 
   UNGCPRO;
@@ -2405,6 +2389,12 @@ syms_of_keymap ()
   control_x_map = Fmake_keymap (Qnil);
   Fset (intern ("ctl-x-map"), control_x_map);
   Ffset (intern ("Control-X-prefix"), control_x_map);
+
+  DEFVAR_LISP ("define-key-rebound-commands", &Vdefine_key_rebound_commands,
+    "List of commands given new key bindings recently.\n\
+This is used for internal purposes during Emacs startup;\n\
+don't alter it yourself.");
+  Vdefine_key_rebound_commands = Qt;
 
   DEFVAR_LISP ("minibuffer-local-map", &Vminibuffer_local_map,
     "Default keymap to use when reading from the minibuffer.");
@@ -2473,12 +2463,8 @@ key, typing `ESC O P x' would return [f1 x].");
   defsubr (&Slocal_key_binding);
   defsubr (&Sglobal_key_binding);
   defsubr (&Sminor_mode_key_binding);
-  defsubr (&Sglobal_set_key);
-  defsubr (&Slocal_set_key);
   defsubr (&Sdefine_key);
   defsubr (&Slookup_key);
-  defsubr (&Sglobal_unset_key);
-  defsubr (&Slocal_unset_key);
   defsubr (&Sdefine_prefix_command);
   defsubr (&Suse_global_map);
   defsubr (&Suse_local_map);

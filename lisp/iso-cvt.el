@@ -22,7 +22,7 @@
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary: 
-;; This lisp code server two purposes, both of which involve 
+;; This lisp code serves two purposes, both of which involve 
 ;; the translation of various conventions for representing European 
 ;; character sets to ISO 8859-1.
 
@@ -114,8 +114,8 @@
     ("\\\\3" "ß")
     )
   "German translation table. 
-This table uses an aggressive translation approach and may translate 
-erroneously translate too much.")
+This table uses an aggressive translation approach and may erroneously
+translate too much.")
 
 (defvar iso-conservative-german-trans-tab
   '(
@@ -194,9 +194,12 @@ little.")
     ("ß" "{\\\\ss}")
     ("\306" "{\\\\AE}")
     ("\346" "{\\\\ae}")
-    ("\305" "{\\\\o A}")
-    ("\345" "{\\\\o a}")
+    ("\305" "{\\\\AA}")
+    ("\345" "{\\\\aa}")
     ("\251" "{\\\\copyright}")
+    ("£" "{\\\\pounds}")
+    ("¶" "{\\\\P}")
+    ("§" "{\\\\S}")
     ("¿" "{?`}")
     ("¡" "{!`}")
     )
@@ -370,12 +373,16 @@ little.")
     ("{\\\\ss}" "ß")
     ("{\\\\AE}" "\306")
     ("{\\\\ae}" "\346")
-    ("{\\\\o A}" "\305")
-    ("\\\\o{A}" "\305")
-    ("{\\\\o a}" "\345")
-    ("\\\\o{a}" "\345")
+    ("{\\\\AA}" "\305")
+    ("{\\\\aa}" "\345")
     ("{\\\\copyright}" "\251")
     ("\\\\copyright{}" "\251")
+    ("{\\\\pounds}" "£" )
+    ("{\\\\P}" "¶" )
+    ("{\\\\S}" "§" )
+    ("\\\\pounds{}" "£" )
+    ("\\\\P{}" "¶" )
+    ("\\\\S{}" "§" )
     ("{\\?`}" "¿")
     ("{!`}" "¡")
     ("\\?`" "¿")
@@ -549,12 +556,16 @@ contains commonly used sequences.")
     ("{\\\\ss}" "ß")
     ("{\\\\AE}" "\306")
     ("{\\\\ae}" "\346")
-    ("{\\\\o A}" "\305")
-    ("\\\\o{A}" "\305")
-    ("{\\\\o a}" "\345")
-    ("\\\\o{a}" "\345")
+    ("{\\\\AA}" "\305")
+    ("{\\\\aa}" "\345")
     ("{\\\\copyright}" "\251")
     ("\\\\copyright{}" "\251")
+    ("{\\\\pounds}" "£" )
+    ("{\\\\P}" "¶" )
+    ("{\\\\S}" "§" )
+    ("\\\\pounds{}" "£" )
+    ("\\\\P{}" "¶" )
+    ("\\\\S{}" "§" )
     ("?`" "¿")
     ("!`" "¡")
     ("{?`}" "¿")
@@ -625,9 +636,12 @@ contains commonly used sequences.")
     ("ß" "\"s")
     ("\306" "{\\\\AE}")
     ("\346" "{\\\\ae}")
-    ("\305" "{\\\\o A}")
-    ("\345" "{\\\\o a}")
+    ("\305" "{\\\\AA}")
+    ("\345" "{\\\\aa}")
     ("\251" "{\\\\copyright}")
+    ("£" "{\\\\pounds}")
+    ("¶" "{\\\\P}")
+    ("§" "{\\\\S}")
     ("¿" "{?`}")
     ("¡" "{!`}")
     )
@@ -680,16 +694,16 @@ This function recognices German TeX buffers."
       (iso-tex2iso)))
 
 (defun iso-cvt-ffh ()
-  "find-file-hook for iso-cvt-cvt.el."
+  "find-file-hook for iso-cvt.el."
   (iso-fix-tex2iso)
   (set-buffer-modified-p nil))
 
 (defun iso-cvt-wfh ()
-  "write file hook for iso-cvt-cvt.el."
+  "write file hook for iso-cvt.el."
   (iso-fix-iso2tex))
 
 (defun iso-cvt-ash ()
-  "after save hook for iso-cvt-cvt.el."
+  "after save hook for iso-cvt.el."
   (iso-fix-tex2iso)
   (set-buffer-modified-p nil))
 

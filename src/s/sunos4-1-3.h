@@ -1,3 +1,7 @@
+/* As of 19.29, it should work ok to use shared libs with X.  */
+#include "sunos4shr.h"
+
+#if 0
 #include "sunos4-1.h"
 
 /* jik@gza.com says this works now.  */
@@ -19,7 +23,4 @@
 #ifndef SYSTEM_MALLOC
 #define MEMMOVE_MISSING
 #endif
-
-/* brett@kirk.es.go.dlr.de reported that, without this definition,
-   Emacs would loop when olvwm exits.  */
-#define X_IO_BUG
+#endif /* 0 */

@@ -64,45 +64,6 @@
 ;;; Cscheme-specific; you must use cmuscheme.el.  Interested parties are
 ;;; invited to port xscheme functionality on top of comint mode...
 
-;; YOUR .EMACS FILE
-;;=============================================================================
-;; Some suggestions for your .emacs file.
-;;
-;; ; If cmuscheme lives in some non-standard directory, you must tell emacs
-;; ; where to get it. This may or may not be necessary.
-;; (setq load-path (cons (expand-file-name "~jones/lib/emacs") load-path))
-;;
-;; ; Autoload run-scheme from file cmuscheme.el
-;; (autoload 'run-scheme "cmuscheme"
-;;           "Run an inferior Scheme process."
-;;           t)
-;;
-;; ; Files ending in ".scm" are Scheme source, 
-;; ; so put their buffers in scheme-mode.
-;; (setq auto-mode-alist 
-;;       (cons '("\\.scm$" . scheme-mode)  
-;;             auto-mode-alist))
-;;
-;; ; Define C-c t to run my favorite command in inferior scheme mode:
-;; (setq cmuscheme-load-hook
-;;       '((lambda () (define-key inferior-scheme-mode-map "\C-ct"
-;;                                'favorite-cmd))))
-;;;
-;;; Unfortunately, scheme.el defines run-scheme to autoload from xscheme.el.
-;;; This will womp your declaration to autoload run-scheme from cmuscheme.el
-;;; if you haven't loaded cmuscheme in before scheme. Three fixes:
-;;; - Put the autoload on your scheme mode hook and in your .emacs toplevel:
-;;;   (setq scheme-mode-hook
-;;;         '((lambda () (autoload 'run-scheme "cmuscheme"
-;;;                                "Run an inferior Scheme" t))))
-;;;   (autoload 'run-scheme "cmuscheme" "Run an inferior Scheme" t)
-;;;   Now when scheme.el autoloads, it will restore the run-scheme autoload.
-;;; - Load cmuscheme.el in your .emacs: (load-library 'cmuscheme)
-;;; - Change autoload declaration in scheme.el to point to cmuscheme.el:
-;;;   (autoload 'run-scheme "cmuscheme" "Run an inferior Scheme" t)
-;;;   *or* just delete the autoload declaration from scheme.el altogether,
-;;;   which will allow the autoload in your .emacs to have its say.
-
 ;;; Code:
 
 (require 'scheme)
@@ -221,13 +182,7 @@ Defaults to a regexp ignoring all inputs of 0, 1, or 2 letters.")
 (defvar scheme-program-name "scheme"
   "*Program invoked by the run-scheme command")
 
-;;; Obsolete
-(defun scheme (&rest foo)
-  "Use run-scheme"
-  (interactive)
-  (message "Use run-scheme")
-  (ding))
-
+;;;###autoload
 (defun run-scheme (cmd)
   "Run an inferior Scheme process, input and output via buffer *scheme*.
 If there is a process already running in *scheme*, just switch to that buffer.
@@ -244,6 +199,7 @@ of scheme-program-name).  Runs the hooks from inferior-scheme-mode-hook
 	(set-buffer (apply 'make-comint "scheme" (car cmdlist)
 			   nil (cdr cmdlist)))
 	(inferior-scheme-mode)))
+  (setq scheme-program-name cmd)
   (setq scheme-buffer "*scheme*")
   (switch-to-buffer "*scheme*"))
 

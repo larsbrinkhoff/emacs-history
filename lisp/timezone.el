@@ -4,6 +4,7 @@
 
 ;;; Author: Masanobu Umeda
 ;;; Maintainer: umerin@mse.kyutech.ac.jp
+;;; Keywords: news
 
 ;; This file is part of GNU Emacs.
 
@@ -36,6 +37,7 @@
     ("EDT" .  -400)
     ("AST" .  -400)			;by <clamen@CS.CMU.EDU>
     ("NST" .  -330)			;by <clamen@CS.CMU.EDU>
+    ("UT"  .  +000)
     ("GMT" .  +000)
     ("BST" .  +100)
     ("MET" .  +100)
@@ -125,7 +127,9 @@ Understands the following styles:
  (2) Fri, 17 Mar 89 4:01[:33] [GMT]
  (3) Mon Jan 16 16:12[:37] [GMT] 1989
  (4) 6 May 1992 1641-JST (Wednesday)
- (5) 22-AUG-1993 10:59:12.82"
+ (5) 22-AUG-1993 10:59:12.82
+ (6) Thu, 11 Apr 16:17:12 91 [MET]
+ (7) Mon, 6  Jul 16:47:20 T 1992 [MET]"
   (let ((date (or date ""))
 	(year nil)
 	(month nil)
@@ -133,6 +137,14 @@ Understands the following styles:
 	(time nil)
 	(zone nil))			;This may be nil.
     (cond ((string-match
+	    "\\([^ \t,]+\\),[ \t]+\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\(T[ \t]+\\|\\)\\([0-9]+\\)[ \t]*\\'" date)
+	   ;; Styles: (6) and (7) without timezone
+	   (setq year 6 month 3 day 2 time 4 zone nil))
+	  ((string-match
+	    "\\([^ \t,]+\\),[ \t]+\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]+\\(T[ \t]+\\|\\)\\([0-9]+\\)[ \t]*\\([-+a-zA-Z0-9]+\\)" date)
+	   ;; Styles: (6) and (7) with timezone and buggy timezone
+	   (setq year 6 month 3 day 2 time 4 zone 7))
+	  ((string-match
 	    "\\([0-9]+\\)[ \t]+\\([^ \t,]+\\)[ \t]+\\([0-9]+\\)[ \t]+\\([0-9]+:[0-9:]+\\)[ \t]*\\'" date)
 	   ;; Styles: (1) and (2) without timezone
 	   (setq year 3 month 2 day 1 time 4 zone nil))
@@ -279,7 +291,11 @@ If LOCAL is nil, it is assumed to be GMT.
 If TIMEZONE is nil, use the local time zone."
   (let* ((date   (timezone-parse-date date))
 	 (year   (string-to-int (aref date 0)))
-	 (year	 (if (< year 100) (+ year 1900) year))
+	 (year	 (cond ((< year 50)
+			(+ year 2000))
+		       ((< year 100)
+			(+ year 1900))
+		       (t year)))
 	 (month  (string-to-int (aref date 1)))
 	 (day    (string-to-int (aref date 2)))
 	 (time   (timezone-parse-time (aref date 3)))

@@ -106,7 +106,7 @@ Turning on `indented-text-mode' calls the value of the variable
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'indent-relative-maybe)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^$\\|" page-delimiter))
+  (setq paragraph-start (concat "$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (use-local-map indented-text-mode-map)
@@ -147,15 +147,14 @@ This means adjusting the indentation so that it equals
 the distance between the end of the text and `fill-column'."
   (interactive)
   (save-excursion
-    (let (line-length)
+    (let ((lm (current-left-margin))
+	  line-length)
       (beginning-of-line)
       (delete-horizontal-space)
       (end-of-line)
       (delete-horizontal-space)
       (setq line-length (current-column))
-      (beginning-of-line)
-      (indent-to 
-	(+ left-margin 
-	   (/ (- fill-column left-margin line-length) 2))))))
+      (indent-line-to 
+	(+ lm (/ (- fill-column lm line-length) 2))))))
 
 ;;; text-mode.el ends here

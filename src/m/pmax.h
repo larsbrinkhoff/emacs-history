@@ -10,7 +10,7 @@ NOTE-START
 Use -opsystem=osf1 for OSF/1, and -opsystem=bsd4-3 otherwise.
 NOTE-END  */
 
-#undef BIG_ENDIAN
+#undef WORDS_BIG_ENDIAN
 #undef LIB_STANDARD
 #undef START_FILES
 #undef COFF

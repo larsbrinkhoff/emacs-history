@@ -62,9 +62,7 @@ normally should come last (so that local files override standard ones).")
 (defvar gnus-default-nntp-server ""
   ;; set this to your local server
   "The name of the host running an NNTP server.
-If it is a string such as \":DIRECTORY\", then ~/DIRECTORY
-is used as a news spool.  `gnus-nntp-server' is initialised from NNTPSERVER
-environment variable or, if none, this value.")
+The null string means use the local host as the server site.")
 
 (defvar gnus-nntp-service "nntp"
   "NNTP service name, usually \"nntp\" or 119).
@@ -91,6 +89,10 @@ Will use `gnus-startup-file'-SERVER instead if exists.")
 (defconst rmail-spool-directory
   (cond ((string-match "^[^-]+-[^-]+-sco3.2v4" system-configuration)
 	 "/usr/spool/mail/")
+	;; On The Bull DPX/2 /usr/spool/mail is used although 
+	;; it is usg-unix-v.
+	((string-match "^m68k-bull-sysv3" system-configuration)
+	 "/usr/spool/mail/")
 	;; SVR4 and recent BSD are said to use this.
 	;; Rather than trying to know precisely which systems use it,
 	;; let's assume this dir is never used for anything else.
@@ -109,6 +111,26 @@ Its name should end with a slash.")
     ((file-exists-p "/usr/ucblib/sendmail") "/usr/ucblib/sendmail")
     (t "fakemail"))			;In ../etc, to interface to /bin/mail.
   "Program used to send messages.")
+
+(defconst remote-shell-program
+  (cond
+   ;; Some systems use rsh for the remote shell; others use that name for the
+   ;; restricted shell and use remsh for the remote shell.  Let's try to guess
+   ;; based on what we actually find out there.  The restricted shell is
+   ;; almost certainly in /bin or /usr/bin, so it's probably safe to assume
+   ;; that an rsh found elsewhere is the remote shell program.  The converse
+   ;; is not true: /usr/bin/rsh could be either one, so check that last.
+   ((file-exists-p "/usr/ucb/remsh") "/usr/ucb/remsh")
+   ((file-exists-p "/usr/bsd/remsh") "/usr/bsd/remsh")
+   ((file-exists-p "/bin/remsh") "/bin/remsh")
+   ((file-exists-p "/usr/bin/remsh") "/bin/remsh")
+   ((file-exists-p "/usr/local/bin/remsh") "/usr/local/bin/remsh")
+   ((file-exists-p "/usr/ucb/rsh") "/usr/ucb/rsh")
+   ((file-exists-p "/usr/bsd/rsh") "/usr/bsd/rsh")
+   ((file-exists-p "/usr/local/bin/rsh") "/usr/local/bin/rsh")
+   ((file-exists-p "/bin/rsh") "/bin/rsh")
+   ((file-exists-p "/usr/bin/rsh") "/usr/bin/rsh")
+   (t "rsh")))
 
 (defconst term-file-prefix (if (eq system-type 'vax-vms) "[.term]" "term/")
   "If non-nil, Emacs startup does (load (concat term-file-prefix (getenv \"TERM\")))

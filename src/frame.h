@@ -37,55 +37,24 @@ extern int message_buf_print;
    having miscellaneous random variables scattered about.  */
 
 enum output_method
-{ output_termcap, output_x_window };
+{ output_termcap, output_x_window, output_msdos_raw };
 
 struct frame
 {
-  int size;
+  EMACS_INT size;
   struct Lisp_Vector *next;
 
-  /* glyphs as they appear on the frame */
-  struct frame_glyphs *current_glyphs;
+  /* All Lisp_Object components must come first.
+     Only EMACS_INT values can be intermixed with them.
+     That ensures they are all aligned normally.  */
 
-  /* glyphs we'd like to appear on the frame */
-  struct frame_glyphs *desired_glyphs;
-
-  /* See do_line_insertion_deletion_costs for info on these arrays. */
-  /* Cost of inserting 1 line on this frame */
-  int *insert_line_cost;
-  /* Cost of deleting 1 line on this frame */
-  int *delete_line_cost;
-  /* Cost of inserting n lines on this frame */
-  int *insert_n_lines_cost;
-  /* Cost of deleting n lines on this frame */
-  int *delete_n_lines_cost;
-
-  /* glyphs for the mode line */
-  struct frame_glyphs *temp_glyphs;
-
-  /* Intended cursor position of this frame.
-     Measured in characters, counting from upper left corner
-     within the frame.  */
-  int cursor_x;
-  int cursor_y;
-
-  /* Actual cursor position of this frame, and the character under it.
-     (Not used for terminal frames.)  */
-  int phys_cursor_x;
-  int phys_cursor_y;
-  /* This is handy for undrawing the cursor, because current_glyphs is
-     not always accurate when in do_scrolling.  */
-  GLYPH phys_cursor_glyph;
-
-  /* Size of this frame, in units of characters.  */
-  int height;
-  int width;
-
-  /* New height and width for pending size change.  0 if no change pending.  */
-  int new_height, new_width;
-
-  /* Name of this frame: a Lisp string.  See also `explicit_name'.  */
+  /* Name of this frame: a Lisp string.  See also `explicit_name'
+     and `namebuf'.  */
   Lisp_Object name;
+
+  /* The name to use for the icon, the last time
+     it was refreshed.  nil means not explicitly specified.  */
+  Lisp_Object icon_name;
 
   /* The frame which should receive keystrokes that occur in this
      frame, or nil if they should go to the frame itself.  This is
@@ -140,6 +109,63 @@ struct frame
   /* Alist of elements (FACE-NAME . FACE-VECTOR-DATA).  */
   Lisp_Object face_alist;
 
+  /* A vector that records the entire structure of this frame's menu bar.
+     For the format of the data, see extensive comments in xmenu.c.
+     Only the X toolkit version uses this.  */
+  Lisp_Object menu_bar_vector;
+  /* Number of elements in the vector that have meaningful data.  */
+  EMACS_INT menu_bar_items_used;
+
+  /* Predicate for selecting buffers for other-buffer.  */
+  Lisp_Object buffer_predicate;
+
+  /* Beyond here, there should be no more Lisp_Object components.  */
+
+
+  /* A buffer to hold the frame's name.  We can't use the Lisp string's
+     pointer (`name', above) because it might get relocated.  */
+  char *namebuf;
+
+  /* glyphs as they appear on the frame */
+  struct frame_glyphs *current_glyphs;
+
+  /* glyphs we'd like to appear on the frame */
+  struct frame_glyphs *desired_glyphs;
+
+  /* See do_line_insertion_deletion_costs for info on these arrays. */
+  /* Cost of inserting 1 line on this frame */
+  int *insert_line_cost;
+  /* Cost of deleting 1 line on this frame */
+  int *delete_line_cost;
+  /* Cost of inserting n lines on this frame */
+  int *insert_n_lines_cost;
+  /* Cost of deleting n lines on this frame */
+  int *delete_n_lines_cost;
+
+  /* glyphs for the mode line */
+  struct frame_glyphs *temp_glyphs;
+
+  /* Intended cursor position of this frame.
+     Measured in characters, counting from upper left corner
+     within the frame.  */
+  int cursor_x;
+  int cursor_y;
+
+  /* Actual cursor position of this frame, and the character under it.
+     (Not used for terminal frames.)  */
+  int phys_cursor_x;
+  int phys_cursor_y;
+  /* This is handy for undrawing the cursor, because current_glyphs is
+     not always accurate when in do_scrolling.  */
+  GLYPH phys_cursor_glyph;
+
+  /* Size of this frame, in units of characters.  */
+  EMACS_INT height;
+  EMACS_INT width;
+
+  /* New height and width for pending size change.  0 if no change pending.  */
+  int new_height, new_width;
+
   /* The output method says how the contents of this frame
      are displayed.  It could be using termcap, or using an X window.  */
   enum output_method output_method;
@@ -148,6 +174,13 @@ struct frame
      struct x_display is used for X window frames;
      it is defined in xterm.h.  */
   union display { struct x_display *x; int nothing; } display;
+
+#ifdef MULTI_KBOARD
+  /* A pointer to the kboard structure associated with this frame.
+     For termcap frames, this points to initial_kboard.  For X frames,
+     it will be the same as display.x->display_info->kboard.  */
+  struct kboard *kboard;
+#endif
 
   /* Number of lines of menu bar.  */
   int menu_bar_lines;
@@ -227,6 +260,9 @@ struct frame
      cleared.  */
   char explicit_name;
 
+  /* Nonzero if size of some window on this frame has changed.  */
+  char window_sizes_changed;
+
   /* Storage for messages to this frame. */
   char *message_buf;
 
@@ -234,20 +270,29 @@ struct frame
      for lines beyond a certain vpos.  This is the vpos.  */
   int scroll_bottom_vpos;
 
-  /* A vector that records the entire structure of this frame's menu bar.
-     For the format of the data, see extensive comments in xmenu.c.
-     Only the X toolkit version uses this.  */
-  Lisp_Object menu_bar_vector;
-  /* Number of elements in the vector that have meaningful data.  */
-  int menu_bar_items_used;
+  /* Width of the scroll bar, in pixels and in characters.
+     scroll_bar_cols tracks scroll_bar_pixel_width if the latter is positive;
+     a zero value in scroll_bar_pixel_width means to compute the actual width
+     on the fly, using scroll_bar_cols and the current font width.  */
+  int scroll_bar_pixel_width;
+  int scroll_bar_cols;
+
+  /* The baud rate that was used to calculate costs for this frame.  */
+  int cost_calculation_baud_rate;
 };
+
+#ifdef MULTI_KBOARD  /* Note that MULTI_KBOARD implies MULTI_FRAME */
+#define FRAME_KBOARD(f) ((f)->kboard)
+#else
+#define FRAME_KBOARD(f) (&the_only_kboard)
+#endif
 
 #ifdef MULTI_FRAME
 
 typedef struct frame *FRAME_PTR;
 
 #define XFRAME(p) ((struct frame *) XPNTR (p))
-#define XSETFRAME(p, v) ((struct frame *) XSETPNTR (p, v))
+#define XSETFRAME(a, b) (XSETPSEUDOVECTOR (a, b, PVEC_FRAME))
 
 #define WINDOW_FRAME(w) (w)->frame
 
@@ -280,6 +325,7 @@ typedef struct frame *FRAME_PTR;
 #define FRAME_NO_SPLIT_P(f) (f)->no_split
 #define FRAME_WANTS_MODELINE_P(f) (f)->wants_modeline
 #define FRAME_ICONIFIED_P(f) (f)->iconified
+#define FRAME_WINDOW_SIZES_CHANGED(f) (f)->window_sizes_changed
 #define FRAME_MINIBUF_WINDOW(f) (f)->minibuffer_window
 #define FRAME_ROOT_WINDOW(f) (f)->root_window
 #define FRAME_SELECTED_WINDOW(f) (f)->selected_window
@@ -293,9 +339,12 @@ typedef struct frame *FRAME_PTR;
 #define FRAME_FOCUS_FRAME(f) (f)->focus_frame
 #define FRAME_CAN_HAVE_SCROLL_BARS(f) ((f)->can_have_scroll_bars)
 #define FRAME_HAS_VERTICAL_SCROLL_BARS(f) ((f)->has_vertical_scroll_bars)
+#define FRAME_SCROLL_BAR_PIXEL_WIDTH(f) ((f)->scroll_bar_pixel_width)
+#define FRAME_SCROLL_BAR_COLS(f) ((f)->scroll_bar_cols)
 #define FRAME_SCROLL_BARS(f) ((f)->scroll_bars)
 #define FRAME_CONDEMNED_SCROLL_BARS(f) ((f)->condemned_scroll_bars)
 #define FRAME_MENU_BAR_ITEMS(f) ((f)->menu_bar_items)
+#define FRAME_COST_BAUD_RATE(f) ((f)->cost_calculation_baud_rate)
 
 /* Emacs's redisplay code could become confused if a frame's
    visibility changes at arbitrary times.  For example, if a frame is
@@ -373,23 +422,35 @@ extern Lisp_Object Vterminal_frame;
 
 /* These definitions are used in a single-frame version of Emacs.  */
 
-#define FRAME_PTR int
-
 /* A frame we use to store all the data concerning the screen when we
    don't have multiple frames.  Remember, if you store any data in it
    which needs to be protected from GC, you should staticpro that
    element explicitly.  */
 extern struct frame the_only_frame;
 
-extern int selected_frame;
-extern int last_nonminibuf_frame;
+typedef struct frame *FRAME_PTR;
+#ifdef __GNUC__
+/* A function call for always getting 0 is overkill, so... */
+#define WINDOW_FRAME(w) ({ Lisp_Object tem; XSETFASTINT (tem, 0); tem; })
+#else
+#define WINDOW_FRAME(w) (Fselected_frame ())
+#endif
+#define XSETFRAME(p, v) (p = WINDOW_FRAME (***bogus***))
+#define XFRAME(frame) (&the_only_frame)
 
-#define XFRAME(f) selected_frame
-#define WINDOW_FRAME(w) selected_frame
+extern FRAME_PTR selected_frame;
+extern FRAME_PTR last_nonminibuf_frame;
 
 #define FRAME_LIVE_P(f) 1
+#ifdef MSDOS
+/* The following definitions could also be used in the non-MSDOS case,
+   but the constants below lead to better code.  */
+#define FRAME_TERMCAP_P(f) (the_only_frame.output_method == output_termcap)
+#define FRAME_X_P(f) (the_only_frame.output_method != output_termcap)
+#else
 #define FRAME_TERMCAP_P(f) 1
 #define FRAME_X_P(f) 0
+#endif
 #define FRAME_MINIBUF_ONLY_P(f) 0
 #define FRAME_HAS_MINIBUF_P(f) 1
 #define FRAME_CURRENT_GLYPHS(f) (the_only_frame.current_glyphs)
@@ -409,6 +470,7 @@ extern int last_nonminibuf_frame;
 #define FRAME_NO_SPLIT_P(f) 0
 #define FRAME_WANTS_MODELINE_P(f) 1
 #define FRAME_ICONIFIED_P(f) 0
+#define FRAME_WINDOW_SIZES_CHANGED(f) the_only_frame.window_sizes_changed
 #define FRAME_MINIBUF_WINDOW(f) (minibuf_window)
 #define FRAME_ROOT_WINDOW(f) (the_only_frame.root_window)
 #define FRAME_SELECTED_WINDOW(f) (selected_window)
@@ -423,9 +485,12 @@ extern int last_nonminibuf_frame;
 #define FRAME_CAN_HAVE_SCROLL_BARS(f) (the_only_frame.can_have_scroll_bars)
 #define FRAME_HAS_VERTICAL_SCROLL_BARS(f) \
   (the_only_frame.has_vertical_scroll_bars)
+#define FRAME_SCROLL_BAR_PIXEL_WIDTH(f) (the_only_frame.scroll_bar_pixel_width)
+#define FRAME_SCROLL_BAR_COLS(f) (the_only_frame.scroll_bar_cols)
 #define FRAME_SCROLL_BARS(f) (the_only_frame.scroll_bars)
 #define FRAME_CONDEMNED_SCROLL_BARS(f) (the_only_frame.condemned_scroll_bars)
 #define FRAME_MENU_BAR_ITEMS(f) (the_only_frame.menu_bar_items)
+#define FRAME_COST_BAUD_RATE(f) (the_only_frame.cost_calculation_baud_rate)
 
 /* See comments in definition above.  */
 #define FRAME_SAMPLE_VISIBILITY(f) (0)
@@ -444,15 +509,12 @@ extern int last_nonminibuf_frame;
    `for' loop which traverses Vframe_list using LIST_VAR and
    FRAME_VAR.  */
 #define FOR_EACH_FRAME(list_var, frame_var)			\
-  for (list_var = Qt; frame_var = selected_frame, ! NILP (list_var); list_var = Qnil)
+  for (list_var = Qt; frame_var = WINDOW_FRAME (***bogus***), ! NILP (list_var); list_var = Qnil)
 
 #endif /* not MULTI_FRAME */
 
 
 /* Device- and MULTI_FRAME-independent scroll bar stuff.  */
-
-/* The number of columns a vertical scroll bar occupies.  */
-#define VERTICAL_SCROLL_BAR_WIDTH (2)
 
 /* Return the starting column (zero-based) of the vertical scroll bar
    for window W.  The column before this one is the last column we can
@@ -462,7 +524,8 @@ extern int last_nonminibuf_frame;
 #define WINDOW_VERTICAL_SCROLL_BAR_COLUMN(w) \
   (((XINT ((w)->left) + XINT ((w)->width)) \
     < FRAME_WIDTH (XFRAME (WINDOW_FRAME (w)))) \
-   ? XINT ((w)->left) + XINT ((w)->width) - VERTICAL_SCROLL_BAR_WIDTH \
+   ? (XINT ((w)->left) + XINT ((w)->width) \
+      - FRAME_SCROLL_BAR_COLS (XFRAME (WINDOW_FRAME (w)))) \
    : FRAME_WIDTH (XFRAME (WINDOW_FRAME (w))))
 
 /* Return the height in lines of the vertical scroll bar in w.  If the

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Killing and Moving Text
@@ -301,6 +301,9 @@ tells the following command, if it is a kill command, to append the text
 it kills to the last killed text, instead of starting a new entry.  With
 @kbd{C-M-w}, you can kill several separated pieces of text and
 accumulate them to be yanked back in one place.@refill
+
+  A kill command following @kbd{M-w} does not append to the text that
+@kbd{M-w} copied into the kill ring.
 
 @node Earlier Kills
 @subsection Yanking Earlier Kills

@@ -67,19 +67,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define INTERRUPT_INPUT
 
 /*
- *	Define HAVE_TIMEVAL if the system supports the BSD style clock values.
- *	Look in <sys/time.h> for a timeval structure.
- */
-
-#define HAVE_TIMEVAL
-
-/*
- *	Define HAVE_SELECT if the system supports the `select' system call.
- */
-
-#define HAVE_SELECT
-
-/*
  *	Define HAVE_SOCKETS if the system supports sockets.
  */
 
@@ -364,7 +351,9 @@ CC=gcc
   if (ioctl (xforkin, I_PUSH, "ttcompat") == -1) \
     fatal ("ioctl I_PUSH ttcompat", errno);
 
+#ifdef __GNUC__
 #define C_DEBUG_SWITCH -g -V2 -mversion-03.00 -mstandard
+#endif
 
 #endif /* ELF */
 
@@ -372,6 +361,7 @@ CC=gcc
    of expediency. */
 
 #define LIB_X11_LIB -lX11
+#define LIB_MOTIF -lXm -lgen
 
 /* Process groups work in the traditional BSD manner.  */
 

@@ -1,4 +1,6 @@
 How to Compile, Link and Build GNU Emacs under VMS
+[This probably has not been updated for Emacs 19;
+in fact, Emacs 19 probably does not work on VMS.]
 ==================================================
 
 A runnable Emacs on VMS consists of two files, an exe file and a map

@@ -14,19 +14,22 @@ ctags -- generate tag file for vi
 .SH SYNOPSIS
 .hy 0
 .na
-.B etags [\|\-aCDSVH\|] [\|\-i \fIfile\fP\|] [\|\-o \fItagfile\fP\|]
+.B etags [\|\-aCDRSVh\|] [\|\-i \fIfile\fP\|] [\|\-l \fIlanguage\fP\|] [\|\-i \fIregexp\fP\|] [\|\-o \fItagfile\fP\|]
 .br
-[\|\-\-c++\|] [\|\-\-no\-defines\|] [\|\-\-ignore\-indentation\|] [\|\-\-help\|] [\|\-\-version\|]
-.br
-[\|\-\-include=\fIfile\fP\|] [\|\-\-output=\fItagfile\fP\|] [\|\-\-append\|] \fIfile\fP .\|.\|.
+[\|\-\-c++\|] [\|\-\-no\-defines\|] [\|\-\-ignore\-indentation\|]
+[\|\-\-language=\fIlanguage\fP\|] [\|\-\-regex=\fIregexp\fP\|]
+[\|\-\-no\-regexp\|] [\|\-\-help\|] [\|\-\-version\|]
+[\|\-\-include=\fIfile\fP\|] [\|\-\-output=\fItagfile\fP\|]
+[\|\-\-append\|] \fIfile\fP .\|.\|.
 
-.B ctags [\|\-aCdSVH\|] [\|\-BtTuvwx\|] [\|\-o \fItagfile\fP\|]
+.B ctags [\|\-aCdRSVh\|] [\|\-BtTuvwx\|] [\|\-l \fIlanguage\fP\|]
 .br
+[\|\-i \fIregexp\fP\|] [\|\-o \fItagfile\fP\|]
 [\|\-\-c++\|] [\|\-\-defines\|] [\|\-\-ignore\-indentation\|]
-.br
-[\|\-\-backward\-search\|] [\|\-\-forward\-search\|] [\|\-\-typedefs\|] [\|\-\-typedefs\-and\-c++\|]
-.br
-[\|\-\-no\-warn\|] [\|\-\-cxref\|] [\|\-\-help\|] [\|\-\-version\|]
+[\|\-\-no\-warn\|] [\|\-\-cxref\|] [\|\-\-backward\-search\|]
+[\|\-\-forward\-search\|] [\|\-\-typedefs\|] [\|\-\-typedefs\-and\-c++\|]
+[\|\-\-language=\fIlanguage\fP\|] [\|\-\-regex=\fIregexp\fP\|]
+[\|\-\-help\|] [\|\-\-version\|]
 .br
 [\|\-\-output=\fItagfile\fP\|] [\|\-\-append\|] [\|\-\-update\|] \fIfile\fP .\|.\|.
 .ad b
@@ -39,13 +42,15 @@ understood by
 format understood by
 .BR vi ( 1 )\c
 \&.  Both forms of the program understand
-the syntax of C, Fortran, Pascal, LaTeX, Scheme, Emacs Lisp/Common Lisp
+the syntax of C, C++, Fortran, Pascal, LaTeX, Scheme, Emacs Lisp/Common Lisp
 and most assembler\-like syntaxes. 
 Both forms read the files specified on the command line, and write a tag
 table (defaults: `\|TAGS\|' for \fBetags\fP, `\|tags\|' for
 \fBctags\fP) in the current working directory. 
 The programs recognize the language used in an input file based on its
-file name and contents; there are no switches for specifying the language.  
+file name and contents.  The --language switch can be used to force
+parsing of the file names following the switch according to the given
+language, overriding guesses based on filename extensions.
 .SH OPTIONS
 Some options make sense only for the \fBvi\fP style tag files produced
 by ctags;
@@ -80,14 +85,72 @@ This may make the tags file much smaller if many header files are tagged.
 This is the default behavior for \fBctags\fP, so this option is only
 accepted by \fBetags\fP.
 .TP
-\fB\-i\fP \fIfile\fP, \fB\-\-include=\fIfile\fP
-Include a note in tag file indicating that, when searching for a tag,
-one should also consult the tags file \fIfile\fP after checking the
-current file.  Only \fBetags\fP accepts this option.
+\fB\-l\fP \fIlanguage\fP, \fB\-\-language=\fIlanguage\fP
+Parse the following files according to the given language.  More than
+one such options may be intermixed with filenames.  Use \fB\-\-help\fP
+to get a list of the available languages and their default filename
+extensions.  The `auto' language can be used to restore automatic
+detection of language based on filename extension.  The `none'
+language may be used to disable language parsing altogether; only
+regexp matching is done in this case (see the \fB\-\-regex\fP option).
 .TP
 \fB\-o\fP \fItagfile\fP, \fB\-\-output=\fItagfile\fP
 Explicit name of file for tag table; overrides default `\|TAGS\|' or
 `\|tags\|'.   (But ignored with \fB\-v\fP or \fB\-x\fP.)
+.TP
+\fB\-r\fP \fIregexp\fP, \fB\-\-regex=\fIregexp\fP
+Make tags based on regexp matching for each line of the files
+following this option, in addition to the tags made with the standard
+parsing based on language.  May be freely intermixed with filenames
+and the \fB\-R\fP option.  The regexps are cumulative, i.e. each
+option will add to the previous ones.  The regexps are of the form:
+.br 
+
+		\fB/\fP\fItagregexp\fP[\fB/\fP\fInameregexp\fP]\fB/\fP
+.br
+
+where \fItagregexp\fP is used to match the lines that must be tagged.
+It should not match useless characters.  If the match is
+such that more characters than needed are unavoidably matched by
+\fItagregexp\fP, it may be useful to add a \fInameregexp\fP, to
+narrow down the tag scope.
+.br
+Here are some examples.  All the regexps are quoted to protect them
+from shell interpretation.
+.br
+
+Tag the DEFVAR macros in the emacs source files:
+.br
+\fI\-\-regex\='/[ \\t]*DEFVAR_[A-Z_ \\t(]+"\\([^"]+\\)"\/'\fP
+.br
+
+Tag VHDL files (this example is a single long line, broken here for
+formatting reasons):
+.br
+\fI\-\-language\=none\ \-\-regex='/[\ \\t]*\\(ARCHITECTURE\\|\\
+CONFIGURATION\\)\ +[^\ ]*\ +OF/'\ \-\-regex\='/[\ \\t]*\\
+\\(ATTRIBUTE\\|ENTITY\\|FUNCTION\\|PACKAGE\\(\ BODY\\)?\\
+\\|PROCEDURE\\|PROCESS\\|TYPE\\)[\ \\t]+\\([^\ \\t(]+\\)/\\3/'\fP
+.br
+
+Tag Cobol files:
+.br
+\fI\-\-language\=none \-\-regex\='/.......[a\-zA\-Z0\-9\-]+\\./'\fP
+.br
+
+Tag Postscript files:
+.br
+\fI\-\-language\=none \-\-regex\='#/[^\ \\t{]+#/'\fP
+.br
+
+Tag TCL files (this last example shows the usage of a \fItagregexp\fP):
+.br
+\fI\-\-lang\=none \-\-regex\='/proc[\ \\t]+\\([^\ \\t]+\\)/\\1/'\fP
+
+.TP
+.B \-R, \-\-no\-regex
+Don't do any more regexp matching on the following files.  May be
+freely intermixed with filenames and the \fB\-\-regex\fP option.
 .TP
 .B \-S, \-\-ignore\-indentation
 Don't rely on indentation as much as we normally do.  Currently, this

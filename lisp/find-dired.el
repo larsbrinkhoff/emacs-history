@@ -1,18 +1,14 @@
 ;;; find-dired.el --- run a `find' command and dired the output
 
-;;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
+;;; Copyright (C) 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Roland McGrath <roland@gnu.ai.mit.edu>,
 ;;	   Sebastian Kremer <sk@thp.uni-koeln.de>
-;; Maintainer: Sebastian Kremer <sk@thp.uni-koeln.de>
 ;; Keywords: unix
-
-(defconst find-dired-version (substring "$Revision: 1.16 $" 11 -2)
-  "$Id: find-dired.el,v 1.16 1994/05/03 23:39:55 kwzh Exp $")
 
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
-;;; the Free Software Foundation; either version 1, or (at your option)
+;;; the Free Software Foundation; either version 2, or (at your option)
 ;;; any later version.
 ;;;
 ;;; This program is distributed in the hope that it will be useful,
@@ -26,52 +22,31 @@
 ;;; 02139, USA.
 ;;;
 
-;;; Commentary:
-
-;; LISPDIR ENTRY for the Elisp Archive ===============================
-;;    LCD Archive Entry:
-;;    find-dired|Roland McGrath, Sebastian Kremer
-;;    |roland@gnu.ai.mit.edu, sk@thp.uni-koeln.de
-;;    |Run a `find' command and dired the output
-;;    |$Date: 1994/05/03 23:39:55 $|$Revision: 1.16 $|
-
-;; INSTALLATION ======================================================
-
-;; To use this file, byte-compile it, install it somewhere in your
-;; load-path, and put:
-
-;;   (autoload 'find-dired "find-dired" nil t)
-;;   (autoload 'find-name-dired "find-dired" nil t)
-;;   (autoload 'find-grep-dired "find-dired" nil t)
-
-;; in your ~/.emacs, or site-init.el, etc.
-
-;; To bind it to a key, put, e.g.:
-;;
-;;   (global-set-key "\C-cf" 'find-dired)
-;;   (global-set-key "\C-cn" 'find-name-dired)
-;;   (global-set-key "\C-cl" 'find-grep-dired)
-;;
-;; in your ~/.emacs.
-
 ;;; Code:
 
 (require 'dired)
 
+;; find's -ls corresponds to these switches.
+;; Note -b, at least GNU find quotes spaces etc. in filenames
 ;;;###autoload
-(defvar find-ls-option (if (eq system-type 'berkeley-unix) "-ls"
-			 "-exec ls -ldi {} \\;")
-  "*Option to `find' to produce an `ls -l'-type listing.")
+(defvar find-ls-option (if (eq system-type 'berkeley-unix) '("-ls" . "-gilsb")
+			 '("-exec ls -ld {} \\;" . "-ld"))
+  "*Description of the option to `find' to produce an `ls -l'-type listing.
+This is a cons of two strings (FIND-OPTION . LS-SWITCHES).  FIND-OPTION
+gives the option (or options) to `find' that produce the desired output.
+LS-SWITCHES is a list of `ls' switches to tell dired how to parse the output.")
 
 ;;;###autoload
-(defvar find-grep-options (if (eq system-type 'berkeley-unix) "-s" "-l")
+(defvar find-grep-options (if (eq system-type 'berkeley-unix) "-s" "-q")
   "*Option to grep to be as silent as possible.
-On Berkeley systems, this is `-s', for others it seems impossible to
-suppress all output, so `-l' is used to print nothing more than the
-file name.")
+On Berkeley systems, this is `-s'; on Posix, and with GNU grep, `-q' does it.
+On other systems, the closest you can come is to use `-l'.")
 
 (defvar find-args nil
   "Last arguments given to `find' by \\[find-dired].")
+
+;; History of find-args values entered in the minibuffer.
+(defvar find-args-history nil)
 
 ;;;###autoload
 (defun find-dired (dir args)
@@ -80,10 +55,8 @@ The command run (after changing into DIR) is
 
     find . \\( ARGS \\) -ls"
   (interactive (list (read-file-name "Run find in directory: " nil "" t)
-		     (if (featurep 'gmhist)
-			 (read-with-history-in 'find-args-history
-					       "Run find (with args): ")
-		       (read-string "Run find (with args): " find-args))))
+		     (read-string "Run find (with args): " find-args
+				  '(find-args-history . 1))))
   ;; Expand DIR ("" means default-directory), and make sure it has a
   ;; trailing slash.
   (setq dir (file-name-as-directory (expand-file-name dir)))
@@ -101,11 +74,9 @@ The command run (after changing into DIR) is
 		     (if (string= args "")
 			 ""
 		       (concat "\\( " args " \\) "))
-		     find-ls-option))
+		     (car find-ls-option)))
   ;; The next statement will bomb in classic dired (no optional arg allowed)
-  ;; find(1)'s -ls corresponds to these switches.
-  ;; Note -b, at least GNU find quotes spaces etc. in filenames
-  (dired-mode dir "-gilsb")
+  (dired-mode dir (cdr find-ls-option))
   ;; Set subdir-alist so that Tree Dired will work:
   (if (fboundp 'dired-simple-subdir-alist)
       ;; will work even with nested dired format (dired-nstd.el,v 1.15
@@ -122,12 +93,12 @@ The command run (after changing into DIR) is
   ;; Make second line a ``find'' line in analogy to the ``total'' or
   ;; ``wildcard'' line. 
   (insert "  " args "\n")
-  ;; Start the find process
-  (set-process-filter (start-process-shell-command "find"
-						   (current-buffer) args)
-		      (function find-dired-filter))
-  (set-process-sentinel (get-buffer-process (current-buffer))
-			(function find-dired-sentinel))
+  ;; Start the find process.
+  (let ((proc (start-process-shell-command "find" (current-buffer) args)))
+    (set-process-filter proc (function find-dired-filter))
+    (set-process-sentinel proc (function find-dired-sentinel))
+    ;; Initialize the process marker; it is used by the filter.
+    (move-marker (process-mark proc) 1 (current-buffer)))
   (setq mode-line-process '(":%s")))
 
 ;;;###autoload
@@ -157,7 +128,7 @@ The command run (after changing into DIR) is
     find . -exec grep -s ARG {} \\\; -ls
 
 Thus ARG can also contain additional grep options."
-  (interactive "DFind-grep (directory): \nsFind-grep (grep args): ")
+  (interactive "DFind-grep (directory): \nsFind-grep (grep regexp): ")
   ;; find -exec doesn't allow shell i/o redirections in the command,
   ;; or we could use `grep -l >/dev/null'
   (find-dired dir
@@ -185,10 +156,19 @@ Thus ARG can also contain additional grep options."
 		  (forward-line 1))
 		;; Convert ` ./FILE' to ` FILE'
 		;; This would lose if the current chunk of output
-		;; starts or ends within the ` ./', so backup up a bit:
+		;; starts or ends within the ` ./', so back up a bit:
 		(goto-char (- end 3))	; no error if < 0
 		(while (search-forward " ./" nil t)
-		  (delete-region (point) (- (point) 2)))))))
+		  (delete-region (point) (- (point) 2)))
+		;; Find all the complete lines in the unprocessed
+		;; output and process it to add text properties.
+		(goto-char end)
+		(if (search-backward "\n" (process-mark proc) t)
+		    (progn
+		      (dired-insert-set-properties (process-mark proc)
+						   (1+ (point)))
+		      (move-marker (process-mark proc) (1+ (point)))))
+		))))
       ;; The buffer has been killed.
       (delete-process proc))))
 
@@ -212,28 +192,8 @@ Thus ARG can also contain additional grep options."
 	      ;; process is dead, we can delete it now.  Otherwise it
 	      ;; will stay around until M-x list-processes.
 	      (delete-process proc)
-	      ;; Force mode line redisplay soon.
-	      (set-buffer-modified-p (buffer-modified-p))))
+	      (force-mode-line-update)))
 	  (message "find-dired %s finished." (current-buffer))))))
-
-(or (fboundp 'start-process-shell-command)
-    ;; From version 19 subr.el.
-(defun start-process-shell-command (name buffer &rest args)
-  "Start a program in a subprocess.  Return the process object for it.
-Args are NAME BUFFER COMMAND &rest COMMAND-ARGS.
-NAME is name for process.  It is modified if necessary to make it unique.
-BUFFER is the buffer or (buffer-name) to associate with the process.
- Process output goes at end of that buffer, unless you specify
- an output stream or filter function to handle the output.
- BUFFER may be also nil, meaning that this process is not associated
- with any buffer
-Third arg is command name, the name of a shell command.
-Remaining arguments are the arguments for the command.
-Wildcards and redirection are handled as usual in the shell."
-  (if (eq system-type 'vax-vms)
-      (apply 'start-process name buffer args)
-    (start-process name buffer shell-file-name "-c"
-		   (concat "exec " (mapconcat 'identity args " "))))))
 
 (provide 'find-dired)
 

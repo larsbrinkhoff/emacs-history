@@ -1,3 +1,179 @@
+Mon Jun 19 22:50:57 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Version 19.29 released.
+
+Sun Jun 11 15:39:02 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* lwlib.c (lwlib_toolkit_type): New variable.
+
+Fri May 26 23:54:11 1995  Richard Stallman  <rms@gnu.ai.mit.edu>
+
+	* xlwmenu.c (Drag): Do nothing unless menu.popped_up field is set.
+
+Mon May 22 22:53:05 1995  Karl Heuer  <kwzh@hal.gnu.ai.mit.edu>
+
+	* xlwmenu.c (XlwMenuInitialize): Cast XCreatePixmapFromBitmapData args.
+
+Sat May 20 01:15:00 1995  Karl Heuer  <kwzh@nutrimat.gnu.ai.mit.edu>
+
+	* lwlib.c: Don't use prototype.
+	* lwlib-Xm.c (activate_button, xm_update_cascadebutton): Likewise.
+
+Fri May  5 21:54:02 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib.c (lw_refigure_widget) [USE_MOTIF]: Fix backward if.
+
+Thu May  4 15:52:16 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (ALL_CFLAGS): Add -I../src.
+
+Wed May  3 19:35:22 1995  Morten Welinder  <terra+@cs.cmu.edu>
+
+	* lwlib.c [__osf__]: Include string.h and stdlib.h.
+	[__osf__] (xmalloc): Declared.
+
+Thu Apr 13 01:02:01 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib-Xm.c (update_one_menu_entry, make_menu_in_widget):
+	Specify more useful names in XmCreatePulldownMenu calls.
+
+	* lwlib-Xaw.c (xaw_pop_instance): Make x, y, w, h unsigned.
+
+	* xlwmenu.c (size_menu): Make height and label_width unsigned.
+	(fit_to_screen): Make screen_width and screen_height unsigned.
+	(motion_event_is_in_menu): Make x, y unsigned.
+
+Sun Apr  9 00:55:40 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* lwlib-utils.c: If HAVE_CONFIG_H, include config.h.
+
+	* Makefile.in (ALL_CFLAGS): Define HAVE_CONFIG_H.
+	Add -I${srcdir}/../src.
+	
+Sat Apr  8 14:01:45 1995  Paul Reilly  <pmr@geech.gnu.ai.mit.edu>
+
+	* lwlib-Xm.c: Remove function prototypes.
+	(xm_pop_down_callback): Call the deactivation callback only when
+	popping	down the top level submenu.
+
+Fri Apr  7 01:44:18 1995  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* Makefile.in (lwlib.o): Depend on Makefile.
+
+	* lwlib-Xm.h: Remove function prototypes.
+
+	* lwlib-Xm.c (remove_grabs): Use type Widget for `menu'.
+
+Wed Feb 15 14:09:35 1995  Paul Reilly  <pmr@geech.gnu.ai.mit.edu>
+
+	* Makefile.in (ALL_CFLAGS): Allow include files to be found in
+        `srcdir'.
+
+Tue Feb  7 18:50:09 1995  Richard Stallman  <rms@pogo.gnu.ai.mit.edu>
+
+	* Makefile.in (maintainer-clean): Renamed from realclean.
+
+Mon Nov 28 18:11:00 1994  Richard Stallman  <rms@bethel>
+
+	* lwlib-int.h (safe_strdup): Don't use ANSI argument prototype.
+
+Tue Nov 15 03:22:52 1994  Paul Reilly  <pmr@duality.gnu.ai.mit.edu>
+
+	* lwlib.c (lw_refigure_widget): Use the macro USE_XAW rather than XAW.
+
+Tue Nov  8 13:06:07 1994  Paul Reilly  <pmr@duality.gnu.ai.mit.edu>
+
+	* lwlib-Xm.c (make_menu_in_widget):  Differentiate a separator
+	entry ("--") from a title.
+	(xm_pop_down_callback): Filter all but the last pop down callbacks.
+
+Mon Nov  7 07:31:19 1994  Paul Reilly  <pmr@duality.gnu.ai.mit.edu>
+
+	* lwlib-Xm.c (update_one_menu_entry): Use the parent of the
+	cascade button as the parent of the pulldown, rather than the
+	cascade button itself.  This works around a Motif SIGSEGV in the
+	function `InSharedMenuHierarchy'.
+
+Sat Oct 29 23:25:10 1994  Richard Stallman  <rms@duality.gnu.ai.mit.edu>
+
+	* xlwmenu.c (xlwmenu_default_font): New global variable.
+	(XlwMenuInitialize): Use xlwmenu_default_font to default
+	the font if necessary.  Make mw, itself, an argument.
+
+Wed Oct 26 04:57:41 1994  Richard Stallman  <rms@duality.gnu.ai.mit.edu>
+
+	* xlwmenu.c (pop_up_menu): Pass a Display * to x_catch_errors, etc.
+
+Wed Oct 26 00:57:28 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (xlwmenu_default_font): New global variable.
+	(XlwMenuInitialize): Use xlwmenu_default_font to default
+	the font if necessary.  Make mw, itself, an argument.
+
+	* xlwmenu.c (pop_up_menu): Pass a Display * to x_catch_errors, etc.
+
+Sat Oct  8 00:15:45 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+
+	* xlwmenu.c (fit_to_screen): Don't put the menu off the left or top.
+
+Sun Oct  2 08:07:15 1994  Paul Reilly  <pmr@geech.gnu.ai.mit.edu>
+
+	* xlwmenu.c (display_menu_item): Add support for displaying the
+        title in pop up menus.
+
+	* lwlib.c (lw_set_main_areas): Use xm_set_main_areas().
+	(lw_manage_resizing): Use xm_manage_resizing() for Emacs/Motif.
+
+Sun Sep 25 15:57:17 1994  Paul Reilly  <pmr@geech.gnu.ai.mit.edu>
+
+	* lwlib-Xaw.c (xaw_create_main): New function to support the
+        toolkit independent creation of the main Emacs widget.  *
+        lwlib-Xlw.c (xlw_create_menubar): When compiling under Emacs, set
+        resizing resources to disable showGrip and to enable both
+        resizeToPreferred and allowShellResize.
+
+	* lwlib-Xm.h: Declare xm_set_main_areas, xm_manage_resizing.
+
+	* lwlib-Xm.c: (make_menu_in_widget): Add support for displaying a
+	title in pop up menus.
+	(make_main, xm_set_main_areas, xm_manage_resizing): New functions to
+	create and manage a Motif Main Window widget.
+
+	* xlwmenu.c: Add #include <X11/ObjectP.h> for X11R4.
+
+Sun Sep 18 17:21:52 1994  Fred Pierresteguy <F.Pierresteguy@frcl.bull.fr>
+
+	* lwlib-Xm.c (make_dialog): When there is more than two pushbuttons,
+	set XmPACK_TIGHT and XmHORIZONTAL to the rowcolumn.  Also add a
+	margin of 10 pixels.
+
+Fri Sep 16 17:21:52 1994  Paul Reilly <pmr@geech.gnu.ai.mit.edu>
+
+	* lwlib-Xm.c (make_main): New function to support toolkit
+        independent creation of the main Emacs widget.
+	(make_destroyed_instance): Use safe_strdup() instead of strdup().
+
+	* lwlib-int.h: Declare safe_strdup.
+
+	* lwlib.c (lw_refigure_widget): New function.  Handle geometry
+        management inside lwlib instead of in Emacs.
+	(lw_window_is_in_menubar): New function.  Determine if the pointer
+	is in a menubar.
+	(lw_set_main_areas): New function.  Set the main window widgets for
+	Motif.
+
+	* lwlib.h: Declare lw_refigure_widget(), lw_window_is_in_menubar(),
+	lw_set_main_areas().
+
+	* xlwmenu.h: Define Xt{Ns,CS}howGrip, Xt{Nr,CR}esizeToPreferred, and
+	Xt{Na,CA}llowResize.
+
+	* xlwmenu.c (Start): Use pop_up_menu() to post the submenus.
+	(Select): Remove the pointer grab when popping down a menubar
+	submenu.
+	(pop_up_menu): Handle popping up submenus from a menubar, i.e. when
+	the menu widget parent is not a shell widget.
+
 Thu Aug 25 17:21:52 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
 
 	* xlwmenu.c (pop_up_menu): Clear next_release_must_exit.

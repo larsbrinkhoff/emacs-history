@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Rmail, Dired, Sending Mail, Top
 @chapter Reading Mail with Rmail
@@ -275,15 +275,38 @@ adding or removing this attribute.  @xref{Rmail Labels}.
 @section Rmail Files and Inboxes
 @cindex inbox file
 
+@cindex @code{movemail} program
   The operating system places incoming mail for you in a file that we
-call your @dfn{inbox}.  When you start up Rmail, it copies the new
-messages from your inbox into your primary Rmail file, an Rmail file,
-which also contains other messages saved from previous Rmail sessions.
-It is in this file that you actually read the mail with Rmail.  This
-operation is called @dfn{getting new mail}.  You can get new mail at any
-time in Rmail by typing @kbd{g}.  The inbox file name is usually
+call your @dfn{inbox}.  When you start up Rmail, it runs a C program
+called @code{movemail} to copy the new messages from your inbox into
+your primary Rmail file, which also contains other messages saved from
+previous Rmail sessions.  It is in this file that you actually read the
+mail with Rmail.  This operation is called @dfn{getting new mail}.  You
+can get new mail at any time in Rmail by typing @kbd{g}.
+
+@vindex rmail-primary-inbox-list
+@cindex @code{MAIL} environment variable
+  The variable @code{rmail-primary-inbox-list} contains a list of the 
+files which are inboxes for your primary Rmail file.  If you don't set
+this variable explicitly, it is initialized from the @code{MAIL}
+environment variable, or, as a last resort, set to @code{nil}, which
+means to use the default inbox.  The default inbox is
 @file{/var/mail/@var{username}}, @file{/usr/spool/mail/@var{username}},
 or @file{/usr/mail/@var{username}}, depending on your operating system.
+
+  Some sites use a method called POP for accessing users' inbox data
+instead of storing the data in inbox files.  @code{movemail} can work
+with POP if you compile it with the macro @code{MAIL_USE_POP} defined,
+and then install it setuid to @code{root}.  It is safe to install
+@code{movemail} in this way.
+
+@cindex @code{MAILHOST} environment variable
+@cindex POP inboxes
+  Assuming you have compiled and installed @code{movemail}
+appropriately, you can specify a POP inbox with a ``file name'' of the
+form @samp{po:@var{username}}.  @code{movemail} handles such a name by
+opening a connection to the POP server.  The @code{MAILHOST} environment
+variable specifies the machine to look for the server on.
 
   There are three reason for having separate Rmail files and inboxes.
 
@@ -312,10 +335,9 @@ file to the Rmail file; then it saves the Rmail file; then it truncates
 the inbox file.  This way, a system crash may cause duplication of mail
 between the inbox and the Rmail file, but cannot lose mail.
 
-  Copying mail from an inbox in the system's mailer directory actually
-puts it in an intermediate file @file{~/.newmail-@var{inboxname}}.  The
-C program that does interlocking with the mailer is designed to write
-its output into a file.  Once this program finishes, Rmail reads that
+  When @code{movemail} copies mail from an inbox in the system's mailer
+directory, it actually puts it in an intermediate file
+@file{~/.newmail-@var{inboxname}}.  Once it finishes, Rmail reads that
 file, merges the new mail, saves the Rmail file, and only then deletes
 the intermediate file.  If there is a crash at the wrong time, this file
 continues to exist and Rmail will use it again the next time it gets new
@@ -629,6 +651,10 @@ message that you are replying to, and @kbd{C-c C-q} to fill what was
 thus yanked.  You can also switch to the Rmail buffer, select a
 different message, switch back, and yank the new current message.
 
+@kindex M-m @r{(Rmail)}
+@findex rmail-retry-failure
+@cindex retrying a failed message
+@vindex rmail-retry-ignored-headers
   Sometimes a message does not reach its destination.  Mailers usually
 send the failed message back to you, enclosed in a @dfn{failure
 message}.  The Rmail command @kbd{M-m} (@code{rmail-retry-failure})
@@ -636,7 +662,11 @@ prepares to send the same message a second time: it sets up a
 @samp{*mail*} buffer with the same text and header fields as before.  If
 you type @kbd{C-c C-c} right away, you send the message again exactly
 the same as the first time.  Alternatively, you can edit the text or
-headers and then send it.
+headers and then send it.  The variable
+@code{rmail-retry-ignored-headers}, in the same format as
+@code{rmail-ignored-headers} (@pxref{Rmail Display}), controls which
+headers are stripped from the failed message when retrying it; it
+defaults to nil.
 
 @kindex f @r{(Rmail)}
 @findex rmail-forward
@@ -820,10 +850,10 @@ the screen.
 @kindex q @r{(Rmail summary)}
 @findex rmail-summary-quit
   When you are finished using the summary, type @kbd{w}
-(@code{rmail-summary-wipe}) to kill the summary buffer's window.  You
-can also exit Rmail while in the summary.  @kbd{q}
-(@code{rmail-summary-quit}) kills the summary window, then saves the
-Rmail file and switches to another buffer.
+(@code{rmail-summary-wipe}) to delete the summary buffer's window.  You
+can also exit Rmail while in the summary: @kbd{q}
+(@code{rmail-summary-quit}) deletes the summary window, then exits from
+Rmail by saving the Rmail file and switching to another buffer.
 
 @node Rmail Sorting
 @section Sorting the Rmail File
@@ -848,7 +878,7 @@ correspondent.
 @item M-x rmail-sort-by-lines
 Sort messages of current Rmail file by size (number of lines).
 
-@item M-x rmail-sort-by-keywords @key{RET} @var{labels} @var{RET}
+@item M-x rmail-sort-by-keywords @key{RET} @var{labels} @key{RET}
 Sort messages of current Rmail file by labels.  The argument
 @var{labels} should be a comma-separated list of labels.  The order of
 these labels specifies the order of messages; messages with the first
@@ -894,6 +924,12 @@ it, use the @kbd{t} command (@code{rmail-toggle-headers}).  This
 discards the reformatted headers of the current message and displays it
 with the original header.  Repeating @kbd{t} reformats the message
 again.  Selecting the message again also reformats.
+
+  One consequence of this is that if you edit the reformatted header
+(using @kbd{e}; @pxref{Rmail Editing}), subsequent use of @kbd{t} will
+discard your edits.  On the other hand, if you use @kbd{e} after
+@kbd{t}, to edit the original (unreformatted) header, those changes are
+permanent.
 
 @vindex rmail-highlighted-headers
   When used with a window system that supports multiple fonts, Rmail

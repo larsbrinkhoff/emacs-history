@@ -17,16 +17,12 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#ifdef HAVE_X11
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
 #include <X11/Xatom.h>
 #include <X11/Xresource.h>
-#else
-#include <X/Xlib.h>
-#endif /* HAVE_X11 */
 
 #ifdef USE_X_TOOLKIT
 #include <X11/StringDefs.h>
@@ -37,18 +33,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <X11/StringDefs.h>
 #endif
 
-/* Define a queue for X-events.  One such queue is used for mouse clicks.
-   Another is used for expose events.  */
-
-#define EVENT_BUFFER_SIZE 64
-
-/* Max and Min sizes in character columns. */
-#define MINWIDTH 10
-#define MINHEIGHT 10
-#define MAXWIDTH 300
-#define MAXHEIGHT 80
-
-#ifdef HAVE_X11
+/* The class of this X application.  */
+#define EMACS_CLASS "Emacs"
+
+/* Bookkeeping to distinguish X versions.  */
 
 /* HAVE_X11R4 is defined if we have the features of X11R4.  It should
    be defined when we're using X11R5, since X11R5 has the features of
@@ -90,48 +78,33 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define HAVE_X11R4
 #endif
 #endif
-
-#define PIX_TYPE unsigned long
-#define XDISPLAY x_current_display,
-#define XFlushQueue() XFlush(x_current_display)
-#define BLACK_PIX_DEFAULT BlackPixel (x_current_display, \
-				      XDefaultScreen (x_current_display))
-#define WHITE_PIX_DEFAULT WhitePixel (x_current_display, \
-				      XDefaultScreen (x_current_display))
-#define DISPLAY_SCREEN_ARG x_current_display, \
-				      XDefaultScreen (x_current_display)
-#define DISPLAY_CELLS DisplayCells (x_current_display, XDefaultScreen (x_current_display))
-#define ROOT_WINDOW RootWindow (x_current_display, DefaultScreen (x_current_display))
-#define FONT_TYPE XFontStruct
-#define Color XColor
-
-#define XExposeRegionEvent XExposeEvent
-#define Bitmap Pixmap			/* In X11, Bitmaps are a kind of
-					   Pixmap.  */
-#define WINDOWINFO_TYPE XWindowAttributes
-#define XGetWindowInfo(w, i) XGetWindowAttributes (x_current_display, \
-						   (w), (i))
-#define XGetFont(f) XLoadQueryFont (x_current_display, (f))
-#define XLoseFont(f) XFreeFont (x_current_display, (f))
-#define XStuffPending() XPending (x_current_display)
-#define XClear(w) XClearWindow (x_current_display, (w))
-#define XWarpMousePointer(w,x,y) XWarpPointer (x_current_display, None, w, \
-					       0,0,0,0, x, y)
-#define XHandleError XSetErrorHandler
-#define XHandleIOError XSetIOErrorHandler
-
-#define XChangeWindowSize(w,x,y) XResizeWindow(x_current_display,w,x,y)
+
+#define BLACK_PIX_DEFAULT(f) BlackPixel (FRAME_X_DISPLAY (f), \
+					 XScreenNumberOfScreen (FRAME_X_SCREEN (f)))
+#define WHITE_PIX_DEFAULT(f) WhitePixel (FRAME_X_DISPLAY (f), \
+					 XScreenNumberOfScreen (FRAME_X_SCREEN (f)))
 
 #define FONT_WIDTH(f)	((f)->max_bounds.width)
 #define FONT_HEIGHT(f)	((f)->ascent + (f)->descent)
 #define FONT_BASE(f)    ((f)->ascent)
 
+#define CHECK_X_FRAME(f, frame)			\
+  if (NILP (frame))				\
+    f = selected_frame;				\
+  else						\
+    {						\
+      CHECK_LIVE_FRAME (frame, 0);		\
+      f = XFRAME (frame);			\
+    }						\
+  if (! FRAME_X_P (f))
+
+  
+
 /* The mask of events that text windows always want to receive.  This
    does not include mouse movement events.  It is used when the window
-   is created (in x_window) and when we ask/unask for mouse movement
-   events (in XTmouse_tracking_enable).
+   is created (in x_window) and and in selection processing.
 
-   We do include ButtonReleases in this set because elisp isn't always
+   We do include ButtonReleases in this set because Emacs isn't always
    fast enough to catch them when it wants them, and they're rare
    enough that they don't use much processor time.  */
 
@@ -148,51 +121,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    | EnterWindowMask		\
    | VisibilityChangeMask)
 
-#else	/* X10 */
-
-#define ConnectionNumber(dpy) dpyno()
-#define PIX_TYPE int
-#define XDISPLAY
-#define XFlushQueue() XFlush()
-#define BLACK_PIX_DEFAULT BlackPixel
-#define WHITE_PIX_DEFAULT WhitePixel
-#define DISPLAY_SCREEN_ARG
-#define DISPLAY_CELLS DisplayCells ()
-#define ROOT_WINDOW RootWindow
-#define XFree free
-#define FONT_TYPE FontInfo
-
-#define WINDOWINFO_TYPE WindowInfo
-#define XGetWindowInfo(w, i) XQueryWindow ((w), (i))
-#define XGetFont(f) XOpenFont ((f))
-#define XLoseFont(f) XCloseFont ((f))
-#define XStuffPending() XPending ()
-#define XWarpMousePointer(w,x,y) XWarpMouse (w,x,y)
-#define XHandleError XErrorHandler
-#define XHandleIOError XIOErrorHandler
-
-#define FONT_WIDTH(f)	((f)->width)
-#define FONT_HEIGHT(f)	((f)->height)
-#define FONT_BASE(f)    ((f)->base)
-
-#define XChangeWindowSize(w,x,y) XChangeWindow(w,x,y)
-
-#endif /* X10 */
-
-struct event_queue
-  {
-    int rindex;			/* Index at which to fetch next. */
-    int windex;			/* Index at which to store next.  */
-    XEvent xrep[EVENT_BUFFER_SIZE];
-  };
-
-/* Queue for mouse clicks.  */
-extern struct event_queue x_mouse_queue;
-
-/* This is the X connection that we are using.  */
-
-extern Display *x_current_display;
-
 /* This checks to make sure we have a display.  */
 extern void check_x ();
 
@@ -200,59 +128,203 @@ extern struct frame *x_window_to_frame ();
 
 #ifdef USE_X_TOOLKIT
 extern struct frame *x_any_window_to_frame ();
+extern struct frame *x_non_menubar_window_to_frame ();
 extern struct frame *x_top_window_to_frame ();
 #endif
 
-/* The frame (if any) which has the X window that has keyboard focus.
-   Zero if none.  This is examined by Ffocus_frame in xfns.c */
+extern Visual *select_visual ();
 
-extern struct frame *x_focus_frame;
-
-#ifdef HAVE_X11
-/* Variables associated with the X display screen this emacs is using.  */
-
-/* How many screens this X display has.  */
-extern int x_screen_count;
-
-/* The vendor supporting this X server.  */
-extern Lisp_Object Vx_vendor;
-
-/* The vendor's release number for this X server.  */
-extern int x_release;
-
-/* Height of this X screen in pixels.  */
-extern int x_screen_height;
-
-/* Height of this X screen in millimeters.  */
-extern int x_screen_height_mm;
-
-/* Width of this X screen in pixels.  */
-extern int x_screen_width;
-
-/* Width of this X screen in millimeters.  */
-extern int x_screen_width_mm;
-
-/* Does this X screen do backing store?  */
-extern Lisp_Object Vx_backing_store;
-
-/* Does this X screen do save-unders?  */
-extern int x_save_under;
-
-/* Number of planes for this screen.  */
-extern int x_screen_planes;
-
-/* X Visual type of this screen.  */
-extern Lisp_Object Vx_screen_visual;
-
-/* Mask of which mouse buttons are currently held down.  */
-extern unsigned int x_mouse_grabbed;
-
-#endif /* HAVE_X11 */
-
 enum text_cursor_kinds {
   filled_box_cursor, hollow_box_cursor, bar_cursor
 };
 
+/* This data type is used for the font_table field
+   of struct x_display_info.  */
+
+struct font_info
+{
+  XFontStruct *font;
+  char *name;
+  char *full_name;
+};
+
+/* Structure recording X pixmap and reference count.
+   If REFCOUNT is 0 then this record is free to be reused.  */
+
+struct x_bitmap_record
+{
+  Pixmap pixmap;
+  char *file;
+  int refcount;
+  /* Record some info about this pixmap.  */
+  int height, width, depth;
+};
+
+/* For each X display, we have a structure that records
+   information about it.  */
+
+struct x_display_info
+{
+  /* Chain of all x_display_info structures.  */
+  struct x_display_info *next;
+  /* Connection number (normally a file descriptor number).  */
+  int connection;
+  /* This says how to access this display in Xlib.  */
+  Display *display;
+  /* This is a cons cell of the form (NAME . FONT-LIST-CACHE).
+     The same cons cell also appears in x_display_name_list.  */
+  Lisp_Object name_list_element;
+  /* Number of frames that are on this display.  */
+  int reference_count;
+  /* The Screen this connection is connected to.  */
+  Screen *screen;
+  /* The Visual being used for this display.  */
+  Visual *visual;
+  /* Number of panes on this screen.  */
+  int n_planes;
+  /* Dimensions of this screen.  */
+  int height, width;
+  /* Mask of things that cause the mouse to be grabbed.  */
+  int grabbed;
+  /* Emacs bitmap-id of the default icon bitmap for this frame.
+     Or -1 if none has been allocated yet.  */
+  int icon_bitmap_id;
+  /* The root window of this screen.  */
+  Window root_window;
+  /* The cursor to use for vertical scroll bars.  */
+  Cursor vertical_scroll_bar_cursor;
+  /* X Resource data base */
+  XrmDatabase xrdb;
+
+  /* A table of all the fonts we have already loaded.  */
+  struct font_info *font_table;
+
+  /* The current capacity of x_font_table.  */
+  int font_table_size;
+
+  /* Reusable Graphics Context for drawing a cursor in a non-default face. */
+  GC scratch_cursor_gc;
+
+  /* These variables describe the range of text currently shown
+     in its mouse-face, together with the window they apply to.
+     As long as the mouse stays within this range, we need not
+     redraw anything on its account.  */
+  int mouse_face_beg_row, mouse_face_beg_col;
+  int mouse_face_end_row, mouse_face_end_col;
+  int mouse_face_past_end;
+  Lisp_Object mouse_face_window;
+  int mouse_face_face_id;
+
+  /* 1 if a mouse motion event came and we didn't handle it right away because
+     gc was in progress.  */
+  int mouse_face_deferred_gc;
+
+  /* FRAME and X, Y position of mouse when last checked for
+     highlighting.  X and Y can be negative or out of range for the frame.  */
+  struct frame *mouse_face_mouse_frame;
+  int mouse_face_mouse_x, mouse_face_mouse_y;
+
+  /* Nonzero means defer mouse-motion highlighting.  */
+  int mouse_face_defer;
+
+  char *x_id_name;
+
+  /* The number of fonts actually stored in x_font_table.
+     font_table[n] is used and valid iff 0 <= n < n_fonts.
+     0 <= n_fonts <= font_table_size.  */
+  int n_fonts;
+
+  /* Pointer to bitmap records.  */
+  struct x_bitmap_record *bitmaps;
+
+  /* Allocated size of bitmaps field.  */
+  int bitmaps_size;
+
+  /* Last used bitmap index.  */
+  int bitmaps_last;
+
+  /* Which modifier keys are on which modifier bits?
+
+     With each keystroke, X returns eight bits indicating which modifier
+     keys were held down when the key was pressed.  The interpretation
+     of the top five modifier bits depends on what keys are attached
+     to them.  If the Meta_L and Meta_R keysyms are on mod5, then mod5
+     is the meta bit.
+
+     meta_mod_mask is a mask containing the bits used for the meta key.
+     It may have more than one bit set, if more than one modifier bit
+     has meta keys on it.  Basically, if EVENT is a KeyPress event,
+     the meta key is pressed if (EVENT.state & meta_mod_mask) != 0.
+
+     shift_lock_mask is LockMask if the XK_Shift_Lock keysym is on the
+     lock modifier bit, or zero otherwise.  Non-alphabetic keys should
+     only be affected by the lock modifier bit if XK_Shift_Lock is in
+     use; XK_Caps_Lock should only affect alphabetic keys.  With this
+     arrangement, the lock modifier should shift the character if
+     (EVENT.state & shift_lock_mask) != 0.  */
+  int meta_mod_mask, shift_lock_mask;
+
+  /* These are like meta_mod_mask, but for different modifiers.  */
+  int alt_mod_mask, super_mod_mask, hyper_mod_mask;
+
+  /* Communication with window managers.  */
+  Atom Xatom_wm_protocols;
+  /* Kinds of protocol things we may receive.  */
+  Atom Xatom_wm_take_focus;
+  Atom Xatom_wm_save_yourself;
+  Atom Xatom_wm_delete_window;
+  /* Atom for indicating window state to the window manager.  */
+  Atom Xatom_wm_change_state;
+  /* Other WM communication */
+  Atom Xatom_wm_configure_denied; /* When our config request is denied */
+  Atom Xatom_wm_window_moved;     /* When the WM moves us.  */
+  /* EditRes protocol */
+  Atom Xatom_editres;
+
+  /* More atoms, which are selection types.  */
+  Atom Xatom_CLIPBOARD, Xatom_TIMESTAMP, Xatom_TEXT, Xatom_DELETE,
+  Xatom_MULTIPLE, Xatom_INCR, Xatom_EMACS_TMP, Xatom_TARGETS, Xatom_NULL,
+  Xatom_ATOM_PAIR;
+#ifdef MULTI_KBOARD
+  struct kboard *kboard;
+#endif
+  int cut_buffers_initialized; /* Whether we're sure they all exist */
+
+  /* The frame (if any) which has the X window that has keyboard focus.
+     Zero if none.  This is examined by Ffocus_frame in xfns.c.  Note
+     that a mere EnterNotify event can set this; if you need to know the
+     last frame specified in a FocusIn or FocusOut event, use
+     x_focus_event_frame.  */
+  struct frame *x_focus_frame;
+
+  /* The last frame mentioned in a FocusIn or FocusOut event.  This is
+     separate from x_focus_frame, because whether or not LeaveNotify
+     events cause us to lose focus depends on whether or not we have
+     received a FocusIn event for it.  */
+  struct frame *x_focus_event_frame;
+
+  /* The frame which currently has the visual highlight, and should get
+     keyboard input (other sorts of input have the frame encoded in the
+     event).  It points to the X focus frame's selected window's
+     frame.  It differs from x_focus_frame when we're using a global
+     minibuffer.  */
+  struct frame *x_highlight_frame;
+};
+
+/* This is a chain of structures for all the X displays currently in use.  */
+extern struct x_display_info *x_display_list;
+
+/* This is a list of cons cells, each of the form (NAME . FONT-LIST-CACHE),
+   one for each element of x_display_list and in the same order.
+   NAME is the name of the frame.
+   FONT-LIST-CACHE records previous values returned by x-list-fonts.  */
+extern Lisp_Object x_display_name_list;
+
+extern struct x_display_info *x_display_info_for_display ();
+extern struct x_display_info *x_display_info_for_name ();
+
+extern struct x_display_info *x_term_init ();
+
 /* Each X frame object points to its own struct x_display object
    in the display.x field.  The x_display structure contains all
    the information that is specific to X windows.  */
@@ -269,10 +341,15 @@ struct x_display
   /* Size of the X window in pixels.  */
   int pixel_height, pixel_width;
 
+  /* Height of menu bar widget, in pixels.
+     Zero if not using the X toolkit.
+     When using the toolkit, this value is not meaningful
+     if the menubar is turned off.  */
+  int menubar_height;
+
   /* Height of a line, in pixels.  */
   int line_height;
 
-#ifdef HAVE_X11
   /* The tiled border used when the mouse is out of the frame.  */
   Pixmap border_tile;
 
@@ -280,7 +357,6 @@ struct x_display
   GC normal_gc;				/* Normal video */
   GC reverse_gc;			/* Reverse video */
   GC cursor_gc;				/* cursor drawing */
-#endif /* HAVE_X11 */
 
   /* Width of the internal border.  This is a line of background color
      just inside the window's border.  When the frame is selected,
@@ -297,7 +373,9 @@ struct x_display
   Window icon_desc;
 
   /* The X window that is the parent of this X window.
-     Usually but not always RootWindow.  */
+     Usually this is a window that was made by the window manager,
+     but it can be the root window, and it can be explicitly specified
+     (see the explicit_parent field, below).  */
   Window parent_desc;
 
 #ifdef USE_X_TOOLKIT
@@ -312,34 +390,26 @@ struct x_display
   Widget menubar_widget;
 #endif
 
-  /* 1 for bitmap icon, 0 for text icon.  */
-  int icon_bitmap_flag;
+  /* If >=0, a bitmap index.  The indicated bitmap is used for the
+     icon. */
+  int icon_bitmap;
 
-  FONT_TYPE *font;
+  XFontStruct *font;
 
   /* Pixel values used for various purposes.
      border_pixel may be -1 meaning use a gray tile.  */
-  PIX_TYPE background_pixel;
-  PIX_TYPE foreground_pixel;
-  PIX_TYPE cursor_pixel;
-  PIX_TYPE border_pixel;
-  PIX_TYPE mouse_pixel;
-  PIX_TYPE cursor_foreground_pixel;
+  unsigned long background_pixel;
+  unsigned long foreground_pixel;
+  unsigned long cursor_pixel;
+  unsigned long border_pixel;
+  unsigned long mouse_pixel;
+  unsigned long cursor_foreground_pixel;
 
   /* Descriptor for the cursor in use for this window.  */
-#ifdef HAVE_X11
   Cursor text_cursor;
   Cursor nontext_cursor;
   Cursor modeline_cursor;
   Cursor cross_cursor;
-#else
-  Cursor cursor;
-#endif
-
-  /* The name that was associated with the icon, the last time
-     it was refreshed.  Usually the same as the name of the
-     buffer in the currently selected window in the frame */
-  char *icon_label;
 
   /* Flag to set when the X window needs to be completely repainted.  */
   int needs_exposure;
@@ -351,6 +421,9 @@ struct x_display
   /* What kind of text cursor should we draw in the future?
      This should always be filled_box_cursor or bar_cursor.  */
   enum text_cursor_kinds desired_cursor;
+
+  /* Width of bar cursor (if we are using that).  */
+  int cursor_width;
 
   /* These are the current window manager hints.  It seems that
      XSetWMHints, when presented with an unset bit in the `flags'
@@ -389,6 +462,16 @@ struct x_display
 
   /* The geometry flags for this window.  */
   int size_hint_flags;
+
+  /* This is the Emacs structure for the X display this frame is on.  */
+  struct x_display_info *display_info;
+
+  /* Nonzero means our parent is another application's window
+     and was explicitly specified.  */
+  char explicit_parent;
+
+  /* Nonzero means tried already to make this frame visible.  */
+  char asked_for_visible;
 };
 
 /* Get at the computed faces of an X window frame.  */
@@ -406,39 +489,24 @@ struct x_display
 /* Return the window associated with the frame F.  */
 #define FRAME_X_WINDOW(f) ((f)->display.x->window_desc)
 
+#define FRAME_FOREGROUND_PIXEL(f) ((f)->display.x->foreground_pixel)
+#define FRAME_BACKGROUND_PIXEL(f) ((f)->display.x->background_pixel)
+#define FRAME_FONT(f) ((f)->display.x->font)
+
+/* This gives the x_display_info structure for the display F is on.  */
+#define FRAME_X_DISPLAY_INFO(f) ((f)->display.x->display_info)
+
+/* This is the `Display *' which frame F is on.  */
+#define FRAME_X_DISPLAY(f) (FRAME_X_DISPLAY_INFO (f)->display)
+
+/* This is the `Screen *' which frame F is on.  */
+#define FRAME_X_SCREEN(f) (FRAME_X_DISPLAY_INFO (f)->screen)
+
 /* These two really ought to be called FRAME_PIXEL_{WIDTH,HEIGHT}.  */
 #define PIXEL_WIDTH(f) ((f)->display.x->pixel_width)
 #define PIXEL_HEIGHT(f) ((f)->display.x->pixel_height)
 
 #define FRAME_DESIRED_CURSOR(f) ((f)->display.x->desired_cursor)
-
-
-/* When X windows are used, a glyph may be a 16 bit unsigned datum.
-   The high order byte is the face number and is used as an index
-   in the face table.  A face is a font plus:
-    1) the unhighlighted foreground color,
-    2) the unhighlighted background color.
-   For highlighting, the two colors are exchanged.
-   Face number 0 is unused.  The low order byte of a glyph gives
-   the character within the font.  All fonts are assumed to be
-   fixed width, and to have the same height and width.  */
-
-#ifdef HAVE_X11
-
-/* Face declared in dispextern.h */
-
-#else	/* X10 */
-
-struct face
-{
-  FONT_TYPE *font;	/* Font info for specified font.  */
-  int  fg;		/* Unhighlighted foreground.  */
-  int  bg;		/* Unhighlighted background.  */
-};
-#endif	/* X10 */
-
-#define MAX_FACES_AND_GLYPHS 256
-extern struct face *x_face_table[];
 
 
 /* X-specific scroll bar stuff.  */
@@ -454,7 +522,7 @@ extern struct face *x_face_table[];
 struct scroll_bar {
 
   /* These fields are shared by all vectors.  */
-  int size_from_Lisp_Vector_struct;
+  EMACS_INT size_from_Lisp_Vector_struct;
   struct Lisp_Vector *next_from_Lisp_Vector_struct;
 
   /* The window we're a scroll bar for.  */
@@ -492,12 +560,13 @@ struct scroll_bar {
 };
 
 /* The number of elements a vector holding a struct scroll_bar needs.  */
-#define SCROLL_BAR_VEC_SIZE \
-  ((sizeof (struct scroll_bar) - sizeof (int) - sizeof (struct Lisp_Vector *)) \
+#define SCROLL_BAR_VEC_SIZE					\
+  ((sizeof (struct scroll_bar)					\
+    - sizeof (EMACS_INT) - sizeof (struct Lisp_Vector *))	\
    / sizeof (Lisp_Object))
 
 /* Turning a lisp vector value into a pointer to a struct scroll_bar.  */
-#define XSCROLL_BAR(vec) ((struct scroll_bar *) XPNTR (vec))
+#define XSCROLL_BAR(vec) ((struct scroll_bar *) XVECTOR (vec))
 
 
 /* Building a 32-bit C integer from two 16-bit lisp integers.  */
@@ -505,8 +574,8 @@ struct scroll_bar {
 
 /* Setting two lisp integers to the low and high words of a 32-bit C int.  */
 #define SCROLL_BAR_UNPACK(low, high, int32) \
-  (XSET ((low),  Lisp_Int,  (int32)        & 0xffff), \
-   XSET ((high), Lisp_Int, ((int32) >> 16) & 0xffff))
+  (XSETINT ((low),   (int32)        & 0xffff), \
+   XSETINT ((high), ((int32) >> 16) & 0xffff))
 
 
 /* Extract the X window id of the scroll bar from a struct scroll_bar.  */
@@ -517,9 +586,6 @@ struct scroll_bar {
 #define SET_SCROLL_BAR_X_WINDOW(ptr, id) \
   (SCROLL_BAR_UNPACK ((ptr)->x_window_low, (ptr)->x_window_high, (int) id))
 
-
-/* Return the outside pixel width for a vertical scroll bar on frame F.  */
-#define VERTICAL_SCROLL_BAR_PIXEL_WIDTH(f) (2*FONT_WIDTH ((f)->display.x->font))
 
 /* Return the outside pixel height for a vertical scroll bar HEIGHT
    rows high on frame F.  */
@@ -571,7 +637,7 @@ struct scroll_bar {
    Knowledge of which factors affect the overall size of the window should
    be hidden in these macros, if that's possible.
 
-/* Return the upper/left pixel position of the character cell on frame F
+   Return the upper/left pixel position of the character cell on frame F
    at ROW/COL.  */
 #define CHAR_TO_PIXEL_ROW(f, row) \
   ((f)->display.x->internal_border_width \

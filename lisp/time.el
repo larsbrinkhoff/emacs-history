@@ -29,7 +29,8 @@
 
 (defvar display-time-mail-file nil
   "*File name of mail inbox file, for indicating existence of new mail.
-Default is system-dependent, and is the same as used by Rmail.")
+Non-nil and not a string means don't check for mail.  nil means use
+default, which is system-dependent, and is the same as used by Rmail.")
 
 ;;;###autoload
 (defvar display-time-day-and-date nil "\
@@ -41,7 +42,7 @@ Default is system-dependent, and is the same as used by Rmail.")
   "*Seconds between updates of time in the mode line.")
 
 (defvar display-time-24hr-format nil
-  "*Non-nill indicates time should be displayed as hh:mm, 0 <= hh <= 23.
+  "*Non-nil indicates time should be displayed as hh:mm, 0 <= hh <= 23.
 Nil means 1 <= hh <= 12, and an AM/PM suffix is used.")
 
 (defvar display-time-string nil)
@@ -87,8 +88,7 @@ After each update, `display-time-hook' is run with `run-hooks'."
   (or (eq (process-status proc) 'run)
       (setq display-time-string ""))
   ;; Force mode-line updates
-  (save-excursion (set-buffer (other-buffer)))
-  (set-buffer-modified-p (buffer-modified-p))
+  (force-mode-line-update t)
   (sit-for 0))
 
 (defvar display-time-string-forms
@@ -110,14 +110,15 @@ and `time-zone' all alphabetic strings, and `mail' a true/nil value.
 For example, the form
 
   '((substring year -2) \"/\" month \"/\" day
-    " " 24-hours \":\" minutes \":\" seconds
+    \" \" 24-hours \":\" minutes \":\" seconds
     (if time-zone \" (\") time-zone (if time-zone \")\")
     (if mail \" Mail\" \"\"))
 
 would give mode line times like `94/12/30 21:07:48 (UTC)'.")
 
 (defun display-time-filter (proc string)
-  (let* ((time (current-time-string))
+  (let* ((now (current-time))
+	 (time (current-time-string now))
          (load (condition-case ()
                    (if (zerop (car (load-average))) ""
                      (let ((str (format " %03d" (car (load-average)))))
@@ -126,22 +127,30 @@ would give mode line times like `94/12/30 21:07:48 (UTC)'.")
          (mail-spool-file (or display-time-mail-file
                               (getenv "MAIL")
                               (concat rmail-spool-directory
-                                      (or (getenv "LOGNAME")
-                                          (getenv "USER")
-                                          (user-login-name)))))
-         (mail (and (file-exists-p mail-spool-file)
-                    (display-time-file-nonempty-p mail-spool-file)))
+                                      (user-login-name))))
+	 (mail (and (stringp mail-spool-file)
+		    (or (null display-time-server-down-time)
+			;; If have been down for 20 min, try again.
+			(> (- (nth 1 (current-time))
+			      display-time-server-down-time)
+			   1200))
+		    (let ((start-time (current-time)))
+		      (prog1
+			  (display-time-file-nonempty-p mail-spool-file)
+			(if (> (- (nth 1 (current-time)) (nth 1 start-time))
+			       20)
+			    ;; Record that mail file is not accessible.
+			    (setq display-time-server-down-time 
+				  (nth 1 (current-time)))
+			  ;; Record that mail file is accessible.
+			  (setq display-time-server-down-time nil))))))
          (24-hours (substring time 11 13))
          (hour (string-to-int 24-hours))
-         (12-hours (int-to-string (if (> hour 12)
-                                      (- hour 12)
-                                    (if (= hour 0)
-                                        12
-                                      hour))))
+         (12-hours (int-to-string (1+ (% (+ hour 11) 12))))
          (am-pm (if (>= hour 12) "pm" "am"))
          (minutes (substring time 14 16))
          (seconds (substring time 17 19))
-         (time-zone (car (cdr (current-time-zone))))
+         (time-zone (car (cdr (current-time-zone now))))
          (day (substring time 8 10))
          (year (substring time 20 24))
          (monthname (substring time 4 7))
@@ -156,9 +165,7 @@ would give mode line times like `94/12/30 21:07:48 (UTC)'.")
     (setq display-time-string
           (mapconcat 'eval display-time-string-forms "")))
   (run-hooks 'display-time-hook)
-  ;; Force redisplay of all buffers' mode lines to be considered.
-  (save-excursion (set-buffer (other-buffer)))
-  (set-buffer-modified-p (buffer-modified-p))
+  (force-mode-line-update)
   ;; Do redisplay right now, if no input pending.
   (sit-for 0))
 

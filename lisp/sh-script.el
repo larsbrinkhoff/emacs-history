@@ -47,7 +47,7 @@
 	    ;;	- that have a suffix .sh or .shar (shell archive)
 	    ;;	- that contain resources for the various shells
 	    ;;	- startup files for X11
-	    (cons '("\\.sh$\\|\\.shar$\\|/\\.\\(profile\\|bash_profile\\|login\\|bash_login\\|logout\\|bash_logout\\|bashrc\\|t?cshrc\\|xinitrc\\|startxrc\\|xsession\\)$" . sh-mode)
+	    (cons '("\\.sh\\'\\|\\.shar\\'\\|/\\.\\(profile\\|bash_profile\\|login\\|bash_login\\|logout\\|bash_logout\\|bashrc\\|t?cshrc\\|xinitrc\\|startxrc\\|xsession\\)\\'" . sh-mode)
 		  auto-mode-alist)))
 
 
@@ -120,19 +120,19 @@
     (define-key map [menu-bar insert] 
       (cons "Insert" (make-sparse-keymap "Insert")))
     (define-key map [menu-bar insert sh-while] 
-      '("While loop" . sh-while))
+      '("While Loop" . sh-while))
     (define-key map [menu-bar insert sh-until] 
-      '("Until loop" . sh-until))
+      '("Until Loop" . sh-until))
     (define-key map [menu-bar insert sh-select] 
-      '("Select statement" . sh-select))
+      '("Select Statement" . sh-select))
     (define-key map [menu-bar insert sh-indexed-loop] 
-      '("Indexed loop" . sh-indexed-loop))
+      '("Indexed Loop" . sh-indexed-loop))
     (define-key map [menu-bar insert sh-if] 
-      '("If statement" . sh-if))
+      '("If Statement" . sh-if))
     (define-key map [menu-bar insert sh-for] 
-      '("For loop" . sh-for))
+      '("For Loop" . sh-for))
     (define-key map [menu-bar insert sh-case] 
-      '("Case statement" . sh-case))
+      '("Case Statement" . sh-case))
     map)
   "Keymap used in Shell-Script mode.")
 
@@ -287,9 +287,10 @@ Variables only understood by some shells are associated to a list of those.")
 
 
 
-(defvar sh-font-lock-keywords
-  '(("[ \t]\\(#.*\\)" 1 font-lock-comment-face)
-    ("\"[^`]*\"\\|'.*'\\|\\\\[^\nntc]" . font-lock-string-face))
+(defvar sh-font-lock-keywords nil
+  ;; This is done syntactically:
+  ;'(("[ \t]\\(#.*\\)" 1 font-lock-comment-face)
+  ;  ("\"[^`]*\"\\|'.*'\\|\\\\[^\nntc]" . font-lock-string-face))
   "*Rules for highlighting shell scripts.
 This variable is included into the various variables
 `sh-SHELL-font-lock-keywords'.  If no such variable exists for some shell,
@@ -391,8 +392,7 @@ The following commands are available, based on the current shell's syntax:
   (make-local-variable 'sh-shell-is-csh)
   (make-local-variable 'pair-alist)
   (make-local-variable 'pair-filter)
-  (make-local-variable 'font-lock-keywords)
-  (make-local-variable 'font-lock-keywords-case-fold-search)
+  (make-local-variable 'font-lock-defaults)
   (make-local-variable 'sh-variables)
   (setq major-mode 'sh-mode
 	mode-name "Shell-script"
@@ -404,7 +404,6 @@ The following commands are available, based on the current shell's syntax:
 	tab-width sh-tab-width
 	;; C shells do
 	require-final-newline t
-	font-lock-keywords-case-fold-search nil
 	pair-alist '((?` _ ?`))
 	pair-filter 'sh-quoted-p)
   ;; parse or insert magic number for exec
@@ -827,12 +826,12 @@ Calls the value of `sh-set-shell-hook' if set."
 					(error "Cannot find %s." shell)))
 	  sh-shell (intern (file-name-nondirectory sh-shell-path))
 	  sh-shell-is-csh (memq sh-shell '(csh tcsh))
-	  font-lock-keywords
-	  (intern-soft (format "sh-%s-font-lock-keywords" sh-shell))
-	  font-lock-keywords (if (and font-lock-keywords
-				      (boundp font-lock-keywords))
-				 (symbol-value font-lock-keywords)
-			       sh-font-lock-keywords)
+	  font-lock-defaults
+	  (let ((keywords (intern-soft (format "sh-%s-font-lock-keywords"
+					       sh-shell))))
+	    (list (if (and keywords (boundp keywords))
+		      keywords
+		    'sh-font-lock-keywords)))
 	  comment-start-skip (if sh-shell-is-csh
 				 "\\(^\\|[^$]\\|\\$[^{]\\)#+[\t ]*"
 			       "\\(^\\|[^$]\\|\\$[^{]\\)\\B#+[\t ]*")

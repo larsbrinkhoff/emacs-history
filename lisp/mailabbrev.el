@@ -126,14 +126,6 @@
 
 (require 'sendmail)
 
-(defvar mail-abbrev-mailrc-file nil
-  "Name of file with mail aliases.   If nil, ~/.mailrc is used.")
-
-(defmacro mail-abbrev-mailrc-file ()
-  '(or mail-abbrev-mailrc-file
-       (setq mail-abbrev-mailrc-file
-	     (or (getenv "MAILRC") "~/.mailrc"))))
-
 ;; originally defined in sendmail.el - used to be an alist, now is a table.
 (defvar mail-abbrevs nil
   "Word-abbrev table of mail address aliases.
@@ -144,21 +136,18 @@ no aliases, which is represented by this being a table with no entries.)")
 ;;;###autoload
 (defun mail-abbrevs-setup ()
   (if (and (not (vectorp mail-abbrevs))
-	   (file-exists-p (mail-abbrev-mailrc-file)))
+	   (file-exists-p mail-personal-alias-file))
       (build-mail-abbrevs))
-  (make-local-variable 'pre-abbrev-expand-hook)
-  (setq pre-abbrev-expand-hook
-    (cond ((and (listp pre-abbrev-expand-hook)
-		(not (eq 'lambda (car pre-abbrev-expand-hook))))
-	   (cons 'sendmail-pre-abbrev-expand-hook pre-abbrev-expand-hook))
-	  (t
-	   (list 'sendmail-pre-abbrev-expand-hook pre-abbrev-expand-hook))))
+  (make-local-hook 'pre-abbrev-expand-hook)
+  (add-hook 'pre-abbrev-expand-hook 'sendmail-pre-abbrev-expand-hook
+	    nil t)
   (abbrev-mode 1))
 
 ;;;###autoload
 (defun build-mail-abbrevs (&optional file recursivep)
-  "Read mail aliases from `~/.mailrc' file and set `mail-abbrevs'."
-  (setq file (expand-file-name (or file (mail-abbrev-mailrc-file))))
+  "Read mail aliases from personal mail alias file and set `mail-abbrevs'.
+By default this is the file specified by `mail-personal-alias-file'."
+  (setq file (expand-file-name (or file mail-personal-alias-file)))
   (if (vectorp mail-abbrevs)
       nil
     (setq mail-abbrevs nil)
@@ -237,7 +226,7 @@ also want something like \",\\n    \" to get each address on its own line.")
 ;;
 ;;;###autoload
 (defun define-mail-abbrev (name definition &optional from-mailrc-file)
-  "Define NAME as a mail-abbrev that translates to DEFINITION.
+  "Define NAME as a mail alias abbrev that translates to DEFINITION.
 If DEFINITION contains multiple addresses, separate them with commas."
   ;; When this is called from build-mail-abbrevs, the third argument is
   ;; true, and we do some evil space->comma hacking like /bin/mail does.
@@ -247,7 +236,7 @@ If DEFINITION contains multiple addresses, separate them with commas."
       nil
     (setq mail-abbrevs nil)
     (define-abbrev-table 'mail-abbrevs '())
-    (if (file-exists-p (mail-abbrev-mailrc-file))
+    (if (file-exists-p mail-personal-alias-file)
 	(build-mail-abbrevs)))
   ;; strip garbage from front and end
   (if (string-match "\\`[ \t\n,]+" definition)
@@ -318,10 +307,9 @@ If DEFINITION contains multiple addresses, separate them with commas."
 
 
 (defun mail-abbrev-expand-hook ()
-  "For use as the fourth arg to define-abbrev.
-After expanding a mail-abbrev, if fill-mode is on and we're past the
-fill-column, break the line at the previous comma, and indent the next
-line."
+  "For use as the fourth arg to `define-abbrev'.
+After expanding a mail-abbrev, if Auto Fill mode is on and we're past the
+fill-column, break the line at the previous comma, and indent the next line."
   (save-excursion
     (let ((p (point))
 	  bol comma fp)
@@ -352,8 +340,8 @@ line."
 
 (defvar mail-abbrev-mode-regexp 
   "^\\(Resent-\\)?\\(To\\|From\\|CC\\|BCC\\|Reply-to\\):"
-  "*Regexp to select mail-headers in which mail-abbrevs should be expanded.
-This string it will be handed to `looking-at' with the point at the beginning
+  "*Regexp to select mail-headers in which mail abbrevs should be expanded.
+This string will be handed to `looking-at' with point at the beginning
 of the current line; if it matches, abbrev mode will be turned on, otherwise
 it will be turned off.  (You don't need to worry about continuation lines.)
 This should be set to match those mail fields in which you want abbreviations
@@ -378,7 +366,7 @@ turned on.")
     (modify-syntax-entry ?> ")<" tab)
     tab)
   "The syntax table used in send-mail mode when in a mail-address header.
-mail-mode-syntax-table is used when the cursor is in the message body or in
+`mail-mode-syntax-table' is used when the cursor is in the message body or in
 non-address headers.")
 
 (defvar mail-abbrev-syntax-table
@@ -392,7 +380,7 @@ non-address headers.")
     tab)
   "The syntax-table used for abbrev-expansion purposes; this is not actually
 made the current syntax table of the buffer, but simply controls the set of
-characters which may be a part of the name of a mail-alias.")
+characters which may be a part of the name of a mail alias.")
 
 
 (defun mail-abbrev-in-expansion-header-p ()
@@ -470,7 +458,7 @@ characters which may be a part of the name of a mail-alias.")
 		   (expand-abbrev)
 		   ;; Now set it back to what it was before.
 		   (set-syntax-table mail-mode-header-syntax-table)))
-	     (setq abbrev-start-location (point) ; This is the trick.
+	     (setq abbrev-start-location (point-max) ; This is the trick.
 		   abbrev-start-location-buffer (current-buffer)))
 
 	 ;; We're not in a mail header where mail aliases should
@@ -489,7 +477,7 @@ characters which may be a part of the name of a mail-alias.")
   (interactive (list
 		(let ((insert-default-directory t)
 		      (default-directory (expand-file-name "~/"))
-		      (def (mail-abbrev-mailrc-file)))
+		      (def mail-personal-alias-file))
 		  (read-file-name
 		    (format "Read additional aliases from file: (default %s) "
 			    def)
@@ -503,7 +491,7 @@ characters which may be a part of the name of a mail-alias.")
   (interactive (list
 		(let ((insert-default-directory t)
 		      (default-directory (expand-file-name "~/"))
-		      (def (mail-abbrev-mailrc-file)))
+		      (def mail-personal-alias-file))
 		  (read-file-name
 		   (format "Read mail aliases from file: (default %s) " def)
 		   default-directory

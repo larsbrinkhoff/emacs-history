@@ -24,6 +24,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "commands.h"
 #include "buffer.h"
 #include "window.h"
+#include "syntax.h"
 
 /* An abbrev table is an obarray.
  Each defined abbrev is represented by a symbol in that obarray
@@ -124,7 +125,7 @@ it is called after EXPANSION is inserted.")
   oexp = XSYMBOL (sym)->value;
   ohook = XSYMBOL (sym)->function;
   if (!((EQ (oexp, expansion)
-	 || (XTYPE (oexp) == Lisp_String && XTYPE (expansion) == Lisp_String
+	 || (STRINGP (oexp) && STRINGP (expansion)
 	     && (tem = Fstring_equal (oexp, expansion), !NILP (tem))))
 	&&
 	(EQ (ohook, hook)
@@ -228,7 +229,9 @@ Returns t if expansion took place.")
      expansion".  */
   value = (MODIFF != oldmodiff ? Qt : Qnil);
 
-  if (XBUFFER (Vabbrev_start_location_buffer) != current_buffer)
+  wordstart = 0;
+  if (!(BUFFERP (Vabbrev_start_location_buffer) &&
+	XBUFFER (Vabbrev_start_location_buffer) == current_buffer))
     Vabbrev_start_location = Qnil;
   if (!NILP (Vabbrev_start_location))
     {
@@ -236,10 +239,12 @@ Returns t if expansion took place.")
       CHECK_NUMBER_COERCE_MARKER (tem, 0);
       wordstart = XINT (tem);
       Vabbrev_start_location = Qnil;
-      if (FETCH_CHAR (wordstart) == '-')
+      if (wordstart < BEGV || wordstart > ZV)
+	wordstart = 0;
+      if (wordstart && wordstart != ZV && FETCH_CHAR (wordstart) == '-')
 	del_range (wordstart, wordstart + 1);
     }
-  else
+  if (!wordstart)
     wordstart = scan_words (point, -1);
 
   if (!wordstart)
@@ -267,17 +272,19 @@ Returns t if expansion took place.")
       *p++ = c;
     }
 
-  if (XTYPE (current_buffer->abbrev_table) == Lisp_Vector)
+  if (VECTORP (current_buffer->abbrev_table))
     sym = oblookup (current_buffer->abbrev_table, buffer, p - buffer);
   else
-    XFASTINT (sym) = 0;
-  if (XTYPE (sym) == Lisp_Int || NILP (XSYMBOL (sym)->value))
+    XSETFASTINT (sym, 0);
+  if (INTEGERP (sym) || NILP (XSYMBOL (sym)->value))
     sym = oblookup (Vglobal_abbrev_table, buffer, p - buffer);
-  if (XTYPE (sym) == Lisp_Int || NILP (XSYMBOL (sym)->value))
+  if (INTEGERP (sym) || NILP (XSYMBOL (sym)->value))
     return value;
 
   if (INTERACTIVE && !EQ (minibuf_window, selected_window))
     {
+      /* Add an undo boundary, in case we are doing this for
+	 a self-inserting command which has avoided making one so far.  */
       SET_PT (wordend);
       Fundo_boundary ();
     }
@@ -290,7 +297,7 @@ Returns t if expansion took place.")
   Vlast_abbrev = sym;
   last_abbrev_point = wordstart;
 
-  if (XTYPE (XSYMBOL (sym)->plist) == Lisp_Int)
+  if (INTEGERP (XSYMBOL (sym)->plist))
     XSETINT (XSYMBOL (sym)->plist,
 	     XINT (XSYMBOL (sym)->plist) + 1);	/* Increment use count */
 
@@ -307,8 +314,8 @@ Returns t if expansion took place.")
       if (!abbrev_all_caps)
 	if (scan_words (point, -1) > scan_words (wordstart, 1))
 	  {
-	    upcase_initials_region (make_number (wordstart),
-				    make_number (point));
+	    Fupcase_initials_region (make_number (wordstart),
+				     make_number (point));
 	    goto caped;
 	  }
       /* If expansion is one word, or if user says so, upcase it all. */
@@ -318,16 +325,15 @@ Returns t if expansion took place.")
   else if (uccount)
     {
       /* Abbrev included some caps.  Cap first initial of expansion */
-      int old_zv = ZV;
-      int old_pt = point;
+      int pos = wordstart;
 
-      /* Don't let Fcapitalize_word operate on text after point.  */
-      ZV = point;
-      SET_PT (wordstart);
-      Fcapitalize_word (make_number (1));
+      /* Find the initial.  */
+      while (pos < point
+	     && SYNTAX (*BUF_CHAR_ADDRESS (current_buffer, pos)) != Sword)
+	pos++;
 
-      SET_PT (old_pt);
-      ZV = old_zv;
+      /* Change just that.  */
+      Fupcase_initials_region (make_number (pos), make_number (pos + 1));
     }
 
   hook = XSYMBOL (sym)->function;
@@ -349,13 +355,13 @@ is not undone.")
       || last_abbrev_point > ZV)
     return Qnil;
   SET_PT (last_abbrev_point);
-  if (XTYPE (Vlast_abbrev_text) == Lisp_String)
+  if (STRINGP (Vlast_abbrev_text))
     {
       /* This isn't correct if Vlast_abbrev->function was used
          to do the expansion */
       Lisp_Object val;
       val = XSYMBOL (Vlast_abbrev)->value;
-      if (XTYPE (val) != Lisp_String)
+      if (!STRINGP (val))
 	error ("value of abbrev-symbol must be a string");
       adjust = XSTRING (val)->size;
       del_range (point, point + adjust);
@@ -377,7 +383,7 @@ write_abbrev (sym, stream)
   if (NILP (XSYMBOL (sym)->value))
     return;
   insert ("    (", 5);
-  XSET (name, Lisp_String, XSYMBOL (sym)->name);
+  XSETSTRING (name, XSYMBOL (sym)->name);
   Fprin1 (name, stream);
   insert (" ", 1);
   Fprin1 (XSYMBOL (sym)->value, stream);
@@ -429,7 +435,7 @@ define the abbrev table NAME exactly as it is currently defined.")
   table = Fsymbol_value (name);
   CHECK_VECTOR (table, 0);
 
-  XSET (stream, Lisp_Buffer, current_buffer);
+  XSETBUFFER (stream, current_buffer);
 
   if (!NILP (readable))
     {

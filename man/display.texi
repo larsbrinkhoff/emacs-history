@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Display, Search, Registers, Top
 @chapter Controlling the Display
@@ -204,6 +204,12 @@ the three dots.
 
   To make all lines visible again, type @kbd{C-x $} with no argument.
 
+@vindex selective-display-ellipses
+  If you set the variable @code{selective-display-ellipses} to
+@code{nil}, the three dots do not appear at the end of a line that
+precedes invisible lines.  Then there is no visible indication of the
+invisible lines.  This variable becomes local automatically when set.
+
 @node European Display
 @section European Character Set Display
 
@@ -221,20 +227,23 @@ terminal or font in use supports them.  The @kbd{M-x
 standard-display-european} command toggles European character display
 mode.  With a numeric argument, @kbd{M-x standard-display-european}
 enables European character display if and only if the argument is
-positive.
+positive.  Load the library @code{iso-syntax} to specify the correct
+syntactic properties and case conversion table for the Latin-1 character
+set.
 
   Some operating systems let you specify the language you are using by
 setting a locale.  Emacs handles one common special case of this: if
 your locale name for character types contains the string @samp{8859-1}
 or @samp{88591}, Emacs automatically enables European character display
-mode when it starts up.
+mode and its syntax.
 
-  Load the library @code{iso-syntax} to specify the correct syntactic
-properties and case conversion table for the Latin-1 character set.
+  There are three different ways you can enter Latin-1 characters:
 
-  If your keyboard can send character codes 128 and up to represent
-ISO Latin-1 characters, execute the following expression to
-enable Emacs to understand them:
+@itemize @bullet
+@item
+If your keyboard can generate character codes 128 and up, representing
+ISO Latin-1 characters, execute the following expression to enable Emacs
+to understand them:
 
 @example
 (set-input-mode (car (current-input-mode))
@@ -242,37 +251,41 @@ enable Emacs to understand them:
                 0)
 @end example
 
-@noindent
 @kindex C-x 8
 @cindex @code{iso-transl} library
-Otherwise, you can load the library @code{iso-transl} to turn the key
-@kbd{C-x 8} into a ``compose character'' prefix for entry of the extra
-ISO Latin-1 printing characters.  @kbd{C-x 8} is good for insertion (in
-the minibuffer as well as other buffers), for searching, and in any
-other context where a key sequence is allowed.  The @key{ALT} modifier key,
-if you have one, serves the same purpose as @kbd{C-x 8}; use @key{ALT}
+@item
+You can load the library @code{iso-transl} to turn the key @kbd{C-x 8}
+into a ``compose character'' prefix for entry of the extra ISO Latin-1
+printing characters.  @kbd{C-x 8} is good for insertion (in the
+minibuffer as well as other buffers), for searching, and in any other
+context where a key sequence is allowed.  The @key{ALT} modifier key, if
+you have one, serves the same purpose as @kbd{C-x 8}; use @key{ALT}
 together with an accent character to modify the following letter.
 
 @cindex ISO Accents mode
 @findex iso-accents-mode
-  If you enter non-ASCII ISO Latin-1 characters often, you might find
-ISO Accents mode convenient.  When this minor mode is enabled, the
-characters @samp{`}, @samp{'}, @samp{"}, @samp{^}, @samp{/} and @samp{~}
-modify the following letter by adding the corresponding diacritical mark
-to it, if possible.  To enable or disable ISO Accents mode, use the
-command @kbd{M-x iso-accents-mode}.  This command affects only the
-current buffer.
+@item
+You can use ISO Accents mode.  This minor mode is convenient if you
+enter non-ASCII ISO Latin-1 characters often.  When this minor mode is
+enabled, the characters @samp{`}, @samp{'}, @samp{"}, @samp{^}, @samp{/}
+and @samp{~} modify the following letter by adding the corresponding
+diacritical mark to it, if possible.  To enable or disable ISO Accents
+mode, use the command @kbd{M-x iso-accents-mode}.  This command affects
+only the current buffer.
 
-  To enter one of those six special characters, type the character,
-followed by a space.  Some of those characters have a corresponding
-``dead key'' accent character in the ISO Latin-1 character set; to enter
-that character, type the corresponding ASCII character twice.  For
-example, @kbd{''} enters the Latin-1 character acute-accent (character
-code 0264).
+To enter one of those six special characters while in ISO Accents mode,
+type the character, followed by a space.  Some of those characters have
+a corresponding ``dead key'' accent character in the ISO Latin-1
+character set; to enter that character, type the corresponding ASCII
+character twice.  For example, @kbd{''} enters the Latin-1 character
+acute-accent (character code 0264).
 
-  In addition to the accented letters, you can use these special
-sequences in ISO Accents mode to enter certain other ISO Latin-1
-characters:
+ISO Accents mode input is available whenever a key sequence is expected:
+for ordinary insertion, for searching, for the minibuffer, and for
+certain command arguments.
+
+In addition to the accented letters, you can use these special sequences
+in ISO Accents mode to enter certain other ISO Latin-1 characters:
 
 @table @kbd
 @item /A
@@ -297,10 +310,12 @@ German sharp @samp{s}.
 Left guillemet.
 @item ~>
 Right guillemet.
+@item ~!
+Inverted exclamation mark.
+@item ~?
+Inverted question mark.
 @end table
-
-  This feature is available whenever a key sequence is expected: for
-ordinary insertion, for searching, and for certain command arguments.
+@end itemize
 
 @node Optional Mode Line
 @section Optional Mode Line Features
@@ -318,7 +333,9 @@ information about minor modes and about how to use this command.
   If the buffer is very large (larger than the value of
 @code{line-number-display-limit}), then the line number doesn't appear.
 Emacs doesn't compute the line number when the buffer is large, because
-that would be too slow.
+that would be too slow.  If you have narrowed the buffer
+(@pxref{Narrowing}), the displayed line number is relative to the
+accessible portion of the buffer.
 
 @findex display-time
 @cindex time (on mode line)
@@ -351,7 +368,7 @@ users should skip it.
   The variable @code{mode-line-inverse-video} controls whether the mode
 line is displayed in inverse video (assuming the terminal supports it);
 @code{nil} means don't do so.  @xref{Mode Line}.  If you specify the
-foreground color for the @code{mode-line} face, and
+foreground color for the @code{modeline} face, and
 @code{mode-line-inverse-video} is non-@code{nil}, then the default
 background color for that face is the usual foreground color.
 @xref{Faces}.
@@ -399,12 +416,6 @@ changing it, just like @code{ctl-arrow}.  Note that how the tab character
 in the buffer is displayed has nothing to do with the definition of
 @key{TAB} as a command.  The variable @code{tab-width} must have an
 integer value between 1 and 1000, inclusive.
-
-@vindex selective-display-ellipses
-  If you set the variable @code{selective-display-ellipses} to @code{nil},
-the three dots do not appear at the end of a line that precedes invisible
-lines.  Then there is no visible indication of the invisible lines.
-This variable too becomes local automatically when set.
 
 @c @vindex truncate-lines  @c No index entry here, because we have one
 @c in the continuation section.

@@ -32,7 +32,7 @@
 ;; (1) Select routine may signal an error or fall into infinite loop
 ;;  while waiting for the server response. In this case, you'd better
 ;;  not use byte-compiled codes but original source. If you still have
-;;  a problems with it, set the variable `nntp-buggy-select' to T.
+;;  a problems with it, set the variable `nntp-buggy-select' to t.
 ;;
 ;; (2) Emacs may hang up while retrieving headers since too many
 ;;  requests have been sent to the NNTP server without reading their
@@ -69,11 +69,12 @@ hook, use the variable `nntp-server-name'.")
 If the number of the articles is greater than the value, verbose
 messages will be shown to indicate the current status.")
 
-(defvar nntp-buggy-select (memq system-type '(usg-unix-v fujitsu-uts))
-  "*T if your select routine is buggy.
+
+(defvar nntp-buggy-select (memq system-type '(fujitsu-uts))
+  "*Non-nil if your select routine is buggy.
 If the select routine signals error or fall into infinite loop while
 waiting for the server response, the variable must be set to t.  In
-case of Fujitsu UTS, it is set to T since `accept-process-output'
+case of Fujitsu UTS, it is set to t since `accept-process-output'
 doesn't work properly.")
 
 (defvar nntp-maximum-request 400
@@ -338,8 +339,9 @@ If optional argument SERVICE is non-nil, open by the service name."
 	   ;; Do check unexpected close of connection.
 	   ;; Suggested by feldmark@hanako.stars.flab.fujitsu.junet.
 	   (if status
-	       (set-process-sentinel nntp-server-process
-				     'nntp-default-sentinel)
+	       (progn (set-process-sentinel nntp-server-process
+					    'nntp-default-sentinel)
+		      (nntp-send-command "^[25].*\r$" "MODE" "READER"))
 	     ;; We have to close connection here, since function
 	     ;;  `nntp-server-opened' may return incorrect status.
 	     (nntp-close-server-internal)
@@ -387,6 +389,8 @@ If the stream is opened, return T, otherwise return NIL."
 
 (defun nntp-request-article (id)
   "Select article by message ID (or number)."
+  (if (numberp id)
+      (setq id (number-to-string id)))
   (prog1
       ;; If NEmacs, end of message may look like: "\256\215" (".^M")
       (nntp-send-command "^\\.\r$" "ARTICLE" id)
@@ -623,29 +627,7 @@ in the current news group."
     ;;  process because of NEmacs hack.
     (copy-to-buffer nntp-server-buffer begin end)
     (set-buffer nntp-server-buffer)
-    (setq begin (point-min))
-    (setq end (point-max))
-    ;; `process-send-region' does not work if text to be sent is very
-    ;;  large. I don't know maximum size of text sent correctly.
-    (let ((last nil)
-	  (size 100))			;Size of text sent at once.
-      (save-restriction
-	(narrow-to-region begin end)
-	(goto-char begin)
-	(while (not (eobp))
-	  ;;(setq last (min end (+ (point) size)))
-	  ;; NEmacs gets confused if character at `last' is Kanji.
-	  (setq last (save-excursion
-		       (goto-char (min end (+ (point) size)))
-		       (or (eobp) (forward-char 1)) ;Adjust point
-		       (point)))
-	  (process-send-region nntp-server-process (point) last)
-	  ;; I don't know whether the next codes solve the known
-	  ;;  problem of communication error of GNU Emacs.
-	  (accept-process-output)
-	  ;;(sit-for 0)
-	  (goto-char last)
-	  )))
+    (process-send-region nntp-server-process (point-min) (point-max))
     ;; We cannot erase buffer, because reply may be received.
     (delete-region begin end)
     ))

@@ -1,11 +1,11 @@
 /* Buffer insertion/deletion and gap motion for GNU Emacs.
-   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -25,8 +25,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "window.h"
 #include "blockinput.h"
 
-static void insert_1 ();
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
 static void insert_from_string_1 ();
+static void insert_from_buffer_1 ();
 static void gap_left ();
 static void gap_right ();
 static void adjust_markers ();
@@ -35,6 +37,7 @@ static void adjust_point ();
 /* Move gap to position `pos'.
    Note that this can quit!  */
 
+void
 move_gap (pos)
      int pos;
 {
@@ -220,7 +223,7 @@ adjust_markers (from, to, amount)
   register struct Lisp_Marker *m;
   register int mpos;
 
-  marker = current_buffer->markers;
+  marker = BUF_MARKERS (current_buffer);
 
   while (!NILP (marker))
     {
@@ -252,12 +255,14 @@ adjust_markers (from, to, amount)
    current set of intervals.  */
 static void
 adjust_point (amount)
+     int amount;
 {
-  current_buffer->text.pt += amount;
+  BUF_PT (current_buffer) += amount;
 }
 
 /* Make the gap INCREMENT characters longer.  */
 
+void
 make_gap (increment)
      int increment;
 {
@@ -269,13 +274,26 @@ make_gap (increment)
   /* If we have to get more space, get enough to last a while.  */
   increment += 2000;
 
+  /* Don't allow a buffer size that won't fit in an int
+     even if it will fit in a Lisp integer.
+     That won't work because so many places use `int'.  */
+     
+  if (Z - BEG + GAP_SIZE + increment
+      >= ((unsigned) 1 << (min (INTBITS, VALBITS) - 1)))
+    error ("Buffer exceeds maximum size");
+
   BLOCK_INPUT;
   result = BUFFER_REALLOC (BEG_ADDR, (Z - BEG + GAP_SIZE + increment));
-  UNBLOCK_INPUT;
 
   if (result == 0)
-    memory_full ();
+    {
+      UNBLOCK_INPUT;
+      memory_full ();
+    }
+
+  /* We can't unblock until the new address is properly stored.  */
   BEG_ADDR = result;
+  UNBLOCK_INPUT;
 
   /* Prevent quitting in move_gap.  */
   tem = Vinhibit_quit;
@@ -300,45 +318,43 @@ make_gap (increment)
 }
 
 /* Insert a string of specified length before point.
-   DO NOT use this for the contents of a Lisp string!
-   prepare_to_modify_buffer could relocate the string.  */
+   DO NOT use this for the contents of a Lisp string or a Lisp buffer!
+   prepare_to_modify_buffer could relocate the text.  */
 
+void
 insert (string, length)
      register unsigned char *string;
      register length;
 {
   if (length > 0)
     {
-      insert_1 (string, length, 0);
+      insert_1 (string, length, 0, 1);
       signal_after_change (PT-length, 0, length);
     }
 }
 
+void
 insert_and_inherit (string, length)
      register unsigned char *string;
      register length;
 {
   if (length > 0)
     {
-      insert_1 (string, length, 1);
+      insert_1 (string, length, 1, 1);
       signal_after_change (PT-length, 0, length);
     }
 }
 
-static void
-insert_1 (string, length, inherit)
+void
+insert_1 (string, length, inherit, prepare)
      register unsigned char *string;
-     register length;
-     int inherit;
+     register int length;
+     int inherit, prepare;
 {
   register Lisp_Object temp;
 
-  /* Make sure point-max won't overflow after this insertion.  */
-  XSET (temp, Lisp_Int, length + Z);
-  if (length + Z != XINT (temp))
-    error ("maximum buffer size exceeded");
-
-  prepare_to_modify_buffer (PT, PT);
+  if (prepare)
+    prepare_to_modify_buffer (PT, PT);
 
   if (PT != GPT)
     move_gap (PT);
@@ -351,7 +367,7 @@ insert_1 (string, length, inherit)
   bcopy (string, GPT_ADDR, length);
 
 #ifdef USE_TEXT_PROPERTIES
-  if (current_buffer->intervals != 0)
+  if (BUF_INTERVALS (current_buffer) != 0)
     /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES.  */
     offset_intervals (current_buffer, PT, length);
 #endif
@@ -360,10 +376,11 @@ insert_1 (string, length, inherit)
   GPT += length;
   ZV += length;
   Z += length;
+  adjust_overlays_for_insert (PT, length);
   adjust_point (length);
 
 #ifdef USE_TEXT_PROPERTIES
-  if (!inherit && current_buffer->intervals != 0)
+  if (!inherit && BUF_INTERVALS (current_buffer) != 0)
     Fset_text_properties (make_number (PT - length), make_number (PT),
 			  Qnil, Qnil);
 #endif
@@ -378,6 +395,7 @@ insert_1 (string, length, inherit)
    before we bcopy the stuff into the buffer, and relocate the string
    without insert noticing.  */
 
+void
 insert_from_string (string, pos, length, inherit)
      Lisp_Object string;
      register int pos, length;
@@ -400,7 +418,7 @@ insert_from_string_1 (string, pos, length, inherit)
   struct gcpro gcpro1;
 
   /* Make sure point-max won't overflow after this insertion.  */
-  XSET (temp, Lisp_Int, length + Z);
+  XSETINT (temp, length + Z);
   if (length + Z != XINT (temp))
     error ("maximum buffer size exceeded");
 
@@ -425,12 +443,88 @@ insert_from_string_1 (string, pos, length, inherit)
   GPT += length;
   ZV += length;
   Z += length;
+  adjust_overlays_for_insert (PT, length);
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
   graft_intervals_into_buffer (XSTRING (string)->intervals, PT, length,
 			       current_buffer, inherit);
 
   adjust_point (length);
+}
+
+/* Insert text from BUF, starting at POS and having length LENGTH, into the
+   current buffer.  If the text in BUF has properties, they are absorbed
+   into the current buffer.
+
+   It does not work to use `insert' for this, because a malloc could happen
+   and relocate BUF's text before the bcopy happens.  */
+
+void
+insert_from_buffer (buf, pos, length, inherit)
+     struct buffer *buf;
+     int pos, length;
+     int inherit;
+{
+  if (length > 0)
+    {
+      insert_from_buffer_1 (buf, pos, length, inherit);
+      signal_after_change (PT-length, 0, length);
+    }
+}
+
+static void
+insert_from_buffer_1 (buf, pos, length, inherit)
+     struct buffer *buf;
+     int pos, length;
+     int inherit;
+{
+  register Lisp_Object temp;
+  int chunk;
+
+  /* Make sure point-max won't overflow after this insertion.  */
+  XSETINT (temp, length + Z);
+  if (length + Z != XINT (temp))
+    error ("maximum buffer size exceeded");
+
+  prepare_to_modify_buffer (PT, PT);
+
+  if (PT != GPT)
+    move_gap (PT);
+  if (GAP_SIZE < length)
+    make_gap (length - GAP_SIZE);
+
+  record_insert (PT, length);
+  MODIFF++;
+
+  if (pos < BUF_GPT (buf))
+    {
+      chunk = BUF_GPT (buf) - pos;
+      if (chunk > length)
+	chunk = length;
+      bcopy (BUF_CHAR_ADDRESS (buf, pos), GPT_ADDR, chunk);
+    }
+  else
+    chunk = 0;
+  if (chunk < length)
+    bcopy (BUF_CHAR_ADDRESS (buf, pos + chunk),
+	   GPT_ADDR + chunk, length - chunk);
+
+#ifdef USE_TEXT_PROPERTIES
+  if (BUF_INTERVALS (current_buffer) != 0)
+    offset_intervals (current_buffer, PT, length);
+#endif
+
+  GAP_SIZE -= length;
+  GPT += length;
+  ZV += length;
+  Z += length;
+  adjust_overlays_for_insert (PT, length);
+  adjust_point (length);
+
+  /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
+  graft_intervals_into_buffer (copy_intervals (BUF_INTERVALS (buf),
+					       pos, length),
+			       PT - length, length, current_buffer, inherit);
 }
 
 /* Insert the character C before point */
@@ -456,6 +550,7 @@ insert_string (s)
    Don't use this function to insert part of a Lisp string,
    since gc could happen and relocate it.  */
 
+void
 insert_before_markers (string, length)
      unsigned char *string;
      register int length;
@@ -463,12 +558,13 @@ insert_before_markers (string, length)
   if (length > 0)
     {
       register int opoint = PT;
-      insert_1 (string, length, 1);
+      insert_1 (string, length, 0, 1);
       adjust_markers (opoint - 1, opoint, length);
       signal_after_change (PT-length, 0, length);
     }
 }
 
+void
 insert_before_markers_and_inherit (string, length)
      unsigned char *string;
      register int length;
@@ -476,7 +572,7 @@ insert_before_markers_and_inherit (string, length)
   if (length > 0)
     {
       register int opoint = PT;
-      insert_1 (string, length, 1);
+      insert_1 (string, length, 1, 1);
       adjust_markers (opoint - 1, opoint, length);
       signal_after_change (PT-length, 0, length);
     }
@@ -484,6 +580,7 @@ insert_before_markers_and_inherit (string, length)
 
 /* Insert part of a Lisp string, relocating markers after.  */
 
+void
 insert_from_string_before_markers (string, pos, length, inherit)
      Lisp_Object string;
      register int pos, length;
@@ -501,14 +598,16 @@ insert_from_string_before_markers (string, pos, length, inherit)
 /* Delete characters in current buffer
    from FROM up to (but not including) TO.  */
 
+void
 del_range (from, to)
      register int from, to;
 {
-  return del_range_1 (from, to, 1);
+  del_range_1 (from, to, 1);
 }
 
 /* Like del_range; PREPARE says whether to call prepare_to_modify_buffer.  */
 
+void
 del_range_1 (from, to, prepare)
      register int from, to, prepare;
 {
@@ -546,6 +645,10 @@ del_range_1 (from, to, prepare)
      to point at the end of the text before the gap.  */
   adjust_markers (to + GAP_SIZE, to + GAP_SIZE, - numdel - GAP_SIZE);
 
+  /* Adjust the overlay center as needed.  This must be done after
+   adjusting the markers that bound the overlays.  */
+  adjust_overlays_for_delete (from, numdel);
+
   GAP_SIZE += numdel;
   ZV -= numdel;
   Z -= numdel;
@@ -556,6 +659,7 @@ del_range_1 (from, to, prepare)
   if (Z - GPT < end_unchanged)
     end_unchanged = Z - GPT;
 
+  evaporate_overlays (from);
   signal_after_change (from, numdel, 0);
 }
 
@@ -563,6 +667,7 @@ del_range_1 (from, to, prepare)
    to END.  This checks the read-only properties of the region, calls
    the necessary modification hooks, and warns the next redisplay that
    it should pay attention to that area.  */
+void
 modify_region (buffer, start, end)
      struct buffer *buffer;
      int start, end;
@@ -580,9 +685,11 @@ modify_region (buffer, start, end)
       || unchanged_modified == MODIFF)
     end_unchanged = Z - end;
 
-  if (MODIFF <= current_buffer->save_modified)
+  if (MODIFF <= SAVE_MODIFF)
     record_first_change ();
   MODIFF++;
+
+  buffer->point_before_scroll = Qnil;
 
   if (buffer != old_buffer)
     set_buffer_internal (old_buffer);
@@ -593,6 +700,7 @@ modify_region (buffer, start, end)
    verify that the text to be modified is not read-only, and call
    any modification properties the text may have. */
 
+void
 prepare_to_modify_buffer (start, end)
      Lisp_Object start, end;
 {
@@ -600,21 +708,17 @@ prepare_to_modify_buffer (start, end)
     Fbarf_if_buffer_read_only ();
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  if (current_buffer->intervals != 0)
+  if (BUF_INTERVALS (current_buffer) != 0)
     verify_interval_modification (current_buffer, start, end);
 
-  if (!NILP (current_buffer->overlays_before)
-      || !NILP (current_buffer->overlays_after))
-    verify_overlay_modification (start, end);
-
 #ifdef CLASH_DETECTION
-  if (!NILP (current_buffer->filename)
-      && current_buffer->save_modified >= MODIFF)
-    lock_file (current_buffer->filename);
+  if (!NILP (current_buffer->file_truename)
+      && SAVE_MODIFF >= MODIFF)
+    lock_file (current_buffer->file_truename);
 #else
   /* At least warn if this file has changed on disk since it was visited.  */
   if (!NILP (current_buffer->filename)
-      && current_buffer->save_modified >= MODIFF
+      && SAVE_MODIFF >= MODIFF
       && NILP (Fverify_visited_file_modtime (Fcurrent_buffer ()))
       && !NILP (Ffile_exists_p (current_buffer->filename)))
     call1 (intern ("ask-user-about-supersession-threat"),
@@ -622,6 +726,15 @@ prepare_to_modify_buffer (start, end)
 #endif /* not CLASH_DETECTION */
 
   signal_before_change (start, end);
+
+  if (current_buffer->newline_cache)
+    invalidate_region_cache (current_buffer,
+                             current_buffer->newline_cache,
+                             start - BEG, Z - end);
+  if (current_buffer->width_run_cache)
+    invalidate_region_cache (current_buffer,
+                             current_buffer->width_run_cache,
+                             start - BEG, Z - end);
 
   Vdeactivate_mark = Qt;
 }
@@ -658,11 +771,12 @@ after_change_functions_restore (value)
    START and END are the bounds of the text to be changed,
    as Lisp objects.  */
 
+void
 signal_before_change (start, end)
      Lisp_Object start, end;
 {
   /* If buffer is unmodified, run a special hook for that case.  */
-  if (current_buffer->save_modified >= MODIFF
+  if (SAVE_MODIFF >= MODIFF
       && !NILP (Vfirst_change_hook)
       && !NILP (Vrun_hooks))
     call1 (Vrun_hooks, Qfirst_change_hook);
@@ -720,14 +834,21 @@ signal_before_change (start, end)
 	}
       unbind_to (count, Qnil);
     }
+
+  if (!NILP (current_buffer->overlays_before)
+      || !NILP (current_buffer->overlays_after))
+    report_overlay_modification (start, end, 0, start, end, Qnil);
 }
 
 /* Signal a change immediately after it happens.
    POS is the address of the start of the changed text.
    LENDEL is the number of characters of the text before the change.
    (Not the whole buffer; just the part that was changed.)
-   LENINS is the number of characters in the changed text.  */
+   LENINS is the number of characters in the changed text.
 
+   (Hence POS + LENINS - LENDEL is the position after the changed text.)  */
+
+void
 signal_after_change (pos, lendel, lenins)
      int pos, lendel, lenins;
 {
@@ -782,4 +903,12 @@ signal_after_change (pos, lendel, lenins)
 	}
       unbind_to (count, Qnil);
     }
+
+  if (!NILP (current_buffer->overlays_before)
+      || !NILP (current_buffer->overlays_after))
+    report_overlay_modification (make_number (pos),
+				 make_number (pos + lenins - lendel),
+				 1,
+				 make_number (pos), make_number (pos + lenins),
+				 make_number (lendel));
 }

@@ -1,6 +1,6 @@
 ;;;; texinfmt.el
-;;; Copyright (C) 1985, 1986, 1988,
-;;;               1990, 1991, 1992, 1993  Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1986, 1988, 1990, 1991,
+;;;               1992, 1993, 1994, 1995  Free Software Foundation, Inc.
 
 ;; Maintainer: Robert J. Chassell <bug-texinfo@prep.ai.mit.edu>
 
@@ -24,7 +24,7 @@
 
 ;;; Emacs lisp functions to convert Texinfo files to Info files.
 
-(defvar texinfmt-version "2.32 of 19 November 1993")
+(defvar texinfmt-version "2.34 of 7 June 1995")
 
 ;;; Variable definitions
 
@@ -42,6 +42,7 @@
 (defvar texinfo-last-node)
 (defvar texinfo-node-names)
 (defvar texinfo-enclosure-list)
+(defvar texinfo-alias-list)
 
 (defvar texinfo-command-start)
 (defvar texinfo-command-end)
@@ -202,7 +203,7 @@ converted to Info is stored in a temporary buffer."
       (setq texinfo-command-end (point))
       (let ((filename (concat input-directory
                               (texinfo-parse-line-arg))))
-        (beginning-of-line)
+        (re-search-backward "^@include")
         (delete-region (point) (save-excursion (forward-line 1) (point)))
         (message "Reading included file: %s" filename)
         (save-excursion
@@ -236,6 +237,7 @@ converted to Info is stored in a temporary buffer."
         (insert "\n"))
     ;; Don't use a previous value of texinfo-enclosure-list.
     (setq texinfo-enclosure-list nil)
+    (setq texinfo-alias-list nil)
 
     (goto-char (point-min))
     (if (looking-at "\\\\input[ \t]+texinfo")
@@ -305,6 +307,7 @@ converted to Info is stored in a temporary buffer."
         (input-buffer (current-buffer))
         (input-directory default-directory))
     (setq texinfo-enclosure-list nil)
+    (setq texinfo-alias-list nil)
     (save-excursion
       (goto-char (point-min))
       (or (search-forward "@setfilename" nil t)
@@ -327,7 +330,7 @@ converted to Info is stored in a temporary buffer."
       (setq texinfo-command-end (point))
       (let ((filename (concat input-directory
                               (texinfo-parse-line-arg))))
-        (beginning-of-line)
+        (re-search-backward "^@include")
         (delete-region (point) (save-excursion (forward-line 1) (point)))
         (message "Reading included file: %s" filename)
         (save-excursion
@@ -391,7 +394,7 @@ converted to Info is stored in a temporary buffer."
 ;;; Handle paragraph filling
 
 (defvar texinfo-no-refill-regexp
-  "^@\\(example\\|smallexample\\|lisp\\|smalllisp\\|display\\|format\\|flushleft\\|flushright\\|menu\\|titlepage\\|iftex\\|tex\\)"
+  "^@\\(example\\|smallexample\\|lisp\\|smalllisp\\|display\\|format\\|flushleft\\|flushright\\|menu\\|titlepage\\|iftex\\|ifhtml\\|tex\\|html\\)"
   "Regexp specifying environments in which paragraphs are not filled.")
 
 (defvar texinfo-part-of-para-regexp
@@ -641,7 +644,7 @@ lower types.")
   ;; Scan for @-commands.
   (goto-char (point-min))
   (while (search-forward "@" nil t)
-    (if (looking-at "[@{}'` *]")
+    (if (looking-at "[@{}^'` *\"?!]")
         ;; Handle a few special @-followed-by-one-char commands.
         (if (= (following-char) ?*)
             (progn
@@ -660,10 +663,16 @@ lower types.")
           (forward-word 1)
         (forward-char 1))
       (setq texinfo-command-end (point))
-      ;; Call the handler for this command.
+      ;; Handle let aliasing
       (setq texinfo-command-name
-            (intern (buffer-substring
-             (1+ texinfo-command-start) texinfo-command-end)))
+	    (let (trial
+		  (cmdname 
+		   (buffer-substring
+		    (1+ texinfo-command-start) texinfo-command-end)))
+	      (while (setq trial (assoc cmdname texinfo-alias-list))
+		(setq cmdname (cdr trial)))
+            (intern cmdname)))
+      ;; Call the handler for this command.
       (let ((enclosure-type
              (assoc
               (symbol-name texinfo-command-name)
@@ -915,9 +924,8 @@ lower types.")
           (error "Duplicate node name: %s" name)
         (setq texinfo-node-names (cons (list tem) texinfo-node-names))))
     (setq texinfo-footnote-number 0)
-    (or (bolp)
-        (insert ?\n))
-    (insert "\^_\nFile: " texinfo-format-filename
+    ;; insert "\n\^_" unconditionally since this is what info is looking for
+    (insert "\n\^_\nFile: " texinfo-format-filename
             ", Node: " name)
     (if next
         (insert ", Next: " next))
@@ -1054,7 +1062,8 @@ lower types.")
     (insert ?\n)))
 
 
-;;; Space controling commands:  @. and @:   
+;;; Space controlling commands:  @. and @:, and the soft hyphen.
+
 (put '\. 'texinfo-format 'texinfo-format-\.)
 (defun texinfo-format-\. ()
   (texinfo-discard-command)
@@ -1062,6 +1071,10 @@ lower types.")
 
 (put '\: 'texinfo-format 'texinfo-format-\:)
 (defun texinfo-format-\: ()
+  (texinfo-discard-command))
+
+(put '\- 'texinfo-format 'texinfo-format-soft-hyphen)
+(defun texinfo-format-soft-hyphen ()
   (texinfo-discard-command))
 
 
@@ -1494,7 +1507,7 @@ Used by @refill indenting command to avoid indenting within lists, etc.")
     (texinfo-do-itemize (nth 1 stacktop))))
 
 
-;;; @ifinfo,  @iftex, @tex
+;;; @ifinfo,  @iftex, @tex, @ifhtml, @html
 
 (put 'ifinfo 'texinfo-format 'texinfo-discard-line)
 (put 'ifinfo 'texinfo-end 'texinfo-discard-command)
@@ -1505,10 +1518,22 @@ Used by @refill indenting command to avoid indenting within lists, etc.")
                  (progn (re-search-forward "@end iftex[ \t]*\n")
                         (point))))
 
+(put 'ifhtml 'texinfo-format 'texinfo-format-ifhtml)
+(defun texinfo-format-ifhtml ()
+  (delete-region texinfo-command-start
+                 (progn (re-search-forward "@end ifhtml[ \t]*\n")
+                        (point))))
+
 (put 'tex 'texinfo-format 'texinfo-format-tex)
 (defun texinfo-format-tex ()
   (delete-region texinfo-command-start
                  (progn (re-search-forward "@end tex[ \t]*\n")
+                        (point))))
+
+(put 'html 'texinfo-format 'texinfo-format-html)
+(defun texinfo-format-html ()
+  (delete-region texinfo-command-start
+                 (progn (re-search-forward "@end html[ \t]*\n")
                         (point))))
 
 
@@ -1581,6 +1606,10 @@ Used by @refill indenting command to avoid indenting within lists, etc.")
 ; must follow the command name with two commas in a row; otherwise,
 ; the Info formatting commands will misinterpret the end delimiter
 ; string as a start delimiter string.
+;
+; If you do a @definfoenclose{} on the name of a pre-defined macro (such
+; as @emph{}, @strong{}, @tt{}, or @i{}) the enclosure definition will
+; override the built-in definition.
 ; 
 ; An enclosure command defined this way takes one argument in braces.
 ;
@@ -1821,6 +1850,11 @@ If used within a line, follow `@minus' with braces."
   (texinfo-parse-arg-discard)
   (insert "..."))
 
+(put 'enddots 'texinfo-format 'texinfo-format-enddots)
+(defun texinfo-format-enddots ()
+  (texinfo-parse-arg-discard)
+  (insert "...."))
+
 
 ;;; Refilling and indenting:  @refill, @paragraphindent, @noindent
 
@@ -1882,9 +1916,11 @@ Default is to leave paragraph indentation as is."
   ;; are used to underline it.  This could occur if the line following
   ;; the underlining is not an index entry and has text within it.
   (let* ((previous-paragraph-separate paragraph-separate)
-         (paragraph-separate (concat paragraph-separate "\\|^[-=*.]+"))
+         (paragraph-separate
+          (concat paragraph-separate "\\|[-=.]+\\|\\*\\*+"))
          (previous-paragraph-start paragraph-start)
-         (paragraph-start (concat paragraph-start "\\|^[-=*.]+")))
+         (paragraph-start 
+          (concat paragraph-start "\\|[-=.]+\\|\\*\\*+")))
     (unwind-protect
         (fill-paragraph nil)
       (setq paragraph-separate previous-paragraph-separate)
@@ -2951,6 +2987,7 @@ The command  `@value{foo}'  expands to the value."
 (put 'settitle 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'setx 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'shortcontents 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'shorttitlepage 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'smallbook 'texinfo-format 'texinfo-discard-line)
 (put 'summarycontents 'texinfo-format 'texinfo-discard-line-with-args)
 

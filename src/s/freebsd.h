@@ -25,7 +25,7 @@
 /* For mem-limits.h. */
 #define BSD4_2
 
-/* thses aren't needed, since we have getloadavg() */
+/* These aren't needed, since we have getloadavg.  */
 #undef KERNEL_FILE
 #undef LDAV_SYMBOL
 
@@ -43,9 +43,10 @@
 
 /* freebsd has POSIX-style pgrp behavior. */
 #undef BSD_PGRPS
+#define GETPGRP_NO_ARG
 
 #ifndef NO_SHARED_LIBS
-#define LD_SWITCH_SYSTEM -e start
+#define LD_SWITCH_SYSTEM -e start -dc -dp
 #define HAVE_TEXT_START		/* No need to define `start_of_text'. */
 #define START_FILES pre-crt0.o /usr/lib/crt0.o
 #define UNEXEC unexsunos4.o
@@ -67,6 +68,7 @@
 
 #define HAVE_WAIT_HEADER
 #define HAVE_GETLOADAVG
+/*#define HAVE_GETPAGESIZE  /* configure now puts this in config.h */
 #define HAVE_TERMIOS
 #define NO_TERMIO
 #define DECLARE_GETPWUID_WITH_UID_T

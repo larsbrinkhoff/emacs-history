@@ -36,9 +36,10 @@ NOTE-END  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* lowest-numbered byte is most significant */
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
+   is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define WORDS_BIG_ENDIAN
 
 /* XINT must explicitly sign-extend */
 
@@ -77,11 +78,3 @@ NOTE-END  */
 /* System provides alloca.  */
 
 #define HAVE_ALLOCA
-
-/* Control header files used by loadst.c.
-   Some users report machines have dkstat.h while others report dk.h,
-   so it's hard to tell what this should say.  */
-
-#ifdef BSD
-#define DKSTAT_HEADER_FILE
-#endif

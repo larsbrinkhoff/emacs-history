@@ -42,6 +42,16 @@
    (purecopy '(-3 . "%p"))
    (purecopy "-%-")))
 
+;; Use ";" instead of ":" as a path separator (from files.el).
+(setq path-separator ";")
+
+;; Set the null device (for compile.el).
+(setq grep-null-device "NUL")
+
+;; Set the grep regexp to match entries with drive letters.
+(setq grep-regexp-alist
+  '(("^\\(\\([a-zA-Z]:\\)?[^:( \t\n]+\\)[:( \t]+\\([0-9]+\\)[:) \t]" 1 3)))
+
 (defvar file-name-buffer-file-type-alist
   '(
     ("[:/].*config.sys$" . nil)		; config.sys text
@@ -141,11 +151,14 @@ against the file name, and TYPE is nil for text, t for binary.")
 (defsubst intdos (regs)
   (int86 33 regs))
 
-;;; Fix interface to (X-specific) mouse.el
-(defalias 'window-frame 'ignore)
-(defalias 'x-set-selection 'ignore)
-(fset 'x-get-selection '(lambda (&rest rest) ""))
-(fmakunbound 'font-menu-add-default)
-(global-unset-key [C-down-mouse-1])
-(global-unset-key [C-down-mouse-2])
-(global-unset-key [C-down-mouse-3])
+;; Extra stub to functions in src/frame.c
+;; Emacs aborts during dump if the following don't have a doc string.
+(defun window-frame (window)
+  "Return the frame that WINDOW resides on."
+  (selected-frame))
+(defun raise-frame (frame)
+  "Raise FRAME to the top of the desktop."
+  nil)
+(defun select-frame (frame &optional no-enter)
+  "Select FRAME for input events."
+  (selected-frame))

@@ -3,7 +3,7 @@
 ;; Author: RMS
 ;; Keywords: internal
 
-;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,104 +28,229 @@
 (or (lookup-key global-map [menu-bar])
     (define-key global-map [menu-bar] (make-sparse-keymap "menu-bar")))
 (defvar menu-bar-help-menu (make-sparse-keymap "Help"))
-;; Put Help item last.
-(setq menu-bar-final-items '(help))
-(define-key global-map [menu-bar help] (cons "Help" menu-bar-help-menu))
+
+;; Force Help item to come last, after the major mode's own items.
+;; The symbol used to be called `help', but that gets confused with the
+;; help key.
+(setq menu-bar-final-items '(help-menu))
+
+(define-key global-map [menu-bar help-menu] (cons "Help" menu-bar-help-menu))
+(defvar menu-bar-search-menu (make-sparse-keymap "Search"))
+(define-key global-map [menu-bar search] (cons "Search" menu-bar-search-menu))
 (defvar menu-bar-edit-menu (make-sparse-keymap "Edit"))
 (define-key global-map [menu-bar edit] (cons "Edit" menu-bar-edit-menu))
-(defvar menu-bar-file-menu (make-sparse-keymap "File"))
-(define-key global-map [menu-bar file] (cons "File" menu-bar-file-menu))
+(defvar menu-bar-tools-menu (make-sparse-keymap "Tools"))
+(define-key global-map [menu-bar tools] (cons "Tools" menu-bar-tools-menu))
+(defvar menu-bar-files-menu (make-sparse-keymap "Files"))
+(define-key global-map [menu-bar files] (cons "Files" menu-bar-files-menu))
+
+;; This alias is for compatibility with 19.28 and before.
+(defvar menu-bar-file-menu menu-bar-files-menu)
 
-(define-key menu-bar-file-menu [exit-emacs]
+(defvar vc-menu-map (make-sparse-keymap "Version Control"))
+
+(define-key menu-bar-tools-menu [calendar] '("Display Calendar" . calendar))
+(define-key menu-bar-tools-menu [rmail] '("Read Mail" . rmail))
+(define-key menu-bar-tools-menu [gnus] '("Read Net News" . gnus))
+
+(define-key menu-bar-tools-menu [separator-vc]
+  '("--"))
+
+(define-key menu-bar-tools-menu [vc-menu]
+  (cons "Version Control" vc-menu-map))
+
+(define-key menu-bar-tools-menu [separator-compare]
+  '("--"))
+
+(define-key menu-bar-tools-menu [epatch]
+  '("Apply Patch" . menu-bar-epatch-menu))
+(define-key menu-bar-tools-menu [ediff-merge]
+  '("Merge" . menu-bar-ediff-merge-menu))
+(define-key menu-bar-tools-menu [compare]
+  '("Compare" . menu-bar-ediff-menu))
+
+(define-key menu-bar-tools-menu [separator-print]
+  '("--"))
+
+(put 'print-region 'menu-enable 'mark-active)
+(put 'ps-print-region-with-faces 'menu-enable 'mark-active)
+
+(define-key menu-bar-tools-menu [ps-print-region]
+  '("Postscript Print Region" . ps-print-region-with-faces))
+(define-key menu-bar-tools-menu [ps-print-buffer]
+  '("Postscript Print Buffer" . ps-print-buffer-with-faces))
+(define-key menu-bar-tools-menu [print-region]
+  '("Print Region" . print-region))
+(define-key menu-bar-tools-menu [print-buffer]
+  '("Print Buffer" . print-buffer))
+
+(define-key menu-bar-files-menu [exit-emacs]
   '("Exit Emacs" . save-buffers-kill-emacs))
 
-(define-key menu-bar-file-menu [separator-compare]
+(define-key menu-bar-files-menu [separator-exit]
   '("--"))
 
-(define-key menu-bar-file-menu [epatch]
-  '("Apply Patch" . menu-bar-epatch-menu))
-(define-key menu-bar-file-menu [ediff]
-  '("Compare" . menu-bar-ediff-menu))
-(define-key menu-bar-file-menu [emerge] '("Emerge" . menu-bar-emerge-menu))
+(define-key menu-bar-files-menu [one-window]
+  '("One Window" . delete-other-windows))
 
-(define-key menu-bar-file-menu [separator-misc]
+(define-key menu-bar-files-menu [split-window]
+  '("Split Window" . split-window-vertically))
+
+(if (fboundp 'delete-frame)
+    (progn
+      (define-key menu-bar-files-menu [delete-frame]
+	'("Delete Frame" . delete-frame))
+      (define-key menu-bar-files-menu [make-frame-on-display]
+	'("Open New Display..." . make-frame-on-display))
+      (define-key menu-bar-files-menu [make-frame]
+	'("Make New Frame" . make-frame))))
+
+(define-key menu-bar-files-menu [separator-buffers]
   '("--"))
 
-(define-key menu-bar-file-menu [calendar] '("Calendar" . calendar))
-(define-key menu-bar-file-menu [rmail] '("Read Mail" . rmail))
-(define-key menu-bar-file-menu [gnus] '("Read Net News" . gnus))
-
-(define-key menu-bar-file-menu [separator-frames]
-  '("--"))
-
-(define-key menu-bar-file-menu [delete-frame] '("Delete Frame" . delete-frame))
-(define-key menu-bar-file-menu [make-frame] '("Make New Frame" . make-frame))
-
-(define-key menu-bar-file-menu [separator-buffers]
-  '("--"))
-
-(define-key menu-bar-file-menu [bookmark]
-  '("Bookmarks" . menu-bar-bookmark-map))
-(define-key menu-bar-file-menu [print-buffer]
-  '("Print Buffer" . print-buffer))
-(define-key menu-bar-file-menu [kill-buffer]
-  '("Kill Buffer" . kill-this-buffer))
-(define-key menu-bar-file-menu [insert-file]
-  '("Insert File" . insert-file))
-(define-key menu-bar-file-menu [revert-buffer]
+(define-key menu-bar-files-menu [kill-buffer]
+  '("Kill Current Buffer" . kill-this-buffer))
+(define-key menu-bar-files-menu [insert-file]
+  '("Insert File..." . insert-file))
+(define-key menu-bar-files-menu [revert-buffer]
   '("Revert Buffer" . revert-buffer))
-(define-key menu-bar-file-menu [write-file]
+(define-key menu-bar-files-menu [write-file]
   '("Save Buffer As..." . write-file))
-(define-key menu-bar-file-menu [save-buffer] '("Save Buffer" . save-buffer))
-(define-key menu-bar-file-menu [dired] '("Open Directory..." . dired))
-(define-key menu-bar-file-menu [open-file] '("Open File..." . find-file))
+(define-key menu-bar-files-menu [save-buffer] '("Save Buffer" . save-buffer))
+(define-key menu-bar-files-menu [dired] '("Open Directory..." . dired))
+(define-key menu-bar-files-menu [open-file] '("Open File..." . find-file))
 
 ;; This is just one element of the ediff menu--the first.
 (define-key menu-bar-ediff-menu [window]
   '("This Window And Next Window" . compare-windows))
 
-(define-key menu-bar-edit-menu [query-replace]
-  '("Query Replace" . query-replace))
-(define-key menu-bar-edit-menu [re-search-back]
-  '("Regexp Search Backwards" . re-search-backward))
-(define-key menu-bar-edit-menu [search-back]
-  '("Search Backwards" . search-backward))
-(define-key menu-bar-edit-menu [re-search-fwd]
-  '("Regexp Search" . re-search-forward))
-(define-key menu-bar-edit-menu [search-fwd]
-  '("Search" . search-forward))
+(defun nonincremental-search-forward (string)
+  "Read a string and search for it nonincrementally."
+  (interactive "sSearch for string: ")
+  (if (equal string "")
+      (search-forward (car search-ring))
+    (isearch-update-ring string nil)
+    (search-forward string)))
 
-(define-key menu-bar-edit-menu [separator-misc]
+(defun nonincremental-search-backward (string)
+  "Read a string and search backward for it nonincrementally."
+  (interactive "sSearch for string: ")
+  (if (equal string "")
+      (search-backward (car search-ring))
+    (isearch-update-ring string nil)
+    (search-backward string)))
+
+(defun nonincremental-re-search-forward (string)
+  "Read a regular expression and search for it nonincrementally."
+  (interactive "sSearch for regexp: ")
+  (if (equal string "")
+      (re-search-forward (car regexp-search-ring))
+    (isearch-update-ring string t)
+    (re-search-forward string)))
+
+(defun nonincremental-re-search-backward (string)
+  "Read a regular expression and search backward for it nonincrementally."
+  (interactive "sSearch for regexp: ")
+  (if (equal string "")
+      (re-search-backward (car regexp-search-ring))
+    (isearch-update-ring string t)
+    (re-search-backward string)))
+
+(defun nonincremental-repeat-search-forward ()
+  "Search forward for the previous search string."
+  (interactive)
+  (search-forward (car search-ring)))
+
+(defun nonincremental-repeat-search-backward ()
+  "Search backward for the previous search string."
+  (interactive)
+  (search-backward (car search-ring)))
+
+(defun nonincremental-repeat-re-search-forward ()
+  "Search forward for the previous regular expression."
+  (interactive)
+  (re-search-forward (car regexp-search-ring)))
+
+(defun nonincremental-repeat-re-search-backward ()
+  "Search backward for the previous regular expression."
+  (interactive)
+  (re-search-backward (car regexp-search-ring)))
+
+(define-key menu-bar-search-menu [query-replace-regexp]
+  '("Query Replace Regexp..." . query-replace-regexp))
+(define-key menu-bar-search-menu [query-replace]
+  '("Query Replace..." . query-replace))
+(define-key menu-bar-search-menu [find-tag]
+  '("Find Tag..." . find-tag))
+(put 'find-tag 'menu-enable 'tags-table-list)
+(define-key menu-bar-search-menu [bookmark]
+  '("Bookmarks" . menu-bar-bookmark-map))
+
+(define-key menu-bar-search-menu [separator-search]
   '("--"))
 
-(define-key menu-bar-edit-menu [spell] '("Spell" . ispell-menu-map))
+(define-key menu-bar-search-menu [nonincremental-repeat-re-search-back]
+  '("Repeat Regexp Backwards" . nonincremental-repeat-re-search-backward))
+(define-key menu-bar-search-menu [nonincremental-repeat-search-back]
+  '("Repeat Backwards" . nonincremental-repeat-search-backward))
+(define-key menu-bar-search-menu [nonincremental-repeat-re-search-fwd]
+  '("Repeat Regexp" . nonincremental-repeat-re-search-forward))
+(define-key menu-bar-search-menu [nonincremental-repeat-search-fwd]
+  '("Repeat Search" . nonincremental-repeat-search-forward))
+
+(define-key menu-bar-search-menu [separator-repeat]
+  '("--"))
+
+(define-key menu-bar-search-menu [re-search-back]
+  '("Regexp Search Backwards..." . nonincremental-re-search-backward))
+(define-key menu-bar-search-menu [search-back]
+  '("Search Backwards..." . nonincremental-search-backward))
+(define-key menu-bar-search-menu [re-search-fwd]
+  '("Regexp Search..." . nonincremental-re-search-forward))
+(define-key menu-bar-search-menu [search-fwd]
+  '("Search..." . nonincremental-search-forward))
+
+(if (fboundp 'start-process)
+    (define-key menu-bar-edit-menu [spell] '("Spell" . ispell-menu-map)))
 (define-key menu-bar-edit-menu [fill] '("Fill" . fill-region))
+(define-key menu-bar-edit-menu [props] '("Text Properties" . facemenu-menu))
 
 (define-key menu-bar-edit-menu [separator-edit]
   '("--"))
 
 (define-key menu-bar-edit-menu [clear] '("Clear" . delete-region))
-(define-key menu-bar-edit-menu [choose-next-paste]
-  '("Choose Next Paste >" . mouse-menu-choose-yank))
-(define-key menu-bar-edit-menu [paste] '("Paste" . yank))
-(define-key menu-bar-edit-menu [copy] '("Copy" . kill-ring-save))
+
+(define-key menu-bar-edit-menu [paste] '("Paste Most Recent" . yank))
+
+(defvar yank-menu (cons "Select Yank" nil))
+(fset 'yank-menu (cons 'keymap yank-menu))
+(define-key menu-bar-edit-menu [select-paste] '("Select and Paste" . yank-menu))
+(define-key menu-bar-edit-menu [copy] '("Copy" . menu-bar-kill-ring-save))
 (define-key menu-bar-edit-menu [cut] '("Cut" . kill-region))
 (define-key menu-bar-edit-menu [undo] '("Undo" . undo))
 
+(defun menu-bar-kill-ring-save (beg end)
+  (interactive "r")
+  (if (mouse-region-match)
+      (message "Select a region with the mouse does `copy' automatically")
+    (kill-ring-save beg end)))
+
 (put 'fill-region 'menu-enable 'mark-active)
 (put 'kill-region 'menu-enable 'mark-active)
-(put 'kill-ring-save 'menu-enable 'mark-active)
+(put 'menu-bar-kill-ring-save 'menu-enable 'mark-active)
 (put 'yank 'menu-enable '(x-selection-exists-p))
-(put 'delete-region 'menu-enable 'mark-active)
+(put 'yank-menu 'menu-enable '(cdr yank-menu))
+(put 'delete-region 'menu-enable '(and mark-active
+				       (not (mouse-region-match))))
 (put 'undo 'menu-enable '(if (eq last-command 'undo)
 			     pending-undo-list
 			   (consp buffer-undo-list)))
-(put 'query-replace 'menu-enable (not buffer-read-only))
+(put 'query-replace 'menu-enable '(not buffer-read-only))
 
 (autoload 'ispell-menu-map "ispell" nil t 'keymap)
 
 ;; These are alternative definitions for the cut, paste and copy
-;; menu items.  Use them if your system expects these to use the clipboard
+;; menu items.  Use them if your system expects these to use the clipboard.
 
 (put 'clipboard-kill-region 'menu-enable 'mark-active)
 (put 'clipboard-kill-ring-save 'menu-enable 'mark-active)
@@ -174,7 +299,7 @@ Do the same for the keys of the same name."
 (define-key menu-bar-help-menu [emacs-version]
   '("Show Version" . emacs-version))
 (define-key menu-bar-help-menu [report-emacs-bug]
-  '("Send Bug Report" . report-emacs-bug))
+  '("Send Bug Report..." . report-emacs-bug))
 (define-key menu-bar-help-menu [emacs-tutorial]
   '("Emacs Tutorial" . help-with-tutorial))
 (define-key menu-bar-help-menu [man] '("Man..." . manual-entry))
@@ -190,9 +315,10 @@ Do the same for the keys of the same name."
   '("Command Apropos..." . command-apropos))
 (define-key menu-bar-help-menu [describe-mode]
   '("Describe Mode" . describe-mode))
-(define-key menu-bar-help-menu [info] '("Info" . info))
-
+(define-key menu-bar-help-menu [info] '("Browse Manuals" . info))
+(define-key menu-bar-help-menu [emacs-faq] '("Emacs FAQ" . view-emacs-FAQ))
 (define-key menu-bar-help-menu [emacs-news] '("Emacs News" . view-emacs-news))
+
 (defun kill-this-buffer ()	; for the menubar
   "Kills the current buffer."
   (interactive)
@@ -205,24 +331,46 @@ Do the same for the keys of the same name."
       (or (string-match "^ " (buffer-name (car buffers)))
 	  (setq count (1+ count)))
       (setq buffers (cdr buffers)))
-    (> count 1)))
+    (and (not (window-minibuffer-p (selected-window)))
+	 (> count 1))))
 
-(put 'save-buffer 'menu-enable '(buffer-modified-p))
+(put 'kill-this-buffer 'menu-enable '(kill-this-buffer-enabled-p))
+
+(put 'save-buffer 'menu-enable
+     '(and (buffer-modified-p)
+	   (not (window-minibuffer-p (selected-window)))))
+
+(put 'write-file 'menu-enable
+     '(not (window-minibuffer-p (selected-window))))
+
+(put 'find-file 'menu-enable
+     '(not (window-minibuffer-p (selected-window))))
+
+(put 'dired 'menu-enable
+     '(not (window-minibuffer-p (selected-window))))
+
+(put 'insert-file 'menu-enable
+     '(not (window-minibuffer-p (selected-window))))
+
 (put 'revert-buffer 'menu-enable
      '(or revert-buffer-function revert-buffer-insert-file-contents-function
 	  (and (buffer-file-name)
 	       (or (buffer-modified-p)
 		   (not (verify-visited-file-modtime (current-buffer)))))))
+
 ;; Permit deleting frame if it would leave a visible or iconified frame.
 (put 'delete-frame 'menu-enable
-     '(let ((frames (frame-list))
-	    (count 0))
-	(while frames
-	  (if (cdr (assq 'visibility (frame-parameters (car frames))))
-	      (setq count (1+ count)))
-	  (setq frames (cdr frames)))
-	(> count 1)))
-(put 'kill-this-buffer 'menu-enable '(kill-this-buffer-enabled-p))
+     '(delete-frame-enabled-p))
+
+(defun delete-frame-enabled-p ()
+  "Return non-nil if `delete-frame' should be enabled in the menu bar."
+  (let ((frames (frame-list))
+	      (count 0))
+	  (while frames
+	    (if (frame-visible-p (car frames))
+		(setq count (1+ count)))
+	    (setq frames (cdr frames)))
+	  (> count 1)))
 
 (put 'advertised-undo 'menu-enable
      '(and (not (eq t buffer-undo-list))
@@ -231,49 +379,39 @@ Do the same for the keys of the same name."
 		    pending-undo-list)
 	     buffer-undo-list)))
 
-(defvar yank-menu-length 100
-  "*Maximum length of an item in the menu for \
-\\[mouse-menu-choose-yank].")
+(defvar yank-menu-length 20
+  "*Maximum length to display in the yank-menu.")
 
-(defun mouse-menu-choose-yank (event)
-  "Pop up a menu of the kill-ring for selection with the mouse.
-The kill-ring-yank-pointer is moved to the selected element.
-A subsequent \\[yank] yanks the choice just selected."
-  (interactive "e")
-  (let* ((count 0)
-	 (menu (mapcar (lambda (string)
-			 (if (> (length string) yank-menu-length)
-			     (setq string (substring string
-						     0 yank-menu-length)))
-			 (prog1 (cons string count)
-			   (setq count (1+ count))))
-		       kill-ring))
-	 (arg (x-popup-menu event 
-			    (list "Yank Menu"
-				  (cons "Choose Next Yank" menu)))))
-    ;; A mouse click outside the menu returns nil.
-    ;; Avoid a confusing error from passing nil to rotate-yank-pointer.
-    ;; XXX should this perhaps do something other than simply return? -rm
-    (if arg
+(defun menu-bar-update-yank-menu (string old)
+  (let ((front (car (cdr yank-menu)))
+	(menu-string (if (<= (length string) yank-menu-length)
+			 string
+		       (concat
+			(substring string 0 (/ yank-menu-length 2))
+			"..."
+			(substring string (- (/ yank-menu-length 2)))))))
+    ;; If we're supposed to be extending an existing string, and that
+    ;; string really is at the front of the menu, then update it in place.
+    (if (and old (or (eq old (car front))
+		     (string= old (car front))))
 	(progn
-	  ;; We don't use `rotate-yank-pointer' because we want to move
-	  ;; relative to the beginning of kill-ring, not the current
-	  ;; position.  Also, that would ask for any new X selection and
-	  ;; thus change the list of items the user just chose from, which
-	  ;; would be highly confusing.
-	  (setq kill-ring-yank-pointer (nthcdr arg kill-ring))
-	  (if (interactive-p)
-	      (message "The next yank will insert the selected text.")
-	    (current-kill 0))))))
-(put 'mouse-menu-choose-yank 'menu-enable 'kill-ring)
+	  (setcar front string)
+	  (setcar (cdr front) menu-string))
+      (setcdr yank-menu
+	      (cons
+	       (cons string (cons menu-string 'menu-bar-select-yank))
+	       (cdr yank-menu)))))
+  (if (> (length (cdr yank-menu)) kill-ring-max)
+      (setcdr (nthcdr kill-ring-max yank-menu) nil)))
+
+(defun menu-bar-select-yank ()
+  (interactive "*")
+  (push-mark (point))
+  (insert last-command-event))
 
 (define-key global-map [menu-bar buffer] '("Buffers" . menu-bar-buffers))
 
 (defalias 'menu-bar-buffers (make-sparse-keymap "Buffers"))
-
-(defvar complex-buffers-menu-p nil
-  "*Non-nil says, offer a choice of actions after you pick a buffer.
-This applies to the Buffers menu from the menu bar.")
 
 (defvar buffers-menu-max-size 10
   "*Maximum number of entries which may appear on the Buffers menu.
@@ -282,6 +420,8 @@ If this is nil, then all buffers are shown.
 A large number or nil slows down menu responsiveness.")
 
 (defvar list-buffers-directory nil)
+
+(defvar menu-bar-update-buffers-maxbuf)
 
 (defun menu-bar-select-buffer ()
   (interactive)
@@ -292,6 +432,30 @@ A large number or nil slows down menu responsiveness.")
   (make-frame-visible last-command-event)
   (raise-frame last-command-event)
   (select-frame last-command-event))
+
+(defun menu-bar-update-buffers-1 (elt)
+  (cons (format
+	 (format "%%%ds  %%s%%s  %%s" menu-bar-update-buffers-maxbuf)
+	 (cdr elt)
+	 (if (buffer-modified-p (car elt))
+	     "*" " ")
+	 (save-excursion
+	   (set-buffer (car elt))
+	   (if buffer-read-only "%" " "))
+	 (let ((file
+		(or (buffer-file-name (car elt))
+		    (save-excursion
+		      (set-buffer (car elt))
+		      list-buffers-directory)
+		    "")))
+	   (setq file (or (file-name-directory file)
+			  ""))
+	   (if (> (length file) 20)
+	       (setq file (concat "..." (substring file -17))))
+	   file))
+	(car elt)))
+
+(defvar menu-bar-buffers-menu-list-buffers-entry nil)
 
 (defun menu-bar-update-buffers ()
   ;; If user discards the Buffers item, play along.
@@ -309,43 +473,66 @@ A large number or nil slows down menu responsiveness.")
 	 ;; Make the menu of buffers proper.
 	 (setq buffers-menu
 	       (cons "Select Buffer"
-		     (let ((tail buffers)
-			   (maxbuf 0)
-			   (maxlen 0)
-			   alist
-			   head)
+		     (let* ((buffer-list
+			     (mapcar 'list buffers))
+			    tail
+			    (menu-bar-update-buffers-maxbuf 0)
+			    (maxlen 0)
+			    alist
+			    head)
+		       ;; Put into each element of buffer-list
+		       ;; the name for actual display,
+		       ;; perhaps truncated in the middle.
+		       (setq tail buffer-list)
 		       (while tail
-			 (or (eq ?\ (aref (buffer-name (car tail)) 0))
-			     (setq maxbuf
-				   (max maxbuf
-					(length (buffer-name (car tail))))))
+			 (let ((name (buffer-name (car (car tail)))))
+			   (setcdr (car tail)
+				   (if (> (length name) 27)
+				       (concat (substring name 0 12)
+					       "..."
+					       (substring name -12))
+				     name)))
 			 (setq tail (cdr tail)))
-		       (setq tail buffers)
+		       ;; Compute the maximum length of any name.
+		       (setq tail buffer-list)
+		       (while tail
+			 (or (eq ?\ (aref (cdr (car tail)) 0))
+			     (setq menu-bar-update-buffers-maxbuf
+				   (max menu-bar-update-buffers-maxbuf
+					(length (cdr (car tail))))))
+			 (setq tail (cdr tail)))
+		       ;; Set ALIST to an alist of the form
+		       ;; ITEM-STRING . BUFFER
+		       (setq tail buffer-list)
 		       (while tail
 			 (let ((elt (car tail)))
-			   (or (eq ?\ (aref (buffer-name elt) 0))
+			   (or (eq ?\ (aref (cdr elt) 0))
 			       (setq alist (cons
-					    (cons
-					     (format
-					      (format "%%%ds  %%s%%s  %%s"
-						      maxbuf)
-					      (buffer-name elt)
-					      (if (buffer-modified-p elt)
-						  "*" " ")
-					      (save-excursion
-						(set-buffer elt)
-						(if buffer-read-only "%" " "))
-					      (or (buffer-file-name elt)
-						  (save-excursion
-						    (set-buffer elt)
-						    list-buffers-directory)
-						  ""))
-					     elt)
+					    (menu-bar-update-buffers-1 elt)
 					    alist)))
 			   (and alist (> (length (car (car alist))) maxlen)
 				(setq maxlen (length (car (car alist))))))
 			 (setq tail (cdr tail)))
 		       (setq alist (nreverse alist))
+		       ;; Make the menu item for list-buffers
+		       ;; or reuse the one we already have.
+		       ;; The advantage in reusing one
+		       ;; is that it already has the keyboard equivalent
+		       ;; cached, so we save the time to look that up again.
+		       (or menu-bar-buffers-menu-list-buffers-entry
+			   (setq menu-bar-buffers-menu-list-buffers-entry
+				 (cons
+				  'list-buffers
+				  (cons
+				   ""
+				   'list-buffers))))
+		       ;; Update the item string for menu's new width.
+		       (setcar (cdr menu-bar-buffers-menu-list-buffers-entry)
+			       (concat (make-string (max (- (/ maxlen 2) 8) 0)
+						    ?\ )
+				       "List All Buffers"))
+		       ;; Now make the actual list of items,
+		       ;; ending with the list-buffers item.
 		       (nconc (mapcar '(lambda (pair)
 					 ;; This is somewhat risque, to use
 					 ;; the buffer name itself as the event
@@ -358,14 +545,7 @@ A large number or nil slows down menu responsiveness.")
 						      (cons nil nil))
 						'menu-bar-select-buffer))
 				      alist)
-			      (list
-			       (cons
-				'list-buffers
-				(cons
-				 (concat (make-string (max (- (/ maxlen 2) 8) 0)
-						      ?\ )
-					 "List All Buffers")
-				 'list-buffers)))))))
+			      (list menu-bar-buffers-menu-list-buffers-entry)))))
 
 
 	 ;; Make a Frames menu if we have more than one frame.

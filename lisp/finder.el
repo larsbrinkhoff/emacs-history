@@ -11,7 +11,7 @@
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -48,17 +48,20 @@
   '(
     (abbrev	. "abbreviation handling, typing shortcuts, macros")
     (bib	. "code related to the `bib' bibliography processor")
-    (c		. "C and C++ language support")
+    (c		. "support for the C language and related languages")
     (calendar	. "calendar and time management support")
     (comm	. "communications, networking, remote access to files")
     (data	. "support editing files of data")
+    (debugging	. "support for debugging programs")
     (docs	. "support for Emacs documentation")
     (emulations	. "emulations of other editors")
     (extensions	. "Emacs Lisp language extensions")
     (faces	. "support for multiple fonts")
+    (frames     . "support for Emacs frames and window systems")
     (games	. "games, jokes and amusements")
     (hardware	. "support for interfacing with exotic hardware")
     (help	. "support for on-line help systems")
+    (hypermedia . "support for links between text or other media types")
     (i18n	. "internationalization and alternate character-set support")
     (internal	. "code for Emacs internals, build process, defaults")
     (languages	. "specialized modes for editing programming languages")
@@ -69,6 +72,8 @@
     (matching	. "various sorts of searching and matching")
     (mouse	. "mouse support")
     (news	. "support for netnews reading and posting")
+    (oop        . "support for object-oriented programming")
+    (outlines   . "support for hierarchical outlining")
     (processes	. "process, subshell, compilation, and job control support")
     (terminals	. "support for terminal types")
     (tex	. "code related to the TeX formatter")
@@ -79,14 +84,16 @@
     ))
 
 (defvar finder-mode-map nil)
-;(if finder-mode-map
-;    nil
-  (setq finder-mode-map (make-sparse-keymap))
-  (define-key finder-mode-map " "	'finder-select)
-  (define-key finder-mode-map "?"	'finder-summary)
-  (define-key finder-mode-map "q"	'finder-exit)
-  (define-key finder-mode-map "f"	'finder-list-keywords)
-;  )
+(or finder-mode-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map " "	'finder-select)
+      (define-key map "f"	'finder-select)
+      (define-key map "\C-m"	'finder-select)
+      (define-key map "?"	'finder-summary)
+      (define-key map "q"	'finder-exit)
+      (define-key map "d"	'finder-list-keywords)
+      (setq finder-mode-map map)))
+
 
 ;;; Code for regenerating the keyword list.
 
@@ -271,7 +278,7 @@ arguments compiles from `load-path'."
   (interactive)
   (message
    (substitute-command-keys
-    "\\<finder-mode-map>\\[finder-select] = select, \\[finder-list-keywords] = back to finder, \\[finder-exit] = quit, \\[finder-summary] = help")))
+    "\\<finder-mode-map>\\[finder-select] = select, \\[finder-list-keywords] = to finder directory, \\[finder-exit] = quit, \\[finder-summary] = help")))
 
 (defun finder-exit ()
   "Exit Finder mode and kill the buffer"

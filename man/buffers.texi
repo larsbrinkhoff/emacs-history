@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Buffers, Windows, Files, Top
 @chapter Using Multiple Buffers
@@ -45,6 +45,7 @@ the value in other buffers.  @xref{Locals}.
 * Kill Buffer::	       Killing buffers you no longer need.
 * Several Buffers::    How to go through the list of all buffers
 			 and operate variously on several of them.
+* Indirect Buffers::   An indirect buffer shares the text of another buffer. 
 @end menu
 
 @node Select Buffer
@@ -99,7 +100,7 @@ List the existing buffers (@code{list-buffers}).
 @cindex listing current buffers
 @kindex C-x C-b
 @findex list-buffers
-  To print a list of all the buffers that exist, type @kbd{C-x C-b}.  Each
+  To display a list of all the buffers that exist, type @kbd{C-x C-b}.  Each
 line in the list shows one buffer's name, major mode and visited file.  The
 buffers are listed in the order, most recently visited first.
 
@@ -160,7 +161,8 @@ works by setting the variable @code{buffer-read-only}, which has a local
 value in each buffer and makes the buffer read-only if its value is
 non-@code{nil}.  If the file is maintained with version control,
 @kbd{C-x C-q} works through the version control system to change the
-read-only status of the file as well as the buffer.
+read-only status of the file as well as the buffer.  @xref{Version
+Control}.
 
 @findex rename-buffer
   @kbd{M-x rename-buffer} changes the name of the current buffer.  Specify
@@ -272,8 +274,9 @@ Remove any request made for the current line, and move down.
 Move to previous line and remove any request made for that line.
 @end table
 
-  The @kbd{d}, @kbd{s} and @kbd{u} commands to add or remove flags also
-move down a line.  They accept a numeric argument as a repeat count.
+  The @kbd{d}, @kbd{C-d}, @kbd{s} and @kbd{u} commands to add or remove
+flags also move down (or up) one line.  They accept a numeric argument
+as a repeat count.
 
   These commands operate immediately on the buffer listed on the current
 line:
@@ -295,7 +298,8 @@ Visit the buffer as a tags table.  @xref{Select Tags Table}.
 @item q
 Quit the buffer menu---immediately display the most recent formerly
 visible buffer in its place.
-@item f
+@item @key{RET}
+@itemx f
 Immediately select this line's buffer in place of the @samp{*Buffer
 List*} buffer.
 @item o
@@ -311,32 +315,65 @@ Immediately set up two windows, with this line's buffer in one, and the
 previously selected buffer (aside from the buffer @samp{*Buffer List*})
 in the other.
 @item m
-Mark this line's buffer to be displayed in another window if the @kbd{q}
-command is used.  The request shows as a @samp{>} at the beginning of
-the line.  (A single buffer may not have both a delete request and a
-display request.)
+Mark this line's buffer to be displayed in another window if you exit
+with the @kbd{v} command.  The request shows as a @samp{>} at the
+beginning of the line.  (A single buffer may not have both a delete
+request and a display request.)
 @item v
 Immediately select this line's buffer, and also display in other windows
 any buffers previously marked with the @kbd{m} command.  If you have not
 marked any buffers, this command is equivalent to @kbd{1}.
 @end table
 
-  All that @code{buffer-menu} does directly is create and select a suitable
-buffer, and turn on Buffer Menu mode.  Everything else described above is
-implemented by the special commands provided in Buffer Menu mode.  One
-consequence of this is that you can switch from the @samp{*Buffer List*}
-buffer to another Emacs buffer, and edit there.  You can reselect the
-@code{buffer-menu} buffer later, to perform the operations already
-requested, or you can kill it, or pay no further attention to it.
+  All that @code{buffer-menu} does directly is create and switch to a
+suitable buffer, and turn on Buffer Menu mode.  Everything else
+described above is implemented by the special commands provided in
+Buffer Menu mode.  One consequence of this is that you can switch from
+the @samp{*Buffer List*} buffer to another Emacs buffer, and edit there.
+You can reselect the @samp{*Buffer List*} buffer later, to perform the
+operations already requested, or you can kill it, or pay no further
+attention to it.
 
-  The only difference between @code{buffer-menu} and @code{list-buffers} is
-that @code{buffer-menu} selects the @samp{*Buffer List*} buffer and
-@code{list-buffers} does not.  If you run @code{list-buffers} (that is,
-type @kbd{C-x C-b}) and select the buffer list manually, you can use all of
-the commands described here.
+  The only difference between @code{buffer-menu} and @code{list-buffers}
+is that @code{buffer-menu} switches to the @samp{*Buffer List*} buffer
+in the selected window; @code{list-buffers} displays it in another
+window.  If you run @code{list-buffers} (that is, type @kbd{C-x C-b})
+and select the buffer list manually, you can use all of the commands
+described here.
 
   The buffer @samp{*Buffer List*} is not updated automatically when
 buffers are created and killed; its contents are just text.  If you have
 created, deleted or renamed buffers, the way to update @samp{*Buffer
 List*} to show what you have done is to type @kbd{g}
 (@code{revert-buffer}) or repeat the @code{buffer-menu} command.
+
+@node Indirect Buffers
+@section Indirect Buffers
+@cindex indirect buffer
+@cindex base buffer
+
+  An @dfn{indirect buffer} shares the text of some other buffer, which
+is called the @dfn{base buffer} of the indirect buffer.  In some ways it
+is the analogue, for buffers, of a symbolic link between files.
+
+@table @kbd
+@findex make-indirect-buffer
+@item M-x make-indirect-buffer @var{base-buffer} @key{RET} @var{indirect-name} @key{RET}
+Create an indirect buffer named @var{indirect-name} whose base buffer
+is @var{base-buffer}.
+@end table
+
+  The text of the indirect buffer is always identical to the text of its
+base buffer; changes made by editing either one are visible immediately
+in the other.  But in all other respects, the indirect buffer and its
+base buffer are completely separate.  They have different names,
+different values of point, different narrowing, different markers,
+different major modes, and different local variables.
+
+  An indirect buffer cannot visit a file, but its base buffer can.  If
+you try to save the indirect buffer, that actually works by saving the
+base buffer.  Killing the base buffer effectively kills the indirect
+buffer, but killing an indirect buffer has no effect on its base buffer.
+
+  One way to use indirect buffers is to display multiple views of an
+outline.  @xref{Outline Views}.

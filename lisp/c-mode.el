@@ -1,5 +1,5 @@
 ;;; c-mode.el --- C code editing commands for Emacs
-;; Copyright (C) 1985, 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 87, 92, 94, 95 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: c
@@ -23,7 +23,7 @@
 ;;; Commentary:
 
 ;; A smart editing mode for C code.  It knows a lot about C syntax and tries
-;; to position the curser according to C layout conventions.  You can
+;; to position the cursor according to C layout conventions.  You can
 ;; change the details of the layout style with option variables.  Load it
 ;; and do M-x describe-mode for details.
 
@@ -45,7 +45,6 @@
 (define-key c-mode-map "\e\C-q" 'indent-c-exp)
 (define-key c-mode-map "\ea" 'c-beginning-of-statement)
 (define-key c-mode-map "\ee" 'c-end-of-statement)
-(define-key c-mode-map "\eq" 'c-fill-paragraph)
 (define-key c-mode-map "\C-c\C-n" 'c-forward-conditional)
 (define-key c-mode-map "\C-c\C-p" 'c-backward-conditional)
 (define-key c-mode-map "\C-c\C-u" 'c-up-conditional)
@@ -54,8 +53,11 @@
 
 (define-key c-mode-map [menu-bar] (make-sparse-keymap))
 
+;; "C-mode" is not strictly the right punctuation--it should be "C
+;; mode"--but that would look like two menu items.  "C-mode" is the
+;; best alternative I can think of.
 (define-key c-mode-map [menu-bar c]
-  (cons "C" (make-sparse-keymap "C")))
+  (cons "C-mode" (make-sparse-keymap "C-mode")))
 
 (define-key c-mode-map [menu-bar c comment-region]
   '("Comment Out Region" . comment-region))
@@ -69,6 +71,8 @@
   '("Indent Line" . c-indent-command))
 (define-key c-mode-map [menu-bar c fill]
   '("Fill Comment Paragraph" . c-fill-paragraph))
+(define-key c-mode-map [menu-bar c cpp-highlight-buffer]
+  '("Highlight Conditionals" . cpp-highlight-buffer))
 (define-key c-mode-map [menu-bar c up]
   '("Up Conditional" . c-up-conditional))
 (define-key c-mode-map [menu-bar c backward]
@@ -79,6 +83,10 @@
   '("Backward Statement" . c-beginning-of-statement))
 (define-key c-mode-map [menu-bar c forward-stmt]
   '("Forward Statement" . c-end-of-statement))
+
+(put 'comment-region 'menu-enable 'mark-active)
+(put 'c-macro-expand 'menu-enable 'mark-active)
+(put 'c-backslash-region 'menu-enable 'mark-active)
 
 (autoload 'c-macro-expand "cmacexp"
   "Display the result of expanding all C macros occurring in the region.
@@ -118,37 +126,42 @@ The expansion is entirely correct because it uses the C preprocessor."
   "*Extra indent for lines not starting new statements.")
 (defconst c-continued-brace-offset 0
   "*Extra indent for substatements that start with open-braces.
-This is in addition to c-continued-statement-offset.")
+This is in addition to `c-continued-statement-offset'.")
 (defconst c-style-alist
   '(("GNU"
      (c-indent-level               .  2)
      (c-argdecl-indent             .  5)
      (c-brace-offset               .  0)
+     (c-continued-brace-offset     .  0)
      (c-label-offset               . -2)
      (c-continued-statement-offset .  2))
     ("K&R"
      (c-indent-level               .  5)
      (c-argdecl-indent             .  0)
-     (c-brace-offset               . -5)
+     (c-brace-offset               .  0)
+     (c-continued-brace-offset     . -5)
      (c-label-offset               . -5)
      (c-continued-statement-offset .  5))
     ("BSD"
      (c-indent-level               .  4)
      (c-argdecl-indent             .  4)
-     (c-brace-offset               . -4)
+     (c-brace-offset               .  0)
+     (c-continued-brace-offset     . -4)
      (c-label-offset               . -4)
      (c-continued-statement-offset .  4))
     ("C++"
-     (c-indent-level               . 4)
-     (c-continued-statement-offset . 4)
-     (c-brace-offset               . -4)
-     (c-argdecl-indent             . 0)
+     (c-indent-level               .  4)
+     (c-argdecl-indent             .  0)
+     (c-brace-offset               .  0)
+     (c-continued-brace-offset     . -4)
      (c-label-offset               . -4)
-     (c-auto-newline               . t))
+     (c-continued-statement-offset .  4)
+     (c-auto-newline               .  t))
     ("Whitesmith"
      (c-indent-level               .  4)
      (c-argdecl-indent             .  4)
      (c-brace-offset               .  0)
+     (c-continued-brace-offset     .  0)
      (c-label-offset               . -4)
      (c-continued-statement-offset .  4))))
 
@@ -164,7 +177,7 @@ regardless of where in the line point is when the TAB command is used.")
 
 ;;; Regular expression used internally to recognize labels in switch
 ;;; statements.
-(defconst c-switch-label-regexp "case[ \t'/(]\\|default\\(\\S_\\|'\\)")
+(defconst c-switch-label-regexp "case[ \t'/(]\\|default[ \t]*:")
 
 
 (defun c-mode ()
@@ -219,11 +232,13 @@ if that value is non-nil."
   (setq local-abbrev-table c-mode-abbrev-table)
   (set-syntax-table c-mode-syntax-table)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^$\\|" page-delimiter))
+  (setq paragraph-start (concat "$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'paragraph-ignore-fill-prefix)
   (setq paragraph-ignore-fill-prefix t)
+  (make-local-variable 'fill-paragraph-function)
+  (setq fill-paragraph-function 'c-fill-paragraph)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'c-indent-line)
   (make-local-variable 'indent-region-function)
@@ -244,6 +259,8 @@ if that value is non-nil."
   (setq comment-start-skip "/\\*+ *")
   (make-local-variable 'comment-indent-function)
   (setq comment-indent-function 'c-comment-indent)
+  (make-local-variable 'comment-multi-line)
+  (setq comment-multi-line t)
   (make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
   (run-hooks 'c-mode-hook))
@@ -305,11 +322,11 @@ preserving the comment indentation or line-starting decorations."
 	       ;; should not be filled into paragraphs they are next to.
 	       (concat 
 		paragraph-start
-		"\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
+		"\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
 	      (paragraph-separate
 	       (concat
 		paragraph-separate
-		"\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$")))
+		"\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$")))
 	  (save-excursion
 	    (beginning-of-line)
 	    ;; Move up to first line of this comment.
@@ -416,11 +433,11 @@ preserving the comment indentation or line-starting decorations."
 		 ;; should not be filled into paragraphs they are next to.
 		 (concat 
 		  paragraph-start
-		  "\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
+		  "\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
 		(paragraph-separate
 		 (concat
 		  paragraph-separate
-		  "\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
+		  "\\|[ \t]*/\\*[ \t]*$\\|[ \t]*\\*/[ \t]*$\\|[ \t/*]*$"))
 		(chars-to-delete 0))
 	    (save-restriction
 	      ;; Don't fill the comment together with the code following it.
@@ -445,6 +462,16 @@ preserving the comment indentation or line-starting decorations."
 				  (search-forward "*/" nil 'move)
 				  (forward-line 1)
 				  (point)))
+	      (save-excursion
+		(goto-char (point-max))
+		(forward-line -1)
+		;; And comment terminator was on a separate line before,
+		;; keep it that way.
+		;; This also avoids another problem:
+		;; if the fill-prefix ends in a *, it could eat up
+		;; the * of the comment terminator.
+		(if (looking-at "[ \t]*\\*/")
+		    (narrow-to-region (point-min) (point))))
 	      (fill-paragraph arg)
 	      (save-excursion
 		;; Delete the chars we inserted to avoid clobbering
@@ -465,7 +492,8 @@ preserving the comment indentation or line-starting decorations."
 		      (forward-line -1)
 		      (fill-region-as-paragraph (point) (point-max)))))))
 	;; Outside of comments: do ordinary filling.
-	(fill-paragraph arg)))))
+	(fill-paragraph arg)))
+    t))
 
 (defun electric-c-brace (arg)
   "Insert character and correct line's indentation."
@@ -628,13 +656,15 @@ Return the amount the indentation changed by."
 		  (setq indent (save-excursion
 				 (c-backward-to-start-of-if)
 				 (current-indentation))))
-		 ((looking-at "}[ \t]*else")
+		 ((and (looking-at "}[ \t]*else\\b")
+		       (not (looking-at "}[ \t]*else\\s_")))
 		  (setq indent (save-excursion
 				 (forward-char)
 				 (backward-sexp)
 				 (c-backward-to-start-of-if)
 				 (current-indentation))))
 		 ((and (looking-at "while\\b")
+		       (not (looking-at "while\\s_"))
 		       (save-excursion
 			 (c-backward-to-start-of-do)))
 		  ;; This is a `while' that ends a do-while.
@@ -716,11 +746,17 @@ Returns nil if line starts inside a string, t if in a comment."
 				     (looking-at "[^\"\n=(]*(")
 				     (progn
 				       (goto-char (1- (match-end 0)))
-				       (setq lim (point))
-				       (condition-case nil
-					   (forward-sexp 1)
-					 (error))
-				       (skip-chars-forward " \t\f")
+				       ;; Skip any number of paren-groups.
+				       ;; Consider typedef int (*fcn) (int);
+				       (while (= (following-char) ?\()
+					 (setq lim (point))
+					 (condition-case nil
+					     (forward-sexp 1)
+					   (error))
+					 (skip-chars-forward " \t\f"))
+				       ;; Have we reached something
+				       ;; that shows this isn't a function
+				       ;; definition?
 				       (and (< (point) indent-point)
 					    (not (memq (following-char)
 						       '(?\, ?\;)))))
@@ -925,9 +961,11 @@ return the indentation of the text that would follow this star."
 	(case-fold-search nil))
     (while (and (not (bobp)) (not (zerop if-level)))
       (backward-sexp 1)
-      (cond ((looking-at "else\\b")
+      (cond ((and (looking-at "else\\b")
+		  (not (looking-at "else\\s_")))
 	     (setq if-level (1+ if-level)))
-	    ((looking-at "if\\b")
+	    ((and (looking-at "if\\b")
+		  (not (looking-at "if\\s_")))
 	     (setq if-level (1- if-level)))
 	    ((< (point) limit)
 	     (setq if-level 0)
@@ -1170,55 +1208,66 @@ If within a string or comment, move by sentences instead of statements."
 	  ;; past the region.)
 	  (if (or (eolp) (and endpos (>= (point) endpos)))
 	      nil
+	    ;; Is this line in a new nesting level?
+	    ;; In other words, is this the first line that
+	    ;; starts in the new level?
 	    (if (and (car indent-stack)
 		     (>= (car indent-stack) 0))
-		;; Line is on an existing nesting level.
-		;; Lines inside parens are handled specially.
-		(if (/= (char-after (car contain-stack)) ?{)
-		    (setq this-indent (car indent-stack))
-		  ;; Line is at statement level.
-		  ;; Is it a new statement?  Is it an else?
-		  ;; Find last non-comment character before this line
-		  (save-excursion
-		    (setq this-point (point))
-		    (setq at-else (looking-at "else\\W"))
-		    (setq at-brace (= (following-char) ?{))
-		    (setq at-while (looking-at "while\\b"))
-		    (if (= (following-char) ?})
-			(setq this-indent (car indent-stack))
-		      (c-backward-to-noncomment opoint)
-		      (if (not (memq (preceding-char) '(0 ?\, ?\; ?} ?: ?{)))
-			  ;; Preceding line did not end in comma or semi;
-			  ;; indent this line  c-continued-statement-offset
-			  ;; more than previous.
-			  (progn
-			    (c-backward-to-start-of-continued-exp (car contain-stack))
-			    (setq this-indent
-				  (+ c-continued-statement-offset (current-column)
-				     (if at-brace c-continued-brace-offset 0))))
-			;; Preceding line ended in comma or semi;
-			;; use the standard indent for this level.
-			(cond (at-else (progn (c-backward-to-start-of-if opoint)
-					      (setq this-indent
-						    (current-indentation))))
-			      ((and at-while (c-backward-to-start-of-do opoint))
-			       (setq this-indent (current-indentation)))
-			      ((eq (preceding-char) ?\,)
-			       (goto-char this-point)
-			       (setq this-indent (calculate-c-indent)))
-			      (t (setq this-indent (car indent-stack))))))))
-	      ;; Just started a new nesting level.
+		nil
+	      ;; Yes.
 	      ;; Compute the standard indent for this level.
-	      (let ((val (calculate-c-indent
-			   (if (car indent-stack)
-			       (- (car indent-stack))
-			     opoint))))
+	      (let (val)
+		(if (= (char-after (car contain-stack)) ?{)
+		    (save-excursion
+		      (goto-char (car contain-stack))
+		      (setq val (+ c-indent-level (current-column))))
+		  (setq val (calculate-c-indent
+			     (if (car indent-stack)
+				 (- (car indent-stack))
+			       opoint))))
 		;; t means we are in a block comment and should
 		;; calculate accordingly.
 		(if (eq val t)
 		    (setq val (calculate-c-indent-within-comment)))
-		(setcar indent-stack
-			(setq this-indent val))))
+		(setcar indent-stack val)))
+	    ;; Adjust indent of this individual line
+	    ;; based on its predecessor.
+	    ;; Handle continuation lines, if, else, while, and so on.
+	    (if (/= (char-after (car contain-stack)) ?{)
+		(setq this-indent (car indent-stack))
+	      ;; Line is at statement level.
+	      ;; Is it a new statement?  Is it an else?
+	      ;; Find last non-comment character before this line
+	      (save-excursion
+		(setq this-point (point))
+		(setq at-else (and (looking-at "else\\b")
+				   (not (looking-at "else\\s_"))))
+		(setq at-brace (= (following-char) ?{))
+		(setq at-while (and (looking-at "while\\b")
+				    (not (looking-at "while\\s_"))))
+		(if (= (following-char) ?})
+		    (setq this-indent (car indent-stack))
+		  (c-backward-to-noncomment opoint)
+		  (if (not (memq (preceding-char) '(0 ?\, ?\; ?} ?: ?{)))
+		      ;; Preceding line did not end in comma or semi;
+		      ;; indent this line  c-continued-statement-offset
+		      ;; more than previous.
+		      (progn
+			(c-backward-to-start-of-continued-exp (car contain-stack))
+			(setq this-indent
+			      (+ c-continued-statement-offset (current-column)
+				 (if at-brace c-continued-brace-offset 0))))
+		    ;; Preceding line ended in comma or semi;
+		    ;; use the standard indent for this level.
+		    (cond (at-else (progn (c-backward-to-start-of-if opoint)
+					  (setq this-indent
+						(current-indentation))))
+			  ((and at-while (c-backward-to-start-of-do opoint))
+			   (setq this-indent (current-indentation)))
+			  ((eq (preceding-char) ?\,)
+			   (goto-char this-point)
+			   (setq this-indent (calculate-c-indent)))
+			  (t (setq this-indent (car indent-stack))))))))
 	    ;; Adjust line indentation according to its contents
 	    (if (or (looking-at c-switch-label-regexp)
 		    (and (looking-at "[A-Za-z]")
@@ -1334,8 +1383,9 @@ The arguments are a string representing the desired style
 and a flag which, if non-nil, means to set the style globally.
 \(Interactively, the flag comes from the prefix argument.)
 Available styles are GNU, K&R, BSD and Whitesmith."
-  (interactive (list (completing-read "Use which C indentation style? "
-                                      c-style-alist nil t)
+  (interactive (list (let ((completion-ignore-case t))
+		       (completing-read "Use which C indentation style? "
+					c-style-alist nil t))
 		     current-prefix-arg))
   (let ((vars (cdr (assoc style c-style-alist))))
     (or vars
@@ -1480,7 +1530,9 @@ move backward across a preprocessor conditional."
 		    (if forward (forward-line 1))
 		    ;; If this line exits a level of conditional, exit inner loop.
 		    (if (< depth 0)
-			(setq found (point)))))))
+			(setq found (point))))
+		;; If the line is not really a conditional, skip past it.
+		(if forward (end-of-line)))))
 	  (or found
 	      (error "No containing preprocessor conditional"))
 	  (goto-char (setq new found)))

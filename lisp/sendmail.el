@@ -1,6 +1,6 @@
 ;;; sendmail.el --- mail sending commands for Emacs.
 
-;; Copyright (C) 1985, 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -29,6 +29,17 @@
 ;;; Code:
 
 ;;;###autoload
+(defvar mail-from-style 'angles "\
+*Specifies how \"From:\" fields look.
+
+If `nil', they contain just the return address like:
+	king@grassland.com
+If `parens', they look like:
+	king@grassland.com (Elvis Parsley)
+If `angles', they look like:
+	Elvis Parsley <king@grassland.com>")
+
+;;;###autoload
 (defvar mail-self-blind nil "\
 Non-nil means insert BCC to self in messages to be sent.
 This is done when the message is initialized,
@@ -47,7 +58,8 @@ Delete these headers from old message when it's inserted in a reply.")
 ;;;###autoload
 (defvar send-mail-function 'sendmail-send-it "\
 Function to call to send the current buffer as mail.
-The headers are be delimited by a line which is `mail-header-separator'.")
+The headers should be delimited by a line whose contents
+match the variable `mail-header-separator'.")
 
 ;;;###autoload
 (defvar mail-header-separator "--text follows this line--" "\
@@ -56,10 +68,10 @@ The headers are be delimited by a line which is `mail-header-separator'.")
 ;;;###autoload
 (defvar mail-archive-file-name nil "\
 *Name of file to write all outgoing messages in, or nil for none.
-Do not use an rmail file here!  Instead, use its inbox file.")
+This can be an inbox file or an Rmail file.")
 
 ;;;###autoload
-(defvar mail-default-reply-to nil
+(defvar mail-default-reply-to t
   "*Address to insert as default Reply-to field of outgoing messages.")
 
 ;;;###autoload
@@ -69,11 +81,23 @@ This file defines aliases to be expanded by the mailer; this is a different
 feature from that of defining aliases in `.mailrc' to be expanded in Emacs.
 This variable has no effect unless your system uses sendmail as its mailer.")
 
+;;;###autoload
+(defvar mail-personal-alias-file "~/.mailrc"
+  "*If non-nil, the name of the user's personal mail alias file.
+This file typically should be in same format as the `.mailrc' file used by
+the `Mail' or `mailx' program.
+This file need not actually exist.")
+
 (defvar mail-aliases t
   "Alist of mail address aliases,
-or t meaning should be initialized from `~/.mailrc'.
-The alias definitions in `~/.mailrc' have this form:
+or t meaning should be initialized from your mail aliases file.
+\(The file's name is normally `~/.mailrc', but your MAILRC environment
+variable can override that name.)
+The alias definitions in the file have this form:
     alias ALIAS MEANING")
+
+(defvar mail-alias-modtime nil
+  "The modification time of your mail alias file when it was last examined.")
 
 (defvar mail-yank-prefix nil
   "*Prefix insert on lines of yanked message being replied to.
@@ -103,7 +127,7 @@ instead of no action.")
 (defvar mail-mode-map nil)
 
 (autoload 'build-mail-aliases "mailalias"
-  "Read mail aliases from `~/.mailrc' and set `mail-aliases'."
+  "Read mail aliases from user's personal aliases file and set `mail-aliases'."
   nil)
 
 (autoload 'expand-mail-aliases "mailalias"
@@ -127,6 +151,12 @@ If t, it means to insert the contents of the file `~/.signature'.")
 It is inserted before you edit the message,
 so you can edit or delete these lines.")
 
+(defvar mail-bury-selects-summary t
+  "*If non-nil, try to show RMAIL summary buffer after returning from mail.
+The functions \\[mail-send-on-exit] or \\[mail-dont-send] select
+the RMAIL summary buffer before returning, if it exists and this variable
+is non-nil.")
+
 ;; Note: could use /usr/ucb/mail instead of sendmail;
 ;; options -t, and -v if not interactive.
 (defvar mail-mailer-swallows-blank-line
@@ -141,7 +171,11 @@ so you can edit or delete these lines.")
 		   (let ((case-fold-search nil))
 		     (re-search-forward "^OR\\>" nil t)))
 	       (kill-buffer buffer))))
-      '(looking-at "[ \t]\\|[-a-zA-Z]+:"))
+      ;; According to RFC822, "The field-name must be composed of printable
+      ;; ASCII characters (i.e. characters that have decimal values between
+      ;; 33 and 126, except colon)", i.e. any chars except ctl chars,
+      ;; space, or colon.
+      '(looking-at "[ \t]\\|[][!\"#$%&'()*+,-./0-9;<=>?@A-Z\\\\^_`a-z{|}~]+:"))
   "Set this non-nil if the system's mailer runs the header and body together.
 \(This problem exists on Sunos 4 when sendmail is run in remote mode.)
 The value should be an expression to test whether the problem will
@@ -150,19 +184,39 @@ actually occur.")
 (defvar mail-mode-syntax-table nil
   "Syntax table used while in mail mode.")
 
-(if (null mail-mode-syntax-table)
+(if (not mail-mode-syntax-table)
     (progn
      (setq mail-mode-syntax-table (copy-syntax-table text-mode-syntax-table))
      (modify-syntax-entry ?% ". " mail-mode-syntax-table)))
 
+(defvar mail-font-lock-keywords
+  (list '("^To:" . font-lock-function-name-face)
+	'("^B?CC:\\|^Reply-To:" . font-lock-keyword-face)
+	'("^Subject:" . font-lock-comment-face)
+	'("^Subject:\\s *\\(.+\\)" 1 font-lock-type-face)
+	(list (concat "^\\(" (regexp-quote mail-header-separator) "\\)$") 1
+	      'font-lock-comment-face)
+	'("^[ \t]*\\sw*[>|}].*" . font-lock-reference-face)	; Citation.
+	'("^\\(X-[A-Za-z0-9-]+\\|In-reply-to\\):.*" . font-lock-string-face))
+  "Additional expressions to highlight in Mail mode.")
+
 (defvar mail-send-hook nil
   "Normal hook run before sending mail, in Mail mode.")
 
+(defun sendmail-synch-aliases ()
+  (let ((modtime (nth 5 (file-attributes mail-personal-alias-file))))
+    (or (equal mail-alias-modtime modtime)
+	(setq mail-alias-modtime modtime
+	      mail-aliases t))))
+
 (defun mail-setup (to subject in-reply-to cc replybuffer actions)
+  (if (eq mail-default-reply-to t)
+      (setq mail-default-reply-to (getenv "REPLYTO")))
+  (sendmail-synch-aliases)
   (if (eq mail-aliases t)
       (progn
 	(setq mail-aliases nil)
-	(if (file-exists-p "~/.mailrc")
+	(if (file-exists-p mail-personal-alias-file)
 	    (build-mail-aliases))))
   (setq mail-send-actions actions)
   (setq mail-reply-buffer replybuffer)
@@ -184,7 +238,11 @@ actually occur.")
 	  (insert cc "\n")
 	  (fill-region-as-paragraph address-start (point-max))))
     (if in-reply-to
-	(insert "In-reply-to: " in-reply-to "\n"))
+        (let ((fill-prefix "\t")
+	      (fill-column 78)
+	      (address-start (point)))
+	  (insert "In-reply-to: " in-reply-to "\n")
+	  (fill-region-as-paragraph address-start (point-max))))
     (insert "Subject: " (or subject "") "\n")
     (if mail-default-headers
 	(insert mail-default-headers))
@@ -217,13 +275,14 @@ actually occur.")
 Like Text Mode but with these additional commands:
 C-c C-s  mail-send (send the message)    C-c C-c  mail-send-and-exit
 C-c C-f  move to a header field (and create it if there isn't):
-	 C-c C-f C-t  move to To:	C-c C-f C-s  move to Subj:
-	 C-c C-f C-b  move to BCC:	C-c C-f C-c  move to CC:
+	 C-c C-f C-t  move to To:	C-c C-f C-s  move to Subject:
+	 C-c C-f C-c  move to CC:	C-c C-f C-b  move to BCC:
 	 C-c C-f C-f  move to FCC:
-C-c C-t  move to message text.
+C-c C-t  mail-text (move to beginning of message text).
+C-c C-w  mail-signature (insert `~/.signature' file).
 C-c C-y  mail-yank-original (insert current message, in Rmail).
 C-c C-q  mail-fill-yanked-message (fill what was yanked).
-C-c C-v  mail-sent-via (add a sent-via field for each To or CC)."
+C-c C-v  mail-sent-via (add a Sent-via field for each To or CC)."
   (interactive)
   (kill-all-local-variables)
   (make-local-variable 'mail-reply-buffer)
@@ -235,13 +294,15 @@ C-c C-v  mail-sent-via (add a sent-via field for each To or CC)."
   (setq major-mode 'mail-mode)
   (setq mode-name "Mail")
   (setq buffer-offer-save t)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(mail-font-lock-keywords t))
   (make-local-variable 'paragraph-separate)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^" mail-header-separator
-				"$\\|^[ \t]*[-_][-_][-_]+$\\|"
+  (setq paragraph-start (concat (regexp-quote mail-header-separator)
+				"$\\|[ \t]*[-_][-_][-_]+$\\|"
 				paragraph-start))
-  (setq paragraph-separate (concat "^" mail-header-separator
-				   "$\\|^[ \t]*[-_][-_][-_]+$\\|"
+  (setq paragraph-separate (concat (regexp-quote mail-header-separator)
+				   "$\\|[ \t]*[-_][-_][-_]+$\\|"
 				   paragraph-separate))
   (run-hooks 'text-mode-hook 'mail-mode-hook))
 
@@ -256,6 +317,7 @@ C-c C-v  mail-sent-via (add a sent-via field for each To or CC)."
   (define-key mail-mode-map "\C-c\C-f\C-f" 'mail-fcc)
   (define-key mail-mode-map "\C-c\C-f\C-c" 'mail-cc)
   (define-key mail-mode-map "\C-c\C-f\C-s" 'mail-subject)
+  (define-key mail-mode-map "\C-c\C-f\C-r" 'mail-reply-to)
   (define-key mail-mode-map "\C-c\C-t" 'mail-text)
   (define-key mail-mode-map "\C-c\C-y" 'mail-yank-original)
   (define-key mail-mode-map "\C-c\C-q" 'mail-fill-yanked-message)
@@ -286,7 +348,10 @@ C-c C-v  mail-sent-via (add a sent-via field for each To or CC)."
   '("Send Message" . mail-send-and-exit))
 
 (define-key mail-mode-map [menu-bar headers]
-  (cons "Headers" (make-sparse-keymap "Headers")))
+  (cons "Headers" (make-sparse-keymap "Move to Header")))
+
+(define-key mail-mode-map [menu-bar headers reply-to]
+  '("Reply-To" . mail-reply-to))
 
 (define-key mail-mode-map [menu-bar headers sent-via]
   '("Sent Via" . mail-sent-via))
@@ -337,7 +402,8 @@ Prefix arg means don't delete this window."
 	       (set-buffer (window-buffer (next-window (selected-window) 'not)))
 	       (setq rmail-flag (eq major-mode 'rmail-mode))
 	       (setq summary-buffer
-		     (and (boundp 'rmail-summary-buffer)
+		     (and mail-bury-selects-summary
+			  (boundp 'rmail-summary-buffer)
 			  rmail-summary-buffer
 			  (buffer-name rmail-summary-buffer)
 			  (not (get-buffer-window rmail-summary-buffer))
@@ -402,6 +468,7 @@ the user from the mailer."
 	  (replace-match "\n")
 	  (backward-char 1)
 	  (setq delimline (point-marker))
+	  (sendmail-synch-aliases)
 	  (if mail-aliases
 	      (expand-mail-aliases (point-min) delimline))
 	  (goto-char (point-min))
@@ -441,14 +508,22 @@ the user from the mailer."
 ;;;		 (progn
 ;;;		   (forward-line 1)
 ;;;		   (insert "Sender: " (user-login-name) "\n")))
-	    ;; "S:" is an abbreviation for "Subject:".
-	    (goto-char (point-min))
-	    (if (re-search-forward "^S:" delimline t)
-		(replace-match "Subject:"))
 	    ;; Don't send out a blank subject line
 	    (goto-char (point-min))
-	    (if (re-search-forward "^Subject:[ \t]*\n" delimline t)
+	    (if (re-search-forward "^Subject:\\([ \t]*\n\\)+\\b" delimline t)
 		(replace-match ""))
+	    ;; Put the "From:" field in unless for some odd reason
+	    ;; they put one in themselves.
+	    (goto-char (point-min))
+	    (if (not (re-search-forward "^From:" delimline t))
+		(let* ((login (user-login-name))
+		       (fullname (user-full-name)))
+		  (cond ((eq mail-from-style 'angles)
+			 (insert "From: " fullname " <" login ">\n"))
+			((eq mail-from-style 'parens)
+			 (insert "From: " login " (" fullname ")\n"))
+			((null mail-from-style)
+			 (insert "From: " login "\n")))))
 	    ;; Insert an extra newline if we need it to work around
 	    ;; Sun's bug that swallows newlines.
 	    (goto-char (1+ delimline))
@@ -495,6 +570,16 @@ the user from the mailer."
       (if (bufferp errbuf)
 	  (kill-buffer errbuf)))))
 
+;; Return non-nil if file FILE is an Rmail file.
+(defun mail-file-babyl-p (file)
+  (unwind-protect
+      (save-excursion
+	(set-buffer (get-buffer-create " mail-temp"))
+	(erase-buffer)
+	(insert-file-contents file nil 0 20)
+	(looking-at "BABYL OPTIONS:"))
+  (kill-buffer " mail-temp")))
+
 (defun mail-do-fcc (header-end)
   (let (fcc-list
 	(rmailbuf (current-buffer))
@@ -536,52 +621,64 @@ the user from the mailer."
 	  (forward-char -5)
 	  (insert ?>)))
       (while fcc-list
-	(let ((buffer (get-file-buffer (car fcc-list))))
+	(let* ((buffer (find-buffer-visiting (car fcc-list)))
+	       (curbuf (current-buffer))
+	       (beg (point-min)) (end (point-max))
+	       (beg2 (save-excursion (goto-char (point-min))
+				     (forward-line 2) (point))))
 	  (if buffer
 	      ;; File is present in a buffer => append to that buffer.
-	      (let ((curbuf (current-buffer))
-		    (beg (point-min)) (end (point-max))
-		    (beg2 (save-excursion (goto-char (point-min))
-					  (forward-line 2) (point))))
-		(save-excursion
-		  (set-buffer buffer)
-		  ;; Keep the end of the accessible portion at the same place
-		  ;; unless it is the end of the buffer.
-		  (let ((max (if (/= (1+ (buffer-size)) (point-max))
-				 (point-max))))
-		    (unwind-protect
-			;; Code below lifted from rmailout.el
-			;; function rmail-output-to-rmail-file:
-			(let ((buffer-read-only nil)
-			      (msg (and (boundp 'rmail-current-message)
-					rmail-current-message)))
-			  ;; If MSG is non-nil, buffer is in RMAIL mode.
-			  (if msg
-			      (progn
-				(rmail-maybe-set-message-counters)
-				(widen)
-				(narrow-to-region (point-max) (point-max))
-				(insert "\C-l\n0, unseen,,\n*** EOOH ***\n"
-					"From: " (user-login-name) "\n"
-					"Date: " (mail-rfc822-date) "\n")
-				(insert-buffer-substring curbuf beg2 end)
-				(insert "\n\C-_")
-				(goto-char (point-min))
-				(widen)
-				(search-backward "\n\^_")
-				(narrow-to-region (point) (point-max))
-				(rmail-count-new-messages t)
-				(rmail-show-message msg)
-				(setq max nil))
-			    ;; Output file not in rmail mode
-			    ;; => just insert at the end.
-			    (narrow-to-region (point-min) (1+ (buffer-size)))
-			    (goto-char (point-max))
-			    (insert-buffer-substring curbuf beg end)))
-		      (if max (narrow-to-region (point-min) max))))))
+	      (save-excursion
+		(set-buffer buffer)
+		;; Keep the end of the accessible portion at the same place
+		;; unless it is the end of the buffer.
+		(let ((max (if (/= (1+ (buffer-size)) (point-max))
+			       (point-max))))
+		  (unwind-protect
+		      ;; Code below lifted from rmailout.el
+		      ;; function rmail-output-to-rmail-file:
+		      (let ((buffer-read-only nil)
+			    (msg (and (boundp 'rmail-current-message)
+				      rmail-current-message)))
+			;; If MSG is non-nil, buffer is in RMAIL mode.
+			(if msg
+			    (progn
+			      (rmail-maybe-set-message-counters)
+			      (widen)
+			      (narrow-to-region (point-max) (point-max))
+			      (insert "\C-l\n0, unseen,,\n*** EOOH ***\n"
+				      "From: " (user-login-name) "\n"
+				      "Date: " (mail-rfc822-date) "\n")
+			      (insert-buffer-substring curbuf beg2 end)
+			      (insert "\n\C-_")
+			      (goto-char (point-min))
+			      (widen)
+			      (search-backward "\n\^_")
+			      (narrow-to-region (point) (point-max))
+			      (rmail-count-new-messages t)
+			      (rmail-show-message msg)
+			      (setq max nil))
+			  ;; Output file not in rmail mode
+			  ;; => just insert at the end.
+			  (narrow-to-region (point-min) (1+ (buffer-size)))
+			  (goto-char (point-max))
+			  (insert-buffer-substring curbuf beg end)))
+		    (if max (narrow-to-region (point-min) max)))))
 	    ;; Else append to the file directly.
-	    (write-region
-	     (1+ (point-min)) (point-max) (car fcc-list) t)))
+	    (if (and (file-exists-p (car fcc-list))
+		     (mail-file-babyl-p (car fcc-list)))
+		;; If the file is a Babyl file,
+		;; convert the message to Babyl format.
+		(save-excursion
+		  (set-buffer (get-buffer-create " mail-temp"))
+		  (insert "\C-l\n0, unseen,,\n*** EOOH ***\n"
+			  "From: " (user-login-name) "\n"
+			  "Date: " (mail-rfc822-date) "\n")
+		  (insert-buffer-substring curbuf beg2 end)
+		  (insert "\n\C-_")
+		  (write-region (point-min) (point-max) (car fcc-list) t))
+	      (write-region
+	       (1+ (point-min)) (point-max) (car fcc-list) t))))
 	(setq fcc-list (cdr fcc-list))))
     (kill-buffer tembuf)))
 
@@ -648,11 +745,17 @@ the user from the mailer."
       (mail-position-on-field "to"))
   (insert "\nFCC: " folder))
 
+(defun mail-reply-to ()      
+  "Move point to end of Reply-To-field."
+  (interactive)
+  (expand-abbrev)
+  (mail-position-on-field "Reply-To"))
+
 (defun mail-position-on-field (field &optional soft)
   (let (end
 	(case-fold-search t))
     (goto-char (point-min))
-    (re-search-forward (concat "^" (regexp-quote mail-header-separator) "\n"))
+    (re-search-forward (concat "^" (regexp-quote mail-header-separator) "$"))
     (setq end (match-beginning 0))
     (goto-char (point-min))
     (if (re-search-forward (concat "^" (regexp-quote field) ":") end t)
@@ -668,8 +771,9 @@ the user from the mailer."
       nil)))
 
 (defun mail-text ()
-  "Move point to beginning of text field."
+  "Move point to beginning of message text."
   (interactive)
+  (expand-abbrev)
   (goto-char (point-min))
   (search-forward (concat "\n" mail-header-separator "\n")))
 
@@ -772,7 +876,7 @@ and don't delete any header fields."
 When this function returns, the buffer `*mail*' is selected.
 The value is t if the message was newly initialized; otherwise, nil.
 
-By default, the signature file `~/.signature' is inserted at the end;
+Optionally, the signature file `~/.signature' can be inserted at the end;
 see the variable `mail-signature'.
 
 \\<mail-mode-map>
@@ -794,8 +898,11 @@ is inserted.
 If `mail-setup-hook' is bound, its value is called with no arguments
 after the message is initialized.  It can add more default fields.
 
-When calling from a program, the second through fifth arguments
- TO, SUBJECT, IN-REPLY-TO and CC specify if non-nil
+When calling from a program, the first argument if non-nil says
+not to erase the existing contents of the `*mail*' buffer.
+
+The second through fifth arguments,
+ TO, SUBJECT, IN-REPLY-TO and CC, specify if non-nil
  the initial contents of those header fields.
  These arguments should not have final newlines.
 The sixth argument REPLYBUFFER is a buffer whose contents
@@ -847,7 +954,7 @@ The seventh argument ACTIONS is a list of actions to take
 ;;;		   (file-exists-p buffer-auto-save-file-name))
 ;;;	      (message "Auto save file for draft message exists; consider M-x mail-recover"))
 ;;;          t))
-  (switch-to-buffer "*mail*")
+  (pop-to-buffer "*mail*")
   (if (file-exists-p (expand-file-name "~/"))
       (setq default-directory (expand-file-name "~/")))
   (auto-save-mode auto-save-default)
@@ -886,7 +993,11 @@ The seventh argument ACTIONS is a list of actions to take
 (defun mail-other-window (&optional noerase to subject in-reply-to cc replybuffer sendactions)
   "Like `mail' command, but display mail buffer in another window."
   (interactive "P")
-  (let ((pop-up-windows t))
+  (let ((pop-up-windows t)
+	(special-display-buffer-names nil)
+	(special-display-regexps nil)
+	(same-window-buffer-names nil)
+	(same-window-regexps nil))
     (pop-to-buffer "*mail*"))
   (mail noerase to subject in-reply-to cc replybuffer sendactions))
 
@@ -894,7 +1005,11 @@ The seventh argument ACTIONS is a list of actions to take
 (defun mail-other-frame (&optional noerase to subject in-reply-to cc replybuffer sendactions)
   "Like `mail' command, but display mail buffer in another frame."
   (interactive "P")
-  (let ((pop-up-frames t))
+  (let ((pop-up-frames t)
+	(special-display-buffer-names nil)
+	(special-display-regexps nil)
+	(same-window-buffer-names nil)
+	(same-window-regexps nil))
     (pop-to-buffer "*mail*"))
   (mail noerase to subject in-reply-to cc replybuffer sendactions))
 
@@ -903,6 +1018,8 @@ The seventh argument ACTIONS is a list of actions to take
 ;;;###autoload (define-key ctl-x-map "m" 'mail)
 ;;;###autoload (define-key ctl-x-4-map "m" 'mail-other-window)
 ;;;###autoload (define-key ctl-x-5-map "m" 'mail-other-frame)
+
+;;;###autoload (add-hook 'same-window-buffer-names "*mail*")
 
 ;;; Do not add anything but external entries on this page.
 

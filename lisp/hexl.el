@@ -77,6 +77,10 @@ and \"-de\" when dehexlfying a buffer.")
 
 (defvar hexl-mode-map nil)
 
+(defvar hexl-mode-old-local-map)
+(defvar hexl-mode-old-mode-name)
+(defvar hexl-mode-old-major-mode)
+
 ;; routines
 
 ;;;###autoload
@@ -170,6 +174,9 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
     (make-local-variable 'write-contents-hooks)
     (add-hook 'write-contents-hooks 'hexl-save-buffer)
 
+    (make-local-hook 'after-revert-hook)
+    (add-hook 'after-revert-hook 'hexl-after-revert-hook nil t)
+
     (make-local-variable 'hexl-max-address)
 
     (make-local-variable 'change-major-mode-hook)
@@ -185,6 +192,10 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
         (hexlify-buffer)
         (set-buffer-modified-p modified)
         (hexl-goto-address original-point)))))
+
+(defun hexl-after-revert-hook ()
+  (hexlify-buffer)
+  (set-buffer-modified-p nil))
 
 (defvar hexl-in-save-buffer nil)
 
@@ -223,7 +234,7 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
   "Edit file FILENAME in hexl-mode.
 Switch to a buffer visiting file FILENAME, creating one in none exists."
   (interactive "fFilename: ")
-  (if (eq system-type 'ms-dos)
+  (if (or (eq system-type 'ms-dos) (eq system-type 'windows-nt))
       (find-file-binary filename)
     (find-file filename))
   (if (not (eq major-mode 'hexl-mode))

@@ -220,7 +220,7 @@ xaw_pop_instance (instance, up)
 	     life easier?
 	   */
 	  {
-	    int x, y, w, h;
+	    unsigned int x, y, w, h;
 	    Widget topmost = instance->parent;
 	    Arg args[2];
 
@@ -624,9 +624,24 @@ xaw_create_scrollbar (instance)
 #endif
 }
 
+static Widget
+xaw_create_main (instance)
+     widget_instance *instance;
+{
+  Arg al[1];
+  int ac;
+
+  /* Create a vertical Paned to hold menubar */
+  ac = 0;
+  XtSetArg (al[ac], XtNborderWidth, 0); ac++;
+  return XtCreateWidget (instance->info->name, panedWidgetClass,
+			 instance->parent, al, ac);
+}
+
 widget_creation_entry
 xaw_creation_table [] =
 {
   {"scrollbar",			xaw_create_scrollbar},
+  {"main",			xaw_create_main},
   {NULL, NULL}
 };

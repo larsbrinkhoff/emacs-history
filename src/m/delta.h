@@ -33,10 +33,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define LONGBITS 32		/* Number of bits in a long */
 
-/* Define BIG_ENDIAN iff lowest-numbered byte in a word
+/* Define WORDS_BIG_ENDIAN iff lowest-numbered byte in a word
    is the most significant byte.  */
 
-#define BIG_ENDIAN
+#define WORDS_BIG_ENDIAN
 
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
@@ -62,7 +62,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define NO_UNION_TYPE 
 
 /* Define EXPLICIT_SIGN_EXTEND if XINT must explicitly sign-extend
-   the 24-bit bit field into an int.  In other words, if bit fields
+   the bit field into an int.  In other words, if bit fields
    are always unsigned.
 
    If you use NO_UNION_TYPE, this flag does not matter.  */
@@ -124,12 +124,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* #define NO_SOCK_SIGIO */
 
 
-/* Define these if you want to edit files up to 32Mbytes.
-   Leaving them undefined (files up to 8 Mbytes) should be more efficient. */
-  
-/* #define VALBITS 26
-   #define GCTYPEBITS 5 */
-
 /* Undefine this if you don't want the machine slow down when a buffer
    is modified. */
 
@@ -138,11 +132,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* Machine specific stuff */
 #define HAVE_PTYS
 #define SYSV_PTYS
-#define HAVE_SELECT
 #ifdef HAVE_INET_SOCKETS	/* this comes from autoconf  */
 # define HAVE_SOCKETS		/* NSE may or may not have been installed */
 #endif
-#define HAVE_TIMEVAL
 #define SIGNALS_VIA_CHARACTERS
 #define BROKEN_CLOSEDIR		/* builtin closedir is interruptible */
 #undef HAVE_BCOPY		/* b* functions are just stubs to mem* ones */
@@ -171,17 +163,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef sigsetmask
 
 #ifdef HAVE_X_WINDOWS
-/* I have not tested X, but I think these are obsolete, so let's
-   commment them -pot@cnuce.cnr.it */
-/* debug switches enabled because of some difficulties w/X11
-# define C_DEBUG_SWITCH -g
-# define OBJECTS_MACHINE -lg
-# define C_OPTIMIZE_SWITCH
-# define CANNOT_DUMP
-# define XDEBUG */
-/* X library is in 'nonstandard' location. */
-/* This should be taken care of by configure -pot@cnuce.cnr.it
-# define LD_SWITCH_MACHINE -L/usr/lib/X11/ */
 # define HAVE_RANDOM
 # define BROKEN_FIONREAD	/* pearce@ll.mit.edu says this is needed. */
 # define HAVE_XSCREENNUMBEROFSCREEN
@@ -199,27 +180,25 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  /* Union lisp objects do not yet work as of 19.15. */
 /* # undef NO_UNION_TYPE */
 
-/* There are three ways to use the gnucc provided with R3V7.  Either
-   link /bin/ccd/cc to /bin/cc and then configure (supposing that CC
-   is unset or set to cc).  Or configure like this: `CC=/bin/ccd/cc
-   configure', or else configure like this: `CC=gnucc configure'. */
-
-# ifdef __STDC__
- /* Compiling with gnucc (not through ccd).  This means -traditional is
-    not set.  Let us set it, because gmalloc.c includes <stddef.h>,
-    and we don't have that (as of SYSV68 R3V7).
-    Removing the -finline-functions option to gnucc causes an
-    executable emacs smaller by about 10%. */
-#  define C_SWITCH_MACHINE -mfp0ret -m68881 -traditional -Dconst= -fdelayed-branch -fstrength-reduce -finline-functions -fcaller-saves
+ /* We are assuming here that the `true' GNU gcc has not been
+    installed, and we are using the gnucc provided by Motorola.  No
+    support exists for compiling with GNU gcc, as I do not have it on
+    my machine to try it out.  -pot@cnuce.cnr.it
+    If __STDC__ is defined gnucc has been called without the -traditional
+    option, that is, we are inside configure.  If THIS_IS_CONFIGURE is
+    not defined, then configure is trying to figure out what the right
+    option for real compilation are.
+    Let us set -traditional, because gmalloc.c includes <stddef.h>, and
+    we don't have that (as of SYSV68 R3V7). */
+#  define C_SWITCH_MACHINE -mfp0ret -traditional -Dconst= -fdelayed-branch -fstrength-reduce -fno-inline -fcaller-saves
 #  define LIB_GCC /lib/gnulib881
-# endif /* __STDC__ */
 
 #else
  /* Not __GNUC__, use the alloca in alloca.s. */
 
  /* Try to guess if we are using the Green Hills Compiler */
 # if defined mc68000 && defined MC68000
- /* Required only for use with Green Hills compiler:
+   /* Required only for use with Green Hills compiler:
 	-ga	 Because alloca relies on stack frames. This option forces
 		 the Green Hills compiler to create stack frames even for
 		 functions with few local variables. */

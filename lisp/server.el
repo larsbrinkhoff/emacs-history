@@ -1,6 +1,6 @@
 ;;; server.el --- Lisp code for GNU Emacs running as server process.
 
-;; Copyright (C) 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987, 1992, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: William Sommerfeld <wesommer@athena.mit.edu>
 ;; Keywords: processes
@@ -158,7 +158,10 @@ Prefix arg means just kill any existing server communications subprocess."
       nil
     (if server-process
 	(server-log (message "Restarting server")))
-    (setq server-process (start-process "server" nil server-program))
+    ;; Using a pty is wasteful, and the separate session causes
+    ;; annoyance sometimes (some systems kill idle sessions).
+    (let ((process-connection-type nil))
+      (setq server-process (start-process "server" nil server-program)))
     (set-process-sentinel server-process 'server-sentinel)
     (set-process-filter server-process 'server-process-filter)
     (process-kill-without-query server-process)))
@@ -168,21 +171,23 @@ Prefix arg means just kill any existing server communications subprocess."
 (defun server-process-filter (proc string)
   (server-log string)
   (setq string (concat server-previous-string string))
-  (if (not (and (eq ?\n (aref string (1- (length string))))
-		(eq 0 (string-match "Client: " string))))
-      ;; If input is not complete, save it for later.
-      (setq server-previous-string string)
-    ;; If it is complete, process it now, and discard what was saved.
-    (setq string (substring string (match-end 0)))
-    (setq server-previous-string "")
-    (let ((client (list (substring string 0 (string-match " " string))))
+  ;; If the input is multiple lines,
+  ;; process each line individually.
+  (while (string-match "\n" string)
+    (let ((request (substring string 0 (match-beginning 0)))
+	  client
 	  (files nil)
 	  (lineno 1))
-      (setq string (substring string (match-end 0)))
-      (while (string-match "[^ ]+ " string)
+      ;; Remove this line from STRING.
+      (setq string (substring string (match-end 0)))	  
+      (if (string-match "^Client: " request)
+	  (setq request (substring request (match-end 0))))
+      (setq client (list (substring request 0 (string-match " " request))))
+      (setq request (substring request (match-end 0)))
+      (while (string-match "[^ ]+ " request)
 	(let ((arg
-	       (substring string (match-beginning 0) (1- (match-end 0)))))
-	  (setq string (substring string (match-end 0)))
+	       (substring request (match-beginning 0) (1- (match-end 0)))))
+	  (setq request (substring request (match-end 0)))
 	  (if (string-match "\\`\\+[0-9]+\\'" arg)
 	      (setq lineno (read (substring arg 1)))
 	    (setq files
@@ -195,7 +200,9 @@ Prefix arg means just kill any existing server communications subprocess."
       (server-switch-buffer (nth 1 client))
       (run-hooks 'server-switch-hook)
       (message (substitute-command-keys
-		"When done with a buffer, type \\[server-edit].")))))
+		"When done with a buffer, type \\[server-edit]."))))
+  ;; Save for later any partial line that remains.
+  (setq server-previous-string string))
 
 (defun server-visit-files (files client)
   "Finds FILES and returns the list CLIENT with the buffers nconc'd.
@@ -233,16 +240,25 @@ FILES is an alist whose elements are (FILENAME LINENUMBER)."
 
 (defun server-buffer-done (buffer)
   "Mark BUFFER as \"done\" for its client(s).
-Buries the buffer, and returns another server buffer
-as a suggestion for what to select next."
+This buries the buffer, then returns a list of the form (NEXT-BUFFER KILLED).
+NEXT-BUFFER is another server buffer, as a suggestion for what to select next,
+or nil.  KILLED is t if we killed BUFFER (because it was a temp file)."
   (let ((running (eq (process-status server-process) 'run))
 	(next-buffer nil)
+	(killed nil)
 	(old-clients server-clients))
     (while old-clients
       (let ((client (car old-clients)))
 	(or next-buffer 
 	    (setq next-buffer (nth 1 (memq buffer client))))
 	(delq buffer client)
+	;; Delete all dead buffers from CLIENT.
+	(let ((tail client))
+	  (while tail
+	    (and (bufferp (car tail))
+		 (null (buffer-name (car tail)))
+		 (delq (car tail) client))
+	    (setq tail (cdr tail))))
 	;; If client now has no pending buffers,
 	;; tell it that it is done, and forget it entirely.
 	(if (cdr client) nil
@@ -250,19 +266,23 @@ as a suggestion for what to select next."
 	      (progn
 		(send-string server-process 
 			     (format "Close: %s Done\n" (car client)))
-		(server-log (format "Close: %s Done\n" (car client)))))
+		(server-log (format "Close: %s Done\n" (car client)))
+		;; Don't send emacsserver two commands in close succession.
+		;; It cannot handle that.
+		(sit-for 1)))
 	  (setq server-clients (delq client server-clients))))
       (setq old-clients (cdr old-clients)))
-    (if (buffer-name buffer)
+    (if (and (bufferp buffer) (buffer-name buffer))
 	(progn
 	  (save-excursion
 	    (set-buffer buffer)
 	    (setq server-buffer-clients nil)
 	    (run-hooks 'server-done-hook))
 	  (if (server-temp-file-p buffer)
-	      (kill-buffer buffer)
+	      (progn (kill-buffer buffer)
+		     (setq killed t))
 	    (bury-buffer buffer))))
-    next-buffer))
+    (list next-buffer killed)))
 
 (defun server-temp-file-p (buffer)
   "Return non-nil if BUFFER contains a file considered temporary.
@@ -276,7 +296,9 @@ are considered temporary."
 
 (defun server-done ()
   "Offer to save current buffer, mark it as \"done\" for clients.
-Then bury it, and return a suggested buffer to select next."
+This buries the buffer, then returns a list of the form (NEXT-BUFFER KILLED).
+NEXT-BUFFER is another server buffer, as a suggestion for what to select next,
+or nil.  KILLED is t if we killed the BUFFER (because it was a temp file)."
   (let ((buffer (current-buffer)))
     (if server-buffer-clients
 	(progn
@@ -291,9 +313,10 @@ Then bury it, and return a suggested buffer to select next."
 		(save-buffer buffer)))
 	  (server-buffer-done buffer)))))
 
-;; If a server buffer is killed, release its client.
-;; I'm not sure this is really a good idea--do you want the client
-;; to proceed using whatever is on disk in that file?
+;; Ask before killing a server buffer.
+;; It was suggested to release its client instead,
+;; but I think that is dangerous--the client would proceed
+;; using whatever is on disk in that file. -- rms.
 (defun server-kill-buffer-query-function ()
   (or (not server-buffer-clients)
       (yes-or-no-p (format "Buffer `%s' still has clients; kill it? "
@@ -328,23 +351,35 @@ which filenames are considered temporary.
 
 If invoked with a prefix argument, or if there is no server process running, 
 starts server process and that is all.  Invoked by \\[server-edit]."
-
   (interactive "P")
   (if (or arg
 	  (not server-process)
 	  (memq (process-status server-process) '(signal exit)))
       (server-start nil)
-    (server-switch-buffer (server-done))))
+    (apply 'server-switch-buffer (server-done))))
 
-(defun server-switch-buffer (next-buffer)
+(defun server-switch-buffer (&optional next-buffer killed-one)
   "Switch to another buffer, preferably one that has a client.
 Arg NEXT-BUFFER is a suggestion; if it is a live buffer, use it."
-  (cond ((windowp server-window)
+  ;; KILLED-ONE is t in a recursive call
+  ;; if we have already killed one temp-file server buffer.
+  ;; This means we should avoid the final "switch to some other buffer"
+  ;; since we've already effectively done that.
+  (cond ((and (windowp server-window)
+	      (window-live-p server-window))
 	 (select-window server-window))
 	((framep server-window)
+	 (if (not (frame-live-p server-window))
+	     (setq server-window (make-frame)))
 	 (select-window (frame-selected-window server-window))))
   (if (window-minibuffer-p (selected-window))
-      (select-window (next-window nil 'nomini t)))
+      (select-window (next-window nil 'nomini 0)))
+  ;; Move to a non-dedicated window, if we have one.
+  (let ((last-window (previous-window nil 'nomini 0)))
+    (while (and (window-dedicated-p (selected-window))
+		(not (eq last-window (selected-window))))
+      (select-window (next-window nil 'nomini 0))))
+  (set-window-dedicated-p (selected-window) nil)
   (if next-buffer
       (if (and (bufferp next-buffer)
 	       (buffer-name next-buffer))
@@ -352,11 +387,12 @@ Arg NEXT-BUFFER is a suggestion; if it is a live buffer, use it."
 	;; If NEXT-BUFFER is a dead buffer,
 	;; remove the server records for it
 	;; and try the next surviving server buffer.
-	(server-switch-buffer
-	 (server-buffer-done next-buffer)))
+	(apply 'server-switch-buffer
+	       (server-buffer-done next-buffer)))
     (if server-clients
-	(server-switch-buffer (nth 1 (car server-clients)))
-      (switch-to-buffer (other-buffer)))))
+	(server-switch-buffer (nth 1 (car server-clients)) killed-one)
+      (if (not killed-one)
+	  (switch-to-buffer (other-buffer))))))
 
 (global-set-key "\C-x#" 'server-edit)
 

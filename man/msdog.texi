@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node MS-DOS, Manifesto, Antinews, Top
 @appendix MS-DOS Issues
@@ -19,9 +19,8 @@ does not know about this limitation; it is up to you to specify valid
 file names.  Excess characters before or after the period are generally
 ignored.
 
-  Display on MS-DOS in Emacs 19.26 does not support menus or multiple
-fonts.  Support for multiple faces that specify different colors
-should be added in version 19.27.
+  Display on MS-DOS does not support menus or multiple fonts.  Support
+for multiple faces that specify different colors may be added later.
 
   Emacs on MS-DOS does support a mouse (on the default terminal only).
 The mouse commands work as documented, aside from those that try to use

@@ -2,15 +2,15 @@
 
 @ifinfo
 @c The edition number appears in several places in this file
-This corresponds to the tenth edition of the @cite{GNU Emacs Manual},
-for Emacs version 19.28.
+This corresponds to the eleventh edition of the @cite{GNU Emacs Manual},
+for Emacs version 19.29.
 @c Please REMEMBER to update edition number in *three* places in this file.
 
 Published by the Free Software Foundation
-675 Massachusetts Avenue
-Cambridge, MA 02139 USA
+59 Temple Place, Suite 330
+Boston, MA  02111-1307 USA
 
-Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -63,22 +63,22 @@ original English.
 @sp 6
 @center @titlefont{GNU Emacs Manual}
 @sp 4
-@center Tenth Edition, Updated for Emacs version 19.28
+@center Eleventh Edition, Updated for Emacs Version 19.29
 @sp 5
 @center Richard Stallman
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+Copyright @copyright{} 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @sp 2
-Tenth Edition @*
-Updated for Emacs Version 19.28, @*
-July 1994
+Eleventh Edition @*
+Updated for Emacs Version 19.29, @*
+June 1995
 
-ISBN 1-882114-04-3.
+ISBN 1-882114-52-3
 @sp 1
 Published by the Free Software Foundation @*
-675 Massachusetts Avenue @*
-Cambridge, MA 02139 USA
+59 Temple Place, Suite 330 @*
+Boston, MA  02111-1307 USA
 @sp 1
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -110,7 +110,7 @@ Cover art by Etienne Suvasa.
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.28.
+corresponds to GNU Emacs version 19.29.
 
 @end ifinfo
 
@@ -124,6 +124,7 @@ Snapshots
 Text Mode
 Outline Mode
 @TeX{} Mode
+Formatted Text
 Fortran Mode
 Fortran Indentation
 Shell Command History
@@ -141,9 +142,10 @@ and Sending Mail and Registers and Minibuffer.
 			it also explains that there is no warranty.
 * Intro::	      An introduction to Emacs concepts.
 * Glossary::	      The glossary.
-* Antinews::	      Information about Emacs version 18.
+* Antinews::	      Information about Emacs version 19.28.
 * MS-DOS::            Using Emacs on MS-DOS (otherwise known as "MS-DOG").
 * Manifesto::	      What's GNU?  Gnu's Not Unix!
+* Acknowledgments::   Major contributors to GNU Emacs.
 
 Indexes, nodes containing large menus
 * Key Index::	      An item for each standard Emacs key sequence.
@@ -205,6 +207,7 @@ Advanced Features
 * Shell::	      Executing shell commands from Emacs.
 * Emacs Server::      Using Emacs as an editing server for @code{mail}, etc.
 * Hardcopy::	      Printing buffers or regions.
+* Postscript::	      Printing buffers or regions as Postscript.
 * Sorting::	      Sorting lines, paragraphs or pages within Emacs.
 * Narrowing::	      Restricting display and editing to a portion
 			of the buffer.
@@ -344,7 +347,7 @@ File Handling
 * Auto Save::	     Auto Save periodically protects against loss of data.
 * File Aliases::     Handling multiple names for one file.
 * Version Control::  Version control systems (RCS and SCCS).
-* ListDir::	     Listing the contents of a file directory.
+* Directories::	     Listing the contents of a file directory.
 * Comparing Files::  Finding where two files differ.
 * Misc File Ops::    Other things you can do on files.
 
@@ -356,24 +359,25 @@ Saving Files
 
 Version Control
 
-* Concepts of VC::		Basic version control information;
-				  checking files in and out.
-* Editing with VC::		Commands for editing a file maintained
-				  with version control.
-* Variables for Check-in/out::	Variables that affect the commands used
-				  to check files in or out.
-* Log Entries::			Logging your changes.
-* Change Logs and VC::		Generating a change log file from log
-				  entries. 
-* Old Versions::		Examining and comparing old versions.
-* VC Status::			Commands to view the VC status of files and
-				  look at log entries.
-* Renaming and VC::		A command to rename both the source and
-				  master file correctly.
-* Snapshots::			How to make and use snapshots, a set of
-				  file versions that can be treated as a unit.
-* Version Headers::		Inserting version control headers into
-				  working files.
+* Version Systems::             Supported version control back end systems.
+* VC Concepts::                 Basic version control information;
+                                  checking files in and out.
+* Editing with VC::             Commands for editing a file maintained
+                                  with version control.
+* Log Entries::                 Logging your changes.
+* Change Logs and VC::          Generating a change log file from log entries. 
+* Old Versions::                Examining and comparing old versions.
+* Branches::                    Selecting a branch to put your changes in,
+                                  and creating a new branch.
+* Status in VC::                Commands to view the VC status of files and
+                                  look at log entries.
+* Renaming and VC::             A command to rename both the source and
+                                  master file correctly.
+* Snapshots::                   How to make and use snapshots, a set of
+                                  file versions that can be treated as a unit.
+* Version Headers::             Inserting version control headers into
+                                  working files.
+* Customizing VC::              Variables to change VC's behavior.
 
 Using Multiple Buffers
 
@@ -383,6 +387,7 @@ Using Multiple Buffers
 * Kill Buffer::	       Killing buffers you no longer need.
 * Several Buffers::    How to go through the list of all buffers
 			 and operate variously on several of them.
+* Indirect Buffers::   An indirect buffer shares the text of another buffer. 
 
 Multiple Windows
 
@@ -430,6 +435,7 @@ Commands for Human Languages
 * Outline Mode::  The major mode for editing outlines.
 * TeX Mode::	  The major modes for editing input to the formatter TeX.
 * Nroff Mode::	  The major mode for editing input to the formatter nroff.
+* Formatted Text::Editing formatted text directly in WYSIWYG fashion.
 
 Filling Text
 
@@ -537,7 +543,7 @@ Sending Mail
 
 Reading Mail with Rmail
 
-* Rmail Basics.              Basic concepts of Rmail, and simple use.
+* Rmail Basics::             Basic concepts of Rmail, and simple use.
 * Rmail Scrolling::          Scrolling through a message.
 * Rmail Motion::             Moving to another message.
 * Rmail Deletion::           Deleting and expunging messages.
@@ -684,14 +690,15 @@ The Init File, @file{~/.emacs}
 
 Dealing with Emacs Trouble
 
-* DEL Gets Help::	What to do if @key{DEL} doesn't delete.
-* Stuck Recursive::	`[...]' in mode line around the parentheses.
-* Screen Garbled::	Garbage on the screen.
-* Text Garbled::	Garbage in the text.
-* Unasked-for Search::	Spontaneous entry to incremental search.
-* Emergency Escape::	Emergency escape---
-			  What to do if Emacs stops responding.
-* Total Frustration::	When you are at your wits' end.
+* DEL Gets Help::       What to do if @key{DEL} doesn't delete.
+* Stuck Recursive::     `[...]' in mode line around the parentheses.
+* Screen Garbled::      Garbage on the screen.
+* Text Garbled::        Garbage in the text.
+* Unasked-for Search::  Spontaneous entry to incremental search.
+* Memory Full::         How to cope when you run out of memory.
+* Emergency Escape::    Emergency escape---
+                          What to do if Emacs stops responding.
+* Total Frustration::   When you are at your wits' end.
 
 Reporting Bugs
 
@@ -702,20 +709,22 @@ Reporting Bugs
 
 Command Line Options and Arguments
 
-* Ordinary Arguments::	Arguments to visit files, load libraries,
+* Action Arguments::	Arguments to visit files, load libraries,
 			  and call functions.
-* Initial Options::	Arguments that must come at the start of the command.
-* Command Example::	Examples of using command line arguments.
+* Initial Options::     Arguments that take effect while starting Emacs.
+* Command Example::     Examples of using command line arguments.
 * Resume Arguments::	Specifying arguments when you resume a running Emacs.
-* Environment::		Environment variables that Emacs uses.
+* Environment::         Environment variables that Emacs uses.
 
-* Display X::		Changing the default display and using remote login.
-* Font X::		Choosing a font for text, under X.
-* Colors X::		Choosing colors, under X.
-* Window Size X::	Start-up window size, under X.
-* Borders X::		Internal and external borders, under X.
-* Icons X::		Choosing what sort of icon to use, under X.
-* Resources X::		Advanced use of classes and resources, under X.
+* Display X::           Changing the default display and using remote login.
+* Font X::	        Choosing a font for text, under X.
+* Colors X::	        Choosing colors, under X.
+* Window Size X::       Start-up window size, under X.
+* Borders X::	        Internal and external borders, under X.
+* Icons X::             Choosing what sort of icon to use, under X.
+* Resources X::         Advanced use of classes and resources, under X.
+* Lucid Resources::     X resources for Lucid menus.
+* Motif Resources::     X resources for Motif menus.
 
 Environment Variables
 
@@ -781,11 +790,11 @@ Publications Department, Laboratory for Computer Science, 545 Tech Square,
 Cambridge, MA 02139, USA@.  The price today is $3.
 
 This edition of the manual is intended for use with GNU Emacs installed
-on GNU and Unix systems.  GNU Emacs can also be used on VMS and MS-DOS
-(aka.@: MS-DOG) systems, but those systems have different file name syntax
-and do not support all GNU Emacs features.  We don't try to describe VMS
-usage in this manual.  @xref{MS-DOS}, for information about using Emacs
-on MS-DOS.
+on GNU and Unix systems.  GNU Emacs can also be used on VMS, MS-DOS
+(aka.@: MS-DOG) and Windows NT systems, but those systems have different
+file name syntax and do not support all GNU Emacs features.  We don't
+try to describe VMS usage in this manual.  @xref{MS-DOS}, for
+information about using Emacs on MS-DOS.
 @end iftex
 
 @node Distrib, Copying, Top, Top
@@ -801,13 +810,11 @@ of GNU Emacs that they might get from you.  The precise conditions are
 found in the GNU General Public License that comes with Emacs and also
 appears following this section.
 
-The easiest way to get a copy of GNU Emacs is from someone else who has
-it.  You need not ask for our permission to do so, or tell any one else;
-just copy it.  If you have access to the Internet, you can get the
-latest distribution version of GNU Emacs from host
-@file{prep.ai.mit.edu} using anonymous login.  See the file
-@file{/pub/gnu/GETTING.GNU.SOFTWARE} on that host to find out about your
-options for copying and which files to use.
+One way to get a copy of GNU Emacs is from someone else who has it.  You
+need not ask for our permission to do so, or tell any one else; just
+copy it.  If you have access to the Internet, you can get the latest
+distribution version of GNU Emacs by anonymous FTP; see the file
+@file{etc/FTP} in the Emacs distribution for more information.
 
 You may also receive GNU Emacs when you buy a computer.  Computer
 manufacturers are free to distribute copies on the same terms that apply to
@@ -827,8 +834,8 @@ the Emacs distribution.  For further information, write to
 
 @display
 Free Software Foundation
-675 Mass Ave
-Cambridge, MA 02139
+59 Temple Place, Suite 330
+Boston, MA  02111-1307 USA
 USA
 @end display
 
@@ -843,6 +850,40 @@ workplace, suggest that the company make a donation.  If company policy
 is unsympathetic to the idea of donating to charity, you might instead
 suggest ordering a CD-ROM from the Foundation occasionally, or
 subscribing to periodic updates.
+
+@iftex
+Contributors to GNU Emacs include Per Abrahamsen, Jay K. Adams, Joe
+Arceneax, Boaz Ben-Zvi, Jim Blandy, Frank Bresz, Kevin Broadey, Vincent
+Broman, David M. Brown, Hans Chalupsky, Bob Chassell, James Clark, Mike
+Clarkson, Doug Cutting, Michael DeCorte, Gary Delp, Matthieu Devin,
+Scott Draves, Viktor Dukhovni, Rolf Ebert, Torbj@"orn Einarsson, Hans
+Henrik Eriksen, Michael Ernst, Ata Etemadi, Fred Fish, Karl Fogel, Noah
+Friedman, Keith Gabryelski, Kevin Gallagher, Howard Gayle, Stephen
+Gildea, David Gillespie, Boris Goldowsky, Michael Gschwind, Henry
+Guillaume, Doug Gwyn, Chris Hanson, K. Shane Hartman, Markus Heritsch,
+Karl Heuer, Manabu Higashida, Anders Holst, Lars Ingebrigtsen, Michael
+K. Johnson, Kyle Jones, Brewster Kahle, David Kaufman, Henry Kautz,
+Howard Kaye, Michael Kifer, Richard King, Larry K. Kolodney, Robert
+Krawitz, Sebastian Kremer, Geoff Kuenning, David K@aa gedal, Daniel
+LaLiberte, Aaron Larson, James R. Larus, Lars Lindberg, Neil M. Mager,
+Ken Manheimer, Bill Mann, Brian Marick, Simon Marshall, Bengt
+Martensson, Charlie Martin, Thomas May, Roland McGrath, David Megginson,
+Richard Mlynarik, Keith Moore, Thomas Neumann, Mike Newton, Jurgen
+Nickelsen, Jeff Norden, Jeff Peck, Damon Anton Permezel, Tom Perrine,
+Daniel Pfeiffer, Fred Pierresteguy, Christian Plaunt, Franceso
+A. Potorti, Michael D. Prange, Mukesh Prasad, Ashwin Ram, Eric
+S. Raymond, Paul Reilly, Edward M. Reingold, Rob Riepel, Roland
+B. Roberts, John Robinson, William Rosenblatt, Guillermo J. Rozas,
+Wolfgang Rupprecht, James B. Salem, Masahiko Sato, William Schelter,
+Gregor Schmid, Michael Schmidt, Ronald S. Schnell, Philippe Schnoebelen,
+Randal Schwartz, Mark Shapiro, Olin Shivers, Espen Skoglund, Rick
+Sladkey, Lynn Slater, Chris Smith, David Smith, William Sommerfeld, Ake
+Stenhoff, Jonathan Stigelman, Steve Strassman, Spencer Thomas, Jim
+Thompson, Masanobu Umeda, Geoffrey Voelker, Johan Vromans, Barry Warsaw,
+Morten Welinder, Joseph Brian Wells, Ed Wilkinson, Mike Williams, Steven
+A. Wood, Dale R. Worley, Felix S. T. Wu, Tom Wurgler, Jamie Zawinski,
+and Neal Ziring. 
+@end iftex
 
 @node Copying, Intro, Distrib, Top
 @unnumbered GNU GENERAL PUBLIC LICENSE
@@ -1258,10 +1299,10 @@ head as you edit.  @xref{Basic,Real-time,Basic Editing}.
 
   We call Emacs advanced because it provides facilities that go beyond
 simple insertion and deletion: controlling subprocesses; automatic
-indentation of programs; viewing two or more files at once; and dealing
-in terms of characters, words, lines, sentences, paragraphs, and pages,
-as well as expressions and comments in several different programming
-languages.
+indentation of programs; viewing two or more files at once; editing
+formatted text; and dealing in terms of characters, words, lines,
+sentences, paragraphs, and pages, as well as expressions and comments in
+several different programming languages.
 
   @dfn{Self-documenting} means that at any time you can type a special
 character, @kbd{Control-h}, to find out what your options are.  You can
@@ -1331,6 +1372,9 @@ edit files at the same time as you run shell commands.
 @include msdog.texi
 @include gnu.texi
 @include glossary.texi
+@ifinfo
+@include ack.texi
+@end ifinfo
 
 @node Key Index, Command Index, Glossary, Top
 @unnumbered Key (Character) Index
@@ -1344,7 +1388,7 @@ edit files at the same time as you run shell commands.
 @unnumbered Variable Index
 @printindex vr
 
-@node Concept Index, Screen, Variable Index, Top
+@node Concept Index, Acknowledgments, Variable Index, Top
 @unnumbered Concept Index
 @printindex cp
 

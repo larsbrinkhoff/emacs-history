@@ -30,7 +30,18 @@
 (defvar debug-function-list nil
   "List of functions currently set for debug on entry.")
 
+(defvar debugger-step-after-exit nil
+  "Non-nil means \"single-step\" after the debugger exits.")
+
+(defvar debugger-value nil
+  "This is the value for the debugger to return, when it returns.")
+
+(defvar debugger-old-buffer nil
+  "This is the buffer that was current when the debugger was entered.")
+
 (defvar debugger-outer-match-data)
+(defvar debugger-outer-load-read-function)
+(defvar debugger-outer-overriding-local-map)
 (defvar debugger-outer-track-mouse)
 (defvar debugger-outer-last-command)
 (defvar debugger-outer-this-command)
@@ -55,6 +66,7 @@ of the evaluator.
 You may call with no args, or you may pass nil as the first arg and
 any other args you like.  In that case, the list of args after the
 first will be printed into the backtrace buffer."
+  (interactive)
   (message "Entering debugger...")
   (let (debugger-value
 	(debug-on-error nil)
@@ -68,6 +80,8 @@ first will be printed into the backtrace buffer."
 	;; Save the outer values of these vars for the `e' command
 	;; before we replace the values.
 	(debugger-outer-match-data (match-data))
+	(debugger-outer-load-read-function load-read-function)
+	(debugger-outer-overriding-local-map overriding-local-map)
 	(debugger-outer-track-mouse track-mouse)
 	(debugger-outer-last-command last-command)
 	(debugger-outer-this-command this-command)
@@ -85,6 +99,8 @@ first will be printed into the backtrace buffer."
 	  (unread-command-char -1) unread-command-events
 	  last-input-event last-command-event last-nonmenu-event
 	  last-event-frame
+	  overriding-local-map
+	  load-read-function
 	  (standard-input t) (standard-output t)
 	  (cursor-in-echo-area nil))
       (unwind-protect
@@ -104,14 +120,19 @@ first will be printed into the backtrace buffer."
 			       (forward-line 1)
 			       (point)))
 	      (debugger-reenable)
+	      ;; lambda is for debug-on-call when a function call is next.
+	      ;; debug is for debug-on-entry function called.
 	      (cond ((memq (car debugger-args) '(lambda debug))
 		     (insert "Entering:\n")
 		     (if (eq (car debugger-args) 'debug)
 			 (progn
-			   (backtrace-debug 4 t)
+			   ;; Skip the frames for backtrace-debug, byte-code,
+			   ;; and debug.
+			   (backtrace-debug 3 t)
 			   (delete-char 1)
 			   (insert ?*)
 			   (beginning-of-line))))
+		    ;; Exiting a function.
 		    ((eq (car debugger-args) 'exit)
 		     (insert "Return value: ")
 		     (setq debugger-value (nth 1 debugger-args))
@@ -120,12 +141,15 @@ first will be printed into the backtrace buffer."
 		     (delete-char 1)
 		     (insert ? )
 		     (beginning-of-line))
+		    ;; Debugger entered for an error.
 		    ((eq (car debugger-args) 'error)
 		     (insert "Signalling: ")
 		     (prin1 (nth 1 debugger-args) (current-buffer))
 		     (insert ?\n))
+		    ;; debug-on-call, when the next thing is an eval.
 		    ((eq (car debugger-args) t)
 		     (insert "Beginning evaluation of function call form:\n"))
+		    ;; User calls debug directly.
 		    (t
 		     (prin1 (if (eq (car debugger-args) 'nil)
 				(cdr debugger-args) debugger-args)
@@ -152,6 +176,8 @@ first will be printed into the backtrace buffer."
 	(store-match-data debugger-outer-match-data)))
     ;; Put into effect the modified values of these variables
     ;; in case the user set them with the `e' command.
+    (setq load-read-function debugger-outer-load-read-function)
+    (setq overriding-local-map debugger-outer-overriding-local-map)
     (setq track-mouse debugger-outer-track-mouse)
     (setq last-command debugger-outer-last-command)
     (setq this-command debugger-outer-this-command)
@@ -297,10 +323,14 @@ Applies to the frame whose line point is on in the backtrace."
 	  (last-event-frame debugger-outer-last-event-frame)
 	  (standard-input debugger-outer-standard-input)
 	  (standard-output debugger-outer-standard-output)
-	  (cursor-in-echo-area debugger-outer-cursor-in-echo-area))
+	  (cursor-in-echo-area debugger-outer-cursor-in-echo-area)
+	  (overriding-local-map debugger-outer-overriding-local-map)
+	  (load-read-function debugger-outer-load-read-function))
       (store-match-data debugger-outer-match-data)
       (prog1 (eval-expression exp)
 	(setq debugger-outer-match-data (match-data))
+	(setq debugger-outer-load-read-function load-read-function)
+	(setq debugger-outer-overriding-local-map overriding-local-map)
 	(setq debugger-outer-track-mouse track-mouse)
 	(setq debugger-outer-last-command last-command)
 	(setq debugger-outer-this-command this-command)
@@ -413,7 +443,10 @@ If argument is nil or an empty string, cancel for all functions."
 	  (if (nthcdr 5 contents)
 	      (setq body (cons (list 'interactive (nth 5 contents)) body)))
 	  (if (nth 4 contents)
-	      (setq body (cons (nth 4 contents) body)))
+	      ;; Use `documentation' here, to get the actual string,
+	      ;; in case the compiled function has a reference
+	      ;; to the .elc file.
+	      (setq body (cons (documentation function) body)))
 	  (fset function (cons 'lambda (cons (car contents) body)))))))
 
 (defun debug-on-entry-1 (function defn flag)
@@ -449,6 +482,9 @@ If argument is nil or an empty string, cancel for all functions."
 	  (terpri)
 	  (setq list (cdr list))))
       (princ "Note: if you have redefined a function, then it may no longer\n")
-      (princ "be set to debug on entry, even if it is in the list."))))
+      (princ "be set to debug on entry, even if it is in the list."))
+    (save-excursion
+      (set-buffer standard-output)
+      (help-mode))))
 
 ;;; debug.el ends here

@@ -67,6 +67,36 @@ that dbx had this problem and never rewrote them to avoid it.
 I believe that GDB does not have such a problem.
 
 
+** Examining Lisp object values.
+
+When you have a live process to debug, and it has not encountered a
+fatal error, you can use the GDB command `pr'.  First print the value
+in the ordinary way, with the `p' command.  Then type `pr' with no
+arguments.  This calls a subroutine which uses the Lisp printer.
+
+If you can't use this command, either because the process can't run
+a subroutine or because the data is invalid, you can fall back on
+lower-level commands.
+
+Use the `xtype' command to print out the data type of the last data
+value.  Once you know the data type, use the command that corresponds
+to that type.  Here are these commands:
+
+    xint xptr xwindow xmarker xoverlay xmiscfree xintfwd xboolfwd xobjfwd
+    xbufobjfwd xkbobjfwd xbuflocal xbuffer xsymbol xstring xvector xframe
+    xwinconfig xcompiled xcons xcar xcdr xsubr xprocess xfloat xscrollbar
+
+Each one of them applies to a certain type or class of types.
+(Some of these types are not visible in Lisp, because they exist only
+internally.)
+
+Each x... command prints some information about the value, and
+produces a GDB value (subsequently available in $) through which you
+can get at the rest of the contents.
+
+In general, most of the rest of the contents will be addition Lisp
+objects which you can examine in turn with the x... commands.
+
 ** If GDB does not run and your debuggers can't load Emacs.
 
 On some systems, no debugger can load Emacs with a symbol table,

@@ -3,6 +3,7 @@
 ;; Copyright (C) 1990, 1994  Free Software Foundation, Inc.
 
 ;; Author: William F. Mann
+;; Maintainer: FSF
 ;; Adapted-By: ESR
 ;; Keywords: languages
 
@@ -33,7 +34,7 @@
 ;; With argments to perl:
 ;; #!/usr/bin/perl -P-	 # -*-Perl-*-
 ;; To handle files included with do 'filename.pl';, add something like
-;; (setq auto-mode-alist (append (list (cons "\\.pl$" 'perl-mode))
+;; (setq auto-mode-alist (append (list (cons "\\.pl\\'" 'perl-mode))
 ;;                               auto-mode-alist))
 ;; to your .emacs file; otherwise the .pl suffix defaults to prolog-mode.
 
@@ -146,6 +147,25 @@ The expansion is entirely correct because it uses the C preprocessor."
   (modify-syntax-entry ?| "." perl-mode-syntax-table)
 )
 
+(defvar perl-font-lock-keywords
+  (list
+;   ("if" "until" "while" "elsif" "else" "unless" "for" "foreach" "continue"
+;    "exit" "die" "last" "goto" "next" "redo" "return" "local" "exec")
+   (concat "\\<\\("
+	   "continue\\|die\\|e\\(ls\\(e\\|if\\)\\|x\\(ec\\|it\\)\\)\\|"
+	   "for\\(\\|each\\)\\|goto\\|if\\|l\\(ast\\|ocal\\)\\|next\\|"
+	   "re\\(do\\|turn\\)\\|un\\(less\\|til\\)\\|while"
+	   "\\)\\>")
+;   ("#endif" "#else" "#ifdef" "#ifndef" "#if" "#include" "#define" "#undef")
+   (cons (concat "#\\(define\\|e\\(lse\\|ndif\\)\\|"
+		 "i\\(f\\(\\|def\\|ndef\\)\\|nclude\\)\\|undef\\)\\>")
+	 'font-lock-reference-face)
+   '("^[ \n\t]*sub[ \t]+\\([^ \t{]+\\)[ \t]*[{]" 1 font-lock-function-name-face)
+   '("[ \n\t{]*\\(eval\\)[ \n\t(;]" 1 font-lock-function-name-face)
+   '("\\(--- .* ---\\|=== .* ===\\)" . font-lock-string-face)
+   )
+  "Additional expressions to highlight in Perl mode.")
+
 (defvar perl-indent-level 4
   "*Indentation of Perl statements with respect to containing block.")
 (defvar perl-continued-statement-offset 4
@@ -165,7 +185,9 @@ This is in addition to `perl-continued-statement-offset'.")
 Otherwise it inserts a tab character if you type it past the first
 nonwhite character on the line.")
 
-(defvar perl-tab-to-comment t
+;; I changed the default to nil for consistency with general Emacs
+;; conventions -- rms.
+(defvar perl-tab-to-comment nil
   "*Non-nil means TAB moves to eol or makes a comment in some cases.
 For lines which don't need indenting, TAB either indents an
 existing comment, moves to end-of-line, or if at end-of-line already,
@@ -228,7 +250,7 @@ Turning on Perl mode runs the normal hook `perl-mode-hook'."
   (setq local-abbrev-table perl-mode-abbrev-table)
   (set-syntax-table perl-mode-syntax-table)
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^$\\|" page-delimiter))
+  (setq paragraph-start (concat "$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'paragraph-ignore-fill-prefix)
@@ -249,6 +271,8 @@ Turning on Perl mode runs the normal hook `perl-mode-hook'."
   (setq comment-indent-function 'perl-comment-indent)
   (make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(perl-font-lock-keywords))
   (run-hooks 'perl-mode-hook))
 
 ;; This is used by indent-for-comment
@@ -259,8 +283,10 @@ Turning on Perl mode runs the normal hook `perl-mode-hook'."
       0					;Existing comment at bol stays there.
     (save-excursion
       (skip-chars-backward " \t")
-      (max (1+ (current-column))	;Else indent at comment column
-	   comment-column))))		; except leave at least one space.
+      (max (if (bolp)			;Else indent at comment column
+	       0			; except leave at least one space if
+	     (1+ (current-column)))	; not at beginning of line.
+	   comment-column))))
 
 (defun electric-perl-terminator (arg)
   "Insert character and adjust indentation.
@@ -441,8 +467,8 @@ Returns (parse-state) if line starts inside a string."
 			     (memq (char-syntax (char-after (- (point) 2)))
 				   '(?w ?_))))
 	       (if (eq (preceding-char) ?\,)
-		   (perl-backward-to-start-of-continued-exp containing-sexp))
-	       (beginning-of-line)
+		   (perl-backward-to-start-of-continued-exp containing-sexp)
+		 (beginning-of-line))
 	       (perl-backward-to-noncomment))
 	     ;; Now we get the answer.
 	     (if (not (memq (preceding-char) '(?\; ?\} ?\{)))

@@ -3,6 +3,9 @@
  * 
  * Print a quotation from Zippy the Pinhead.
  * Qux <Kaufman-David@Yale> March 6, 1986
+ *
+ * This file is in the public domain because the author published it
+ * with no copyright notice before the US signed the Bern Convention.
  * 
  * With dynamic memory allocation.
  */
@@ -30,13 +33,18 @@
     &res;})
 #endif
 
+char *malloc(), *realloc();
+
+void yow();
+void setup_yow();
+
+int
 main (argc, argv)
      int argc;
      char *argv[];
 {
   FILE *fp;
   char file[BUFSIZ];
-  void yow(), setup_yow();
 
   if (argc > 2 && !strcmp (argv[1], "-f"))
     strcpy (file, argv[2]);
@@ -48,6 +56,7 @@ main (argc, argv)
 #endif
 
   if ((fp = fopen(file, "r")) == NULL) {
+    fprintf(stderr, "yow: ");
     perror(file);
     exit(1);
   }
@@ -58,7 +67,7 @@ main (argc, argv)
   setup_yow(fp);
   yow(fp);
   fclose(fp);
-  exit(0);
+  return 0;
 }
 
 static long len = -1;
@@ -79,7 +88,7 @@ setup_yow(fp)
    * we explicitly skip that. */
   while ((c = getc(fp)) != SEP) {
     if (c == EOF) {
-      fprintf(stderr, "File contains no separators.\n");
+      fprintf(stderr, "yow: file contains no separators\n");
       exit(2);
     }
   }
@@ -88,7 +97,7 @@ setup_yow(fp)
     header_len -= AVG_LEN;	/* allow the first quotation to appear */
 	
   if (fseek(fp, 0L, 2) == -1) {
-    perror("fseek 1");
+    perror("yow");
     exit(1);
   }
   len = ftell(fp) - header_len;
@@ -104,11 +113,10 @@ yow (fp)
   int c, i = 0;
   char *buf;
   unsigned int bufsize;
-  char *malloc(), *realloc();
 
   offset = rand() % len + header_len;
   if (fseek(fp, offset, 0) == -1) {
-    perror("fseek 2");
+    perror("yow");
     exit(1);
   }
 
@@ -133,7 +141,7 @@ yow (fp)
   bufsize = BUFSIZE;
   buf = malloc(bufsize);
   if (buf == (char *)0) {
-    fprintf(stderr, "can't allocate any memory\n");
+    fprintf(stderr, "yow: virtual memory exhausted\n");
     exit (3);
   }
 
@@ -146,7 +154,7 @@ yow (fp)
       bufsize *= 2;
       buf = realloc(buf, bufsize);
       if (buf == (char *)0) {
-	fprintf(stderr, "can't allocate more memory\n");
+	fprintf(stderr, "yow: virtual memory exhausted\n");
 	exit (3);
       }
     }

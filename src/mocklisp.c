@@ -1,11 +1,11 @@
 /* Mocklisp compatibility functions for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1995 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -210,9 +210,9 @@ is converted into a string by expressing it in decimal.")
     {
       tem = args[argnum];
     retry:
-      if (XTYPE (tem) == Lisp_Int)
+      if (INTEGERP (tem))
 	tem = Fnumber_to_string (tem);
-      if (XTYPE (tem) == Lisp_String)
+      if (STRINGP (tem))
 	insert1 (tem);
       else
 	{

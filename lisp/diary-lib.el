@@ -67,15 +67,27 @@ in the displayed three-month calendar."
     (if (and d-file (file-exists-p d-file))
         (if (file-readable-p d-file)
             (list-diary-entries (calendar-cursor-to-date t) arg)
-          (error "Your diary file is not readable!"))
+          (error "Diary file is not readable!"))
       (error "You don't have a diary file!"))))
+
+(defun view-other-diary-entries (arg diary-file)
+  "Prepare and display buffer of diary entries from an alternative diary file.
+Prompts for a file name and searches that file for entries that match ARG
+days starting with the date indicated by the cursor position in the displayed
+three-month calendar."
+  (interactive
+   (list (cond ((null current-prefix-arg) 1)
+               ((listp current-prefix-arg) (car current-prefix-arg))
+               (t current-prefix-arg))
+         (setq diary-file (read-file-name "Enter diary file name: "
+                                          default-directory nil t))))
+  (view-diary-entries arg))
 
 (autoload 'check-calendar-holidays "holidays"
   "Check the list of holidays for any that occur on DATE.
 The value returned is a list of strings of relevant holiday descriptions.
 The holidays are those in the list `calendar-holidays'."
   t)
-
 
 (autoload 'calendar-holiday-list "holidays"
   "Form the list of holidays that occur on dates in the calendar window.
@@ -345,11 +357,8 @@ This function is provided for optional use as the `diary-display-hook'."
           (display-buffer holiday-buffer)
           (message  "No diary entries for %s" date-string)))
     (save-excursion;; Prepare the fancy diary buffer.
-      (set-buffer (get-buffer-create fancy-diary-buffer))
+      (set-buffer (make-fancy-diary-buffer))
       (setq buffer-read-only nil)
-      (make-local-variable 'mode-line-format)
-      (calendar-set-mode-line "Diary Entries")
-      (erase-buffer)
       (let ((entry-list diary-entries-list)
             (holiday-list)
             (holiday-list-last-month 1)
@@ -405,6 +414,18 @@ This function is provided for optional use as the `diary-display-hook'."
       (setq buffer-read-only t)
       (display-buffer fancy-diary-buffer)
       (message "Preparing diary...done"))))
+
+(defun make-fancy-diary-buffer ()
+  "Create and return the initial fancy diary buffer."
+  (save-excursion
+    (set-buffer (get-buffer-create fancy-diary-buffer))
+    (setq buffer-read-only nil)
+    (make-local-variable 'mode-line-format)
+    (calendar-set-mode-line "Diary Entries")
+    (erase-buffer)
+    (set-buffer-modified-p nil)
+    (setq buffer-read-only t)
+    (get-buffer fancy-diary-buffer)))
 
 (defun print-diary-entries ()
   "Print a hard copy of the diary display.
@@ -761,12 +782,12 @@ For example, returns 1325 for 1:25pm.  Returns -9999 if no time is recognized.
 The recognized forms are XXXX or X:XX or XX:XX (military time), XXam or XXpm,
 and XX:XXam or XX:XXpm."
   (cond ((string-match;; Military time  
-          "^ *\\([0-9]?[0-9]\\):?\\([0-9][0-9]\\)\\(\\>\\|[^ap]\\)" s)
+          "^[ \t]*\\([0-9]?[0-9]\\):?\\([0-9][0-9]\\)\\(\\>\\|[^ap]\\)" s)
          (+ (* 100 (string-to-int
                     (substring s (match-beginning 1) (match-end 1))))
             (string-to-int (substring s (match-beginning 2) (match-end 2)))))
         ((string-match;; Hour only  XXam or XXpm
-          "^ *\\([0-9]?[0-9]\\)\\([ap]\\)m\\>" s)
+          "^[ \t]*\\([0-9]?[0-9]\\)\\([ap]\\)m\\>" s)
          (+ (* 100 (% (string-to-int
                          (substring s (match-beginning 1) (match-end 1)))
                         12))
@@ -774,7 +795,7 @@ and XX:XXam or XX:XXpm."
                               (substring s (match-beginning 2) (match-end 2)))
                 0 1200)))
         ((string-match;; Hour and minute  XX:XXam or XX:XXpm
-          "^ *\\([0-9]?[0-9]\\):\\([0-9][0-9]\\)\\([ap]\\)m\\>" s)
+          "^[ \t]*\\([0-9]?[0-9]\\):\\([0-9][0-9]\\)\\([ap]\\)m\\>" s)
          (+ (* 100 (% (string-to-int
                          (substring s (match-beginning 1) (match-end 1)))
                         12))
@@ -1322,7 +1343,7 @@ ending of that number (that is, `st', `nd', `rd' or `th', as appropriate."
 (defun diary-ordinal-suffix (n)
   "Ordinal suffix for N. (That is, `st', `nd', `rd', or `th', as appropriate.)"
   (if (or (memq (% n 100) '(11 12 13))
-	  (< 3 (% n 10)))
+          (< 3 (% n 10)))
       "th"
     (aref ["th" "st" "nd" "rd"] (% n 10))))
 

@@ -280,7 +280,7 @@ If the third argument is incorrect, Emacs may crash.")
   register unsigned char *strbeg;
 
   CHECK_STRING (bytestr, 0);
-  if (XTYPE (vector) != Lisp_Vector)
+  if (!VECTORP (vector))
     vector = wrong_type_argument (Qvectorp, vector);
   CHECK_NUMBER (maxdepth, 2);
 
@@ -336,29 +336,13 @@ If the third argument is incorrect, Emacs may crash.")
 	  op = op - Bvarref;
 	varref:
 	  v1 = vectorp[op];
-	  if (XTYPE (v1) != Lisp_Symbol)
+	  if (!SYMBOLP (v1))
 	    v2 = Fsymbol_value (v1);
 	  else
 	    {
 	      v2 = XSYMBOL (v1)->value;
-#ifdef SWITCH_ENUM_BUG
-	      switch ((int) XTYPE (v2))
-#else
-	      switch (XTYPE (v2))
-#endif
-		{
-		case Lisp_Symbol:
-		  if (!EQ (v2, Qunbound))
-		    break;
-		case Lisp_Intfwd:
-		case Lisp_Boolfwd:
-		case Lisp_Objfwd:
-		case Lisp_Buffer_Local_Value:
-		case Lisp_Some_Buffer_Local_Value:
-		case Lisp_Buffer_Objfwd:
-		case Lisp_Void:
-		  v2 = Fsymbol_value (v1);
-		}
+	      if (MISCP (v2) || EQ (v2, Qunbound))
+		v2 = Fsymbol_value (v1);
 	    }
 	  PUSH (v2);
 	  break;
@@ -407,11 +391,11 @@ If the third argument is incorrect, Emacs may crash.")
 	docall:
 	  DISCARD (op);
 #ifdef BYTE_CODE_METER
-	  if (byte_metering_on && XTYPE (TOP) == Lisp_Symbol)
+	  if (byte_metering_on && SYMBOLP (TOP))
 	    {
 	      v1 = TOP;
 	      v2 = Fget (v1, Qbyte_code_meter);
-	      if (XTYPE (v2) == Lisp_Int
+	      if (INTEGERP (v2)
 		  && XINT (v2) != ((1<<VALBITS)-1))
 		{
 		  XSETINT (v2, XINT (v2) + 1);
@@ -611,7 +595,7 @@ If the third argument is incorrect, Emacs may crash.")
 	  goto docar;
 
 	case Bsymbolp:
-	  TOP = XTYPE (TOP) == Lisp_Symbol ? Qt : Qnil;
+	  TOP = SYMBOLP (TOP) ? Qt : Qnil;
 	  break;
 
 	case Bconsp:
@@ -619,7 +603,7 @@ If the third argument is incorrect, Emacs may crash.")
 	  break;
 
 	case Bstringp:
-	  TOP = XTYPE (TOP) == Lisp_String ? Qt : Qnil;
+	  TOP = STRINGP (TOP) ? Qt : Qnil;
 	  break;
 
 	case Blistp:
@@ -750,7 +734,7 @@ If the third argument is incorrect, Emacs may crash.")
 
 	case Bsub1:
 	  v1 = TOP;
-	  if (XTYPE (v1) == Lisp_Int)
+	  if (INTEGERP (v1))
 	    {
 	      XSETINT (v1, XINT (v1) - 1);
 	      TOP = v1;
@@ -761,7 +745,7 @@ If the third argument is incorrect, Emacs may crash.")
 
 	case Badd1:
 	  v1 = TOP;
-	  if (XTYPE (v1) == Lisp_Int)
+	  if (INTEGERP (v1))
 	    {
 	      XSETINT (v1, XINT (v1) + 1);
 	      TOP = v1;
@@ -804,7 +788,7 @@ If the third argument is incorrect, Emacs may crash.")
 
 	case Bnegate:
 	  v1 = TOP;
-	  if (XTYPE (v1) == Lisp_Int)
+	  if (INTEGERP (v1))
 	    {
 	      XSETINT (v1, - XINT (v1));
 	      TOP = v1;
@@ -844,7 +828,7 @@ If the third argument is incorrect, Emacs may crash.")
 	  break;
 
 	case Bpoint:
-	  XFASTINT (v1) = point;
+	  XSETFASTINT (v1, point);
 	  PUSH (v1);
 	  break;
 
@@ -863,12 +847,12 @@ If the third argument is incorrect, Emacs may crash.")
 	  break;
 
 	case Bpoint_max:
-	  XFASTINT (v1) = ZV;
+	  XSETFASTINT (v1, ZV);
 	  PUSH (v1);
 	  break;
 
 	case Bpoint_min:
-	  XFASTINT (v1) = BEGV;
+	  XSETFASTINT (v1, BEGV);
 	  PUSH (v1);
 	  break;
 
@@ -877,17 +861,17 @@ If the third argument is incorrect, Emacs may crash.")
 	  break;
 
 	case Bfollowing_char:
-	  XFASTINT (v1) = PT == ZV ? 0 : FETCH_CHAR (point);
+	  v1 = Ffollowing_char ();
 	  PUSH (v1);
 	  break;
 
 	case Bpreceding_char:
-	  XFASTINT (v1) = point <= BEGV ? 0 : FETCH_CHAR (point - 1);
+	  v1 = Fprevious_char ();
 	  PUSH (v1);
 	  break;
 
 	case Bcurrent_column:
-	  XFASTINT (v1) = current_column ();
+	  XSETFASTINT (v1, current_column ());
 	  PUSH (v1);
 	  break;
 
@@ -952,7 +936,8 @@ If the third argument is incorrect, Emacs may crash.")
 
 	case Bchar_syntax:
 	  CHECK_NUMBER (TOP, 0);
-	  XFASTINT (TOP) = syntax_code_spec[(int) SYNTAX (0xFF & XINT (TOP))];
+	  XSETFASTINT (TOP,
+		       syntax_code_spec[(int) SYNTAX (XINT (TOP))]);
 	  break;
 
 	case Bbuffer_substring:
@@ -1021,7 +1006,7 @@ If the third argument is incorrect, Emacs may crash.")
 	  break;
 
 	case Belt:
-	  if (XTYPE (TOP) == Lisp_Cons)
+	  if (CONSP (TOP))
 	    {
 	      /* Exchange args and then do nth.  */
 	      v2 = POP;
@@ -1058,7 +1043,7 @@ If the third argument is incorrect, Emacs may crash.")
 
 	case Bcar_safe:
 	  v1 = TOP;
-	  if (XTYPE (v1) == Lisp_Cons)
+	  if (CONSP (v1))
 	    TOP = XCONS (v1)->car;
 	  else
 	    TOP = Qnil;
@@ -1066,7 +1051,7 @@ If the third argument is incorrect, Emacs may crash.")
 
 	case Bcdr_safe:
 	  v1 = TOP;
-	  if (XTYPE (v1) == Lisp_Cons)
+	  if (CONSP (v1))
 	    TOP = XCONS (v1)->cdr;
 	  else
 	    TOP = Qnil;
@@ -1082,7 +1067,7 @@ If the third argument is incorrect, Emacs may crash.")
 	  break;
 
 	case Bintegerp:
-	  TOP = XTYPE (TOP) == Lisp_Int ? Qt : Qnil;
+	  TOP = INTEGERP (TOP) ? Qt : Qnil;
 	  break;
 
 #ifdef BYTE_CODE_SAFE

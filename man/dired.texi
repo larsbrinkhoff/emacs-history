@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Dired, Calendar/Diary, Rmail, Top
 @chapter Dired, the Directory Editor
@@ -118,6 +118,7 @@ negated.
 
 @kindex x @r{(Dired)}
 @findex dired-expunge
+@cindex expunging (Dired)
   To delete the flagged files, type @kbd{x} (@code{dired-expunge}).
 This command first displays a list of all the file names flagged for
 deletion, and requests confirmation with @kbd{yes}.  If you confirm,
@@ -146,9 +147,7 @@ few backup files of any one file are exempt; the middle ones are flagged.
 
 @item % d @var{regexp} @key{RET}
 Flag for deletion all files whose names match the regular expression
-@var{regexp} (@code{dired-flag-files-regexp}).  @samp{%d} is like @kbd{%
-m} except that it flags files with @samp{D} instead of marking with
-@samp{*}.  @xref{Marks vs Flags}.
+@var{regexp} (@code{dired-flag-files-regexp}).
 @end table
 
 @kindex # @r{(Dired)}
@@ -205,6 +204,10 @@ that subdirectory (making a separate Dired buffer).
 @findex dired-find-file
 Visit the file described on the current line, like typing @kbd{C-x C-f}
 and supplying that file name (@code{dired-find-file}).  @xref{Visiting}.
+
+@item @key{RET}
+@kindex @key{RET} @r{(Dired)}
+Equivalent to @kbd{f}.
 
 @item o
 @kindex o @r{(Dired)}
@@ -318,7 +321,9 @@ c * t  c SPC *  c t SPC
 @findex dired-mark-files-regexp
 @kindex % m @r{(Dired)}
 Mark (with @samp{*}) all files whose names match the regular expression
-@var{regexp} (@code{dired-mark-files-regexp}).
+@var{regexp} (@code{dired-mark-files-regexp}).  @kbd{% m} is like @kbd{%
+d}, except that it marks files with @samp{*} instead of flagging with
+@samp{D}.  @xref{Flagging Many Files}.
 
 Only the non-directory part of the file name is used in matching.  Use
 @samp{^} and @samp{$} to anchor matches.  Exclude subdirectories by
@@ -352,7 +357,7 @@ Otherwise, the command operates on the current file only.
 
   Here are the file-manipulating commands that operate on files in this
 way.  (Some other Dired commands, such as @kbd{!} and the @samp{%}
-commands, use the same conventions to decide which files to work on.)
+commands, also use these conventions to decide which files to work on.)
 
 @table @kbd
 @findex dired-do-copy
@@ -444,7 +449,34 @@ Load the specified Emacs Lisp files (@code{dired-do-load}).
 Byte compile the specified Emacs Lisp files
 (@code{dired-do-byte-compile}).  @xref{Byte Compilation,, Byte
 Compilation, elisp, The Emacs Lisp Reference Manual}.
+
+@kindex A @r{(Dired)}
+@findex dired-do-search
+@item A @var{regexp} @key{RET}
+Search all the specified files for the regular expression @var{regexp}
+(@code{dired-do-search}).
+
+This command is a variant of @code{tags-search}.  The search stops at
+the first match it finds; use @kbd{M-,} to resume the search and find
+the next match.  @xref{Tags Search}.
+
+@kindex Q @r{(Dired)}
+@findex dired-do-query-replace
+@item Q @var{from} @key{RET} @var{to} @key{RET}
+Perform @code{query-replace-regexp} on each of the specified files,
+replacing matches for @var{from} (a regular expression) with the string
+@var{to} (@code{dired-do-query-replace}).
+
+This command is a variant of @code{tags-query-replace}.  If you exit the
+query replace loop, you can use @kbd{M-,} to resume the scan and replace
+more matches.  @xref{Tags Search}.
 @end table
+
+@kindex + @r{(Dired)}
+@findex dired-create-directory
+  One special file-operation command is @kbd{+}
+(@code{dired-create-directory}).  This command reads a directory name and
+creates the directory if it does not already exist.
 
 @node Shell Commands in Dired
 @section Shell Commands in Dired
@@ -531,15 +563,15 @@ from the name of the old file.
 @end table
 
   The four regular expression substitution commands effectively perform
-@code{query-replace-regexp} on the selected file names in the Dired
-buffer.  They read two arguments: a regular expression @var{from}, and a
+a search-and-replace on the selected file names in the Dired buffer.
+They read two arguments: a regular expression @var{from}, and a
 substitution pattern @var{to}.
 
   The commands match each ``old'' file name against the regular
 expression @var{from}, and then replace the matching part with @var{to}.
 You can use @samp{\&} and @samp{\@var{digit}} in @var{to} to refer to
 all or part of what the pattern matched in the old file name, as in
-@code{query-replace} (@pxref{Query Replace}).  If the regular expression
+@code{query-replace-regexp} (@pxref{Query Replace}).  If the regular expression
 matches more than once in a file name, only the first match is replaced.
 
   For example, @kbd{% R ^.*$ @key{RET} x-\& @key{RET}} renames each
@@ -558,7 +590,7 @@ entire absolute file name including directory name.
 same @var{regexp} that you use in the command.  To do this, mark those
 files with @kbd{% m @var{regexp} @key{RET}}, then use the same regular
 expression in the command to operate on the files.  To make this easier,
-the @samp{%} commands to operate on files use the last regular
+the @kbd{%} commands to operate on files use the last regular
 expression specified in any @kbd{%} command as a default.
 
 @node Comparison in Dired
@@ -808,3 +840,9 @@ minibuffer arguments, @var{directory} and @var{find-args}; it runs
 @code{find} in @var{directory}, passing @var{find-args} to tell
 @code{find} what condition to test.  To use this command, you need to
 know how to use @code{find}.
+
+@vindex find-ls-option
+  The format of listing produced by these commands is controlled by the
+variable @code{find-ls-option}, whose default value specifies using
+options @samp{-ldi} for @code{ls}.  If your listings are corrupted, you
+may need to change the value of this variable.

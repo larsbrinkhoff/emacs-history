@@ -1,25 +1,3 @@
-% -*-texinfo-*-
-
-% Follow the following instructions to print the VIP manual.
-%
-% Run tex on this file:
-%
-%	tex vip.texinfo
-%
-% This creates vip.dvi and some files for cross references and
-% indices.  Since the manual contains key index and concept
-% index, it is necessary to create sorted index files for
-% them.  It is also necessary to edit the file vip.kys.  This
-% is done as follows.
-%
-%	texindex vip.ky vip.cp
-%	sed -e '/\\initial/ d' -e 's/{[^ ]* /{/' vip.kys > tmp
-%	mv tmp vip.kys
-%	tex vip.texinfo
-%
-% The dvi file created by the second run of tex can be used
-% for printing.
-
 \input texinfo
 
 @setfilename ../info/vip

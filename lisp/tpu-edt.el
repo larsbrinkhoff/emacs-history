@@ -1,6 +1,6 @@
 ;;; tpu-edt.el --- Emacs emulating TPU emulating EDT
 
-;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1994, 1995 Free Software Foundation, Inc.
 
 ;; Author: Rob Riepel <riepel@networking.stanford.edu>
 ;; Maintainer: Rob Riepel <riepel@networking.stanford.edu>
@@ -59,17 +59,11 @@
 ;;;     o tpu-update-mode-line  o mode line section
 ;;;
 (defconst tpu-emacs19-p (not (string-lessp emacs-version "19"))
-  "Non-NIL if we are running Lucid or GNU Emacs version 19.")
-
-(defconst tpu-gnu-emacs18-p (not tpu-emacs19-p)
-  "Non-NIL if we are running GNU Emacs version 18.")
+  "Non-nil if we are running Lucid Emacs or version 19.")
 
 (defconst tpu-lucid-emacs19-p
   (and tpu-emacs19-p (string-match "Lucid" emacs-version))
-  "Non-NIL if we are running Lucid Emacs version 19.")
-
-(defconst tpu-gnu-emacs19-p (and tpu-emacs19-p (not tpu-lucid-emacs19-p))
-  "Non-NIL if we are running GNU Emacs version 19.")
+  "Non-nil if we are running Lucid Emacs version 19.")
 
 
 ;;;
@@ -99,7 +93,7 @@ GOLD is the ASCII 7-bit escape sequence <ESC>OP.")
 
 (and tpu-lucid-emacs19-p
      (defvar minibuffer-local-ns-map (make-sparse-keymap)
-       "Hack to give Lucid emacs the same maps as GNU emacs."))
+       "Hack to give Lucid Emacs the same maps as ordinary Emacs."))
 
 
 ;;;
@@ -224,12 +218,12 @@ GOLD is the ASCII 7-bit escape sequence <ESC>OP.")
   (cond (tpu-emacs19-p (force-mode-line-update))
 	(t (set-buffer-modified-p (buffer-modified-p)) (sit-for 0))))
 
-(cond (tpu-gnu-emacs19-p
-       (add-hook 'activate-mark-hook 'tpu-update-mode-line)
-       (add-hook 'deactivate-mark-hook 'tpu-update-mode-line))
-      (tpu-lucid-emacs19-p
+(cond (tpu-lucid-emacs19-p
        (add-hook 'zmacs-deactivate-region-hook 'tpu-update-mode-line)
-       (add-hook 'zmacs-activate-region-hook 'tpu-update-mode-line)))
+       (add-hook 'zmacs-activate-region-hook 'tpu-update-mode-line))
+      (tpu-emacs19-p
+       (add-hook 'activate-mark-hook 'tpu-update-mode-line)
+       (add-hook 'deactivate-mark-hook 'tpu-update-mode-line)))
 
 
 ;;;
@@ -303,15 +297,15 @@ Otherwise sets the tpu-match markers to nil and returns nil."
 (defun tpu-mark nil
   "TPU-edt version of the mark function.
 Return the appropriate value of the mark for the current
-version of emacs."
+version of Emacs."
   (cond (tpu-lucid-emacs19-p (mark (not zmacs-regions)))
-	(tpu-gnu-emacs19-p (and mark-active (mark (not transient-mark-mode))))
+	(tpu-emacs19-p (and mark-active (mark (not transient-mark-mode))))
 	(t (mark))))
 
 (defun tpu-set-mark (pos)
-  "TPU-edt verion of the set-mark function.
+  "TPU-edt verion of the `set-mark' function.
 Sets the mark at POS and activates the region acording to the
-current version of emacs."
+current version of Emacs."
   (set-mark pos)
   (and tpu-lucid-emacs19-p pos (zmacs-activate-region)))
 
@@ -326,7 +320,7 @@ current version of emacs."
 (defun tpu-y-or-n-p (prompt &optional not-yes)
   "Prompt for a y or n answer with positive default.
 Optional second argument NOT-YES changes default to negative.
-Like emacs y-or-n-p, also accepts space as y and DEL as n."
+Like Emacs `y-or-n-p', but also accepts space as y and DEL as n."
   (message (format "%s[%s]" prompt (if not-yes "n" "y")))
   (let ((doit t))
     (while doit
@@ -917,32 +911,49 @@ direction.  If an argument is specified, don't set the search direction."
   (tpu-unset-match)
   (tpu-adjust-search)
 
-  (cond ((tpu-emacs-search tpu-search-last-string nil t)
-	 (tpu-set-match) (goto-char (tpu-match-beginning)))
+  (let ((case-fold-search
+	 (and case-fold-search (tpu-check-search-case tpu-search-last-string))))
 
-	(t
-	 (tpu-adjust-search t)
-	 (let ((found nil) (pos nil))
-	   (save-excursion
-	     (let ((tpu-searching-forward (not tpu-searching-forward)))
-	       (tpu-adjust-search)
-	       (setq found (tpu-emacs-rev-search tpu-search-last-string nil t))
-	       (setq pos (match-beginning 0))))
+    (cond ((tpu-emacs-search tpu-search-last-string nil t)
+	   (tpu-set-match) (goto-char (tpu-match-beginning)))
 
-	   (cond (found
-		  (cond ((tpu-y-or-n-p
-			  (format "Found in %s direction.  Go there? "
-				  (if tpu-searching-forward "reverse" "forward")))
-			 (goto-char pos) (tpu-set-match)
-			 (tpu-toggle-search-direction))))
+	  (t
+	   (tpu-adjust-search t)
+	   (let ((found nil) (pos nil))
+	     (save-excursion
+	       (let ((tpu-searching-forward (not tpu-searching-forward)))
+		 (tpu-adjust-search)
+		 (setq found (tpu-emacs-rev-search tpu-search-last-string nil t))
+		 (setq pos (match-beginning 0))))
 
-		 (t
-		  (if (not quiet)
-		      (message
-		       "%sSearch failed: \"%s\""
-		       (if tpu-regexp-p "RE " "") tpu-search-last-string))))))))
+	     (cond
+	      (found
+	       (cond ((tpu-y-or-n-p
+		       (format "Found in %s direction.  Go there? "
+			       (if tpu-searching-forward "reverse" "forward")))
+		      (goto-char pos) (tpu-set-match)
+		      (tpu-toggle-search-direction))))
+
+	      (t
+	       (if (not quiet)
+		   (message
+		    "%sSearch failed: \"%s\""
+		    (if tpu-regexp-p "RE " "") tpu-search-last-string)))))))))
 
 (fset 'tpu-search-internal-core (symbol-function 'tpu-search-internal))
+
+(defun tpu-check-search-case (string)
+  "Returns t if string contains upper case."
+  ;; if using regexp, elimiate upper case forms (\B \W \S.)
+  (if tpu-regexp-p
+      (let ((pat (copy-sequence string)) (case-fold-search nil) (pos 0))
+	(while (setq pos (string-match "\\\\\\\\" pat)) (aset pat (+ 1 pos) ?.))
+	(while (setq pos (string-match "\\\\B" pat)) (aset pat (+ 1 pos) ?.))
+	(while (setq pos (string-match "\\\\W" pat)) (aset pat (+ 1 pos) ?.))
+	(while (setq pos (string-match "\\\\S." pat))
+	  (aset pat (+ 1 pos) ?.) (aset pat (+ 2 pos) ?.))
+	(string-equal pat (downcase pat)))
+    (string-equal string (downcase string))))
 
 (defun tpu-adjust-search (&optional arg)
   "For forward searches, move forward a character before searching,
@@ -2089,16 +2100,19 @@ Accepts a prefix argument for the number of tpu-pan-columns to scroll."
 (defun tpu-load-xkeys (file)
   "Load the TPU-edt X-windows key definitions FILE.
 If FILE is nil, try to load a default file.  The default file names are
-~/.tpu-lucid-keys for Lucid emacs, and ~/.tpu-gnu-keys for GNU emacs."
+`~/.tpu-lucid-keys' for Lucid emacs, and `~/.tpu-keys' for Emacs."
   (interactive "fX key definition file: ")
   (cond (file
 	 (setq file (expand-file-name file)))
 	(tpu-xkeys-file
 	 (setq file (expand-file-name tpu-xkeys-file)))
-	(tpu-gnu-emacs19-p
-	 (setq file (expand-file-name "~/.tpu-gnu-keys")))
 	(tpu-lucid-emacs19-p
-	 (setq file (expand-file-name "~/.tpu-lucid-keys"))))
+	 (setq file (expand-file-name "~/.tpu-lucid-keys")))
+	(tpu-emacs19-p
+	 (setq file (expand-file-name "~/.tpu-keys"))
+	 (and (not (file-exists-p file))
+	      (file-exists-p (expand-file-name "~/.tpu-gnu-keys"))
+	      (tpu-copy-keyfile (expand-file-name "~/.tpu-gnu-keys") file))))
   (cond ((file-readable-p file)
 	 (load-file file))
 	(t
@@ -2130,6 +2144,34 @@ If FILE is nil, try to load a default file.  The default file names are
 		 (t
 		  (insert "Nope, I can't seem to find it.  :-(\n\n")
 		  (sit-for 120)))))))
+
+(defun tpu-copy-keyfile (oldname newname)
+  "Copy the TPU-edt X key definitions file to the new default name."
+  (interactive "fOld name: \nFNew name: ")
+  (if (not (get-buffer "*TPU-Notice*")) (generate-new-buffer "*TPU-Notice*"))
+  (set-buffer "*TPU-Notice*")
+  (erase-buffer)
+  (insert "
+  NOTICE --
+
+  The default name of the TPU-edt key definition file has changed
+  from `~/.tpu-gnu-keys' to `~/.tpu-keys'.  With your permission,
+  your key definitions will be copied to the new file.  If you'll
+  never use older versions of Emacs, you can remove the old file.
+  If the copy fails, you'll be asked if you want to create a new
+  key definitions file.  Do you want to copy your key definition
+  file now?
+  ")
+  (save-window-excursion
+    (switch-to-buffer-other-window "*TPU-Notice*")
+    (shrink-window-if-larger-than-buffer)
+    (goto-char (point-min))
+    (beep)
+    (and (tpu-y-or-n-p "Copy key definitions to the new file now? ")
+	 (condition-case conditions
+             (copy-file oldname newname)
+	   (error (message "Sorry, couldn't copy - %s" (cdr conditions)))))
+    (kill-buffer "*TPU-Notice*")))
 
 
 ;;;
@@ -2174,12 +2216,6 @@ If FILE is nil, try to load a default file.  The default file names are
     (setq global-map (copy-keymap tpu-original-global-map))
     (use-global-map global-map)
     (setq tpu-edt-mode nil))))
-
-
-;;;
-;;;  Turn on TPU-edt and announce it as a feature
-;;;
-(tpu-edt-mode)
 
 (provide 'tpu-edt)
 

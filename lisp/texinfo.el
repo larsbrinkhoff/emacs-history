@@ -196,6 +196,20 @@ chapter."
   (modify-syntax-entry ?} "){" texinfo-mode-syntax-table)
   (modify-syntax-entry ?\' "w" texinfo-mode-syntax-table))
 
+(defvar texinfo-font-lock-keywords
+  (list
+   '("^\\(@c\\|@comment\\)[ \t].*" . font-lock-comment-face)	;comments
+   "@\\(@\\|[^}\t \n{]+\\)"					;commands
+   '("^\\(*.*\\)[\t ]*$" 1 font-lock-function-name-face t)	;menu items
+   '("@\\(emph\\|strong\\|b\\|i\\){\\([^}]+\\)" 2 font-lock-comment-face t)
+   '("@\\(file\\|kbd\\|key\\){\\([^}]+\\)" 2 font-lock-string-face t)
+   '("@\\(samp\\|code\\|var\\){\\([^}]+\\)" 2 font-lock-function-name-face t)
+   '("@\\(xref\\|pxref\\){\\([^}]+\\)" 2 font-lock-keyword-face t)
+   '("@end *\\([a-zA-Z0-9]+\\)[ \t]*$" 1 font-lock-function-name-face t)
+   '("@item \\(.*\\)$" 1 font-lock-function-name-face t)
+   '("\\$\\([^$]*\\)\\$" 1 font-lock-string-face t)
+   )
+  "Additional expressions to highlight in TeXinfo mode.")
 
 ;;; Keybindings
 (defvar texinfo-mode-map nil)
@@ -248,7 +262,6 @@ chapter."
   (define-key texinfo-mode-map "\C-c\C-s"     'texinfo-show-structure)
 
   (define-key texinfo-mode-map "\C-c}"    	'up-list)
-  (define-key texinfo-mode-map "\C-c]"    	'up-list)
   (define-key texinfo-mode-map "\C-c{"    	'texinfo-insert-braces)
 
   ;; bindings for inserting strings
@@ -360,9 +373,9 @@ value of texinfo-mode-hook."
   (make-local-variable 'indent-tabs-mode)
   (setq indent-tabs-mode nil)
   (make-local-variable 'paragraph-separate)
-  (setq paragraph-separate (concat "^\b\\|^@[a-zA-Z]*[ \n]\\|" paragraph-separate))
+  (setq paragraph-separate (concat "\b\\|@[a-zA-Z]*[ \n]\\|" paragraph-separate))
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^\b\\|^@[a-zA-Z]*[ \n]\\|" paragraph-start))
+  (setq paragraph-start (concat "\b\\|@[a-zA-Z]*[ \n]\\|" paragraph-start))
   (make-local-variable 'fill-column)
   (setq fill-column 72)
   (make-local-variable 'comment-start)
@@ -371,6 +384,8 @@ value of texinfo-mode-hook."
   (setq comment-start-skip "@c +")
   (make-local-variable 'words-include-escapes)
   (setq words-include-escapes t)
+  (make-local-variable 'font-lock-defaults)
+  (setq font-lock-defaults '(texinfo-font-lock-keywords))
   (make-local-variable 'tex-start-of-header)
   (setq tex-start-of-header "%**start")
   (make-local-variable 'tex-end-of-header)
@@ -381,16 +396,13 @@ value of texinfo-mode-hook."
 ;;; Insert string commands
 
 (defconst texinfo-environment-regexp
-  "^@\\(f?table\\|enumerate\\|itemize\\|ifinfo\\|iftex\\|ifset\\|ifclear\
+  "^@\\(f?table\\|enumerate\\|itemize\
+\\|ifhtml\\|ifinfo\\|iftex\\|ifset\\|ifclear\
 \\|example\\|quotation\\|lisp\\|smallexample\\|smalllisp\\|display\\|format\
-\\|flushleft\\|flushright\\|ignore\\|group\\|tex\\|cartouche\\|end\
-\\|def[a-z]*\\)"
+\\|flushleft\\|flushright\\|ignore\\|group\\|tex\\|html\\|cartouche\\|menu\
+\\|titlepage\\|end\\|def[a-z]*[a-wyz]\\>\\)"
   "Regexp for environment-like Texinfo list commands.
 Subexpression 1 is what goes into the corresponding `@end' statement.")
-
-;; The following texinfo-insert-@end command not only inserts a SPC
-;; after the @end, but tries to find out what belongs there.  It is
-;; not very smart: it does not understand nested lists.
 
 (defun texinfo-insert-@end ()
   "Insert the matching `@end' for the last Texinfo command that needs one."
@@ -403,9 +415,10 @@ Subexpression 1 is what goes into the corresponding `@end' statement.")
 	    (setq depth (1+ depth))
 	  (setq depth (1- depth)))))
       (looking-at texinfo-environment-regexp)
-      (setq string
-	    (buffer-substring (match-beginning 1)
-			      (match-end 1))))
+      (if (zerop depth)
+	  (setq string
+		(buffer-substring (match-beginning 1)
+				  (match-end 1)))))
     (insert "@end ")
     (if string (insert string "\n"))))
 

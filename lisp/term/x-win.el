@@ -78,35 +78,53 @@
 
 (defvar x-command-line-resources nil)
 
-(setq command-switch-alist
-      (append '(("-bw" .	x-handle-numeric-switch)
-		("-d" .		x-handle-display)
-		("-display" .	x-handle-display)
-		("-name" .	x-handle-name-rn-switch)
-		("-rn" .	x-handle-name-rn-switch)
-		("-T" .		x-handle-switch)
-		("-r" .		x-handle-switch)
-		("-rv" .	x-handle-switch)
-		("-reverse" .	x-handle-switch)
-		("-fn" .	x-handle-switch)
-		("-font" .	x-handle-switch)
-		("-ib" .	x-handle-numeric-switch)
-		("-g" .		x-handle-geometry)
-		("-geometry" .	x-handle-geometry)
-		("-fg" .	x-handle-switch)
-		("-foreground".	x-handle-switch)
-		("-bg" .	x-handle-switch)
-		("-background".	x-handle-switch)
-		("-ms" .	x-handle-switch)
-		("-itype" .	x-handle-switch)
-		("-i" 	.	x-handle-switch)
-		("-iconic" .	x-handle-iconic)
-		("-xrm" .       x-handle-xrm-switch)
-		("-cr" .	x-handle-switch)
-		("-vb" .	x-handle-switch)
-		("-hb" .	x-handle-switch)
-		("-bd" .	x-handle-switch))
-	      command-switch-alist))
+(defconst x-option-alist
+  '(("-bw" .	x-handle-numeric-switch)
+    ("-d" .		x-handle-display)
+    ("-display" .	x-handle-display)
+    ("-name" .	x-handle-name-rn-switch)
+    ("-rn" .	x-handle-name-rn-switch)
+    ("-T" .		x-handle-switch)
+    ("-r" .		x-handle-switch)
+    ("-rv" .	x-handle-switch)
+    ("-reverse" .	x-handle-switch)
+    ("-fn" .	x-handle-switch)
+    ("-font" .	x-handle-switch)
+    ("-ib" .	x-handle-numeric-switch)
+    ("-g" .		x-handle-geometry)
+    ("-geometry" .	x-handle-geometry)
+    ("-fg" .	x-handle-switch)
+    ("-foreground".	x-handle-switch)
+    ("-bg" .	x-handle-switch)
+    ("-background".	x-handle-switch)
+    ("-ms" .	x-handle-switch)
+    ("-itype" .	x-handle-switch)
+    ("-i" 	.	x-handle-switch)
+    ("-iconic" .	x-handle-iconic)
+    ("-xrm" .       x-handle-xrm-switch)
+    ("-cr" .	x-handle-switch)
+    ("-vb" .	x-handle-switch)
+    ("-hb" .	x-handle-switch)
+    ("-bd" .	x-handle-switch)))
+
+(defconst x-long-option-alist
+  '(("--border-width" .	"-bw")
+    ("--display" .	"-d")
+    ("--name" .		"-name")
+    ("--title" .	"-T")
+    ("--reverse-video" . "-reverse")
+    ("--font" .		"-font")
+    ("--internal-border" . "-ib")
+    ("--geometry" .	"-geometry")
+    ("--foreground-color" . "-fg")
+    ("--background-color" . "-bg")
+    ("--mouse-color" .	"-ms")
+    ("--icon-type" .	"-itype")
+    ("--iconic" .	"-iconic")
+    ("--xrm" .		"-xrm")
+    ("--cursor-color" .	"-cr")
+    ("--vertical-scroll-bars" . "-vb")
+    ("--border-color" .	"-bd")))
 
 (defconst x-switch-definitions
   '(("-name" name)
@@ -207,14 +225,38 @@ x-invocation args from which the X-related things are extracted, first
 the switch (e.g., \"-fg\") in the following code, and possible values
 \(e.g., \"black\") in the option handler code (e.g., x-handle-switch).
 This returns ARGS with the arguments that have been processed removed."
+  (message "%s" args)
   (setq x-invocation-args args
 	args nil)
   (while x-invocation-args
     (let* ((this-switch (car x-invocation-args))
-	   (aelt (assoc this-switch command-switch-alist)))
+	   (orig-this-switch this-switch)
+	   completion argval aelt)
       (setq x-invocation-args (cdr x-invocation-args))
+      ;; Check for long options with attached arguments
+      ;; and separate out the attached option argument into argval.
+      (if (string-match "^--[^=]*=" this-switch)
+	  (setq argval (substring this-switch (match-end 0))
+		this-switch (substring this-switch 0 (1- (match-end 0)))))
+      (setq completion (try-completion this-switch x-long-option-alist))
+      (if (eq completion t)
+	  ;; Exact match for long option.
+	  (setq this-switch (cdr (assoc this-switch x-long-option-alist)))
+	(if (stringp completion)
+	    (let ((elt (assoc completion x-long-option-alist)))
+	      ;; Check for abbreviated long option.
+	      (or elt
+		  (error "Option `%s' is ambiguous" this-switch))
+	      (setq this-switch (cdr elt)))
+	  ;; Check for a short option.
+	  (setq argval nil this-switch orig-this-switch)))
+      (setq aelt (assoc this-switch x-option-alist))
       (if aelt
-	  (funcall (cdr aelt) this-switch)
+	  (if argval
+	      (let ((x-invocation-args
+		     (cons argval x-invocation-args)))
+		(funcall (cdr aelt) this-switch))
+	    (funcall (cdr aelt) this-switch))
 	(setq args (cons this-switch args)))))
   (setq args (nreverse args)))
 
@@ -352,8 +394,6 @@ This returns ARGS with the arguments that have been processed removed."
 		   "Gold"
 		   "goldenrod"
 		   "Goldenrod"
-		   "medium goldenrod"
-		   "MediumGoldenrod"
 		   "green"
 		   "Green"
 		   "dark green"
@@ -364,8 +404,6 @@ This returns ARGS with the arguments that have been processed removed."
 		   "ForestGreen"
 		   "lime green"
 		   "LimeGreen"
-		   "medium forest green"
-		   "MediumForestGreen"
 		   "medium sea green"
 		   "MediumSeaGreen"
 		   "medium spring green"
@@ -448,17 +486,20 @@ This returns ARGS with the arguments that have been processed removed."
 		   "Yellow"
 		   "green yellow"
 		   "GreenYellow")
-  "The full list of X colors from the rgb.text file.")
+  "The full list of X colors from the `rgb.text' file.")
 
-(defun x-defined-colors ()
-  "Return a list of colors supported by the current X-Display."
+(defun x-defined-colors (&optional frame)
+  "Return a list of colors supported for a particular frame.
+The argument FRAME specifies which frame to try.
+The value may be different for frames on different X displays."
+  (or frame (setq frame (selected-frame)))
   (let ((all-colors x-colors)
 	(this-color nil)
 	(defined-colors nil))
     (while all-colors
       (setq this-color (car all-colors)
 	    all-colors (cdr all-colors))
-      (and (x-color-defined-p this-color)
+      (and (face-color-supported-p frame this-color t)
 	   (setq defined-colors (cons this-color defined-colors))))
     defined-colors))
 
@@ -501,46 +542,69 @@ This returns ARGS with the arguments that have been processed removed."
 (put 'return 'ascii-character 13)
 (put 'escape 'ascii-character ?\e)
 
-;; Set up to recognize vendor-specific keysyms.
-;; Unless/until there is a real conflict,
-;; we need not try to make this list depend on
-;; the type of X server in use.
-(setq system-key-alist
-      '(
-	;; These are some HP keys.
-	(  168 . mute-acute)
-	(  169 . mute-grave)
-	(  170 . mute-asciicircum)
-	(  171 . mute-diaeresis)
-	(  172 . mute-asciitilde)
-	(  175 . lira)
-	(  190 . guilder)
-	(  252 . block)
-	(  256 . longminus)
-	(65388 . reset)
-	(65389 . system)
-	(65390 . user)
-	(65391 . clearline)
-	(65392 . insertline)
-	(65393 . deleteline)
-	(65394 . insertchar)
-	(65395 . deletechar)
-	(65396 . backtab)
-	(65397 . kp-backtab)
-	;; This is used by DEC's X server.
-	(65280 . remove)
-	;; These are for Sun.
-	(392976 . f35)
-    	(392977 . f36)
-	(393056 . req)
-	;; These are for Sun under X11R6
-	(393072 . props)
-	(393073 . front)
-	(393074 . copy)
-	(393075 . open)
-	(393076 . paste)
-	(393077 . cut)
-	))
+(defun vendor-specific-keysyms (vendor)
+  "Return the appropriate value of system-key-alist for VENDOR.
+VENDOR is a string containing the name of the X Server's vendor,
+as returned by (x-server-vendor)."
+  (cond ((string-equal vendor "Apollo Computer Inc.")
+	 '((65280 . linedel)
+	   (65281 . chardel)
+	   (65282 . copy)
+	   (65283 . cut)
+	   (65284 . paste)
+	   (65285 . move)
+	   (65286 . grow)
+	   (65287 . cmd)
+	   (65288 . shell)
+	   (65289 . leftbar)
+	   (65290 . rightbar)
+	   (65291 . leftbox)
+	   (65292 . rightbox)
+	   (65293 . upbox)
+	   (65294 . downbox)
+	   (65295 . pop)
+	   (65296 . read)
+	   (65297 . edit)
+	   (65298 . save)
+	   (65299 . exit)
+	   (65300 . repeat)))
+	((or (string-equal vendor "Hewlett-Packard Incorporated")
+	     (string-equal vendor "Hewlett-Packard Company"))
+	 '((  168 . mute-acute)
+	   (  169 . mute-grave)
+	   (  170 . mute-asciicircum)
+	   (  171 . mute-diaeresis)
+	   (  172 . mute-asciitilde)
+	   (  175 . lira)
+	   (  190 . guilder)
+	   (  252 . block)
+	   (  256 . longminus)
+	   (65388 . reset)
+	   (65389 . system)
+	   (65390 . user)
+	   (65391 . clearline)
+	   (65392 . insertline)
+	   (65393 . deleteline)
+	   (65394 . insertchar)
+	   (65395 . deletechar)
+	   (65396 . backtab)
+	   (65397 . kp-backtab)))
+	((or (string-equal vendor "X11/NeWS - Sun Microsystems Inc.")
+	     (string-equal vendor "X Consortium"))
+	 '((392976 . f35)
+	   (392977 . f36)
+	   (393056 . req)
+	   ;; These are for Sun under X11R6
+	   (393072 . props)
+	   (393073 . front)
+	   (393074 . copy)
+	   (393075 . open)
+	   (393076 . paste)
+	   (393077 . cut)))
+	(t
+	 ;; This is used by DEC's X server.
+	 '((65280 . remove)))))
+
 
 ;;;; Selections and cut buffers
 
@@ -620,11 +684,18 @@ This is in addition to the primary selection.")
       (while (setq i (string-match "[.*]" x-resource-name))
 	(aset x-resource-name i ?-))))
 
-(menu-bar-mode t)
-
-(x-open-connection (or x-display-name
-		       (setq x-display-name (getenv "DISPLAY")))
-		   x-command-line-resources)
+;; For the benefit of older Emacses (19.27 and earlier) that are sharing
+;; the same lisp directory, don't pass the third argument unless we seem
+;; to have the multi-display support.
+(if (fboundp 'x-close-connection)
+    (x-open-connection (or x-display-name
+			   (setq x-display-name (getenv "DISPLAY")))
+		       x-command-line-resources
+		       ;; Exit Emacs with fatal error if this fails.
+		       t)
+  (x-open-connection (or x-display-name
+			 (setq x-display-name (getenv "DISPLAY")))
+		     x-command-line-resources))
 
 (setq frame-creation-function 'x-create-frame-with-faces)
 
@@ -632,17 +703,35 @@ This is in addition to the primary selection.")
 			    x-cut-buffer-max))
 
 ;; Sun expects the menu bar cut and paste commands to use the clipboard.
-(if (string-match "X11/NeWS - Sun Microsystems Inc\\."
+;; This has ,? to match both on Sunos and on Solaris.
+(if (string-match " Sun Microsystems,? Inc\\."
 		  (x-server-vendor))
     (menu-bar-enable-clipboard))
 
 ;; Apply a geometry resource to the initial frame.  Put it at the end
 ;; of the alist, so that anything specified on the command line takes
 ;; precedence.
-(let ((res-geometry (x-get-resource "geometry" "Geometry")))
+(let* ((res-geometry (x-get-resource "geometry" "Geometry"))
+       parsed)
   (if res-geometry
-      (setq initial-frame-alist (append initial-frame-alist
-					(x-parse-geometry res-geometry)))))
+      (progn
+	(setq parsed (x-parse-geometry res-geometry))
+	;; If the resource specifies a position,
+	;; call the position and size "user-specified".
+	(if (or (assq 'top parsed) (assq 'left parsed))
+	    (setq parsed (cons '(user-position . t)
+			       (cons '(user-size . t) parsed))))
+	;; All geometry parms apply to the initial frame.
+	(setq initial-frame-alist (append initial-frame-alist parsed))
+	;; The size parms apply to all frames.
+	(if (assq 'height parsed)
+	    (setq default-frame-alist
+		  (cons (cons 'height (cdr (assq 'height parsed)))
+			default-frame-alist)))
+	(if (assq 'width parsed)
+	    (setq default-frame-alist
+		  (cons (cons 'width (cdr (assq 'width parsed)))
+			default-frame-alist))))))
 
 ;; Check the reverseVideo resource.
 (let ((case-fold-search t))
@@ -670,5 +759,8 @@ This is in addition to the primary selection.")
 ;;; Turn off window-splitting optimization; X is usually fast enough
 ;;; that this is only annoying.
 (setq split-window-keep-point t)
+
+;; Don't show the frame name; that's redundant with X.
+(setq-default mode-line-buffer-identification '("Emacs: %12b"))
 
 ;;; x-win.el ends here

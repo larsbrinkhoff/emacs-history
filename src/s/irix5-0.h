@@ -59,11 +59,6 @@ char *_getpty();
 /* We need only try once to open a pty.  */
 #define PTY_ITERATION
 /* Here is how to do it.  */
-/* It is necessary to prevent SIGCHLD signals within _getpty.
-   So we block them. But since all of Emacs uses classic SYSV signal()
-   signals, there is no reliable way to do this (unlike BSD sighold or
-   POSIX sigaction).  On Irix 5.* systems, the implementation of
-   sigaction is as close as you can get to a universal. */
 #define PTY_OPEN					    \
 {							    \
   struct sigaction ocstat, cstat;			    \
@@ -83,6 +78,10 @@ char *_getpty();
   strcpy (pty_name, name);				    \
 }
 
+/* Since we use POSIX constructs in PTY_OPEN, we must force POSIX
+   throughout. */
+#define POSIX_SIGNALS  
+
 /* jpff@maths.bath.ac.uk reports `struct exception' is not defined
    on this system, so inhibit use of matherr.  */
 #define NO_MATHERR
@@ -101,4 +100,16 @@ char *_getpty();
    default, but GCC (at least 2.5.8 and 2.6.0) doesn't. */
 #ifdef __GNUC__
 #define LD_SWITCH_SYSTEM -G 0
+#endif
+
+/* define MAIL_USE_FLOCK if the mailer uses flock
+   to interlock access to /usr/spool/mail/$USER.
+   The alternative is that a lock file named
+   /usr/spool/mail/$USER.lock.  */
+
+#define MAIL_USE_FLOCK
+
+/* use K&R C */
+#ifndef __GNUC__
+#define C_SWITCH_SYSTEM -cckr
 #endif

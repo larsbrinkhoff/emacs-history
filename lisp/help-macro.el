@@ -5,8 +5,6 @@
 ;; Author: Lynn Slater <lrs@indetech.com>
 ;; Created: : Mon Oct  1 11:42:39 1990
 ;; Adapted-By: ESR
-;; Last Modified By: Lynn Slater x2048
-;; Last Modified On: Mon Sep 23 14:40:19 1991
 
 ;; This file is part of GNU Emacs.
 
@@ -106,9 +104,13 @@ and then returns."
 		     (setcdr local-map (, helped-map))
 		     (define-key local-map [t] 'undefined)
 		     (if three-step-help
-			 (setq key (let ((overriding-local-map local-map))
-				     (read-key-sequence nil))
-			       char (aref key 0))
+			 (progn
+			   (setq key (let ((overriding-local-map local-map))
+				     (read-key-sequence nil)))
+			   ;; Make the HELP key translate to C-h.
+			   (if (lookup-key function-key-map key)
+			       (setq key (lookup-key function-key-map key)))
+			   (setq char (aref key 0)))
 		       (setq char ??))
 		     (if (or (eq char ??) (eq char help-char))
 			 (progn
@@ -121,6 +123,7 @@ and then returns."
 				      config nil))
 			   (erase-buffer)
 			   (insert help-screen)
+			   (help-mode)
 			   (goto-char (point-min))
 			   (while (or (memq char (cons help-char '(?? ?\C-v ?\ ?\177 delete ?\M-v)))
 				      (eq (car-safe char) 'switch-frame)
@@ -149,9 +152,7 @@ and then returns."
 			 (setq unread-command-events
 			       (cons char unread-command-events)
 			       config nil)
-		       (let ((defn
-			       (let ((overriding-local-map local-map))
-				 (key-binding key))))
+		       (let ((defn (lookup-key local-map key)))
 			 (if defn
 			     (progn
 			       (if config

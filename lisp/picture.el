@@ -159,9 +159,7 @@ The mode line is updated to reflect the current direction."
 	(format "Picture:%s"
 		(car (nthcdr (+ 1 (% horiz 2) (* 3 (1+ (% vert 2))))
 			     '(nw up ne left none right sw down se)))))
-  ;; Kludge - force the mode line to be updated.  Is there a better
-  ;; way to this?
-  (set-buffer-modified-p (buffer-modified-p))
+  (force-mode-line-update)
   (message ""))
 
 (defun picture-move ()
@@ -199,7 +197,7 @@ Do \\[command-apropos] `picture-movement' to see those commands."
     (setq arg (1- arg))
     (move-to-column-force (1+ (current-column)))
     (delete-char -1)
-    (insert last-input-char)
+    (insert last-command-event)		; Always a character in this case.
     (forward-char -1)
     (picture-move)))
 
@@ -432,6 +430,16 @@ point at the other (diagonally opposed) corner."
       (error "No rectangle saved.")
     (picture-insert-rectangle picture-killed-rectangle insertp)))
 
+(defun picture-yank-at-click (click arg)
+  "Insert the last killed rectangle at the position clicked on.
+Also move point to one end of the text thus inserted (normally the end).
+Prefix arguments are interpreted as with \\[yank].
+If `mouse-yank-at-point' is non-nil, insert at point
+regardless of where you click."
+  (interactive "e\nP")
+  (or mouse-yank-at-point (mouse-set-point click))
+  (picture-yank-rectangle arg))
+
 (defun picture-yank-rectangle-from-register (register &optional insertp)
   "Overlay rectangle saved in REGISTER.
 The rectangle is positioned with upper left corner at point, overwriting
@@ -468,12 +476,9 @@ Leaves the region surrounding the rectangle."
   (substitute-key-definition oldfun newfun picture-mode-map global-map))
 
 (if (not picture-mode-map)
-    (let ((i ?\ ))
-      (setq picture-mode-map (make-keymap))
-      (while (< i ?\177)
-	(define-key picture-mode-map (make-string 1 i) 'picture-self-insert)
-	(setq i (1+ i)))
-
+    (progn
+      (setq picture-mode-map (list 'keymap (make-vector 256 nil)))
+      (picture-substitute 'self-insert-command 'picture-self-insert)
       (picture-substitute 'forward-char 'picture-forward-column)
       (picture-substitute 'backward-char 'picture-backward-column)
       (picture-substitute 'delete-char 'picture-clear-column)
@@ -483,7 +488,7 @@ Leaves the region surrounding the rectangle."
       (picture-substitute 'kill-line 'picture-clear-line)
       (picture-substitute 'open-line 'picture-open-line)
       (picture-substitute 'newline 'picture-newline)
-      (picture-substitute 'newline-andindent 'picture-duplicate-line)
+      (picture-substitute 'newline-and-indent 'picture-duplicate-line)
       (picture-substitute 'next-line 'picture-move-down)
       (picture-substitute 'previous-line 'picture-move-up)
       (picture-substitute 'beginning-of-line 'picture-beginning-of-line)
@@ -623,9 +628,7 @@ With no argument strips whitespace from end of every line in Picture buffer
     (setq major-mode picture-mode-old-major-mode)
     (kill-local-variable 'tab-stop-list)
     (setq truncate-lines picture-mode-old-truncate-lines)
-    ;; Kludge - force the mode line to be updated.  Is there a better
-    ;; way to do this?
-    (set-buffer-modified-p (buffer-modified-p))))
+    (force-mode-line-update)))
 
 (defun picture-clean ()
   "Eliminate whitespace at ends of lines."

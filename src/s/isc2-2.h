@@ -5,8 +5,8 @@
 
 /* With this defined, subprocesses made by (e.g.) M-x grep don't exit
    cleanly, they just hang.  ISC 2.2.1 does have select, in the -linet
-   library, but I guess it's not what Emacs needs.  --karl@cs.umb.edu
-#define HAVE_SELECT */
+   library, but I guess it's not what Emacs needs.  --karl@cs.umb.edu  */
+#undef HAVE_SELECT /* override configuration decision */
 
 /* Although ISC has sockets, again in -linet, again it's not what Emacs
    needs.  With this defined, interrupt-shell-subjob and the like do
@@ -35,7 +35,7 @@
 #define SIGNALS_VIA_CHARACTERS
 
 /* -lPW is only needed if not using Gcc.  We used to include -lcposix here
-   for the rename function, but some pepople saus ISC's renames doesn't
+   for the rename function, but some people say ISC's rename doesn't
    work correctly with Emacs so we use Emacs' emulation instead. */
 #if defined (__GNUC__)
 #  define LIB_STANDARD -lcposix -lc
@@ -43,13 +43,7 @@
 #  define LIB_STANDARD -lPW -lc
 #endif /* !__GNUC__ */
 
-/* mt00@etherm.co.uk says this is needed for process.c.  */
-#define USE_UTIME
-
 #define NO_X_DESTROY_DATABASE
-
-/* This communicates with m-intel386.h.  */
-#define DONT_DEFINE_SIGNAL
 
 /* May be needed to avoid undefined symbols such as gethostname,
    inet_addr, gethostbyname, socket, connect, ...  But if we are not

@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -72,9 +72,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <fcntl.h>
 #else /* neither HAVE_TERMIO nor HAVE_TERMIOS */
 #ifndef VMS
-#ifndef MSDOS
+#ifndef DOS_NT
 #include <sgtty.h>
-#endif
+#endif /* not DOS_NT */
 #else /* VMS */
 #include <descrip.h>
 static struct iosb
@@ -118,7 +118,7 @@ static struct sensemode {
 #include <termios.h>
 #endif
 
-#ifdef AIX
+#ifdef AIXHFT
 /* Get files for keyboard remapping */
 #define HFNKEYS 2
 #include <sys/hft.h>
@@ -138,22 +138,13 @@ static struct sensemode {
 #if defined (HPUX) && defined (HAVE_PTYS)
 #include <sys/ptyio.h>
 #endif
-  
+
 #ifdef AIX
 #include <sys/pty.h>
-#include <unistd.h>
-#define UNISTD_H_INCLUDED
 #endif /* AIX */
 
-#ifdef IRIX4
-/* Get _getpty prototype */
+#if (defined (POSIX) || defined (NEED_UNISTD_H)) && defined (HAVE_UNISTD_H)
 #include <unistd.h>
-#define UNISTD_H_INCLUDED
-#endif
-
-#if defined (POSIX) && !defined (UNISTD_H_INCLUDED) && defined (HAVE_UNISTD_H)
-#include <unistd.h>
-#define UNISTD_H_INCLUDED
 #endif
 
 #ifdef SYSV_PTYS
@@ -326,11 +317,10 @@ static struct sensemode {
    of the tty on FD in *P.  Return zero if all's well, or -1 if we ran
    into an error we couldn't deal with.
 
-   EMACS_SET_TTY (int FD, struct emacs_tty *P, int waitp)
+   EMACS_SET_TTY (int FD, struct emacs_tty *P, int flushp)
    sets the parameters of the tty on FD according to the contents of
-   *P.  If waitp is non-zero, we wait for all queued output to be
-   written before making the change; otherwise, we forget any queued
-   input and make the change immediately.
+   *P.  If flushp is non-zero, we discard queued input to be
+   written before making the change.
    Return 0 if all went well, and -1 if anything failed.
 
    EMACS_TTY_TABS_OK (struct emacs_tty *P) is false iff the kernel
@@ -356,11 +346,11 @@ struct emacs_tty {
 #ifdef VMS
   struct sensemode main;
 #else
-#ifdef MSDOS
+#ifdef DOS_NT
   int main;
-#else
+#else  /* not DOS_NT */
   struct sgttyb main;
-#endif
+#endif /* not DOS_NT */
 #endif
 #endif
 #endif
@@ -411,11 +401,11 @@ struct emacs_tty {
 
 #else
 
-#ifdef MSDOS
+#ifdef DOS_NT
 #define EMACS_TTY_TABS_OK(p) 0
-#else /* not MSDOS */
+#else /* not DOS_NT */
 #define EMACS_TTY_TABS_OK(p) (((p)->main.sg_flags & XTABS) != XTABS)
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
 
 #endif /* not def VMS */
 #endif /* not def HAVE_TERMIO */

@@ -33,6 +33,10 @@
 (buffer-disable-undo "*scratch*")
 
 (load "subr")
+
+;; We specify .el in case someone compiled version.el by mistake.
+(load "version.el")
+
 (garbage-collect)
 (load "byte-run")
 (garbage-collect)
@@ -46,16 +50,24 @@
 (garbage-collect)
 (load "files")
 (garbage-collect)
+(load "format")
+(garbage-collect)
 (load "indent")
 (garbage-collect)
 (load "window")
-(garbage-collect)
 (if (fboundp 'delete-frame)
     (progn
-      (load "frame")
-      (load "mouse")
+      (garbage-collect)
+      (load "frame")))
+(if (fboundp 'frame-face-alist)
+    (progn
       (garbage-collect)
       (load "faces")
+      (load "facemenu")))
+(if (fboundp 'track-mouse)
+    (progn
+      (garbage-collect)
+      (load "mouse")
       (garbage-collect)
       (load "menu-bar")
       (load "scroll-bar")
@@ -96,11 +108,16 @@
     (progn
       (garbage-collect)
       (load "vms-patch")))
+(if (eq system-type 'windows-nt)
+    (progn
+      (garbage-collect)
+      (load "ls-lisp")
+      (garbage-collect)
+      (load "winnt")
+      (garbage-collect)))
 (if (eq system-type 'ms-dos)
     (progn
       (load "ls-lisp")
-      (garbage-collect)
-      (load "mouse")
       (garbage-collect)
       (load "dos-fns")
       (garbage-collect)
@@ -110,11 +127,9 @@
     (progn		; floating pt. functions if 
       (garbage-collect)	; we have float support.
       (load "float-sup")))
+
 (garbage-collect)
 (load "vc-hooks")
-
-;; We specify .el in case someone compiled version.el by mistake.
-(load "version.el")
 
 ;If you want additional libraries to be preloaded and their
 ;doc strings kept in the DOC file rather than in core,
@@ -124,6 +139,12 @@
 ;For other systems, you must edit ../src/Makefile.in.in.
 (if (load "site-load" t)
     (garbage-collect))
+
+(if (fboundp 'x-popup-menu)
+    (precompute-menubar-bindings))
+;; Turn on recording of which commands get rebound,
+;; for the sake of the next call to precompute-menubar-bindings.
+(setq define-key-rebound-commands nil)
 
 ;; Determine which last version number to use
 ;; based on the executables that now exist.
@@ -154,8 +175,9 @@
 	(setq name (concat (downcase (substring name 0 (match-beginning 0)))
 			   "-"
 			   (substring name (match-end 0)))))
-      (if (eq system-type 'ms-dos)
-	  (setq name (expand-file-name "../etc/DOC"))
+      (if (memq system-type '(ms-dos windows-nt))
+	  (setq name (expand-file-name
+		      (if (fboundp 'make-frame) "DOC-X" "DOC") "../etc"))
 	(setq name (concat (expand-file-name "../etc/DOC-") name))
 	(if (file-exists-p name)
 	    (delete-file name))
@@ -197,8 +219,9 @@
       ;; under the name `xemacs'), and it's inconsistent with every
       ;; other GNU product's build process.
       (dump-emacs "emacs" "temacs")
+      (message "%d pure bytes used" pure-bytes-used)
       ;; Recompute NAME now, so that it isn't set when we dump.
-      (if (not (eq system-type 'ms-dos))
+      (if (not (memq system-type '(ms-dos windows-nt)))
 	  (let ((name (concat "emacs-" emacs-version)))
 	    (while (string-match "[^-+_.a-zA-Z0-9]+" name)
 	      (setq name (concat (downcase (substring name 0 (match-beginning 0)))
@@ -214,8 +237,11 @@
 ;; this file must be loaded each time Emacs is run.
 ;; So run the startup code now.
 
-(or (or (equal (nth 3 command-line-args) "dump")
-	(equal (nth 4 command-line-args) "dump"))
-    (eval top-level))
+(or (equal (nth 3 command-line-args) "dump")
+    (equal (nth 4 command-line-args) "dump")
+    (progn
+      ;; Avoid loading loadup.el a second time!
+      (setq command-line-args (cdr (cdr command-line-args)))
+      (eval top-level)))
 
 ;;; loadup.el ends here

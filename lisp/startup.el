@@ -23,33 +23,90 @@
 
 ;;; Commentary:
 
-; These are processed only at the beginning of the argument list.
-; -batch		execute noninteractively (messages go to stdout,
-;			 variable noninteractive set to t)
-;			 This option must be the first in the arglist.
-;			 Processed by `main' in emacs.c -- never seen by lisp
-; -t file		Specify to use file rather than stdin/stdout
-;			 as the terminal.
-;			 This option must be the first in the arglist.
-;			 Processed by `main' in emacs.c -- never seen by lisp
-; -nw			Inhibit the use of any window-system-specific display
-;			 code; use the current virtual terminal.
-;			 This option must be the first in the arglist.
-;			 Processed by `main' in emacs.c -- never seen by lisp
-; -q			load no init file
-; -no-init-file		same
-; -u user		load user's init file
-; -user user		same
-; -debug-init		Don't catch errors in init file; let debugger run.
+;; This file parses the command line and gets Emacs running.  Options on
+;; the command line are handled in precedence order.  The order is the
+;; one in the list below; first described means first handled.  Options
+;; within each category (delimited by a bar) are handled in the order
+;; encountered on the command line.
 
-; These are processed in the order encountered.
-; -f function		execute function
-; -funcall function	same
-; -l file		load file
-; -load file		same
-; -insert file		same
-; file			visit file
-; -kill			kill (exit) emacs
+;; -------------------------
+;; -version                  Print Emacs version to stderr, then exit
+;; --version                 successfully right away.
+;;                           This option is handled by emacs.c
+;; -------------------------
+;; -help                     Print a short usage description and exit
+;; --help                    successfully right away.
+;;                           This option is handled by emacs.c
+;; -------------------------
+;; -nl                       Do not use shared memory (for systems that
+;; -no-shared-memory         support this) for the dumped Emacs data.
+;;                           This option is handled by emacs.c
+;;
+;; -map                      For VMS.
+;; --map-data                This option is handled by emacs.c
+;; -------------------------
+;; -t FILE                   Use FILE as the name of the terminal.
+;; --terminal FILE           Using this implies "-nw" also.
+;;                           This option is handled by emacs.c
+;; -------------------------
+;; -d DISPNAME               Use DISPNAME as the name of the X-windows
+;; -display DISPNAME         display for the initial frame.
+;; --display DISPNAME        This option is handled by emacs.c
+;; -------------------------
+;; -nw                       Do not use a windows system (but use the
+;; --no-windows              terminal instead.)
+;;                           This option is handled by emacs.c
+;; -------------------------
+;; -batch                    Execute noninteractively (messages go to stdout,
+;; --batch                   variable noninteractive set to t)
+;;                           This option is handled by emacs.c
+;; -------------------------
+;; -q                        Do not load user's init file and do not load
+;; -no-init-file             "default.el".  Regardless of this switch,
+;; --no-init-file            "site-init.el" is still loaded.
+;; -------------------------
+;; -no-site-file             Do not load "site-init.el".  (This is the ONLY
+;; --no-site-file            way to prevent loading that file.)
+;; -------------------------
+;; -u USER                   Load USER's init file instead of the init
+;; -user USER                file belonging to the user starting Emacs.
+;; --user USER
+;; -------------------------
+;; -debug-init               Don't catch errors in init files; let the
+;; --debug-init              debugger run.
+;; -------------------------
+;; -i ICONTYPE               Set type of icon using when Emacs is
+;; -itype ICONTYPE           iconified under X-windows.
+;; --icon-type ICONTYPE      This option is passed on to term/x-win.el
+;;
+;; -iconic                   Start Emacs iconified under X-windows.
+;; --iconic                  This option is passed on to term/x-win.el
+;; -------------------------
+;; Various X-windows options for colors/fonts/geometry/title etc.
+;; These options are passed on to term/x-win.el which see.  Certain
+;; of these are also found in term/pc-win.el
+;; -------------------------
+;; FILE                      Visit FILE.
+;;
+;; -L DIRNAME                Add DIRNAME to load-path
+;; -directory DIRNAME
+;; --directory DIRNAME
+;;
+;; -l FILE                   Load and execute the Emacs lisp code
+;; -load FILE                in FILE.
+;; --load FILE
+;;
+;; -f FUNC                   Execute Emacs lisp function FUNC with
+;; -funcall FUNC             no arguments.  The "-e" form is outdated
+;; --funcall FUNC            and should not be used.  (It's a typo
+;; -e FUNC                   promoted to a feature.)
+;;
+;; -insert FILE              Insert the contents of FILE into buffer.
+;; --insert FILE
+;; -------------------------
+;; -kill                     Kill (exit) Emacs right away.
+;; --kill
+;; -------------------------
 
 ;;; Code:
 
@@ -134,7 +191,10 @@ originally logged in, or it may be a string containing a user's name.
 
 In either of the latter cases, `(concat \"~\" init-file-user \"/\")'
 evaluates to the name of the directory where the `.emacs' file was
-looked for.")
+looked for.
+
+Setting `init-file-user' does not prevent Emacs from loading
+`site-start.el'.  The only way to do that is to use `--no-site-file'.")
 
 (defvar site-run-file "site-start"
   "File containing site-wide run-time initializations.
@@ -142,24 +202,55 @@ This file is loaded at run-time before `~/.emacs'.  It contains inits
 that need to be in place for the entire site, but which, due to their
 higher incidence of change, don't make sense to load into emacs'
 dumped image.  Thus, the run-time load order is: 1. file described in
-this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
+this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.
+
+Don't use the `site-start.el' file for things some users may not like.
+Put them in `default.el' instead, so that users can more easily
+override them.  Users can prevent loading `default.el' with the `-q'
+option or by setting `inhibit-default-init' in their own init files,
+but inhibiting `site-start.el' requires `--no-site-file', which
+is less convenient.")
 
 (defconst iso-8859-1-locale-regexp "8859[-_]?1"
   "Regexp that specifies when to enable the ISO 8859-1 character set.
 We do that if this regexp matches the locale name
 specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 
+(defvar mail-host-address nil
+  "*Name of this machine, for purposes of naming users.")
+
 (defvar user-mail-address nil
-  "Full mailing address of this user.")
+  "*Full mailing address of this user.")
 
 (defvar init-file-debug nil)
 
 (defvar init-file-had-error nil)
 
+;; This function is called from the subdirs.el file.
+(defun normal-top-level-add-to-load-path (dirs)
+  (let ((tail (member default-directory load-path)))
+    (setcdr tail (append (mapcar 'expand-file-name dirs) (cdr tail)))))
+
 (defun normal-top-level ()
   (if command-line-processed
       (message "Back to top level.")
     (setq command-line-processed t)
+    ;; Give *Messages* the same default-directory as *scratch*,
+    ;; just to keep things predictable.
+    (let ((dir default-directory))
+      (save-excursion
+	(set-buffer (get-buffer "*Messages*"))
+	(setq default-directory dir)))
+    ;; Look in each dir in load-path for a subdirs.el file.
+    ;; If we find one, load it, which will add the appropriate subdirs
+    ;; of that dir into load-path,
+    (let ((tail load-path)
+	  new)
+      (while tail
+	(setq new (cons (car tail) new))
+	(let ((default-directory (car tail)))
+	  (load (expand-file-name "subdirs.el" (car tail)) t t t))
+	(setq tail (cdr tail))))
     (if (not (eq system-type 'vax-vms))
 	(progn
 	  ;; If the PWD environment variable isn't accurate, delete it.
@@ -176,7 +267,16 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 			   (delete (concat "PWD=" pwd)
 				   process-environment)))))))
     (setq default-directory (abbreviate-file-name default-directory))
-    (setq user-mail-address (concat (user-login-name) "@" (system-name)))
+    (setq user-mail-address (concat (user-login-name) "@"
+				    (or mail-host-address
+					(system-name))))
+    ;; Specify the file for recording all the auto save files of this session.
+    ;; This is used by multiple-recover.
+    (setq auto-save-list-file-name
+	  (expand-file-name
+	   (format "~/.saves-%d-%s"
+		   (emacs-pid)
+		   (or mail-host-address (system-name)))))
     (let ((menubar-bindings-done nil))
       (unwind-protect
 	  (command-line)
@@ -195,19 +295,23 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	(and window-setup-hook
 	     (run-hooks 'window-setup-hook))
 	(or menubar-bindings-done
-	    (precompute-menubar-bindings))))))
+	    (if (eq window-system 'x)
+		(precompute-menubar-bindings)))))))
 
 ;; Precompute the keyboard equivalents in the menu bar items.
 (defun precompute-menubar-bindings ()
-  (if (eq window-system 'x)
-      (let ((submap (lookup-key global-map [menu-bar])))
-	(while submap
-	  (and (consp (car submap))
-	       (symbolp (car (car submap)))
-	       (stringp (car-safe (cdr (car submap))))
-	       (keymapp (cdr (cdr (car submap))))
-	       (x-popup-menu nil (cdr (cdr (car submap)))))
-	  (setq submap (cdr submap))))))
+  (let ((submap (lookup-key global-map [menu-bar])))
+    (while submap
+      (and (consp (car submap))
+	   (symbolp (car (car submap)))
+	   (stringp (car-safe (cdr (car submap))))
+	   (keymapp (cdr (cdr (car submap))))
+	   (progn
+	     (x-popup-menu nil (cdr (cdr (car submap))))
+	     (if purify-flag
+		 (garbage-collect))))
+      (setq submap (cdr submap))))
+  (setq define-key-rebound-commands t))
 
 (defun command-line ()
   (setq command-line-default-directory default-directory)
@@ -236,6 +340,7 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	(and ctype
 	     (string-match iso-8859-1-locale-regexp ctype)))
       (progn 
+	(require 'disp-table)
 	(standard-display-european t)
 	(require 'iso-syntax)))
 
@@ -246,13 +351,31 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
   ;;! (setq split-window-keep-point (> baud-rate 2400))
 
   ;; Read window system's init file if using a window system.
-  (if (and window-system (not noninteractive))
-      (load (concat term-file-prefix
-		    (symbol-name window-system)
-		    "-win")
-	    ;; Every window system should have a startup file;
-	    ;; barf if we can't find it.
-	    nil t))
+  (condition-case error
+      (if (and window-system (not noninteractive))
+	  (load (concat term-file-prefix
+			(symbol-name window-system)
+			"-win")
+		;; Every window system should have a startup file;
+		;; barf if we can't find it.
+		nil t))
+    ;; If we can't read it, print the error message and exit.
+    (error
+     (princ
+      (if (eq (car error) 'error)
+	  (apply 'concat (cdr error))
+	(if (memq 'file-error (get (car error) 'error-conditions))
+	    (format "%s: %s"
+		     (nth 1 error)
+		     (mapconcat '(lambda (obj) (prin1-to-string obj t))
+				(cdr (cdr error)) ", "))
+	  (format "%s: %s"
+		   (get (car error) 'error-message)
+		   (mapconcat '(lambda (obj) (prin1-to-string obj t))
+			      (cdr error) ", "))))
+      'external-debugging-output)
+     (setq window-system nil)
+     (kill-emacs)))
 
   (let ((done nil)
 	(args (cdr command-line-args)))
@@ -268,7 +391,22 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
     ;; processed.  This is consistent with the way main in emacs.c
     ;; does things.
     (while (and (not done) args)
-      (let ((argi (car args)))
+      (let ((longopts '(("--no-init-file") ("--no-site-file") ("--user")
+			("--debug-init") ("--iconic") ("--icon-type")))
+	    (argi (car args))
+	    (argval nil))
+	(if (string-match "=" argi)
+	    (setq argval (substring argi (match-end 0))
+		  argi (substring argi 0 (match-beginning 0))))
+	(let ((completion (try-completion argi longopts)))
+	  (if (eq completion t)
+	      (setq argi (substring argi 1))
+	    (if (stringp completion)
+		(let ((elt (assoc completion longopts)))
+		  (or elt
+		      (error "Option `%s' is ambiguous" argi))
+		  (setq argi (substring (car elt) 1)))
+	      (setq argval nil))))
 	(cond
 	 ((or (string-equal argi "-q")
 	      (string-equal argi "-no-init-file"))
@@ -276,8 +414,11 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 		args (cdr args)))
 	 ((or (string-equal argi "-u")
 	      (string-equal argi "-user"))
-	  (setq args (cdr args)
-		init-file-user (car args)
+	  (or argval
+	      (setq argval (car args)
+		    args (cdr args)))
+	  (setq init-file-user argval
+		argval nil
 		args (cdr args)))
 	 ((string-equal argi "-no-site-file")
 	  (setq site-run-file nil
@@ -285,16 +426,33 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	 ((string-equal argi "-debug-init")
 	  (setq init-file-debug t
 		args (cdr args)))
-	 (t (setq done t)))))
-    
+	 ((string-equal argi "-iconic")
+	  (setq initial-frame-alist
+		(cons '(visibility . icon) initial-frame-alist))
+	  (setq args (cdr args)))
+	 ((or (string-equal argi "-icon-type")
+	      (string-equal argi "-i")
+	      (string-equal argi "-itype"))
+	  (setq default-frame-alist
+		(cons '(icon-type . t) default-frame-alist))
+	  (setq args (cdr args)))
+	 (t (setq done t)))
+	;; Was argval set but not used?
+	(and argval
+	     (error "Option `%s' doesn't allow an argument" argi))))
+
     ;; Re-attach the program name to the front of the arg list.
-    (setcdr command-line-args args))
+    (and command-line-args (setcdr command-line-args args)))
 
   ;; Under X Windows, this creates the X frame and deletes the terminal frame.
   (if (fboundp 'face-initialize)
       (face-initialize))
   (if (fboundp 'frame-initialize)
       (frame-initialize))
+  ;; If frame was created with a menu bar, set menu-bar-mode on.
+  (if (and (eq window-system 'x)
+	   (> (cdr (assq 'menu-bar-lines (frame-parameters))) 0))
+      (menu-bar-mode t))
 
   (run-hooks 'before-init-hook)
 
@@ -324,6 +482,8 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 			  (cond 
 			   ((eq system-type 'ms-dos)
 			    (concat "~" init-file-user "/_emacs"))
+			   ((eq system-type 'windows-nt)
+			    "~/_emacs")
 			   ((eq system-type 'vax-vms) 
 			    "sys$login:.emacs")
 			   (t 
@@ -434,7 +594,8 @@ specified by the LC_ALL, LC_CTYPE and LANG environment variables.")
 	     (setq window-setup-hook nil)
 	     ;; Do this now to avoid an annoying delay if the user
 	     ;; clicks the menu bar during the sit-for.
-	     (precompute-menubar-bindings)
+	     (if (eq window-system 'x)
+		 (precompute-menubar-bindings))
 	     (setq menubar-bindings-done t)
 	     (unwind-protect
 		 (progn
@@ -446,25 +607,41 @@ Copyright (C) 1994 Free Software Foundation, Inc.\n\n")
 		   (if (and (eq (key-binding "\C-h") 'help-command)
 			    (eq (key-binding "\C-xu") 'advertised-undo)
 			    (eq (key-binding "\C-x\C-c") 'save-buffers-kill-emacs)
-			    (eq (key-binding "\C-h\C-c") 'describe-copying)
-			    (eq (key-binding "\C-h\C-d") 'describe-distribution)
-			    (eq (key-binding "\C-h\C-w") 'describe-no-warranty)
-			    (eq (key-binding "\C-ht") 'help-with-tutorial))
+			    (eq (key-binding "\C-ht") 'help-with-tutorial)
+			    (eq (key-binding "\C-hi") 'info))
 		       (insert 
        "Type C-h for help; C-x u to undo changes.  (`C-' means use CTRL key.)
 To kill the Emacs job, type C-x C-c.
 Type C-h t for a tutorial on using Emacs.
-Type C-h i to enter Info, which you can use to read GNU documentation.
+Type C-h i to enter Info, which you can use to read GNU documentation.")
+		     (insert (substitute-command-keys
+			      (format "Type %s for help; \\[advertised-undo] to undo changes.  (`C-' means use CTRL key.)
+To kill the Emacs job, type \\[save-buffers-kill-emacs].
+Type \\[help-with-tutorial] for a tutorial on using Emacs.
+Type \\[info] to enter Info, which you can use to read GNU documentation."
+				      (let ((where (where-is-internal
+						    'help-command nil t)))
+					(if where
+					    (key-description where)
+					  "M-x help"))))))
 
+		   ;; Windows and MSDOS (currently) do not count as
+		   ;; window systems, but do have mouse support.
+		   (if (or (memq system-type '(msdos windowsnt))
+			   window-system)
+		       (insert "
+C-mouse-3 (third mouse button, with Control) gets a mode-specific menu."))
+		   (insert "\n")
+		   (if (and (eq (key-binding "\C-h\C-c") 'describe-copying)
+			    (eq (key-binding "\C-h\C-d") 'describe-distribution)
+			    (eq (key-binding "\C-h\C-w") 'describe-no-warranty))
+		       (insert 
+			"
 GNU Emacs comes with ABSOLUTELY NO WARRANTY; type C-h C-w for full details.
 You may give out copies of Emacs; type C-h C-c to see the conditions.
 Type C-h C-d for information on getting the latest version.")
 		     (insert (substitute-command-keys
-       "Type \\[help-command] for help; \\[advertised-undo] to undo changes.  (`C-' means use CTRL key.)
-To kill the Emacs job, type \\[save-buffers-kill-emacs].
-Type \\[help-with-tutorial] for a tutorial on using Emacs.
-Type \\[info] to enter Info, which you can use to read GNU documentation.
-
+			      "
 GNU Emacs comes with ABSOLUTELY NO WARRANTY; type \\[describe-no-warranty] for full details.
 You may give out copies of Emacs; type \\[describe-copying] to see the conditions.
 Type \\[describe-distribution] for information on getting the latest version.")))
@@ -476,36 +653,95 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		 (set-buffer (get-buffer "*scratch*"))
 		 (erase-buffer)
 		 (set-buffer-modified-p nil)))))
+    ;; Delay 2 seconds after the init file error message
+    ;; was displayed, so user can read it.
+    (if init-file-had-error
+	(sit-for 2))
     (let ((dir command-line-default-directory)
 	  (file-count 0)
 	  first-file-buffer
 	  (line 0))
       (while command-line-args-left
-	(let ((argi (car command-line-args-left))
-	      tem)
+	(let* ((argi (car command-line-args-left))
+	       (orig-argi argi)
+	       ;; This includes our standard options' long versions
+	       ;; and long versions of what's on command-switch-alist.
+	       (longopts
+	        (append '(("--funcall") ("--load") ("--insert") ("--kill")
+			  ("--directory"))
+			(mapcar '(lambda (elt)
+				   (list (concat "-" (car elt))))
+				command-switch-alist)))
+	       tem argval completion
+	       ;; List of directories specified in -L/--directory,
+	       ;; in reverse of the order specified.
+	       extra-load-path
+	       (initial-load-path load-path))
 	  (setq command-line-args-left (cdr command-line-args-left))
+
+	  ;; Convert long options to ordinary options
+	  ;; and separate out an attached option argument into argval.
+	  (if (string-match "^--[^=]*=" argi)
+	      (setq argval (substring argi (match-end 0))
+		    argi (substring argi 0 (1- (match-end 0)))))
+	  (setq completion (try-completion argi longopts))
+	  (if (eq completion t)
+	      (setq argi (substring argi 1))
+	    (if (stringp completion)
+		(let ((elt (assoc completion longopts)))
+		  (or elt
+		      (error "Option `%s' is ambiguous" argi))
+		  (setq argi (substring (car elt) 1)))
+	      (setq argval nil argi orig-argi)))
+
+	  ;; Execute the option.
 	  (cond ((setq tem (assoc argi command-switch-alist))
-		 (funcall (cdr tem) argi))
+		 (if argval
+		     (let ((command-line-args-left
+			    (cons argval command-line-args-left)))
+		       (funcall (cdr tem) argi))
+		   (funcall (cdr tem) argi)))
 		((or (string-equal argi "-f")  ;what the manual claims
 		     (string-equal argi "-funcall")
 		     (string-equal argi "-e")) ; what the source used to say
-		 (setq tem (intern (car command-line-args-left)))
-		 (setq command-line-args-left (cdr command-line-args-left))
-		 (funcall tem))
+		 (if argval
+		     (setq tem (intern argval))
+		   (setq tem (intern (car command-line-args-left)))
+		   (setq command-line-args-left (cdr command-line-args-left)))
+		 (if (arrayp (symbol-function tem))
+		     (command-execute tem)
+		   (funcall tem)))
+		;; Set the default directory as specified in -L.
+		((or (string-equal argi "-L")
+		     (string-equal argi "-directory"))
+		 (if argval
+		     (setq tem argval)
+		   (setq tem (car command-line-args-left)
+			 command-line-args-left (cdr command-line-args-left)))
+		 (setq extra-load-path
+		       (cons (expand-file-name tem) extra-load-path))
+		 (setq load-path (append (nreverse extra-load-path)
+					 initial-load-path)))
 		((or (string-equal argi "-l")
 		     (string-equal argi "-load"))
-		 (let ((file (car command-line-args-left)))
+		 (if argval
+		     (setq tem argval)
+		   (setq tem (car command-line-args-left)
+			 command-line-args-left (cdr command-line-args-left)))
+		 (let ((file tem))
 		   ;; Take file from default dir if it exists there;
 		   ;; otherwise let `load' search for it.
 		   (if (file-exists-p (expand-file-name file))
 		       (setq file (expand-file-name file)))
-		   (load file nil t))
-		 (setq command-line-args-left (cdr command-line-args-left)))
+		   (load file nil t)))
 		((string-equal argi "-insert")
 		 (or (stringp (car command-line-args-left))
-		     (error "filename omitted from `-insert' option"))
-		 (insert-file-contents (car command-line-args-left))
-		 (setq command-line-args-left (cdr command-line-args-left)))
+		     (error "File name omitted from `-insert' option"))
+		 (if argval
+		     (setq tem argval)
+		   (setq tem (car command-line-args-left)
+			 command-line-args-left (cdr command-line-args-left)))
+		 (insert-file-contents tem))
 		((string-equal argi "-kill")
 		 (kill-emacs t))
 		((string-match "^\\+[0-9]+\\'" argi)

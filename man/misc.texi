@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994, 1995 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Miscellaneous Commands
@@ -14,7 +14,7 @@ diversions and amusements.
 
 @end iftex
 @node GNUS, Shell, Calendar/Diary, Top
-@section @sc{GNUS}
+@section GNUS
 @cindex @sc{gnus}
 @cindex reading netnews
 
@@ -24,7 +24,14 @@ articles in specific group, and read articles of interest.  You can
 respond to authors or write replies to all the readers of a news group.
 
   This section introduces @sc{gnus} and describes several basic
-features.  Full documentation will appear elsewhere.
+features.
+@ifinfo
+@xref{Top, GNUS, GNUS, gnus}.
+@end ifinfo
+@iftex
+For more information, run @kbd{M-x info} and select the @sc{gnus}
+manual.
+@end iftex
 
 @findex gnus
 To start @sc{gnus}, type @kbd{M-x gnus @key{RET}}.
@@ -36,7 +43,7 @@ To start @sc{gnus}, type @kbd{M-x gnus @key{RET}}.
 @end menu
 
 @node Buffers of GNUS
-@subsection @sc{GNUS}'s Three Buffers
+@subsection GNUS's Three Buffers
 
 @sc{gnus} creates and uses three Emacs buffers, each with its own
 particular purpose and its own major mode.
@@ -57,7 +64,7 @@ need to select this buffer because you can scroll through it while
 remaining in the Summary buffer.
 
 @node GNUS Startup
-@subsection When @sc{GNUS} Starts Up
+@subsection When GNUS Starts Up
 
 At startup, @sc{gnus} reads your @file{.newsrc} news initialization file
 and attempts to communicate with the local news server, which is a
@@ -69,6 +76,16 @@ newsgroups listed in the Newsgroup buffer, type @kbd{L} to get a listing
 of all the newsgroups.  Then type @kbd{u} to unsubscribe from the
 newsgroups you don't want to read.  (You can move point to a particular
 group using @kbd{n} and @kbd{p} or the usual Emacs commands.)
+
+The first time you start @sc{gnus}, it subscribes automatically to every
+newsgroup that exists.  Subsequently, @sc{gnus} subscribes automatically
+to all newly created newsgroups.  You can unsubscribe groups with
+@kbd{u}.  You can inhibit automatic subscription by adding the following
+line to your @file{~/.newsrc} file:
+
+@example
+options -n !all !all.all
+@end example
 
 When you quit @sc{gnus} with @kbd{q}, it automatically records in your
 @file{.newsrc} initialization file the subscribed or unsubscribed status
@@ -502,7 +519,7 @@ instead.
 
 @item M-?
 @kindex M-? @r{(Shell mode)}
-@findex comint-dynamic-list-filename-completions
+@findex comint-dynamic-list-filename@dots{}
 Display temporarily a list of the possible completions of the file name
 before point in the shell buffer
 (@code{comint-dynamic-list-filename-completions}).
@@ -522,17 +539,17 @@ Move to the beginning of the line, but after the prompt if any
 (@code{comint-bol}).
 
 @item C-c C-u
-@kindex C-c C-\ @r{(Shell mode)}
+@kindex C-c C-u @r{(Shell mode)}
 @findex comint-kill-input
 Kill all text pending at end of buffer to be sent as input
 (@code{comint-kill-input}).
 
 @item C-c C-w
-@kindex C-c C-\ @r{(Shell mode)}
+@kindex C-c C-w @r{(Shell mode)}
 Kill a word before point (@code{backward-kill-word}).
 
 @item C-c C-c
-@kindex C-c C-\ @r{(Shell mode)}
+@kindex C-c C-c @r{(Shell mode)}
 @findex comint-interrupt-subjob
 Interrupt the shell or its current subjob if any
 (@code{comint-interrupt-subjob}).
@@ -583,9 +600,15 @@ specifies how to recognize the end of a command.
 Move backward across one shell command, but not beyond the current line
 (@code{shell-backward-command}).
 
+@item C-c C-l
+@kindex C-c C-l @r{(Shell mode)}
+@findex comint-dynamic-list-input-ring
+Display the buffer's history of shell commands in another window
+(@code{comint-dynamic-list-input-ring}).
+
 @item M-x dirs
-Ask the shell what its current directory is, so that Emacs can agree with 
-the shell.
+Ask the shell what its current directory is, so that Emacs can agree
+with the shell.
 
 @item M-x send-invisible @key{RET} @var{text} @key{RET}
 @findex send-invisible
@@ -609,9 +632,29 @@ Suspending a subjob of the shell is a completely different matter---that
 is normal practice, but you must use the shell to continue the subjob;
 this command won't do it.}
 
-@item M-x shell-strip-ctrl-m
-@findex shell-strip-ctrl-m
+@item M-x comint-strip-ctrl-m
+@findex comint-strip-ctrl-m
 Discard all control-m characters from the shell output.
+The most convenient way to use this command is to make it run
+automatically when you get output from the subshell.  To do that,
+evaluate this Lisp expression:
+
+@example
+(add-hook 'comint-output-filter-functions
+          'comint-strip-ctrl-m)
+@end example
+
+@item M-x comint-truncate-buffer
+@findex comint-truncate-buffer
+This command truncates the shell buffer to a certain maximum number of
+lines, specified by the variable @code{comint-buffer-maximum-size}.
+Here's how to do this automatically each time you get output from the
+subshell:
+
+@example
+(add-hook 'comint-output-filter-functions
+          'comint-truncate-buffer)
+@end example
 @end table
 
   Shell mode also customizes the paragraph commands so that only shell
@@ -619,6 +662,7 @@ prompts start new paragraphs.  Thus, a paragraph consists of an input
 command plus the output that follows it in the buffer.
 
 @cindex Comint mode
+@cindex mode, Comint
   Shell mode is a derivative of Comint mode, a general purpose mode for
 communicating with interactive subprocesses.  Most of the features of
 Shell mode actually come from Comint mode, as you can see from the
@@ -819,7 +863,7 @@ the possible completions whenever completion is not exact.
 @findex comint-dynamic-complete-variable
   The command @code{comint-dynamic-complete-variable} does variable name
 completion using the environment variables as set within Emacs.  The
-variables controlling filename completion apply to variable name
+variables controlling file name completion apply to variable name
 completion too.  This command is normally available through the menu
 bar.
 
@@ -828,10 +872,10 @@ bar.
 If you set @code{shell-command-execonly} to @code{nil},
 it considers nonexecutable files as well.
 
-@cindex shell-pushd-tohome
-@cindex shell-pushd-dextract
-@cindex shell-pushd-dunique
-  You can now configure the behavior of @samp{pushd}.  Variables control
+@findex shell-pushd-tohome
+@findex shell-pushd-dextract
+@findex shell-pushd-dunique
+  You can configure the behavior of @samp{pushd}.  Variables control
 whether @samp{pushd} behaves like @samp{cd} if no argument is given
 (@code{shell-pushd-tohome}), pop rather than rotate with a numeric
 argument (@code{shell-pushd-dextract}), and only add directories to the
@@ -891,38 +935,40 @@ Shell mode.
 
   Various programs such as @code{mail} can invoke your choice of editor
 to edit a particular piece of text, such as a message that you are
-sending.  By convention, these programs use the environment variable
-@code{EDITOR} to specify which editor to run.  If you set @code{EDITOR}
-to @samp{emacs}, they invoke Emacs---but in an inconvenient fashion, by
-starting a new, separate Emacs process.  This is inconvenient because it
-takes time and because the new Emacs process doesn't share the buffers
-in the existing Emacs process.
+sending.  By convention, most of these programs use the environment
+variable @code{EDITOR} to specify which editor to run.  If you set
+@code{EDITOR} to @samp{emacs}, they invoke Emacs---but in an
+inconvenient fashion, by starting a new, separate Emacs process.  This
+is inconvenient because it takes time and because the new Emacs process
+doesn't share the buffers in the existing Emacs process.
 
   You can arrange to use your existing Emacs process as the editor for
 programs like @code{mail} by using the Emacs client and Emacs server
 programs.  Here is how.
 
+@cindex TEXEDIT environment variable
   First, the preparation.  Within Emacs, call the function
 @code{server-start}.  (Your @file{.emacs} file can do this automatically
 if you add the expression @code{(server-start)} to it.)  Then, outside
-Emacs, set the @code{EDITOR} environment variable to
-@samp{emacsclient}.
+Emacs, set the @code{EDITOR} environment variable to @samp{emacsclient}.
+(Note that some programs use a different environment variable; for
+example, to make @TeX{} use @samp{emacsclient}, you should set the
+@code{TEXEDIT} environment variable to @samp{emacsclient +%d %s}.)
 
 @kindex C-x #
 @findex server-edit
   Then, whenever any program invokes your specified @code{EDITOR}
 program, the effect is to send a message to your principal Emacs telling
 it to visit a file.  (That's what the program @code{emacsclient} does.)
-Emacs obeys silently; it does not immediately switch to the new file's
-buffer.  When you want to do that, type @kbd{C-x #}
-(@code{server-edit}).
+Emacs displays the buffer immediately and you can immediately begin
+editing it.
 
-  When you've finished editing that buffer, type @kbd{C-x #} again.
-This saves the file and sends a message back to the @code{emacsclient}
-program telling it to exit.  The programs that use @code{EDITOR} wait
-for the ``editor'' (actually, @code{emacsclient}) to exit.  @kbd{C-x #}
-also checks to see if any other files are pending for you to edit, and
-selects the next one.
+  When you've finished editing that buffer, type @kbd{C-x #}
+(@code{server-edit}).  This saves the file and sends a message back to
+the @code{emacsclient} program telling it to exit.  The programs that
+use @code{EDITOR} wait for the ``editor'' (actually, @code{emacsclient})
+to exit.  @kbd{C-x #} also checks for other pending external requests
+to edit various files, and selects the next such file.
 
   You can switch to a server buffer manually if you wish; you don't have
 to arrive at it with @kbd{C-x #}.  But @kbd{C-x #} is the only way to
@@ -963,7 +1009,7 @@ you finish with the file.  Use the variable
 this sense; its value should be a regular expression that matches file
 names that are temporary.
 
-@node Hardcopy, Sorting, Emacs Server, Top
+@node Hardcopy, Postscript, Emacs Server, Top
 @section Hardcopy Output
 @cindex hardcopy
 
@@ -990,11 +1036,11 @@ Like @code{lpr-buffer} but print only the current region.
 @findex lpr-buffer
 @findex lpr-region
 @vindex lpr-switches
-  All the hardcopy commands pass extra switches to the @code{lpr}
-program based on the value of the variable @code{lpr-switches}.  Its
-value should be a list of strings, each string an option starting with
-@samp{-}.  For example, to use a printer named @samp{nearme}, set
-@code{lpr-switches} like this:
+  The hardcopy commands (aside from the Postscript commands) pass extra
+switches to the @code{lpr} program based on the value of the variable
+@code{lpr-switches}.  Its value should be a list of strings, each string
+an option starting with @samp{-}.  For example, to use a printer named
+@samp{nearme}, set @code{lpr-switches} like this:
 
 @example
 (setq lpr-switches '("-Pnearme"))
@@ -1004,7 +1050,72 @@ value should be a list of strings, each string an option starting with
   The variable @code{lpr-header-switches} similarly specifies the
 extra switches to use to make page headers.
 
-@node Sorting, Narrowing, Hardcopy, Top
+@node Postscript, Sorting, Hardcopy, Top
+@section Postscript Hardcopy
+
+  These commands convert buffer contents to Postscript,
+either printing it or leaving it in another Emacs buffer.
+
+@table @kbd
+@item M-x ps-print-buffer
+Print hardcopy of the current buffer in Postscript form.
+@item M-x ps-print-region
+Print hardcopy of the current region in Postscript form.
+@item M-x ps-print-buffer-with-faces
+Print hardcopy of the current buffer in Postscript form, showing the
+faces used in the text by means of Postscript features.
+@item M-x ps-print-region-with-faces
+Print hardcopy of the current region in Postscript form, showing the
+faces used in the text.
+@item M-x ps-spool-buffer
+Generate Postscript for the current buffer text.
+@item M-x ps-spool-region
+Generate Postscript for the current region.
+@item M-x ps-spool-buffer-with-faces
+Generate Postscript for the current buffer, showing the faces used.
+@item M-x ps-spool-region-with-faces
+Generate Postscript for the current region, showing the faces used.
+@end table
+
+@findex ps-print-region
+@findex ps-print-buffer
+@findex ps-print-region-with-faces
+@findex ps-print-buffer-with-faces
+  The Postscript commands, @code{ps-print-buffer} and
+@code{ps-print-region}, print buffer contents in Postscript form.  One
+command prints the entire buffer; the other, just the region.  The
+corresponding @samp{-with-faces} commands,
+@code{ps-print-buffer-with-faces} and @code{ps-print-region-with-faces},
+use Postscript features to show the faces (fonts and colors) in the text
+properties of the text being printed.
+
+@vindex ps-lpr-command
+@vindex ps-lpr-switches
+@vindex ps-print-color-p
+  All four of the commands above use the variables @code{ps-lpr-command}
+and @code{ps-lpr-switches} to specify how to print the output.
+@code{ps-lpr-command} specifies the command name to run, and
+@code{ps-lpr-switches} specifies command line options to use.  If you
+don't set these variables yourself, they take their initial values from
+@code{lpr-command} and @code{lpr-switches}.
+
+@vindex ps-print-header
+  The variable @code{ps-print-header} controls whether these commands
+add header lines to each page---set it to @code{nil} to turn headers
+off.  You can turn off color processing by setting
+@code{ps-print-color-p} to @code{nil}.  Many other customization
+variables for these commands are defined and described in the Lisp file
+@file{ps-print.el}.
+
+@findex ps-spool-region
+@findex ps-spool-buffer
+@findex ps-spool-region-with-faces
+@findex ps-spool-buffer-with-faces
+  The commands whose names have @samp{spool} instead of @samp{print}
+generate the Postscript output in an Emacs buffer instead of sending
+it to the printer.
+
+@node Sorting, Narrowing, Postscript, Top
 @section Sorting Text
 @cindex sorting
 
@@ -1370,6 +1481,14 @@ this Emacs session will be saved when you exit Emacs.
 must start it with the same current directory as you used when you
 started the previous session.
 
+@vindex desktop-files-not-to-save
+  The variable @code{desktop-files-not-to-save} controls which files are
+excluded from state saving.  Its value is a regular expression that
+matches the files to exclude.  By default, remote (ftp-accessed) files
+are excluded; this is because visiting them again in the subsequent
+session would be slow.  If you want to include these files in state
+saving, set @code{desktop-files-not-to-save} to @code{"^$"}.
+
 @node Recursive Edit, Emulation, Saving Emacs Sessions, Top
 @section Recursive Editing Levels
 @cindex recursive editing level
@@ -1460,12 +1579,19 @@ are done in the global keymap, so there is no problem switching
 buffers or major modes while in EDT emulation.
 
 @item vi (Berkeley editor)
+@findex viper-mode
+Viper is the newest emulator for vi.  It implements several levels of
+emulation; level 1 is closest to vi itself, while level 5 departs
+somewhat from strict emulation to take advantage of the capabilities of
+Emacs.  To invoke Viper, type @kbd{M-x viper-mode}; it will guide you
+the rest of the way and ask for the emulation level.
+
+@item vi (another emulator)
 @findex vi-mode
-Turn on vi emulation with @kbd{M-x vi-mode}.  This is a major mode
-that replaces the previously established major mode.  All of the
-vi commands that, in real vi, enter ``input'' mode are programmed
-in the Emacs emulator to return to the previous major mode.  Thus,
-ordinary Emacs serves as vi's ``input'' mode.
+@kbd{M-x vi-mode} enters a major mode that replaces the previously
+established major mode.  All of the vi commands that, in real vi, enter
+``input'' mode are programmed instead to return to the previous major
+mode.  Thus, ordinary Emacs serves as vi's ``input'' mode.
 
 Because vi emulation works through major modes, it does not work
 to switch buffers during emulation.  Return to normal Emacs first.
@@ -1475,11 +1601,11 @@ to the @code{vi-mode} command.
 
 @item vi (alternate emulator)
 @findex vip-mode
-Another vi emulator said to resemble real vi more thoroughly is
-invoked by @kbd{M-x vip-mode}.  ``Input'' mode in this emulator is
-changed from ordinary Emacs so you can use @key{ESC} to go back to
-emulated vi command mode.  To get from emulated vi command mode back
-to ordinary Emacs, type @kbd{C-z}.
+@kbd{M-x vip-mode} invokes another vi emulator, said to resemble real vi
+more thoroughly than @kbd{M-x vi-mode}.  ``Input'' mode in this emulator
+is changed from ordinary Emacs so you can use @key{ESC} to go back to
+emulated vi command mode.  To get from emulated vi command mode back to
+ordinary Emacs, type @kbd{C-z}.
 
 This emulation does not work through major modes, and it is possible
 to switch buffers in various ways within the emulator.  It is not
@@ -1490,11 +1616,6 @@ not use it.
 For full information, see the long comment at the beginning of the
 source file, which is @file{lisp/vip.el} in the Emacs distribution.
 @end table
-
-I am interested in hearing which vi emulator users prefer, as well as in
-receiving more complete user documentation for either or both emulators.
-Warning: loading both vi emulators at once may cause name conflicts; no
-one has checked.
 
 @node Dissociated Press, Amusements, Emulation, Top
 @section Dissociated Press

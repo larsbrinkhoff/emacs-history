@@ -1,5 +1,8 @@
 ;;; vi.el --- major mode for emulating "vi" editor under GNU Emacs.
 
+; This file is in the public domain because the authors distributed it
+; without a copyright noticed before the US signed the Bern Convention.
+
 ;; Author: Neal Ziring <nz@rsch.wisc.edu>
 ;;	Felix S. T. Wu <wu@crys.wisc.edu>
 ;; Keywords: emulations
@@ -9,7 +12,7 @@
 ; Originally written by : seismo!wucs!nz@rsch.wisc.edu (Neal Ziring)
 ; Extensively redesigned and rewritten by wu@crys.wisc.edu (Felix S.T. Wu)
 ; Last revision: 01/07/87 Wed (for GNU Emacs 18.33)
-;
+
 ; INSTALLATION PROCEDURE:
 ; 1) Add a global key binding for command "vi-mode" (I use ESC ESC instead of
 ;    the single ESC used in real "vi", so I can access other ESC prefixed emacs
@@ -40,10 +43,13 @@
   (let ((mode-cmd (lookup-key vi-tilde-map (char-to-string mode-char))))
     (if (null mode-cmd)
 	(with-output-to-temp-buffer "*Help*"
-	  (princ (substitute-command-keys "Possible major modes to switch to: \\{vi-tilde-map}")))
+	  (princ (substitute-command-keys "Possible major modes to switch to: \\{vi-tilde-map}"))
+	  (save-excursion
+	    (set-buffer standard-output)
+	    (help-mode)))
       (setq prefix-arg arg)		; prefix arg will be passed down
       (command-execute mode-cmd nil)	; may need to save mode-line-format etc
-      (set-buffer-modified-p (buffer-modified-p))))) ; just in case
+      (force-mode-line-update))))	; just in case
 
 
 (if (null (where-is-internal 'vi-switch-mode (current-local-map)))
@@ -93,7 +99,7 @@
 	(use-local-map vi-mode-old-local-map)
 	(setq major-mode vi-mode-old-major-mode)
 	(setq case-fold-search vi-mode-old-case-fold)
-	(set-buffer-modified-p (buffer-modified-p)))))
+	(force-mode-line-update))))
 
 (defun vi-readonly-mode ()
   "Toggle current buffer's readonly flag."
@@ -451,7 +457,7 @@ Syntax table and abbrevs while in vi mode remain as they were in Emacs."
      (use-local-map vi-com-map)
      (setq major-mode 'vi-mode)
      (setq mode-name "VI")
-     (set-buffer-modified-p (buffer-modified-p))  ; force mode line update
+     (force-mode-line-update)		; force mode line update
      (if vi-insert-state	        ; this is a return from insertion
          (vi-end-of-insert-state))))
 
@@ -485,7 +491,10 @@ set sw=n     M-x set-variable vi-shift-width n "
 ;; (let ((cmd (read-string ":")) (lines 1))
 ;;  (cond ((string-match "s"))))
   (with-output-to-temp-buffer "*Help*"
-    (princ (documentation 'vi-ex-cmd))))
+    (princ (documentation 'vi-ex-cmd))
+    (save-excursion
+      (set-buffer standard-output)
+      (help-mode))))
 
 (defun vi-undefined ()
   (interactive)
@@ -513,7 +522,7 @@ This function expects 'overwrite-mode' being set properly beforehand."
   (setq case-fold-search vi-mode-old-case-fold)
   (use-local-map vi-mode-old-local-map)
   (setq major-mode vi-mode-old-major-mode)
-  (set-buffer-modified-p (buffer-modified-p))  ; force mode line update
+  (force-mode-line-update)
   (setq vi-insert-state t))
 
 (defun vi-end-of-insert-state ()
@@ -565,9 +574,9 @@ insert state."
    (kill-line arg)
    (vi-set-last-change-command 'kill-line arg))
 
-(defun vi-kill-region ()
-  (interactive)
-  (kill-region)
+(defun vi-kill-region (start end)
+  (interactive "*r")
+  (kill-region start end)
   (vi-set-last-change-command 'kill-region))
   
 (defun vi-append-at-end-of-line (arg)
@@ -1350,12 +1359,12 @@ The following CHAR will be the name for the command or macro."
 p(aragraph), P(age), f(unction in C/Pascal etc.), w(ord), e(nd of sentence),
 l(ines)."
   (interactive "p\nc")
-  (cond ((char-equal region ?d) (mark-defun arg))
+  (cond ((char-equal region ?d) (mark-defun))
 	((char-equal region ?s) (mark-sexp arg))
 	((char-equal region ?b) (mark-whole-buffer))
-	((char-equal region ?p) (mark-paragraph arg))
+	((char-equal region ?p) (mark-paragraph))
 	((char-equal region ?P) (mark-page arg))
-	((char-equal region ?f) (mark-c-function arg))
+	((char-equal region ?f) (mark-c-function))
 	((char-equal region ?w) (mark-word arg))
 	((char-equal region ?e) (mark-end-of-sentence arg))
 	((char-equal region ?l) (vi-mark-lines arg))

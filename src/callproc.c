@@ -1,5 +1,5 @@
 /* Synchronous subprocess invocation for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1988, 1993, 1994 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 88, 93, 94, 95 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -41,6 +41,15 @@ extern char *strerror ();
 #include <fcntl.h>
 #endif
 
+#ifdef WINDOWSNT
+#define NOMINMAX
+#include <windows.h>
+#include <stdlib.h>	/* for proper declaration of environ */
+#include <fcntl.h>
+#include "nt.h"
+#define _P_NOWAIT 1	/* from process.h */
+#endif
+
 #ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
 #include "msdos.h"
 #define INCLUDED_FCNTL
@@ -74,14 +83,14 @@ extern char **environ;
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-#ifdef MSDOS
+#ifdef DOS_NT
 /* When we are starting external processes we need to know whether they
    take binary input (no conversion) or text input (\n is converted to
    \r\n).  Similar for output: if newlines are written as \r\n then it's
    text process output, otherwise it's binary.  */
 Lisp_Object Vbinary_process_input;
 Lisp_Object Vbinary_process_output;
-#endif
+#endif /* DOS_NT */
 
 Lisp_Object Vexec_path, Vexec_directory, Vdata_directory, Vdoc_directory;
 Lisp_Object Vconfigure_info_directory;
@@ -90,9 +99,9 @@ Lisp_Object Vshell_file_name;
 
 Lisp_Object Vprocess_environment;
 
-#ifdef MSDOS
+#ifdef DOS_NT
 Lisp_Object Qbuffer_file_type;
-#endif
+#endif /* DOS_NT */
 
 /* True iff we are about to fork off a synchronous process or if we
    are waiting for it.  */
@@ -170,10 +179,17 @@ DEFUN ("call-process", Fcall_process, Scall_process, 1, MANY, 0,
 The program's input comes from file INFILE (nil means `/dev/null').\n\
 Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
+BUFFER can also have the form (REAL-BUFFER STDERR-FILE); in that case,\n\
+REAL-BUFFER says what to do with standard output, as above,\n\
+while STDERR-FILE says what to do with standard error in the child.\n\
+STDERR-FILE may be nil (discard standard error output),\n\
+t (mix it with ordinary output), or a file name string.\n\
+\n\
 Fourth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining arguments are strings passed as command arguments to PROGRAM.\n\
-If BUFFER is 0, returns immediately with value nil.\n\
-Otherwise waits for PROGRAM to terminate\n\
+\n\
+If BUFFER is 0, `call-process' returns immediately with value nil.\n\
+Otherwise it waits for PROGRAM to terminate\n\
 and returns a numeric exit status or a signal description string.\n\
 If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   (nargs, args)
@@ -184,11 +200,16 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   int fd[2];
   int filefd;
   register int pid;
-  char buf[1024];
+  char buf[16384];
+  char *bufptr = buf;
+  int bufsize = 16384;
   int count = specpdl_ptr - specpdl;
   register unsigned char **new_argv
     = (unsigned char **) alloca ((max (2, nargs - 2)) * sizeof (char *));
   struct buffer *old = current_buffer;
+  /* File to use for stderr in the child.
+     t means use same as standard output.  */
+  Lisp_Object error_file;
 #ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
   char *outf, *tempfile;
   int outfilefd;
@@ -198,9 +219,11 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 #endif
   CHECK_STRING (args[0], 0);
 
+  error_file = Qt;
+
 #ifndef subprocesses
   /* Without asynchronous processes we cannot have BUFFER == 0.  */
-  if (nargs >= 3 && XTYPE (args[2]) == Lisp_Int)
+  if (nargs >= 3 && INTEGERP (args[2]))
     error ("Operating system cannot handle asynchronous subprocesses");
 #endif /* subprocesses */
 
@@ -214,14 +237,28 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 
   if (nargs >= 3)
     {
-      register Lisp_Object tem;
+      buffer = args[2];
 
-      buffer = tem = args[2];
-      if (!(EQ (tem, Qnil)
-	    || EQ (tem, Qt)
-	    || XFASTINT (tem) == 0))
+      /* If BUFFER is a list, its meaning is
+	 (BUFFER-FOR-STDOUT FILE-FOR-STDERR).  */
+      if (CONSP (buffer))
 	{
-	  buffer = Fget_buffer (tem);
+	  if (CONSP (XCONS (buffer)->cdr))
+	    error_file = Fexpand_file_name (XCONS (XCONS (buffer)->cdr)->car,
+					    Qnil);
+	  buffer = XCONS (buffer)->car;
+	}
+
+      if (!(EQ (buffer, Qnil)
+	    || EQ (buffer, Qt)
+	    || XFASTINT (buffer) == 0))
+	{
+	  Lisp_Object spec_buffer;
+	  spec_buffer = buffer;
+	  buffer = Fget_buffer (buffer);
+	  /* Mention the buffer name for a better error message.  */
+	  if (NILP (buffer))
+	    CHECK_BUFFER (spec_buffer, 2);
 	  CHECK_BUFFER (buffer, 2);
 	}
     }
@@ -314,12 +351,16 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
     }
 #endif
 
-  if (XTYPE (buffer) == Lisp_Int)
+  if (INTEGERP (buffer))
     fd[1] = open (NULL_DEVICE, O_WRONLY), fd[0] = -1;
   else
     {
 #ifndef MSDOS
+#ifdef WINDOWSNT
+      pipe_with_inherited_out (fd);
+#else  /* not WINDOWSNT */
       pipe (fd);
+#endif /* not WINDOWSNT */
 #endif
 #if 0
       /* Replaced by close_process_descs */
@@ -332,6 +373,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
        Protect it from permanent change.  */
     register char **save_environ = environ;
     register int fd1 = fd[1];
+    int fd_error = fd1;
 
 #if 0  /* Some systems don't have sigblock.  */
     mask = sigblock (sigmask (SIGCHLD));
@@ -360,6 +402,32 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 	report_file_error ("Cannot re-open temporary file", Qnil);
       }
 #else /* not MSDOS */
+
+    if (NILP (error_file))
+      fd_error = open (NULL_DEVICE, O_WRONLY);
+    else if (STRINGP (error_file))
+      {
+#ifdef DOS_NT
+	fd_error = open (XSTRING (error_file)->data,
+			 O_WRONLY | O_TRUNC | O_CREAT | O_TEXT,
+			 S_IREAD | S_IWRITE);
+#else  /* not DOS_NT */
+	fd_error = creat (XSTRING (error_file)->data, 0666);
+#endif /* not DOS_NT */
+      }
+
+    if (fd_error < 0)
+      {
+	close (filefd);
+	close (fd[0]);
+	if (fd1 >= 0)
+	  close (fd1);
+	report_file_error ("Cannot open", error_file);
+      }
+
+#ifdef WINDOWSNT
+    pid = child_setup (filefd, fd1, fd_error, new_argv, 0, current_dir);
+#else  /* not WINDOWSNT */
     pid = vfork ();
 
     if (pid == 0)
@@ -371,9 +439,10 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 #else
         setpgrp (pid, pid);
 #endif /* USG */
-	child_setup (filefd, fd1, fd1, new_argv, 0, current_dir);
+	child_setup (filefd, fd1, fd_error, new_argv, 0, current_dir);
       }
 #endif /* not MSDOS */
+#endif /* not WINDOWSNT */
 
     environ = save_environ;
 
@@ -391,7 +460,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       report_file_error ("Doing vfork", Qnil);
     }
 
-  if (XTYPE (buffer) == Lisp_Int)
+  if (INTEGERP (buffer))
     {
       if (fd[0] >= 0)
 	close (fd[0]);
@@ -417,7 +486,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 #endif /* not MSDOS */
 
 
-  if (XTYPE (buffer) == Lisp_Buffer)
+  if (BUFFERP (buffer))
     Fset_buffer (buffer);
 
   immediate_quit = 1;
@@ -426,12 +495,49 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   {
     register int nread;
     int first = 1;
+    int total_read = 0;
 
-    while ((nread = read (fd[0], buf, sizeof buf)) > 0)
+    while (1)
       {
+	/* Repeatedly read until we've filled as much as possible
+	   of the buffer size we have.  But don't read
+	   less than 1024--save that for the next bufferfull.  */
+
+	nread = 0;
+	while (nread < bufsize - 1024)
+	  {
+	    int this_read
+	      = read (fd[0], bufptr + nread, bufsize - nread);
+
+	    if (this_read < 0)
+	      goto give_up;
+
+	    if (this_read == 0)
+	      goto give_up_1;
+
+	    nread += this_read;
+	  }
+
+      give_up_1:
+
+	/* Now NREAD is the total amount of data in the buffer.  */
+	if (nread == 0)
+	  break;
+
 	immediate_quit = 0;
+	total_read += nread;
+	
 	if (!NILP (buffer))
-	  insert (buf, nread);
+	  insert (bufptr, nread);
+
+	/* Make the buffer bigger as we continue to read more data,
+	   but not past 64k.  */
+	if (bufsize < 64 * 1024 && total_read > 32 * bufsize)
+	  {
+	    bufsize *= 2;
+	    bufptr = (char *) alloca (bufsize);
+	  }
+
 	if (!NILP (display) && INTERACTIVE)
 	  {
 	    if (first)
@@ -442,6 +548,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 	immediate_quit = 1;
 	QUIT;
       }
+  give_up: ;
   }
 
   /* Wait for it to terminate, unless it already has.  */
@@ -467,19 +574,29 @@ static Lisp_Object
 delete_temp_file (name)
      Lisp_Object name;
 {
-  unlink (XSTRING (name)->data);
+  /* Use Fdelete_file (indirectly) because that runs a file name handler.
+     We did that when writing the file, so we should do so when deleting.  */
+  internal_delete_file (name);
 }
 
 DEFUN ("call-process-region", Fcall_process_region, Scall_process_region,
   3, MANY, 0,
   "Send text from START to END to a synchronous process running PROGRAM.\n\
 Delete the text if fourth arg DELETE is non-nil.\n\
+\n\
 Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
+BUFFER can also have the form (REAL-BUFFER STDERR-FILE); in that case,\n\
+REAL-BUFFER says what to do with standard output, as above,\n\
+while STDERR-FILE says what to do with standard error in the child.\n\
+STDERR-FILE may be nil (discard standard error output),\n\
+t (mix it with ordinary output), or a file name string.\n\
+\n\
 Sixth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining args are passed to PROGRAM at startup as command args.\n\
-If BUFFER is nil, returns immediately with value nil.\n\
-Otherwise waits for PROGRAM to terminate\n\
+\n\
+If BUFFER is nil, `call-process-region' returns immediately with value nil.\n\
+Otherwise it waits for PROGRAM to terminate\n\
 and returns a numeric exit status or a signal description string.\n\
 If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   (nargs, args)
@@ -489,13 +606,13 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   struct gcpro gcpro1;
   Lisp_Object filename_string;
   register Lisp_Object start, end;
-#ifdef MSDOS
+#ifdef DOS_NT
   char *tempfile;
 #else
   char tempfile[20];
 #endif
   int count = specpdl_ptr - specpdl;
-#ifdef MSDOS
+#ifdef DOS_NT
   char *outf = '\0';
 
   if ((outf = egetenv ("TMP")) || (outf = egetenv ("TEMP")))
@@ -506,17 +623,21 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       *tempfile = '\0';
     }
   dostounix_filename (tempfile);
-  if (tempfile[strlen (tempfile) - 1] != '/')
+  if (!IS_DIRECTORY_SEP (tempfile[strlen (tempfile) - 1]))
     strcat (tempfile, "/");
+#ifdef WINDOWSNT
+  strcat (tempfile, "emXXXXXX");
+#else
   strcat (tempfile, "detmp.XXX");
-#else /* not MSDOS */
+#endif
+#else /* not DOS_NT */
 
 #ifdef VMS
   strcpy (tempfile, "tmp:emacsXXXXXX.");
 #else
   strcpy (tempfile, "/tmp/emacsXXXXXX");
 #endif
-#endif /* not MSDOS */
+#endif /* not DOS_NT */
 
   mktemp (tempfile);
 
@@ -524,13 +645,13 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   GCPRO1 (filename_string);
   start = args[0];
   end = args[1];
-#ifdef MSDOS
+#ifdef DOS_NT
   specbind (Qbuffer_file_type, Vbinary_process_input);
   Fwrite_region (start, end, filename_string, Qnil, Qlambda);
   unbind_to (count, Qnil);
-#else
+#else  /* not DOS_NT */
   Fwrite_region (start, end, filename_string, Qnil, Qlambda);
-#endif
+#endif /* not DOS_NT */
 
   record_unwind_protect (delete_temp_file, filename_string);
 
@@ -576,6 +697,10 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
 #else /* not MSDOS */
   char **env;
   char *pwd_var;
+#ifdef WINDOWSNT
+  int cpid;
+  HANDLE handles[4];
+#endif /* WINDOWSNT */
 
   int pid = getpid ();
 
@@ -608,7 +733,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
     temp = pwd_var + 4;
     bcopy ("PWD=", pwd_var, 4);
     bcopy (XSTRING (current_dir)->data, temp, i);
-    if (temp[i - 1] != '/') temp[i++] = '/';
+    if (!IS_DIRECTORY_SEP (temp[i - 1])) temp[i++] = DIRECTORY_SEP;
     temp[i] = 0;
 
     /* We can't signal an Elisp error here; we're in a vfork.  Since
@@ -617,10 +742,10 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
        are changed between the check and this chdir, but we should
        at least check.  */
     if (chdir (temp) < 0)
-      exit (errno);
+      _exit (errno);
 
     /* Strip trailing slashes for PWD, but leave "/" and "//" alone.  */
-    while (i > 2 && temp[i - 1] == '/')
+    while (i > 2 && IS_DIRECTORY_SEP (temp[i - 1]))
       temp[--i] = 0;
   }
 
@@ -632,8 +757,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
 
     new_length = 0;
     for (tem = Vprocess_environment;
-	 (XTYPE (tem) == Lisp_Cons
-	  && XTYPE (XCONS (tem)->car) == Lisp_String);
+	 CONSP (tem) && STRINGP (XCONS (tem)->car);
 	 tem = XCONS (tem)->cdr)
       new_length++;
 
@@ -647,8 +771,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
 
     /* Copy the Vprocess_environment strings into new_env.  */
     for (tem = Vprocess_environment;
-	 (XTYPE (tem) == Lisp_Cons
-	  && XTYPE (XCONS (tem)->car) == Lisp_String);
+	 CONSP (tem) && STRINGP (XCONS (tem)->car);
 	 tem = XCONS (tem)->cdr)
       {
 	char **ep = env;
@@ -677,7 +800,9 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
       }
     *new_env = 0;
   }
-
+#ifdef WINDOWSNT
+  prepare_standard_handles (in, out, err, handles);
+#else  /* not WINDOWSNT */
   /* Make sure that in, out, and err are not actually already in
      descriptors zero, one, or two; this could happen if Emacs is
      started with its standard in, out, or error closed, as might
@@ -701,6 +826,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
   close (in);
   close (out);
   close (err);
+#endif /* not WINDOWSNT */
 
 #ifdef USG
 #ifndef SETPGRP_RELEASES_CTTY
@@ -716,15 +842,26 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
   something missing here;
 #endif /* vipc */
 
+#ifdef WINDOWSNT
+  /* Spawn the child.  (See ntproc.c:Spawnve).  */
+  cpid = spawnve (_P_NOWAIT, new_argv[0], new_argv, env);
+  if (cpid == -1)
+    /* An error occurred while trying to spawn the process.  */
+    report_file_error ("Spawning child process", Qnil);
+  reset_standard_handles (in, out, err, handles);
+  return cpid;
+#else /* not WINDOWSNT */
   /* execvp does not accept an environment arg so the only way
      to pass this environment is to set environ.  Our caller
      is responsible for restoring the ambient value of environ.  */
   environ = env;
   execvp (new_argv[0], new_argv);
 
-  write (1, "Couldn't exec the program ", 26);
+  write (1, "Can't exec program: ", 26);
   write (1, new_argv[0], strlen (new_argv[0]));
+  write (1, "\n", 1);
   _exit (1);
+#endif /* not WINDOWSNT */
 #endif /* not MSDOS */
 }
 
@@ -771,10 +908,16 @@ getenv_internal (var, varlen, value, valuelen)
       Lisp_Object entry;
 
       entry = XCONS (scan)->car;
-      if (XTYPE (entry) == Lisp_String
+      if (STRINGP (entry)
 	  && XSTRING (entry)->size > varlen
 	  && XSTRING (entry)->data[varlen] == '='
-	  && ! bcmp (XSTRING (entry)->data, var, varlen))
+#ifdef WINDOWSNT
+	  /* NT environment variables are case insensitive.  */
+	  && ! strnicmp (XSTRING (entry)->data, var, varlen)
+#else  /* not WINDOWSNT */
+	  && ! bcmp (XSTRING (entry)->data, var, varlen)
+#endif /* not WINDOWSNT */
+	  )
 	{
 	  *value    = (char *) XSTRING (entry)->data + (varlen + 1);
 	  *valuelen = XSTRING (entry)->size - (varlen + 1);
@@ -858,11 +1001,11 @@ init_callproc ()
 			       Vinstallation_directory);
       if (NILP (Fmember (tem, Vexec_path)))
 	{
-#ifndef MSDOS
+#ifndef DOS_NT
 	  /* MSDOS uses wrapped binaries, so don't do this.  */
 	  Vexec_path = nconc2 (Vexec_path, Fcons (tem, Qnil));
 	  Vexec_directory = Ffile_name_as_directory (tem);
-#endif
+#endif /* not DOS_NT */
 
 	  /* If we use ../lib-src, maybe use ../etc as well.
 	     Do so if ../etc exists and has our DOC-... file in it.  */
@@ -940,7 +1083,7 @@ set_process_environment ()
 
 syms_of_callproc ()
 {
-#ifdef MSDOS
+#ifdef DOS_NT
   Qbuffer_file_type = intern ("buffer-file-type");
   staticpro (&Qbuffer_file_type);
 
@@ -951,7 +1094,7 @@ syms_of_callproc ()
   DEFVAR_LISP ("binary-process-output", &Vbinary_process_output,
     "*If non-nil then new subprocesses are assumed to produce binary output.");
   Vbinary_process_output = Qnil;
-#endif
+#endif /* DOS_NT */
 
   DEFVAR_LISP ("shell-file-name", &Vshell_file_name,
     "*File name to load inferior shells from.\n\

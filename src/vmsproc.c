@@ -5,7 +5,7 @@ This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -402,7 +402,7 @@ child_setup (in, out, err, new_argv, env)
   close_process_descs ();
 #endif
 
-  if (XTYPE (current_buffer->directory) == Lisp_String)
+  if (STRINGP (current_buffer->directory))
     chdir (XSTRING (current_buffer->directory)->data);
 }
 
@@ -506,7 +506,7 @@ if you quit, the process is killed.")
     status = get_pty_channel (inDevName, outDevName, &inchannel, &outchannel);
     if (!(status & 1))
       error ("Error getting PTY channel: %x", status);
-    if (XTYPE (buffer) == Lisp_Int)
+    if (INTEGERP (buffer))
       {
 	dout.l = strlen ("NLA0:");
 	dout.a = "NLA0:";
@@ -545,7 +545,7 @@ if you quit, the process is killed.")
   /*
       Start a read on the process channel
   */
-  if (XTYPE (buffer) != Lisp_Int)
+  if (!INTEGERP (buffer))
     {
       start_vms_process_read (vs);
       SpawnFlags = CLI$M_NOWAIT;
@@ -574,7 +574,7 @@ if you quit, the process is killed.")
     }
   pid = vs->pid;
 
-  if (XTYPE (buffer) == Lisp_Int)
+  if (INTEGERP (buffer))
     {
 #ifndef subprocesses
       wait_without_blocking ();
@@ -589,7 +589,7 @@ if you quit, the process is killed.")
 			 Fcons (make_number (fd[0]), make_number (pid)));
 
 
-  if (XTYPE (buffer) == Lisp_Buffer)
+  if (BUFFERP (buffer))
     Fset_buffer (buffer);
 
   immediate_quit = 1;
@@ -726,8 +726,8 @@ create_process (process, new_argv)
   /* Record this as an active process, with its channels.
      As a result, child_setup will close Emacs's side of the pipes.  */
   chan_process[inchannel] = process;
-  XFASTINT (XPROCESS (process)->infd) = inchannel;
-  XFASTINT (XPROCESS (process)->outfd) = outchannel;
+  XSETFASTINT (XPROCESS (process)->infd, inchannel);
+  XSETFASTINT (XPROCESS (process)->outfd, outchannel);
   XPROCESS (process)->status = Qrun
 
   /* Delay interrupts until we have a chance to store
@@ -742,7 +742,7 @@ create_process (process, new_argv)
     */
   write_to_vms_process (vs, NO_ECHO, strlen (NO_ECHO));
 
-  XFASTINT (XPROCESS (process)->pid) = pid;
+  XSETFASTINT (XPROCESS (process)->pid, pid);
   sys$setast (1);
 }
 

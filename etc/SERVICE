@@ -72,7 +72,7 @@ Tel.: +49 6151 62568
 - Consultant for other UNIX users at TU Darmstadt
 - 14 years experience with CS, Systemadministration
 -  7 years with UNIX/Networking/FreeWare/GNU/X11
--  5 years organizer of practical OS courses 
+-  5 years organizer of practical OS courses
 - Platforms: SunOS, HP-UX, Ultrix, OSF1, Linux, AIX, Solaris
 - Experience with parallel environments (Transputers: Meiko, Parix)
 
@@ -157,7 +157,7 @@ Rates: from 2000 FF/day to 150 000 FF/year, 40% discount for
 educational institutions, add taxes and expenses.  Ask for list.
 
 Entered: 5May94
-^_
+
 Contributed Software
 Graefestr. 76
 10967 Berlin, Germany
@@ -205,29 +205,21 @@ Mountain View, CA 94043 USA
 +1 415 903 0122 fax
 
 Cygnus Support
-1 Kendall Square
-Cambridge, MA 02139
-+1 617 494 1040 voice
-+1 617 494 1325 fax
+48 Grove Street
+Somerville, MA 02144
++1 617 629 3000 voice
++1 617 629 3010 fax
 
-Cygnus Support offers warranty protection (service contracts) for a
-number of free software tools.	For a fixed annual fee our customers
-receive binary and source distributions, mail and phone support,
-documentation and customization assistance for the GNU tools and the
-Kerberos Network Security package.  This toolkit consists of gcc, g++,
-gdb, and gas.  Cygnus maintains and supports the GNU tools on over 50
-host/target configurations.
+Cygnus Support continues to provide supported, maintained versions of
+the GNU toolset including GCC, G++, the GNU debugger with graphical
+user interface, GNU linker, GNU macro-assembler and Emacs 19. In
+keeping with the rapidly advancing needs of software developers,
+Cygnus maintains a 90 day release cycle of the GNU toolset. Each
+release is regression tested and includes substantial improvements and
+additions to the existing matrix of over 65 supported platform
+configurations.
 
-This set of supported tools and platforms is updated and added to
-every 90 days.	Please contact Cygnus for the most up to date software
-available.
-
-For those who need on-site assistance, support is also available from
-our Cambridge office.
-
-Annual Support starts at $1,400.
-
-Updated: 11Apr94
+Updated: 2Feb95
 
 Jose A. Fernandez <jaf@inference.com>
 
@@ -289,7 +281,7 @@ Internet.  For larger jobs I may be willing to travel.
 
 Updated: 5Apr94
 
-Ron Guilmette	<rfg@netcom.com>
+Ron Guilmette	<rfg@segfault.us.com>
 396 Ano Nuevo Ave. #216
 Sunnyvale, CA 94086
 408-732-7839
@@ -331,11 +323,11 @@ Rates:		Variable depending upon contract duration.  Call for quote.
 
 Updated: 13Apr94
 
-Hundred Acre Software Consultants	<info@pooh.com>
-5301 Longley Lane, Suite D-144
-Reno NV 89511-1805
-(702)-829-9700
-(800) 245-2885
+Hundred Acre Consulting		<info@pooh.com>
+1155 W Fourth St Ste 225
+PO Box 6209
+Reno NV 89513-6209
+(702)-348-7299
 Hundred Acre is a consulting group providing support and development
 services to organizations of all sizes.	 We support GNU C++ and C in
 particular, but also provide support for all other GNU software and
@@ -348,7 +340,7 @@ is charged on either an hourly or fixed bid basis.
 Consulting rates: $70 to $90 per hour, or fixed bid.
 Support contracts:  Several levels, from $495 to $90000 per year.
 
-Updated: 7Apr94
+Updated: 27Dec94
 
 Scott D. Kalter			<sdk@mithril.com)
 2032 Corral Canyon
@@ -376,6 +368,28 @@ Qualifications: BS Math/CS 1985: Carnegie Mellon University
 	multiple, communicating Emacs processes.
 
 Updated: 6Apr94
+
+KAMAN SCIENCES CORPORATION
+258 GENESEE STREET
+UTICA  NY  13502
+(315) 734-3600
+
+CONTACTS: Alan Piszcz (peesh)      <apiszcz@utica1.kaman.com>
+        : Dennis Fitzgerald        <dennis@utica.kaman.com>
+
+Kaman Sciences has performed a GNU port for a custom RISC processor.
+We have experience in the definition and description of the machine
+register transfer language to the GNU tool-set.  This includes rewriting
+and modification of the necessary description and source files of gcc, gas,
+and gld and other binutils.  Kaman also has services for installation and
+setup of GNU tools, (GAWK, GCC, EMACS, etc.) on Sun workstations.
+
+Work is on a "service contract" basis and development is charged either
+hourly or as a fixed price contract.
+
+Consulting rates: $70 to $200 per hour.
+
+Entered: 13Jan95
 
 Scott J. Kramer		<sjk@aura.nbn.com>
 P.O. Box 620207
@@ -415,21 +429,21 @@ Schellnhausen 2
 36325 Feldatal
 Germany
 
-Phone:	+49-6637-1488
-Fax:	+49-6637-1489
+Phone:	+49-6637-919123
+Fax:	+49-6637-919122
 Mail	<grog@lemis.de>
 
 Services: Supply, porting, installation, consultation on all GNU
 products.
 
 Experience: 20 years OS and compiler experience, portations of most
-GNU products. Author of ported software CD-ROM for Unix 4.2.
+GNU products.  Author of ported software CD-ROM for Unix 4.2.
 
 Rates: Choice of DM 150 per hour or hotline rates 3 DM per minute + 10
 DM per phone call. Quick questions may be free. Limited free support
 available for purchasers of LEMIS CD-ROMs.
 
-Updated: 13Apr94
+Updated: 21Feb95
 
 Marty Leisner	   <leisner@sdsp.mc.xerox.com>
 332 Shaftsbury Road
@@ -448,23 +462,77 @@ marty
 <leisner@sdsp.mc.xerox.com>  <leisner@eso.mc.xerox.com>
 
 Updated: 15Apr94
-^_
+
+Richard Levitte             (in TeX: Richard Levitte
+Södra Långgatan 39, II               S\"odra L{\aa}nggatan 39, II
+S-171 49  Solna                      S-171 49  Solna
+Sweden                               Sweden)
+Tel.nr.:  +46 (8) 18 30 99	(there is an answering machine)
+e-mail:	  <levitte@e.kth.se> (preferred)
+	  <levitte@vms.stacken.kth.se>
+
+What I do:
+	Primarly I work on GNU software for VMS, both VAX and AXP.  I
+	also work on GNU stuff for Unix on occasion.  I'm familiar with
+	SunOS (version 4.x.x), BSD (version 4.2 and up),
+	Ultrix (version 4.2 and up).
+	I've been porting GNU Emacs to VMS since spring 1991.  This
+	includes versions 18.57 to 18.59 and version 19.22.
+	I maintain GNU vmslib.
+
+Programs supported:
+	GNU vmslib:	extending, installation, upgrading aid,
+			simple and complex questions, you name it.
+	GNU Emacs:	porting, extending, installation, upgrading aid,
+			customization, simple or complex questions,
+			training, you name it.
+	GNU autoconf:	porting, extending, installation, upgrading aid.
+	GNU zip, diffutils, m4, patch, texinfo:
+			porting, installation, upgrading aid.
+	GNU C/C++:	installation, upgrading aid.  I might start to
+			hack at it some day.
+
+The list of programs I currently support represents both my interests and
+current priorities.  Your interest and funding can influence my priorities.
+
+Experience:
+	Fluent in C, C++, Emacs Lisp, Pascal as well as assembler
+	on VAX, Motorola 680x0, Intel 8086 and 80x86.  Modified key
+	elements in Emacs (e.g., memory and process management) to work
+	transparently on VMS.  I have very good knowledge in the VMS
+	operating system, as well as MS-DOS and IBM PC compatibles.
+	I have worked for four and a half years as a VMS system manager.
+	I've also provided consulting services on IBM PC compatibles,
+	as well as held classes for IBM PC users.
+	A reference list is available on request.
+
+Your Rate:
+	$50-$80/hour (400-700 SEK in sweden), plus expenses.  My rates
+	are negotiable, depending on how interesting the project is to me.
+
+
+Entered: 18Aug94
+
 Roland McGrath		<roland@frob.com>
-545 Tech Sq rm 426
+545 Tech Sq, Rm 426
 Cambridge, MA  02139
 Work: (617) 253-8568
 
 Co-author of GNU Make (with Richard Stallman); maintainer of GNU Make.
-Author and maintainer of the GNU C Library and parts of the GNU Hurd.
-Author of several Emacs Lisp packages and parts of Emacs 19.
+Author and maintainer of the GNU C Library and co-author of the GNU Hurd.
+Author of several GNU Emacs Lisp packages and parts of GNU Emacs 19.
 FSF employee summer 1989, fall 1990 to the present.
 
-Installation, maintenance, porting, enhancement of all GNU software.
+Installation, maintenance, porting, enhancement of all GNU software.  I can
+install GNU software and maintain its installation on call via the Internet.
 
-Fees negotiable.  I can work anywhere in the Boston or SF Bay Area, or
-anywhere on the Internet.
+Fees negotiable; $75-$100/hour, higher for very short term projects.  I can
+work anywhere in the Boston or SF Bay Area, or anywhere on the Internet.  I
+am working full-time for the FSF on the GNU Hurd, so I am likely to take on
+only jobs that either can be done entirely via the Internet and are
+short-term, or that are very interesting.
 
-Updated: 14Apr94
+Updated: 21Jan95
 
 Wolfgang S. Rupprecht		<wolfgang@wsrcc.com>
 47 Esparito Ave.
@@ -641,8 +709,8 @@ St. Petersburg, Russia	195272
 Custom GhostScript and TeX programming by e-mail.
 Database documents, directories, standard forms.
 
-UrbanSoft uses a portion of its revenues to contribute 
-diskette distributions of GNU software to Russian 
+UrbanSoft uses a portion of its revenues to contribute
+diskette distributions of GNU software to Russian
 universities (most of which lack FTP access).
 
 Rates: 30,000 rubles (currently USD 16.80) per hour.
@@ -651,25 +719,62 @@ Rates: 30,000 rubles (currently USD 16.80) per hour.
 
 Updated: 20Apr94
 
+noris network
+Matthias Urlichs
+Schleiermacherstrasse 12
+90491 Nuernberg
+Germany
+Phone: +49 911 9959621
+Fax: +49 911 5980150
+<info@noris.de>
+http://info.noris.de/ (German)
+
+Expertise:
+  OS internals, esp. Linux and BSD, esp. device drivers
+  Network protocol / program design and coding
+  Utilities coding and maintainance
+  Program debugging, testing
+  User interface design and testing
+  Several programming and tool languages
+
+Services:
+  Installation, debugging, enhancement, distribution,
+    for all kinds of free software.
+  System administration for most Unix-like systems.
+  Email, Fax, phone, and in-person consulting (and/or "question answering").
+  Remote support and system monitoring (over the Internet),
+  Update service (new tools tested and installed automagically)
+  Internet access
+
+Rates:
+  DM 110 (~$70) per hour
+  Support contracts start at DM 170/month + DM 30/supported system.
+  Willing to travel for sufficiently large jobs.
+  Rates don't include taxes.
+
+Entered: 16Aug94
+
 Joe Wells <jbw@cs.bu.edu>
 Postal Address:
   care of: Boston University Computer Science Department
   111 Cummington Street, Room 138
   Boston, Massachusetts 02215
-Work Telephone: (617) 353-3381
-Home Telephone: (617) 352-7508 (until August 1994)
+Work Telephone: (617) 353-3381 (sorry, but no answering machine or voice mail)
+Home Telephone: (617) 739-7456 (until August 1995)
 Finger "jbw@cs.bu.edu" for up-to-date contact information.
 
 Experience:
     I have B.A. and M.A. degrees in Computer Science and have completed
-    all but the dissertation for a Ph.D. in C.S.  My primary programming
-    languages are Emacs Lisp, Perl, and Bourne shell, but of course I can
-    program in any language.  I have written numerous Emacs Lisp
-    packages.  I started the USENET "List of Frequently Asked Questions
-    about GNU Emacs with Answers" and maintained it for more than two
-    years.  Most of my work has been related to the telephone system, but
-    I am not limited to that.  Send e-mail for my complete resume or
-    curriculum vita.
+    all but the dissertation for a Ph.D. in C.S.  My research for my
+    Ph.D.  is in the areas of logic, type systems, and programming
+    language theory.  My primary programming languages are Emacs Lisp,
+    Perl, and Bourne shell, but of course I can program in any language.
+    I have written numerous Emacs Lisp packages.  I started the USENET
+    "List of Frequently Asked Questions about GNU Emacs with Answers" and
+    maintained it for more than two years.  Most of my work has been
+    related to the telephone system (modems, voice mail, etc.), but I am
+    not limited to that.  Send e-mail for my complete resume or curriculum
+    vita.
 
 Programs supported:
     GNU Emacs and Taylor UUCP:
@@ -681,18 +786,19 @@ Programs supported:
 
 Working conditions:
     I am usually available for part-time work (less than 20 hours per week
-    including any travel time).	 I can sometimes make time for full-time
+    including any travel time).  I can sometimes make time for full-time
     work for a month or two; please inquire.  I can either work in or near
-    Boston or via the Internet or via telephone.  My schedule is fairly
-    flexible.  Any programs I write will normally have the copying
-    conditions of the GNU General Public License.
+    Boston or via the Internet or via telephone; travel outside the Boston
+    metropolitan area can be negotiated.  My schedule is very flexible.
+    Any programs I write will normally have the copying conditions of the
+    GNU General Public License; this is negotiable.
 
 Rates: $65/hour as an independent contractor.
        travel and telephone expenses.
        higher rates if extensive travel is required.
 
-Updated: 1May94
-^_
+Updated: 27Sep94.
+
 Yggdrasil Computing, Inc./ Freesoft, Inc.	<info@yggdrasil.com>
 4880 Stevens Creek Blvd. Ste. 205
 San Jose, CA  95129
@@ -700,7 +806,7 @@ San Jose, CA  95129
 (800) 261 6630
 
 Updated: 14Apr94
-^_
+
 
 For a current copy of this directory, or to have yourself listed, ask:
 	gnu@prep.ai.mit.edu

@@ -56,7 +56,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <config.h>
 #endif
 
-#if defined (SUNOS4) || defined (__FreeBSD__)
+#if defined (SUNOS4) || defined (__FreeBSD__) || defined (__NetBSD__)
 #define UNDO_RELOCATION
 #endif
 
@@ -92,7 +92,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 extern char *getenv ();
-static unsigned Brk;
+static unsigned brk_value;
 static struct exec nhdr;
 static int rd_only_len;
 static long cookie;
@@ -106,10 +106,6 @@ unexec (new_name, a_name, bndry, bss_start, entry)
   char *old;
   struct exec ohdr;		/* Allocate on the stack,  not needed in the next life */
   struct stat stat;
-
-#ifdef emacs
-  fprintf (stderr, "Used %d bytes of Pure Storage\n", pureptr);
-#endif
 
   if ((fd = open (a_name, O_RDONLY)) < 0)
     {
@@ -149,7 +145,8 @@ unexec (new_name, a_name, bndry, bss_start, entry)
    */
   cookie = time (0);
 
-  Brk = sbrk (0);		/* Save the break, it is reset to &_end (by ld.so?) */
+  /* Save the break, it is reset to &_end (by ld.so?).  */
+  brk_value = (unsigned) sbrk (0);
 
   /*
    * Round up data start to a page boundary (Lose if not a 2 power!)
@@ -167,15 +164,13 @@ unexec (new_name, a_name, bndry, bss_start, entry)
   initialized = 1;
 #endif
   
-  /* 
-   * Handle new data and bss sizes and optional new entry point.
-   * No one actually uses bss_start and entry,  but tradition compels
-   * one to support them.
-   * Could complain if bss_start > Brk,  but the caller is *supposed* to know
-   * what she is doing.
-   */
-  nhdr.a_data = (bss_start ? bss_start : Brk) - N_DATADDR (nhdr);
-  nhdr.a_bss  = bss_start ? Brk - bss_start : 0;
+  /* Handle new data and bss sizes and optional new entry point.
+     No one actually uses bss_start and entry,  but tradition compels
+     one to support them.
+     Could complain if bss_start > brk_value,
+     but the caller is *supposed* to know what she is doing.  */
+  nhdr.a_data = (bss_start ? bss_start : brk_value) - N_DATADDR (nhdr);
+  nhdr.a_bss  = bss_start ? brk_value - bss_start : 0;
   if (entry) 
     nhdr.a_entry = entry;
 
@@ -236,11 +231,11 @@ unexec (new_name, a_name, bndry, bss_start, entry)
 #ifdef sparc
 #define REL_INFO_TYPE		struct reloc_info_sparc
 #else
-#define REL_INFO_TYPE		struct reloc_info_m68k
+#define REL_INFO_TYPE		struct relocation_info
 #endif /* sparc */
 #define REL_TARGET_ADDRESS(r)	(((REL_INFO_TYPE *)(r))->r_address)
 #endif /* SUNOS4 */
-#ifdef __FreeBSD__
+#if defined (__FreeBSD__) || defined (__NetBSD__)
     extern struct _dynamic _DYNAMIC;
 
     /*  FreeBSD's LD_REL is a virtual address itself. */
@@ -283,7 +278,7 @@ run_time_remap (progname)
     return;
 
   /* Restore the break */
-  brk (Brk);
+  brk ((char *) brk_value);
 
   /*  If nothing to remap:  we are done! */
   if (rd_only_len == 0)
@@ -362,7 +357,7 @@ is_it (filename)
 	       * should the shared library decide to indirect through
 	       * addresses in the data segment not part of __DYNAMIC
 	       */
-	      mmap (data_start, rd_only_len, PROT_READ | PROT_EXEC,
+	      mmap ((char *) data_start, rd_only_len, PROT_READ | PROT_EXEC,
 		    MAP_FILE | MAP_SHARED | MAP_FIXED, fd,
 		    N_DATOFF (hdr) + data_start - N_DATADDR (hdr));
 	      close (fd);
