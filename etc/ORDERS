@@ -307,8 +307,8 @@ Operating system: ____________________________________________________________
 
 Media type: __________________________________________________________________
 
-____ @ $5000 = $ ______	  Deluxe Distribution, with manuals and executables.
-
+____ @ $5000 = $ ______	  Deluxe Distribution, with manuals, reference cards.
+			  source code and executables.
 
 The following source and executables for MS-DOS, on 3.5" 1.44MB diskettes:
 
@@ -325,7 +325,7 @@ ____ @ $ 80  = $ ______	  DJGPP on diskettes, GCC version 2, for 80386
 			  compatible with XMS memory managers and VCPI, but
 			  not with Microsoft Windows extended mode or other
 			  DPMI managers.  It cannot emulate multitasking (e.g.
-			  fork(2)) or signals.
+			  fork) or signals.
 ____ @ $ 85  = $ ______	  Selected Utilities from the GNUish MS-DOS Project on
 			  diskettes, 8086 and up.  The utilities include:
 			  RCS, flex, GAWK, cpio, diff, MicroEmacs, find,
@@ -335,7 +335,6 @@ ____ @ $ 85  = $ ______	  Selected Utilities from the GNUish MS-DOS Project on
 			  missing features.
 ____ @ $ 40  = $ ______	  Windows diskette, GNU Chess and gnuplot for
 			  Microsoft Windows.
-
 
 CD-ROM, in ISO 9660 format (CD-ROM described above):
 
@@ -425,16 +424,16 @@ GNU/FSF T-shirts, thick 100% cotton:
 
 The front of the t-shirt has an image of a GNU hacking at a workstation with
 the text "GNU's Not Unix" above and the text "Free Software Foundation below.
-Natural is an off-white, unbleached, undyed, environmentally friendly cotton,
+Natural is an off-white, unbleached, undyed, environment-friendly cotton,
 printed with black ink.	 Black is printed with white ink.
 
-____ @ $ 15  = $ ______	  Size M,    ____ natural, ____ black.
+____ @ $ 15  = $ ______	  Size M     ____ natural  ____ black.
 
-____ @ $ 15  = $ ______	  Size L,    ____ natural, ____ black.
+____ @ $ 15  = $ ______	  Size L     ____ natural  ____ black.
 
-____ @ $ 15  = $ ______	  Size XL,   ____ natural, ____ black.
+____ @ $ 15  = $ ______	  Size XL    ____ natural  ____ black.
 
-____ @ $ 15  = $ ______	  Size XXL,  ____ natural, ____ black.
+____ @ $ 15  = $ ______	  Size XXL   ____ natural  ____ black.
 		 ------
 
       Subtotal $ ______
@@ -445,13 +444,14 @@ ____ @ $ 15  = $ ______	  Size XXL,  ____ natural, ____ black.
 			  for GNU Emacs Lisp Reference and GNU Emacs Calc
 			  manuals, add $5 each, or $20 per box.	 For all other
 			  items, add $5 base charge, then $1 per item except
-			  reference cards.
+			  reference cards; i.e.,
+			  shipping for all other items = $5 + $1 * n.
 	     + $ ______	  Outside of U.S., Canada, and Puerto Rico for
 			  shipping: for each box of GNU Emacs Lisp Reference
 			  manuals, add $60.  For all other items, add $20 base
 			  charge, and then add $10 more for each item (except
 			  reference cards) in the order; i.e.,
-			  total = $20 + $10 * n.
+			  shipping for all other items = $20 + $10 * n.
 	     + $ ______	  Optional (tax-deductible in the U.S.) donation.
 		 ------
 

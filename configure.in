@@ -304,10 +304,10 @@ case "${srcdir}" in
       srcdir="${confdir}"
     else
       if [ -f "./src/lisp.h" -a -f "./lisp/version.el" ]; then
-        srcdir=`.`
+        srcdir='.'
       else
         if [ -f "../src/lisp.h" -a -f "../lisp/version.el" ]; then
-	  srcdir=`..`
+	  srcdir='..'
         else
 	  (echo "\
 ${progname}: Neither the current directory nor its parent seem to
@@ -354,6 +354,15 @@ case "${srcdir}" in
   *  ) srcdir="`(cd ${srcdir}; pwd)`" ;;
 esac
 
+#### Make sure that the source directory doesn't already have a
+#### configured system in it.
+if [ `pwd` != `(cd ${srcdir} && pwd)` ] \
+   && [ -f "${srcdir}/src/config.h" ] ; then
+  (echo "${progname}: the directory tree \`${srcdir}' is being used"
+   echo "   as a build directory right now; it has been configured in its own"
+   echo "   right.  You can't use srcdir in this situation.") >&2
+  exit 1
+fi
 
 ### Make the necessary directories, if they don't exist.
 if [ ! -d ./src ]; then
@@ -576,7 +585,7 @@ case "${configuration}" in
   i386-ibm-aix1.1 )
     machine=ibmps2-aix opsys=usg5-2-2
   ;;
-  i386-ibm-aix1.2 )
+  i386-ibm-aix1.[23] | i386-ibm-aix* )
     machine=ibmps2-aix opsys=usg5-3
   ;;
   rs6000-ibm-aix3.1 )
@@ -631,6 +640,8 @@ case "${configuration}" in
       *-xenix* )		opsys=xenix ;;
       *-linux* )		opsys=linux ;;
       *-sco3.2v4* )		opsys=sco4 ;;
+      *-bsd386* )		opsys=bsd386 ;;
+      *-386bsd )	        opsys=386bsd ;;
       ## Otherwise, we'll fall through to the generic opsys code at the bottom.
     esac
   ;;
@@ -677,8 +688,12 @@ case "${configuration}" in
   ## the BSD world."  I'll assume that these are instructions for
   ## handling two odd situations, and that every other situation
   ## should use mips.h and usg5-2-2, they being listed first.
+  mips-mips-usg* )
+    machine=mips4
+    ## Fall through to the general code at the bottom to decide on the OS.
+  ;;
   mips-mips-riscos4* )
-    machine=mips4 opsys=usg5-2-2
+    machine=mips4 opsys=bsd4-3
   ;;
   mips-mips-bsd* )
     machine=mips opsys=bsd4-3
@@ -830,6 +845,7 @@ case "${configuration}" in
       *-bsd4.1 ) 					opsys=bsd4-1 ;;
       *-bsd4.2 | *-ultrix[0-3].* | *-ultrix4.0 )	opsys=bsd4-2 ;;
       *-bsd4.3 | *-ultrix* ) 				opsys=bsd4-3 ;;
+      *-bsd386 )					opsys=bsd386 ;;
       *-sysv[01]* | *-sysvr[01]* ) 			opsys=usg5-0 ;;
       *-sysv2* | *-sysvr2* )				opsys=usg5-2 ;;
       *-vms* ) 						opsys=vms ;;
@@ -860,7 +876,7 @@ esac
 ### operating system is; if you know what operating systems a machine
 ### runs, it's cleaner to make it explicit in the case statement
 ### above.
-if [ ! "${opsys}" ]; then
+if [ x"${opsys}" = x ]; then
   case "${configuration}" in
     *-bsd4.[01] )	opsys=bsd4-1 ;;
     *-bsd4.2 )		opsys=bsd4-2 ;;
@@ -1085,7 +1101,7 @@ if [ "${system_malloc}" = "yes" ]; then
   (The GNU allocators don't work with this system configuration.)"
 fi
 
-if [ ! "${REL_ALLOC}" ]; then
+if [ x"${REL_ALLOC}" = x ]; then
   REL_ALLOC=${GNU_MALLOC}
 fi
 
@@ -1095,7 +1111,7 @@ LISP_FLOAT_TYPE=yes
 #### Find out which version of Emacs this is.
 version=`grep 'defconst[	 ]*emacs-version' ${srcdir}/lisp/version.el \
 	 | sed -e 's/^.*"\([0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`
-if [ ! "${version}" ]; then
+if [ x"${version}" = x ]; then
   echo "${progname}: can't find current emacs version in
 	\`${srcdir}/lisp/version.el'." >&2
   exit 1

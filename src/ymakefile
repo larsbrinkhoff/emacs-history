@@ -374,6 +374,12 @@ LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE LD_SWITCH_SITE
 #define INTERVAL_OBJ
 #endif
 
+#ifdef HAVE_GETLOADAVG
+#define GETLOADAVG_OBJ
+#else
+#define GETLOADAVG_OBJ getloadavg.o
+#endif
+
 /* lastfile must follow all files
    whose initialized data areas should be dumped as pure by dump-emacs. */
 obj=    dispnew.o frame.o scroll.o xdisp.o window.o \
@@ -386,7 +392,7 @@ obj=    dispnew.o frame.o scroll.o xdisp.o window.o \
 	eval.o floatfns.o fns.o print.o lread.o \
 	abbrev.o syntax.o UNEXEC mocklisp.o bytecode.o \
 	process.o callproc.o \
-	doprnt.o getloadavg.o
+	doprnt.o GETLOADAVG_OBJ
 
 #ifdef TERMINFO
 /* Used to be -ltermcap here.  If your machine needs that,
@@ -517,10 +523,14 @@ emacs: temacs ${etc}DOC ${lisp}
 	ln temacs emacs
 #else
 #ifdef HAVE_SHM
-	w=`pwd`; cd ${srcdir}; $${w}/temacs -nl -batch -l ../lisp/inc-vers
+	-if [ -w ${srcdir}/../lisp ]; then \
+	  w=`pwd`; cd ${srcdir}; $${w}/temacs -nl -batch -l ../lisp/inc-vers; \
+	else true; fi
 	./temacs -nl -batch -l loadup dump
 #else /* ! defined (HAVE_SHM) */
-	w=`pwd`; cd ${srcdir}; $${w}/temacs -batch -l ../lisp/inc-vers
+	-if [ -w ${srcdir}/../lisp ]; then \
+	  w=`pwd`; cd ${srcdir}; $${w}/temacs -batch -l ../lisp/inc-vers; \
+	else true; fi
 	./temacs -batch -l loadup dump
 #endif /* ! defined (HAVE_SHM) */
 #endif /* ! defined (CANNOT_DUMP) */
@@ -585,9 +595,13 @@ $(OLDXMENU): really-oldXMenu
 /* Encode the values of these two macros in Make variables,
    so we can use $(...) to substitute their values within "...".  */
 C_SWITCH_SYSTEM_1 = C_SWITCH_SYSTEM
+C_SWITCH_SITE_1 = C_SWITCH_SITE
 C_SWITCH_X_SITE_1 = C_SWITCH_X_SITE
 really-oldXMenu:
-	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS "C_SWITCH_SITE=$(C_SWITCH_X_SITE_1)" "C_SWITCH_SYSTEM=$(C_SWITCH_SYSTEM_1)"
+	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS \
+    "C_SWITCH_SITE=$(C_SWITCH_SITE_1)" \
+    "C_SWITCH_X_SITE=$(C_SWITCH_X_SITE_1)" \
+    "C_SWITCH_SYSTEM=$(C_SWITCH_SYSTEM_1)"
 	@true  /* make -t should not create really-oldXMenu.  */
 #endif /* ! defined (HAVE_X11) */
 #endif /* ! defined (HAVE_X_MENU) */

@@ -946,8 +946,16 @@ x_set_menu_bar_lines (f, value, oldval)
 
   FRAME_MENU_BAR_LINES (f) = nlines;
   x_set_menu_bar_lines_1 (f->root_window, nlines - olines);
-  x_set_window_size (f, FRAME_WIDTH (f),
-		     FRAME_HEIGHT (f) + nlines - olines);
+  /* Use FRAME_NEW_WIDTH, HEIGHT so as not to override a size change
+     made by the user but not fully reflected in the Emacs frame object.  */
+  x_set_window_size (f,
+		     (FRAME_NEW_WIDTH (f)
+		      ? FRAME_NEW_WIDTH (f)
+		      : FRAME_WIDTH (f)),
+		     ((FRAME_NEW_HEIGHT (f)
+		       ? FRAME_NEW_HEIGHT (f)
+		       : FRAME_HEIGHT (f))
+		      + nlines - olines));
 }
 
 /* Change the name of frame F to ARG.  If ARG is nil, set F's name to
@@ -1476,6 +1484,8 @@ x_window (f)
   XSetWindowAttributes attributes;
   unsigned long attribute_mask;
   XClassHint class_hints;
+  char *shortname;
+  char *p;
 
   attributes.background_pixel = f->display.x->background_pixel;
   attributes.border_pixel = f->display.x->border_pixel;
@@ -1501,7 +1511,15 @@ x_window (f)
 		     screen_visual, /* set in Fx_open_connection */
 		     attribute_mask, &attributes);
 
-  class_hints.res_name = (char *) XSTRING (f->name)->data;
+  /* X resource names should not have periods in them.
+     So copy the frame name, discarding from the first period onward.  */
+  shortname = (char *) alloca (XSTRING (f->name)->size + 1);
+  bcopy (XSTRING (f->name)->data, shortname, XSTRING (f->name)->size + 1);
+  for (p = shortname; *p; p++)
+    if (*p == '.')
+      *p = 0;
+
+  class_hints.res_name = shortname;
   class_hints.res_class = EMACS_CLASS;
   XSetClassHint (x_current_display, FRAME_X_WINDOW (f), &class_hints);
 
@@ -1750,7 +1768,7 @@ be shared by the new frame.")
   /* We need to do this after creating the X window, so that the
      icon-creation functions can say whose icon they're describing.  */
   x_default_parameter (f, parms, Qicon_type, Qnil,
-		       "iconType", "IconType", symbol);
+		       "bitmapIcon", "BitmapIcon", symbol);
 
   x_default_parameter (f, parms, Qauto_raise, Qnil,
 		       "autoRaise", "AutoRaiseLower", boolean);
@@ -2184,11 +2202,15 @@ fonts), even if they match PATTERN and FACE.")
       FRAME_PTR f = NILP (frame) ? selected_frame : XFRAME (frame);
       int face_id = face_name_id_number (f, face);
 
-      if (face_id < 0 || face_id > FRAME_N_FACES (f))
-	face_id = 0;
-      size_ref = FRAME_FACES (f) [face_id]->font;
-      if (size_ref == (XFontStruct *) (~0))
+      if (face_id < 0 || face_id >= FRAME_N_FACES (f)
+	  || FRAME_FACES (f) [face_id] == 0)
 	size_ref = f->display.x->font;
+      else
+	{
+	  size_ref = FRAME_FACES (f) [face_id]->font;
+	  if (size_ref == (XFontStruct *) (~0))
+	    size_ref = f->display.x->font;
+	}
     }
 
   BLOCK_INPUT;
@@ -3447,7 +3469,7 @@ arg XRM_STRING is a string of resources in xrdb format.")
   else
     xrm_option = (unsigned char *) 0;
   xrdb = x_load_resources (x_current_display, xrm_option, EMACS_CLASS);
-#ifdef HAVE_X11R5
+#if defined (HAVE_X11R5) && ! defined (NO_XRM_SET_DATBASE)
   XrmSetDatabase (x_current_display, xrdb);
 #else
   x_current_display->db = xrdb;

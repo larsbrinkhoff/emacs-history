@@ -132,10 +132,10 @@ Visit a different file instead of the one visited last
 (@code{find-alternate-file}).
 @item C-x 4 C-f
 Visit a file, in another window (@code{find-file-other-window}).  Don't
-change this window.
+change the selected window.
 @item C-x 5 C-f
 Visit a file, in a new frame (@code{find-file-other-frame}).  Don't
-change this window.
+change the selected frame.
 @end table
 
 @cindex files
@@ -232,6 +232,12 @@ show the same buffer it was already showing.  If this command is used when
 only one window is being displayed, that window is split in two, with one
 window showing the same buffer as before, and the other one showing the
 newly requested file.  @xref{Windows}.
+
+@kindex C-x 5 f
+@findex find-file-other-frame
+  @kbd{C-x 5 f} (@code{find-file-other-frame}) is similar, but opens a
+new frame.  This feature is available only when you are using a window
+system.  @xref{Frames}.
 
 @vindex find-file-hooks
 @vindex find-file-not-found-hooks

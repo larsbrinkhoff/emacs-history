@@ -1874,11 +1874,11 @@ kbd_buffer_get_event ()
 #endif
 	}
 
-#ifdef MULTI_FRAME
       /* If this event is on a different frame, return a switch-frame this
 	 time, and leave the event in the queue for next time.  */
       else
 	{
+#ifdef MULTI_FRAME
 	  Lisp_Object frame = event->frame_or_window;
 	  Lisp_Object focus;
 
@@ -1893,6 +1893,7 @@ kbd_buffer_get_event ()
 	      && XFRAME (frame) != selected_frame)
 	    obj = make_lispy_switch_frame (frame);
 	  internal_last_event_frame = frame;
+#endif /* MULTI_FRAME */
 
 	  /* If we didn't decide to make a switch-frame event, go ahead
 	     and build a real event from the queue entry.  */
@@ -1909,7 +1910,6 @@ kbd_buffer_get_event ()
 	      kbd_fetch_ptr = event + 1;
 	    }
 	}
-#endif
     }
   else if (do_mouse_tracking && mouse_moved)
     {
@@ -2024,7 +2024,7 @@ static char *lispy_function_keys[] =
   {
     /* X Keysym value */
 
-    0, 0, 0, 0, 0, 0, 0, 0,	/* 0xff00 */
+    "remove", 0, 0, 0, 0, 0, 0, 0,	/* 0xff00 */
     "backspace",
     "tab",
     "linefeed",

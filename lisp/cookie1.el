@@ -1,4 +1,4 @@
-;;; cookie.el --- retrieve random phrases from fortune cookie files
+;;; cookie1.el --- retrieve random phrases from fortune cookie files
 
 ;; Copyright (C) 1993 Free Software Foundation, Inc.
 
@@ -129,6 +129,6 @@ subsequent calls on the same file won't go to disk."
       (setq i (1+ i))))
   vector)
 
-(provide 'cookie)
+(provide 'cookie1)
 
 ;;; cookie.el ends here

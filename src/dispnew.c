@@ -955,6 +955,9 @@ update_frame (f, force, inhibit_hairy_id)
   register int downto, leftmost;
 #endif
 
+  if (preempt_count <= 0)
+    preempt_count = 1;
+
   if (FRAME_HEIGHT (f) == 0) abort (); /* Some bug zeros some core */
 
   detect_input_pending ();
@@ -1025,7 +1028,8 @@ update_frame (f, force, inhibit_hairy_id)
 			outq = PENDING_OUTPUT_COUNT (stdout);
 #endif
 		      outq *= 10;
-		      sleep (outq / baud_rate);
+		      if (baud_rate > 0)
+			sleep (outq / baud_rate);
 		    }
 		}
 	      if ((i - 1) % preempt_count == 0)
@@ -1231,7 +1235,7 @@ buffer_posn_from_coords (window, col, line)
   posn = compute_motion (startp, 0,
 			 (window == XWINDOW (minibuf_window) && startp == 1
 			  ? minibuf_prompt_width : 0),
-			 ZV, line, col - window_left,
+			 ZV, line, col,
 			 window_width, XINT (window->hscroll), 0);
 
   current_buffer = old_current_buffer;

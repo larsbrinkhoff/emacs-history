@@ -47,7 +47,18 @@ The Lisp code is executed when the node is selected.")
 This value is used as the default for `Info-directory-list'.  It is set
 in paths.el.")
 
-(defvar Info-directory-list nil
+(defvar Info-directory-list
+  (let ((path (getenv "INFOPATH")))
+    (if path
+	(let ((list nil)
+	      idx)
+	  (while (> (length path) 0)
+	    (setq idx (or (string-match ":" path) (length path))
+		  list (cons (substring path 0 idx) list)
+		  path (substring path (min (1+ idx)
+					    (length path)))))
+	  (nreverse list))
+      Info-default-directory-list))
   "List of directories to search for Info documentation files.
 nil means not yet initialized.  In this case, Info uses the environment
 variable INFOPATH to initialize it, or `Info-default-directory-list'
@@ -112,19 +123,6 @@ In interactive use, a prefix argument directs this command
 to read a file name from the minibuffer."
   (interactive (if current-prefix-arg
 		   (list (read-file-name "Info file name: " nil nil t))))
-  (or Info-directory-list
-      (setq Info-directory-list
-	    (let ((path (getenv "INFOPATH")))
-	      (if path
-		  (let ((list nil)
-			idx)
-		    (while (> (length path) 0)
-		      (setq idx (or (string-match ":" path) (length path))
-			    list (cons (substring path 0 idx) list)
-			    path (substring path (min (1+ idx)
-						      (length path)))))
-		    (nreverse list))
-		Info-default-directory-list))))
   (if file
       (Info-goto-node (concat "(" file ")"))
     (if (get-buffer "*info*")
@@ -1054,19 +1052,20 @@ SIG optional fourth argument, controls action on no match
   (save-excursion
     (goto-char pos)
     (re-search-backward start (max (point-min) (- pos 200)) 'yes)
-    (while (and (re-search-forward all (min (point-max) (+ pos 200)) 'yes)
-		(not (and (<= (match-beginning 0) pos)
-			  (> (match-end 0) pos)))))
-    (if (and (<= (match-beginning 0) pos)
-	     (> (match-end 0) pos))
-	(buffer-substring (match-beginning 1) (match-end 1))
-      (cond ((null errorstring)
-	     nil)
-	    ((eq errorstring t)
-	     (beep)
-	     nil)
-	    (t
-	     (error "No %s around position %d" errorstring pos))))))
+    (let (found)
+      (while (and (re-search-forward all (min (point-max) (+ pos 200)) 'yes)
+		  (not (setq found (and (<= (match-beginning 0) pos)
+					(> (match-end 0) pos))))))
+      (if (and found (<= (match-beginning 0) pos)
+	       (> (match-end 0) pos))
+	  (buffer-substring (match-beginning 1) (match-end 1))
+	(cond ((null errorstring)
+	       nil)
+	      ((eq errorstring t)
+	       (beep)
+	       nil)
+	      (t
+	       (error "No %s around position %d" errorstring pos)))))))
 
 (defun Info-follow-nearest-node (click)
   "\\<Info-mode-map>Follow a node reference near point.
@@ -1135,7 +1134,7 @@ At end of the node's text, moves to the next node."
   (define-key Info-mode-map "p" 'Info-prev)
   (define-key Info-mode-map "q" 'Info-exit)
   (define-key Info-mode-map "s" 'Info-search)
-  (define-key Info-mode-map "t" 'Info-top)
+  (define-key Info-mode-map "t" 'Info-top-node)
   (define-key Info-mode-map "u" 'Info-up)
   (define-key Info-mode-map "," 'Info-index-next)
   (define-key Info-mode-map "\177" 'Info-scroll-down)

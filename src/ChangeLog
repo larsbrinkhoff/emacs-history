@@ -1,3 +1,193 @@
+Tue Jun  1 00:27:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.11 released.
+
+Tue Jun  1 00:07:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (x_set_menu_bar_lines): Use FRAME_NEW_HEIGHT and ..._WIDTH.
+
+	* m/sparc.h [__GNUC__ >= 2]: Don't include alloca.h.
+
+	* xterm.c (x_new_font): If XListFontsWithInfo finds nothing,
+	try to load the font anyway.
+
+	* ymakefile (emacs): Don't run inc-vers if ../lisp is read-only.
+	(C_SWITCH_SITE_1): New make variable.
+	(really-oldXMenu): Pass C_SWITCH_X_SITE_1 as C_SWITCH_X_SITE.
+	Use C_SWITCH_SITE_1 to pass C_SWITCH_SITE.
+
+	* s/386bsd.h: New file.
+
+Mon May 31 14:04:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fns.c (internal_equal): Don't let ints be equal to floats.
+
+	* print.c (float_to_string): Skip `-' like digits when ensuring
+	result looks like a float.
+
+	* data.c (Frem): Fix result sign properly.
+
+	* xrdb.c [__bsdi__]: ALternate decls of getpwuid and getpwnam.
+
+	* emacs.c (main) [BSD]: Delete the setpgrp (both times).
+
+	* m/ibmrs6000.h (NLIST_STRUCT): Defined.
+
+	* ymakefile (GETLOADAVG_OBJ): New macro.
+	(obj): Use that.
+
+	* s/bsd386.h: New file.
+
+	* term.c (term_get_fkeys): If not initialized, init Vfunction_key_map.
+
+	* m/ibmrs6000.h: Delete ! __GNUC__ conditional.
+	(LD_SWITCH_MACHINE): Defined.
+	(ORDINARY_LINK): Defined unconditionally.
+
+	* dispnew.c (update_frame): Make preempt_count positive.
+	Defend against negative baud_rate.
+	* scroll.c (calculate_scrolling): Defend against negative baud_rate.
+
+	* mem-limits.h [__bsdi__]: Define BSD4_2.
+
+	* xfns.c (x_window): In XSetClassHint, use a shortened version
+	of the frame name.
+
+	* s/hpux8.h (C_SWITCH_SYSTEM): Fix typo in X11R5 dirname.
+
+	* xterm.c (XTread_socket, case KeyPress) [HPUX]: Test IsModifiedKey.
+
+	* keyboard.c (kbd_buffer_get_event):
+	Shorten the first MULTI_FRAME conditional.
+
+	* s/usg5-4-2.h (HAVE_VFORK): Deleted.
+
+Mon May 31 10:07:48 1993  James Clark  (jjc@jclark.com)
+
+	* xselect.c (x_reply_selection_request): Call XFlushQueue.
+
+	* window.c (Fset_window_buffer): Set window's force_start to Qnil.
+
+Mon May 31 01:33:06 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* syntax.c (Fforward_comment): Set point to where scan stops,
+	thus moving acros whitespace.  When moving fwd, treat Sendcomment
+	as whitespace; likewise for Scomment when moving back.
+	(scan_sexps_forward): New arg COMMENTSTOP.
+	(Fparse_partial_sexp): Likewise.
+
+	* xfns.c (Fx_create_frame): Use bitmapIcon, not iconType.
+
+Sun May 30 20:04:19 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* data.c (float_arith_driver): Detect division by zero in advance.
+	(arith_driver, Frem): Likewise.
+
+	* xfns.c (Fx_list_fonts): Handle 0 for FRAME_FACES (f) [face_id]->font.
+
+	* print.c (Fwith_output_to_temp_buffer): Doc fix.
+
+	* sysdep.c (wait_for_termination): Delete LINUX conditionals.
+
+	* s/linux.h (HAVE_TCATTR): Deleted.
+	(BSD): Don't define.
+	(read, write, open, close): Defined.
+	(INTERRUPTIBLE_OPEN, INTERRUPTIBLE_CLOSE, INTERRUPTIBLE_IO): Defined.
+	(C_SWITCH_SYSTEM): Defined.
+
+	* xterm.c: Include systty.h; don't mess with FIONREAD.
+	Don't include termio.h dorectly.
+
+	* intervals.c (interval_deletion_adjustment): Delete unreachable abort.
+
+	* fns.c (Fyes_or_no_p): Delete unreachable UNGCPRO.
+
+	* keyboard.c (lispy_function_keys): Add `remove' key.
+
+Sun May 30 19:24:09 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* buffer.c (Fgenerate_new_buffer_name): Doc fix.
+
+Sun May 30 19:10:09 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (clean): Delete libXMenu11.a.
+
+Sun May 30 17:48:11 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* m/mips.h (KERNEL_FILE): Set this to "/unix".
+	* m/mips4.h (MIPS2): Go ahead and define this.
+	(C_DEBUG_SWITCH): Add -DMips and -g3, and up Olimit to 2000.
+
+Sun May 30 16:51:56 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* emacs.c (main) [AIX _I386]: Don't handle SIGIOINT.
+
+	* lisp.h (UCHAR): Don't define if _UCHAR_T.
+
+	* m/ibmps2-aix.h (HAVE_GETTIMEOFDAY): Deleted.
+	(HAVE_SETSID, HAVE_TERMIOS): Defined.
+	(HAVE_TERMIO): Add #undef.
+	(SIGNALS_VIA_CHARACTERS): Defined.
+	(C_DEBUG_SWITCH): Make definition empty.
+	(LIBS_DEBUG): Defined.
+	(BROKEN_TIOCGWINSZ, LIB_X11_LIB): Add #undef.
+
+	* sysdep.c (child_setup_tty) [AIX SIGNALS_VIA_CHARACTERS]: Install
+	something usefull in the VQUIT and VINTR.
+	(emacs_set_tty): Try only 10 times to call tcsetattr.
+	Don't use memcmp to test what it did.
+
+	* systty.h [HAVE_TERMIOS _AIX _I386]: Include termios before termio.
+
+	* dispnew.c (buffer_posn_from_coords): Since COL is already
+	window-relative, don't subtract window_left.
+
+Sun May 30 15:49:17 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xfaces.c (unload_color): Don't #include <X11/Intrinsic.h>,
+	<X11/StringDefs.h>, or <X11/Xmu/Drawing.h>.  Just write out
+	"unsigned long" instead of using the "Pixel" typedef; it's in the
+	protocol, so it's not likely to change.
+
+	* hftctl.c (hft_alrm): Declare and define this to return void, not
+	int; the AIX #include files have prototypes for it.
+
+	* s/aix3-2.h (LIBS_SYSTEM): Remove -lIM and -liconv from here...
+	* m/ibmrs6000.h (LIBS_MACHINE): They're already here.  Doc fix.
+
+	* Makefile.in (SUBMAKEFLAGS): Remember to propagate MAKE.
+
+Sun May 30 14:18:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/sunos4-1-3.h: Delete the #undef of SYSTEM_MALLOC.
+
+	* systty.h [IRIX4]: Include unistd.h.
+
+	* s/irix4-0.h (IRIX4): Defined.
+	(IRIS_UTIME): #undef this.
+
+	* xfns.c (Fx_open_connection) [NO_XRM_SET_DATABASE]:
+	Don't call XrmsSetDatabase.
+
+	* xfaces.c: Fix HPUX conditional syntax.
+
+	* s/hpux8.h (random, srandom): Defined.
+
+	* s/usg5-4-2.h: Don't specify s/ dir in #include.
+	* s/usg5-4-2.h (PTY_TTY_NAME_SPRINTF): Defined.
+	(HAVE_SYSV_SIGPAUSE): #undef this.
+
+	* sysdep.c (wait_for_termination): Add POSIX_SIGNALS alternative.
+
+Sun May 30 13:01:54 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xfaces.c (init_frame_faces): We have to make sure that face ID's
+	are valid on all frames or no frames; make sure F has allocated
+	faces for any face valid on the selected frame.
+
+	* s/hpux9.h: New file; don't use the GNU allocator.  Hope we fix
+	this soon.
+
 Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.10 released.

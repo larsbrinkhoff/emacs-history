@@ -14,18 +14,24 @@ frame normally contains its own echo area and minibuffer, but you can
 make frames that don't have these---they use the echo area and
 minibuffer of another frame.
 
+  Anything you do in one frame also affects the other frames.  For
+instance, if you put text in the kill ring in one frame, you can yank it
+in another frame.  If you exit emacs through @kbd{C-x C-c} in one frame,
+it terminates all the frames.  To delete just one frame, use @kbd{C-x 5
+0}.
+
   To avoid confusion, we reserve the word ``window'' for the
 subdivisions that Emacs implements, and never use it to refer to a
 frame.
 
 @menu
-* Mouse Commands::
-* Creating Frames::
-* Frame Parameters::
-* Scroll Bars::
-* Menu Bars::
-* Faces::
-* Misc X::
+* Mouse Commands::     Moving, cutting, and pasting, with the mouse.
+* Creating Frames::    Creating additional Emacs frames with various contents.
+* Frame Parameters::   Changing the colors and other modes of frames.
+* Scroll Bars::        How to enable and disable scroll bars; how to use them.
+* Menu Bars::          Enabling and disabling the menu bar.
+* Faces::              How to change the display style using faces.
+* Misc X::             Iconifying and deleting frames.  Region highlighting.
 @end menu
 
 @node Mouse Commands
@@ -40,6 +46,7 @@ frame.
 @table @kbd
 @item mouse-1
 Move point to where you click (@code{mouse-set-point}).
+This is normally the left button.
 
 @item drag-mouse-1
 Move point to where you release the mouse, and set the mark where you
@@ -48,34 +55,38 @@ specify both ends of the region.
 
 @item mouse-2
 Yank the last kill text, where you click (@code{mouse-yank-at-click}).
+This is normally the middle button.
 
 @item mouse-3
-Copy text to the kill ring (@code{mouse-save-then-click}).
-When repeated, kills the text.
+Copy text to the kill ring (@code{mouse-save-then-click}).  This is
+normally the right button.  If you click it a second time at the same
+place, that kills the text.
 
 This operation applies to the text between point and the place where
 you click.
 @end table
 
-Thus, to kill a section of text, you can press @key{MOUSE-1} at one
-end, then press @key{MOUSE-3} twice at the other end.  To prepare
-to copy the text without killing it, press @key{MOUSE-3} just once.
+  Thus, to kill a section of text, you can press @key{Mouse-1} at one
+end, then press @key{Mouse-3} twice at the other end.  To select the
+text for copying without deleting it from the buffer, press
+@key{Mouse-3} just once.  Then you can copy it elsewhere by yanking it.
+@xref{Killing}.
 
-To yank the killed or copied text somewhere else, move the mouse there
-and press @key{MOUSE-2}.
+  To yank the killed or copied text somewhere else, move the mouse there
+and press @key{Mouse-2}.  @xref{Yanking}.
 
 @cindex cutting and X
 @cindex pasting and X
 @cindex X cutting and pasting
 @cindex X pasting and cutting
-To copy text to another X window, kill it or save it in the kill ring.
+  To copy text to another X window, kill it or save it in the kill ring.
 Under X, this also sets the @dfn{primary selection}.  Then use the
 ``paste'' or ``yank'' command of the program operating the other window
 to insert the text from the selection.
 
-To copy text from another X window, use the ``cut'' or ``copy'' command
+  To copy text from another X window, use the ``cut'' or ``copy'' command
 of the program operating the other window, to select the text you want.
-Then yank it in Emacs with @kbd{C-y} or @key{MOUSE-2}.
+Then yank it in Emacs with @kbd{C-y} or @key{Mouse-2}.
 
 @node Creating Frames
 @section Creating Frames
@@ -118,9 +129,8 @@ frame.  This runs @code{find-file-read-only-other-frame}.
 @cindex Auto-Raise mode
 @cindex Auto-Lower mode
 
-  This section describes the commands for setting various parameters
-controlling the display style and window management behavior of a
-frame.  All of them apply to the selected frame only.
+  This section describes commands for altering the display style and
+window management behavior of the selected frame.
 
 @findex set-foreground-color
 @findex set-background-color
@@ -158,7 +168,11 @@ the frame moves to the bottom of the stack of X windows.
 
 @findex set-default-font
 @item M-x set-default-font @key{RET} @var{font} @key{RET}
-Specify font @var{font} as the default for the selected frame.
+Specify font @var{font} as the default for the selected frame. 
+@xref{Font X}, for ways to list the available fonts on your system.
+
+You can also set a frame's default font through a pop-up menu.
+Press @kbd{C-@key{Mouse-3}} to activate this menu.
 @end table
 
 @node Scroll Bars
@@ -172,16 +186,17 @@ shows a moving rectangular inner box which represents the portion of the
 buffer currently displayed.  The entire height of the scroll bar
 represents the entire length of the buffer.
 
-  You can use the middle mouse button in the scroll bar to move or drag
-the inner box up and down.  If you move it to the top of the scroll bar,
-you see the top of the buffer.  If you move it to the bottom of the
-scroll bar, you see the bottom of the buffer.
+  You can use @key{Mouse-2} (normally, the middle button) in the scroll
+bar to move or drag the inner box up and down.  If you move it to the
+top of the scroll bar, you see the top of the buffer.  If you move it to
+the bottom of the scroll bar, you see the bottom of the buffer.
 
   The left and right buttons in the scroll bar scroll by controlled
-increments.  The left button moves the line at the level where you click
-up to the top of the window.  The right button moves the line at the top
-of the window down to the level where you click.  By clicking repeatedly
-in the same place, you can scroll by the same distance over and over.
+increments.  @key{Mouse-1} (normally, the left button) moves the line at
+the level where you click up to the top of the window.  @key{Mouse-3}
+(normally, the right button) moves the line at the top of the window
+down to the level where you click.  By clicking repeatedly in the same
+place, you can scroll by the same distance over and over.
 
 @findex scroll-bar-mode
   You can enable or disable Scroll Bar mode with the command @kbd{M-x
@@ -200,7 +215,14 @@ frames yet to be created.
 @cindex mode, Menu Bar
 
   By default, each Emacs frame has a menu bar at the top which you can
-use to perform certain common operations.
+use to perform certain common operations.  There's no need to describe
+them in detail here, as you can more easily see for yourself; also,
+we may change them and add to them in subsequent Emacs versions.
+
+  Each of the operations in the menu bar is bound to an ordinary Emacs
+command which you can invoke equally well with @kbd{M-x} or with its own
+key bindings.  To see the command's name and documentation, type
+@kbd{C-h k} and then select the menu bar item you are interested in.
 
   You can turn display of menu bars on or off with @kbd{M-x menu-bar-mode}.
 With no argument, this command toggles Menu Bar mode, a minor mode.
@@ -296,10 +318,14 @@ Swap the foreground and background colors of face @var{face}.
 
 @kindex C-z
 @findex iconify-frame
-To iconify the selected Emacs frame, type @kbd{C-z}.  The normal meaning
+  To iconify the selected Emacs frame, type @kbd{C-z}.  The normal meaning
 of @kbd{C-z}, to suspend Emacs, is not useful under a window system, so
 it has a different binding in that case (the command
 @code{iconify-frame}).
+
+@kindex C-x 5 0
+@findex delete-frame
+  To delete the selected frame, type @kbd{C-x 5 0}. 
 
   Under X Windows, when Transient Mark mode is enabled, Emacs highlights
 the region when the mark is active.  This is the main motive for using

@@ -98,8 +98,11 @@ Menu Bar mode gives each frame a menu bar (@pxref{Menu Bars}).  Both of
 these modes are enabled by default when you use the X Window System.
 
   In Transient Mark mode, every change in the buffer ``deactivates'' the
-mark, so that commands that operate on the region will get an error.  
-@xref{Setting Mark}.
+mark, so that commands that operate on the region will get an error.
+This means you must either set the mark, or explicitly ``reactivate''
+it, before each command that uses the region.  The advantage of
+Transient Mark mode is that Emacs can display the region highlighted
+(currently only when using X).  @xref{Setting Mark}.
 
 @node Variables
 @section Variables

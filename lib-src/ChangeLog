@@ -1,3 +1,23 @@
+Tue Jun  1 04:07:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.11 released.
+
+	* timer.c [LINUX]: #undef signal.
+	* emacsserver.c: #undef signal.
+
+Sun May 30 21:39:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* wakeup.c (main): Make when a time_t.
+
+Sun May 30 15:24:31 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Makefile.in: (${archlibdir}): Use `(cd foo && pwd)` instead of
+	`(cd foo ; pwd)` to get the canonical name of a directory; cd
+	might fail, and have pwd print out the current directory.
+
+	* movemail.c [MAIL_USE_POP] (main): Don't use non-portable
+	string-handling functions.
+
 Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.10 released.

@@ -31,6 +31,8 @@ mark in the @dfn{mark ring}.
 
 @menu
 * Setting Mark::	Commands to set the mark.
+* Transient Mark::	How to make Emacs highlight the region--
+			  when there is one.
 * Using Region::	Summary of ways to operate on contents of the region.
 * Marking Objects::	Commands to put region around textual units.
 * Mark Ring::   Previous mark positions saved so you can go back there.
@@ -82,23 +84,6 @@ that end of the region, and then move it.  A second use of @kbd{C-x
 C-x}, if necessary, puts the mark at the new position with point back at
 its original position.
 
-@cindex mode, Transient Mark
-@cindex Transient Mark mode
-  If you enable Transient Mark mode (a minor mode), then the mark
-becomes ``inactive'' after every command that modifies the buffer.
-Quitting with @kbd{C-g} also deactivates the mark.  Most commands that
-use the mark give an error if the mark is inactive, but you can use
-@kbd{C-x C-x} to make it active again.  Commands that ``leave the mark
-behind'' usually change its position but leave it inactive.
-
-@findex transient-mark-mode
-  Under X Windows, when Transient Mark mode is enabled, Emacs highlights
-the region when the mark is active.  This is the main motive for using
-Transient Mark mode.  To enable this mode, use the command @kbd{M-x
-transient-mark-mode}.  The mode is also sometimes known as ``Zmacs
-mode'' because the Zmacs editor on the MIT Lisp Machine handled the mark
-in a similar way.
-
 @kindex C-@@
   There is no such character as @kbd{C-@key{SPC}} in ASCII; when you
 type @key{SPC} while holding down @key{CTRL}, what you get on most
@@ -108,6 +93,63 @@ have a terminal where typing @kbd{C-@key{SPC}} does not produce
 @kbd{C-@@}, you might as well think of this character as
 @kbd{C-@key{SPC}}.  Under X, @kbd{C-@key{SPC}} is actually a distinct
 character, but its binding is still @code{set-mark-command}.
+
+@node Transient Mark
+@section Transient Mark Mode
+@cindex mode, Transient Mark
+@cindex Transient Mark mode
+
+  Many Emacs commands move the mark and invisibly set new regions.
+This means that there is almost always some region that you can act
+on.  This is convenient, provided you get used to keeping track of the
+mark's position.
+
+  Some people prefer a more rigid mode of operation in which you must
+set up a region for each command that uses one---in which the region
+``lasts'' only temporarily.  This is called Transient Mark mode.  It
+is particularly well-suited to window systems such as X, since Emacs
+can highlight the region when it is active.
+
+@findex transient-mark-mode
+  To enable Transient Mark mode, type @kbd{M-x transient-mark-mode}.
+This command toggles the mode, so you can issue it again to return to
+the normal Emacs way of handling the mark and the region.
+
+  Here are the details of Transient Mark mode:
+
+@itemize @bullet
+@item
+To set the mark, type @kbd{C-@key{SPC}} (@code{set-mark-command}).
+This makes the mark active; as you move point, you will see the region
+highlighting change in extent.
+
+@item
+On a window system, an easy way to select a region is to press the
+button @key{Mouse-1} (normally the left button) at one end of it, drag
+the mouse to the other end, and then release the button.
+
+@item
+When the mark is active, you can execute any commands you want on the
+region, such as killing, indentation, or writing to a file.
+
+@item
+Any change to the buffer, such as inserting or deleting a character,
+deactivates the mark.  This means any subsequent command that operates
+on a region will get an error and refuse to operate.  You can make the
+region active again by typing @kbd{C-x C-x}.
+
+@item
+Commands like @kbd{M->} that ``leave the mark behind'' do not activate
+the new mark.  it.  You can activate the new region by executing
+@kbd{C-x C-x} (@code{exchange-point-and-mark}).
+
+@item
+Quitting with @kbd{C-g} deactivates the mark.
+@end itemize
+
+  Transient Mark mode is also sometimes known as ``Zmacs mode''
+because the Zmacs editor on the MIT Lisp Machine handled the mark in a
+similar way.
 
 @node Using Region
 @section Operating on the Region

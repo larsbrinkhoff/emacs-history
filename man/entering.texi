@@ -7,8 +7,8 @@
 
   The usual way to invoke Emacs is with the shell command @samp{emacs}.
 Emacs clears the screen and then displays an initial help message and
-copyright notice.  You can begin typing Emacs commands immediately
-afterward.
+copyright notice.  On a window system, Emacs opens a window of its own.
+You can begin typing Emacs commands immediately afterward.
 
   Some operating systems insist on discarding all type-ahead when Emacs
 starts up; they give Emacs no way to prevent this.  Therefore, it is

@@ -1,3 +1,49 @@
+Tue Jun  1 00:08:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.11 released.
+
+	* configure.in: Handle 386bsd.
+
+Mon May 31 00:23:47 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Update getdate.c.
+
+	* configure.in: Handle bsd386.
+
+	* Makefile.in (do-install): Use `-' in tar options.
+
+	* configure.in: Change  ! "${...}"  to  x"${...}" = x.
+
+	* Makefile.in (do-install): Copy the DOC-* files from the build
+	etc directory, as well as lots of things from ${srcdir}/etc.
+
+	* make-dist: Copy config.guess.
+
+	* configure.in: Handle AIX versions 1.2, 1.3.
+
+Sun May 30 15:37:57 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: Use s/bsd4-3.h for mips-mips-riscos4, and add
+	the configuration name mips-mips-usg* to represent USG systems.
+
+	* configure.in: Fix logic to detect if srcdir is already configured.
+
+	* Makefile.in: Pass in LD_SWITCH_X_SITE.
+
+	* Makefile.in (mkdir, clean, mostlyclean, do-install): Use `(cd
+	foo && pwd)` instead of `(cd foo ; pwd)` to get the canonical name
+	of a directory; cd might fail, and have pwd print out the current
+	directory.
+
+Sun May 30 14:55:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: When looking for sources, use '.', not `.`.  Also '..'.
+
+Sun May 30 14:23:50 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: Complain if srcdir points at an already-configured
+	tree.
+
 Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.10 released.

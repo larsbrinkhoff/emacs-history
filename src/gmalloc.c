@@ -47,11 +47,10 @@ extern "C"
 #define	__P(args)	args
 #undef	__ptr_t
 #define	__ptr_t		void *
-#define CONST const
+#define CONST		const
 #else /* Not C++ or ANSI C.  */
 #undef	__P
 #define	__P(args)	()
-#undef	CONST
 #define	CONST
 #undef	__ptr_t
 #define	__ptr_t		char *
@@ -427,8 +426,6 @@ malloc (size)
   struct list *next;
 
 #ifdef emacs
-  /* Library fns that call malloc need this
-     on some systems, such as rpc on Ultrix on Decstation.  */
   if (size == 0)
     size = 1;
 #else
@@ -1152,10 +1149,6 @@ Cambridge, MA 02139, USA.
 #ifndef	_MALLOC_INTERNAL
 #define	_MALLOC_INTERNAL
 #include <malloc.h>
-#endif
-
-#if defined (emacs) || defined (HAVE_CONFIG_H)
-#include "config.h"
 #endif
 
 #ifdef	__GNU_LIBRARY__

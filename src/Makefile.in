@@ -21,7 +21,7 @@ CPP = $(CC) -E -Is -Im
 # Just to avoid uncertainty.
 SHELL = /bin/sh
 
-SUBMAKEFLAGS = CC='${CC}' LN_S='${LN_S}' CFLAGS='${CFLAGS}'
+SUBMAKEFLAGS = CC='${CC}' LN_S='${LN_S}' CFLAGS='${CFLAGS}' MAKE='${MAKE}'
 
 all: doall
 
@@ -34,7 +34,7 @@ distclean:
 	-rm -f paths.h config.h emacs-* temacs emacs xmakefile core *.o
 
 clean:
-	-rm -f temacs emacs prefix-args xmakefile* core \#* *.o
+	-rm -f temacs emacs prefix-args xmakefile* core \#* *.o libXMenu11.a
 
 versionclean:
 	-rm -f emacs emacs-* ../etc/DOC*

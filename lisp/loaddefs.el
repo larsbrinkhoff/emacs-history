@@ -753,6 +753,114 @@ will result in errors that will show up very late." nil (quote macro))
 
 ;;;***
 
+;;;### (autoloads (bibtex-mode) "bibtex" "/home/fsf/rms/e19/lisp/bibtex.el" (11274 32339))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/bibtex.el
+
+(autoload (quote bibtex-mode) "bibtex" "\
+Major mode for editing bibtex files.
+
+\\{bibtex-mode-map}
+
+A command such as \\[bibtex-Book] will outline the fields for a BibTeX book entry.
+
+The optional fields start with the string OPT, and thus ignored by BibTeX.
+The OPT string may be removed from a field with \\[bibtex-remove-OPT].
+\\[bibtex-kill-optional-field] kills the current optional field entirely.
+\\[bibtex-remove-double-quotes] removes the double-quotes around the text of
+the current field.  \\[bibtex-empty-field] replaces the text of the current
+field with the default \"\".
+
+The command \\[bibtex-clean-entry] cleans the current entry, i.e. (i) removes
+double-quotes from entirely numerical fields, (ii) removes OPT from all
+non-empty optional fields, (iii) removes all empty optional fields, and (iv)
+checks that no non-optional fields are empty.
+
+Use \\[bibtex-find-text] to position the dot at the end of the current field.
+Use \\[bibtex-next-field] to move to end of the next field.
+
+\\[bibtex-x-environment] binds a mode-specific X menu to control+right
+mouse button.
+\\[bibtex-sun-environment] binds a mode-specific Sun menu to right
+mouse button.
+
+The following may be of interest as well:
+
+  Functions:
+    find-bibtex-duplicates
+    find-bibtex-entry-location
+    hide-bibtex-entry-bodies
+    sort-bibtex-entries
+    validate-bibtex-buffer
+
+  Variables:
+    bibtex-clean-entry-zap-empty-opts
+    bibtex-entry-field-alist
+    bibtex-include-OPTannote
+    bibtex-include-OPTcrossref
+    bibtex-include-OPTkey
+    bibtex-maintain-sorted-entries
+    bibtex-mode-user-optional-fields
+
+Fields:
+    address
+           Publisher's address
+    annote
+           Long annotation used for annotated bibliographies (begins sentence)
+    author
+           Name(s) of author(s), in BibTeX name format
+    booktitle
+           Book title when the thing being referenced isn't the whole book.
+           For book entries, the title field should be used instead.
+    chapter
+           Chapter number
+    crossref
+	   The database key of the entry being cross referenced.
+    edition
+           Edition of a book (e.g., \"second\")
+    editor
+           Name(s) of editor(s), in BibTeX name format.
+           If there is also an author field, then the editor field should be
+           for the book or collection that the work appears in
+    howpublished
+            How something strange has been published (begins sentence)
+    institution
+           Sponsoring institution
+    journal
+           Journal name (macros are provided for many)
+    key
+           Alphabetizing and labeling key (needed when no author or editor)
+    month
+           Month (macros are provided)
+    note
+           To help the reader find a reference (begins sentence)
+    number
+           Number of a journal or technical report
+    organization
+           Organization (sponsoring a conference)
+    pages
+           Page number or numbers (use `--' to separate a range)
+    publisher
+           Publisher name
+    school
+           School name (for theses)
+    series
+           The name of a series or set of books.
+           An individual book will will also have it's own title
+    title
+           The title of the thing being referenced
+    type
+           Type of a technical report (e.g., \"Research Note\") to be used
+           instead of the default \"Technical Report\"
+    volume
+           Volume of a journal or multivolume work
+    year
+           Year---should contain only numerals
+---------------------------------------------------------
+Entry to this mode calls the value of bibtex-mode-hook if that value is
+non-nil." t nil)
+
+;;;***
+
 ;;;### (autoloads (blackbox) "blackbox" "blackbox.el" (10941 43431))
 ;;; Generated autoloads from blackbox.el
 
@@ -4176,6 +4284,16 @@ Prefix arg means just kill any existing server communications subprocess." t nil
 
 ;;;***
 
+;;;### (autoloads (sgml-mode) "sgml-mode" "/home/fsf/rms/e19/lisp/sgml-mode.el" (11274 32251))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/sgml-mode.el
+
+(autoload (quote sgml-mode) "sgml-mode" "\
+Major mode for editing SGML.
+Makes > display the matching <.  Makes / display matching /.
+Use \\[sgml-validate] to validate your document with an SGML parser." t nil)
+
+;;;***
+
 ;;;### (autoloads (shell) "shell" "shell.el" (11231 58570))
 ;;; Generated autoloads from shell.el
 
@@ -4369,43 +4487,6 @@ Normally input is edited in Emacs and sent a line at a time." t nil)
 Open a network login connection to host named HOST (a string).
 Communication with HOST is recorded in a buffer *HOST-rsh*.
 Normally input is edited in Emacs and sent a line at a time." t nil)
-
-;;;***
-
-;;;### (autoloads (terminal-emulator) "term1" "term1.el" (11249 3876))
-;;; Generated autoloads from term1.el
-
-(autoload (quote terminal-emulator) "term1" "\
-Under a display-terminal emulator in BUFFER, run PROGRAM on arguments ARGS.
-ARGS is a list of argument-strings.  Remaining arguments are WIDTH and HEIGHT.
-BUFFER's contents are made an image of the display generated by that program,
-and any input typed when BUFFER is the current Emacs buffer is sent to that
-program an keyboard input.
-
-Interactively, BUFFER defaults to \"*terminal*\" and PROGRAM and ARGS
-are parsed from an input-string using your usual shell.
-WIDTH and HEIGHT are determined from the size of the current window
--- WIDTH will be one less than the window's width, HEIGHT will be its height.
-
-To switch buffers and leave the emulator, or to give commands
-to the emulator itself (as opposed to the program running under it),
-type Control-^.  The following character is an emulator command.
-Type Control-^ twice to send it to the subprogram.
-This escape character may be changed using the variable `terminal-escape-char'.
-
-`Meta' characters may not currently be sent through the terminal emulator.
-
-Here is a list of some of the variables which control the behaviour
-of the emulator -- see their documentation for more information:
-terminal-escape-char, terminal-scrolling, terminal-more-processing,
-terminal-redisplay-interval.
-
-This function calls the value of terminal-mode-hook if that exists
-and is non-nil after the terminal buffer has been set up and the
-subprocess started.
-
-Presently with `termcap' only; if somebody sends us code to make this
-work with `terminfo' we will try to use it." t nil)
 
 ;;;***
 

@@ -1,3 +1,91 @@
+Tue Jun  1 00:27:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.11 released.
+
+	* lucid.el (copy-tree): Use let* to bind new before i.
+
+	* terminal.el (te-pass-through): Delete debugging code left by mistake.
+
+	* comint.el (comint-filter): Put window-start before the input.
+
+	* isearch.el (isearch-mode): If enter recursive-edit,
+	also bind isearch-recursive-edit.
+
+	* cookie1.el: Renamed from cookie.el.
+	Provide cookie1.
+	* yow.el, spook.el: Changed accordingly.
+
+Mon May 31 23:21:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* outline.el (outline-flag-region): Pass t as NOUNDO arg
+	to subst-char-in-region.  No need to restore buffer-modified-p by hand.
+
+Mon May 31 19:59:12 1993  Junio Hamano  (junio@twinsun.com)
+
+	* lisp/window.el (count-windows): PROC argument of
+	walk-windows takes an argument.
+
+Mon May 31 00:20:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gnus.el (gnus-summary-isearch-article): Call isearch-forward
+	in ordinary fashion with no args.
+	(gnus-inews-article-hook, gnus-prepare-article-hook):
+	Initialize to a list.
+	(gnus-read-newsrc-file): If timestamps are equal, reload .newsrc. 
+
+	* bibtex.el (bibtex-mode): Add autoload.
+
+	* files.el (inhibit-local-variables-regexps): New variable.
+	(set-auto-mode): Handle inhibit-local-variables-regexps.
+
+	* tar-mode.el: Don't initialize write-file-hooks.
+	Don't change auto-mode-alist.
+	(tar-regexp): Deleted.
+	(tar-normal-mode): Deleted.
+	(tar-mode): Add autoload.
+
+	* faces.el (x-resolve-font-name): Clean up error messages.
+
+	* timer.el (run-at-time): Pass args to start-process in right order.
+
+	* info.el (Info-get-token): Check that thesecond search succeeded.
+
+	* edebug.el: Provide edebug.
+
+	* rmailsum.el (rmail-message-subject-p): Fix typo in string constant.
+
+	* cl.el (mod): Use cl-floor.
+	(rem): Use cl-truncate.
+
+	* gud.el (gud-def): Don't use gud-key-prefix at compile time.
+
+	* window.el (shrink-window-if-larger-than-buffer): Add `interactive'.
+	Do nothing if window contents not entirely visible.
+
+	* sendmail.el (mail-do-fcc): Put back the newline at the start
+	of the fcc temp buffer.  It got lost somewhere.
+
+Sun May 30 15:14:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* gnus.el (gnus-nntp-server): Use gnus-default-nntp-server.
+
+	* info.el (Info-mode-map): Correct Info-top to Info-top-node.
+
+	* man.el (Man-notify-when-ready): Correct previous change.
+
+Sun May 30 18:28:43 1993  Stephen Gildea  (gildea@alex.lcs.mit.edu)
+
+	* mh-e.el (mh-signature-file-name): New variable.
+	mh-e version 3.8.2.
+
+Sun May 30 13:21:04 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	 * faces.el (x-resolve-font-name): Fix args to error; the format
+	 string was changed, but not the arguments to be substituted.
+
+	 * faces.el (x-resolve-font-name): Give correct error message
+	 depending on whether or not FACE was non-nil.
+
 Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.10 released.

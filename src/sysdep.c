@@ -314,7 +314,7 @@ wait_for_termination (pid)
       status = SYS$FORCEX (&pid, 0, 0);
       break;
 #else /* not VMS */
-#if (defined (BSD) && !defined (LINUX)) || (defined (HPUX) && !defined (HPUX_5))
+#if defined (BSD) || (defined (HPUX) && !defined (HPUX_5))
       /* Note that kill returns -1 even if the process is just a zombie now.
 	 But inevitably a SIGCHLD interrupt should be generated
 	 and child_sig will do wait3 and make the process go away. */
@@ -333,12 +333,21 @@ wait_for_termination (pid)
 	sleep (1);
       else
 	sigpause (SIGEMPTYMASK);
-#else /* not BSD, not LINUX, and not HPUX version >= 6 */
-#if defined (UNIPLUS) || defined (LINUX)
+#else /* not BSD, and not HPUX version >= 6 */
+#if defined (UNIPLUS)
       if (0 > kill (pid, 0))
 	break;
       wait (0);
-#else /* neither BSD nor UNIPLUS nor LINUX: random sysV */
+#else /* neither BSD nor UNIPLUS: random sysV */
+#ifdef POSIX_SIGNALS	/* would this work for LINUX as well? */
+      sigblock (sigmask (SIGCHLD));
+      if (0 > kill (pid, 0))
+	{
+	  sigunblock (sigmask (SIGCHLD));
+	  break;
+	}
+      sigpause (sigmask (SIGCHLD));
+#else /* not POSIX_SIGNALS */
 #ifdef HAVE_SYSV_SIGPAUSE
       sighold (SIGCHLD);
       if (0 > kill (pid, 0))
@@ -355,6 +364,7 @@ wait_for_termination (pid)
 	 we lose just one second.  */
       sleep (1);
 #endif /* not HAVE_SYSV_SIGPAUSE */
+#endif /* not POSIX_SIGNALS */
 #endif /* not UNIPLUS */
 #endif /* not BSD, and not HPUX version >= 6 */
 #endif /* not VMS */
@@ -453,8 +463,20 @@ child_setup_tty (out)
   /* QUIT and INTR work better as signals, so disable character forms */
   s.main.c_cc[VQUIT] = 0377;
   s.main.c_cc[VINTR] = 0377;
-  s.main.c_cc[VEOL] = 0377;
+#ifdef SIGNALS_VIA_CHARACTERS
+  /* the QUIT and INTR character are used in process_send_signal
+     so set them here to something useful.  */
+  if (s.main.c_cc[VQUIT] == 0377)
+    s.main.c_cc[VQUIT] = '\\'&037;	/* Control-\ */
+  if (s.main.c_cc[VINTR] == 0377)
+    s.main.c_cc[VINTR] = 'C'&037;	/* Control-C */
+#else /* no TIOCGPGRP or no TIOCGLTC or no TIOCGETC */
+  /* QUIT and INTR work better as signals, so disable character forms */
+  s.main.c_cc[VQUIT] = 0377;
+  s.main.c_cc[VINTR] = 0377;
   s.main.c_lflag &= ~ISIG;
+#endif /* no TIOCGPGRP or no TIOCGLTC or no TIOCGETC */
+  s.main.c_cc[VEOL] = 0377;
   s.main.c_cflag = (s.main.c_cflag & ~CBAUD) | B9600; /* baud rate sanity */
 #endif /* AIX */
 
@@ -795,6 +817,7 @@ emacs_set_tty (fd, settings, waitp)
 {
   /* Set the primary parameters - baud rate, character size, etcetera.  */
 #ifdef HAVE_TCATTR
+  int i;
   /* We have those nifty POSIX tcmumbleattr functions.
      William J. Smith <wjs@wiis.wang.com> writes:
      "POSIX 1003.1 defines tcsetattr() to return success if it was
@@ -802,7 +825,8 @@ emacs_set_tty (fd, settings, waitp)
      of the requested actions could not be performed.
      We must read settings back to ensure tty setup properly.
      AIX requires this to keep tty from hanging occasionally."  */
-  for (;;)
+  /* This make sure that we dont loop indefinetly in here.  */
+  for (i = 0 ; i < 10 ; i++)
     if (tcsetattr (fd, waitp ? TCSAFLUSH : TCSADRAIN, &settings->main) < 0)
       {
 	if (errno == EINTR)
@@ -816,10 +840,18 @@ emacs_set_tty (fd, settings, waitp)
 
 	/* Get the current settings, and see if they're what we asked for.  */
 	tcgetattr (fd, &new);
-	if (memcmp (&new, &settings->main, sizeof (new)))
-	  continue;
-	else
+	/* We cannot use memcmp on the whole structure here because under
+	 * aix386 the termios structure has some reserved field that may
+	 * not be filled in.
+	 */
+	if (   new.c_iflag == settings->main.c_iflag
+	    && new.c_oflag == settings->main.c_oflag
+	    && new.c_cflag == settings->main.c_cflag
+	    && new.c_lflag == settings->main.c_lflag
+	    && memcmp(new.c_cc, settings->main.c_cc, NCCS) == 0)
 	  break;
+	else
+	  continue;
       }
 
 #else

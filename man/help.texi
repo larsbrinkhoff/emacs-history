@@ -114,6 +114,9 @@ what @var{key} does.
 displays the documentation string of the command as well as its name.
 This is too big for the echo area, so a window is used for the display.
 
+  @kbd{C-h c} and @kbd{C-h k} work for any sort of key sequences,
+including function keys and mouse events.
+
 @node Name Help
 @section Help by Command or Variable Name
 

@@ -30,8 +30,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <fcntl.h>
 #else
 #ifdef HAVE_TERMIOS
+#if defined(_AIX) && defined(_I386)
+#include <termios.h>		/* termios.h needs to be before termio.h */
+#include <termio.h>
+#else
 #include <termio.h>
 #include <termios.h>
+#endif /* _AIX && _I386 */
 #include <fcntl.h>
 #else /* neither HAVE_TERMIO nor HAVE_TERMIOS */
 #ifndef VMS
@@ -106,6 +111,11 @@ static struct sensemode {
 #include <sys/pty.h>
 #include <unistd.h>
 #endif /* AIX */
+
+#ifdef IRIX4
+/* Get _getpty prototype */
+#include <unistd.h>
+#endif
 
 #ifdef SYSV_PTYS
 #include <sys/types.h>

@@ -343,8 +343,13 @@ IBM RS/6000 (rs6000-ibm-aix)
   persons say that the tty VMIN and VTIME settings have been
   corrupted; if you have a fix, please send it to us.
 
+  Reports are that the IBM supplied X libraries don't work with Emacs, 
+  but the IBM X libraries and include files do work.
+
   Compiling with -O using the IBM compiler has been known
   to make Emacs work incorrectly.
+
+  GCC 2.3.3 and 2.4.1 have a bug that miscompiles Emacs.
 
 IBM RT/PC (romp-ibm-bsd or romp-ibm-aix)
 
@@ -375,25 +380,42 @@ Integrated Solutions `Optimum V' (m68k-isi-bsd4.2 or -bsd4.3)
   in a system header file, which confuses Emacs (which thinks that UMAX
   indicates the Umax operating system).
 
-Intel 386 (i386-unknown-isc, 		i386-unknown-esix,
-	   i386-unknown-xenix,		i386-unknown-linux,
-	   i386-intsys-sysv,		i386-unknown-sysv5.2.2,
-	   i386-unknown-sysv5.3,	i386-unknown-bsd4.2,
-	   i386-unknown-sco3.2v4)
+Intel 386 (i386-*-isc, 		i386-*-esix,
+	   i386-*-xenix,	i386-*-linux,
+	   i386-intsys-sysv,	i386-*-sysv3,
+	   i386-*-sysv4,	i386-*-sysv4.2,
+	   i386-*-sysv5.3,	i386-*-bsd4.2,
+	   i386-*-sco3.2v4,	i386-*-bsd386)
+
+  In the above configurations, * means that the manufacturer's name
+  you specify does not matter, and you can use any name you like
+  (but it should not contain any dashes).
 
   18.58 should support a wide variety of operating systems.
-  Make sure to use i386-unknown-isc2.2 for Interactive 386/ix version
+  Make sure to use i386-*-isc2.2 for Interactive 386/ix version
 	2.2 or later.
-  Use i386-unknown-esix for Esix; Emacs runs as of version 19.6.
-  Use i386-unknown-linux for Linux; Emacs runs as of version 19.7.
+  Use i386-*-esix for Esix; Emacs runs as of version 19.6.
+  Use i386-*-linux for Linux; Emacs runs as of version 19.7.
   Use i386-intsys-sysv for Integrated Solutions 386 machines.
   It may also be correct for Microport systems.
-  Use i386-unknown-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.6.
+  Use i386-*-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.6.
+
+  Use i386-*-bsd386 for BSDI BSD/386; Emacs runs as of version 19.10.
+  Make on that system is broken; use GNU make instead.
+
+  For System V release 3, use i386-*-sysv3.
+  For System V release 4, use i386-*-sysv4.
+  For System V release 4.2, use i386-*-sysv4.2.
 
   If you are using Xenix, see notes at end under Xenix.
   If you are using Esix, see notes at end under Esix.
   If you are using SCO Unix, see notes at end under SCO.
-  
+
+  If you are using System V release 4.2, you may find that `cc -E'
+  puts spurious spaces in `src/xmakefile'.  If that happens,
+  specify CC=/lib/cpp as an option when you run make.
+  There is no problem if you compile with GCC.
+    
   Note that use on Linux with GCC 2.4 and the DLL 4.4 libraries
   requires the experimental "net 2" network patches (no relation to
   Berkeley Net 2).
@@ -787,7 +809,7 @@ SCO Unix
 
   If you are using MMDF instead of sendmail, you need to remove
   /usr/lib/sendmail or modify lisp/paths.el before compiling.
-  lisp/paths.el (which is loaded during the build) will attent to use
+  lisp/paths.el (which is loaded during the build) will attempt to use
   sendmail if it exists.
 
   If you are using SMAIL, you need to define the macro

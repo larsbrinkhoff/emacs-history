@@ -117,7 +117,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define OBJECTS_MACHINE hftctl.o
 #define C_SWITCH_MACHINE -D_BSD
-/* cdfwz@r2d2.giss.nasa.gov says -lIM -liconv is needed.  */
+/* IBM's X11R5 use -lIM and -liconv in AIX 3.2.2.  */
 #define LIBS_MACHINE -lrts -lIM -liconv
 #define START_FILES
 #define HAVE_SYSVIPC
@@ -130,9 +130,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #undef NEED_SIOCTL
 #undef NEED_PTEM_H
 
-#ifdef __GNUC__
-#  define ORDINARY_LINK
-#else
-#  undef LINKER
-#  define LINKER cc -Wl,-bnso,-bnodelcsect,-bI:/lib/syscalls.exp
-#endif
+#define ORDINARY_LINK
+#define LD_SWITCH_MACHINE -Wl,-bnso,-bnodelcsect,-bI:/lib/syscalls.exp
+
+/* AIX supposedly doesn't use this interface, but on thr RS/6000
+   it apparently does.  */
+#define NLIST_STRUCT

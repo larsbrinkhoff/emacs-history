@@ -128,10 +128,10 @@ a keymap when loaded.
 should be autoloaded by writing special "magic" comments in that
 library itself.
 
-   Write `;;;###autoload' on a line by itself before a function
-definition before the real definition of the function, in its
-autoloadable source file; then the command `M-x update-file-autoloads'
-automatically puts the `autoload' call into `loaddefs.el'.
+   Write `;;;###autoload' on a line by itself before the real
+definition of the function, in its autoloadable source file; then the
+command `M-x update-file-autoloads' automatically puts the `autoload'
+call into `loaddefs.el'.
 
    You can also put other kinds of forms into `loaddefs.el', by writing
 `;;;###autoload' followed on the same line by the form.  `M-x
@@ -328,7 +328,7 @@ notation (`DIG.DIGITSeEXPT').  Use `f' for decimal point notation
 for the number at hand.
 
    The precision in any of these cases is the number of digits following
-the decimal point.  With `f', a precision of 0 means to omit the
+the decimal point.  With `e', a precision of 0 means to omit the
 decimal point.  0 is not allowed with `f' or `g'.
 
    A value of `nil' means to use the format `%.20g'.
@@ -440,10 +440,10 @@ Changes in Basic Editing Functions
      shown by highlighting.
 
      The variables `activate-mark-hook' and `deactivate-mark-hook' are
-     normal hooks run, respectively, when the mark becomes active
-     andwhen it becomes inactive.  The hook `activate-mark-hook' is
-     also run at the end of a command if the mark is active and the
-     region may have changed.
+     normal hooks run, respectively, when the mark becomes active and
+     when it becomes inactive.  The hook `activate-mark-hook' is also
+     run at the end of a command if the mark is active and the region
+     may have changed.
 
    * The function `move-to-column' now accepts a second optional
      argument FORCE, in addition to COLUMN; if the requested column
@@ -494,8 +494,8 @@ Changes in Basic Editing Functions
      any buffer modification.  It takes three arguments: the beginning
      and end of the region just changed, and the length of the text that
      existed before the change.  (To get the current length, subtract
-     the rrgion beginning from the region end.)  All three arguments are
-     integers.  The buffer that's about to change is always the current
+     the region beginning from the region end.)  All three arguments are
+     integers.  The buffer that has just changed is always the current
      buffer.
 
      Both of these variables are temporarily bound to `nil' during the
@@ -584,7 +584,7 @@ range of text:
 
 `set-text-properties'
      This function replaces the entire property list, leaving no
-     vessage of the properties that that text used to have.
+     vestige of the properties that that text used to have.
 
    All these functions take four arguments: START, END, PROPS, and
 OBJECT.  The last argument is optional and defaults to the current
@@ -846,7 +846,7 @@ possibly others to be added in the future.  Therefore, it should always
 reinvoke the ordinary Lisp primitive when it receives an operation it
 does not recognize.  Here's one way to do this:
 
-     (defun my-file-handler (primitive &rest args)
+     (defun my-file-handler (operation &rest args)
        ;; First check for the specific operations
        ;; that we have special handling for.
        (cond ((eq operation 'insert-file-contents) ...)
@@ -1907,7 +1907,7 @@ represent them as input.
     BUTTON-SYMBOL
           indicates which mouse button was used.  It is one of the
           symbols `mouse-1', `mouse-2', ..., where the buttons are
-          numbered numbered left to right.
+          normally numbered left to right.
 
           You can also use prefixes `A-', `C-', `H-', `M-', `S-' and
           `s-' for modifiers alt, control, hyper, meta, shift and
@@ -2038,7 +2038,7 @@ represent them as input.
 
      In X windows, most window managers are set up so that just moving
      the mouse into a window is enough to set the focus there.  As far
-     as the user concern, Emacs behaves consistently with this.
+     as the user is concerned, Emacs behaves consistently with this.
      However, there is no need for the Lisp program to know about the
      focus change until some other kind of input arrives.  So Emacs
      generates the focus event only when the user actually types a
@@ -2403,7 +2403,7 @@ Keymaps
 
     PROMPT-STRING
           A string as an element of the keymap marks the keymap as a
-          menu, and serves as the overal prompt string for it.
+          menu, and serves as the overall prompt string for it.
 
     `(KEY . BINDING)'
           A cons cell binds KEY to DEFINITION.  Here KEY may be any
@@ -2442,7 +2442,7 @@ Keymaps
           contains a default binding, it completely masks out any
           lower-priority keymaps.
 
-   * A keymap can now inherit from another keymap.  Do do this, make the
+   * A keymap can now inherit from another keymap.  To do this, make the
      latter keymap the "tail" of the new one.  Such a keymap looks like
      this:
 
@@ -2556,7 +2556,7 @@ hand when the minibuffer input functions are not using it.
 Other Minibuffer Features
 -------------------------
 
-   The INITIAL argument to `read-from-minibufer' and other minibuffer
+   The INITIAL argument to `read-from-minibuffer' and other minibuffer
 input functions can now be a cons cell `(STRING . POSITION)'.  This
 means to start off with STRING in the minibuffer, but put the cursor
 POSITION characters from the beginning, rather than at the end.

@@ -6,6 +6,23 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.11.
+
+* Supercite is installed.
+
+* `write-file-hooks' functions that return non-nil are responsible
+for making a backup file if you want that to be done.
+To do so, execute the following code:
+
+   (or buffer-backed-up (backup-buffer))
+
+You might wish to save the file modes value returned by
+`backup-buffer' and use that to set the mode bits of the file
+that you write.  This is what `basic-save-buffer' does when
+it writes a file in the usual way.
+
+(This is not actually new, but wasn't documented before.)
+
 Changes in version 19.10.
 
 * The command `repeat-complex-command' is now on C-x ESC ESC.

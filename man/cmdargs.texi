@@ -296,6 +296,10 @@ xfd -fn 6x13
 @noindent
 displays the entire font @samp{6x13}.
 
+  While running Emacs, you can set the font of the current frame
+(@pxref{Frame Parameters}) or for a specific kind of text
+(@pxref{Faces}).
+
 @node Colors X
 @appendixsec Window Color Options
 @cindex color of window (X Windows)
