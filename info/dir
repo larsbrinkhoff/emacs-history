@@ -19,3 +19,5 @@ File: dir	Node: Top	This is the top of the INFO tree
 			  by filling in forms.
 * GNUS: (gnus).		The news reader GNUS.
 * CL: (cl).		Partial Common Lisp support for Emacs Lisp.
+* SC: (sc).		Supercite lets you cite parts of messages you're 
+			  replying to, in hairy ways.

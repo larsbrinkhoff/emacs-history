@@ -4,6 +4,7 @@
 @node Text, Programs, Indentation, Top
 @chapter Commands for Human Languages
 @cindex text
+@cindex manipulating text
 
   The term @dfn{text} has two widespread meanings in our area of the
 computer field.  One is data that is a sequence of characters.  Any file
@@ -128,6 +129,7 @@ delimiter.  @xref{Syntax}.
 @node Sentences
 @section Sentences
 @cindex sentences
+@cindex manipulating sentences
 
   The Emacs commands for manipulating sentences and paragraphs are mostly
 on Meta keys, so as to be like the word-handling commands.
@@ -193,6 +195,7 @@ This example is explained in the section on regexps.  @xref{Regexps}.
 @node Paragraphs
 @section Paragraphs
 @cindex paragraphs
+@cindex manipulating paragraphs
 @kindex M-@{
 @kindex M-@}
 @findex backward-paragraph
@@ -236,14 +239,15 @@ one of these blank lines is included in the region.  Thus, for example,
 @vindex paragraph-start
 @vindex paragraph-separate
   The precise definition of a paragraph boundary is controlled by the
-variables @code{paragraph-separate} and @code{paragraph-start}.  The value
-of @code{paragraph-start} is a regexp that should match any line that
-either starts or separates paragraphs.  The value of
+variables @code{paragraph-separate} and @code{paragraph-start}.  The
+value of @code{paragraph-start} is a regexp that should match any line
+that either starts or separates paragraphs.  The value of
 @code{paragraph-separate} is another regexp that should match only lines
-that separate paragraphs without being part of any paragraph.  Lines that
-start a new paragraph and are contained in it must match both regexps.  For
-example, normally @code{paragraph-start} is @code{"^[ @t{\}t@t{\}n@t{\}f]"}
-and @code{paragraph-separate} is @code{"^[ @t{\}t@t{\}f]*$"}.@refill
+that separate paragraphs without being part of any paragraph.  Lines
+that start a new paragraph and are contained in it must match only
+@code{paragraph-start}, not @code{paragraph-separate}.  For example,
+normally @code{paragraph-start} is @code{"^[ @t{\}t@t{\}n@t{\}f]"} and
+@code{paragraph-separate} is @code{"^[ @t{\}t@t{\}f]*$"}.@refill
 
   Normally it is desirable for page boundaries to separate paragraphs.
 The default values of these variables recognize the usual separator for
@@ -322,7 +326,7 @@ matches a formfeed character at the beginning of a line.
 
 @node Filling
 @section Filling Text
-@cindex filling
+@cindex filling text
 
   With Auto Fill mode, text can be @dfn{filled} (broken up into lines
 that fit in a specified width) as you insert it.  If you alter existing
@@ -573,6 +577,8 @@ Convert region to upper case (@code{upcase-region}).
 @kindex M-u
 @kindex M-c
 @cindex words
+@cindex converting text to upper or lower case
+@cindex capitalizing words
 @findex downcase-word
 @findex upcase-word
 @findex capitalize-word

@@ -3,7 +3,8 @@
 @c See file emacs.texi for copying conditions.
 @node Windows, Frames, Buffers, Top
 @chapter Multiple Windows
-@cindex windows
+@cindex windows in Emacs
+@cindex multiple windows in Emacs
 
   Emacs can split a frame into two or many windows.  Multiple windows
 can display parts of different buffers, or different parts of one
@@ -150,6 +151,7 @@ mismatch.  @xref{Comparing Files}.
 @node Pop Up Window, Change Window, Other Window, Windows
 @section Displaying in Another Window
 
+@cindex selecting buffers in other windows
 @kindex C-x 4
   @kbd{C-x 4} is a prefix key for commands that select another window
 (splitting the window if there is only one) and select a buffer in that

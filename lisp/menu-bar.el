@@ -168,6 +168,8 @@ If this is 10, then only the ten most-recently-selected buffers are shown.
 If this is nil, then all buffers are shown.
 A large number or nil slows down menu responsiveness.")
 
+(defvar list-buffers-directory nil)
+
 (defun mouse-menu-bar-buffers (event)
   "Pop up a menu of buffers for selection with the mouse.
 This switches buffers in the window that you clicked on,
@@ -208,7 +210,11 @@ and selects that window."
 					(save-excursion
 					  (set-buffer elt)
 					  (if buffer-read-only "%" " "))
-					(or (buffer-file-name elt) ""))
+					(or (buffer-file-name elt)
+					    (save-excursion
+					      (set-buffer elt)
+					      list-buffers-directory)
+					    ""))
 				       elt)
 				      head)))
 		      (and head (> (length (car (car head))) maxlen)

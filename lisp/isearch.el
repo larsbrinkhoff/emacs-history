@@ -4,7 +4,7 @@
 
 ;; Author: Daniel LaLiberte <liberte@cs.uiuc.edu>
 
-;; |$Date: 1993/07/31 18:39:09 $|$Revision: 1.47 $
+;; |$Date: 1993/08/13 06:32:49 $|$Revision: 1.49 $
 
 ;; This file is not yet part of GNU Emacs, but it is based almost
 ;; entirely on isearch.el which is part of GNU Emacs.
@@ -717,8 +717,7 @@ If first char entered is \\[isearch-yank-word], then do word search instead."
 	    (let* (;; Why does following read-char echo?  
 		   ;;(echo-keystrokes 0) ;; not needed with above message
 		   (e (let ((cursor-in-echo-area t))
-			(if isearch-event-data-type
-			    (allocate-event) (read-char))))
+			(read-event)))
 		   ;; Binding minibuffer-history-symbol to nil is a work-around
 		   ;; for some incompatibility with gmhist.
 		   (minibuffer-history-symbol))
@@ -730,12 +729,7 @@ If first char entered is \\[isearch-yank-word], then do word search instead."
 	      ;; no check is made here.
 	      (message (isearch-message-prefix nil nil t))
 	      (if (eq 'isearch-yank-word
-		      (lookup-key
-		       isearch-mode-map
-		       (char-to-string
-			(if isearch-event-data-type
-			    (or (event-to-character (next-command-event e)) 0)
-			  e))))
+		      (lookup-key isearch-mode-map (vector e)))
 		  (setq isearch-word t  ;; so message-prefix is right
 			isearch-new-word t)
 		(isearch-unread e))
@@ -1090,9 +1084,9 @@ If you want to search for just a space, type C-q SPC."
 	()
       (set yank-pointer-name
 	   (setq yank-pointer
-		 (% (+ (or yank-pointer 0)
-		       (if advance (1- length) 1))
-		    length)))
+		 (mod (+ (or yank-pointer 0)
+			 (if advance -1 1))
+		      length)))
       (setq isearch-string (nth yank-pointer ring)
 	    isearch-message (mapconcat 'isearch-text-char-description
 				       isearch-string "")))))
@@ -1134,11 +1128,8 @@ If you want to search for just a space, type C-q SPC."
 	()
       (set yank-pointer-name
 	   (setq yank-pointer
-		 (% (+ (or yank-pointer 0)
-		       ;; Add LENGTH here to ensure a positive result.
-		       length
-		       (% (- n) length))
-		    length)))
+		 (mod (- (or yank-pointer 0) n)
+		      length)))
 
       (erase-buffer)
       (insert (nth yank-pointer ring))

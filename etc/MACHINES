@@ -143,12 +143,12 @@ AT&T 7300 or 3b1 (m68k-att-sysv)
 
 Bull DPX/2 models 2nn or 3nn (m68k-bull-sysv3)
 
-  19.12 works fine either with cc or gcc. 
+  Minor fixes merged into 19.19, which should work with CC or GCC.
 
   You should compile with all the POSIX stuff: undef _SYSV and define
   _POSIX_SOURCE, _XOPEN_SOURCE and _BULL_SOURCE.
 
-  On bos2.00.45 there is a bug that makes the F_SETOWN fcntl() 
+  On bos2.00.45 there is a bug that makes the F_SETOWN fcntl
   call enters in an infinite loop. F_SETOWN_BUG has been defined to avoid 
   calling it.
 
@@ -403,6 +403,10 @@ IBM RS/6000 (rs6000-ibm-aix)
 
   As of 19.11, if you strip the Emacs executable, it ceases to work.
 
+  If you are using AIX 3.2.3, you may get a core dump when loading
+  ange-ftp.  You may be able to fix the problem by defining LIBS_TERMCAP
+  as -ltermcap -lcurses.  Please tell us if this fails to work.
+
   If anyone can fix the above problems, or confirm that they don't happen
   with certain versions of various programs, we would appreciate it.
 
@@ -478,7 +482,10 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
     
   Note that use on Linux with GCC 2.4 and the DLL 4.4 libraries
   requires the experimental "net 2" network patches (no relation to
-  Berkeley Net 2).
+  Berkeley Net 2).  There is a report that (some version of) Linux
+  requires including `/usr/src/linux/include/linux' in buffer.c
+  but no coherent explanation of why that might be so.  If it is so,
+  in current versions of Linux, something else should probably be changed.
 
   Some sysV.3 systems seem to have bugs in `opendir';
   for them, alter `config.h' to define NONSYSTEM_DIR_LIBRARY
@@ -594,6 +601,10 @@ Mips (mips-mips-riscos, mips-mips-riscos4.0, or mips-mips-bsd)
   Change it to handle SIGTRAP as well as SIGFPE.  But this will have a
   great disadvantage: you will not be able to run Emacs under a
   debugger.  I think crashing on division by zero is a lesser problem.
+
+  dsg@mitre.org reported needing to use --x-libraries=/bsd43/usr/lib
+  on a riscos4bsd site.  But it is not clear whether this is needed in
+  general or only because of quirks on a particular site.
 
 National Semiconductor 32000 (ns32k-ns-genix)
 
@@ -722,7 +733,7 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   `sparc-sun-sunos4.1.3'.
 
   Use `m68k' for the 68000-based Sun boxes, `sparc' for Sparcstations,
-  and `i386' for Sun Roadrunners.
+  and `i386' for Sun Roadrunners.  i386 calls for Sunos4.0.
 
   On Solaris 2, you need to install patch 100947-02 to fix a system bug.
   Presumably this patch comes from Sun.  You must alter the definition of
@@ -736,6 +747,14 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   slow down their host and disable rlogin and telnet.  This is most
   likely due to a bug in Solaris 2.2's multiprocessor support,
   rather than an Emacs bug.
+
+  On Solaris, if linking gives the error that `bss_end' and `main'
+  are undefined, it may mean that the C preprocessor did the wrong
+  thing when processing `src/ymakefile' into `src/xmakefile'.
+  A tell-tale sign of this in `src/xmakefile' is the presence of
+  extra spaces, as in  	unexelf.o: unexelf . o $(config_h)
+  If this happens, try using GCC to compile Emacs,
+  or at least to preprocess `src/ymakefile' into `src/xmakefile'.
 
   If you have trouble using open-network-stream, get the distribution
   of `bind' (the BSD name-server), build libresolv.a, and link Emacs
@@ -793,6 +812,10 @@ Tandem Integrity S2 (mips-tandem-sysv)
   You will probably want to see if you can make subprocesses work.
 
   You must edit `lib-src/Makefile' to define LOADLIBES = -mld.
+
+Tektronix XD88 (m88k-tektronix-sysv3*)
+
+  Minor changes merged in 19.19, which should work.
 
 Tektronix 16000 box (6130?) (ns16k-tektronix-bsd)
 

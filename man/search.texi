@@ -4,6 +4,7 @@
 @node Search, Fixit, Display, Top
 @chapter Searching and Replacement
 @cindex searching
+@cindex finding strings within text
 
   Like other editors, Emacs has commands for searching for occurrences of
 a string.  The principal search command is unusual in that it is
@@ -30,6 +31,7 @@ which occurrences to replace.
 @node Incremental Search, Nonincremental Search, Search, Search
 @section Incremental Search
 
+@cindex incremental search
   An incremental search begins searching as soon as you type the first
 character of the search string.  As you type in the search string, Emacs
 shows you where the string (as you have typed it so far) would be
@@ -615,6 +617,7 @@ there is a default value which you can change as well.  @xref{Locals}.
 @node Replace, Other Repeating Search, Search Case, Search
 @section Replacement Commands
 @cindex replacement
+@cindex search-and-replace commands
 @cindex string substitution
 @cindex global substitution
 

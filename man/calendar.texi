@@ -33,6 +33,7 @@ major mode is Calendar mode.
 @node Calendar Motion
 @section Movement in the Calendar
 
+@cindex moving inside the calendar
   Calendar mode lets you move in logical units of time such as days,
 weeks, months, and years.  If you move outside the three months
 originally displayed, the calendar display scrolls automatically through
@@ -191,6 +192,7 @@ then centers the three-month calendar around that month.
 @node Scroll Calendar
 @section Scrolling in the Calendar
 
+@cindex scrolling in the calendar
   The calendar display scrolls automatically through time when you move out
 of the visible portion.  You can also scroll it manually.  Imagine that the
 calendar window contains a long strip of paper with the months on it.

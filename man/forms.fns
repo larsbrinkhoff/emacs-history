@@ -1,0 +1,32 @@
+\initial {B}
+\entry {\code {beginning-of-buffer}}{9}
+\initial {D}
+\entry {\code {describe-mode}}{8}
+\initial {E}
+\entry {\code {end-of-buffer}}{9}
+\entry {\code {eval-current-buffer}}{2}
+\initial {F}
+\entry {\code {forms-delete-record}}{8}
+\entry {\code {forms-edit-mode}}{7}
+\entry {\code {forms-enumerate}}{10}
+\entry {\code {forms-exit}}{8}
+\entry {\code {forms-exit-no-save}}{8}
+\entry {\code {forms-find-file}}{6}
+\entry {\code {forms-find-file-other-window}}{6}
+\entry {\code {forms-first-record}}{7}
+\entry {\code {forms-insert-record}}{8}
+\entry {\code {forms-jump-record}}{7}
+\entry {\code {forms-last-record}}{7}
+\entry {\code {forms-modified-record-filter}}{3, 6}
+\entry {\code {forms-new-record-filter}}{3}
+\entry {\code {forms-next-field}}{7}
+\entry {\code {forms-next-record}}{7}
+\entry {\code {forms-prev-record}}{7}
+\entry {\code {forms-search}}{8}
+\entry {\code {forms-view-mode}}{7}
+\initial {R}
+\entry {\code {revert-buffer}}{8}
+\initial {S}
+\entry {\code {save-buffer}}{8}
+\entry {\code {scroll-down}}{8}
+\entry {\code {scroll-up}}{8}

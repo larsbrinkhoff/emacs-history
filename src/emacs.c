@@ -47,6 +47,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include "systty.h"
 #include "syssignal.h"
+#include "process.h"
 
 #ifndef O_RDWR
 #define O_RDWR 2
@@ -169,8 +170,8 @@ init_cmdargs (argc, argv, skip_args)
     {
       Lisp_Object found;
       int yes = openp (Vexec_path, Vinvocation_name,
-		       "", &found, 1);
-      if (yes)
+		       EXEC_SUFFIXES, &found, 1);
+      if (yes == 1)
 	Vinvocation_directory = Ffile_name_directory (found);
     }
 
@@ -221,7 +222,10 @@ __do_global_ctors_aux ()
 {}
 __do_global_dtors ()
 {}
+/* Linux has a bug in its library; avoid an error.  */
+#ifndef LINUX
 char * __CTOR_LIST__[2] = { (char *) (-1), 0 };
+#endif
 char * __DTOR_LIST__[2] = { (char *) (-1), 0 };
 __main ()
 {}
@@ -536,9 +540,7 @@ main (argc, argv, envp)
       syms_of_print ();
       syms_of_eval ();
       syms_of_fns ();
-#ifdef LISP_FLOAT_TYPE
       syms_of_floatfns ();
-#endif
 
       syms_of_abbrev ();
       syms_of_buffer ();

@@ -1,9 +1,9 @@
 #### Makefile for the Emacs User's Manual.
 #### Just a few targets required by the coding standards.
 
-info: ../info/emacs ../info/cl ../info/forms ../info/vip
+info: ../info/emacs ../info/cl.info ../info/forms ../info/vip ../info/gnus ../info/sc
 
-dvi: emacs.dvi cl.dvi forms.dvi vip.dvi
+dvi: emacs.dvi cl.dvi forms.dvi gnus.dvi sc.dvi vip.dvi
 .texi.dvi:
 	tex $<
 
@@ -57,6 +57,10 @@ cl.dvi: cl.texinfo
 ../info/forms: forms.texinfo
 	makeinfo forms.texinfo
 forms.dvi: forms.texinfo
+
+../info/sc: sc.texinfo
+	makeinfo sc.texinfo
+sc.dvi: forms.texinfo
 
 ../info/vip: vip.texinfo
 	makeinfo vip.texinfo

@@ -1,3 +1,163 @@
+Sat Aug 14 03:54:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.19 released.
+
+	* menu-bar.el (list-buffers-directory): Add declaration.
+
+	* files.el (find-file-noselect): If a find-file-not-found-hook
+	succeeds, clear `error'.
+
+	* faces.el (x-create-frame-with-faces): Check for `on' or `true'
+	as reverseVideo resource value.
+	* frame.el (frame-initialize): Likewise.
+
+	* outline.el (outline-minor-mode-prefix): New variable.
+	(outline-minor-mode-map): Use it.
+	(outline-level): New var.  Everything funcalls this
+	instead of calling outline-level.
+
+	* frame.el (frame-initialize): Handle reverseVideo x-resource.
+
+	* subr.el (momentary-string-display): Scroll to keep the string
+	on the screen.
+
+Fri Aug 13 02:23:43 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* compile.el (compilation-parse-errors): Don't add multiple errors
+	for one source line.
+
+	* bibtex.el (bibtex-mode-map): Change C-c e to C-c C-b.
+
+	* menu-bar.el (mouse-menu-bar-buffers): Use list-buffers-directory.
+
+	* isearch.el (isearch-edit-string): Use read-event, not read-char.
+
+Thu Aug 12 18:20:55 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (backup-inhibited): Doc fix.
+
+	* saveplace.el: New file.
+
+	* bookmark.el: New version from Fogel.
+
+	* mouse.el (mouse-choose-completion): Really go to minibuffer;
+	no save-excursion.
+
+Thu Aug 12 14:38:37 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* tar-mode.el (tar-mode-map): Don't bind C-c.
+
+Thu Aug 12 01:32:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* paragraphs.el (paragraph-start): Doc fix.
+
+	* paren.el (show-paren-command-hook): Do nothing if input is pending.
+
+Wed Aug 11 17:26:47 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* compile.el (next-error): Handle zero and negative prefix args.
+
+Wed Aug 11 02:01:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dired-aux.el (dired-compress-file): Fix previous change.
+
+	* rmail.el (rmail-forward): Don't bind mail-signature, mail-setup-hook.
+
+	* mouse.el (mouse-drag-region): Mouse in menu bar means scroll up.
+
+	* text-mode.el (indented-text-mode): Doc fix.
+
+	* userlock.el (ask-user-about-supersession-threat): Mention file name
+	when asking question.
+
+	* paren.el (show-paren-command-hook): Don't use value of make-face.
+
+	* mouse.el (font-menu-add-default): Use list, not cons, for new elt.
+	Don't get confused if no Misc entry.
+
+	* emerge.el (emerge-find-difference): Add interactive spec.
+
+	* mouse.el (mouse-set-point): Use event-end, not event-start.
+
+	* frame.el (other-frame): Fix error in loop counting.
+
+Tue Aug 10 08:02:36 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* autoload.el (generate-file-autoloads): Set float-output-format to
+	nil, not "%.20e", since nil is guaranteed to not lose info on output.
+	* bytecomp.el (byte-compile-from-buffer): Likewise.
+
+Tue Aug 10 04:24:09 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* startup.el (site-run-file): New variable.
+	(command-line): Use it.  Support -no-site-file.
+
+	* mouse.el (mouse-drag-region): Doc fix.
+
+	* texinfo.el (texinfo-delete-from-print-queue)
+	(texinfo-tex-buffer): Load tex-mode to get tex-start-shell, etc.
+
+Tue Aug 10 18:19:46 1993  Rob Riepel  (riepel@Snowflake.Stanford.edu)
+
+        * tpu-edt.el (tpu-help): Use variables for "n" and "p".
+	(tpu-help-N, tpu-help-n, tpu-help-P, tpu-help-p): New vars.
+        * tpu-mapper.el: Insert (in buffer) setqs for tpu-help-... variables.
+
+Mon Aug  9 21:32:42 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* calendar.el (hebrew-holidays-3): Fix misspelling in var name.
+
+	* array.el (abs, ceiling, floor): Remove, since they now redefine
+	builtin functions.  All `ceiling' callers rewritten to invoke `floor'.
+
+	* bytecomp.el: `mod' is no longer an alias for `%'.
+	* subr.el: Likewise.
+
+	* cal-dst.el (calendar-/, calendar-%): Remove, since floor and mod
+	now subsume them.  All callers changed.
+	* cal-mayan.el (mayan-mod): Likewise.
+	* ring.el (ring-mod): Likewise.
+	* solar.el (solar-mod): Likewise.
+
+	* cl-extra.el (floor*): Use `floor' rather than doing all the work.
+
+	* gnus.el (gnus-caesar-region): Replace `%' by `mod' and simplify.
+	* rnews.el (caesar-region): Likewise.
+	* isearch.el (isearch-ring-adjust1, isearch-ring-advance-edit):
+	Likewise.
+	* simple.el (current-kill): Likewise.
+
+	* timezone.el (timezone-fix-time): Simplify complicated expression
+	with `floor'.
+	(timezone-zone-to-minute): Replace (max X (- X)) with (abs X).
+
+Mon Aug  9 15:28:25 1993  Rob Riepel  (riepel@Snowflake.Stanford.edu)
+
+        * tpu-doc.el: Added section on local variables.
+
+        * tpu-edt.el (tpu-version): Print version number rather than the RCS
+        revision number.
+
+        * tpu-edt.el (tpu-next-file-buffer): Bind starting-buffer with let.
+        * tpu-edt.el (tpu-load-xkeys): Check value of tpu-xkeys-file.
+	Make sure to use the "*scratch*" buffer.
+
+        * tpu-edt.el (tpu-lm-replace): Changed variable searching-forward
+        to tpu-searching-forward.
+        (tpu-substitute): Likewise.
+	(tpu-toggle-search-direction): Likewise.
+        (tpu-search-forward, tpu-search-reverse, tpu-set-search): Likewise.
+        (tpu-search-internal, tpu-adjust-search): Likewise.
+
+        * tpu-extras.el (tpu-search-internal): Changed variable
+        searching-forward to tpu-searching-forward.
+
+        * tpu-extras.el: Changed "edit-picture-hook" to
+        "picture-mode-hook" for emacs version 19.
+
+        * tpu-mapper.el (tpu-gnu-map-key): Repaired the key name
+        generation code to work with the latest version of emacs.
+
 Sun Aug  8 00:39:52 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.18 released.

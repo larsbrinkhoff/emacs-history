@@ -91,11 +91,13 @@ This command must be bound to a mouse click."
 	(split-window-horizontally
 	 (min (max new-width first-col) last-col))))))
 
-(defun mouse-set-point (click)
+(defun mouse-set-point (event)
   "Move point to the position clicked on with the mouse.
-This must be bound to a mouse click."
+This should be bound to a mouse click event type."
   (interactive "e")
-  (let ((posn (event-start click)))
+  ;; Use event-end in case called from mouse-drag-region.
+  ;; If EVENT is a click, event-end and event-start give same value.
+  (let ((posn (event-end event)))
     (and (window-minibuffer-p (posn-window posn))
 	 (not (minibuffer-window-active-p (posn-window posn)))
 	 (error "Minibuffer window is not active"))
@@ -105,7 +107,7 @@ This must be bound to a mouse click."
 
 (defun mouse-set-region (click)
   "Set the region to the text that the mouse is dragged over.
-This must be bound to a mouse drag event."
+This should be bound to a mouse drag event."
   (interactive "e")
   (let ((posn (event-start click))
 	(end (event-end click)))
@@ -158,8 +160,10 @@ Upon exit, point is at the far edge of the newly visible text."
 
 (defun mouse-drag-region (start-event)
   "Set the region to the text that the mouse is dragged over.
-Highlight the drag area as the user moves the mouse.
-This must be bound to a button-down mouse event."
+Highlight the drag area as you move the mouse.
+This must be bound to a button-down mouse event.
+In Transient Mark mode, the highlighting remains once you
+release the mouse button.  Otherwise, it does not."
   (interactive "e")
   (let* ((start-posn (event-start start-event))
 	 (start-point (posn-point start-posn))
@@ -215,8 +219,16 @@ This must be bound to a button-down mouse event."
 		  (mouse-scroll-subr (1+ (- mouse-row bottom))
 				     mouse-drag-overlay start-point)))))
 
-	     ;; Otherwise, we have no idea where the mouse is.
-	     (t)))))
+	     (t
+	      (let ((mouse-y (cdr (cdr (mouse-position))))
+		    (menu-bar-lines (or (cdr (assq 'menu-bar-lines
+						   (frame-parameters)))
+					0)))
+
+		;; Are we on the menu bar?
+		(and (integerp mouse-y) (< mouse-y menu-bar-lines)
+		     (mouse-scroll-subr (- mouse-y menu-bar-lines)
+					mouse-drag-overlay start-point))))))))
 
       (if (and (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
 	       (eq (posn-window (event-end event)) start-window)
@@ -868,27 +880,26 @@ and selects that window."
 	(let ((beg (point)))
 	  (skip-chars-forward "^ \t\n")
 	  (setq choice (buffer-substring beg (point))))))
-    (save-excursion
-      (set-buffer (window-buffer (minibuffer-window)))
-      (goto-char (max (point-min) (- (point-max) (length choice))))
-      (while (and (not (eobp))
-		  (let ((tail (buffer-substring (point) (point-max))))
-		    (not (string= tail (substring choice 0 (length tail))))))
-	(forward-char 1))
-      (insert choice)
-      (delete-region (point) (point-max))
-      (minibuffer-complete-and-exit))))
+    (set-buffer (window-buffer (minibuffer-window)))
+    (goto-char (max (point-min) (- (point-max) (length choice))))
+    (while (and (not (eobp))
+		(let ((tail (buffer-substring (point) (point-max))))
+		  (not (string= tail (substring choice 0 (length tail))))))
+      (forward-char 1))
+    (insert choice)
+    (delete-region (point) (point-max))
+    (minibuffer-complete-and-exit)))
 
 ;; Font selection.
 
 (defun font-menu-add-default ()
   (let* ((default (cdr (assq 'font (frame-parameters (selected-frame)))))
 	 (font-alist x-fixed-font-alist)
-	 (elt (assoc "Misc" font-alist)))
+	 (elt (or (assoc "Misc" font-alist) (nth 1 font-alist))))
     (if (assoc "Default" elt)
 	(delete (assoc "Default" elt) elt))
     (setcdr elt
-	    (cons (cons "Default"
+	    (cons (list "Default"
 			(cdr (assq 'font (frame-parameters (selected-frame)))))
 		  (cdr elt)))))
 

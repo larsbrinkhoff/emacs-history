@@ -374,6 +374,7 @@ the way you entered the text.@refill
 @node Checklist
 @subsection Checklist for Bug Reports
 
+@cindex reporting bugs
   The best way to send a bug report is to mail it electronically to the
 Emacs maintainers at @samp{bug-gnu-emacs@@prep.ai.mit.edu}.
 
@@ -632,6 +633,8 @@ such things without first using the debugger to find the facts.
 @node Sending Patches
 @subsection Sending Patches for GNU Emacs
 
+@cindex sending patches for GNU Emacs
+@cindex patches, sending
   If you would like to write bug fixes or improvements for GNU Emacs, that
 is very helpful.  When you send your changes, please follow these
 guidelines to make it easy for the maintainers to use them.

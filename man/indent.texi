@@ -36,7 +36,7 @@ Indent from point to under an indentation point in the previous line.
 @end table
 
 @kindex TAB
-@cindex indentation
+@cindex indentation for programs
   Most programming languages have some indentation convention.  For Lisp
 code, lines are indented according to their nesting in parentheses.  The
 same general idea is used for C code, though many details are different.
@@ -138,6 +138,9 @@ mode.  @xref{Text}.
 @node Tab Stops, Just Spaces, Indentation Commands, Indentation
 @section Tab Stops
 
+@cindex tab stops 
+@cindex using tab stops in making tables
+@cindex tables, indentation for
 @kindex M-i
 @findex tab-to-tab-stop
   For typing in tables, you can use Text mode's definition of @key{TAB},

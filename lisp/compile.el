@@ -664,7 +664,7 @@ other kinds of prefix arguments are ignored."
 
   (next-error 1))
 
-(defun compilation-buffer-p (buffer)
+(defsubst compilation-buffer-p (buffer)
   (assq 'compilation-error-list (buffer-local-variables buffer)))
 
 ;; Return a compilation buffer.
@@ -724,7 +724,9 @@ See variables `compilation-parse-errors-function' and
 			       ;; We want to pass a number here only if
 			       ;; we got a numeric prefix arg, not just C-u.
 			       (and (not (consp argp))
-				    (1- (prefix-numeric-value argp))))
+				    (if (< (prefix-numeric-value argp) 1)
+					0
+				      (1- (prefix-numeric-value argp)))))
   ;; Make ARGP nil if the prefix arg was just C-u,
   ;; since that means to reparse the errors, which the
   ;; compile-reinitialize-errors call just did.
@@ -735,8 +737,21 @@ See variables `compilation-parse-errors-function' and
     (save-excursion
       (set-buffer compilation-last-buffer)
       ;; compilation-error-list points to the "current" error.
-      (setq next-errors (nthcdr (1- (prefix-numeric-value argp))
-				compilation-error-list)
+      (setq next-errors 
+	    (if (> (prefix-numeric-value argp) 0)
+		(nthcdr (1- (prefix-numeric-value argp))
+			compilation-error-list)
+	      ;; Zero or negative arg; we need to move back in the list.
+	      (let ((n (1- (prefix-numeric-value argp)))
+		    (i 0)
+		    (e compilation-old-error-list))
+		;; See how many cdrs away the current error is from the start.
+		(while (not (eq e compilation-error-list))
+		  (setq i (1+ i)
+			e (cdr e)))
+		(if (> (- n) i)
+		    (error "Moved back past first error")
+		  (nthcdr (+ i n) compilation-old-error-list))))
 	    next-error (car next-errors))
       (while
 	  (progn
@@ -1062,12 +1077,16 @@ See variable `compilation-parse-errors-function' for the interface it uses."
 	       ;; location, and the file and line number of the error.
 	       (save-excursion
 		 (beginning-of-line 1)
-		 (setq compilation-error-list
-		       (cons (cons (point-marker)
-				   (cons filename linenum))
-			     compilation-error-list)))
-	       (setq compilation-num-errors-found
-		     (1+ compilation-num-errors-found))
+		 (let ((this (cons (point-marker)
+				   (cons filename linenum))))
+		   ;; Don't add the same source line more than once.
+		   (if (equal (cdr this) (cdr (car compilation-error-list)))
+		       nil
+		     (setq compilation-error-list
+			   (cons this
+				 compilation-error-list))
+		     (setq compilation-num-errors-found
+			   (1+ compilation-num-errors-found)))))
 	       (and find-at-least (>= compilation-num-errors-found
 				      find-at-least)
 		    ;; We have found as many new errors as the user wants.

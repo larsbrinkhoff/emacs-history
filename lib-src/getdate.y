@@ -59,48 +59,6 @@ char *alloca ();
 
 #include <sys/types.h>
 
-#if sgi
-#undef timezone
-#endif
-
-/* If the configuration process hasn't #define HAVE_GETTIMEOFDAY, try
-   to guess it.  */
-#ifndef HAVE_GETTIMEOFDAY
-
-/* We know these machines have it.  */
-#ifdef BSD4_2
-#define HAVE_GETTIMEOFDAY
-#endif
-
-#ifdef BSD4_1C
-#define HAVE_GETTIMEOFDAY
-#endif
-
-#if (defined (hp9000) && !defined (hpux))
-#define HAVE_GETTIMEOFDAY
-#endif
-
-#ifdef _AIX
-#define HAVE_GETTIMEOFDAY
-#endif
-
-/* We know these machines don't.  We could just omit these, but some of
-   these CPP symbols are more specific than the ones above, so we want
-   to override them if any of the above are #defined.  */
-#ifdef USG
-#undef HAVE_GETTIMEOFDAY
-#endif
-
-#ifdef sgi
-#undef HAVE_GETTIMEOFDAY
-#endif
-
-#ifdef __386BSD__
-#undef HAVE_GETTIMEOFDAY
-#endif
-
-#endif
-
 #ifdef TIME_WITH_SYS_TIME
 #include <sys/time.h>
 #include <time.h>
@@ -112,20 +70,25 @@ char *alloca ();
 #endif
 #endif
 
+#ifdef timezone
+#undef timezone /* needed for sgi */
+#endif
+
 #if defined(HAVE_SYS_TIMEB_H) || (!defined(USG) && defined(HAVE_FTIME))
 #include <sys/timeb.h>
 #else
 /*
-**  If you need to do a tzset() call to set the
-**  timezone, and don't have ftime().
+** We use the obsolete `struct timeb' as part of our interface!
+** Since the system doesn't have it, we define it here;
+** our callers must do likewise.
 */
 struct timeb {
     time_t		time;		/* Seconds since the epoch	*/
     unsigned short	millitm;	/* Field not used		*/
-    short		timezone;
+    short		timezone;	/* Minutes west of GMT		*/
     short		dstflag;	/* Field not used		*/
 };
-#endif /* defined(HAVE_SYS_TIMEB_H) || (!defined(USG) && defined(HAVE_FTIME))*/
+#endif /* defined(HAVE_SYS_TIMEB_H) */
 
 #endif	/* defined(vms) */
 
@@ -140,6 +103,7 @@ struct timeb {
 #define bcopy(from, to, len) memcpy ((to), (from), (len))
 #endif
 
+extern struct tm	*gmtime();
 extern struct tm	*localtime();
 
 #define yyparse getdate_yyparse
@@ -904,12 +868,38 @@ yylex()
 }
 
 
+#define TM_YEAR_ORIGIN 1900
+
+/* Yield A - B, measured in seconds.  */
+static time_t
+difftm(a, b)
+     struct tm *a, *b;
+{
+  int ay = a->tm_year + (TM_YEAR_ORIGIN - 1);
+  int by = b->tm_year + (TM_YEAR_ORIGIN - 1);
+  return
+    (
+     (
+      (
+       /* difference in day of year */
+       a->tm_yday - b->tm_yday
+       /* + intervening leap days */
+       +  ((ay >> 2) - (by >> 2))
+       -  (ay/100 - by/100)
+       +  ((ay/100 >> 2) - (by/100 >> 2))
+       /* + difference in years * 365 */
+       +  (time_t)(ay-by) * 365
+       )*24 + (a->tm_hour - b->tm_hour)
+      )*60 + (a->tm_min - b->tm_min)
+     )*60 + (a->tm_sec - b->tm_sec);
+}
+
 time_t
 get_date(p, now)
     char		*p;
     struct timeb	*now;
 {
-    struct tm		*tm;
+    struct tm		*tm, gmt;
     struct timeb	ftz;
     time_t		Start;
     time_t		tod;
@@ -917,34 +907,12 @@ get_date(p, now)
     yyInput = p;
     if (now == NULL) {
         now = &ftz;
-#if	!defined(HAVE_FTIME)
 	(void)time(&ftz.time);
-	/* Set the timezone global. */
-	tzset();
-	{
-#ifdef HAVE_GETTIMEOFDAY
-	    struct timeval tv;
-	    struct timezone tz;
 
-	    gettimeofday (&tv, &tz);
-	    ftz.timezone = (int) tz.tz_minuteswest;
-#else /* not HAVE_GETTIMEOFDAY */ 
-#if sgi
-	    ftz.timezone = (int) _timezone / 60;
-#else /* not HAVE_GETTIMEOFDAY, nor sgi */
-#ifdef __386BSD__
-	    ftz.timezone = 0;
-#else /* not HAVE_GETTIMEOFDAY, nor sgi, nor 386BSD -- probably USG */
-	    extern time_t timezone;
-
-	    ftz.timezone = (int) timezone / 60;
-#endif /* not HAVE_GETTIMEOFDAY, nor sgi, nor 386BSD -- probably USG */
-#endif /* not HAVE_GETTIMEOFDAY, nor sgi */
-#endif /* not HAVE_GETTIMEOFDAY */
-	}
-#else /* HAVE_FTIME */
-	(void)ftime(&ftz);
-#endif /* HAVE_FTIME */
+	if (! (tm = gmtime (&ftz.time)))
+	    return -1;
+	gmt = *tm;	/* Make a copy, in case localtime modifies *tm.  */
+	ftz.timezone = difftm (&gmt, localtime (&ftz.time)) / 60;
     }
 
     tm = localtime(&now->time);

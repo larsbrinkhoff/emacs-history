@@ -27,7 +27,7 @@
 \entry {\code {c-indent-level}}{171}
 \entry {\code {c-label-offset}}{172}
 \entry {\code {c-mode-hook}}{164}
-\entry {\code {c-mode-map}}{303}
+\entry {\code {c-mode-map}}{301}
 \entry {\code {c-tab-always-indent}}{170}
 \entry {\code {calendar-daylight-savings-ends}}{270}
 \entry {\code {calendar-daylight-savings-starts}}{270}
@@ -42,7 +42,7 @@
 \entry {\code {case-fold-search}}{84}
 \entry {\code {case-replace}}{85}
 \entry {\code {command-history}}{41}
-\entry {\code {command-line-args}}{332}
+\entry {\code {command-line-args}}{330}
 \entry {\code {comment-column}}{175}
 \entry {\code {comment-end}}{176}
 \entry {\code {comment-indent-function}}{176}
@@ -56,8 +56,8 @@
 \entry {\code {completion-auto-help}}{39}
 \entry {\code {completion-ignored-extensions}}{39}
 \entry {\code {ctl-arrow}}{73}
-\entry {\code {ctl-x-4-map}}{303}
-\entry {\code {ctl-x-map}}{303}
+\entry {\code {ctl-x-4-map}}{301}
+\entry {\code {ctl-x-map}}{301}
 \initial {D}
 \entry {\code {dbx-mode-hook}}{203}
 \entry {\code {default-directory}}{93}
@@ -70,16 +70,16 @@
 \entry {\code {dired-copy-preserve-time}}{245}
 \entry {\code {dired-kept-versions}}{243}
 \entry {\code {dired-listing-switches}}{241}
-\entry {\code {double-click-time}}{309}
+\entry {\code {double-click-time}}{307}
 \initial {E}
 \entry {\code {echo-keystrokes}}{73}
 \entry {\code {emacs-lisp-mode-hook}}{164}
 \entry {\code {emerge-combine-versions-template}}{189}
-\entry {\code {emerge-startup-hook}}{189}
+\entry {\code {emerge-startup-hook}}{190}
 \entry {\code {enable-recursive-minibuffers}}{37}
-\entry {\code {esc-map}}{303}
+\entry {\code {esc-map}}{301}
 \entry {\code {european-calendar-style}}{266}
-\entry {\code {explicit-shell-file-name}}{279}
+\entry {\code {explicit-shell-file-name}}{277}
 \initial {F}
 \entry {\code {fill-column}}{149}
 \entry {\code {fill-prefix}}{150}
@@ -109,10 +109,10 @@
 \entry {\code {gdb-mode-hook}}{203}
 \entry {\code {gud-xdb-directories}}{201}
 \initial {H}
-\entry {\code {help-map}}{303}
+\entry {\code {help-map}}{301}
 \initial {I}
 \entry {\code {indent-tabs-mode}}{141}
-\entry {\code {indent-tabs-mode \r {(Fortran mode)}}}{192}
+\entry {\code {indent-tabs-mode \r {(Fortran mode)}}}{193}
 \entry {\code {inferior-lisp-program}}{208}
 \entry {\code {initial-major-mode}}{23}
 \entry {\code {insert-default-directory}}{93}
@@ -134,12 +134,12 @@
 \entry {\code {lisp-indent-offset}}{169}
 \entry {\code {lisp-interaction-mode-hook}}{164}
 \entry {\code {lisp-mode-hook}}{164}
-\entry {\code {lisp-mode-map}}{303}
+\entry {\code {lisp-mode-map}}{301}
 \entry {\code {list-directory-brief-switches}}{115}
 \entry {\code {list-directory-verbose-switches}}{115}
 \entry {\code {load-path}}{205}
 \entry {\code {local-write-file-hooks}}{98}
-\entry {\code {lpr-switches}}{283}
+\entry {\code {lpr-switches}}{281}
 \initial {M}
 \entry {\code {mail-abbrevs}}{224}
 \entry {\code {mail-aliases}}{224}
@@ -154,12 +154,12 @@
 \entry {\code {make-backup-files}}{99}
 \entry {\code {mark-ring}}{55}
 \entry {\code {mark-ring-max}}{55}
-\entry {\code {minibuffer-local-completion-map}}{304}
-\entry {\code {minibuffer-local-map}}{304}
-\entry {\code {minibuffer-local-must-match-map}}{304}
-\entry {\code {minibuffer-local-ns-map}}{304}
+\entry {\code {minibuffer-local-completion-map}}{302}
+\entry {\code {minibuffer-local-map}}{302}
+\entry {\code {minibuffer-local-must-match-map}}{302}
+\entry {\code {minibuffer-local-ns-map}}{302}
 \entry {\code {mode-line-inverse-video}}{72}
-\entry {\code {mode-specific-map}}{303}
+\entry {\code {mode-specific-map}}{301}
 \entry {\code {muddle-mode-hook}}{164}
 \initial {N}
 \entry {\code {next-line-add-newlines}}{27}
@@ -195,23 +195,24 @@
 \entry {\code {search-slow-window-lines}}{77}
 \entry {\code {selective-display-ellipses}}{73}
 \entry {\code {sentence-end}}{145}
-\entry {\code {server-window}}{286}
-\entry {\code {shell-cd-regexp}}{279}
-\entry {\code {shell-file-name}}{278}
-\entry {\code {shell-popd-regexp}}{279}
-\entry {\code {shell-prompt-pattern}}{280}
-\entry {\code {shell-pushd-regexp}}{279}
-\entry {\code {shell-set-directory-error-hook}}{279}
+\entry {\code {server-temp-file-regexp}}{284}
+\entry {\code {server-window}}{284}
+\entry {\code {shell-cd-regexp}}{277}
+\entry {\code {shell-file-name}}{276}
+\entry {\code {shell-popd-regexp}}{277}
+\entry {\code {shell-prompt-pattern}}{278}
+\entry {\code {shell-pushd-regexp}}{277}
+\entry {\code {shell-set-directory-error-hook}}{277}
 \entry {\code {slitex-mode-hook}}{160}
 \entry {\code {slitex-run-command}}{159}
-\entry {\code {sort-fold-case}}{277}
+\entry {\code {sort-fold-case}}{275}
 \entry {\code {split-window-keep-point}}{126}
 \initial {T}
 \entry {\code {tab-stop-list}}{141}
 \entry {\code {tab-width}}{73}
 \entry {\code {tags-file-name}}{180}
-\entry {\code {term-file-prefix}}{314}
-\entry {\code {term-setup-hook}}{315}
+\entry {\code {term-file-prefix}}{312}
+\entry {\code {term-setup-hook}}{313}
 \entry {\code {tex-bibtex-command}}{160}
 \entry {\code {tex-default-mode}}{156}
 \entry {\code {tex-directory}}{159}

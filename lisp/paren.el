@@ -42,7 +42,9 @@
 ;; Find the place to show, if there is one,
 ;; and show it until input arrives.
 (defun show-paren-command-hook ()
-  (if window-system
+  ;; Do nothing if no window system to display results with.
+  ;; Do nothing if input is pending.
+  (if (and window-system (sit-for 0))
       (let (pos dir mismatch (oldpos (point))
 		(face show-paren-face))
 	(cond ((eq (char-syntax (following-char)) ?\()
@@ -82,8 +84,9 @@
 			   (or (setq show-paren-mismatch-face
 				     (internal-find-face 'paren-mismatch))
 			       (progn
+				 (make-face 'paren-mismatch)
 				 (setq show-paren-mismatch-face
-				       (make-face 'paren-mismatch))
+				       'paren-mismatch)
 				 (set-face-background 'paren-mismatch
 						      "purple"))))
 		      (if show-paren-mismatch-face

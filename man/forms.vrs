@@ -1,0 +1,12 @@
+\initial {F}
+\entry {\code {forms-field-sep}}{3}
+\entry {\code {forms-fields}}{4}
+\entry {\code {forms-file}}{2}
+\entry {\code {forms-format-list}}{2, 4}
+\entry {\code {forms-forms-jump}}{3, 9}
+\entry {\code {forms-forms-scroll}}{3, 8}
+\entry {\code {forms-mode-hooks}}{9}
+\entry {\code {forms-multi-line}}{3}
+\entry {\code {forms-number-of-fields}}{2}
+\entry {\code {forms-read-only}}{3}
+\entry {\code {forms-version}}{10}

@@ -1,5 +1,5 @@
 \input texinfo  @comment -*-Texinfo-*-
-@setfilename sc.info
+@setfilename ../info/sc.info
 @settitle Supercite User's Manual
 @iftex
 @finalout

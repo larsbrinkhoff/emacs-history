@@ -3,6 +3,7 @@
 @c See file emacs.texi for copying conditions.
 @node Sending Mail, Rmail, Picture, Top
 @chapter Sending Mail
+@cindex sending mail
 @cindex mail
 @cindex message
 
@@ -265,6 +266,7 @@ buffer are expanded subsequently when you send the message.
 @node Mail Mode
 @section Mail Mode
 
+@cindex Mail mode
   The major mode used in the @samp{*mail*} buffer is Mail mode, which is
 much like Text mode except that various special commands are provided on
 the @kbd{C-c} prefix.  These commands all have to do specifically with

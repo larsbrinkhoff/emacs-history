@@ -429,7 +429,7 @@ for \\[find-tag] (which see)."
 ;;;(sort-regexp-fields nil "\n*.*\n.*from \\(.*\\)[^]*" "\\1"
 ;;;		    (point-min) (point-max))
 
-;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log) "add-log" "add-log.el" (11337 52470))
+;;;### (autoloads (change-log-mode add-change-log-entry-other-window add-change-log-entry find-change-log prompt-for-change-log-name) "add-log" "add-log.el" (11354 48317))
 ;;; Generated autoloads from add-log.el
 
 (defvar change-log-default-name nil "\
@@ -439,6 +439,9 @@ for \\[find-tag] (which see)."
 *If non-nil, function to guess name of current function from surrounding text.
 \\[add-change-log-entry] calls this function (if nil, `add-log-current-defun'
 instead) with no arguments.  It returns a string or nil if it cannot guess.")
+
+(autoload (quote prompt-for-change-log-name) "add-log" "\
+Prompt for a change log name." nil nil)
 
 (autoload (quote find-change-log) "add-log" "\
 Find a change log file for \\[add-change-log-entry] and return the name.
@@ -455,7 +458,9 @@ current buffer to the complete file name." nil nil)
 Find change log file and add an entry for today.
 Optional arg (interactive prefix) non-nil means prompt for user name and site.
 Second arg is file name of change log.  If nil, uses `change-log-default-name'.
-Third arg OTHER-WINDOW non-nil means visit in other window." t nil)
+Third arg OTHER-WINDOW non-nil means visit in other window.
+Fourth arg NEW-ENTRY non-nil means always create a new entry at the front;
+never append to an existing entry." t nil)
 
 (autoload (quote add-change-log-entry-other-window) "add-log" "\
 Find change log file in other window and add an entry for today.
@@ -572,7 +577,7 @@ advice state that will be used during activation if appropriate. Only use
 this if the defadvice gets actually compiled (with a v18 byte-compiler put
 the defadvice into the body of a defun).
 
-Look at the file advice.el for comprehensive documentation." nil t)
+Look at the file advice.el for comprehensive documentation." nil (quote macro))
 
 (autoload (quote ad-start-advice) "advice" "\
 Redefines some primitives to start the advice magic.
@@ -588,7 +593,7 @@ a function gets defined or redefined." t nil)
 
 ;;;***
 
-;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11339 39555))
+;;;### (autoloads (ange-ftp-hook-function) "ange-ftp" "ange-ftp.el" (11365 55979))
 ;;; Generated autoloads from ange-ftp.el
 
 (autoload (quote ange-ftp-hook-function) "ange-ftp" nil nil nil)
@@ -679,7 +684,7 @@ Special commands:\\{asm-mode-map}
 
 ;;;***
 
-;;;### (autoloads (batch-update-autoloads update-directory-autoloads update-autoloads-here update-file-autoloads) "autoload" "autoload.el" (11332 29335))
+;;;### (autoloads (batch-update-autoloads update-directory-autoloads update-autoloads-here update-file-autoloads) "autoload" "autoload.el" (11341 50340))
 ;;; Generated autoloads from autoload.el
 
 (autoload (quote update-file-autoloads) "autoload" "\
@@ -755,7 +760,7 @@ constants.
 BEWARE BEWARE BEWARE
 Inclusion of (,ATOM) rather than (, ATOM)
 or of (,@ATOM) rather than (,@ ATOM)
-will result in errors that will show up very late." nil t)
+will result in errors that will show up very late." nil (quote macro))
 
 ;;;***
 
@@ -862,7 +867,7 @@ non-nil." t nil)
 
 ;;;***
 
-;;;### (autoloads (blackbox) "blackbox" "blackbox.el" (11285 49689))
+;;;### (autoloads (blackbox) "blackbox" "blackbox.el" (11356 18211))
 ;;; Generated autoloads from blackbox.el
 
 (autoload (quote blackbox) "blackbox" "\
@@ -979,17 +984,20 @@ a reflection." t nil)
 
 ;;;***
 
-;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11336 59225))
+;;;### (autoloads (batch-byte-compile display-call-tree byte-compile compile-defun byte-compile-file byte-recompile-directory) "bytecomp" "bytecomp.el" (11367 8231))
 ;;; Generated autoloads from bytecomp.el
 
 (autoload (quote byte-recompile-directory) "bytecomp" "\
 Recompile every `.el' file in DIRECTORY that needs recompilation.
 This is if a `.elc' file exists but is older than the `.el' file.
+Files in subdirectories of DIRECTORY are processed also.
 
 If the `.elc' file does not exist, normally the `.el' file is *not* compiled.
 But a prefix argument (optional second arg) means ask user,
 for each such `.el' file, whether to compile it.  Prefix argument 0 means
-don't ask and compile the file anyway." t nil)
+don't ask and compile the file anyway.
+
+A nonzero prefix argument also means ask about each subdirectory." t nil)
 
 (autoload (quote byte-compile-file) "bytecomp" "\
 Compile a file of Lisp code named FILENAME into a file of byte code.
@@ -1029,7 +1037,7 @@ For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\"" nil n
 
 ;;;***
 
-;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11327 35047))
+;;;### (autoloads (list-yahrzeit-dates calendar) "calendar" "calendar.el" (11367 14240))
 ;;; Generated autoloads from calendar.el
 
 (defvar view-diary-entries-initially nil "\
@@ -1276,30 +1284,6 @@ See the documentation of diary-date-forms for an explanation.")
 *List of pseudo-patterns describing the European patterns of date used.
 See the documentation of diary-date-forms for an explanation.")
 
-(defvar diary-date-forms (if european-calendar-style european-date-diary-pattern american-date-diary-pattern) "\
-*List of pseudo-patterns describing the forms of date used in the diary.
-The patterns on the list must be MUTUALLY EXCLUSIVE and must should not match
-any portion of the diary entry itself, just the date component.
-
-A pseudo-pattern is a list of regular expressions and the keywords `month',
-`day', `year', `monthname', and `dayname'.  The keyword `monthname' will
-match the name of the month, capitalized or not, or its three-letter
-abbreviation, followed by a period or not; it will also match `*'.
-Similarly, `dayname' will match the name of the day, capitalized or not, or
-its three-letter abbreviation, followed by a period or not.  The keywords
-`month', `day', and `year' will match those numerical values, preceded by
-arbitrarily many zeros; they will also match `*'.
-
-The matching of the diary entries with the date forms is done with the
-standard syntax table from Fundamental mode, but with the `*' changed so
-that it is a word constituent.
-
-If, to be mutually exclusive, a pseudo-pattern must match a portion of the
-diary entry itself, the first element of the pattern MUST be `backup'.  This
-directive causes the date recognizer to back up to the beginning of the
-current word of the diary entry, so in no case can the pattern match more than
-a portion of the first word of the diary entry.")
-
 (defvar european-calendar-display-form (quote ((if dayname (concat dayname ", ")) day " " monthname " " year)) "\
 *Pseudo-pattern governing the way a date appears in the European style.
 See the documentation of calendar-date-display-forms for an explanation.")
@@ -1307,28 +1291,6 @@ See the documentation of calendar-date-display-forms for an explanation.")
 (defvar american-calendar-display-form (quote ((if dayname (concat dayname ", ")) monthname " " day ", " year)) "\
 *Pseudo-pattern governing the way a date appears in the American style.
 See the documentation of calendar-date-display-forms for an explanation.")
-
-(defvar calendar-date-display-form (if european-calendar-style european-calendar-display-form american-calendar-display-form) "\
-*Pseudo-pattern governing the way a date appears.
-
-Used by the function `calendar-date-string', a pseudo-pattern is a list of
-expressions that can involve the keywords `month', `day', and `year', all
-numbers in string form, and `monthname' and `dayname', both alphabetic
-strings.  For example, the ISO standard would use the pseudo- pattern
-
-       '(year \"-\" month \"-\" day)
-
-while a typical American form would be
-
-       '(month \"/\" day \"/\" (substring year -2))
-
-and
-
-       '((format \"%9s, %9s %2s, %4s\" dayname monthname day year))
-
-would give the usual American style in fixed-length fields.
-
-See the documentation of the function `calendar-date-string'.")
 
 (defvar print-diary-entries-hook (quote lpr-buffer) "\
 *List of functions called after a temporary diary buffer is prepared.
@@ -1364,17 +1326,22 @@ in your .emacs file to cause the fancy diary buffer to be displayed with
 diary entries from various included files, each day's entries sorted into
 lexicographic order.")
 
-(defvar diary-display-hook (quote simple-diary-display) "\
+(defvar diary-hook nil "\
+*List of functions called after the display of the diary.
+Can be used for appointment notification.")
+
+(defvar diary-display-hook nil "\
 *List of functions that handle the display of the diary.
+If nil (the default), `simple-diary-display' will be used.  Use `ignore' for no
+diary display.
 
 Ordinarily, this just displays the diary buffer (with holidays indicated in
 the mode line), if there are any relevant entries.  At the time these
 functions are called, the variable `diary-entries-list' is a list, in order
 by date, of all relevant diary entries in the form of ((MONTH DAY YEAR)
 STRING), where string is the diary entry for the given date.  This can be
-used, for example, to handle appointment notification, prepare a different
-buffer for display (perhaps combined with holidays), or produce hard copy
-output.
+used, for example, a different buffer for display (perhaps combined with
+holidays), or produce hard copy output.
 
 A function `fancy-diary-display' is provided as an alternative
 choice for this hook; this function prepares a special noneditable diary
@@ -1436,7 +1403,15 @@ See the documentation for `calendar-holidays' for details.")
 *User defined holidays.
 See the documentation for `calendar-holidays' for details.")
 
-(defvar hebrew-holidays (quote ((holiday-rosh-hashanah-etc) (if all-hebrew-calendar-holidays (holiday-julian 11 (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (if (zerop (% (1+ year) 4)) 22 21))) "\"Tal Umatar\" (evening)")) (if all-hebrew-calendar-holidays (holiday-hanukkah) (holiday-hebrew 9 25 "Hanukkah")) (if all-hebrew-calendar-holidays (holiday-hebrew 10 (let ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list displayed-month 28 displayed-year)))))) (if (= (% (calendar-absolute-from-hebrew (list 10 10 h-year)) 7) 6) 11 10)) "Tzom Teveth")) (if all-hebrew-calendar-holidays (holiday-hebrew 11 15 "Tu B'Shevat")) (if all-hebrew-calendar-holidays (holiday-hebrew 11 (let ((m displayed-month) (y displayed-year)) (increment-calendar-month m y 1) (let* ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list m (calendar-last-day-of-month m y) y))))) (s-s (calendar-hebrew-from-absolute (if (= (% (calendar-absolute-from-hebrew (list 7 1 h-year)) 7) 6) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 17 h-year))) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 16 h-year)))))) (day (extract-calendar-day s-s))) day)) "Shabbat Shirah")) (holiday-passover-etc) (if (and all-hebrew-calendar-holidays (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (= 21 (% year 28))))) (holiday-julian 3 26 "Kiddush HaHamah")) (if all-hebrew-calendar-holidays (holiday-tisha-b-av-etc)))) "\
+(defvar hebrew-holidays-1 (quote ((holiday-rosh-hashanah-etc) (if all-hebrew-calendar-holidays (holiday-julian 11 (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (if (zerop (% (1+ year) 4)) 22 21))) "\"Tal Umatar\" (evening)")))))
+
+(defvar hebrew-holidays-2 (quote ((if all-hebrew-calendar-holidays (holiday-hanukkah) (holiday-hebrew 9 25 "Hanukkah")) (if all-hebrew-calendar-holidays (holiday-hebrew 10 (let ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list displayed-month 28 displayed-year)))))) (if (= (% (calendar-absolute-from-hebrew (list 10 10 h-year)) 7) 6) 11 10)) "Tzom Teveth")) (if all-hebrew-calendar-holidays (holiday-hebrew 11 15 "Tu B'Shevat")))))
+
+(defvar hebrew-holidays-3 (quote ((if all-hebrew-calendar-holidays (holiday-hebrew 11 (let ((m displayed-month) (y displayed-year)) (increment-calendar-month m y 1) (let* ((h-year (extract-calendar-year (calendar-hebrew-from-absolute (calendar-absolute-from-gregorian (list m (calendar-last-day-of-month m y) y))))) (s-s (calendar-hebrew-from-absolute (if (= (% (calendar-absolute-from-hebrew (list 7 1 h-year)) 7) 6) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 17 h-year))) (calendar-dayname-on-or-before 6 (calendar-absolute-from-hebrew (list 11 16 h-year)))))) (day (extract-calendar-day s-s))) day)) "Shabbat Shirah")))))
+
+(defvar hebrew-holidays-4 (quote ((holiday-passover-etc) (if (and all-hebrew-calendar-holidays (let* ((m displayed-month) (y displayed-year) (year)) (increment-calendar-month m y -1) (let ((year (extract-calendar-year (calendar-julian-from-absolute (calendar-absolute-from-gregorian (list m 1 y)))))) (= 21 (% year 28))))) (holiday-julian 3 26 "Kiddush HaHamah")) (if all-hebrew-calendar-holidays (holiday-tisha-b-av-etc)))))
+
+(defvar hebrew-holidays (append hebrew-holidays-1 hebrew-holidays-2 hebrew-holidays-3 hebrew-holidays-4) "\
 *Jewish holidays.
 See the documentation for `calendar-holidays' for details.")
 
@@ -1574,7 +1549,7 @@ The Command History listing is recomputed each time this mode is invoked." t nil
 
 ;;;***
 
-;;;### (autoloads (make-comint) "comint" "comint.el" (11335 3957))
+;;;### (autoloads (make-comint) "comint" "comint.el" (11367 8243))
 ;;; Generated autoloads from comint.el
 
 (autoload (quote make-comint) "comint" "\
@@ -1679,7 +1654,7 @@ See variables `compilation-parse-errors-function' and
 
 ;;;***
 
-;;;### (autoloads (shuffle-vector cookie-snarf cookie-insert cookie) "cookie1" "cookie1.el" (11337 43735))
+;;;### (autoloads (shuffle-vector cookie-snarf cookie-insert cookie) "cookie1" "cookie1.el" (11356 11391))
 ;;; Generated autoloads from cookie1.el
 
 (autoload (quote cookie) "cookie1" "\
@@ -1700,7 +1675,7 @@ Randomly permute the elements of VECTOR (all permutations equally likely)" nil n
 
 ;;;***
 
-;;;### (autoloads (c++-mode) "cplus-md" "cplus-md.el" (11296 5913))
+;;;### (autoloads (c++-mode) "cplus-md" "cplus-md.el" (11349 24039))
 ;;; Generated autoloads from cplus-md.el
 
 (autoload (quote c++-mode) "cplus-md" "\
@@ -1838,14 +1813,14 @@ When OFF, typed text is just inserted at point." t nil)
 
 ;;;***
 
-;;;### (autoloads (diary) "diary" "diary.el" (11300 39849))
+;;;### (autoloads (diary) "diary" "diary.el" (11360 16265))
 ;;; Generated autoloads from diary.el
 
 (autoload (quote diary) "diary" "\
 Generate the diary window for ARG days starting with the current date.
 If no argument is provided, the number of days of diary entries is governed
 by the variable `number-of-diary-entries'.  This function is suitable for
-execution in a .emacs file." t nil)
+execution in a `.emacs' file." t nil)
 
 ;;;***
 
@@ -1866,19 +1841,22 @@ The backup file is the first file given to `diff'." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-hide-all dired-hide-subdir dired-tree-down dired-tree-up dired-kill-subdir dired-mark-subdir-files dired-goto-subdir dired-prev-subdir dired-maybe-insert-subdir dired-downcase dired-upcase dired-do-symlink-regexp dired-do-hardlink-regexp dired-do-copy-regexp dired-do-rename-regexp dired-do-rename dired-do-hardlink dired-do-symlink dired-do-copy dired-create-directory dired-string-replace-match dired-do-redisplay dired-do-load dired-do-byte-compile dired-do-compress dired-do-kill-lines dired-do-shell-command dired-do-print dired-do-chown dired-do-chgrp dired-do-chmod dired-backup-diff dired-diff) "dired-aux" "dired-aux.el" (11315 32230))
+;;;### (autoloads (dired-hide-all dired-hide-subdir dired-tree-down dired-tree-up dired-kill-subdir dired-mark-subdir-files dired-goto-subdir dired-prev-subdir dired-maybe-insert-subdir dired-downcase dired-upcase dired-do-symlink-regexp dired-do-hardlink-regexp dired-do-copy-regexp dired-do-rename-regexp dired-do-rename dired-do-hardlink dired-do-symlink dired-do-copy dired-create-directory dired-string-replace-match dired-do-redisplay dired-do-load dired-do-byte-compile dired-do-compress dired-do-kill-lines dired-do-shell-command dired-do-print dired-do-chown dired-do-chgrp dired-do-chmod dired-backup-diff dired-diff) "dired-aux" "dired-aux.el" (11364 34565))
 ;;; Generated autoloads from dired-aux.el
 
 (autoload (quote dired-diff) "dired-aux" "\
 Compare file at point with file FILE using `diff'.
 FILE defaults to the file at the mark.
-The prompted-for file is the first file given to `diff'." t nil)
+The prompted-for file is the first file given to `diff'.
+With prefix arg, prompt for second argument SWITCHES,
+ which is options for `diff'." t nil)
 
 (autoload (quote dired-backup-diff) "dired-aux" "\
 Diff this file with its backup file or vice versa.
 Uses the latest backup, if there are several numerical backups.
 If this file is a backup, diff it with its original.
-The backup file is the first file given to `diff'." t nil)
+The backup file is the first file given to `diff'.
+With prefix arg, prompt for argument SWITCHES which is options for `diff'." t nil)
 
 (autoload (quote dired-do-chmod) "dired-aux" "\
 Change the mode of the marked (or next ARG) files.
@@ -2042,7 +2020,7 @@ Use \\[dired-hide-subdir] to (un)hide a particular subdirectory." t nil)
 
 ;;;***
 
-;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "dired.el" (11330 12951))
+;;;### (autoloads (dired-noselect dired-other-frame dired-other-window dired) "dired" "dired.el" (11355 44777))
 ;;; Generated autoloads from dired.el
 
 (defvar dired-listing-switches "-al" "\
@@ -2181,7 +2159,7 @@ With prefix argument, enable European character display iff arg is positive." t 
 
 ;;;***
 
-;;;### (autoloads (dissociated-press) "dissociate" "dissociate.el" (11285 51167))
+;;;### (autoloads (dissociated-press) "dissociate" "dissociate.el" (11356 11391))
 ;;; Generated autoloads from dissociate.el
 
 (autoload (quote dissociated-press) "dissociate" "\
@@ -2195,7 +2173,7 @@ Default is 2." t nil)
 
 ;;;***
 
-;;;### (autoloads (doctor) "doctor" "doctor.el" (11285 51174))
+;;;### (autoloads (doctor) "doctor" "doctor.el" (11344 11919))
 ;;; Generated autoloads from doctor.el
 
 (autoload (quote doctor) "doctor" "\
@@ -2203,7 +2181,7 @@ Switch to *doctor* buffer and start giving psychotherapy." t nil)
 
 ;;;***
 
-;;;### (autoloads (dunnet) "dunnet" "dunnet.el" (11331 7826))
+;;;### (autoloads (dunnet) "dunnet" "dunnet.el" (11356 11391))
 ;;; Generated autoloads from dunnet.el
 
 (autoload (quote dunnet) "dunnet" "\
@@ -2286,7 +2264,7 @@ Symbols:  RET, SPC, TAB, DEL, LFD, NUL; C-key; M-key.  (Must be uppercase.)
 
 ;;;***
 
-;;;### (autoloads (edt-emulation-on) "edt" "edt.el" (11285 51187))
+;;;### (autoloads (edt-emulation-on) "edt" "edt.el" (11344 10928))
 ;;; Generated autoloads from edt.el
 
 (autoload (quote edt-emulation-on) "edt" "\
@@ -2305,7 +2283,7 @@ Prompts for bug subject.  Leaves you in a mail buffer." t nil)
 
 ;;;***
 
-;;;### (autoloads (emerge-files-with-ancestor-remote emerge-files-remote emerge-files-with-ancestor-command emerge-files-command emerge-buffers-with-ancestor emerge-buffers emerge-files-with-ancestor emerge-files) "emerge" "emerge.el" (11292 61746))
+;;;### (autoloads (emerge-files-with-ancestor-remote emerge-files-remote emerge-files-with-ancestor-command emerge-files-command emerge-buffers-with-ancestor emerge-buffers emerge-files-with-ancestor emerge-files) "emerge" "emerge.el" (11356 11307))
 ;;; Generated autoloads from emerge.el
 
 (autoload (quote emerge-files) "emerge" "\
@@ -2518,7 +2496,7 @@ for \\[find-tag] (which see)." t nil)
 
 ;;;***
 
-;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11288 45533))
+;;;### (autoloads (complete-tag select-tags-table tags-apropos list-tags tags-query-replace tags-search tags-loop-continue next-file find-tag-regexp find-tag-other-frame find-tag-other-window find-tag find-tag-noselect tags-table-files visit-tags-table) "etags" "etags.el" (11364 43321))
 ;;; Generated autoloads from etags.el
 
 (defvar tags-file-name nil "\
@@ -2749,8 +2727,8 @@ to get the effect of a C-q." nil nil)
 
 ;;;***
 
-;;;### (autoloads (font-lock-mode) "font-lock" "/home/fsf/rms/e19/lisp/font-lock.el" (11325 54485))
-;;; Generated autoloads from /home/fsf/rms/e19/lisp/font-lock.el
+;;;### (autoloads (font-lock-mode) "font-lock" "font-lock.el" (11361 29125))
+;;; Generated autoloads from font-lock.el
 
 (defvar font-lock-mode-hook nil "\
 Function or functions to run on entry to Font Lock mode.")
@@ -2873,7 +2851,7 @@ with no args, if that value is non-nil." t nil)
 
 ;;;***
 
-;;;### (autoloads (gnus) "gnus" "gnus.el" (11336 19282))
+;;;### (autoloads (gnus) "gnus" "gnus.el" (11367 8636))
 ;;; Generated autoloads from gnus.el
 
 (autoload (quote gnus) "gnus" "\
@@ -2882,7 +2860,7 @@ If optional argument CONFIRM is non-nil, ask NNTP server." t nil)
 
 ;;;***
 
-;;;### (autoloads (gnus-post-news) "gnuspost" "gnuspost.el" (11280 64406))
+;;;### (autoloads (gnus-post-news) "gnuspost" "gnuspost.el" (11339 29602))
 ;;; Generated autoloads from gnuspost.el
 
 (fset (quote sendnews) (quote gnus-post-news))
@@ -2895,7 +2873,7 @@ Type \\[describe-mode] once editing the article to get a list of commands." t ni
 
 ;;;***
 
-;;;### (autoloads (gomoku) "gomoku" "gomoku.el" (10948 54946))
+;;;### (autoloads (gomoku) "gomoku" "gomoku.el" (11356 11391))
 ;;; Generated autoloads from gomoku.el
 
 (autoload (quote gomoku) "gomoku" "\
@@ -2922,7 +2900,7 @@ Use \\[set-gnu-bindings] to restore previous global bindings." t nil)
 
 ;;;***
 
-;;;### (autoloads (xdb dbx sdb gdb) "gud" "gud.el" (11332 46975))
+;;;### (autoloads (xdb dbx sdb gdb) "gud" "gud.el" (11365 54337))
 ;;; Generated autoloads from gud.el
 
 (autoload (quote gdb) "gud" "\
@@ -3125,7 +3103,7 @@ undoes the expansion." t nil)
 (autoload (quote make-hippie-expand-function) "hippie-exp" "\
 Construct a function similar to `hippie-expand'.
 Make it use the expansion functions in TRY-LIST.  An optional second
-argument VERBOSE non-nil makes the function verbose." nil t)
+argument VERBOSE non-nil makes the function verbose." nil (quote macro))
 
 ;;;***
 
@@ -3141,8 +3119,7 @@ mode.  Default is whitespace followed by 0 or 1 single-letter colon-keyword
 (defvar inferior-lisp-program "lisp" "\
 *Program name for invoking an inferior Lisp with for Inferior Lisp mode.")
 
-(defvar inferior-lisp-load-command "(load \"%s\")
-" "\
+(defvar inferior-lisp-load-command "(load \"%s\")\n" "\
 *Format-string for building a Lisp expression to load a file.
 This format string should use `%s' to substitute a file name
 and should result in a Lisp expression that will command the inferior Lisp
@@ -3181,7 +3158,7 @@ of `inferior-lisp-program').  Runs the hooks from
 
 ;;;***
 
-;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info) "info" "info.el" (11299 35162))
+;;;### (autoloads (Info-goto-emacs-key-command-node Info-goto-emacs-command-node info-standalone info) "info" "info.el" (11362 48870))
 ;;; Generated autoloads from info.el
 
 (autoload (quote info) "info" "\
@@ -3192,12 +3169,19 @@ the default is the top-level directory of Info.
 In interactive use, a prefix argument directs this command
 to read a file name from the minibuffer." t nil)
 
+(autoload (quote info-standalone) "info" "\
+Run Emacs as a standalone Info reader.
+Usage:  emacs -f info-standalone [filename]
+In standalone mode, \\<Info-mode-map>\\[Info-exit] exits Emacs itself." nil nil)
+
 (autoload (quote Info-goto-emacs-command-node) "info" "\
-Go to the Info node in the Emacs manual for command COMMAND." t nil)
+Go to the Info node in the Emacs manual for command COMMAND.
+The command is found by looking up in Emacs manual's Command Index." t nil)
 
 (autoload (quote Info-goto-emacs-key-command-node) "info" "\
 Go to the Info node in the Emacs manual the command bound to KEY, a string.
-Interactively, if the binding is execute-extended-command, a command is read." t nil)
+Interactively, if the binding is execute-extended-command, a command is read.
+The command is found by looking up in Emacs manual's Command Index." t nil)
 
 ;;;***
 
@@ -3232,7 +3216,7 @@ For example, invoke \"emacs -batch -f batch-info-validate $info/ ~/*.info\"" nil
 
 ;;;***
 
-;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11332 65354))
+;;;### (autoloads (ispell-region ispell-word ispell) "ispell" "ispell.el" (11344 51605))
 ;;; Generated autoloads from ispell.el
 
 (autoload (quote ispell) "ispell" "\
@@ -3297,7 +3281,7 @@ do (setq lisp-mode-hook 'ledit-from-lisp-mode)" t nil)
 
 ;;;***
 
-;;;### (autoloads (life) "life" "life.el" (11285 51286))
+;;;### (autoloads (life) "life" "life.el" (11356 11391))
 ;;; Generated autoloads from life.el
 
 (autoload (quote life) "life" "\
@@ -3318,7 +3302,7 @@ is nil, raise an error." t nil)
 
 ;;;***
 
-;;;### (autoloads (print-region lpr-region print-buffer lpr-buffer) "lpr" "lpr.el" (11187 44821))
+;;;### (autoloads (print-region lpr-region print-buffer lpr-buffer) "lpr" "lpr.el" (11359 12171))
 ;;; Generated autoloads from lpr.el
 
 (defvar lpr-switches nil "\
@@ -3345,7 +3329,7 @@ Print region contents as with Unix command `lpr -p'.
 
 ;;;***
 
-;;;### (autoloads (phases-of-moon) "lunar" "lunar.el" (11298 18264))
+;;;### (autoloads (phases-of-moon) "lunar" "lunar.el" (11367 8268))
 ;;; Generated autoloads from lunar.el
 
 (autoload (quote phases-of-moon) "lunar" "\
@@ -3356,7 +3340,7 @@ This function is suitable for execution in a .emacs file." t nil)
 
 ;;;***
 
-;;;### (autoloads (apply-macro-to-region-lines kbd-macro-query insert-kbd-macro name-last-kbd-macro) "macros" "macros.el" (11285 51300))
+;;;### (autoloads (apply-macro-to-region-lines kbd-macro-query insert-kbd-macro name-last-kbd-macro) "macros" "macros.el" (11351 17266))
 ;;; Generated autoloads from macros.el
 
 (autoload (quote name-last-kbd-macro) "macros" "\
@@ -3447,7 +3431,7 @@ often correct parser.")
 
 ;;;***
 
-;;;### (autoloads (define-mail-abbrev build-mail-abbrevs mail-abbrevs-setup) "mailabbrev" "mailabbrev.el" (11324 36346))
+;;;### (autoloads (define-mail-abbrev build-mail-abbrevs mail-abbrevs-setup) "mailabbrev" "mailabbrev.el" (11349 45422))
 ;;; Generated autoloads from mailabbrev.el
 
 (autoload (quote mail-abbrevs-setup) "mailabbrev" nil nil nil)
@@ -3565,8 +3549,10 @@ Previous contents of that buffer are killed first." t nil)
 
 ;;;***
 
-;;;### (autoloads (manual-entry) "man" "man.el" (11321 63369))
+;;;### (autoloads (manual-entry) "man" "man.el" (11358 46030))
 ;;; Generated autoloads from man.el
+
+(defalias (quote man) (quote manual-entry))
 
 (autoload (quote manual-entry) "man" "\
 Get a Un*x manual page and put it in a buffer.
@@ -3578,7 +3564,7 @@ Universal argument ARG, is passed to `Man-getpage-in-background'." t nil)
 
 ;;;***
 
-;;;### (autoloads (map-y-or-n-p) "map-ynp" "map-ynp.el" (11319 45784))
+;;;### (autoloads (map-y-or-n-p) "map-ynp" "map-ynp.el" (11342 16097))
 ;;; Generated autoloads from map-ynp.el
 
 (autoload (quote map-y-or-n-p) "map-ynp" "\
@@ -3623,7 +3609,7 @@ Returns the number of actions taken." nil nil)
 
 ;;;***
 
-;;;### (autoloads (mh-smail mh-rmail) "mh-e" "mh-e.el" (11335 17728))
+;;;### (autoloads (mh-smail mh-rmail) "mh-e" "mh-e.el" (11365 38303))
 ;;; Generated autoloads from mh-e.el
 
 (autoload (quote mh-rmail) "mh-e" "\
@@ -3636,7 +3622,7 @@ Compose and send mail with the MH mail system." t nil)
 
 ;;;***
 
-;;;### (autoloads (convert-mocklisp-buffer) "mlconvert" "mlconvert.el" (11285 51423))
+;;;### (autoloads (convert-mocklisp-buffer) "mlconvert" "mlconvert.el" (11339 6975))
 ;;; Generated autoloads from mlconvert.el
 
 (autoload (quote convert-mocklisp-buffer) "mlconvert" "\
@@ -3673,7 +3659,7 @@ followed by the first character of the construct.
 
 ;;;***
 
-;;;### (autoloads (mpuz) "mpuz" "mpuz.el" (11285 51427))
+;;;### (autoloads (mpuz) "mpuz" "mpuz.el" (11356 11391))
 ;;; Generated autoloads from mpuz.el
 
 (autoload (quote mpuz) "mpuz" "\
@@ -3726,7 +3712,7 @@ Type \\[describe-mode] in that buffer for a list of commands." t nil)
 
 ;;;***
 
-;;;### (autoloads (outline-minor-mode outline-mode) "outline" "outline.el" (11319 20136))
+;;;### (autoloads (outline-minor-mode outline-mode) "outline" "outline.el" (11340 12742))
 ;;; Generated autoloads from outline.el
 
 (autoload (quote outline-mode) "outline" "\
@@ -3960,7 +3946,7 @@ When called from a program, requires two args which specify the corners." t nil)
 
 ;;;***
 
-;;;### (autoloads (reposition-window) "reposition" "reposition.el" (11185 15878))
+;;;### (autoloads (reposition-window) "reposition" "reposition.el" (11339 34632))
 ;;; Generated autoloads from reposition.el
 
 (autoload (quote reposition-window) "reposition" "\
@@ -3994,7 +3980,7 @@ Clear out the file used for transmitting args when Emacs resumes." nil nil)
 
 ;;;***
 
-;;;### (autoloads (make-ring ring-p) "ring" "ring.el" (11227 4056))
+;;;### (autoloads (make-ring ring-p) "ring" "ring.el" (11367 8270))
 ;;; Generated autoloads from ring.el
 
 (autoload (quote ring-p) "ring" "\
@@ -4077,7 +4063,7 @@ buffer." t nil)
 
 ;;;***
 
-;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11334 11170))
+;;;### (autoloads (rmail-input rmail-mode rmail) "rmail" "rmail.el" (11360 11262))
 ;;; Generated autoloads from rmail.el
 
 (defvar rmail-dont-reply-to-names nil "\
@@ -4176,7 +4162,7 @@ Display current buffer in rot 13 in another window." t nil)
 
 ;;;***
 
-;;;### (autoloads (sc-cite-original) "sc" "sc.el" (11297 261))
+;;;### (autoloads (sc-cite-original) "sc" "sc.el" (11350 50069))
 ;;; Generated autoloads from sc.el
 
 (autoload (quote sc-cite-original) "sc" "\
@@ -4246,7 +4232,7 @@ scribe-electric-parenthesis
 
 ;;;***
 
-;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11352 5490))
+;;;### (autoloads (mail-other-frame mail-other-window mail mail-mode) "sendmail" "sendmail.el" (11356 48606))
 ;;; Generated autoloads from sendmail.el
 
 (defvar mail-self-blind nil "\
@@ -4337,7 +4323,7 @@ Like `mail' command, but display mail buffer in another frame." t nil)
 
 ;;;***
 
-;;;### (autoloads (server-start) "server" "server.el" (11332 54913))
+;;;### (autoloads (server-start) "server" "server.el" (11365 58935))
 ;;; Generated autoloads from server.el
 
 (autoload (quote server-start) "server" "\
@@ -4400,7 +4386,7 @@ Otherwise, one argument `-i' is passed to the shell.
 
 ;;;***
 
-;;;### (autoloads (sunrise-sunset) "solar" "solar.el" (11310 32522))
+;;;### (autoloads (sunrise-sunset) "solar" "solar.el" (11367 8281))
 ;;; Generated autoloads from solar.el
 
 (defvar calendar-time-display-form (quote (12-hours ":" minutes am-pm (if time-zone " (") time-zone (if time-zone ")"))) "\
@@ -4448,7 +4434,7 @@ This function is suitable for execution in a .emacs file." t nil)
 
 ;;;***
 
-;;;### (autoloads (reverse-region sort-columns sort-regexp-fields sort-fields sort-float-fields sort-numeric-fields sort-pages sort-paragraphs sort-lines) "sort" "sort.el" (11285 51497))
+;;;### (autoloads (reverse-region sort-columns sort-regexp-fields sort-fields sort-float-fields sort-numeric-fields sort-pages sort-paragraphs sort-lines) "sort" "sort.el" (11344 9594))
 ;;; Generated autoloads from sort.el
 
 (autoload (quote sort-lines) "sort" "\
@@ -4583,27 +4569,27 @@ The variable `tab-width' controls the spacing of tab stops." t nil)
 
 ;;;***
 
-;;;### (autoloads (tar-mode) "tar-mode" "tar-mode.el" (11336 20101))
+;;;### (autoloads (tar-mode) "tar-mode" "tar-mode.el" (11354 62228))
 ;;; Generated autoloads from tar-mode.el
 
 (autoload (quote tar-mode) "tar-mode" "\
 Major mode for viewing a tar file as a dired-like listing of its contents.
 You can move around using the usual cursor motion commands. 
 Letters no longer insert themselves.
-Type 'e' to pull a file out of the tar file and into its own buffer.
-Type 'c' to copy an entry from the tar file into another file on disk.
+Type `e' to pull a file out of the tar file and into its own buffer.
+Type `c' to copy an entry from the tar file into another file on disk.
 
-If you edit a sub-file of this archive (as with the 'e' command) and 
-save it with Control-X Control-S, the contents of that buffer will be 
+If you edit a sub-file of this archive (as with the `e' command) and 
+save it with Control-x Control-s, the contents of that buffer will be 
 saved back into the tar-file buffer; in this way you can edit a file 
 inside of a tar archive without extracting it and re-archiving it.
 
-See also: variables tar-update-datestamp and tar-anal-blocksize.
+See also: variables `tar-update-datestamp' and `tar-anal-blocksize'.
 \\{tar-mode-map}" nil nil)
 
 ;;;***
 
-;;;### (autoloads (rsh telnet) "telnet" "telnet.el" (11283 60253))
+;;;### (autoloads (rsh telnet) "telnet" "telnet.el" (11357 58585))
 ;;; Generated autoloads from telnet.el
 
 (autoload (quote telnet) "telnet" "\
@@ -4655,7 +4641,7 @@ work with `terminfo' we will try to use it." t nil)
 
 ;;;***
 
-;;;### (autoloads (latex-mode plain-tex-mode tex-mode) "tex-mode" "tex-mode.el" (11285 51540))
+;;;### (autoloads (latex-mode plain-tex-mode tex-mode) "tex-mode" "tex-mode.el" (11354 8216))
 ;;; Generated autoloads from tex-mode.el
 
 (defvar tex-shell-file-name nil "\
@@ -4849,7 +4835,7 @@ subshell is initiated, the value of tex-shell-hook is called." t nil)
 
 ;;;***
 
-;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11336 13830))
+;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11367 23334))
 ;;; Generated autoloads from texinfo.el
 
 (autoload (quote texinfo-mode) "texinfo" "\
@@ -4936,6 +4922,20 @@ After each update, `display-time-hook' is run with `run-hooks'." t nil)
 
 ;;;***
 
+;;;### (autoloads (time-stamp) "time-stamp" "time-stamp.el" (11351 4303))
+;;; Generated autoloads from time-stamp.el
+
+(autoload (quote time-stamp) "time-stamp" "\
+Update the time stamp string in the buffer.
+Only does its thing if the variable  time-stamp-active  is non-nil.
+Typically used on  write-file-hooks  for automatic time-stamping.
+The format of the time stamp is determined by the variable
+time-stamp-format.  The first  time-stamp-line-limit  lines of the
+buffer (normally 8) are searched for the time stamp template,
+and if it is found, a new time stamp is written into it." t nil)
+
+;;;***
+
 ;;;### (autoloads (run-at-time) "timer" "timer.el" (11285 51562))
 ;;; Generated autoloads from timer.el
 
@@ -4958,6 +4958,18 @@ Relative times may be specified as a series of numbers followed by units:
   1 min 5 sec		denotes 65 seconds from now.
   1 min 2 sec 3 hour 4 day 5 week 6 fortnight 7 month 8 year
 			denotes the sum of all the given durations from now." t nil)
+
+;;;***
+
+;;;### (autoloads (tpu-edt-on) "tpu-edt" "tpu-edt.el" (11368 32024))
+;;; Generated autoloads from tpu-edt.el
+
+(fset (quote tpu-edt-mode) (quote tpu-edt-on))
+
+(fset (quote tpu-edt) (quote tpu-edt-on))
+
+(autoload (quote tpu-edt-on) "tpu-edt" "\
+Turn on TPU/edt emulation." t nil)
 
 ;;;***
 
@@ -5124,7 +5136,7 @@ which specify the range to operate on." t nil)
 
 ;;;***
 
-;;;### (autoloads (unrmail batch-unrmail) "unrmail" "unrmail.el" (11176 61386))
+;;;### (autoloads (unrmail batch-unrmail) "unrmail" "unrmail.el" (11345 60792))
 ;;; Generated autoloads from unrmail.el
 
 (autoload (quote batch-unrmail) "unrmail" "\
@@ -5188,7 +5200,7 @@ The buffer in question is current when this function is called." nil nil)
 
 ;;;***
 
-;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11321 6270))
+;;;### (autoloads (vc-update-change-log vc-cancel-version vc-revert-buffer vc-print-log vc-retrieve-snapshot vc-create-snapshot vc-directory vc-insert-headers vc-diff vc-register vc-next-action) "vc" "vc.el" (11367 8291))
 ;;; Generated autoloads from vc.el
 
 (defvar vc-checkin-hook nil "\

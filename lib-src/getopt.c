@@ -21,7 +21,10 @@
    Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+/* We use <config.h> instead of "config.h" so that a compilation
+   using -I. -I$srcdir will use ./config.h rather than $srcdir/config.h
+   (which it would do because getopt.c was found in $srcdir).  */
+#include <config.h>
 #endif
 
 #ifndef __STDC__

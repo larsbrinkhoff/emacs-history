@@ -1,3 +1,15 @@
+Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.19 released.
+
+Tue Aug 10 16:52:15 1993  Simon Leinen  (simon@lia.di.epfl.ch)
+
+	* sc.texinfo: Fix info file name.
+
+	* Makefile (info): Added gnus and sc.
+	(dvi): Added gnus.dvi and sc.dvi.
+	(../info/sc, sc.dvi): New targets.
+
 Sun Aug  8 01:15:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.18 released.

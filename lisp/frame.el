@@ -111,7 +111,10 @@ These supersede the values given in `default-frame-alist'.")
 		    (frame-remove-geometry-params initial-frame-alist))
 	      ;; Handle `reverse' as a parameter.
 	      (if (cdr (or (assq 'reverse initial-frame-alist)
-			   (assq 'reverse default-frame-alist)))
+			   (assq 'reverse default-frame-alist)
+			   (cons nil
+				 (member (x-get-resource "reverseVideo" "ReverseVideo")
+					 '("on" "true")))))
 		  (let ((params (frame-parameters frame-initial-frame)))
 		    (modify-frame-parameters
 		     frame-initial-frame
@@ -366,7 +369,7 @@ A negative ARG moves in the opposite order."
       (setq frame (previous-frame frame))
       (while (not (eq (frame-visible-p frame) t))
 	(setq frame (previous-frame frame)))
-      (setq arg (1- arg)))
+      (setq arg (1+ arg)))
     (raise-frame frame)
     (select-frame frame)))
 

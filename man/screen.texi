@@ -4,6 +4,7 @@
 @node Screen, User Input, Concept Index, Top
 @chapter The Organization of the Screen
 @cindex screen
+@cindex parts of the screen
 @c
 
   On a text-only terminal, the Emacs display occupies the whole screen.
@@ -105,6 +106,7 @@ confident users fast response, while giving hesitant users maximum
 feedback.  You can change this behavior by setting a variable
 (@pxref{Display Vars}).
 
+@cindex error message in the echo area
   If a command cannot be executed, it may print an @dfn{error message} in
 the echo area.  Error messages are accompanied by a beep or by flashing the
 screen.  Also, any input you have typed ahead is thrown away when an error

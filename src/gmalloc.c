@@ -33,7 +33,7 @@ Cambridge, MA 02139, USA.
 #ifdef _MALLOC_INTERNAL
 
 #ifdef	HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #if	defined(_LIBC) || defined(STDC_HEADERS) || defined(USG)
@@ -242,7 +242,7 @@ extern struct mstats mstats __P ((void));
 
 /* Call WARNFUN with a warning message when memory usage is high.  */
 extern void memory_warnings __P ((__ptr_t __start,
-				  void (*__warnfun) __P ((__const char *))));
+				  void (*__warnfun) __P ((const char *))));
 
 
 /* Relocating allocator.  */
@@ -441,6 +441,11 @@ malloc (size)
   if (size < sizeof (struct list))
       size = sizeof (struct list);
 
+#ifdef SUNOS_LOCALTIME_BUG
+  if (size < 16)
+    size = 16;
+#endif
+
   /* Determine the allocation policy based on the request size.  */
   if (size <= BLOCKSIZE / 2)
     {
@@ -527,7 +532,11 @@ malloc (size)
 		  (*__morecore) (0) == ADDRESS (block + lastblocks) &&
 		  (morecore ((blocks - lastblocks) * BLOCKSIZE)) != NULL)
 		{
-		  _heapinfo[block].free.size = blocks;
+ 		  /* Which block we are extending (the `final free
+ 		     block' referred to above) might have changed, if
+ 		     it got combined with a freed info table.  */
+ 		  block = _heapinfo[0].free.prev;
+  		  _heapinfo[block].free.size += (blocks - lastblocks);
 		  _bytes_free += (blocks - lastblocks) * BLOCKSIZE;
 		  continue;
 		}
@@ -998,7 +1007,7 @@ realloc (ptr, size)
 	  if (result != NULL)
 	    {
 	      memcpy (result, ptr, size);
-	      free (ptr);
+	      _free_internal (ptr);
 	      return result;
 	    }
 	}
@@ -1014,7 +1023,7 @@ realloc (ptr, size)
 	  _heapinfo[block + blocks].busy.info.size
 	    = _heapinfo[block].busy.info.size - blocks;
 	  _heapinfo[block].busy.info.size = blocks;
-	  free (ADDRESS (block + blocks));
+	  _free_internal (ADDRESS (block + blocks));
 	  result = ptr;
 	}
       else if (blocks == _heapinfo[block].busy.info.size)
@@ -1029,7 +1038,7 @@ realloc (ptr, size)
 	  /* Prevent free from actually returning memory to the system.  */
 	  oldlimit = _heaplimit;
 	  _heaplimit = 0;
-	  free (ptr);
+	  _free_internal (ptr);
 	  _heaplimit = oldlimit;
 	  result = malloc (size);
 	  if (result == NULL)
@@ -1043,7 +1052,7 @@ realloc (ptr, size)
 		{
 		  __ptr_t previous = malloc ((block - _heapindex) * BLOCKSIZE);
 		  (void) malloc (blocks * BLOCKSIZE);
-		  free (previous);
+		  _free_internal (previous);
 		}
 	      return NULL;
 	    }
@@ -1238,16 +1247,18 @@ Cambridge, MA 02139, USA.
    The author may be reached (Email) at the address mike@ai.mit.edu,
    or (US mail) as Mike Haertel c/o Free Software Foundation.  */
 
-#ifndef	_MALLOC_INTERNAL
-#define	_MALLOC_INTERNAL
-#include <malloc.h>
-#endif
-
-#ifdef	__GNU_LIBRARY__
+#if defined (__GNU_LIBRARY__) || defined (_LIBC)
+#include <stddef.h>
+#include <sys/cdefs.h>
 extern size_t __getpagesize __P ((void));
 #else
 #include "getpagesize.h"
 #define	 __getpagesize()	getpagesize()
+#endif
+
+#ifndef	_MALLOC_INTERNAL
+#define	_MALLOC_INTERNAL
+#include <malloc.h>
 #endif
 
 static size_t pagesize;

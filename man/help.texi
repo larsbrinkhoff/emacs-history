@@ -104,7 +104,7 @@ documented (@code{info-goto-emacs-key-command-node}).
 @kindex C-h c
 @findex describe-key-briefly
   The most basic @kbd{C-h} options are @kbd{C-h c}
-(@code{describe-key-briefly}) and @kbd{C-h k} (@code{describe-key}).
+(@code{describe-key-briefly}) and @w{@kbd{C-h k}} (@code{describe-key}).
 @kbd{C-h c @var{key}} prints in the echo area the name of the command
 that @var{key} is bound to.  For example, @kbd{C-h c C-f} prints
 @samp{forward-char}.  Since command names are chosen to describe what

@@ -1,3 +1,198 @@
+Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.19 released.
+
+	* Makefile.in (mostlyclean): Don't delete emacs here.
+	(clean): Delete emacs and emacs-* here.
+	(distclean): Don't delete emacs-* here.
+
+	* xselect.c (struct property_change): New field `arrived'.
+	(expect_property_change): Return struct property_change *.
+	Clear `arrived'.
+	(unexpect_property_change): Take one as argument.
+	(wait_for_property_change): Take one as argument.
+	If `arrived' is set, don't wait.
+	(wait_for_property_change_unwind): Corresponding changes.
+	(receive_incremental_selection): Corresponding changes.
+	(x_reply_selection_request): Corresponding changes.
+	(property_deleted_p): Function deleted.
+
+	* xselect.c (x_handle_selection_clear): Redisplay.
+
+	* search.c (compile_pattern): Cast result of re_compile_pattern.
+
+	* emacs.c (init_cmdargs): Check openp result for 1, not != 0.
+
+	* xterm.c (x_wm_set_size_hint): New args spec_x and spec_y.
+	Set the window gravity.  All callers changed.
+	* xfns.c (Fx_create_frame): Pass the new args to x_wm_set_size_hint.
+
+	* xmenu.c (Fx_popup_menu): Adjust coords so they are relative
+	to the inner window.
+
+	* syswait.h: New file.
+	* sysdep.c, process.c: Include it.
+	* ymakefile (sysdep.o, process.o): Depend on syswait.h.
+
+	* process.c (wait_reading_process_input): Exit without waiting
+	if wait_for_cell is already non-nil.
+
+	* sysdep.c (mkdir, rmdir): Use wait_for_termination to wait.
+	Redirect descriptors 0...2 to /dev/null.
+
+	* emacs.c (__CTOR_LIST__): Don't declare it on Linux.
+
+	* filelock.c (getpwuid): Declare it as in xrdb.c.
+	(init_filelock): Don't use return value of strcpy.
+
+	* fns.c (internal_equal): Typo in previous change.
+
+	* xfns.c (x_set_frame_parameters): Don't die if just one of
+	height and width was set.  Likewise left and top.
+
+	* textprop.c (property_change_between_p): Test NULL_INTERVAL_P
+	in loop, before looking at next->position.
+
+	* intervals.c (adjust_intervals_for_insertion): If inserting in middle
+	of interval that is sticky in neither direction, don't copy props.
+	(merge_properties_sticky): Handle non-list as front-sticky or
+	rear-nonsticky property.
+
+Fri Aug 13 23:49:07 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fns.c (internal_equal): All markers in no buffer are equal.
+
+Fri Aug 13 19:35:52 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* config.h.in: Added #undef HAVE_XSCREENNUMBEROFSCREEN.
+
+Fri Aug 13 17:38:53 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfns.c (XScreenNumberOfScreen): New function.
+
+	* m/tek4300.h (C_DEBUG_SWITCH, SYSTEM_MALLOC): Defined.
+
+	* m/iris4d.h (START_FILES, LIB_STANDARD): Don't define if USG5_4.
+	(DEFAULT_ENTRY_ADDRESS): Likewise.
+	(UNEXEC): Use unexelfsgi.o if USG5_4.
+
+	* s/irix5-0.h (C_SWITCH_MACHINE): Deleted.
+
+Fri Aug 13 07:42:39 1993  Frederic Pierresteguy  (F.Pierresteguy@frcl.bull.fr)
+
+	* m/dpx2.h: Delete conditionals for HAVE_X_WINDOWS and HAVE_SOCKETS.
+
+Fri Aug 13 00:33:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* m/iris4d.h (C_ALLOCA): Don't define it.
+
+	* keyboard.c (kbd_buffer_store_event): Use bcopy to copy
+	a selection request event.
+
+	* unexnext.c (get_data_region): Add cast to avoid warning.
+
+Thu Aug 12 01:38:36 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ymakefile (prefix-args, filemode.o, lastfile.o): Dep on $(config_h).
+
+	* floatfns.c (Flogb): Error at run time if not supported.
+
+	* ymakefile (emacs.o): Depend on process.h and syssignal.h.
+	* emacs.c: Include process.h.
+	(init_cmdargs): Use EXEC_SUFFIXES.
+
+	* s/irix5-0.h: Include alloca.h if appropriate.
+	Fix the #include file name.
+	(ULIMIT_BREAK_VALUE, GETPGRP_NO_ARG, NO_MATHERR): New macros.
+	(LIB_STANDARD): #undef it.
+
+	* frame.c (Fdelete_frame): Add parens for clarity.
+
+	* keyboard.c (read_char): Never start echoing if -batch.
+
+	* minibuf.c (Qread_file_name_internal): New var.
+	(syms_of_minibuf): Set it up and protect it.
+	(Fminibuffer_complete_word): When completing a file name,
+	expand envvar references.
+
+	* xterm.c (XTread_socket): Make copy_buffer unsigned.
+
+	* s/usg5-4-2.h (HAVE_GETHOSTNAME): #if 0'd.
+
+Wed Aug 11 00:25:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/hpux8.h (LD_SWITCH_SYSTEM): Delete the -L options.
+
+	* termhooks.h (enum event_kind): Delete final comma.
+	(meta_modifier): Delete final comma.
+	* window.c (enum window_loop): Delete final comma.
+	* xfns.c (enum resource_types): Delete final comma.
+
+	* m/ibmrs6000.h (BIG_ENDIAN): Don't actually define it.
+
+	* window.c (Frecenter): Preserve point in the buffer we change it in.
+
+	* cmds.c (Fnewline): If we don't do the first SET_PT,
+	clear flag, so we don't do the second SET_PT.
+
+	* keyboard.c (make_lispy_event): Clear all but 0377 in event->code.
+
+	* xselect.c (receive_incremental_selection): Use bcopy, not memcpy.
+
+	* m/tek4300.h (BIG_ENDIAN): Provide a value that matches the system.
+
+	* config.h.in: Add #undef HAVE_FTIME.
+
+	* ymakefile (ALL_CFLAGS): Use C_SWITCH_X_SITE before
+	C_SWITCH_X_SYSTEM and C_SWITCH_X_MACHINE.
+
+	* s/hpux8.h (C_SWITCH_X_SYSTEM): Define instead of C_SWITCH_SYSTEM.
+
+Wed Aug 11 02:21:15 1993  Shane Hartman  (shane@nugget.spr.com)
+
+	* buffer.c (verify_overlay_modification): Initialize endpos.
+
+	* keymap.c (describe_buffer_bindings): Declare shadow just once. 
+
+Tue Aug 10 01:46:40 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xterm.c (x_calc_absolute_position): For negative coords, take
+	account of added width from window manager's outer window.
+
+	* term.c (term_get_fkeys_define_1, term_get_fkeys_define):
+	New functions.
+	(term_get_fkeys): Use them.
+
+	* m/tekxd88.h: Renamed from tekXD88.h.
+	(LIB_X11_LIB, LIBX11_SYSTEM): Make #undefs unconditional.
+
+	* systty.h: Handle NO_TERMIO in principal HAVE_TERMIOS case.
+
+	* xrdb.c (x_get_customization_string): Don't use value of strcpy.
+
+	* floatfns.c (Fexpt): Use IN_FLOAT2.
+
+Tue Aug 10 15:12:13 1993  Frederic Pierresteguy  (F.Pierresteguy@frcl.bull.fr)
+
+	* m/dpx2.h (HAVE_TCATTR): Macro #defined.
+	(HAVE_CLOSEDIR): #undef to allow use of closedir in sysdep.c.
+	(SIGTSTP): Commented #undef to allow use of ^Z in shell-mode.
+	(SIGNALS_VIA_CHARACTERS): #defined.
+
+Mon Aug  9 21:40:23 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* data.c (Fmod): New function; result is always same sign as divisor.
+	(syms_of_data): Add Smod.
+	* emacs.c (main): Invoke syms_of_floatfns even if LISP_FLOAT_TYPE
+	isn't defined, since `(floor A B)' is now needed for integers.
+	* floatfns.c (syms_of_floatfns): Likewise.
+	(Ffloor): Optional second operand specifies divisor, as in Common Lisp.
+
+Mon Aug  9 21:32:01 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* unexelf.c (unexec): Add casts for some comparisons.
+	(PATCH_INDEX): Likewise.
+
 Sun Aug  8 01:15:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.18 released.

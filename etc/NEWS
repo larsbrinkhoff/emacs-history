@@ -6,6 +6,38 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.19.
+
+* The new package bookmark.el records named bookmarks: positions that
+you can jump to.  Bookmarks are saved automatically between Emacs
+sessions.
+
+* Another simpler package saveplace.el records your position in each
+file when you kill its buffer (or kill Emacs), and jumps to the same
+position when you visit the file again (even in another Emacs
+session).  Use `toggle-save-place' to turn on place-saving in a given file;
+use (setq-default save-place t) to turn it on for all files.
+
+* In Outline mode, you can now customize how to compute the level of a
+heading line.  Set `outline-level' to a function of no arguments which
+returns the level, assuming point is at the beginning of a heading
+line.
+
+* You can now specify the prefix key to use for Outline minor mode.
+(The default is C-c.)  Set the variable outline-minor-mode-prefix to
+the key sequence you want to use (as a string or vector).
+
+* In Bibtex mode, C-c e has been changed to C-c C-b.  This is because
+C-c followed by a letter is reserved for users.
+
+* The `mod' function is no longer an alias for `%', but is a separate function
+that yields a result with the same sign as the divisor.  `floor' now takes an
+optional second argument, which divides the first argument before the floor is
+taken.
+
+* `%' no longer allows floating point arguments, since the results were often
+inconsistent with integer `%'.
+
 Changes in version 19.18.
 
 * Typing C-z in an iconified Emacs frame now deiconifies it.

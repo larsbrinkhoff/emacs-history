@@ -149,6 +149,7 @@ if ($?prompt) set prompt = ...
 @node Debuggers
 @section Running Debuggers Under Emacs
 @cindex debuggers
+@cindex GUD library
 @cindex GDB
 @cindex DBX
 @cindex SDB

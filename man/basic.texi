@@ -102,6 +102,10 @@ a minor mode.  @xref{Minor Modes}.
 @kindex @key{RIGHT}
 @kindex @key{TOP}
 @kindex @key{BOTTOM}
+@cindex moving point
+@cindex movement
+@cindex cursor motion
+@cindex moving the cursor
   To do more than insert characters, you have to know how to move
 point (@pxref{Point}).  The simplest way to do this is with arrow
 keys or the left mouse button.
@@ -211,6 +215,9 @@ Kill back to the beginning of the previous word
 (@code{backward-kill-word}).
 @end table
 
+@cindex killing characters and lines
+@cindex deleting characters and lines
+@cindex erasing characters and lines
   You already know about the @key{DEL} key which deletes the character
 before the cursor.  Another key, @kbd{Control-d} (@kbd{C-d} for short),
 deletes the character after the cursor, causing the rest of the text on the
@@ -269,6 +276,7 @@ you save this buffer with @kbd{C-x C-s}.
 @node Basic Help
 @section Help
 
+@cindex getting help with keys
   If you forget what a key does, you can find out with the Help character,
 which is @kbd{C-h}.  Type @kbd{C-h k} followed by the key you want to know
 about; for example, @kbd{C-h k C-n} tells you all about what @kbd{C-n}
@@ -280,6 +288,8 @@ to get a description of all the help facilities.  @xref{Help}.@refill
 @node Blank Lines
 @section Blank Lines
 
+@cindex inserting blank lines
+@cindex deleting blank lines
   Here are special commands and techniques for putting in and taking out
 blank lines.
 
@@ -298,13 +308,13 @@ Delete all but one of many consecutive blank lines
 @findex open-line
 @findex delete-blank-lines
   When you want to insert a new line of text before an existing line, you
-can do it by typing the new line of text, followed by @key{RET}.  However,
-it may be easier to see what you are doing if you first make a blank line
-and then insert the desired text into it.  This is easy to do using the key
-@kbd{C-o} (@code{open-line}), which inserts a newline after point but leaves
-point in front of the newline.  After @kbd{C-o}, type the text for the new
-line.  @kbd{C-o F O O} has the same effect as @kbd{F O O @key{RET}}, except for
-the final location of point.
+can do it by typing the new line of text, followed by @key{RET}.
+However, it may be easier to see what you are doing if you first make a
+blank line and then insert the desired text into it.  This is easy to do
+using the key @kbd{C-o} (@code{open-line}), which inserts a newline
+after point but leaves point in front of the newline.  After @kbd{C-o},
+type the text for the new line.  @kbd{C-o F O O} has the same effect as
+@w{@kbd{F O O @key{RET}}}, except for the final location of point.
 
   You can make several blank lines by typing @kbd{C-o} several times, or
 by giving it a numeric argument to tell it how many blank lines to
@@ -327,7 +337,7 @@ nonblank line.
 @cindex continuation line
 @cindex wrapping
 @cindex line wrapping
-  If you add too many characters to one line, without breaking it with
+  If you add too many characters to one line without breaking it with
 @key{RET}, the line will grow to occupy two (or more) lines on the screen,
 with a @samp{\} at the extreme right margin of all but the last of them.
 The @samp{\} says that the following screen line is not really a distinct
@@ -381,6 +391,9 @@ point, and column of point (@code{what-cursor-position}).
 @findex what-page
 @findex what-line
 @cindex line number commands
+@cindex location of point
+@cindex cursor location
+@cindex point location
   There are two commands for printing the current line number.  @kbd{M-x
 what-line} computes the current line number and displays it in the echo
 area.  @kbd{M-x line-number-mode} enables display of the current line
@@ -408,15 +421,15 @@ current page.
 the column that the cursor is in, and other miscellaneous information about
 point.  It prints a line in the echo area that looks like this:
 
-@example
+@smallexample
 Char: x (0170)  point=65986 of 563027(12%)  x=44
-@end example
+@end smallexample
 
 @noindent
 (In fact, this is the output produced when point is before the @samp{x=44}
 in the example.)
 
-  The two values after @samp{Char:} describe the character following point,
+  The two values after @samp{Char:} describe the character that follows point,
 first by showing it and second by giving its octal character code.
 
   @samp{point=} is followed by the position of point expressed as a character
@@ -443,7 +456,7 @@ position that point is allowed to assume.  The characters between those
 two positions are the accessible ones.  @xref{Narrowing}.
 
   If point is at the end of the buffer (or the end of the accessible
-part), @kbd{C-x =} omits any description of the character after point.
+part), @w{@kbd{C-x =}} omits any description of the character after point.
 The output looks like this:
 
 @smallexample

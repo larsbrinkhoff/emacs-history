@@ -13,11 +13,13 @@ your keyboard input is understood by Emacs.
 @node User Input, Keys, Screen, Top
 @section Keyboard Input
 @cindex input event
+@cindex input to the keyboard
 @cindex keyboard input
 @cindex character set (keyboard)
 @cindex ASCII
 @cindex C-
 @cindex Control
+@cindex control characters
 
   GNU Emacs uses an extension of the ASCII character set for keyboard
 input.  ASCII consists of 128 character codes.  Some of these codes are
@@ -99,6 +101,7 @@ them.
 @section Keys
 
 @cindex key sequence
+@cindex key
   A @dfn{key sequence} (@dfn{key}, for short) is a sequence of input
 events that combine as part of the invocation of a single command.
 Recall that input events include both keyboard characters and
@@ -132,7 +135,7 @@ give @kbd{C-f C-k} an independent meaning as a command.  @kbd{C-f C-k}
 is two key sequences, not one.@refill
 
   All told, the prefix keys in Emacs are @kbd{C-c}, @kbd{C-x},
-@kbd{C-h}, @kbd{C-x C-a}, @kbd{C-x n}, @kbd{C-x r}, @kbd{C-x v},
+@kbd{C-h}, @kbd{C-x C-a}, @kbd{C-x n}, @w{@kbd{C-x r}}, @kbd{C-x v},
 @kbd{C-x 4}, @kbd{C-x 5}, and @key{ESC}.  But this is not cast in
 concrete; it is just a matter of Emacs's standard key bindings.  In
 customizing Emacs, you could make new prefix keys, or eliminate these.
@@ -158,6 +161,7 @@ change.
 @cindex keymap
 @cindex function
 @cindex command
+@cindex function definition
   This manual is full of passages that tell you what particular keys
 do.  But Emacs does not assign meanings to keys directly.  Instead,
 Emacs assigns meanings to named @dfn{commands}, and then gives keys

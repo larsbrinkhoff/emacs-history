@@ -24,8 +24,6 @@ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
  *	Ed Pelegri-Llopart added C typedefs.
  *	Gnu Emacs TAGS format and modifications by RMS?
  *	Sam Kendall added C++.
- *
- *	Francesco Potorti` is the current maintainer.	7.5
  */
 
 #ifdef HAVE_CONFIG_H
@@ -159,7 +157,7 @@ char *savenstr ();
 char *savestr ();
 char *xmalloc ();
 char *xrealloc ();
-int L_isdef (), L_isquote ();
+int L_isdef ();
 int PF_funcs ();
 int total_size_of_entries ();
 logical consider_token ();
@@ -1334,16 +1332,13 @@ C_create_stabs ()
 }
 
  /*
+  *	etags.c 4.2 1993/03/22 12:13:40 pot Exp
   * C functions are recognized using a simple finite automaton.
   * funcdef is its state variable.
   */
 typedef enum
 {
-  fnone,			/* nothing seen */
-  ftagseen,			/* function-like tag seen */
-  finlist,			/* in parameter list */
-  flistseen,			/* after parameter list */
-  fignore,			/* before open brace */
+  fnone, ftagseen, finlist, flistseen
 } FUNCST;
 FUNCST funcdef;
 
@@ -1353,10 +1348,7 @@ FUNCST funcdef;
   */
 typedef enum
 {
-  tnone,			/* nothing seen */
-  ttypedseen,			/* typedef keyword seen */
-  tinbody,			/* inside typedef body */
-  tend,				/* just before typedef tag */
+  tnone, ttypedseen, tinbody, tend
 } TYPEDST;
 TYPEDST typdef;
 
@@ -1373,7 +1365,7 @@ typedef enum
   skeyseen,			/* struct-like keyword seen */
   stagseen,			/* struct-like tag seen */
   scolonseen,			/* colon seen after struct-like tag */
-  sinbody,			/* in struct body: recognize member func defs*/
+  sinbody			/* in struct body: recognize member func defs*/
 } STRUCTST;
 STRUCTST structdef;
 /*
@@ -1391,7 +1383,7 @@ typedef enum
   dnone,			/* nothing seen */
   dsharpseen,			/* '#' seen as first char on line */
   ddefineseen,			/* '#' and 'define' seen */
-  dignorerest,			/* ignore rest of line */
+  dignorerest			/* ignore rest of line */
 } DEFINEST;
 DEFINEST definedef;
 
@@ -1639,8 +1631,7 @@ C_entries (c_ext)
 		{
 		case flistseen:
 		  MAKE_TAG_FROM_OTH_LB (TRUE);
-		  funcdef = fignore;
-		  break;
+		  /* FALLTHRU */
 		case ftagseen:
 		  funcdef = fnone;
 		  break;
@@ -1668,7 +1659,7 @@ C_entries (c_ext)
 	  else if (yacc_rules && funcdef == ftagseen)
 	    {
 	      MAKE_TAG_FROM_OTH_LB (FALSE);
-	      funcdef = fignore;
+	      funcdef == fnone;
 	    }
 	  break;
 	case ';':
@@ -1677,13 +1668,12 @@ C_entries (c_ext)
 	      typdef = tnone;
 	      MAKE_TAG_FROM_OTH_LB (FALSE);
 	    }
-	  if (funcdef != fignore)
-	    funcdef = fnone;
+	  funcdef = fnone;
 	  /* FALLTHRU */
 	case ',':
 	  /* FALLTHRU */
 	case '[':
-	  if (funcdef != finlist && funcdef != fignore)
+	  if (funcdef != finlist)
 	    funcdef = fnone;
 	  if (structdef == stagseen)
 	    structdef = snone;
@@ -1719,21 +1709,13 @@ C_entries (c_ext)
 	      MAKE_TAG_FROM_OTH_LB (FALSE);
 	      break;
 	    }
-	  switch (funcdef)
-	    {
-	    case flistseen:
-	      MAKE_TAG_FROM_OTH_LB (TRUE);
-	      /* FALLTHRU */
-	    case fignore:
-	      funcdef = fnone;
-	    }
 	  cblev++;
-	  break;
+	  /* FALLTHRU */
 	case '*':
 	  if (funcdef == flistseen)
 	    {
 	      MAKE_TAG_FROM_OTH_LB (TRUE);
-	      funcdef = fignore;
+	      funcdef = fnone;
 	    }
 	  break;
 	case '}':
@@ -1938,8 +1920,7 @@ consider_token (c, lp, tokp, c_ext, cblev, is_func)
   if (next_token_is_func)
     {
       next_token_is_func = FALSE;
-      funcdef = fnone;
-      *is_func = TRUE;		/* to force search string in ctags */
+      *is_func = TRUE;
       return (TRUE);
     }
 
@@ -1950,15 +1931,10 @@ consider_token (c, lp, tokp, c_ext, cblev, is_func)
       funcdef = fnone;		/* should be useless */
       return (FALSE);
     default:
-      if (funcdef == fnone)
-	{
-	  funcdef = ftagseen;
-	  *is_func = TRUE;
-	  return (TRUE);
-	}
+      funcdef = ftagseen;
+      *is_func = TRUE;
+      return (TRUE);
     }
-
-  return (FALSE);
 }
 
 /* Fortran parsing */
@@ -2367,17 +2343,15 @@ L_funcs (fi)
 	  else
 	    {
 	      /* Check for (foo::defmumble name-defined ... */
-	      do
+	      while (*dbp && *dbp != ':' && !isspace (*dbp)
+		     && *dbp != '(' && *dbp != ')')
 		dbp++;
-	      while (*dbp && !isspace (*dbp)
-		     && *dbp != ':' && *dbp != '(' && *dbp != ')');
 	      if (*dbp == ':')
 		{
-		  do
+		  while (*dbp == ':')
 		    dbp++;
-		  while (*dbp == ':');
 
-		  if (L_isdef (dbp - 1))
+		  if (L_isdef (dbp))
 		    {
 		      while (!isspace (*dbp))
 			dbp++;
@@ -2393,23 +2367,11 @@ L_funcs (fi)
 
 int
 L_isdef (dbp)
-     register char *dbp;
+     char *dbp;
 {
-  return ((dbp[1] == 'd' || dbp[1] == 'D')
-	  && (dbp[2] == 'e' || dbp[2] == 'E')
-	  && (dbp[3] == 'f' || dbp[3] == 'F'));
-}
-
-int
-L_isquote (dbp)
-     register char *dbp;
-{
-  return ((*(++dbp) == 'q' || *dbp == 'Q')
-	  && (*(++dbp) == 'u' || *dbp == 'U')
-	  && (*(++dbp) == 'o' || *dbp == 'O')
-	  && (*(++dbp) == 't' || *dbp == 'T')
-	  && (*(++dbp) == 'e' || *dbp == 'E')
-	  && isspace(*(++dbp)));
+  return ((dbp[1] == 'D' || dbp[1] == 'd') &&
+	  (dbp[2] == 'E' || dbp[2] == 'e') &&
+	  (dbp[3] == 'F' || dbp[3] == 'f'));
 }
 
 void
@@ -2419,19 +2381,10 @@ L_getit ()
   char c;
   char nambuf[BUFSIZ];
 
-  if (*dbp == '\'')		/* Skip prefix quote */
-    dbp++;
-  else if (*dbp == '(' && L_isquote (dbp)) /* Skip "(quote " */
-  {
-    dbp += 7;
-    while (isspace(*dbp))
-      dbp++;
-  }
-  for (cp = dbp /*+1*/; *cp && *cp != '(' && *cp != ' ' && *cp != ')'; cp++)
-    continue;
-  if (cp == dbp)
+  if (*dbp == 0)
     return;
-  
+  for (cp = dbp + 1; *cp && *cp != '(' && *cp != ' '; cp++)
+    continue;
   c = cp[0];
   cp[0] = 0;
   (void) strcpy (nambuf, dbp);

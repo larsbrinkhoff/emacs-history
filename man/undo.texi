@@ -4,6 +4,7 @@
 @node Undo, Minibuffer, Basic, Top
 @chapter Undoing Changes
 @cindex undo
+@cindex changes, undoing
 @cindex mistakes, correcting
 
   Emacs allows all changes made in the text of a buffer to be undone, up
@@ -64,6 +65,7 @@ mark ring (@pxref{Mark Ring}).
 
 @vindex undo-limit
 @vindex undo-strong-limit
+@cindex undo limit
   When the undo information of a buffer becomes too large, Emacs
 discards the oldest undo information from time to time (during garbage
 collection).  You can specify how much undo information to keep by

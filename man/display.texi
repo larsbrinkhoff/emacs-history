@@ -39,7 +39,7 @@ moves in the window.  Thus, the command to scrolling forward is called
 * Horizontal Scrolling::   Moving text left and right in a window.
 * Selective Display::      Hiding lines with lots of indentation.
 * Optional Display::       Optional display features.
-* European Display::	   Displaying (and inputting) European characters.
+* European Display::	   Displaying (and inputing) European characters.
 * Display Vars::           Information on variables for customizing display.
 @end menu
 
@@ -174,7 +174,7 @@ columns less, to be precise).
 window cannot be scrolled any farther to the right once it is displaying
 normally (with each line starting at the window's left margin);
 attempting to do so has no effect.  This means that you don't have to
-calculate the argument precisely for @kbd{C-x >}; any sufficiently large
+calculate the argument precisely for @w{@kbd{C-x >}}; any sufficiently large
 argument will restore normally display.
 
 @node Selective Display

@@ -53,6 +53,7 @@ in a program are usually indented.  (@xref{Indentation}.)
 @node Choosing Modes,,Major Modes,Major Modes
 @section How Major Modes are Chosen
 
+@cindex choosing a major mode
   You can select a major mode explicitly for the current buffer, but
 most of the time Emacs determines which mode to use based on the file
 name or on special text in the file.

@@ -4,6 +4,7 @@
 @node Mark, Killing, Help, Top
 @chapter The Mark and the Region
 @cindex mark
+@cindex setting a mark
 @cindex region
 
   There are many Emacs commands which operate on an arbitrary contiguous
@@ -160,6 +161,7 @@ use.  @xref{Windows}.
 @node Using Region
 @section Operating on the Region
 
+@cindex operations on a marked region
   Once you have set up a region and the mark is active, you can do many
 things to the text in it:
 
@@ -188,6 +190,7 @@ region have the word @code{region} in their names.
 @node Marking Objects
 @section Commands to Mark Textual Objects
 
+@cindex marking sections of text
   Here are the commands for placing point and the mark around a textual
 object such as a word, list, paragraph or page.
 

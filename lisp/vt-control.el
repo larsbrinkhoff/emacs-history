@@ -22,8 +22,6 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;;; Revision: $Id: vt-control.el,v 1.2 1993/08/04 08:20:00 rms Exp $
-
 ;;; Commentary:
 
 ;;  The functions contained in this file send various VT control codes
@@ -54,7 +52,7 @@
 
 ;;;  Revision Information
 
-(defconst vt-revision "$Revision: 1.2 $"
+(defconst vt-revision "$Revision: 1.3 $"
   "Revision number of vt-control.")
 
 

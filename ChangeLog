@@ -1,3 +1,42 @@
+Sat Aug 14 01:31:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.19 released.
+
+	* configure.in (i386-*-sunos4): Assume Sunos 4.0.
+
+Fri Aug 13 18:17:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Check for XScreenNumberOfScreen.
+
+Thu Aug 12 01:01:44 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Add * to end of all configuration alternatives.
+	(m68*-sony-newsos3*): New alternative.
+
+Wed Aug 11 00:12:45 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist: Include getdate.c in distribution.
+
+	* configure.in: For --help, use $PAGER if it is set.
+	(LIB_X11_LIB): Default to -lX11.
+	(mips-sgi-irix5.*): New alternative.
+
+	* Makefile.in (do-install): Install info/gnus* and info/sc*.
+
+	* configure.in (m68*-hp-hpux*, hppa*-hp-hpux*):
+	Recognize *.B8.* as hpux version 8. 
+	(m68*-tektronix-bsd*): Fix typo in tek4300.
+	(AC_HAVE_FUNCS): Add ftime.
+
+Tue Aug 10 17:30:07 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (m88k-tektronix-sysv3*): Added the missing *.
+	Use tekxd88, not tekXD88.
+
+Tue Aug 10 14:16:57 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in: Check for -lm.  Then can check for frexp and logb.
+
 Sun Aug  8 13:42:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.18 released.

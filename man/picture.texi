@@ -4,6 +4,7 @@
 @node Picture, Sending Mail, Abbrevs, Top
 @chapter Editing Pictures
 @cindex pictures
+@cindex making pictures out of text characters
 @findex edit-picture
 
   If you want to create a picture made out of text characters (for example,
@@ -60,6 +61,8 @@ arguments as their normal equivalents do.
 @findex picture-backward-column
 @findex picture-move-down
 @findex picture-move-up
+@cindex editing in Picture mode
+
   Most keys do the same thing in Picture mode that they usually do, but
 do it in a quarter-plane style.  For example, @kbd{C-f} is rebound to
 run @code{picture-forward-column}, a command which moves point one
@@ -203,6 +206,7 @@ together with @key{TAB}, can get the effect of context-based tabbing.  But
 @node Rectangles in Picture,, Tabs in Picture, Picture
 @section Picture Mode Rectangle Commands
 @cindex rectangles and Picture mode
+@cindex Picture mode and rectangles
 
   Picture mode defines commands for working on rectangular pieces of the
 text in ways that fit with the quarter-plane model.  The standard rectangle

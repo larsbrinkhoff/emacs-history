@@ -1047,6 +1047,17 @@ then, @code{emacsclient} blocks only the subshell under Emacs; you can
 still use Emacs to edit the file.
 @end itemize
 
+@vindex server-temp-file-regexp
+  Some programs write temporary files for you to edit.  After you edit
+the temporary file, the program reads it back and deletes it.  If the
+Emacs server is later asked to edit the same file name, it should assume
+this has nothing to do with the previous occasion for that file name.
+The server accomplishes this by killing the temporary file's buffer when
+you finish with the file.  Use the variable
+@code{server-temp-file-regexp} to specify which files are temporary in
+this sense; its value should be a regular expression that matches file
+names that are temporary.
+
 @node Recursive Edit, Dissociated Press, Emacs Server, Top
 @section Recursive Editing Levels
 @cindex recursive editing level
@@ -1210,6 +1221,7 @@ a bigger sort of puzzle.
 
 @node Emulation, Customization, Amusements, Top
 @section Emulation
+@cindex emulating other editors
 @cindex other editors
 @cindex EDT
 @cindex vi

@@ -517,6 +517,7 @@ including the local variables list if any.  @xref{Choosing Modes}.
 @node Keyboard Macros
 @section Keyboard Macros
 
+@cindex defining keyboard macros
 @cindex keyboard macro
   A @dfn{keyboard macro} is a command defined by the user to abbreviate a
 sequence of keys.  For example, if you discover that you are about to type
@@ -626,6 +627,7 @@ as part of the process.
 @node Save Kbd Macro
 @subsection Naming and Saving Keyboard Macros
 
+@cindex saving keyboard macros
 @findex name-last-kbd-macro
   If you wish to save a keyboard macro for longer than until you define the
 next one, you must give it a name using @kbd{M-x name-last-kbd-macro}.
@@ -1129,6 +1131,7 @@ how to make @kbd{Hyper-Meta-@key{RIGHT}} move forward a word:
 @node Mouse Buttons
 @subsection Rebinding Mouse Buttons
 @cindex mouse button events
+@cindex rebinding mouse buttons
 @cindex click events
 @cindex drag events
 @cindex down events

@@ -1117,13 +1117,13 @@ Bowditch to @file{rcs2log} on 8 May 1992 with log text @samp{Ignore log
 messages that start with `#'.}.  Then @kbd{C-x v a} visits
 @file{ChangeLog} and inserts text like this:
 
-@example
+@smallexample
 @group
 Fri May  8 21:45:00 1992  Nathaniel Bowditch  (nat@@apn.org)
 
         * rcs2log: Ignore log messages that start with `#'.
 @end group
-@end example
+@end smallexample
 
 @noindent
 You can then edit the new change log entry further as you wish.
@@ -1135,13 +1135,13 @@ if the text of the log entry starts with @w{@samp{(@var{functionname}):
 @samp{(vc-do-command): Check call-process status.}, then the text in
 @file{ChangeLog} looks like this:
 
-@example
+@smallexample
 @group
 Wed May  6 10:53:00 1992  Nathaniel Bowditch  (nat@@apn.org)
 
         * vc.el (vc-do-command): Check call-process status.
 @end group
-@end example
+@end smallexample
 
   When @kbd{C-x v a} adds several change log entries at once, it groups
 related log entries together if they all are checked in by the same
@@ -1161,7 +1161,7 @@ Don't call expand-file-name.
 
   They appear like this in @file{ChangeLog}:
 
-@example
+@smallexample
 @group
 Wed Apr  1 08:57:59 1992  Nathaniel Bowditch  (nat@@apn.org)
 
@@ -1169,7 +1169,7 @@ Wed Apr  1 08:57:59 1992  Nathaniel Bowditch  (nat@@apn.org)
 
         * vc.el, vc-hooks.el: Don't call expand-file-name.
 @end group
-@end example
+@end smallexample
 
   Normally, @kbd{C-x v a} separates log entries by a blank line, but you
 can mark several related log entries to be clumped together (without an
@@ -1190,14 +1190,14 @@ entries are:
 @noindent
 Then the text in @file{ChangeLog} looks like this:
 
-@example
+@smallexample
 @group
 Wed Apr  1 08:57:59 1992  Nathaniel Bowditch  (nat@@apn.org)
 
         * vc.texinfo: Fix expansion typos.
         * vc.el, vc-hooks.el: Don't call expand-file-name.
 @end group
-@end example
+@end smallexample
 
   A log entry whose text begins with @samp{#} is not copied to
 @file{ChangeLog}.  For example, if you merely fix some misspellings in

@@ -1249,7 +1249,7 @@ With argument, insert value in current buffer after the form."
   ;; buffer --> output-buffer, or buffer --> eval form, return nil
   (let (outbuffer)
     (let (;; Prevent truncation of flonums and lists as we read and print them
-	  (float-output-format "%.20e")
+	  (float-output-format nil)
 	  (case-fold-search nil)
 	  (print-length nil)
 	  ;; Simulate entry to byte-compile-top-level
@@ -2155,7 +2155,6 @@ If FORM is a lambda or a macro, byte-compile it as a function."
 (byte-defop-compiler19 buffer-substring	2)
 (byte-defop-compiler19 delete-region	2)
 (byte-defop-compiler19 narrow-to-region	2)
-(byte-defop-compiler19 (mod byte-rem)	2)
 (byte-defop-compiler19 (% byte-rem)	2)
 (byte-defop-compiler aset		3)
 
@@ -3049,7 +3048,6 @@ For example, invoke `emacs -batch -f batch-byte-recompile-directory .'."
   (kill-emacs 0))
 
 
-(make-obsolete 'mod '%)
 (make-obsolete 'dot 'point)
 (make-obsolete 'dot-max 'point-max)
 (make-obsolete 'dot-min 'point-min)

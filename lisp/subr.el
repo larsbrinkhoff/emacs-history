@@ -419,13 +419,6 @@ as returned by the `event-start' and `event-end' functions."
 (defalias 'eval-current-buffer 'eval-buffer)
 (defalias 'compiled-function-p 'byte-code-function-p)
 
-;;; This name isn't mentioned in the manual, and we've been hoping to
-;;; phase it out, but there's still a lot of code out there, even for
-;;; Emacs 18.59, which uses mod.  I'm going to let the byte compiler's
-;;; make-obsolete function to poke people a little more, and leave the
-;;; `mod' name around for a while longer.
-(defalias 'mod '%)
-
 ;; Some programs still use this as a function.
 (defun baud-rate ()
   "Obsolete function returning the value of the `baud-rate' variable.
@@ -573,7 +566,17 @@ If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
 	    ;; defeat file locking... don't try this at home, kids!
 	    (setq buffer-file-name nil)
 	    (insert-before-markers string)
-	    (setq insert-end (point)))
+	    (setq insert-end (point))
+	    ;; If the message end is off screen, recenter now.
+	    (if (> (window-end) insert-end)
+		(recenter (/ (window-height) 2)))
+	    ;; If that pushed message start off the screen,
+	    ;; scroll to start it at the top of the screen.
+	    (move-to-window-line 0)
+	    (if (> (point) pos)
+		(progn
+		  (goto-char pos)
+		  (recenter 0))))
 	  (message (or message "Type %s to continue editing.")
 		   (single-key-description exit-char))
 	  (let ((char (read-event)))

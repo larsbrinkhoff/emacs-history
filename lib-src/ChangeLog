@@ -1,3 +1,22 @@
+Sat Aug 14 00:23:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.19 released.
+
+Thu Aug 12 18:23:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (make-path): Dep on config.h.
+
+Wed Aug 11 16:54:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* b2m.c (TRUE, FALSE): Don't define if already defined.
+
+Mon Aug  9 22:06:00 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log (awkscript):
+	Some sites put comma-separated junk after the fullname.
+	Remove it, but leave "Bill Gates, Jr" alone.
+	Remove the junk from fullnames like "0000-Admin(0000)".
+
 Sun Aug  8 01:15:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.18 released.

@@ -79,6 +79,7 @@ so common in Dired that it deserves to be easy to type.)  @key{DEL}
 @node Dired Deletion
 @section Deleting Files with Dired
 @cindex flagging files (in Dired)
+@cindex deleting files (in Dired)
 
   The primary use of Dired is to @dfn{flag} files for deletion and then
 delete the files previously flagged.

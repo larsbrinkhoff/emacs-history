@@ -133,7 +133,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /*
  * if we use X11, libX11.a has these...
  */
-#ifdef HAVE_X_WINDOWS
 # undef LIB_X11_LIB
 # define LIB_X11_LIB -lX11
 # undef LIBX11_SYSTEM
@@ -145,14 +144,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  * we must have INET loaded so we have sockets
  */
 # define HAVE_SOCKETS
-#endif /* HAVE_X_WINDOWS */
 
 /*
  * useful if you have INET loaded
  */
-#ifdef HAVE_SOCKETS
 # define LIBS_MACHINE -linet
-#endif
 
 
 #if (defined(ncl_mr) || defined(ncl_el)) && !defined (NBPC)
@@ -182,7 +178,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  * to start a sub-shell rather than suspend-emacs,
  * un-comment out the next line.
  */
-# undef SIGTSTP /* make suspend-emacs spawn a sub-shell */
+/* # undef SIGTSTP /* make suspend-emacs spawn a sub-shell */
 # ifdef NOMULTIPLEJOBS
 #   undef NOMULTIPLEJOBS
 # endif
@@ -226,6 +222,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* we have termios */
 #undef HAVE_TERMIO
 #define HAVE_TERMIOS
+#define HAVE_TCATTR
 
 /* we also have this */
 #define HAVE_PTYS
@@ -239,6 +236,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    enters in an infinite loop. Avoid calling it  */
 #define F_SETOWN_BUG
 
-/* end of dpx2.h */
+/* system closedir sometimes complains about wrong descriptor
+   for no apparent reasons. Use the provided closedir in sysdep.c instead */
+#ifdef HAVE_CLOSEDIR
+#undef HAVE_CLOSEDIR
+#endif
+
+/* Send signals to subprocesses by "typing" signal chars at them.  */
+#define SIGNALS_VIA_CHARACTERS
+
+ /* end of dpx2.h */
 
 

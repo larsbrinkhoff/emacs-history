@@ -27,8 +27,8 @@ one buffer and yank it in another buffer.
 @c ??? Should be backward-delete-char
 @findex delete-backward-char
 
-@cindex killing
-@cindex cutting
+@cindex killing text
+@cindex cutting text
 @cindex deletion
 @kindex C-d
 @kindex DEL
@@ -254,6 +254,7 @@ alter the undo history and does not temporarily change the screen.
 @node Appending Kills
 @subsection Appending Kills
 
+@cindex appending kills in the ring
 @cindex television
   Normally, each kill command pushes a new entry onto the kill ring.
 However, two or more kill commands in a row combine their text into a
@@ -305,6 +306,7 @@ accumulate them to be yanked back in one place.@refill
 @node Earlier Kills
 @subsection Yanking Earlier Kills
 
+@cindex yanking previous kills
 @kindex M-y
 @findex yank-pop
   To recover killed text that is no longer the most recent kill, use the
@@ -367,6 +369,7 @@ the command @kbd{C-h v kill-ring}.
 @findex copy-to-buffer
 @findex append-to-file
 
+@cindex accumulating scattered text
   Usually we copy or move text by killing it and yanking it, but there
 are other methods convenient for copying one block of text in many
 places, or for copying many scattered blocks of text into one place.  To
@@ -431,6 +434,7 @@ can lead to losing some of your editing.
 @section Rectangles
 @cindex rectangle
 @cindex columns (and rectangles)
+@cindex killing rectangular areas of text
 
   The rectangle commands operate on rectangular areas of the text: all
 the characters between a certain pair of columns, in a certain range of

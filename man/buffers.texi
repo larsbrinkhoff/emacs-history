@@ -90,6 +90,7 @@ also be used to switch buffers.  @xref{Visiting}.
 List the existing buffers (@code{list-buffers}).
 @end table
 
+@cindex listing current buffers
 @kindex C-x C-b
 @findex list-buffers
   To print a list of all the buffers that exist, type @kbd{C-x C-b}.  Each
@@ -184,6 +185,7 @@ Text}.@refill
 @node Kill Buffer
 @section Killing Buffers
 
+@cindex killing buffers
   If you continue an Emacs session for a while, you may accumulate a
 large number of buffers.  You may then find it convenient to @dfn{kill}
 the buffers you no longer need.  On most operating systems, killing a

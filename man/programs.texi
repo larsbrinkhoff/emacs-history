@@ -329,7 +329,7 @@ it mandates the convention described above.
 
 @node Program Indent
 @section Indentation for Programs
-@cindex indentation
+@cindex indentation for programs
 
   The best way to keep a program properly indented is to use Emacs to
 re-indent it as you change it.  Emacs has commands to indent properly
@@ -1351,6 +1351,10 @@ sequentially by files.
 @item M-x next-file
 Visit the next file in the selected tag table.
 @end table
+
+@iftex
+@break
+@end iftex
 
 @node List Tags
 @subsection Tag Table Inquiries

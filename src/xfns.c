@@ -396,6 +396,18 @@ x_set_frame_parameters (f, alist)
 	}
     }
 
+  /* Don't die if just one of these was set.  */
+  if (EQ (left, Qunbound))
+    XSET (left, Lisp_Int, f->display.x->left_pos);
+  if (EQ (top, Qunbound))
+    XSET (top, Lisp_Int, f->display.x->top_pos);
+
+  /* Don't die if just one of these was set.  */
+  if (EQ (width, Qunbound))
+    XSET (width, Lisp_Int, FRAME_WIDTH (f));
+  if (EQ (height, Qunbound))
+    XSET (height, Lisp_Int, FRAME_HEIGHT (f));
+
   /* Don't set these parameters these unless they've been explicitly
      specified.  The window might be mapped or resized while we're in
      this function, and we don't want to override that unless the lisp
@@ -408,6 +420,7 @@ x_set_frame_parameters (f, alist)
     Lisp_Object frame;
 
     XSET (frame, Lisp_Frame, f);
+
     if ((NUMBERP (width) && XINT (width) != FRAME_WIDTH (f))
 	|| (NUMBERP (height) && XINT (height) != FRAME_HEIGHT (f)))
       Fset_frame_size (frame, width, height);
@@ -1261,7 +1274,7 @@ The defaults are specified in the file `~/.Xdefaults'.")
 /* Types we might convert a resource string into.  */
 enum resource_types
   {
-    number, boolean, string, symbol,
+    number, boolean, string, symbol
   };
 
 /* Return the value of parameter PARAM.
@@ -1705,7 +1718,7 @@ be shared by the new frame.")
 {
 #ifdef HAVE_X11
   struct frame *f;
-  Lisp_Object frame, tem;
+  Lisp_Object frame, tem, tem0, tem1;
   Lisp_Object name;
   int minibuffer_only = 0;
   long window_prompting = 0;
@@ -1848,8 +1861,10 @@ be shared by the new frame.")
   x_default_parameter (f, parms, Qmenu_bar_lines, make_number (0),
 		       "menuBarLines", "MenuBarLines", number);
 
+  tem0 = x_get_arg (parms, Qtop, 0, 0, number);
+  tem1 = x_get_arg (parms, Qleft, 0, 0, number);
   BLOCK_INPUT;
-  x_wm_set_size_hint (f, window_prompting);
+  x_wm_set_size_hint (f, window_prompting, XINT (tem0), XINT (tem1));
   UNBLOCK_INPUT;
 
   tem = x_get_arg (parms, Qunsplittable, 0, 0, boolean);
@@ -3481,6 +3496,24 @@ See the documentation of `x-rebind-key' for more information.")
 #endif /* 0 */
 
 #ifdef HAVE_X11
+
+#ifndef HAVE_XSCREENNUMBEROFSCREEN
+int
+XScreenNumberOfScreen (scr)
+    register Screen *scr;
+{
+  register Display *dpy = scr->display;
+  register Screen *dpyscr = dpy->screens;
+  register int i;
+
+  for (i = 0; i < dpy->nscreens; i++, dpyscr++)
+    if (scr == dpyscr)
+      return i;
+
+  return -1;
+}
+#endif /* not HAVE_XSCREENNUMBEROFSCREEN */
+
 Visual *
 select_visual (screen, depth)
      Screen *screen;
