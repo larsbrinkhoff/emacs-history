@@ -1,12 +1,12 @@
 /* movemail foo bar -- move file foo to file bar,
    locking file foo the way /bin/mail respects.
-   Copyright (C) 1986, 1992 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -18,11 +18,11 @@ You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-/* Important notice: defining MAIL_USE_FLOCK *will cause loss of mail*
-   if you do it on a system that does not normally use flock as its way of
-   interlocking access to inbox files.  The setting of MAIL_USE_FLOCK
-   *must agree* with the system's own conventions.
-   It is not a choice that is up to you.
+/* Important notice: defining MAIL_USE_FLOCK or MAIL_USE_LOCKF *will
+   cause loss of mail* if you do it on a system that does not normally
+   use flock as its way of interlocking access to inbox files.  The
+   setting of MAIL_USE_FLOCK and MAIL_USE_LOCKF *must agree* with the
+   system's own conventions.  It is not a choice that is up to you.
 
    So, if your system uses lock files rather than flock, then the only way
    you can get proper operation is to enable movemail to write lockfiles there.
@@ -54,6 +54,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <errno.h>
 #define NO_SHORTNAMES   /* Tell config not to load remap.h */
 #include <../src/config.h>
+#include <../src/syswait.h>
+
+#ifdef MSDOS
+#undef access
+#endif /* MSDOS */
 
 #ifdef USG
 #include <fcntl.h>
@@ -66,8 +71,20 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 #endif /* USG */
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef XENIX
 #include <sys/locking.h>
+#endif
+
+#ifdef MAIL_USE_LOCKF
+#define MAIL_USE_SYSTEM_LOCK
+#endif
+
+#ifdef MAIL_USE_FLOCK
+#define MAIL_USE_SYSTEM_LOCK
 #endif
 
 #ifdef MAIL_USE_MMDF
@@ -80,8 +97,6 @@ extern int lk_open (), lk_close ();
 #undef write
 #undef close
 
-char *malloc ();
-char *strcpy ();
 char *concat ();
 char *xmalloc ();
 #ifndef errno
@@ -98,15 +113,16 @@ main (argc, argv)
   char *inname, *outname;
   int indesc, outdesc;
   int nread;
+  WAITTYPE status;
 
-#ifndef MAIL_USE_FLOCK
+#ifndef MAIL_USE_SYSTEM_LOCK
   struct stat st;
   long now;
   int tem;
   char *lockname, *p;
   char *tempname;
   int desc;
-#endif /* not MAIL_USE_FLOCK */
+#endif /* not MAIL_USE_SYSTEM_LOCK */
 
   delete_lockname = 0;
 
@@ -126,7 +142,7 @@ main (argc, argv)
 
   /* Also check that outname's directory is writeable to the real uid.  */
   {
-    char *buf = (char *) malloc (strlen (outname) + 1);
+    char *buf = (char *) xmalloc (strlen (outname) + 1);
     char *p, q;
     strcpy (buf, outname);
     p = buf + strlen (buf);
@@ -160,7 +176,7 @@ main (argc, argv)
     pfatal_with_name (inname);
 
 #ifndef MAIL_USE_MMDF
-#ifndef MAIL_USE_FLOCK
+#ifndef MAIL_USE_SYSTEM_LOCK
   /* Use a lock file named /usr/spool/mail/$USER.lock:
      If it exists, the mail file is locked.  */
   /* Note: this locking mechanism is *required* by the mailer
@@ -179,13 +195,14 @@ main (argc, argv)
      which uses lock files for this purpose.  Some systems use other methods.
 
      If your system uses the `flock' system call for mail locking,
-     define MAIL_USE_FLOCK in config.h or the s-*.h file
+     define MAIL_USE_SYSTEM_LOCK in config.h or the s-*.h file
      and recompile movemail.  If the s- file for your system
-     should define MAIL_USE_FLOCK but does not, send a bug report
+     should define MAIL_USE_SYSTEM_LOCK but does not, send a bug report
      to bug-gnu-emacs@prep.ai.mit.edu so we can fix it.  */
 
   lockname = concat (inname, ".lock", "");
-  tempname = strcpy (xmalloc (strlen (inname)+1), inname);
+  tempname = (char *) xmalloc (strlen (inname) + strlen ("EXXXXXX") + 1);
+  strcpy (tempname, inname);
   p = tempname + strlen (tempname);
   while (p != tempname && p[-1] != '/')
     p--;
@@ -198,9 +215,9 @@ main (argc, argv)
     {
       /* Create the lock file, but not under the lock file name.  */
       /* Give up if cannot do that.  */
-      desc = open (tempname, O_WRONLY | O_CREAT, 0666);
+      desc = open (tempname, O_WRONLY | O_CREAT | O_EXCL, 0666);
       if (desc < 0)
-        pfatal_with_name ("lock file--see source file lib-src/movemail.c");
+	pfatal_with_name ("lock file--see source file lib-src/movemail.c");
       close (desc);
 
       tem = link (tempname, lockname);
@@ -219,92 +236,113 @@ main (argc, argv)
     }
 
   delete_lockname = lockname;
-#endif /* not MAIL_USE_FLOCK */
+#endif /* not MAIL_USE_SYSTEM_LOCK */
+#endif /* not MAIL_USE_MMDF */
 
-#ifdef MAIL_USE_FLOCK
-  indesc = open (inname, O_RDWR);
-#else /* if not MAIL_USE_FLOCK */
-  indesc = open (inname, O_RDONLY);
-#endif /* not MAIL_USE_FLOCK */
-#else /* MAIL_USE_MMDF */
-  indesc = lk_open (inname, O_RDONLY, 0, 0, 10);
+  if (fork () == 0)
+    {
+      setuid (getuid ());
+
+#ifndef MAIL_USE_MMDF
+#ifdef MAIL_USE_SYSTEM_LOCK
+      indesc = open (inname, O_RDWR);
+#else  /* if not MAIL_USE_SYSTEM_LOCK */
+      indesc = open (inname, O_RDONLY);
+#endif /* not MAIL_USE_SYSTEM_LOCK */
+#else  /* MAIL_USE_MMDF */
+      indesc = lk_open (inname, O_RDONLY, 0, 0, 10);
 #endif /* MAIL_USE_MMDF */
 
-  if (indesc < 0)
-    pfatal_with_name (inname);
+      if (indesc < 0)
+	pfatal_with_name (inname);
 
 #if defined (BSD) || defined (XENIX)
-  /* In case movemail is setuid to root, make sure the user can
-     read the output file.  */
-  /* This is desirable for all systems
-     but I don't want to assume all have the umask system call */
-  umask (umask (0) & 0333);
+      /* In case movemail is setuid to root, make sure the user can
+	 read the output file.  */
+      /* This is desirable for all systems
+	 but I don't want to assume all have the umask system call */
+      umask (umask (0) & 0333);
 #endif /* BSD or Xenix */
-  outdesc = open (outname, O_WRONLY | O_CREAT | O_EXCL, 0666);
-  if (outdesc < 0)
-    pfatal_with_name (outname);
-#ifdef MAIL_USE_FLOCK
+      outdesc = open (outname, O_WRONLY | O_CREAT | O_EXCL, 0666);
+      if (outdesc < 0)
+	pfatal_with_name (outname);
+#ifdef MAIL_USE_SYSTEM_LOCK
+#ifdef MAIL_USE_LOCKF
+      if (lockf (indesc, F_LOCK, 0) < 0) pfatal_with_name (inname);
+#else /* not MAIL_USE_LOCKF */
 #ifdef XENIX
-  if (locking (indesc, LK_RLCK, 0L) < 0) pfatal_with_name (inname);
+      if (locking (indesc, LK_RLCK, 0L) < 0) pfatal_with_name (inname);
 #else
-  if (flock (indesc, LOCK_EX) < 0) pfatal_with_name (inname);
+      if (flock (indesc, LOCK_EX) < 0) pfatal_with_name (inname);
 #endif
-#endif /* MAIL_USE_FLOCK */
+#endif /* not MAIL_USE_LOCKF */
+#endif /* MAIL_USE_SYSTEM_LOCK */
 
-  {
-    char buf[1024];
-
-    while (1)
       {
-	nread = read (indesc, buf, sizeof buf);
-	if (nread != write (outdesc, buf, nread))
+	char buf[1024];
+
+	while (1)
 	  {
-	    int saved_errno = errno;
-	    unlink (outname);
-	    errno = saved_errno;
-	    pfatal_with_name (outname);
+	    nread = read (indesc, buf, sizeof buf);
+	    if (nread != write (outdesc, buf, nread))
+	      {
+		int saved_errno = errno;
+		unlink (outname);
+		errno = saved_errno;
+		pfatal_with_name (outname);
+	      }
+	    if (nread < sizeof buf)
+	      break;
 	  }
-	if (nread < sizeof buf)
-	  break;
       }
-  }
 
 #ifdef BSD
-  if (fsync (outdesc) < 0)
-    pfatal_and_delete (outname);
+      if (fsync (outdesc) < 0)
+	pfatal_and_delete (outname);
 #endif
 
-  /* Check to make sure no errors before we zap the inbox.  */
-  if (close (outdesc) != 0)
-    pfatal_and_delete (outname);
+      /* Check to make sure no errors before we zap the inbox.  */
+      if (close (outdesc) != 0)
+	pfatal_and_delete (outname);
 
-#ifdef MAIL_USE_FLOCK
+#ifdef MAIL_USE_SYSTEM_LOCK
 #if defined (STRIDE) || defined (XENIX)
-  /* Stride, xenix have file locking, but no ftruncate.  This mess will do. */
-  close (open (inname, O_CREAT | O_TRUNC | O_RDWR, 0666));
+      /* Stride, xenix have file locking, but no ftruncate.  This mess will do. */
+      close (open (inname, O_CREAT | O_TRUNC | O_RDWR, 0666));
 #else
-  ftruncate (indesc, 0L);
+      ftruncate (indesc, 0L);
 #endif /* STRIDE or XENIX */
-#endif /* MAIL_USE_FLOCK */
+#endif /* MAIL_USE_SYSTEM_LOCK */
 
 #ifdef MAIL_USE_MMDF
-  lk_close (indesc, 0, 0, 0);
+      lk_close (indesc, 0, 0, 0);
 #else
-  close (indesc);
+      close (indesc);
 #endif
 
-#ifndef MAIL_USE_FLOCK
-  /* Delete the input file; if we can't, at least get rid of its contents.  */
+#ifndef MAIL_USE_SYSTEM_LOCK
+      /* Delete the input file; if we can't, at least get rid of its
+	 contents.  */
 #ifdef MAIL_UNLINK_SPOOL
-  /* This is generally bad to do, because it destroys the permissions
-     that were set on the file.  Better to just empty the file.  */
-  if (unlink (inname) < 0 && errno != ENOENT)
+      /* This is generally bad to do, because it destroys the permissions
+	 that were set on the file.  Better to just empty the file.  */
+      if (unlink (inname) < 0 && errno != ENOENT)
 #endif /* MAIL_UNLINK_SPOOL */
-    creat (inname, 0600);
-#ifndef MAIL_USE_MMDF
+	creat (inname, 0600);
+#endif /* not MAIL_USE_SYSTEM_LOCK */
+
+      exit (0);
+    }
+
+  wait (&status);
+  if (!WIFEXITED (status))
+    exit (1);
+  else if (WRETCODE (status) != 0)
+    exit (WRETCODE (status));
+
+#if !defined (MAIL_USE_MMDF) && !defined (MAIL_USE_SYSTEM_LOCK)
   unlink (lockname);
-#endif /* not MAIL_USE_MMDF */
-#endif /* not MAIL_USE_FLOCK */
+#endif /* not MAIL_USE_MMDF and not MAIL_USE_SYSTEM_LOCK */
   exit (0);
 }
 
@@ -332,29 +370,22 @@ error (s1, s2, s3)
 pfatal_with_name (name)
      char *name;
 {
-  extern int errno, sys_nerr;
-  extern char *sys_errlist[];
+  extern int errno;
+  extern char *strerror ();
   char *s;
 
-  if (errno < sys_nerr)
-    s = concat ("", sys_errlist[errno], " for %s");
-  else
-    s = "cannot open %s";
+  s = concat ("", strerror (errno), " for %s");
   fatal (s, name);
 }
 
 pfatal_and_delete (name)
      char *name;
 {
-  extern int errno, sys_nerr;
-  extern char *sys_errlist[];
+  extern int errno;
+  extern char *strerror ();
   char *s;
 
-  if (errno < sys_nerr)
-    s = concat ("", sys_errlist[errno], " for %s");
-  else
-    s = "cannot open %s";
-
+  s = concat ("", strerror (errno), " for %s");
   unlink (name);
   fatal (s, name);
 }
@@ -382,7 +413,7 @@ char *
 xmalloc (size)
      unsigned size;
 {
-  char *result = malloc (size);
+  char *result = (char *) malloc (size);
   if (!result)
     fatal ("virtual memory exhausted", 0);
   return result;
@@ -716,15 +747,9 @@ multiline (buf, n, f)
 char *
 get_errmsg ()
 {
-  extern int errno, sys_nerr;
-  extern char *sys_errlist[];
-  char *s;
-
-  if (errno < sys_nerr)
-    s = sys_errlist[errno];
-  else
-    s = "unknown error";
-  return (s);
+  extern int errno;
+  extern char *strerror ();
+  return strerror (errno);
 }
 
 putline (buf, err, f)
@@ -763,3 +788,18 @@ mbx_delimit_end (mbf)
 }
 
 #endif /* MAIL_USE_POP */
+
+#ifndef HAVE_STRERROR
+char *
+strerror (errnum)
+     int errnum;
+{
+  extern char *sys_errlist[];
+  extern int sys_nerr;
+
+  if (errnum >= 0 && errnum < sys_nerr)
+    return sys_errlist[errnum];
+  return (char *) "Unknown error";
+}
+
+#endif /* ! HAVE_STRERROR */

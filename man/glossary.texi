@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Glossary, Key Index, Intro, Top
 @unnumbered Glossary
@@ -289,6 +289,25 @@ character typed.
 @item Expunging
 Expunging a mail file or Dired buffer means really discarding the
 messages or files you have previously flagged for deletion.
+
+@item File Name
+A file name is a name that refers to a file.  File names may be relative
+or absolute; the meaning of a relative file name depends on the current
+directory, but an absolute file name refers to the same file regardless
+of which directory is current.  On GNU and Unix systems, an absolute
+file name starts with a slash (the root directory) or with @samp{~/} or
+@samp{~@var{user}/} (a home directory).
+
+Some people use the term ``pathname'' for file names, but we do not;
+we use the word ``path'' only in the term ``search path'' (q.v.).
+
+@item File Name Component
+A file name component names a file directly within a particular
+directory.  On GNU and Unix systems, a file name is a sequence of file
+name components, separated by slashes.  For example, @file{foo/bar} is a
+file name containing two components, @samp{foo} and @samp{bar}; it
+refers to the file named @samp{bar} in the directory named @samp{foo} in
+the current directory.
 
 @item Fill Prefix
 The fill prefix is a string that should be expected at the beginning
@@ -690,6 +709,11 @@ different part of the buffer.  @xref{Display,Scrolling}.
 @item Searching
 Searching means moving point to the next occurrence of a specified
 string.  @xref{Search}.
+
+@item Search Path
+A search path is a list of directory names, to be used for searching for
+files for certain purposes.  For example, the variable @code{load-path}
+holds a search path for finding Lisp library files.
 
 @item Selecting
 Selecting a buffer means making it the current (q.v.@:) buffer.

@@ -1,6 +1,6 @@
 ;;; sendmail.el --- mail sending commands for Emacs.
 
-;; Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -58,6 +58,7 @@ The headers are be delimited by a line which is `mail-header-separator'.")
 *Name of file to write all outgoing messages in, or nil for none.
 Do not use an rmail file here!  Instead, use its inbox file.")
 
+;;;###autoload
 (defvar mail-default-reply-to nil
   "*Address to insert as default Reply-to field of outgoing messages.")
 
@@ -124,6 +125,25 @@ If t, it means to insert the contents of the file `~/.signature'.")
   "*A string containing header lines, to be inserted in outgoing messages.
 It is inserted before you edit the message,
 so you can edit or delete these lines.")
+
+;; Note: could use /usr/ucb/mail instead of sendmail;
+;; options -t, and -v if not interactive.
+(defvar mail-mailer-swallows-blank-line
+  (if (and (string-match "sparc-sun-sunos\\(\\'\\|[^5]\\)" system-configuration)
+	   (let ((buffer (get-buffer-create " *temp*")))
+	     (unwind-protect
+		 (save-excursion
+		   (set-buffer buffer)
+		   (insert-file-contents "/etc/sendmail.cf")
+		   (goto-char (point-min))
+		   (let ((case-fold-search nil))
+		     (re-search-forward "^OR\\>" nil t)))
+	       (kill-buffer buffer))))
+      '(looking-at "[ \t]\\|[-a-zA-Z]+:"))
+  "Set this non-nil if the system's mailer runs the header and body together.
+\(This problem exists on Sunos 4 when sendmail is run in remote mode.)
+The value should be an expression to test whether the problem will
+actually occur.")
 
 (defvar mail-mode-syntax-table nil
   "Syntax table used while in mail mode.")
@@ -192,6 +212,7 @@ C-c C-s  mail-send (send the message)    C-c C-c  mail-send-and-exit
 C-c C-f  move to a header field (and create it if there isn't):
 	 C-c C-f C-t  move to To:	C-c C-f C-s  move to Subj:
 	 C-c C-f C-b  move to BCC:	C-c C-f C-c  move to CC:
+	 C-c C-f C-f  move to FCC:
 C-c C-t  move to message text.
 C-c C-y  mail-yank-original (insert current message, in Rmail).
 C-c C-q  mail-fill-yanked-message (fill what was yanked).
@@ -401,6 +422,11 @@ the user from the mailer."
 	    (goto-char (point-min))
 	    (if (re-search-forward "^Subject:[ \t]*\n" delimline t)
 		(replace-match ""))
+	    ;; Insert an extra newline if we need it to work around
+	    ;; Sun's bug that swallows newlines.
+	    (goto-char (1+ delimline))
+	    (if (eval mail-mailer-swallows-blank-line)
+		(newline))
 	    (if mail-interactive
 		(save-excursion
 		  (set-buffer errbuf)
@@ -522,10 +548,7 @@ the user from the mailer."
 		      (if max (narrow-to-region (point-min) max))))))
 	    ;; Else append to the file directly.
 	    (write-region
-	     ;; Include a blank line before if file already exists.
-
-	     (if (file-exists-p (car fcc-list)) (point-min) (1+ (point-min)))
-	     (point-max) (car fcc-list) t)))
+	     (1+ (point-min)) (point-max) (car fcc-list) t)))
 	(setq fcc-list (cdr fcc-list))))
     (kill-buffer tembuf)))
 
@@ -584,13 +607,13 @@ the user from the mailer."
       (progn (mail-position-on-field "to")
 	     (insert "\nBCC: "))))
 
-(defun mail-fcc ()
+(defun mail-fcc (folder)
   "Add a new FCC field, with file name completion."
-  (interactive)
+  (interactive "FFolder carbon copy: ")
   (expand-abbrev)
   (or (mail-position-on-field "fcc" t)	;Put new field after exiting FCC.
       (mail-position-on-field "to"))
-  (insert "\nFCC: " (read-file-name "Folder carbon copy: ")))
+  (insert "\nFCC: " folder))
 
 (defun mail-position-on-field (field &optional soft)
   (let (end
@@ -618,7 +641,8 @@ the user from the mailer."
   (search-forward (concat "\n" mail-header-separator "\n")))
 
 (defun mail-signature (atpoint)
-  "Sign letter with contents of `mail-signature-file'."
+  "Sign letter with contents of the file `~/.signature'.
+Prefix arg means put contents at point."
   (interactive "P")
   (save-excursion
     (or atpoint
@@ -627,7 +651,7 @@ the user from the mailer."
     (end-of-line)
     (or atpoint
 	(delete-region (point) (point-max)))
-    (insert "\n\n")
+    (insert "\n\n-- \n")
     (insert-file-contents (expand-file-name "~/.signature"))))
 
 (defun mail-fill-yanked-message (&optional justifyp)

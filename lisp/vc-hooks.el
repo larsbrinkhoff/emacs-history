@@ -1,6 +1,6 @@
 ;;; vc-hooks.el --- resident support for version-control
 
-;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Version: 5.3
@@ -36,7 +36,7 @@ when creating new masters.")
 
 (defvar vc-make-backup-files nil
   "*If non-nil, backups of registered files are made as with other files.
-If nil (the default), for files covered by version control don't get backups.")
+If nil (the default), files covered by version control don't get backups.")
 
 (defvar vc-rcs-status t
   "*If non-nil, revision and locks on RCS working file displayed in modeline.
@@ -73,14 +73,7 @@ Otherwise, not displayed.")
 (defun vc-registered (file)
   (let (handler handlers)
     (if (boundp 'file-name-handler-alist)
-	(save-match-data
-	  (setq handlers file-name-handler-alist)
-	  (while (and (consp handlers) (null handler))
-	    (if (and (consp (car handlers))
-		     (stringp (car (car handlers)))
-		     (string-match (car (car handlers)) file))
-		(setq handler (cdr (car handlers))))
-	    (setq handlers (cdr handlers)))))
+	(setq handler (find-file-name-handler file 'vc-registered)))
     (if handler
 	(funcall handler 'vc-registered file)
       ;; Search for a master corresponding to the given file
@@ -154,8 +147,14 @@ visiting FILE."
 	 (require 'vc)
 	 (not (string-equal (user-login-name) (vc-locking-user file)))
 	 (setq buffer-read-only t))
-    ;; force update of mode line
-    (set-buffer-modified-p (buffer-modified-p))
+    (and (null vc-type)
+	 (file-symlink-p file)
+	 (let ((link-type (vc-backend-deduce (file-symlink-p file))))
+	   (if link-type
+	       (message "Warning: symbolic link to %s-controlled source file"
+			link-type))))
+    (force-mode-line-update)
+    ;;(set-buffer-modified-p (buffer-modified-p))  ;;use this if Emacs 18
     vc-type))
 
 (defun vc-rcs-status (file)
@@ -246,8 +245,10 @@ visiting FILE."
       (vc-file-setprop buffer-file-name 'vc-backend nil))
   (if (and (vc-mode-line buffer-file-name) (not vc-make-backup-files))
       (progn
-	(make-local-variable 'make-backup-files)
-	(setq make-backup-files nil))))
+	;; Use this variable, not make-backup-files,
+	;; because this is for things that depend on the file name.
+	(make-local-variable 'backup-inhibited)
+	(setq backup-inhibited t))))
 
 (add-hook 'find-file-hooks 'vc-find-file-hook)
 

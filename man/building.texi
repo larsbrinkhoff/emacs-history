@@ -91,7 +91,6 @@ compilation, as only one can exist at any time.  However, @kbd{M-x
 compile} asks for confirmation before actually killing a compilation
 that is running.
 
-
 @findex compile-goto-error
   The @samp{*compilation*} buffer uses a special major mode, Compilation
 mode.  This mode provides the keys @key{SPC} and @key{DEL} to scroll by
@@ -145,6 +144,17 @@ how to do it:
 @example
 if ($?prompt) set prompt = ...
 @end example
+
+  Compilation Minor mode lets you parse error messages in any buffer,
+not just a normal compilation output buffer.  Type @kbd{M-x
+compilation-minor-mode} to enable the minor mode.  This defines the key
+@kbd{C-c C-c} to find the source code for the error message at point,
+just as in the Compilation major mode.  In an rlogin buffer
+(@pxref{Remote Host}), this automatically accesses remote source files
+by FTP (@pxref{File Names}).
+
+  The features of Compilation mode are also available in a minor mode
+called Compilation Minor mode.
 
 @node Debuggers
 @section Running Debuggers Under Emacs
@@ -241,6 +251,9 @@ history commands to repeat them.
 @node Commands of GUD
 @subsection Commands of GUD
 
+  The GUD interaction buffer uses a variant of Shell mode, so the
+commands of Shell mode are available (@pxref{Shell Mode}).
+
   GUD provides a command available in all buffers for setting
 breakpoints.  This command is defined globally because you need to use
 it in the source files' buffers.
@@ -252,12 +265,18 @@ Set a breakpoint on the line that point is on.
 @end table
 
 @kindex C-x C-a @r{(GUD)}
-  Here are the other commands provided by GUD.  The keys starting with
-@kbd{C-c} are available only in the GUD interaction buffer.  The
-bindings that start with @kbd{C-x C-a} are available in the GUD buffer
-and also in source files.
+  Here are the other special commands provided by GUD.  The keys
+starting with @kbd{C-c} are available only in the GUD interaction
+buffer.  The bindings that start with @kbd{C-x C-a} are available in the
+GUD buffer and also in source files.
 
 @table @kbd
+@item @key{TAB}
+@kindex @key{TAB} @r{(GUD)}
+@findex gud-gdb-complete-command
+With GDB, complete a symbol name (@code{gud-gdb-complete-command}).
+This key is available only in the GUD interaction buffer.
+
 @item C-c C-l
 @kindex C-c C-l @r{(GUD)}
 @itemx C-x C-a C-l
@@ -286,9 +305,9 @@ at full speed (@code{gud-next}).
 @findex gud-stepi
 Execute a single machine instruction (@code{gud-stepi}).
 
-@item C-c C-c
-@kindex C-c C-c @r{(GUD)}
-@itemx C-x C-a C-c
+@item C-c C-r
+@kindex C-c C-r @r{(GUD)}
+@itemx C-x C-a C-r
 @findex gud-cont
 Continue execution until the next breakpoint, or other event that would
 normally stop the program (@code{gud-cont}).
@@ -439,13 +458,13 @@ These subnodes of the chapter on editing programs describe the editing
 commands for working with Lisp programs, which are in fact available
 globally.
 
-* Lists::               Expressions with balanced parentheses.
-* List Commands::       The commands for working with list and sexps.
-* Defuns::              Each program is made up of separate functions.
-                          There are editing commands to operate on them.
-* Program Indent::      Adjusting indentation to show the nesting.
-* Matching::            Insertion of a close-delimiter flashes matching open.
-* Comments::            Inserting, killing, and aligning comments.
+* Lists::	      Expressions with balanced parentheses.
+* List Commands::     The commands for working with list and sexps.
+* Defuns::	      Each program is made up of separate functions.
+			There are editing commands to operate on them.
+* Program Indent::    Adjusting indentation to show the nesting.
+* Matching::	      Insertion of a close-delimiter flashes matching open.
+* Comments::	      Inserting, killing, and aligning comments.
 @end menu
 
 @node Lisp Libraries
@@ -647,19 +666,20 @@ process.
 
 @findex run-lisp
 @vindex inferior-lisp-program
-  To run an inferior Lisp process, type @kbd{M-x run-lisp}.  This runs
-the program named @code{lisp}, the same program you would run by typing
-@code{lisp} as a shell command, with both input and output going through
-an Emacs buffer named @samp{*lisp*}.  That is to say, any ``terminal
-output'' from Lisp will go into the buffer, advancing point, and any
-``terminal input'' for Lisp comes from text in the buffer.  (You can
-change the name of the Lisp executable file by setting the variable
+@kindex C-x C-z
+  To run an inferior Lisp process, type @kbd{C-c C-z} (@code{run-lisp}).
+This runs the program named @code{lisp}, the same program you would run
+by typing @code{lisp} as a shell command, with both input and output
+going through an Emacs buffer named @samp{*lisp*}.  That is to say, any
+``terminal output'' from Lisp will go into the buffer, advancing point,
+and any ``terminal input'' for Lisp comes from text in the buffer.  (You
+can change the name of the Lisp executable file by setting the variable
 @code{inferior-lisp-program}.)
 
   To give input to Lisp, go to the end of the buffer and type the input,
 terminated by @key{RET}.  The @samp{*lisp*} buffer is in Inferior Lisp
-mode, which combines the special characteristics of Lisp mode and Shell
-mode (@pxref{Shell Mode}).@refill
+mode, which combines the special characteristics of Lisp mode with most
+of the features of Shell mode (@pxref{Shell Mode}).@refill
 
 @findex lisp-mode
   For the source files of programs to run in external Lisps, use Lisp

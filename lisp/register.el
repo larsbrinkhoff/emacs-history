@@ -1,6 +1,6 @@
 ;;; register.el --- register commands for Emacs.
 
-;; Copyright (C) 1985, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -93,6 +93,8 @@ delete any existing frames that the frame configuration doesn't mention.
      ((window-configuration-p val)
       (set-window-configuration val))
      ((markerp val)
+      (or (marker-buffer val)
+	  (error "That register's buffer no longer exists"))
       (switch-to-buffer (marker-buffer val))
       (goto-char val))
      ((and (consp val) (eq (car val) 'file))
@@ -144,10 +146,13 @@ REGISTER is a character."
 	  (princ val))
 
 	 ((markerp val)
-	  (princ "a buffer position:\nbuffer ")
-	  (princ (buffer-name (marker-buffer val)))
-	  (princ ", position ")
-	  (princ (+ 0 val)))
+	  (let ((buf (marker-buffer val)))
+	    (if (null buf)
+		(princ "a marker in no buffer")
+	      (princ "a buffer position:\nbuffer ")
+	      (princ (buffer-name buf))
+	      (princ ", position ")
+	      (princ (marker-position val)))))
 
 	 ((window-configuration-p val)
 	  (princ "a window configuration."))
@@ -183,13 +188,17 @@ Interactively, second arg is non-nil if prefix arg is supplied."
   (interactive "cInsert register: \nP")
   (push-mark)
   (let ((val (get-register char)))
-    (if (consp val)
-	(insert-rectangle val)
-      (if (stringp val)
-	  (insert val)
-	(if (or (integerp val) (markerp val))
-	    (princ (+ 0 val) (current-buffer))
-	  (error "Register does not contain text")))))
+    (cond
+     ((consp val)
+      (insert-rectangle val))
+     ((stringp val)
+      (insert val))
+     ((integerp val)
+      (princ val (current-buffer)))
+     ((and (markerp val) (marker-position val))
+      (princ (marker-position val) (current-buffer)))
+     (t
+      (error "Register does not contain text"))))
   (if (not arg) (exchange-point-and-mark)))
 
 (defun copy-to-register (char start end &optional delete-flag)

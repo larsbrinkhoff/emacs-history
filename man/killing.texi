@@ -48,11 +48,6 @@ that can destroy significant amounts of nontrivial data generally kill.
 The commands' names and individual descriptions use the words @samp{kill}
 and @samp{delete} to say which they do.
 
-  You can use kill commands in read-only buffers.  They don't actually
-change the buffer, and they beep to warn you of that, but they do copy
-the text you tried to kill into the kill ring, so you can yank it into
-other buffers.
-
 @menu
 * Deletion::            Commands for deleting small amounts of text and
                           blank areas.
@@ -192,6 +187,14 @@ search backward and kill text before point.
 sentences, with @kbd{C-x @key{DEL}} and @kbd{M-k}
 (@pxref{Sentences}).@refill
 
+  You can use kill commands in read-only buffers.  They don't actually
+change the buffer, and they beep to warn you of that, but they do copy
+the text you tried to kill into the kill ring, so you can yank it into
+other buffers.  Most of the kill commands move point across the text
+they copy in this way, so that successive kill commands add text to the
+most recent kill-ring entry just as they would if they were really
+killing the text.
+
 @node Yanking, Accumulating Text, Killing, Top
 @section Yanking
 @cindex moving text
@@ -218,9 +221,9 @@ Append next kill to last batch of killed text (@code{append-next-kill}).
 @end table
 
 @menu
-* Kill Ring::       Where killed text is stored.  Basic yanking.
-* Appending Kills:: Several kills in a row all yank together.
-* Earlier Kills::   Yanking something killed some time ago.
+* Kill Ring::		Where killed text is stored.  Basic yanking.
+* Appending Kills::	Several kills in a row all yank together.
+* Earlier Kills::	Yanking something killed some time ago.
 @end menu
 
 @node Kill Ring
@@ -280,7 +283,7 @@ This is a line @point{}of sample text.
 @noindent
 with point as shown.  If you type @kbd{M-d M-@key{DEL} M-d M-@key{DEL}},
 killing alternately forward and backward, you end up with @samp{a line
-of sample} as one entry in the kill ring, and @samp{This is text.} in
+of sample} as one entry in the kill ring, and @samp{This is@ @ text.} in
 the buffer.  (Note the double space, which you can clean up with
 @kbd{M-@key{SPC}} or @kbd{M-q}.)
 
@@ -461,6 +464,8 @@ a line.
 @item C-x r k
 Kill the text of the region-rectangle, saving its contents as the 
 ``last killed rectangle'' (@code{kill-rectangle}).
+@item C-x r d
+Delete the text of the region-rectangle (@code{delete-rectangle}).
 @item C-x r y
 Yank the last killed rectangle with its upper left corner at point
 (@code{yank-rectangle}).
@@ -481,13 +486,14 @@ Insert @var{string} on each line of the region-rectangle.
 inserting rectangles, and commands for blank rectangles.
 
 @kindex C-x r k
+@kindex C-x r d
 @findex kill-rectangle
 @findex delete-rectangle
   There are two ways to get rid of the text in a rectangle: you can
 discard the text (delete it) or save it as the ``last killed''
-rectangle.  The commands for these two ways are @kbd{M-x
-delete-rectangle} and @kbd{C-x r k} (@code{kill-rectangle}).  In either
-case, the portion of each line that falls inside the rectangle's
+rectangle.  The commands for these two ways are @kbd{C-x r d}
+(@code{delete-rectangle}) and @kbd{C-x r k} (@code{kill-rectangle}).  In
+either case, the portion of each line that falls inside the rectangle's
 boundaries is deleted, causing following text (if any) on the line to
 move left into the gap.
 

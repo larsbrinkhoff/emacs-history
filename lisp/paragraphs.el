@@ -1,6 +1,6 @@
 ;;; paragraphs.el --- paragraph and sentence parsing.
 
-;; Copyright (C) 1985, 86, 87, 1991 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 86, 87, 91, 94 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: wp
@@ -58,7 +58,7 @@ This is desirable in modes where blank lines are the paragraph delimiters.")
 
 (defun forward-paragraph (&optional arg)
   "Move forward to end of paragraph.
-With arg N, do it N times; negative arg -N means move forward N paragraphs.
+With arg N, do it N times; negative arg -N means move backward N paragraphs.
 
 A line which `paragraph-start' matches either separates paragraphs
 \(if `paragraph-separate' matches it also) or is the first line of a paragraph.
@@ -75,35 +75,42 @@ to which the end of the previous line belongs, or the end of the buffer."
 	      (concat paragraph-separate "\\|^"
 		      fill-prefix-regexp "[ \t]*$")
 	    paragraph-separate)))
-    (while (< arg 0)
+    (while (and (< arg 0) (not (bobp)))
       (if (and (not (looking-at paragraph-separate))
 	       (re-search-backward "^\n" (max (1- (point)) (point-min)) t))
 	  nil
+	;; Move back over paragraph-separating lines.
 	(forward-char -1) (beginning-of-line)
 	(while (and (not (bobp)) (looking-at paragraph-separate))
 	  (forward-line -1))
-	(end-of-line)
-	;; Search back for line that starts or separates paragraphs.
-	(if (if fill-prefix-regexp
-		;; There is a fill prefix; it overrides paragraph-start.
-		(progn
-		 (while (progn (beginning-of-line)
-			       (and (not (bobp))
-				    (not (looking-at paragraph-separate))
-				    (looking-at fill-prefix-regexp)))
-		   (forward-line -1))
-		 (not (bobp)))
-	      (re-search-backward paragraph-start nil t))
-	    ;; Found one.
-	    (progn
-	      (while (and (not (eobp)) (looking-at paragraph-separate))
-		(forward-line 1))
-	      (if (eq (char-after (- (point) 2)) ?\n)
-		  (forward-line -1)))
-	  ;; No starter or separator line => use buffer beg.
-	  (goto-char (point-min))))
+	(if (bobp)
+	    nil
+	  ;; Go to end of the previous (non-separating) line.
+	  (end-of-line)
+	  ;; Search back for line that starts or separates paragraphs.
+	  (if (if fill-prefix-regexp
+		  ;; There is a fill prefix; it overrides paragraph-start.
+		  (progn
+		   (while (progn (beginning-of-line)
+				 (and (not (bobp))
+				      (not (looking-at paragraph-separate))
+				      (looking-at fill-prefix-regexp)))
+		     (forward-line -1))
+		   (not (bobp)))
+		(re-search-backward paragraph-start nil t))
+	      ;; Found one.
+	      (progn
+		;; Move forward over paragraph separators.
+		;; We know this cannot reach the place we started
+		;; because we know we moved back over a non-separator.
+		(while (and (not (eobp)) (looking-at paragraph-separate))
+		  (forward-line 1))
+		(if (eq (char-after (- (point) 2)) ?\n)
+		    (forward-line -1)))
+	    ;; No starter or separator line => use buffer beg.
+	    (goto-char (point-min)))))
       (setq arg (1+ arg)))
-    (while (> arg 0)
+    (while (and (> arg 0) (not (eobp)))
       (beginning-of-line)
       (while (prog1 (and (not (eobp))
 			 (looking-at paragraph-separate))
@@ -147,14 +154,14 @@ The paragraph marked is the one that contains point or follows point."
 With arg N, kill forward to Nth end of paragraph;
 negative arg -N means kill backward to Nth start of paragraph."
   (interactive "p")
-  (kill-region (point) (save-excursion (forward-paragraph arg) (point))))
+  (kill-region (point) (progn (forward-paragraph arg) (point))))
 
 (defun backward-kill-paragraph (arg)
   "Kill back to start of paragraph.
 With arg N, kill back to Nth start of paragraph;
 negative arg -N means kill forward to Nth end of paragraph."
   (interactive "p")
-  (kill-region (point) (save-excursion (backward-paragraph arg) (point))))
+  (kill-region (point) (progn (backward-paragraph arg) (point))))
 
 (defun transpose-paragraphs (arg)
   "Interchange this (or next) paragraph with previous one."
@@ -218,13 +225,13 @@ See `forward-sentence' for more information."
   "Kill from point to end of sentence.
 With arg, repeat; negative arg -N means kill back to Nth start of sentence."
   (interactive "*p")
-  (kill-region (point) (save-excursion (forward-sentence arg) (point))))
+  (kill-region (point) (progn (forward-sentence arg) (point))))
 
 (defun backward-kill-sentence (&optional arg)
   "Kill back from point to start of sentence.
 With arg, repeat, or kill forward to Nth end of sentence if negative arg -N."
   (interactive "*p")
-  (kill-region (point) (save-excursion (backward-sentence arg) (point))))
+  (kill-region (point) (progn (backward-sentence arg) (point))))
 
 (defun mark-end-of-sentence (arg)
   "Put mark at end of sentence.  Arg works as in `forward-sentence'."

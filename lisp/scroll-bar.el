@@ -1,6 +1,6 @@
 ;;; scroll-bar.el --- window system-independent scroll bar support.
 
-;;; Copyright (C) 1993 Free Software Foundation, Inc.
+;;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: hardware
@@ -33,6 +33,13 @@
 
 
 ;;;; Utilities.
+
+(defun scroll-bar-event-ratio (event)
+  "Given a scroll bar event EVENT, return the scroll bar position as a ratio.
+The value is a cons cell (PORTION . WHOLE) containing two integers
+whose ratio gives the event's vertical position in the scroll bar, with 0
+referring to the top and 1 to the bottom."
+  (nth 2 event))
 
 (defun scroll-bar-scale (num-denom whole)
   "Given a pair (NUM . DENOM) and WHOLE, return (/ (* NUM WHOLE) DENOM).

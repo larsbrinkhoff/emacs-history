@@ -1,6 +1,6 @@
 ;;; time.el --- display time and load in mode line of Emacs.
 
-;; Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 
@@ -49,6 +49,10 @@ Nil means 1 <= hh <= 12, and an AM/PM suffix is used.")
 (defvar display-time-hook nil
   "* List of functions to be called when the time is updated on the mode line.")
 
+(defvar display-time-server-down-time nil
+   "Time when mail file's file system was recorded to be down.
+If that file system seems to be up, the value is nil.")
+
 ;;;###autoload
 (defun display-time ()
   "Display current time, load level, and mail flag in mode line of each buffer.
@@ -68,10 +72,13 @@ After each update, `display-time-hook' is run with `run-hooks'."
 	      (setq global-mode-string
 		    (append global-mode-string '(display-time-string))))
 	  (setq display-time-string "")
-	  (setq display-time-process
-		(start-process "display-time" nil
-			       (concat exec-directory "wakeup")
-			       (int-to-string display-time-interval)))
+	  ;; Using a pty is wasteful, and the separate session causes
+	  ;; annoyance sometimes (some systems kill idle sessions).
+	  (let ((process-connection-type nil))
+	    (setq display-time-process
+		  (start-process "display-time" nil
+				 (expand-file-name "wakeup" exec-directory)
+				 (int-to-string display-time-interval))))
 	  (process-kill-without-query display-time-process)
 	  (set-process-sentinel display-time-process 'display-time-sentinel)
 	  (set-process-filter display-time-process 'display-time-filter)))))
@@ -94,10 +101,8 @@ After each update, `display-time-hook' is run with `run-hooks'."
 	(mail-spool-file (or display-time-mail-file
 			     (getenv "MAIL")
 			     (concat rmail-spool-directory
-				     (or (getenv "LOGNAME")
-					 (getenv "USER")
-					 (user-login-name)))))
-	hour am-pm-flag)
+				     (user-login-name))))
+	hour am-pm-flag mail-flag)
     (setq hour (read (substring time 11 13)))
     (if (not display-time-24hr-format)
 	(progn
@@ -107,15 +112,30 @@ After each update, `display-time-hook' is run with `run-hooks'."
 	    (if (= hour 0)
 		(setq hour 12))))
       (setq am-pm-flag ""))
+    (setq mail-flag
+	  (if (and (or (null display-time-server-down-time)
+		       ;; If have been down for 20 min, try again.
+		       (> (- (nth 1 (current-time))
+			     display-time-server-down-time)
+			  1200))
+		   (let ((start-time (current-time)))
+		     (prog1
+			 (display-time-file-nonempty-p mail-spool-file)
+		       (if (> (- (nth 1 (current-time)) (nth 1 start-time))
+			      20)
+			   ;; Record that mail file is not accessible.
+			   (setq display-time-server-down-time 
+				 (nth 1 (current-time)))
+			 ;; Record that mail file is accessible.
+			 (setq display-time-server-down-time nil))
+		       )))
+	      " Mail"
+	    ""))
     (setq display-time-string
 	  (concat (format "%d" hour) (substring time 13 16)
 		  am-pm-flag
 		  load
-		  (if (and (file-exists-p mail-spool-file)
-			   ;; file not empty?
-			   (display-time-file-nonempty-p mail-spool-file))
-		      " Mail"
-		    "")))
+		  mail-flag))
     ;; Append the date if desired.
     (if display-time-day-and-date
 	(setq display-time-string
@@ -128,6 +148,7 @@ After each update, `display-time-hook' is run with `run-hooks'."
   (sit-for 0))
 
 (defun display-time-file-nonempty-p (file)
-  (< 0 (nth 7 (file-attributes (file-chase-links file)))))
+  (and (file-exists-p file)
+       (< 0 (nth 7 (file-attributes (file-chase-links file))))))
 
 ;;; time.el ends here

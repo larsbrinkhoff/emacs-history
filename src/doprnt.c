@@ -94,11 +94,12 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    }
 	  *string = 0;
 	  /* Get an idea of how much space we might need.  */
-	  size_bound = atoi (&fmtcpy[1]) + 50;
+	  size_bound = atoi (&fmtcpy[1]);
 
 	  /* Avoid pitfall of negative "size" parameter ("%-200d"). */
 	  if (size_bound < 0)
 	    size_bound = -size_bound;
+	  size_bound += 50;
 
 	  /* Make sure we have that much.  */
 	  if (size_bound > size_allocated)
@@ -121,7 +122,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	    case 'o':
 	    case 'x':
 	      if (cnt == nargs)
-		error ("Format string wants too many arguments");
+		error ("not enough arguments for format string");
 	      sprintf (sprintf_buffer, fmtcpy, args[cnt++]);
 	      /* Now copy into final output, truncating as nec.  */
 	      string = sprintf_buffer;
@@ -133,7 +134,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	      {
 		union { double d; char *half[2]; } u;
 		if (cnt + 1 == nargs)
-		  error ("Format string wants too many arguments");
+		  error ("not enough arguments for format string");
 		u.half[0] = args[cnt++];
 		u.half[1] = args[cnt++];
 		sprintf (sprintf_buffer, fmtcpy, u.d);
@@ -146,7 +147,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 	      string[-1] = 's';
 	    case 's':
 	      if (cnt == nargs)
-		error ("Format string wants too many arguments");
+		error ("not enough arguments for format string");
 	      string = args[cnt++];
 	      if (fmtcpy[1] != 's')
 		minlen = atoi (&fmtcpy[1]);
@@ -182,7 +183,7 @@ doprnt (buffer, bufsize, format, format_end, nargs, args)
 
 	    case 'c':
 	      if (cnt == nargs)
-		error ("Format string wants too many arguments");
+		error ("not enough arguments for format string");
 	      *bufptr++ = (int) args[cnt++];
 	      bufsize--;
 	      continue;

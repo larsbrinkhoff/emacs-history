@@ -1,6 +1,6 @@
 ;;; subr.el --- basic lisp subroutines for Emacs
 
-;;; Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -53,15 +53,21 @@ BODY should be a list of lisp expressions."
 
 ;;;; Window tree functions.
 
-(defun one-window-p (&optional nomini)
+(defun one-window-p (&optional nomini all-frames)
   "Returns non-nil if there is only one window.
 Optional arg NOMINI non-nil means don't count the minibuffer
-even if it is active."
+even if it is active.
+
+The optional arg ALL-FRAMES t means count windows on all frames.
+If it is `visible', count windows on all visible frames.
+ALL-FRAMES nil or omitted means count only the selected frame, 
+plus the minibuffer it uses (which may be on another frame).
+If ALL-FRAMES is neither nil nor t, count only the selected frame."
   (let ((base-window (selected-window)))
     (if (and nomini (eq base-window (minibuffer-window)))
 	(setq base-window (next-window base-window)))
     (eq base-window
-	(next-window base-window (if nomini 'arg)))))
+	(next-window base-window (if nomini 'arg) all-frames))))
 
 (defun walk-windows (proc &optional minibuf all-frames)
   "Cycle through all visible windows, calling PROC for each one.
@@ -133,6 +139,9 @@ but optional second arg NODIGITS non-nil treats them like other chars."
 ;      (copy-sequence keymap)
 ;      (copy-alist keymap)))
 
+(defvar key-substitution-in-progress nil
+ "Used internally by substitute-key-definition.")
+
 (defun substitute-key-definition (olddef newdef keymap &optional oldmap prefix)
   "Replace OLDDEF with NEWDEF for any keys in KEYMAP now defined as OLDDEF.
 In other words, OLDDEF is replaced with NEWDEF where ever it appears.
@@ -141,7 +150,9 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
   (or prefix (setq prefix ""))
   (let* ((scan (or oldmap keymap))
 	 (vec1 (vector nil))
-	 (prefix1 (vconcat prefix vec1)))
+	 (prefix1 (vconcat prefix vec1))
+	 (key-substitution-in-progress
+	  (cons scan key-substitution-in-progress)))
     ;; Scan OLDMAP, finding each char or event-symbol that
     ;; has any definition, and act on it with hack-key.
     (while (consp scan)
@@ -152,17 +163,20 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 	    ;; the inside of the following let that handles array elements.
 	    (aset vec1 0 char)
 	    (aset prefix1 (length prefix) char)
-	    (let (inner-def)
+	    (let (inner-def skipped)
 	      ;; Skip past menu-prompt.
 	      (while (stringp (car-safe defn))
+		(setq skipped (cons (car defn) skipped))
 		(setq defn (cdr defn)))
 	      (setq inner-def defn)
 	      (while (and (symbolp inner-def)
 			  (fboundp inner-def))
 		(setq inner-def (symbol-function inner-def)))
 	      (if (eq defn olddef)
-		  (define-key keymap prefix1 newdef)
-		(if (keymapp defn)
+		  (define-key keymap prefix1 (nconc (nreverse skipped) newdef))
+		(if (and (keymapp defn)
+			 (not (memq inner-def
+				    key-substitution-in-progress)))
 		    (substitute-key-definition olddef newdef keymap
 					       inner-def
 					       prefix1)))))
@@ -176,17 +190,21 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 		  ;; the inside of the previous let.
 		  (aset vec1 0 char)
 		  (aset prefix1 (length prefix) char)
-		  (let (inner-def)
+		  (let (inner-def skipped)
 		    ;; Skip past menu-prompt.
 		    (while (stringp (car-safe defn))
+		      (setq skipped (cons (car defn) skipped))
 		      (setq defn (cdr defn)))
 		    (setq inner-def defn)
 		    (while (and (symbolp inner-def)
 				(fboundp inner-def))
 		      (setq inner-def (symbol-function inner-def)))
 		    (if (eq defn olddef)
-			(define-key keymap prefix1 newdef)
-		      (if (keymapp defn)
+			(define-key keymap prefix1
+			  (nconc (nreverse skipped) newdef))
+		      (if (and (keymapp defn)
+			       (not (memq inner-def
+					  key-substitution-in-progress)))
 			  (substitute-key-definition olddef newdef keymap
 						     inner-def
 						     prefix1)))))
@@ -199,8 +217,8 @@ This is like `define-key' except that the binding for KEY is placed
 just after the binding for the event AFTER, instead of at the beginning
 of the map.
 The order matters when the keymap is used as a menu.
-KEY must contain just one event type--it must be a string or vector
-of length 1."
+KEY must contain just one event type--that is to say, it must be
+a string or vector of length 1."
   (or (keymapp keymap)
       (signal 'wrong-type-argument (list 'keymapp keymap)))
   (if (> (length key) 1)
@@ -353,7 +371,7 @@ If EVENT is a mouse press or a mouse click, this returns the location
 of the event.
 If EVENT is a drag, this returns the drag's starting position.
 The return value is of the form
-   (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
 The `posn-' functions access elements of such lists."
   (nth 1 event))
 
@@ -361,7 +379,7 @@ The `posn-' functions access elements of such lists."
   "Return the ending location of EVENT.  EVENT should be a click or drag event.
 If EVENT is a click event, this function is the same as `event-start'.
 The return value is of the form
-   (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
 The `posn-' functions access elements of such lists."
   (nth (if (consp (nth 2 event)) 2 1) event))
 
@@ -373,37 +391,48 @@ The return value is a positive integer."
 (defsubst posn-window (position)
   "Return the window in POSITION.
 POSITION should be a list of the form
-   (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
 as returned by the `event-start' and `event-end' functions."
   (nth 0 position))
 
 (defsubst posn-point (position)
   "Return the buffer location in POSITION.
 POSITION should be a list of the form
-   (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
 as returned by the `event-start' and `event-end' functions."
   (if (consp (nth 1 position))
       (car (nth 1 position))
     (nth 1 position)))
 
-(defsubst posn-col-row (position)
-  "Return the row and column in POSITION.
+(defsubst posn-x-y (position)
+  "Return the x and y coordinates in POSITION.
 POSITION should be a list of the form
-   (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
 as returned by the `event-start' and `event-end' functions."
   (nth 2 position))
+
+(defsubst posn-col-row (position)
+  "Return the row and column in POSITION, measured in characters.
+POSITION should be a list of the form
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
+as returned by the `event-start' and `event-end' functions."
+  (let* ((pair (nth 2 position))
+	 (window (posn-window position))
+	 (frame (if (framep window) window (window-frame window)))
+	 (x (/ (car pair) (frame-char-width frame)))
+	 (y (/ (cdr pair) (frame-char-height frame))))
+    (cons x y)))
 
 (defsubst posn-timestamp (position)
   "Return the timestamp of POSITION.
 POSITION should be a list of the form
-   (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
+   (WINDOW BUFFER-POSITION (X . Y) TIMESTAMP)
 as returned by the `event-start' and `event-end' functions."
   (nth 3 position))
 
 
 ;;;; Obsolescent names for functions.
 
-(defalias 'make-syntax-table 'copy-syntax-table)
 (defalias 'dot 'point)
 (defalias 'dot-marker 'point-marker)
 (defalias 'dot-min 'point-min)
@@ -440,6 +469,7 @@ Please convert your programs to use the variable `baud-rate' directly."
 (defalias 'search-forward-regexp (symbol-function 're-search-forward))
 (defalias 'search-backward-regexp (symbol-function 're-search-backward))
 (defalias 'int-to-string 'number-to-string)
+(defalias 'set-match-data 'store-match-data)
 
 ;;; Should this be an obsolete name?  If you decide it should, you get
 ;;; to go through all the sources and change them.
@@ -461,9 +491,30 @@ If it is a list, the elements are called, in order, with no arguments."
 	   (symbol-value sym)
 	   (let ((value (symbol-value sym)))
 	     (if (and (listp value) (not (eq (car value) 'lambda)))
-		 (mapcar 'funcall value)
+		 (let ((functions value))
+		   (while value
+		     (funcall (car value))
+		     (setq value (cdr value))))
 	       (funcall value)))))
     (setq hooklist (cdr hooklist))))
+
+(defun run-hook-with-args (hook &rest args)
+  "Run HOOK with the specified arguments ARGS.
+HOOK should be a symbol, a hook variable.  If HOOK has a non-nil
+value, that value may be a function or a list of functions to be
+called to run the hook.  If the value is a function, it is called with
+the given arguments and its return value is returned.  If it is a list
+of functions, those functions are called, in order,
+with the given arguments ARGS.
+It is best not to depend on the value return by `run-hook-with-args',
+as that may change."
+  (and (boundp hook)
+       (symbol-value hook)
+       (let ((value (symbol-value hook)))
+	 (if (and (listp value) (not (eq (car value) 'lambda)))
+	     (mapcar '(lambda (foo) (apply foo args))
+		     value)
+	   (apply value args)))))
 
 ;; Tell C code how to call this function.
 (defconst run-hooks 'run-hooks
@@ -486,10 +537,7 @@ function, it is changed to a list of functions."
     (if (or (not (listp old)) (eq (car old) 'lambda))
 	(set hook (list old))))
   (or (if (consp function)
-	  ;; Clever way to tell whether a given lambda-expression
-	  ;; is equal to anything in the hook.
-	  (let ((tail (assoc (cdr function) (symbol-value hook))))
-	    (equal function tail))
+	  (member function (symbol-value hook))
 	(memq function (symbol-value hook)))
       (set hook 
 	   (if append
@@ -508,7 +556,7 @@ list of hooks to run in HOOK, then nothing is done.  See `add-hook'."
     (let ((hook-value (symbol-value hook)))
       (if (consp hook-value)
 	  (setq hook-value (delete function hook-value))
-	(if (eq hook-value function)
+	(if (equal hook-value function)
 	    (setq hook-value nil)))
       (set hook hook-value))))
 
@@ -517,10 +565,13 @@ list of hooks to run in HOOK, then nothing is done.  See `add-hook'."
 (defun eval-after-load (file form)
   "Arrange that, if FILE is ever loaded, FORM will be run at that time.
 This makes or adds to an entry on `after-load-alist'.
+It does nothing if FORM is already on the list for FILE.
 FILE should be the name of a library, with no directory name."
   (or (assoc file after-load-alist)
       (setq after-load-alist (cons (list file) after-load-alist)))
-  (nconc (assoc file after-load-alist) (list form))
+  (let ((elt (assoc file after-load-alist)))
+    (or (member form (cdr elt))
+	(nconc elt (list form))))
   form)
 
 (defun eval-next-after-load (file)
@@ -553,11 +604,13 @@ Optional argument PROMPT specifies a string to use to prompt the user."
 	    ((> count 0)
 	     (setq unread-command-events (list char) count 259))
 	    (t (setq code char count 259))))
-    (logand 255 code)))
+    ;; Turn a meta-character into a character with the 0200 bit set.
+    (logior (if (/= (logand code (lsh 1 23)) 0) 128 0)
+	    (logand 255 code))))
 
 (defun force-mode-line-update (&optional all)
   "Force the mode-line of the current buffer to be redisplayed.
-With optional non-nil ALL then force then force redisplay of all mode-lines."
+With optional non-nil ALL, force redisplay of all mode-lines."
   (if all (save-excursion (set-buffer (other-buffer))))
   (set-buffer-modified-p (buffer-modified-p)))
 
@@ -570,6 +623,8 @@ Display MESSAGE (optional fourth arg) in the echo area.
 If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
   (or exit-char (setq exit-char ?\ ))
   (let ((buffer-read-only nil)
+	;; Don't modify the undo list at all.
+	(buffer-undo-list t)
 	(modified (buffer-modified-p))
 	(name buffer-file-name)
 	insert-end)
@@ -606,6 +661,7 @@ If MESSAGE is nil, instructions to type EXIT-CHAR are displayed there."
 ;;;; Miscellanea.
 
 (defun ignore (&rest ignore) 
+  (interactive)
   "Do nothing.
 Accept any number of arguments, but ignore them."
   nil)
@@ -615,10 +671,7 @@ Accept any number of arguments, but ignore them."
   (while t
     (signal 'error (list (apply 'format args)))))
 
-(defun user-original-login-name ()
-  "Return user's login name from original login.
-This tries to remain unaffected by `su', by looking in environment variables."
-  (or (getenv "LOGNAME") (getenv "USER") (user-login-name)))
+(defalias 'user-original-login-name 'user-login-name)
 
 (defun start-process-shell-command (name buffer &rest args)
   "Start a program in a subprocess.  Return the process object for it.
@@ -631,7 +684,7 @@ BUFFER is the buffer or (buffer-name) to associate with the process.
  with any buffer
 Third arg is command name, the name of a shell command.
 Remaining arguments are the arguments for the command.
-Wildcards and redirection are handle as usual in the shell."
+Wildcards and redirection are handled as usual in the shell."
   (if (eq system-type 'vax-vms)
       (apply 'start-process name buffer args)
     (start-process name buffer shell-file-name "-c"
@@ -645,6 +698,44 @@ Wildcards and redirection are handle as usual in the shell."
      (list 'unwind-protect
            (cons 'progn body)
            (list 'store-match-data original)))))
+
+(defun shell-quote-argument (argument)
+  "Quote an argument for passing as argument to an inferior shell."
+  ;; Quote everything except POSIX filename characters.
+  ;; This should be safe enough even for really weird shells.
+  (let ((result "") (start 0) end)
+    (while (string-match "[^-0-9a-zA-Z_./]" argument start)
+      (setq end (match-beginning 0)
+	    result (concat result (substring argument start end)
+			   "\\" (substring argument end (1+ end)))
+	    start (1+ end)))
+    (concat result (substring argument start))))
+
+(defun make-syntax-table (&optional oldtable)
+  "Return a new syntax table.
+It inherits all letters and control characters from the standard
+syntax table; other characters are copied from the standard syntax table."
+  (if oldtable
+      (copy-syntax-table oldtable)
+    (let ((table (copy-syntax-table))
+	  i)
+      (setq i 0)
+      (while (<= i 31)
+	(aset table i 13)
+	(setq i (1+ i)))
+      (setq i ?A)
+      (while (<= i ?Z)
+	(aset table i 13)
+	(setq i (1+ i)))
+      (setq i ?a)
+      (while (<= i ?z)
+	(aset table i 13)
+	(setq i (1+ i)))
+      (setq i 128)
+      (while (<= i 255)
+	(aset table i 13)
+	(setq i (1+ i)))
+      table)))
 
 ;; now in fns.c
 ;(defun nth (n list)

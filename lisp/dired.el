@@ -1,9 +1,9 @@
 ;;; dired.el --- directory-browsing commands
 
-;; Copyright (C) 1985, 1986, 1992, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
 
-;; Author: Sebastian Kremer <sk@thp.uni-koeln.de>.
-;; Version: 6
+;; Author: Sebastian Kremer <sk@thp.uni-koeln.de>
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
@@ -38,7 +38,8 @@
 (defvar dired-listing-switches "-al"
   "*Switches passed to `ls' for dired.  MUST contain the `l' option.
 May contain all other options that don't contradict `-l';
-may contain even `F', `b', `i' and `s'.")
+may contain even `F', `b', `i' and `s'.  See also the variable
+`dired-ls-F-marks-symlinks' concerning the `F' switch.")
 
 ; Don't use absolute paths as /bin should be in any PATH and people
 ; may prefer /usr/local/gnu/bin or whatever.  However, chown is
@@ -46,7 +47,7 @@ may contain even `F', `b', `i' and `s'.")
 
 ;;;###autoload
 (defvar dired-chown-program
-  (if (memq system-type '(hpux dgux usg-unix-v irix))
+  (if (memq system-type '(hpux dgux usg-unix-v irix linux))
       "chown" "/etc/chown")
   "Name of chown command (usually `chown' or `/etc/chown').")
 
@@ -192,7 +193,7 @@ Each subdirectory has an element: (DIRNAME . STARTMARKER).
 The order of elements is the reverse of the order in the buffer.
 In simple cases, this list contains one element.")
 
-(defvar dired-subdir-regexp "^. \\([^ \n\r]+\\)\\(:\\)[\n\r]"
+(defvar dired-subdir-regexp "^. \\([^\n\r]+\\)\\(:\\)[\n\r]"
   "Regexp matching a maybe hidden subdirectory line in `ls -lR' output.
 Subexpression 1 is the subdirectory proper, no trailing colon.
 The match starts at the beginning of the line and ends after the end
@@ -511,14 +512,28 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
 (defun dired-insert-directory (dir-or-list switches &optional wildcard full-p)
   ;; Do the right thing whether dir-or-list is atomic or not.  If it is,
   ;; inset all files listed in the cdr (the car is the passed-in directory
-  ;; list.
-  (if (consp dir-or-list)
-      (progn
-	(mapcar
-	 (function (lambda (x) (insert-directory x switches wildcard full-p)))
-	 (cdr dir-or-list)))
-    (insert-directory dir-or-list switches wildcard full-p))
+  ;; list).
+  (let ((opoint (point)))
+    (if (consp dir-or-list)
+	(progn
+	  (mapcar
+	   (function (lambda (x) (insert-directory x switches wildcard full-p)))
+	   (cdr dir-or-list)))
+      (insert-directory dir-or-list switches wildcard full-p))
+    (dired-insert-set-properties opoint (point)))
   (setq dired-directory dir-or-list))
+
+(defun dired-insert-set-properties (beg end)
+  (save-excursion
+    (goto-char beg)
+    (while (< (point) end)
+      (if (dired-move-to-filename)
+	  (put-text-property (point)
+			     (save-excursion
+			       (dired-move-to-end-of-filename)
+			       (point))
+			     'mouse-face 'highlight))
+      (forward-line 1))))
 
 (defun dired-insert-headerline (dir);; also used by dired-insert-subdir
   ;; Insert DIR's headerline with no trailing slash, exactly like ls
@@ -631,7 +646,7 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
 
 ;; Remove directory DIR from any directory cache.
 (defun dired-uncache (dir)
-  (let ((handler (find-file-name-handler dir)))
+  (let ((handler (find-file-name-handler dir 'dired-uncache)))
     (if handler
 	(funcall handler 'dired-uncache dir))))
 
@@ -640,13 +655,12 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
 (defvar dired-mode-map nil "Local keymap for dired-mode buffers.")
 (if dired-mode-map
     nil
-  ;; Force `f' rather than `e' in the mode doc:
-  (defalias 'dired-advertised-find-file 'dired-find-file)
   ;; This looks ugly when substitute-command-keys uses C-d instead d:
   ;;  (define-key dired-mode-map "\C-d" 'dired-flag-file-deletion)
 
   (setq dired-mode-map (make-keymap))
   (suppress-keymap dired-mode-map)
+  (define-key dired-mode-map [mouse-2] 'dired-mouse-find-file-other-window)
   ;; Commands to mark or flag certain categories of files
   (define-key dired-mode-map "#" 'dired-flag-auto-save-files)
   (define-key dired-mode-map "*" 'dired-mark-executables)
@@ -682,8 +696,10 @@ If DIRNAME is already in a dired buffer, that buffer is used without refresh."
   (define-key dired-mode-map "\M-{" 'dired-prev-marked-file)
   (define-key dired-mode-map "\M-}" 'dired-next-marked-file)
   ;; Make all regexp commands share a `%' prefix:
-  (defalias 'dired-regexp-prefix (make-sparse-keymap))
-  (define-key dired-mode-map "%" 'dired-regexp-prefix)
+  ;; We used to get to the submap via a symbol dired-regexp-prefix,
+  ;; but that seems to serve little purpose, and copy-keymap
+  ;; does a better job without it.
+  (define-key dired-mode-map "%" nil)
   (define-key dired-mode-map "%u" 'dired-upcase)
   (define-key dired-mode-map "%l" 'dired-downcase)
   (define-key dired-mode-map "%d" 'dired-flag-files-regexp)
@@ -1022,10 +1038,24 @@ Creates a buffer if necessary."
 up)
 	  (dired-goto-file dir)))))
 
+;; Force `f' rather than `e' in the mode doc:
+(defalias 'dired-advertised-find-file 'dired-find-file)
 (defun dired-find-file ()
   "In dired, visit the file or directory named on this line."
   (interactive)
   (find-file (file-name-sans-versions (dired-get-filename) t)))
+
+(defun dired-mouse-find-file-other-window (event)
+  "In dired, visit the file or directory name you click on."
+  (interactive "e")
+  (let (file)
+    (save-excursion
+      (set-buffer (window-buffer (posn-window (event-end event))))
+      (save-excursion
+	(goto-char (posn-point (event-end event)))
+	(setq file (dired-get-filename))))
+    (select-window (posn-window (event-end event)))
+    (find-file-other-window (file-name-sans-versions file t))))
 
 (defun dired-view-file ()
   "In dired, examine a file in view mode, returning to dired when done.
@@ -1116,28 +1146,20 @@ Optional arg NO-ERROR-IF-NOT-FILEP means return nil if no filename on
 
 ;;; Functions for finding the file name in a dired buffer line.
 
+(defvar dired-move-to-filename-regexp
+  "\\(Jan\\|Feb\\|Mar\\|Apr\\|May\\|Jun\\|Jul\\|Aug\\|Sep\\|Oct\\|Nov\\|Dec\\)[ ]+[0-9]+ [ 0-9][0-9][:0-9][0-9][ 0-9] "
+  "Regular expression to match a month abbreviation followed by a number.")
+
 ;; Move to first char of filename on this line.
 ;; Returns position (point) or nil if no filename on this line."
 (defun dired-move-to-filename (&optional raise-error eol)
   ;; This is the UNIX version.
   (or eol (setq eol (progn (end-of-line) (point))))
   (beginning-of-line)
-  (if (re-search-forward
-       "\\(Jan\\|Feb\\|Mar\\|Apr\\|May\\|Jun\\|Jul\\|Aug\\|Sep\\|Oct\\|Nov\\|Dec\\)[ ]+[0-9]+"
-       eol t)
-      (progn
-	(skip-chars-forward " ")	; there is one SPC after day of month
-	(skip-chars-forward "^ " eol)	; move after time of day (or year)
-	(skip-chars-forward " " eol)	; there is space before the file name
-	;; Actually, if the year instead of clock time is displayed,
-	;; there are (only for some ls programs?) two spaces instead
-	;; of one before the name.
-	;; If we could depend on ls inserting exactly one SPC we
-	;; would not bomb on names _starting_ with SPC.
-	(point))
+  (if (re-search-forward dired-move-to-filename-regexp eol t)
+      (goto-char (match-end 0))
     (if raise-error
-	(error "No file on this line")
-      nil)))
+	(error "No file on this line"))))
 
 (defun dired-move-to-end-of-filename (&optional no-error)
   ;; Assumes point is at beginning of filename,
@@ -1259,7 +1281,7 @@ Optional arg NO-ERROR-IF-NOT-FILEP means return nil if no filename on
 (defun dired-in-this-tree (file dir)
   ;;"Is FILE part of the directory tree starting at DIR?"
   (let (case-fold-search)
-    (string-match (concat "^" (regexp-quote dir)) file)))
+    (string-match (concat "^" (regexp-quote (expand-file-name dir))) file)))
 
 (defun dired-normalize-subdir (dir)
   ;; Prepend default-directory to DIR if relative path name.
@@ -1400,7 +1422,7 @@ Returns the new value of the alist."
     (save-excursion
       ;; The hair here is to get the result of dired-goto-subdir
       ;; without really calling it if we don't have any subdirs.
-      (if (if (string= dir default-directory)
+      (if (if (string= dir (expand-file-name default-directory))
 	      (goto-char (point-min))
 	    (and (cdr dired-subdir-alist)
 		 (dired-goto-subdir dir)))
@@ -2056,7 +2078,7 @@ With a prefix argument you can edit the current listing switches instead."
 	(let (case-fold-search)
 	  (concat
 	   "-l"
-	   (dired-replace-in-string (concat "[---lt"
+	   (dired-replace-in-string (concat "[-lt"
 					    dired-ls-sorting-switches "]")
 				    ""
 				    dired-actual-switches)

@@ -1,6 +1,6 @@
 ;;; mouse.el --- window system-independent mouse support.
 
-;;; Copyright (C) 1993 Free Software Foundation, Inc.
+;;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: hardware
@@ -36,19 +36,42 @@
 ;;; Indent track-mouse like progn.
 (put 'track-mouse 'lisp-indent-function 0)
 
+(defvar mouse-yank-at-point nil
+  "*If non-nil, mouse yank commands yank at point instead of at click.")
 
+(defun mouse-minibuffer-check (event)
+  (let ((w (posn-window (event-start event))))
+    (and (window-minibuffer-p w)
+	 (not (minibuffer-window-active-p w))
+	 (error "Minibuffer window is not active"))))
+
 (defun mouse-delete-window (click)
   "Delete the window you click on.
 This must be bound to a mouse click."
   (interactive "e")
+  (mouse-minibuffer-check click)
   (delete-window (posn-window (event-start click))))
+
+(defun mouse-select-window (click)
+  "Select the window clicked on; don't move point."
+  (interactive "e")
+  (mouse-minibuffer-check click)
+  (let ((oframe (selected-frame))
+	(frame (window-frame (posn-window (event-start click)))))
+    (select-window (posn-window (event-start click)))
+    (raise-frame frame)
+    (select-frame frame)
+    (or (eq frame oframe)
+	(set-mouse-position (selected-frame) (1- (frame-width)) 0))
+    (unfocus-frame)))
 
 (defun mouse-tear-off-window (click)
   "Delete the window clicked on, and create a new frame displaying its buffer."
   (interactive "e")
+  (mouse-minibuffer-check click)
   (let* ((window (posn-window (event-start click)))
 	 (buf (window-buffer window))
-	 (frame (new-frame)))
+	 (frame (make-frame)))
     (select-frame frame)
     (switch-to-buffer buf)
     (delete-window window)))
@@ -63,6 +86,7 @@ This must be bound to a mouse click."
 The window is split at the line clicked on.
 This command must be bound to a mouse click."
   (interactive "@e")
+  (mouse-minibuffer-check click)
   (let ((start (event-start click)))
     (select-window (posn-window start))
     (let ((new-height (if (eq (posn-point start) 'vertical-scroll-bar)
@@ -81,6 +105,7 @@ This command must be bound to a mouse click."
 The window is split at the column clicked on.
 This command must be bound to a mouse click."
   (interactive "@e")
+  (mouse-minibuffer-check click)
   (let ((start (event-start click)))
     (select-window (posn-window start))
     (let ((new-width (1+ (car (posn-col-row (event-end click)))))
@@ -95,12 +120,10 @@ This command must be bound to a mouse click."
   "Move point to the position clicked on with the mouse.
 This should be bound to a mouse click event type."
   (interactive "e")
+  (mouse-minibuffer-check event)
   ;; Use event-end in case called from mouse-drag-region.
   ;; If EVENT is a click, event-end and event-start give same value.
   (let ((posn (event-end event)))
-    (and (window-minibuffer-p (posn-window posn))
-	 (not (minibuffer-window-active-p (posn-window posn)))
-	 (error "Minibuffer window is not active"))
     (select-window (posn-window posn))
     (if (numberp (posn-point posn))
 	(goto-char (posn-point posn)))))
@@ -109,6 +132,7 @@ This should be bound to a mouse click event type."
   "Set the region to the text dragged over, and copy to kill ring.
 This should be bound to a mouse drag event."
   (interactive "e")
+  (mouse-minibuffer-check click)
   (let ((posn (event-start click))
 	(end (event-end click)))
     (select-window (posn-window posn))
@@ -171,6 +195,7 @@ This must be bound to a button-down mouse event.
 In Transient Mark mode, the highlighting remains once you
 release the mouse button.  Otherwise, it does not."
   (interactive "e")
+  (mouse-minibuffer-check start-event)
   (let* ((start-posn (event-start start-event))
 	 (start-point (posn-point start-posn))
 	 (start-window (posn-window start-posn))
@@ -211,31 +236,17 @@ release the mouse button.  Otherwise, it does not."
 	      (let ((range (mouse-start-end start-point (point) click-count)))
 		(move-overlay mouse-drag-overlay (car range) (nth 1 range))))
 
-	     ;; Are we moving on a different window on the same frame?
-	     ((and (windowp (posn-window end))
-		   (eq (window-frame (posn-window end)) start-frame))
-	      (let ((mouse-row
-		     (+ (nth 1 (window-edges (posn-window end)))
-			(cdr (posn-col-row end)))))
+	     (t
+	      (let ((mouse-row (cdr (cdr (mouse-position)))))
 		(cond
+		 ((null mouse-row))
 		 ((< mouse-row top)
 		  (mouse-scroll-subr
 		   (- mouse-row top) mouse-drag-overlay start-point))
 		 ((and (not (eobp))
 		       (>= mouse-row bottom))
 		  (mouse-scroll-subr (1+ (- mouse-row bottom))
-				     mouse-drag-overlay start-point)))))
-
-	     (t
-	      (let ((mouse-y (cdr (cdr (mouse-position))))
-		    (menu-bar-lines (or (cdr (assq 'menu-bar-lines
-						   (frame-parameters)))
-					0)))
-
-		;; Are we on the menu bar?
-		(and (integerp mouse-y) (< mouse-y menu-bar-lines)
-		     (mouse-scroll-subr (- mouse-y menu-bar-lines)
-					mouse-drag-overlay start-point))))))))
+				     mouse-drag-overlay start-point)))))))))
 
       (if (and (eq (get (event-basic-type event) 'event-kind) 'mouse-click)
 	       (eq (posn-window (event-end event)) start-window)
@@ -286,12 +297,16 @@ If DIR is positive skip forward; if negative, skip backward."
 	 (list start end))
         ((and (= mode 1)
               (= start end)
-	      (not (eobp))
+	      (char-after start)
               (= (char-syntax (char-after start)) ?\())
-	 (list start (save-excursion (forward-sexp 1) (point))))
+	 (list start
+	       (save-excursion
+		 (goto-char start)
+		 (forward-sexp 1)
+		 (point))))
         ((and (= mode 1)
               (= start end)
-	      (not (eobp))
+	      (char-after start)
               (= (char-syntax (char-after start)) ?\)))
 	 (list (save-excursion 
 		 (goto-char (1+ start))
@@ -320,6 +335,7 @@ If DIR is positive skip forward; if negative, skip backward."
 ;; Subroutine: set the mark where CLICK happened,
 ;; but don't do anything else.
 (defun mouse-set-mark-fast (click)
+  (mouse-minibuffer-check click)
   (let ((posn (event-start click)))
     (select-window (posn-window posn))
     (if (numberp (posn-point posn))
@@ -349,16 +365,22 @@ This must be bound to a mouse click."
   "Kill the region between point and the mouse click.
 The text is saved in the kill ring, as with \\[kill-region]."
   (interactive "e")
-  (let ((click-posn (posn-point (event-start click))))
+  (mouse-minibuffer-check click)
+  (let* ((posn (event-start click))
+	 (click-posn (posn-point posn)))
+    (select-window (posn-window posn))
     (if (numberp click-posn)
 	(kill-region (min (point) click-posn)
 		     (max (point) click-posn)))))
 
 (defun mouse-yank-at-click (click arg)
   "Insert the last stretch of killed text at the position clicked on.
-Prefix arguments are interpreted as with \\[yank]."
+Also move point to one end of the text thus inserted (normally the end).
+Prefix arguments are interpreted as with \\[yank].
+If `mouse-yank-at-point' is non-nil, insert at point
+regardless of where you click."
   (interactive "e\nP")
-  (mouse-set-point click)
+  (or mouse-yank-at-point (mouse-set-point click))
   (setq this-command 'yank)
   (yank arg))
 
@@ -422,6 +444,7 @@ selection through the word or line clicked on.  If you do this
 again in a different position, it extends the selection again.
 If you do this twice in the same position, the selection is killed." 
   (interactive "e")
+  (mouse-minibuffer-check click)
   (let ((click-posn (posn-point (event-start click)))
 	;; Don't let a subsequent kill command append to this one:
 	;; prevent setting this-command to kill-region.
@@ -513,6 +536,7 @@ If you do this twice in the same position, the selection is killed."
 Use \\[mouse-secondary-save-then-kill] to set the other end
 and complete the secondary selection."
   (interactive "e")
+  (mouse-minibuffer-check click)
   (let ((posn (event-start click)))
     (save-excursion
       (set-buffer (window-buffer (posn-window posn)))
@@ -529,6 +553,7 @@ and complete the secondary selection."
   "Set the secondary selection to the text that the mouse is dragged over.
 This must be bound to a mouse drag event."
   (interactive "e")
+  (mouse-minibuffer-check click)
   (let ((posn (event-start click))
 	beg
 	(end (event-end click)))
@@ -546,6 +571,7 @@ This must be bound to a mouse drag event."
 Highlight the drag area as you move the mouse.
 This must be bound to a button-down mouse event."
   (interactive "e")
+  (mouse-minibuffer-check start-event)
   (let* ((start-posn (event-start start-event))
 	 (start-point (posn-point start-posn))
 	 (start-window (posn-window start-posn))
@@ -647,15 +673,15 @@ This must be bound to a button-down mouse event."
 				 (overlay-end mouse-secondary-overlay)))))))))
 
 (defun mouse-yank-secondary (click)
-  "Insert the last stretch of killed text at the position clicked on.
-Prefix arguments are interpreted as with \\[yank]."
+  "Insert the secondary selection at the position clicked on.
+Move point to the end of the inserted text.
+If `mouse-yank-at-point' is non-nil, insert at point
+regardless of where you click."
   (interactive "e")
-  (save-excursion
-    (set-buffer (window-buffer (posn-window (event-start click))))
-    (goto-char (posn-point (event-start click)))
-    (insert (x-get-selection 'SECONDARY))))
+  (or mouse-yank-at-point (mouse-set-point click))
+  (insert (x-get-selection 'SECONDARY)))
 
-(defun mouse-kill-secondary (click)
+(defun mouse-kill-secondary ()
   "Kill the text in the secondary selection.
 This is intended more as a keyboard command than as a mouse command
 but it can work as either one.
@@ -663,12 +689,14 @@ but it can work as either one.
 The current buffer (in case of keyboard use), or the buffer clicked on,
 must be the one that the secondary selection is in.  This requirement
 is to prevent accidents."
-  (interactive "e")
-  (or (eq (overlay-buffer mouse-secondary-overlay)
-	  (if (listp click)
-	      (window-buffer (posn-window (event-start click)))
-	    (current-buffer)))
-      (error "Select or click on the buffer where the secondary selection is"))
+  (interactive)
+  (let* ((keys (this-command-keys))
+	 (click (elt keys (1- (length keys)))))
+    (or (eq (overlay-buffer mouse-secondary-overlay)
+	    (if (listp click)
+		(window-buffer (posn-window (event-start click)))
+	      (current-buffer)))
+	(error "Select or click on the buffer where the secondary selection is")))
   (save-excursion
     (set-buffer (overlay-buffer mouse-secondary-overlay))
     (kill-region (overlay-start mouse-secondary-overlay)
@@ -679,16 +707,19 @@ is to prevent accidents."
 
 (defun mouse-secondary-save-then-kill (click)
   "Save text to point in kill ring; the second time, kill the text.
-If the text between point and the mouse is the same as what's
-at the front of the kill ring, this deletes the text.
+You must use this in a buffer where you have recently done \\[mouse-start-secondary].
+If the text between where you did \\[mouse-start-secondary] and where
+you use this command matches the text at the front of the kill ring,
+this command deletes the text.
 Otherwise, it adds the text to the kill ring, like \\[kill-ring-save],
-which prepares for a second click to delete the text.
+which prepares for a second click with this command to delete the text.
 
-If you have selected words or lines, this command extends the
-selection through the word or line clicked on.  If you do this
-again in a different position, it extends the selection again.
-If you do this twice in the same position, the selection is killed." 
+If you have already made a secondary selection in that buffer,
+this command extends or retracts the selection to where you click.
+If you do this again in a different position, it extends or retracts
+again.  If you do this twice in the same position, it kills the selection."
   (interactive "e")
+  (mouse-minibuffer-check click)
   (let ((posn (event-start click))
 	(click-posn (posn-point (event-start click)))
 	;; Don't let a subsequent kill command append to this one:
@@ -793,6 +824,7 @@ If you do this twice in the same position, the selection is killed."
 This switches buffers in the window that you clicked on,
 and selects that window."
   (interactive "e")
+  (mouse-minibuffer-check event)
   (let ((menu
 	 (list "Buffer Menu"
 	       (cons "Select Buffer"
@@ -1161,20 +1193,6 @@ and selects that window."
 
 ;; Choose a completion with the mouse.
 
-;; Delete the longest partial match for STRING
-;; that can be found before POINT.
-(defun mouse-delete-max-match (string)
-  (let ((len (min (length string)
-		  (- (point-max) (point-min)))))
-    (goto-char (max (point-min) (- (point) (length string))))
-    (while (and (> len 0)
-		(let ((tail (buffer-substring (point)
-					      (+ (point) len))))
-		  (not (string= tail (substring string 0 len)))))
-      (setq len (1- len))
-      (forward-char 1))
-    (delete-char len)))
-
 (defun mouse-choose-completion (event)
   "Click on an alternative in the `*Completions*' buffer to choose it."
   (interactive "e")
@@ -1182,17 +1200,19 @@ and selects that window."
         choice)
     (save-excursion
       (set-buffer (window-buffer (posn-window (event-start event))))
+      (if completion-reference-buffer
+	  (setq buffer completion-reference-buffer))
       (save-excursion
 	(goto-char (posn-point (event-start event)))
 	(skip-chars-backward "^ \t\n")
 	(let ((beg (point)))
 	  (skip-chars-forward "^ \t\n")
 	  (setq choice (buffer-substring beg (point))))))
-    (set-buffer buffer)
-    (mouse-delete-max-match choice)
-    (insert choice)
-    (and (equal buffer (window-buffer (minibuffer-window)))
-	 (minibuffer-complete-and-exit))))
+    (let ((owindow (selected-window)))
+      (select-window (posn-window (event-start event)))
+      (bury-buffer)
+      (select-window owindow))
+    (choose-completion-string choice buffer)))
 
 ;; Font selection.
 
@@ -1210,14 +1230,14 @@ and selects that window."
 (defvar x-fixed-font-alist
   '("Font menu"
     ("Misc"
-     ("6x10" "-misc-fixed-medium-r-semicondensed--10-110-75-75-c-60-*-1")
-     ("6x12" "-misc-fixed-medium-r-semicondensed--12-110-75-75-c-60-*-1")
-     ("6x13" "-misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-*-1")
+     ("6x10" "-misc-fixed-medium-r-normal--10-100-75-75-c-60-*-1" "6x10")
+     ("6x12" "-misc-fixed-medium-r-semicondensed--12-110-75-75-c-60-*-1" "6x12")
+     ("6x13" "-misc-fixed-medium-r-semicondensed--13-120-75-75-c-60-*-1" "6x13")
      ("lucida 13"
       "-b&h-lucidatypewriter-medium-r-normal-sans-0-0-0-0-m-0-*-1")
-     ("7x13" "-misc-fixed-medium-r-normal--13-120-75-75-c-70-*-1")
-     ("7x14" "-misc-fixed-medium-r-normal--14-130-75-75-c-70-*-1")
-     ("9x15" "-misc-fixed-medium-r-normal--15-140-*-*-c-*-*-1")
+     ("7x13" "-misc-fixed-medium-r-normal--13-120-75-75-c-70-*-1" "7x13")
+     ("7x14" "-misc-fixed-medium-r-normal--14-130-75-75-c-70-*-1" "7x14")
+     ("9x15" "-misc-fixed-medium-r-normal--15-140-*-*-c-*-*-1" "9x15")
      ("")
      ("clean 8x8" "-schumacher-clean-medium-r-normal--*-80-*-*-c-*-*-1")
      ("clean 8x14" "-schumacher-clean-medium-r-normal--*-140-*-*-c-*-*-1")
@@ -1266,37 +1286,22 @@ and selects that window."
     )
   "X fonts suitable for use in Emacs.")
 
-(defun mouse-set-font (&optional font)
+(defun mouse-set-font (&rest fonts)
   "Select an emacs font from a list of known good fonts"
   (interactive
    (x-popup-menu last-nonmenu-event x-fixed-font-alist))
-  (if font
-      (progn (modify-frame-parameters (selected-frame)
-				      (list (cons 'font font)))
-	     ;; Update some standard faces too.
-	     (set-face-font 'bold nil (selected-frame)) 
-	     (make-face-bold 'bold (selected-frame) t)
-	     (set-face-font 'italic nil (selected-frame))
-	     (make-face-italic 'italic (selected-frame) t)
-	     (set-face-font 'bold-italic nil (selected-frame))
-	     (make-face-bold-italic 'bold-italic (selected-frame) t)
-	     ;; Update any nonstandard faces whose definition is
-	     ;; "a bold/italic/bold&italic version of the frame's font".
-	     (let ((rest global-face-data))
-	       (while rest
-		 (condition-case nil
-		     (if (listp (face-font (cdr (car rest))))
-			 (let ((bold (memq 'bold (face-font (cdr (car rest)))))
-			       (italic (memq 'italic (face-font (cdr (car rest))))))
-			   (if (and bold italic)
-			       (make-face-bold-italic (car (car rest)) (selected-frame))
-			     (if bold
-				 (make-face-bold (car (car rest)) (selected-frame))
-			       (if italic
-				   (make-face-italic (car (car rest)) (selected-frame)))))))
-		   (error nil))
-		 (setq rest (cdr rest))))
-	     )))
+  (if fonts
+      (let (font)
+	(while fonts
+	  (condition-case nil
+	      (progn
+		(set-default-font (car fonts))
+		(setq font (car fonts))
+		(setq fonts nil))
+	    (error
+	     (setq fonts (cdr fonts)))))
+	(if (null font)
+	    (error "Font not found")))))
 
 ;;; Bindings for mouse commands.
 
@@ -1319,69 +1324,10 @@ and selects that window."
 ;; Replaced with dragging mouse-1
 ;; (global-set-key [S-mouse-1]	'mouse-set-mark)
 
-(global-set-key [mode-line mouse-1] 'mouse-delete-other-windows)
+(global-set-key [mode-line mouse-1] 'mouse-select-window)
+(global-set-key [mode-line mouse-2] 'mouse-delete-other-windows)
 (global-set-key [mode-line mouse-3] 'mouse-delete-window)
-(global-set-key [mode-line S-mouse-2] 'mouse-split-window-horizontally)
-
-;; Define the mouse help menu tree.
-
-(defvar help-menu-map '(keymap "Help"))
-(global-set-key [C-down-mouse-2] help-menu-map)
-
-(defvar help-apropos-map (make-sparse-keymap "Is there a command that..."))
-(defvar help-keys-map (make-sparse-keymap "Key Commands <==> Functions"))
-(defvar help-manual-map (make-sparse-keymap "Manual and tutorial"))
-(defvar help-misc-map (make-sparse-keymap "Odds and ends"))
-(defvar help-modes-map (make-sparse-keymap "Modes"))
-(defvar help-admin-map (make-sparse-keymap "Administrivia"))
-
-(define-key help-menu-map [apropos]
-  (cons "@Is there a command that..." help-apropos-map))
-(define-key help-menu-map [keys]
-  (cons "@Key Commands <==> Functions" help-keys-map))
-(define-key help-menu-map [manuals]
-  (cons "@Manual and tutorial" help-manual-map))
-(define-key help-menu-map [misc]
-  (cons "@Odds and ends" help-misc-map))
-(define-key help-menu-map [modes]
-  (cons "@Modes" help-modes-map))
-(define-key help-menu-map [admin]
-  (cons "@Administrivia" help-admin-map))
-
-(define-key help-apropos-map "c" '("Command Apropos" . command-apropos))
-(define-key help-apropos-map "a" '("Apropos" . apropos))
-
-(define-key help-keys-map "b"
-  '("List all keystroke commands" . describe-bindings))
-(define-key help-keys-map "c"
-  '("Describe key briefly" . describe-key-briefly))
-(define-key help-keys-map "k"
-  '("Describe key verbose" . describe-key))
-(define-key help-keys-map "f"
-  '("Describe Lisp function" . describe-function))
-(define-key help-keys-map "w"
-  '("Where is this command" . where-is))
-
-(define-key help-manual-map "i" '("Info system" . info))
-(define-key help-manual-map "t"
-  '("Invoke Emacs tutorial" . help-with-tutorial))
-
-(define-key help-misc-map "l" '("Last 100 Keystrokes" . view-lossage))
-(define-key help-misc-map "s" '("Describe syntax table" . describe-syntax))
-
-(define-key help-modes-map "m"
-  '("Describe current major mode" . describe-mode))
-(define-key help-modes-map "b"
-  '("List all keystroke commands" . describe-bindings))
-
-(define-key help-admin-map "n"
-  '("View Emacs news" . view-emacs-news))
-(define-key help-admin-map "l"
-  '("View Emacs copying conditions" . describe-copying))
-(define-key help-admin-map "d"
-  '("Describe distribution" . describe-distribution))
-(define-key help-admin-map "w"
-  '("Describe (non)warranty" . describe-no-warranty))
+(global-set-key [mode-line C-mouse-2] 'mouse-split-window-horizontally)
 
 (provide 'mouse)
 

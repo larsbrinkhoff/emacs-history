@@ -12,11 +12,11 @@ buffer.  Multiple frames always imply multiple windows, because each
 window belongs to one and only one frame.
 
 @menu
-* Basic Window::     Introduction to Emacs windows.
-* Split Window::     New windows are made by splitting existing windows.
-* Other Window::     Moving to another window or doing something to it.
-* Pop Up Window::    Finding a file or buffer in another window.
-* Change Window::    Deleting windows and changing their sizes.
+* Basic Window::       Introduction to Emacs windows.
+* Split Window::       New windows are made by splitting existing windows.
+* Other Window::       Moving to another window or doing something to it.
+* Pop Up Window::      Finding a file or buffer in another window.
+* Change Window::      Deleting windows and changing their sizes.
 @end menu
 
 @node Basic Window, Split Window, Windows, Windows

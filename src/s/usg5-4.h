@@ -115,7 +115,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define CLASH_DETECTION
 
 #define HAVE_PTYS
-#define HAVE_SETSID
 #define HAVE_TERMIOS
 #undef BROKEN_TIOCGWINSZ
 #undef BROKEN_TIOCGETC
@@ -196,6 +195,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    So give it a try.  */
 #define HAVE_SOCKETS
 
-#define bcopy(src,dst,n)	memcpy(dst,src,n)
+#define bcopy(src,dst,n)	memmove(dst,src,n)
 #define bcmp(src,dst,n)		memcmp(src,dst,n)
 #define bzero(s,n)		memset(s,0,n)

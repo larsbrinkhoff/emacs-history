@@ -1,6 +1,6 @@
 ;;; cal-mayan.el --- calendar functions for the Mayan calendars.
 
-;; Copyright (C) 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
 
 ;; Author: Stewart M. Clamen <clamen@cs.cmu.edu>
 ;;	Edward M. Reingold <reingold@cs.uiuc.edu>
@@ -9,20 +9,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -102,11 +101,12 @@ research.  Using 1232041 will give you the correlation used by Spinden.")
     (condition-case condition
         (progn
           (while (< cc c)
-            (let ((datum (read-from-string str cc)))
-              (if (not (integerp (car datum)))
-                  (signal 'invalid-read-syntax (car datum))
-                (setq rlc (cons (car datum) rlc))
-                (setq cc (cdr datum)))))
+	    (let* ((start (string-match "[0-9]+" str cc))
+		   (end (match-end 0))
+		   datum)
+	      (setq datum (read (substring str start end)))
+	      (setq rlc (cons datum rlc))
+	      (setq cc end)))
           (if (not (= (length rlc) 5)) (signal 'invalid-read-syntax nil)))
       (invalid-read-syntax nil))
     (reverse rlc)))
@@ -328,19 +328,24 @@ Long count is a list (baktun katun tun uinal kin)"
      (-                          ; days before absolute date 0
       calendar-mayan-days-before-absolute-zero)))
 
-(defun calendar-print-mayan-date ()
-  "Show the Mayan long count, tzolkin, and haab equivalents of date."
-  (interactive)
-  (let* ((d (calendar-absolute-from-gregorian
-            (or (calendar-cursor-to-date)
-                (error "Cursor is not on a date!"))))
+(defun calendar-mayan-date-string (&optional date)
+  "String of Mayan date of Gregorian DATE.
+Defaults to today's date if DATE is not given."
+  (let* ((d (calendar-absolute-from-gregorian 
+             (or date (calendar-current-date))))
          (tzolkin (calendar-mayan-tzolkin-from-absolute d))
          (haab (calendar-mayan-haab-from-absolute d))
          (long-count (calendar-mayan-long-count-from-absolute d)))
-      (message "Mayan date: Long count = %s; tzolkin = %s; haab = %s"
-               (calendar-mayan-long-count-to-string long-count)
-               (calendar-mayan-tzolkin-to-string tzolkin)
-               (calendar-mayan-haab-to-string haab))))
+      (format "Long count = %s; tzolkin = %s; haab = %s"
+              (calendar-mayan-long-count-to-string long-count)
+              (calendar-mayan-tzolkin-to-string tzolkin)
+              (calendar-mayan-haab-to-string haab))))
+
+(defun calendar-print-mayan-date ()
+  "Show the Mayan long count, tzolkin, and haab equivalents of date."
+  (interactive)
+  (message "Mayan date: %s"
+           (calendar-mayan-date-string (calendar-cursor-to-date t))))
 
 (defun calendar-goto-mayan-long-count-date (date &optional noecho)
   "Move cursor to Mayan long count DATE.  Echo Mayan date unless NOECHO is t."
@@ -372,14 +377,7 @@ Long count is a list (baktun katun tun uinal kin)"
 
 (defun diary-mayan-date ()
   "Show the Mayan long count, haab, and tzolkin dates as a diary entry."
-  (let* ((d (calendar-absolute-from-gregorian date))
-         (tzolkin (calendar-mayan-tzolkin-from-absolute d))
-         (haab (calendar-mayan-haab-from-absolute d))
-         (long-count (calendar-mayan-long-count-from-absolute d)))
-    (format "Mayan date: Long count = %s; tzolkin = %s; haab = %s"
-            (calendar-mayan-long-count-to-string  long-count)
-            (calendar-mayan-tzolkin-to-string haab)
-            (calendar-mayan-haab-to-string tzolkin))))
+  (format "Mayan date: %s" (calendar-mayan-date-string date)))
 
 (provide 'cal-mayan)
 

@@ -1,0 +1,70 @@
+Mon May 16 19:47:53 1994  Morten Welinder  (terra@tyr.diku.dk)
+
+	* Version 19.23 released.
+
+	* sed1.inp: Don't use `+' in regexps as different stream
+	editors interpret them differently.  Use `*' instead.
+
+Thu May 12 16:06:34 1994  Morten Welinder  (terra@diku.dk)
+
+	* mainmake (install): Set the minimum stack (for running under
+	DPMI) to 512K.  Avoid using wildcard for matching one file.
+
+Sun May  8 07:35:11 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed3.inp: Don't pass version to [ce]tags.
+
+Sat Apr 30 20:35:43 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed1.inp: don't comment out the inc-vers run as that
+	does not exist anymore.
+	Don't reset DEBUG_MOLE as that no longer is used.
+	Identify the file being patched as src/...
+	* sed2.inp: Identify the file being patched as src/...
+	* sed3.inp: We don't have to have the version number in here
+	anymore.  Instead we patch the way it is passed from make to
+	the C compiler.
+
+Fri Apr 29 00:38:09 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed1.inp: Set CFLAGS=-O2, not -g.  Handle the new
+	M_FILE, S_FILE, and SET_MAKE defines.  Get rid of ^Ms.
+
+	* sed2.inp: We have bcmp.  Configuration is "msdos".
+	Get rid of ^Ms.
+
+	* sed3.inp: Set CFLAGS=-O2, not -g.  Correct for
+	new configuration regarding utilities not to compile.
+	Fix version number.  Get rid of ^Ms.
+
+Sat Jan  8 00:34:24 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed3.inp: improve make-compatibility by not using drive
+	specifications and by not specifying an explicit shell.
+
+Fri Jan  7 14:51:47 1994  Morten Welinder  (terra@diku.dk)
+
+	* sed1.inp: Incorporate the actions of patch1.
+	* patch1: File deleted.
+
+Wed Jan  5 12:11:01 1993  Morten Welinder  (terra@diku.dk)
+
+	* mainmake: New file, makefile for the main directory.
+
+	* patch1: New file.  Context diff to turn src/makefile.in into
+	a msdos version called makefile.
+
+	* emacs.pif: New file, program information file for Emacs under
+	Windows.  (This file contains non-printable characters.)
+
+	* emacs.ico: New file, icon for Emacs under Windows.  It's so ugly
+	that someone is bound to create a better.  Mail uuencoded icons
+	to terra@diku.dk, but be prepared to sign a copyright disclaimer.
+	(This file contains non-printable characters.)
+
+	* sed3.inp: New file for changing lib-src/makefile.in into 
+	lib-src/makefile.
+
+	* sed2.inp: New file for changing src/config.h-in into src/config.h
+
+	* sed1.inp: New file for changing src/makefile.in.in into src/makefile

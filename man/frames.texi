@@ -27,13 +27,16 @@ frame.
 @menu
 * Mouse Commands::     Moving, cutting, and pasting, with the mouse.
 * Secondary Selection::Cutting without altering point and mark.
+* Selecting Mouse::    Using the mouse to select an item from a list.
+* Mode Line Mouse::    Mouse clicks on the mode line.
 * Creating Frames::    Creating additional Emacs frames with various contents.
+* Special Buffer Frames::  You can make certain buffers have their own frames.
 * Frame Parameters::   Changing the colors and other modes of frames.
-* Scroll Bars::        How to enable and disable scroll bars; how to use them.
-* Menu Bars::          Enabling and disabling the menu bar.
-* Faces::              How to change the display style using faces.
+* Scroll Bars::	       How to enable and disable scroll bars; how to use them.
+* Menu Bars::	       Enabling and disabling the menu bar.
+* Faces::	       How to change the display style using faces.
 * Modifying Faces::    How to change what a particular face looks like.
-* Misc X::             Iconifying and deleting frames.  Region highlighting.
+* Misc X::	       Iconifying and deleting frames.	Region highlighting.
 @end menu
 
 @node Mouse Commands
@@ -103,8 +106,12 @@ copy the text into the kill ring without deleting it from the buffer,
 press @key{Mouse-3} just once---or just drag across the text with
 @key{Mouse-1}.  Then you can copy it elsewhere by yanking it.
 
+@vindex mouse-yank-at-point
 To yank the killed or copied text somewhere else, move the mouse there
-and press @key{Mouse-2}.  @xref{Yanking}.
+and press @key{Mouse-2}.  @xref{Yanking}.  If @code{mouse-yank-at-point}
+is non-@code{nil}, @key{Mouse-2} yanks at point.  Then it does not
+matter precisely where you click; all that matters is which window you
+click on.
 
 The mouse commands for selecting a region are mostly compatible with the
 @code{xterm} program.
@@ -170,14 +177,63 @@ Make a secondary selection, using the place specified with @kbd{M-mouse-1}
 as the other end (@code{mouse-secondary-save-then-kill}).  A second click
 at the same place kills the secondary selection just made.
 
-@findex mouse-kill-secondary
+@findex mouse-yank-secondary
 @kindex M-mouse-2
 @item M-mouse-2
-Kill the secondary selection (@code{mouse-kill-secondary}).
+Insert the secondary selection where you click
+(@code{mouse-kill-secondary}).  This places point to the end of the
+yanked text.
 @end table
 
 Double or triple clicking of @kbd{M-@key{Mouse-1}} operates on words and
 lines, much like @key{Mouse-1}.
+
+@vindex mouse-yank-at-point
+If @code{mouse-yank-at-point} is non-@code{nil}, @kbd{M-@key{Mouse-2}}
+yanks at point.  Then it does not matter precisely where you click; all
+that matters is which window you click on.
+
+@node Selecting Mouse
+@section Selecting with the Mouse
+
+  Some Emacs buffers display lists of various sorts.  These include
+lists of files, of buffers, of possible completions, of matches for
+a pattern, and so on.
+
+  Since modifying the text in these buffers is not often useful,
+most of them define @key{Mouse-2} specially, as a command to use or
+view the item you click on.
+
+  For example, if you click @key{Mouse-2} on a file name in a Dired
+buffer, you visit the that file.  If you click @key{Mouse-2} on an error
+message in the @samp{*Compilation*} buffer, you go to the source code
+for that error message.  If you click @key{Mouse-2} on a completion in
+the @samp{*Completions*} buffer, you choose that completion.
+
+  You can usually tell when @key{Mouse-2} has this special sort of
+meaning because the sensitive text highlights when you move the mouse
+over it.
+
+@node Mode Line Mouse
+@section Mode Line Mouse Commands
+
+  You can use mouse clicks on window mode lines to select and manipulate
+windows.
+
+@table @kbd
+@item @key{Mouse-1}
+@key{Mouse-1} on a mode line selects the window above.
+
+@item @key{Mouse-2}
+@key{Mouse-2} on a mode line expands that window to fill its frame.
+
+@item @key{Mouse-3}
+@key{Mouse-3} on a mode line deletes the window above.
+
+@item C-@key{Mouse-2}
+@kbd{C-@key{Mouse-2}} on a mode line splits the window above
+horizontally, above the point in the mode line where you click.
+@end table
 
 @node Creating Frames
 @section Creating Frames
@@ -213,6 +269,40 @@ Visit file @var{filename} read-only, and select its buffer in another
 frame.  This runs @code{find-file-read-only-other-frame}.
 @xref{Visiting}.
 @end table
+
+@node Special Buffer Frames
+@section Special Buffer Frames
+
+@vindex special-display-buffer-names
+  You can make certain chosen buffers, that normally appear in a
+separate window, appear in special frames of their own.  To do this, set
+the variable @code{special-display-buffer-names} to a list of buffer
+names; any buffer whose name is in that list automatically gets a
+special frame when it is to be displayed in another window.
+
+  For example, if you set the variable this way,
+
+@example
+(setq special-display-buffer-names
+      '("*compilation*" "*grep*" "*TeX Shell*"))
+@end example
+
+@noindent
+then completion lists, @code{grep} output and the @TeX{} mode shell
+buffer get individual frames of their own.  These frames, and the
+windows in them, are never automatically split or reused for any other
+buffers.  They continue to show the buffers they were created for,
+unless you alter them by hand.
+
+@vindex special-display-regexps
+  More generally, you can set @code{special-display-regexps} to a list
+of regular expressions; then each buffer whose name matches any of those
+regular expressions gets its own frame.
+
+@vindex special-display-frame-alist
+  The variable @code{special-display-frame-alist} specifies the frame
+parameters for these frames.  It has a default value, so you don't need
+to set it.
 
 @node Frame Parameters
 @section Setting Frame Parameters
@@ -266,6 +356,12 @@ You can also set a frame's default font through a pop-up menu.
 Press @kbd{C-@key{Mouse-3}} to activate this menu.
 @end table
 
+  In Emacs versions that use an X toolkit, the color-setting and
+font-setting functions don't affect menus and the menu bar, since they
+are displayed by their own widget classes.  To change the appearance of
+the menus and menu bar, you must use X resources.  @xref{Colors X},
+regarding colors.  @xref{Font X}, regarding choice of font.
+
 @node Scroll Bars
 @section Scroll Bars
 @cindex Scroll Bar mode
@@ -312,8 +408,10 @@ we may change them and add to them in subsequent Emacs versions.
 
   Each of the operations in the menu bar is bound to an ordinary Emacs
 command which you can invoke equally well with @kbd{M-x} or with its own
-key bindings.  To see the command's name and documentation, type
-@kbd{C-h k} and then select the menu bar item you are interested in.
+key bindings.  The menu lists one equivalent key binding (if the command
+has any) at the right margin.  To see the command's name and
+documentation, type @kbd{C-h k} and then select the menu bar item you
+are interested in.
 
   You can turn display of menu bars on or off with @kbd{M-x menu-bar-mode}.
 With no argument, this command toggles Menu Bar mode, a minor mode.
@@ -344,14 +442,38 @@ overlays or text properties comes from the frame itself.
   To see what faces are currently defined, and what they look like, type
 @kbd{M-x list-faces-display}.  It's possible for a given face to look
 different in different frames; this command shows the appearance in the
-frame in which you type it.
+frame in which you type it.  Here's a list of the standardly defined
+faces:
+
+@table @code
+@item default
+This face is used for ordinary text that doesn't specify any other face.
+@item mode-line
+This face is used for mode lines.  By default, it's set up as the
+inverse of the default face.  @xref{Display Vars}.
+@item highlight
+This face is used for highlighting portions of text, in various modes.
+@item region
+This face is used for displaying a selected region.
+@item secondary-selection
+This face is used for displaying a secondary selection (@pxref{Secondary
+Selection}).
+@item bold
+This face uses a bold variant of the default font, if it has one.
+@item italic
+This face uses an italic variant of the default font, if it has one.
+@item bold-italic
+This face uses a bold italic variant of the default font, if it has one.
+@item underline
+This face underlines text.
+@end table
 
 @cindex @code{region} face
 @cindex region highlighting
   When Transient Mark mode is enabled, the text of the region is
-highlighted when the mark is active.  This uses a face named
+highlighted when the mark is active.  This uses the face named
 @code{region}; you can control the style of highlighting by changing the
-style of this face with the commands below.  @xref{Setting Mark}, for
+style of this face with the commands below.  @xref{Transient Mark}, for
 more information about Transient Mark mode and activation and
 deactivation of the mark.
 
@@ -421,6 +543,9 @@ Specify whether to underline characters in face @var{face}.
 @item M-x invert-face @key{RET} @var{face} @key{RET}
 Swap the foreground and background colors of face @var{face}.
 @end table
+
+  You can also use X resources to specify attributes of particular
+faces.  @xref{Resources X}.
 
 @node Misc X
 @section Miscellaneous X Window Features

@@ -23,10 +23,6 @@
  *  is somewhat abused here) is loaded first!
  *
  */
-#ifdef emacs
-#include <config.h>
-#endif
-
 #include <sys/param.h>
 #include <sys/mman.h>
 #include <sys/file.h>
@@ -34,6 +30,22 @@
 #include <string.h>
 #include <stdio.h>
 #include <a.out.h>
+
+/* Do this after the above #include's in case a configuration file wants
+   to define things for this file based on what <a.out.h> defines.  */
+#ifdef emacs
+#include <config.h>
+#endif
+
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
+/* NetBSD needs this bit, but SunOS does not have it.  */
+#ifndef MAP_FILE
+#define MAP_FILE 0
+#endif
+
 
 /*
  * for programs other than emacs
@@ -63,7 +75,6 @@ unexec (new_name, a_name, bndry, bss_start, entry)
      char *new_name, *a_name;
      unsigned bndry, bss_start, entry;
 {
-  char buf[PAGSIZ];
   int fd, new;
   char *old;
   struct exec ohdr;		/* Allocate on the stack,  not needed in the next life */
@@ -93,7 +104,7 @@ unexec (new_name, a_name, bndry, bss_start, entry)
       exit (1);
     }
 
-  old = (char *)mmap (0, stat.st_size, PROT_READ, MAP_SHARED, fd, 0);
+  old = (char *)mmap (0, stat.st_size, PROT_READ, MAP_FILE|MAP_SHARED, fd, 0);
   if (old == (char *)-1)
     {
       fprintf (stderr, "%s: ", a_name);
@@ -267,7 +278,7 @@ is_it (path)
 	       * addresses in the data segment not part of __DYNAMIC
 	       */
 	      mmap (data_start, rd_only_len, PROT_READ | PROT_EXEC,
-		    MAP_SHARED | MAP_FIXED, fd,
+		    MAP_FILE | MAP_SHARED | MAP_FIXED, fd,
 		    N_DATOFF (hdr) + data_start - N_DATADDR (hdr));
 	      close (fd);
 	      return 1;

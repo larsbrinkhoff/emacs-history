@@ -1,26 +1,25 @@
 ;;; diary-ins.el --- calendar functions for adding diary entries.
 
-;; Copyright (C) 1990 Free Software Foundation, Inc.
+;; Copyright (C) 1990, 1994 Free Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: diary, calendar
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -52,22 +51,15 @@ If omitted, NONMARKING defaults to nil and FILE defaults to diary-file."
   "Insert a diary entry for the date indicated by point.
 Prefix arg will make the entry nonmarking."
   (interactive "P")
-  (make-diary-entry
-   (calendar-date-string
-    (or (calendar-cursor-to-date)
-        (error "Cursor is not on a date!"))
-    t t)
-   arg))
+  (make-diary-entry (calendar-date-string (calendar-cursor-to-date t) t t)
+                    arg))
 
 (defun insert-weekly-diary-entry (arg)
   "Insert a weekly diary entry for the day of the week indicated by point.
 Prefix arg will make the entry nonmarking."
   (interactive "P")
-  (make-diary-entry
-   (calendar-day-name
-    (or (calendar-cursor-to-date)
-        (error "Cursor is not on a date!")))
-   arg))
+  (make-diary-entry (calendar-day-name (calendar-cursor-to-date t))
+                    arg))
 
 (defun insert-monthly-diary-entry (arg)
   "Insert a monthly diary entry for the day of the month indicated by point.
@@ -77,12 +69,8 @@ Prefix arg will make the entry nonmarking."
           (if european-calendar-style
               '(day " * ")
             '("* " day))))
-    (make-diary-entry
-     (calendar-date-string
-      (or (calendar-cursor-to-date)
-          (error "Cursor is not on a date!"))
-      t)
-     arg)))
+    (make-diary-entry (calendar-date-string (calendar-cursor-to-date t) t)
+                      arg)))
 
 (defun insert-yearly-diary-entry (arg)
   "Insert an annual diary entry for the day of the year indicated by point.
@@ -92,12 +80,8 @@ Prefix arg will make the entry nonmarking."
           (if european-calendar-style
               '(day " " monthname)
             '(monthname " " day))))
-    (make-diary-entry
-     (calendar-date-string
-      (or (calendar-cursor-to-date)
-          (error "Cursor is not on a date!"))
-      t)
-     arg)))
+    (make-diary-entry (calendar-date-string (calendar-cursor-to-date t) t)
+                      arg)))
 
 (defun insert-anniversary-diary-entry (arg)
   "Insert an anniversary diary entry for the date given by point.
@@ -110,10 +94,7 @@ Prefix arg will make the entry nonmarking."
     (make-diary-entry
      (format "%s(diary-anniversary %s)"
              sexp-diary-entry-symbol
-             (calendar-date-string
-              (or (calendar-cursor-to-date)
-                  (error "Cursor is not on a date!"))
-              nil t))
+             (calendar-date-string (calendar-cursor-to-date t) nil t))
      arg)))
 
 (defun insert-block-diary-entry (arg)
@@ -124,8 +105,7 @@ Prefix arg will make the entry nonmarking."
           (if european-calendar-style
               '(day " " month " " year)
             '(month " " day " " year)))
-         (cursor (or (calendar-cursor-to-date)
-                     (error "Cursor is not on a date!")))
+         (cursor (calendar-cursor-to-date t))
          (mark (or (car calendar-mark-ring)
                    (error "No mark set in this buffer")))
          (start)
@@ -156,10 +136,7 @@ Prefix arg will make the entry nonmarking."
              sexp-diary-entry-symbol
              (calendar-read "Repeat every how many days: "
                             '(lambda (x) (> x 0)))
-             (calendar-date-string
-              (or (calendar-cursor-to-date)
-                  (error "Cursor is not on a date!"))
-              nil t))
+             (calendar-date-string (calendar-cursor-to-date t) nil t))
      arg)))
 
 (defun insert-hebrew-diary-entry (arg)
@@ -175,8 +152,7 @@ Prefix arg will make the entry nonmarking."
       (calendar-date-string 
        (calendar-hebrew-from-absolute
         (calendar-absolute-from-gregorian
-         (or (calendar-cursor-to-date)
-             (error "Cursor is not on a date!"))))
+         (calendar-cursor-to-date t)))
        nil t))
      arg)))
 
@@ -195,8 +171,7 @@ Prefix arg will make the entry nonmarking."
       (calendar-date-string 
        (calendar-hebrew-from-absolute
         (calendar-absolute-from-gregorian
-         (or (calendar-cursor-to-date)
-             (error "Cursor is not on a date!"))))))
+         (calendar-cursor-to-date t)))))
      arg)))
 
 (defun insert-yearly-hebrew-diary-entry (arg)
@@ -216,8 +191,7 @@ Prefix arg will make the entry nonmarking."
       (calendar-date-string 
        (calendar-hebrew-from-absolute
         (calendar-absolute-from-gregorian
-         (or (calendar-cursor-to-date)
-             (error "Cursor is not on a date!"))))))
+         (calendar-cursor-to-date t)))))
      arg)))
 
 (defun insert-islamic-diary-entry (arg)
@@ -232,8 +206,7 @@ Prefix arg will make the entry nonmarking."
       (calendar-date-string 
        (calendar-islamic-from-absolute
         (calendar-absolute-from-gregorian
-         (or (calendar-cursor-to-date)
-             (error "Cursor is not on a date!"))))
+         (calendar-cursor-to-date t)))
        nil t))
      arg)))
 
@@ -251,8 +224,7 @@ Prefix arg will make the entry nonmarking."
       (calendar-date-string 
        (calendar-islamic-from-absolute
         (calendar-absolute-from-gregorian
-         (or (calendar-cursor-to-date)
-             (error "Cursor is not on a date!"))))))
+         (calendar-cursor-to-date t)))))
      arg)))
 
 (defun insert-yearly-islamic-diary-entry (arg)
@@ -271,8 +243,7 @@ Prefix arg will make the entry nonmarking."
       (calendar-date-string 
        (calendar-islamic-from-absolute
         (calendar-absolute-from-gregorian
-         (or (calendar-cursor-to-date)
-             (error "Cursor is not on a date!"))))))
+         (calendar-cursor-to-date t)))))
      arg)))
 
 (provide 'diary-ins)

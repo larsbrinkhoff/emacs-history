@@ -240,7 +240,9 @@ Otherwise, you can load the library @code{iso-transl} to turn the key
 @kbd{C-x 8} into a ``compose character'' prefix for entry of the extra
 ISO Latin-1 printing characters.  @kbd{C-x 8} is good for insertion (in
 the minibuffer as well as other buffers), for searching, and in any
-other context where a key sequence is allowed.
+other context where a key sequence is allowed.  The @key{ALT} modifier key,
+if you have one, serves the same purpose as @kbd{C-x 8}; use @key{ALT}
+together with an accent character to modify the following letter.
 
 @cindex ISO Accents mode
   If you enter non-ASCII ISO Latin-1 characters often, you might find
@@ -260,14 +262,24 @@ sequences in ISO Accents mode to enter certain other ISO Latin-1
 characters:
 
 @table @kbd
+@item /A
+@samp{A} with ring.
 @item ~C
 @samp{C} with cedilla.
 @item ~D
 @samp{D} with stroke.
+@item /E
+@samp{AE} ligature.
+@item /a
+@samp{a} with ring.
 @item ~c
 @samp{c} with cedilla.
 @item ~d
 @samp{d} with stroke.
+@item /e
+@samp{ae} ligature.
+@item "s
+German sharp @samp{s}.
 @item ~<
 Left guillemet.
 @item ~>
@@ -335,7 +347,11 @@ users should skip it.
 @vindex mode-line-inverse-video
   The variable @code{mode-line-inverse-video} controls whether the mode
 line is displayed in inverse video (assuming the terminal supports it);
-@code{nil} means don't do so.  @xref{Mode Line}.
+@code{nil} means don't do so.  @xref{Mode Line}.  If you specify the
+foreground color for the @code{mode-line} face, and
+@code{mode-line-inverse-video} is non-@code{nil}, then the default
+background color for that face is the usual foreground color.
+@xref{Faces}.
 
 @vindex inverse-video
   If the variable @code{inverse-video} is non-@code{nil}, Emacs attempts
@@ -412,6 +428,6 @@ terminal, as far as Emacs knows.  Setting this variable does not change
 the speed of actual data transmission, but the value is used for
 calculations such as padding.  It also affects decisions about whether
 to scroll part of the screen or redraw it instead---even when using a
-window system, (We designed it this way, despite the fact that a window
+window system.  (We designed it this way, despite the fact that a window
 system has no true ``output speed'', to give you a way to tune these
 decisions.)

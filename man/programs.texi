@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Programs, Building, Text, Top
 @chapter Editing Programs
@@ -67,16 +67,15 @@ on the screen.
 
 @cindex Lisp mode
 @cindex Scheme mode
-@cindex Muddle mode
 @cindex C++ mode
 @cindex Perl mode
 @cindex Icon mode
 @cindex Awk mode
 @cindex Makefile mode
+@cindex Tcl mode
   Emacs also has major modes for the programming languages Lisp, Scheme
-(a variant of Lisp), Awk, C, C++, Perl, Icon, Fortran and Muddle (another
-variant of Lisp).  There is also a major mode for makefiles, called 
-Makefile mode.
+(a variant of Lisp), Awk, C, C++, Fortran, Icon, Pascal, Perl and Tcl.
+There is also a major mode for makefiles, called Makefile mode.
 
   Ideally, a major mode should be implemented for each programming
 language that you might want to edit with Emacs; but often the mode for
@@ -117,11 +116,13 @@ which it creates.
 @vindex scheme-mode-hook
 @vindex muddle-mode-hook
   Turning on a major mode runs a normal hook called the @dfn{mode hook},
-which is the value of a Lisp variable.  For example, turning on C mode
-runs the hook @code{c-mode-hook}.  Mode hook variables for other
-programming language modes include @code{lisp-mode-hook},
-@code{emacs-lisp-mode-hook}, @code{lisp-interaction-mode-hook},
-@code{scheme-mode-hook} and @code{muddle-mode-hook}.  @xref{Hooks}.
+which is the value of a Lisp variable.  Each major mode has a mode hook,
+and the hook's name is always made from the mode command's name by
+adding @samp{-hook}.  For example, turning on C mode runs the hook
+@code{c-mode-hook}.  Mode hook variables for other programming language
+modes include @code{lisp-mode-hook}, @code{emacs-lisp-mode-hook},
+@code{lisp-interaction-mode-hook}, @code{scheme-mode-hook} and
+@code{muddle-mode-hook}.  @xref{Hooks}.
 
 @node Lists
 @section Lists and Sexps
@@ -342,6 +343,9 @@ inside a single parenthetical grouping.
 * Lisp Indent::		Specifying how each Lisp function should be indented.
 * C Indent::		Choosing an indentation style for C code.
 @end menu
+
+  Emacs also provides a Lisp pretty-printer in the library @code{pp}.
+This program prints a Lisp object with indentation chosen to look nice.
 
 @node Basic Indent
 @subsection Basic Program Indentation Commands
@@ -1073,15 +1077,13 @@ global variables, data types, and anything else convenient.  Each name
 recorded is called a @dfn{tag}.
 
 @menu
-* Tag Syntax::          Tag syntax for various types of code and text
-                          files.  
-* Create Tag Table::    Creating a tag table with @code{etags}.
-* Select Tag Table::    How to visit a tag table.
-* Find Tag::            Commands to find the definition of a specific
-                          tag. 
-* Tags Search::         Using a tag table for searching and replacing.
-* Tags Stepping::       Visiting files in a tag table, one by one.
-* List Tags::           Listing and finding tags defined in a file.
+* Tag Syntax::		Tag syntax for various types of code and text files.  
+* Create Tag Table::	Creating a tag table with @code{etags}.
+* Select Tag Table::	How to visit a tag table.
+* Find Tag::		Commands to find the definition of a specific tag. 
+* Tags Search::		Using a tag table for searching and replacing.
+* Tags Stepping::	Visiting files in a tag table, one by one.
+* List Tags::		Listing and finding tags defined in a file.
 @end menu
 
 @node Tag Syntax
@@ -1137,8 +1139,7 @@ etags @var{inputfiles}@dots{}
 The @code{etags} program reads the specified files, and writes a tag table
 named @file{TAGS} in the current working directory.  @code{etags}
 recognizes the language used in an input file based on its file name and
-contents; there are no switches for specifying the language.  The @code{-t}
-switch tells @code{etags} to record typedefs in C code as tags.
+contents; there are no switches for specifying the language.
 
   If the tag table data become outdated due to changes in the files
 described in the table, the way to update the tag table is the same way it
@@ -1156,6 +1157,8 @@ search the entire file for it.
 to have listed, or when you move tag definitions from one file to another,
 or when changes become substantial.  Normally there is no need to update
 the tag table after each edit, or even every day.
+
+  For a list of available @code{etags} options, type @samp{etags --help}.
 
 @node Select Tag Table
 @subsection Selecting a Tag Table
@@ -1265,10 +1268,12 @@ argument finds the previous tag location in another window.
 that match a specified regular expression.  It is just like @kbd{M-.}
 except that it does regexp matching instead of substring matching.
 
+@ignore
   Emacs comes with a tag table file @file{src/TAGS} that includes all
 the Lisp libraries and all the C sources of Emacs.  By specifying this
 file with @code{visit-tags-table} and then using @kbd{M-.}@: you can
 quickly find the source for any Emacs function.
+@end ignore
 
 @node Tags Search
 @subsection Searching and Replacing with Tag Tables
@@ -1870,12 +1875,12 @@ unlike those of other languages.
 runs the hook @code{fortran-mode-hook} (@pxref{Hooks}).
 
 @menu
-* Motion: Fortran Motion.      Moving point by statements or subprograms.
-* Indent: Fortran Indent.      Indentation commands for Fortran.
-* Comments: Fortran Comments.  Inserting and aligning comments.
-* Autofill: Fortran Autofill.  Auto fill minor mode for Fortran.
-* Columns: Fortran Columns.    Measuring columns for valid Fortran.
-* Abbrev: Fortran Abbrev.      Built-in abbrevs for Fortran keywords.
+* Motion: Fortran Motion.	 Moving point by statements or subprograms.
+* Indent: Fortran Indent.	 Indentation commands for Fortran.
+* Comments: Fortran Comments.	 Inserting and aligning comments.
+* Autofill: Fortran Autofill.	 Auto fill minor mode for Fortran.
+* Columns: Fortran Columns.	 Measuring columns for valid Fortran.
+* Abbrev: Fortran Abbrev.	 Built-in abbrevs for Fortran keywords.
 @end menu
 
   Fortran mode was contributed by Michael Prange.  It has been updated by
@@ -1980,12 +1985,15 @@ lines.
 @subsubsection Continuation Lines
 @cindex Fortran continuation lines
 
+@vindex fortran-continuation-string
   Most modern Fortran compilers allow two ways of writing continuation
 lines.  If the first non-space character on a line is in column 5, then
-that line is a continuation of the previous line.  We call this @dfn{fixed
-format}.  (In GNU Emacs we always count columns from 0.)  A line that
-starts with a tab character followed by any digit except @samp{0} is also a
-continuation line.  We call this style of continuation @dfn{tab format}.
+that line is a continuation of the previous line.  We call this
+@dfn{fixed format}.  (In GNU Emacs we always count columns from 0.)  The
+variable @code{fortran-continuation-string} specifies what character to
+put on column 5.  A line that starts with a tab character followed by
+any digit except @samp{0} is also a continuation line.  We call this
+style of continuation @dfn{tab format}.
 
 @vindex indent-tabs-mode @r{(Fortran mode)}
   Fortran mode can make either style of continuation line, but you
@@ -2051,7 +2059,6 @@ numbers is like inserting anything else.
 the task of understanding a Fortran program well enough to indent it
 properly:
 
-@vindex fortran-continuation-string
 @itemize @bullet
 @item
 Two nested @samp{do} loops never share a @samp{continue} statement.
@@ -2224,11 +2231,12 @@ clear from the context which one is meant.
 @node Fortran Autofill
 @subsection Fortran Auto Fill Mode
 
-  Fortran Auto Fill mode is a minor mode which automatically splits Fortran
-statements as you insert them when they become too wide.  Splitting a
-statement involves making continuation lines.  This splitting happens when
-you type @key{SPC}, @key{RET}, or @key{TAB}, and also in the Fortran
-indentation commands.
+  Fortran Auto Fill mode is a minor mode which automatically splits
+Fortran statements as you insert them when they become too wide.
+Splitting a statement involves making continuation lines using
+@code{fortran-continuation-string} (@xref{ForIndent Cont}).  This
+splitting happens when you type @key{SPC}, @key{RET}, or @key{TAB}, and
+also in the Fortran indentation commands.
 
 @findex fortran-auto-fill-mode
   @kbd{M-x fortran-auto-fill-mode} turns Fortran Auto Fill mode on if it
@@ -2283,9 +2291,12 @@ As a result, the numbers may be one less than those you are familiar
 with; but the positions they indicate in the line are standard for
 Fortran.
 
-  The text used to display the column ruler is the value of the variable
-@code{fortran-comment-ruler}.  By changing this variable, you can change
-the display.
+  The text used to display the column ruler depends on the value of 
+the variable @code{indent-tabs-mode}.  If @code{indent-tabs-mode} is
+@code{nil}, then the value of the variable
+@code{fortran-column-ruler-fixed} is used as the column ruler.
+Otherwise, the variable @code{fortran-column-ruler-tab} is displayed.
+By changing this variables, you can change the column ruler display.
 
 @kindex C-c C-w @r{(Fortran mode)}
 @findex fortran-window-create

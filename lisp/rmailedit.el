@@ -1,6 +1,6 @@
 ;;; rmailedit.el --- "RMAIL edit mode"  Edit the current message.
 
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -50,6 +50,10 @@ to return to regular RMAIL:
   (if (boundp 'mode-line-modified)
       (setq mode-line-modified (default-value 'mode-line-modified))
     (setq mode-line-format (default-value 'mode-line-format)))
+  (if (rmail-summary-exists)
+      (save-excursion
+	(set-buffer rmail-summary-buffer)
+	(rmail-summary-disable)))
   (run-hooks 'text-mode-hook 'rmail-edit-mode-hook))
 
 (defun rmail-edit-current-message ()
@@ -58,6 +62,7 @@ to return to regular RMAIL:
   (rmail-edit-mode)
   (make-local-variable 'rmail-old-text)
   (setq rmail-old-text (buffer-substring (point-min) (point-max)))
+  (put 'rmail-old-text 'permanent-local t)
   (setq buffer-read-only nil)
   (set-buffer-modified-p (buffer-modified-p))
   ;; Make mode line update.
@@ -70,6 +75,10 @@ to return to regular RMAIL:
 (defun rmail-cease-edit ()
   "Finish editing message; switch back to Rmail proper."
   (interactive)
+  (if (rmail-summary-exists)
+      (save-excursion
+	(set-buffer rmail-summary-buffer)
+	(rmail-summary-enable)))
   ;; Make sure buffer ends with a newline.
   (save-excursion
     (goto-char (point-max))

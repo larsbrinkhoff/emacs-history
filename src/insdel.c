@@ -1,5 +1,5 @@
 /* Buffer insertion/deletion and gap motion for GNU Emacs.
-   Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -25,6 +25,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "window.h"
 #include "blockinput.h"
 
+static void insert_1 ();
+static void insert_from_string_1 ();
+static void gap_left ();
+static void gap_right ();
+static void adjust_markers ();
+static void adjust_point ();
+
 /* Move gap to position `pos'.
    Note that this can quit!  */
 
@@ -40,6 +47,7 @@ move_gap (pos)
 /* Move the gap to POS, which is less than the current GPT.
    If NEWGAP is nonzero, then don't update beg_unchanged and end_unchanged.  */
 
+static void
 gap_left (pos, newgap)
      register int pos;
      int newgap;
@@ -122,6 +130,7 @@ gap_left (pos, newgap)
   QUIT;
 }
 
+static void
 gap_right (pos)
      register int pos;
 {
@@ -203,6 +212,7 @@ gap_right (pos)
    of adjustment, are first moved back to the near end of the interval
    and then adjusted by `amount'.  */
 
+static void
 adjust_markers (from, to, amount)
      register int from, to, amount;
 {
@@ -231,6 +241,19 @@ adjust_markers (from, to, amount)
       m->bufpos = mpos;
       marker = m->chain;
     }
+}
+
+/* Add the specified amount to point.  This is used only when the value
+   of point changes due to an insert or delete; it does not represent
+   a conceptual change in point as a marker.  In particular, point is
+   not crossing any interval boundaries, so there's no need to use the
+   usual SET_PT macro.  In fact it would be incorrect to do so, because
+   either the old or the new value of point is out of synch with the
+   current set of intervals.  */
+static void
+adjust_point (amount)
+{
+  current_buffer->text.pt += amount;
 }
 
 /* Make the gap INCREMENT characters longer.  */
@@ -284,38 +307,45 @@ insert (string, length)
      register unsigned char *string;
      register length;
 {
-  register Lisp_Object temp;
+  if (length > 0)
+    {
+      insert_1 (string, length);
+      signal_after_change (PT-length, 0, length);
+    }
+}
 
-  if (length < 1)
-    return;
+static void
+insert_1 (string, length)
+     register unsigned char *string;
+     register length;
+{
+  register Lisp_Object temp;
 
   /* Make sure point-max won't overflow after this insertion.  */
   XSET (temp, Lisp_Int, length + Z);
   if (length + Z != XINT (temp))
     error ("maximum buffer size exceeded");
 
-  prepare_to_modify_buffer (point, point);
+  prepare_to_modify_buffer (PT, PT);
 
-  if (point != GPT)
-    move_gap (point);
+  if (PT != GPT)
+    move_gap (PT);
   if (GAP_SIZE < length)
     make_gap (length - GAP_SIZE);
 
-  record_insert (point, length);
+  record_insert (PT, length);
   MODIFF++;
 
   bcopy (string, GPT_ADDR, length);
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  offset_intervals (current_buffer, point, length);
+  offset_intervals (current_buffer, PT, length);
 
   GAP_SIZE -= length;
   GPT += length;
   ZV += length;
   Z += length;
-  SET_PT (point + length);
-
-  signal_after_change (point-length, 0, length);
+  adjust_point (length);
 }
 
 /* Insert the part of the text of STRING, a Lisp object assumed to be
@@ -332,11 +362,21 @@ insert_from_string (string, pos, length, inherit)
      register int pos, length;
      int inherit;
 {
+  if (length > 0)
+    {
+      insert_from_string_1 (string, pos, length, inherit);
+      signal_after_change (PT-length, 0, length);
+    }
+}
+
+static void
+insert_from_string_1 (string, pos, length, inherit)
+     Lisp_Object string;
+     register int pos, length;
+     int inherit;
+{
   register Lisp_Object temp;
   struct gcpro gcpro1;
-
-  if (length < 1)
-    return;
 
   /* Make sure point-max won't overflow after this insertion.  */
   XSET (temp, Lisp_Int, length + Z);
@@ -344,21 +384,21 @@ insert_from_string (string, pos, length, inherit)
     error ("maximum buffer size exceeded");
 
   GCPRO1 (string);
-  prepare_to_modify_buffer (point, point);
+  prepare_to_modify_buffer (PT, PT);
 
-  if (point != GPT)
-    move_gap (point);
+  if (PT != GPT)
+    move_gap (PT);
   if (GAP_SIZE < length)
     make_gap (length - GAP_SIZE);
 
-  record_insert (point, length);
+  record_insert (PT, length);
   MODIFF++;
   UNGCPRO;
 
   bcopy (XSTRING (string)->data, GPT_ADDR, length);
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  offset_intervals (current_buffer, point, length);
+  offset_intervals (current_buffer, PT, length);
 
   GAP_SIZE -= length;
   GPT += length;
@@ -366,12 +406,10 @@ insert_from_string (string, pos, length, inherit)
   Z += length;
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  graft_intervals_into_buffer (XSTRING (string)->intervals, point, length,
+  graft_intervals_into_buffer (XSTRING (string)->intervals, PT, length,
 			       current_buffer, inherit);
 
-  SET_PT (point + length);
-
-  signal_after_change (point-length, 0, length);
+  adjust_point (length);
 }
 
 /* Insert the character C before point */
@@ -401,9 +439,13 @@ insert_before_markers (string, length)
      unsigned char *string;
      register int length;
 {
-  register int opoint = point;
-  insert (string, length);
-  adjust_markers (opoint - 1, opoint, length);
+  if (length > 0)
+    {
+      register int opoint = PT;
+      insert_1 (string, length);
+      adjust_markers (opoint - 1, opoint, length);
+      signal_after_change (PT-length, 0, length);
+    }
 }
 
 /* Insert part of a Lisp string, relocating markers after.  */
@@ -413,9 +455,13 @@ insert_from_string_before_markers (string, pos, length, inherit)
      register int pos, length;
      int inherit;
 {
-  register int opoint = point;
-  insert_from_string (string, pos, length, inherit);
-  adjust_markers (opoint - 1, opoint, length);
+  if (length > 0)
+    {
+      register int opoint = PT;
+      insert_from_string_1 (string, pos, length, inherit);
+      adjust_markers (opoint - 1, opoint, length);
+      signal_after_change (PT-length, 0, length);
+    }
 }
 
 /* Delete characters in current buffer
@@ -423,6 +469,14 @@ insert_from_string_before_markers (string, pos, length, inherit)
 
 del_range (from, to)
      register int from, to;
+{
+  return del_range_1 (from, to, 1);
+}
+
+/* Like del_range; PREPARE says whether to call prepare_to_modify_buffer.  */
+
+del_range_1 (from, to, prepare)
+     register int from, to, prepare;
 {
   register int numdel;
 
@@ -441,22 +495,18 @@ del_range (from, to)
   if (to < GPT)
     gap_left (to, 0);
 
-  prepare_to_modify_buffer (from, to);
+  if (prepare)
+    prepare_to_modify_buffer (from, to);
 
   record_delete (from, numdel);
   MODIFF++;
 
   /* Relocate point as if it were a marker.  */
-  if (from < point)
-    {
-      if (point < to)
-	SET_PT (from);
-      else
-	SET_PT (point - numdel);
-    }
+  if (from < PT)
+    adjust_point (from - (PT < to ? PT : to));
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
-  offset_intervals (current_buffer, point, - numdel);
+  offset_intervals (current_buffer, from, - numdel);
 
   /* Relocate all markers pointing into the new, larger gap
      to point at the end of the text before the gap.  */
@@ -495,6 +545,9 @@ modify_region (buffer, start, end)
   if (Z - end < end_unchanged
       || unchanged_modified == MODIFF)
     end_unchanged = Z - end;
+
+  if (MODIFF <= current_buffer->save_modified)
+    record_first_change ();
   MODIFF++;
 
   if (buffer != old_buffer)
@@ -550,6 +603,20 @@ after_change_function_restore (value)
   Vafter_change_function = value;
 }
 
+static Lisp_Object
+before_change_functions_restore (value)
+     Lisp_Object value;
+{
+  Vbefore_change_functions = value;
+}
+
+static Lisp_Object
+after_change_functions_restore (value)
+     Lisp_Object value;
+{
+  Vafter_change_functions = value;
+}
+
 /* Signal a change to the buffer immediately before it happens.
    START and END are the bounds of the text to be changed,
    as Lisp objects.  */
@@ -570,14 +637,50 @@ signal_before_change (start, end)
       Lisp_Object function;
 
       function = Vbefore_change_function;
+
       record_unwind_protect (after_change_function_restore,
 			     Vafter_change_function);
       record_unwind_protect (before_change_function_restore,
 			     Vbefore_change_function);
+      record_unwind_protect (after_change_functions_restore,
+			     Vafter_change_functions);
+      record_unwind_protect (before_change_functions_restore,
+			     Vbefore_change_functions);
       Vafter_change_function = Qnil;
       Vbefore_change_function = Qnil;
+      Vafter_change_functions = Qnil;
+      Vbefore_change_functions = Qnil;
 
       call2 (function, start, end);
+      unbind_to (count, Qnil);
+    }
+
+  /* Now in any case run the before-change-function if any.  */
+  if (!NILP (Vbefore_change_functions))
+    {
+      int count = specpdl_ptr - specpdl;
+      Lisp_Object functions;
+
+      functions = Vbefore_change_functions;
+
+      record_unwind_protect (after_change_function_restore,
+			     Vafter_change_function);
+      record_unwind_protect (before_change_function_restore,
+			     Vbefore_change_function);
+      record_unwind_protect (after_change_functions_restore,
+			     Vafter_change_functions);
+      record_unwind_protect (before_change_functions_restore,
+			     Vbefore_change_functions);
+      Vafter_change_function = Qnil;
+      Vbefore_change_function = Qnil;
+      Vafter_change_functions = Qnil;
+      Vbefore_change_functions = Qnil;
+
+      while (CONSP (functions))
+	{
+	  call2 (XCONS (functions)->car, start, end);
+	  functions = XCONS (functions)->cdr;
+	}
       unbind_to (count, Qnil);
     }
 }
@@ -601,11 +704,45 @@ signal_after_change (pos, lendel, lenins)
 			     Vafter_change_function);
       record_unwind_protect (before_change_function_restore,
 			     Vbefore_change_function);
+      record_unwind_protect (after_change_functions_restore,
+			     Vafter_change_functions);
+      record_unwind_protect (before_change_functions_restore,
+			     Vbefore_change_functions);
       Vafter_change_function = Qnil;
       Vbefore_change_function = Qnil;
+      Vafter_change_functions = Qnil;
+      Vbefore_change_functions = Qnil;
 
       call3 (function, make_number (pos), make_number (pos + lenins),
 	     make_number (lendel));
+      unbind_to (count, Qnil);
+    }
+  if (!NILP (Vafter_change_functions))
+    {
+      int count = specpdl_ptr - specpdl;
+      Lisp_Object functions;
+      functions = Vafter_change_functions;
+
+      record_unwind_protect (after_change_function_restore,
+			     Vafter_change_function);
+      record_unwind_protect (before_change_function_restore,
+			     Vbefore_change_function);
+      record_unwind_protect (after_change_functions_restore,
+			     Vafter_change_functions);
+      record_unwind_protect (before_change_functions_restore,
+			     Vbefore_change_functions);
+      Vafter_change_function = Qnil;
+      Vbefore_change_function = Qnil;
+      Vafter_change_functions = Qnil;
+      Vbefore_change_functions = Qnil;
+
+      while (CONSP (functions))
+	{
+	  call3 (XCONS (functions)->car,
+		 make_number (pos), make_number (pos + lenins),
+		 make_number (lendel));
+	  functions = XCONS (functions)->cdr;
+	}
       unbind_to (count, Qnil);
     }
 }

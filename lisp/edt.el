@@ -1,6 +1,6 @@
 ;;; edt.el --- EDT emulation in Emacs
 
-;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1994 Free Software Foundation, Inc.
 
 ;; Author: Mike Clarkson <mike@yetti.UUCP>
 ;; Maintainer: FSF
@@ -332,7 +332,8 @@ Accepts a prefix argument for the number of paragraphs."
 Accepts a prefix argument of the number of characters to invert."
   (interactive "p")
   (while (> num 0)
-    (funcall (if (<= ?a (following-char))
+    (funcall (if (let ((ch (following-char)))
+		   (= ch (downcase ch)))
 		 'upcase-region 'downcase-region)
 	     (point) (1+ (point)))
     (forward-char 1)
@@ -341,7 +342,7 @@ Accepts a prefix argument of the number of characters to invert."
 (defun indent-or-fill-region ()
   "Fill region in text modes, indent region in programming language modes."
   (interactive)
-  (if (string= paragraph-start "^$\\|^")
+  (if (string= paragraph-start "^$\\|^\f")
       (indent-region (point) (mark) nil)
     (fill-region (point) (mark))))
 

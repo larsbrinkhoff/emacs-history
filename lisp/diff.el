@@ -1,6 +1,6 @@
 ;;; diff.el --- Run `diff' in compilation-mode.
 
-;; Copyright (C) 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
 
 ;; Keywords: unix, tools
 
@@ -207,25 +207,26 @@ With prefix arg, prompt for diff switches."
 				      (list diff-switches)))
 				  (if (or old-alt new-alt)
 				      (list "-L" old "-L" new))
-				  (list (or old-alt old))
-				  (list (or new-alt new)))
+				  (list
+				   (shell-quote-argument (or old-alt old)))
+				  (list
+				   (shell-quote-argument (or new-alt new))))
 			  " ")))
 	  (setq buf
 		(compile-internal command
 				  "No more differences" "Diff"
 				  'diff-parse-differences))
-	  (save-excursion
-	    (set-buffer buf)
-	    (set (make-local-variable 'diff-old-file) old)
-	    (set (make-local-variable 'diff-new-file) new)
-	    (set (make-local-variable 'diff-old-temp-file) old-alt)
-	    (set (make-local-variable 'diff-new-temp-file) new-alt)
-	    (set (make-local-variable 'compilation-finish-function)
-		 (function (lambda (buff msg)
-			     (if diff-old-temp-file
-				 (delete-file diff-old-temp-file))
-			     (if diff-new-temp-file
-				 (delete-file diff-new-temp-file))))))
+	  (pop-to-buffer buf)
+	  (set (make-local-variable 'diff-old-file) old)
+	  (set (make-local-variable 'diff-new-file) new)
+	  (set (make-local-variable 'diff-old-temp-file) old-alt)
+	  (set (make-local-variable 'diff-new-temp-file) new-alt)
+	  (set (make-local-variable 'compilation-finish-function)
+	       (function (lambda (buff msg)
+			   (if diff-old-temp-file
+			       (delete-file diff-old-temp-file))
+			   (if diff-new-temp-file
+			       (delete-file diff-new-temp-file)))))
 	  buf))))
 
 ;;;###autoload
@@ -253,26 +254,29 @@ The backup file is the first file given to `diff'."
 
 (defun diff-latest-backup-file (fn)	; actually belongs into files.el
   "Return the latest existing backup of FILE, or nil."
-  ;; First try simple backup, then the highest numbered of the
-  ;; numbered backups.
-  ;; Ignore the value of version-control because we look for existing
-  ;; backups, which maybe were made earlier or by another user with
-  ;; a different value of version-control.
-  (setq fn (expand-file-name fn))
-  (or
-   (let ((bak (make-backup-file-name fn)))
-     (if (file-exists-p bak) bak))
-   (let* ((dir (file-name-directory fn))
-	  (base-versions (concat (file-name-nondirectory fn) ".~"))
-	  (bv-length (length base-versions)))
-     (concat dir
-	     (car (sort
-		   (file-name-all-completions base-versions dir)
-		   ;; bv-length is a fluid var for backup-extract-version:
-		   (function
-		    (lambda (fn1 fn2)
-		      (> (backup-extract-version fn1)
-			 (backup-extract-version fn2))))))))))
+  (let ((handler (find-file-name-handler fn 'diff-latest-backup-file)))
+    (if handler
+	(funcall handler 'diff-latest-backup-file fn)
+      ;; First try simple backup, then the highest numbered of the
+      ;; numbered backups.
+      ;; Ignore the value of version-control because we look for existing
+      ;; backups, which maybe were made earlier or by another user with
+      ;; a different value of version-control.
+      (setq fn (file-chase-links (expand-file-name fn)))
+      (or
+       (let ((bak (make-backup-file-name fn)))
+	 (if (file-exists-p bak) bak))
+       (let* ((dir (file-name-directory fn))
+	      (base-versions (concat (file-name-nondirectory fn) ".~"))
+	      (bv-length (length base-versions)))
+	 (concat dir
+		 (car (sort
+		       (file-name-all-completions base-versions dir)
+		       ;; bv-length is a fluid var for backup-extract-version:
+		       (function
+			(lambda (fn1 fn2)
+			  (> (backup-extract-version fn1)
+			     (backup-extract-version fn2))))))))))))
 
 (provide 'diff)
 

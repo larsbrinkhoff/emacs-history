@@ -14,7 +14,12 @@ M-x calendar}, it prompts you for the month and year to be the center of
 the three-month calendar.  The calendar uses its own buffer and the
 major mode is Calendar mode.
 
-  To exit the calendar, type @kbd{q}.
+  @xref{Calendar, Customizing the Calendar and Diary,, elisp, The Emacs
+Lisp Reference Manual}, for customization information about the calendar
+and diary.
+
+  To exit the calendar, type @kbd{q}.  @kbd{Mouse-3} in the calendar
+brings up a menu of commonly used calendar features.
 
 @menu
 * Calendar Motion::       Moving through the calendar; selecting a date.
@@ -42,11 +47,10 @@ convert it to other calendars; moving longer time periods is useful
 simply to scroll the calendar.
 
 @menu
-* Calendar Unit Motion::       Moving by days, weeks, months, and years.
-* Move to Beginning or End::   Moving to start/end of weeks, months, and
-                                 years. 
-* Specified Dates::            Moving to the current date or another
-                                 specific date. 
+* Calendar Unit Motion::      Moving by days, weeks, months, and years.
+* Move to Beginning or End::  Moving to start/end of weeks, months, and years.
+* Specified Dates::           Moving to the current date or another
+                                specific date.
 @end menu
 
 @node Calendar Unit Motion
@@ -313,6 +317,8 @@ and can display them.
 @item h
 Display holidays for the selected date
 (@code{calendar-cursor-holidays}).
+@item Mouse-2 Holidays
+Display any diary entries for the date you click on.
 @item x
 Mark holidays in the calendar window (@code{mark-calendar-holidays}).
 @item u
@@ -328,20 +334,23 @@ window.
 @kindex h @r{(Calendar mode)}
 @findex calendar-cursor-holidays
   To see if any holidays fall on a given date, position point on that
-date in the calendar window and use the @kbd{h} command.  This names
-the holidays for that date, in the echo area if they fit there, 
-otherwise in a separate window.
+date in the calendar window and use the @kbd{h} command.  Alternatively,
+click on that date with @kbd{Mouse-2} and then choose @kbd{Holidays}
+from the menu that appears.  Either operation displays the holidays for
+that date, in the echo area if they fit there, otherwise in a separate
+window.
 
 @kindex x @r{(Calendar mode)}
 @findex mark-calendar-holidays
 @kindex u @r{(Calendar mode)}
 @findex calendar-unmark
   To find the distribution of holidays for a wider period, use the
-@kbd{x} command.  This displays a @samp{*} after each date on which a
-holiday falls.  The command applies both to the currently visible months
-and to other months that subsequently become visible by scrolling.  To
-turn marking off and erase the current marks, type @kbd{u}, which also
-erases any diary marks (@pxref{Diary}).
+@kbd{x} command.  This displays the dates on which holidays fall in a
+different face (or places a @samp{*} after these dates, if display with
+multiple faces is not available).  The command applies both to the
+currently visible months and to other months that subsequently become
+visible by scrolling.  To turn marking off and erase the current marks,
+type @kbd{u}, which also erases any diary marks (@pxref{Diary}).
 
 @kindex a @r{(Calendar mode)}
 @findex list-calendar-holidays
@@ -358,8 +367,8 @@ prompts for the month and year.
 
 @c ??? Delete mention of floating point?
   The holidays known to Emacs include American holidays and the major
-Christian, Jewish, and Islamic holidays; when floating point is
-available, the calendar also knows about solstices and equinoxes.
+Christian, Jewish, and Islamic holidays; also the solstices and
+equinoxes.
 
   The dates used by Emacs for holidays are based on @emph{current
 practice}, not historical fact.  Historically, for instance, the start
@@ -372,14 +381,15 @@ always uses this definition, even though it is wrong for some prior years.
 @section Times of Sunrise and Sunset
 @cindex sunrise and sunset
 
-@c ??? Delete mention of floating point?
   Emacs can tell you, to within a minute or two, the times of sunrise and
-sunset for any date, if floating point is available.
+sunset for any date.
 
 @table @kbd
 @item S
 Display times of sunrise and sunset for the selected date
 (@code{calendar-sunrise-sunset}).
+@item Mouse-2 Sunrise/sunset
+Display times of sunrise and sunset for the date you click on.
 @item M-x sunrise-sunset
 Display times of sunrise and sunset for today's date.
 @item C-u M-x sunrise-sunset
@@ -388,11 +398,12 @@ Display times of sunrise and sunset for a specified date.
 
 @kindex S @r{(Calendar mode)}
 @findex calendar-sunrise-sunset
-@findex sunrise-sunset
   Within the calendar, to display the @emph{local times} of sunrise and
 sunset in the echo area, move point to the date you want, and type
-@kbd{S}.
+@kbd{S}.  Alternatively, click @kbd{Mouse-2} on the date, then choose
+@kbd{Sunrise/sunset} from the menu that appears.
 
+@findex sunrise-sunset
   The command @kbd{M-x sunrise-sunset} is available outside the
 calendar to print this information for today's date or a specified
 date.  To specify a date other than today, use @kbd{C-u M-x
@@ -451,11 +462,9 @@ sunset for that location on that date.
 @cindex phases of the moon
 @cindex moon, phases of
 
-@c ??? Delete mention of floating point?
   Emacs can tell you the dates and times of the phases of the moon (new
-moon, first quarter, full moon, last quarter), if floating point is
-available.  This feature is useful for debugging problems that ``depend
-on the phase of the moon.''
+moon, first quarter, full moon, last quarter).  This feature is useful
+for debugging problems that ``depend on the phase of the moon.''
 
 @table @kbd
 @item M
@@ -502,11 +511,11 @@ Gregorian calendar did not exist.
 and from several other calendars.
 
 @menu
-* Calendar Systems::	  The calendars Emacs understands
-			    (aside from Gregorian).
-* To Other Calendar::     Converting the selected date to various calendars.
-* From Other Calendar::   Moving to a date specified in another calendar.
-* Mayan Calendar::	  Moving to a date specified in a Mayan calendar.
+* Calendar Systems::	   The calendars Emacs understands
+			     (aside from Gregorian).
+* To Other Calendar::	   Converting the selected date to various calendars.
+* From Other Calendar::	   Moving to a date specified in another calendar.
+* Mayan Calendar::	   Moving to a date specified in a Mayan calendar.
 @end menu
 
 @node Calendar Systems
@@ -560,6 +569,8 @@ Goodman-Martinez-Thompson correlation in its calculations.
 in various other calendar systems:
 
 @table @kbd
+@item Mouse-2 Other calendars
+Display the date that you click on, expressed in various other calendars.
 @kindex p @r{(Calendar mode)}
 @findex calendar-print-iso-date
 @item p c
@@ -586,6 +597,13 @@ Display French Revolutionary date for selected day
 @item p m
 Display Mayan date for selected day (@code{calendar-print-mayan-date}).
 @end table
+
+  If you are using X windows, the easiest way to translate a date into
+other calendars is to click on it with @kbd{Mouse-2}, then choose
+@kbd{Other calendars} from the menu that appears.  This displays the
+equivalent forms of the date in all the calendars Emacs understands, in
+the form of a menu.  (Choosing an alternative from this menu doesn't
+actually do anything---the menu is used only for display.)
 
   Put point on the desired date of the Gregorian calendar, then type the
 appropriate keys.  The @kbd{p} is a mnemonic for ``print'' since Emacs
@@ -779,6 +797,8 @@ Calendar mode.
 @item d
 Display any diary entries for the selected date
 (@code{view-diary-entries}).
+@item Mouse-2 Diary
+Display any diary entries for the date you click on.
 @item s
 Display entire diary file (@code{show-all-diary-entries}).
 @item m
@@ -803,14 +823,20 @@ that fall on that date.
 entries for that many successive days.  Thus, @kbd{2 d} displays all the
 entries for the selected date and for the following day.
 
+  Another way to display the diary entries for a date is to click
+@kbd{Mouse-2} on the date, and then choose @kbd{Diary} from the menu
+that appears.
+
 @kindex m @r{(Calendar mode)}
 @findex mark-diary-entries
   To get a broader view of which days are mentioned in the diary, use
-the @kbd{m} command.  This places a @samp{+} after each date which has a
-diary entry.  The command applies both to the currently visible months
-and to other months that subsequently become visible by scrolling.  To
-turn marking off and erase the current marks, type @kbd{u}, which also
-turns off holiday marks (@pxref{Holidays}).
+the @kbd{m} command.  This displays the dates that have diary entries
+fall in a different face (or places a @samp{+} after these dates, if
+display with multiple faces is not available).  The command applies both
+to the currently visible months and to other months that subsequently
+become visible by scrolling.  To turn marking off and erase the current
+marks, type @kbd{u}, which also turns off holiday marks
+(@pxref{Holidays}).
 
 @kindex s @r{(Calendar mode)}
 @findex show-all-diary-entries
@@ -1054,7 +1080,7 @@ calculate the number of elapsed years.
 
 @kindex i b @r{(Calendar mode)}
 @findex insert-block-diary-entry
-  You can make a diary entry entry for a block of dates by setting the
+  You can make a diary entry for a block of dates by setting the
 mark at the date at one end of the block, moving point to the date at
 the other end of the block, and using the @kbd{i b} command.  This
 command causes the end of your diary file to be displayed in another
@@ -1133,15 +1159,15 @@ begins with a recognizable time of day, Emacs can warn you, several
 minutes beforehand, that that appointment is pending.  Emacs alerts you
 to the appointment by displaying a message in the mode line.
 
-@vindex diary-display-hook
+@vindex diary-hook
 @findex appt-make-list
   To enable appointment notification, you must enable the time display
 feature of Emacs, @kbd{M-x display-time} (@pxref{Mode Line}).  You must
 also add the function @code{appt-make-list} to the
-@code{diary-display-hook}, like this:
+@code{diary-hook}, like this:
 
 @example
-(add-hook 'diary-display-hook 'appt-make-list)
+(add-hook 'diary-hook 'appt-make-list)
 @end example
 
   With these preparations done, when you display the diary (either with
@@ -1150,7 +1176,7 @@ command), it sets up an appointment list of all the diary entries found
 with recognizable times of day, and reminds you just before each of
 them.
 
-  For example, if you the diary file contains these lines:
+  For example, if the diary file contains these lines:
 
 @example
 Monday

@@ -1,6 +1,6 @@
 ;;; sort.el --- commands to sort text in an Emacs buffer.
 
-;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987, 1994 Free Software Foundation, Inc.
 
 ;; Author: Howie Kaye
 ;; Maintainer: FSF
@@ -32,6 +32,7 @@
 (defvar sort-fold-case nil
   "*Non-nil if the buffer sort functions should ignore case.")
 
+;;;###autoload
 (defun sort-subr (reverse nextrecfun endrecfun &optional startkeyfun endkeyfun)
   "General text sorting routine to divide buffer into records and sort them.
 Arguments are REVERSE NEXTRECFUN ENDRECFUN &optional STARTKEYFUN ENDKEYFUN.
@@ -94,9 +95,7 @@ same as ENDRECFUN."
 				    'string<)))
 		  (sort sort-lists
 			(cond ((numberp (car (car sort-lists)))
-			       (function
-				(lambda (a b)
-				  (< (car a) (car b)))))
+			       'car-less-than-car)
 			      ((consp (car (car sort-lists)))
 			       (function
 				(lambda (a b)
@@ -211,7 +210,10 @@ REVERSE (non-nil means reverse order), BEG and END (region to sort)."
       (narrow-to-region beg end)
       (goto-char (point-min))
       (sort-subr reverse
-		 (function (lambda () (skip-chars-forward "\n \t\f")))
+		 (function
+		  (lambda ()
+		    (while (and (not (eobp)) (looking-at paragraph-separate))
+		      (forward-line 1))))
 		 'forward-paragraph))))
 
 ;;;###autoload
@@ -248,8 +250,7 @@ Fields are separated by whitespace and numbered from 1 up.
 Specified field must contain a number in each line of the region.
 With a negative arg, sorts by the ARGth field counted from the right.
 Called from a program, there are three arguments:
-FIELD, BEG and END.  BEG and END specify region to sort.
-If you want to sort floating-point numbers, try `sort-float-fields'."
+FIELD, BEG and END.  BEG and END specify region to sort."
   (interactive "p\nr")
   (sort-fields-1 field beg end
 		 (function (lambda ()
@@ -264,26 +265,26 @@ If you want to sort floating-point numbers, try `sort-float-fields'."
 				  (point))))))
 		 nil))
 
-;;;###autoload
-(defun sort-float-fields (field beg end)
-  "Sort lines in region numerically by the ARGth field of each line.
-Fields are separated by whitespace and numbered from 1 up.  Specified field
-must contain a floating point number in each line of the region.  With a
-negative arg, sorts by the ARGth field counted from the right.  Called from a
-program, there are three arguments: FIELD, BEG and END.  BEG and END specify
-region to sort."
-  (interactive "p\nr")
-  (sort-fields-1 field beg end
-		 (function (lambda ()
-			     (sort-skip-fields field)
-			     (string-to-number
-			      (buffer-substring
-			       (point)
-			       (save-excursion
-				 (re-search-forward
-				  "[+-]?[0-9]*\.?[0-9]*\\([eE][+-]?[0-9]+\\)?")
-				 (point))))))
-		 nil))
+;;;;;###autoload
+;;(defun sort-float-fields (field beg end)
+;;  "Sort lines in region numerically by the ARGth field of each line.
+;;Fields are separated by whitespace and numbered from 1 up.  Specified field
+;;must contain a floating point number in each line of the region.  With a
+;;negative arg, sorts by the ARGth field counted from the right.  Called from a
+;;program, there are three arguments: FIELD, BEG and END.  BEG and END specify
+;;region to sort."
+;;  (interactive "p\nr")
+;;  (sort-fields-1 field beg end
+;;		 (function (lambda ()
+;;			     (sort-skip-fields field)
+;;			     (string-to-number
+;;			      (buffer-substring
+;;			       (point)
+;;			       (save-excursion
+;;				 (re-search-forward
+;;				  "[+-]?[0-9]*\.?[0-9]*\\([eE][+-]?[0-9]+\\)?")
+;;				 (point))))))
+;;		 nil))
 
 ;;;###autoload
 (defun sort-fields (field beg end)

@@ -6,11 +6,11 @@
 **  <rsalz@bbn.com> and Jim Berets <jberets@bbn.com> in August, 1990;
 **  send any email to Rich.
 **
-**  This grammar has nine shift/reduce conflicts.
+**  This grammar has 10 shift/reduce conflicts.
 **
 **  This code is in the public domain and has no copyright.
 */
-/* SUPPRESS 287 on yaccpar_sccsid *//* Unusd static variable */
+/* SUPPRESS 287 on yaccpar_sccsid *//* Unused static variable */
 /* SUPPRESS 288 on yyerrlab *//* Label unused */
 
 #ifdef HAVE_CONFIG_H
@@ -29,40 +29,6 @@
    think this code needs to do.  */
 #ifdef emacs
 #undef static
-#endif
-
-/* The following block of alloca-related preprocessor directives is here
-   solely to allow compilation by non GNU-C compilers of the C parser
-   produced from this file by old versions of bison.  Newer versions of
-   bison include a block similar to this one in bison.simple.  */
-   
-#ifdef __GNUC__
-#define alloca __builtin_alloca
-#else
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#else
-#ifdef _AIX
- #pragma alloca
-#else
-void *alloca ();
-#endif
-#endif
-#endif
-
-#ifdef __GNUC__
-#undef alloca
-#define alloca __builtin_alloca
-#else
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#else
-#ifdef _AIX /* for Bison */
- #pragma alloca
-#else
-void *alloca ();
-#endif
-#endif
 #endif
 
 #include <stdio.h>
@@ -135,12 +101,6 @@ extern struct tm	*localtime();
 
 static int yylex ();
 static int yyerror ();
-
-#if	!defined(lint) && !defined(SABER)
-static char RCS[] =
-	"$Header: str2date.y,v 2.1 90/09/06 08:15:06 cronan Exp $";
-#endif	/* !defined(lint) && !defined(SABER) */
-
 
 #define EPOCH		1970
 #define HOUR(x)		((time_t)(x) * 60)
@@ -315,6 +275,12 @@ date	: tUNUMBER '/' tUNUMBER {
 	    yyMonth = -$2;
 	    yyDay = -$3;
 	}
+	| tUNUMBER tMONTH tSNUMBER {
+	    /* e.g. 17-JUN-1992.  */
+	    yyDay = $1;
+	    yyMonth = $2;
+	    yyYear = -$3;
+	}
 	| tMONTH tUNUMBER {
 	    yyMonth = $1;
 	    yyDay = $2;
@@ -376,25 +342,24 @@ number	: tUNUMBER {
 		yyYear = $1;
 	    else {
 		if($1>10000) {
-		    time_t date_part;
-
-		    date_part= $1/10000;
 		    yyHaveDate++;
-		    yyDay= (date_part)%100;
-		    yyMonth= (date_part/100)%100;
-		    yyYear = date_part/10000;
-		} 
-	        yyHaveTime++;
-		if ($1 < 100) {
-		    yyHour = $1;
-		    yyMinutes = 0;
+		    yyDay= ($1)%100;
+		    yyMonth= ($1/100)%100;
+		    yyYear = $1/10000;
 		}
 		else {
-		    yyHour = $1 / 100;
-		    yyMinutes = $1 % 100;
-		}
-		yySeconds = 0;
-		yyMeridian = MER24;
+		    yyHaveTime++;
+		    if ($1 < 100) {
+			yyHour = $1;
+			yyMinutes = 0;
+		    }
+		    else {
+		    	yyHour = $1 / 100;
+		    	yyMinutes = $1 % 100;
+		    }
+		    yySeconds = 0;
+		    yyMeridian = MER24;
+	        }
 	    }
 	}
 	;
@@ -892,31 +857,28 @@ yylex()
     }
 }
 
-
 #define TM_YEAR_ORIGIN 1900
 
 /* Yield A - B, measured in seconds.  */
-static time_t
-difftm(a, b)
+static long
+difftm (a, b)
      struct tm *a, *b;
 {
   int ay = a->tm_year + (TM_YEAR_ORIGIN - 1);
   int by = b->tm_year + (TM_YEAR_ORIGIN - 1);
-  return
-    (
-     (
-      (
-       /* difference in day of year */
-       a->tm_yday - b->tm_yday
-       /* + intervening leap days */
-       +  ((ay >> 2) - (by >> 2))
-       -  (ay/100 - by/100)
-       +  ((ay/100 >> 2) - (by/100 >> 2))
-       /* + difference in years * 365 */
-       +  (time_t)(ay-by) * 365
-       )*24 + (a->tm_hour - b->tm_hour)
-      )*60 + (a->tm_min - b->tm_min)
-     )*60 + (a->tm_sec - b->tm_sec);
+  int days = (
+	      /* difference in day of year */
+	      a->tm_yday - b->tm_yday
+	      /* + intervening leap days */
+	      +  ((ay >> 2) - (by >> 2))
+	      -  (ay/100 - by/100)
+	      +  ((ay/100 >> 2) - (by/100 >> 2))
+	      /* + difference in years * 365 */
+	      +  (long)(ay-by) * 365
+	      );
+  return (60*(60*(24*days + (a->tm_hour - b->tm_hour))
+	      + (a->tm_min - b->tm_min))
+	  + (a->tm_sec - b->tm_sec));
 }
 
 time_t
@@ -937,7 +899,13 @@ get_date(p, now)
 	if (! (tm = gmtime (&ftz.time)))
 	    return -1;
 	gmt = *tm;	/* Make a copy, in case localtime modifies *tm.  */
-	ftz.timezone = difftm (&gmt, localtime (&ftz.time)) / 60;
+
+	if (! (tm = localtime (&ftz.time)))
+	    return -1;
+	
+	ftz.timezone = difftm (&gmt, tm) / 60;
+	if(tm->tm_isdst)
+	    ftz.timezone += 60;
     }
 
     tm = localtime(&now->time);
@@ -991,6 +959,7 @@ get_date(p, now)
 #if	defined(TEST)
 
 /* ARGSUSED */
+int
 main(ac, av)
     int		ac;
     char	*av[];

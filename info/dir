@@ -21,3 +21,4 @@ File: dir	Node: Top	This is the top of the INFO tree
 * CL: (cl).		Partial Common Lisp support for Emacs Lisp.
 * SC: (sc).		Supercite lets you cite parts of messages you're 
 			  replying to, in hairy ways.
+* Dired-X: (dired-x).   Dired Extra Features.

@@ -1,5 +1,5 @@
 /* Fundamental definitions for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -170,7 +170,7 @@ enum Lisp_Type
 
 #ifndef NO_UNION_TYPE
 
-#ifndef BIG_ENDIAN
+#ifndef WORDS_BIG_ENDIAN
 
 /* Definition of Lisp_Object for little-endian machines.  */
 
@@ -202,7 +202,7 @@ union Lisp_Object
   }
 Lisp_Object;
 
-#else /* If BIG_ENDIAN */
+#else /* If WORDS_BIG_ENDIAN */
 
 typedef
 union Lisp_Object
@@ -232,7 +232,7 @@ union Lisp_Object
   }
 Lisp_Object;
 
-#endif /* BIG_ENDIAN */
+#endif /* WORDS_BIG_ENDIAN */
 
 #endif /* NO_UNION_TYPE */
 
@@ -257,7 +257,31 @@ Lisp_Object;
 #define VALMASK ((1<<VALBITS) - 1)
 #endif
 #define GCTYPEMASK ((1<<GCTYPEBITS) - 1)
+
+/* Two flags that are set during GC.  On some machines, these flags
+   are defined differently by the m- file.  */
+
+/* This is set in the car of a cons and in the plist slot of a symbol
+   to indicate it is marked.  Likewise in the plist slot of an interval,
+   the chain slot of a marker, the type slot of a float, and the name
+   slot of a buffer.
+
+   In strings, this bit in the size field indicates that the string
+   is a "large" one, one which was separately malloc'd
+   rather than being part of a string block.  */
+
 #define MARKBIT (1 << (VALBITS + GCTYPEBITS))
+
+/* In the size word of a vector, this bit means the vector has been marked.
+   In the size word of a large string, likewise.  */
+
+#ifndef ARRAY_MARK_FLAG
+#define ARRAY_MARK_FLAG ((MARKBIT >> 1) & ~MARKBIT)
+#endif /* no ARRAY_MARK_FLAG */
+
+#if ARRAY_MARK_FLAG == MARKBIT
+you lose
+#endif
 
 #endif /* NO_UNION_TYPE */
 
@@ -604,6 +628,34 @@ typedef unsigned char UCHAR;
 #define CHAR_CTL   (0x400000)
 #define CHAR_META  (0x800000)
 
+#ifdef USE_X_TOOLKIT
+#ifdef NO_UNION_TYPE
+/* Use this for turning a (void *) into a Lisp_Object, as when the
+   Lisp_Object is passed into a toolkit callback function.  */
+#define VOID_TO_LISP(larg,varg) \
+  do { ((larg) = ((Lisp_Object) (varg))); } while (0)
+#define CVOID_TO_LISP VOID_TO_LISP
+
+/* Use this for turning a Lisp_Object into a  (void *), as when the
+   Lisp_Object is passed into a toolkit callback function.  */
+#define LISP_TO_VOID(larg) ((void *) (larg))
+#define LISP_TO_CVOID(varg) ((const void *) (larg))
+
+#else /* not NO_UNION_TYPE */
+/* Use this for turning a (void *) into a Lisp_Object, as when the
+  Lisp_Object is passed into a toolkit callback function.  */
+#define VOID_TO_LISP(larg,varg) \
+  do { ((larg).v = (void *) (varg)); } while (0)
+#define CVOID_TO_LISP(larg,varg) \
+  do { ((larg).cv = (const void *) (varg)); } while (0)
+
+/* Use this for turning a Lisp_Object into a  (void *), as when the
+   Lisp_Object is passed into a toolkit callback function.  */
+#define LISP_TO_VOID(larg) ((larg).v)
+#define LISP_TO_CVOID(larg) ((larg).cv)
+#endif /* not NO_UNION_TYPE */
+#endif /* USE_X_TOOLKIT */
+
 
 /* The glyph datatype, used to represent characters on the display.  */
 
@@ -616,15 +668,31 @@ typedef unsigned char UCHAR;
    pretty quickly.  */
 #define GLYPH unsigned int
 
+#ifdef HAVE_X_WINDOWS
+/* The FAST macros assume that we already know we're in an X window.  */
+
 /* Given a character code and a face ID, return the appropriate glyph.  */
-#define MAKE_GLYPH(char, face) ((char) | ((face) << 8))
+#define FAST_MAKE_GLYPH(char, face) ((char) | ((face) << 8))
 
 /* Return a glyph's character code.  */
-#define GLYPH_CHAR(glyph) ((glyph) & 0xff)
+#define FAST_GLYPH_CHAR(glyph) ((glyph) & 0xff)
 
 /* Return a glyph's face ID.  */
-#define GLYPH_FACE(glyph) (((glyph) >> 8) & ((1 << 24) - 1))
+#define FAST_GLYPH_FACE(glyph) (((glyph) >> 8) & ((1 << 24) - 1))
 
+/* Slower versions that test the frame type first.  */
+#define MAKE_GLYPH(f, char, face) (FRAME_TERMCAP_P (f) ? (char) \
+				   : FAST_MAKE_GLYPH (char, face))
+#define GLYPH_CHAR(f, g) (FRAME_TERMCAP_P (f) ? (g) : FAST_GLYPH_CHAR (g))
+#define GLYPH_FACE(f, g) (FRAME_TERMCAP_P (f) ? (0) : FAST_GLYPH_FACE (g))
+#else
+#define MAKE_GLYPH(f, char, face) (char)
+#define GLYPH_CHAR(f, g) (g)
+#define GLYPH_FACE(f, g) (g)
+#endif
+
+/* The ID of the mode line highlighting face.  */
+#define GLYPH_MODE_LINE_FACE 1
 
 /* Data type checking */
 
@@ -703,7 +771,7 @@ typedef unsigned char UCHAR;
 
 #define CHECK_NATNUM(x, i) \
   do { if (XTYPE ((x)) != Lisp_Int || XINT ((x)) < 0)	\
-      x = wrong_type_argument (Qnatnump, (x)); } while (0)
+      x = wrong_type_argument (Qwholenump, (x)); } while (0)
 
 #define CHECK_MARKER(x, i) \
   do { if (XTYPE ((x)) != Lisp_Marker) x = wrong_type_argument (Qmarkerp, (x)); } while (0)
@@ -793,10 +861,37 @@ typedef unsigned char UCHAR;
  `doc' is documentation for the user.
 */
 
+#ifndef __STDC__
 #define DEFUN(lname, fnname, sname, minargs, maxargs, prompt, doc) \
   Lisp_Object fnname (); \
   struct Lisp_Subr sname = {fnname, minargs, maxargs, lname, prompt, 0}; \
   Lisp_Object fnname
+
+#else
+
+/* This version of DEFUN declares a function prototype with the right
+   arguments, so we can catch errors with maxargs at compile-time. */
+#define DEFUN(lname, fnname, sname, minargs, maxargs, prompt, doc) \
+  Lisp_Object fnname DEFUN_ARGS_ ## maxargs ; \
+  struct Lisp_Subr sname = {fnname, minargs, maxargs, lname, prompt, 0}; \
+  Lisp_Object fnname
+
+/* Note that the weird token-substitution semantics of ANSI C makes
+   this work for MANY and UNEVALLED. */
+#define DEFUN_ARGS_MANY		(int, Lisp_Object *)
+#define DEFUN_ARGS_UNEVALLED	(Lisp_Object)
+#define DEFUN_ARGS_0	(void)
+#define DEFUN_ARGS_1	(Lisp_Object)
+#define DEFUN_ARGS_2	(Lisp_Object, Lisp_Object)
+#define DEFUN_ARGS_3	(Lisp_Object, Lisp_Object, Lisp_Object)
+#define DEFUN_ARGS_4	(Lisp_Object, Lisp_Object, Lisp_Object, Lisp_Object)
+#define DEFUN_ARGS_5	(Lisp_Object, Lisp_Object, Lisp_Object, Lisp_Object, \
+			 Lisp_Object)
+#define DEFUN_ARGS_6	(Lisp_Object, Lisp_Object, Lisp_Object, Lisp_Object, \
+			 Lisp_Object, Lisp_Object)
+#define DEFUN_ARGS_7	(Lisp_Object, Lisp_Object, Lisp_Object, Lisp_Object, \
+			 Lisp_Object, Lisp_Object, Lisp_Object)
+#endif
 
 /* defsubr (Sname);
  is how we define the symbol for function `name' at start-up time. */
@@ -850,6 +945,9 @@ struct handler
     /* The handler clauses and variable from the condition-case form.  */
     Lisp_Object handler;
     Lisp_Object var;
+    /* Fsignal stores here the condition-case clause that applies,
+       and Fcondition_case thus knows which clause to run.  */
+    Lisp_Object chosen_clause;
 
     /* Used to effect the longjump out to the handler.  */
     struct catchtag *tag;
@@ -862,6 +960,8 @@ extern struct handler *handlerlist;
 
 extern struct catchtag *catchlist;
 extern struct backtrace *backtrace_list;
+
+extern Lisp_Object memory_signal_data;
 
 /* An address near the bottom of the stack.
    Tells GC how to save a copy of the stack.  */
@@ -915,6 +1015,7 @@ extern char *stack_bottom;
 #define UPCASE_TABLE XSTRING (current_buffer->upcase_table)->data
 
 extern Lisp_Object Vascii_downcase_table, Vascii_upcase_table;
+extern Lisp_Object Vascii_canon_table, Vascii_eqv_table;
 
 /* number of bytes of structure consed since last GC */
 
@@ -984,7 +1085,7 @@ void staticpro();
       ret_ungc_val = (expr);		\
       UNGCPRO;				\
       return ret_ungc_val;		\
-    }					\
+    }
 
 /* Defined in data.c */
 extern Lisp_Object Qnil, Qt, Qquote, Qlambda, Qsubr, Qunbound;
@@ -1000,7 +1101,8 @@ extern Lisp_Object Qmark_inactive;
 extern Lisp_Object Qrange_error, Qdomain_error, Qsingularity_error;
 extern Lisp_Object Qoverflow_error, Qunderflow_error;
 
-extern Lisp_Object Qintegerp, Qnumberp, Qnatnump, Qsymbolp, Qlistp, Qconsp;
+extern Lisp_Object Qintegerp, Qnumberp, Qnatnump, Qwholenump;
+extern Lisp_Object Qsymbolp, Qlistp, Qconsp;
 extern Lisp_Object Qstringp, Qarrayp, Qsequencep, Qbufferp;
 extern Lisp_Object Qchar_or_string_p, Qmarkerp, Qvectorp;
 extern Lisp_Object Qinteger_or_marker_p, Qnumber_or_marker_p;
@@ -1085,6 +1187,7 @@ extern Lisp_Object Fpurecopy (), make_pure_string ();
 extern Lisp_Object pure_cons (), make_pure_vector ();
 extern Lisp_Object Fgarbage_collect ();
 extern Lisp_Object Fmake_byte_code ();
+extern int gc_in_progress;
 
 /* Defined in print.c */
 extern Lisp_Object Vprin1_to_string_buffer;
@@ -1115,6 +1218,9 @@ extern Lisp_Object Qautoload, Qexit, Qinteractive, Qcommandp, Qdefun, Qmacro;
 extern Lisp_Object Vinhibit_quit, Qinhibit_quit, Vquit_flag;
 extern Lisp_Object Vmocklisp_arguments, Qmocklisp, Qmocklisp_arguments;
 extern Lisp_Object Vautoload_queue;
+/* To run a normal hook, do
+   if (!NILP (Vrun_hooks))
+     call1 (Vrun_hooks, Qmy_funny_hook);  */
 extern Lisp_Object Vrun_hooks;
 extern Lisp_Object Fand (), For (), Fif (), Fprogn (), Fprog1 (), Fprog2 ();
 extern Lisp_Object Fsetq (), Fquote ();
@@ -1129,6 +1235,7 @@ extern Lisp_Object apply1 (), call0 (), call1 (), call2 (), call3 ();
 extern Lisp_Object apply_lambda ();
 extern Lisp_Object internal_catch ();
 extern Lisp_Object internal_condition_case ();
+extern Lisp_Object internal_condition_case_1 ();
 extern Lisp_Object unbind_to ();
 extern void error ();
 extern Lisp_Object un_autoload ();
@@ -1156,6 +1263,7 @@ extern Lisp_Object Fget_buffer (), Fget_buffer_create (), Fset_buffer ();
 extern Lisp_Object Fbarf_if_buffer_read_only ();
 extern Lisp_Object Fcurrent_buffer (), Fswitch_to_buffer (), Fpop_to_buffer ();
 extern Lisp_Object Fother_buffer ();
+extern Lisp_Object Foverlay_get ();
 extern Lisp_Object Qoverlayp;
 extern struct buffer *all_buffers;
 
@@ -1218,7 +1326,7 @@ extern Lisp_Object Qvertical_scroll_bar;
 
 /* defined in keymap.c */
 
-extern Lisp_Object Qkeymap;
+extern Lisp_Object Qkeymap, Qmenu_bar;
 extern Lisp_Object current_global_map;
 extern Lisp_Object Fkey_description (), Fsingle_key_description ();
 extern Lisp_Object Fwhere_is_internal ();
@@ -1238,6 +1346,7 @@ extern Lisp_Object Fwindow_at ();
 extern int window_internal_height (), window_internal_width ();
 
 /* defined in frame.c */
+extern Lisp_Object Qvisible;
 extern Lisp_Object Fframep ();
 extern Lisp_Object Fselect_frame ();
 extern Lisp_Object Ffocus_frame ();
@@ -1273,6 +1382,7 @@ extern Lisp_Object Frubber_band_rectangle ();
 /* defined in emacs.c */
 extern Lisp_Object decode_env_path ();
 extern Lisp_Object Vinvocation_name, Vinvocation_directory;
+extern Lisp_Object Vinstallation_directory;
 void shut_down_emacs ( /* int signal, int no_x, Lisp_Object stuff */ );
 /* Nonzero means don't do interactive redisplay and don't change tty modes */
 extern int noninteractive;
@@ -1282,9 +1392,11 @@ extern int inhibit_window_system;
 /* defined in process.c */
 extern Lisp_Object Fget_process (), Fget_buffer_process (), Fprocessp ();
 extern Lisp_Object Fprocess_status (), Fkill_process ();
+extern Lisp_Object Fprocess_send_eof ();
 
 /* defined in callproc.c */
 extern Lisp_Object Vexec_path, Vexec_directory, Vdata_directory;
+extern Lisp_Object Vdoc_directory;
 
 /* defined in doc.c */
 extern Lisp_Object Vdoc_file_name;
@@ -1323,3 +1435,5 @@ extern void xfree ();
 
 extern char *egetenv ();
  
+/* Return the name of the machine we're running on.  */
+extern char *get_system_name ();

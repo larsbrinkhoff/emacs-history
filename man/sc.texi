@@ -1,7 +1,7 @@
 \input texinfo  @comment -*-texinfo-*-
 @comment 3.47
 @comment %**start of header (This is for running Texinfo on a region.)
-@setfilename ../info/sc.info
+@setfilename ../info/sc
 @settitle Supercite Version 3.1 User's Manual
 @iftex
 @finalout

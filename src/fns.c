@@ -1,5 +1,5 @@
 /* Random utility Lisp functions.
-   Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -55,24 +55,29 @@ With argument t, set the random number seed from the current time and pid.")
      Lisp_Object limit;
 {
   int val;
+  unsigned long denominator;
   extern long random ();
   extern srandom ();
   extern long time ();
 
   if (EQ (limit, Qt))
     srandom (getpid () + time (0));
-  val = random ();
-  if (XTYPE (limit) == Lisp_Int && XINT (limit) != 0)
+  if (XTYPE (limit) == Lisp_Int && XINT (limit) > 0)
     {
       /* Try to take our random number from the higher bits of VAL,
 	 not the lower, since (says Gentzel) the low bits of `random'
-	 are less random than the higher ones.  */
-      val &= 0xfffffff;		/* Ensure positive.  */
-      val >>= 5;
-      if (XINT (limit) < 10000)
-	val >>= 6;
-      val %= XINT (limit);
+	 are less random than the higher ones.  We do this by using the
+	 quotient rather than the remainder.  At the high end of the RNG
+	 it's possible to get a quotient larger than limit; discarding
+	 these values eliminates the bias that would otherwise appear
+	 when using a large limit.  */
+      denominator = (unsigned long)0x80000000 / XFASTINT (limit);
+      do
+	val = (random () & 0x7fffffff) / denominator;
+      while (val >= limit);
     }
+  else
+    val = random ();
   return make_number (val);
 }
 
@@ -198,7 +203,8 @@ The last argument is not copied, just used as the tail of the new list.")
 DEFUN ("concat", Fconcat, Sconcat, 0, MANY, 0,
   "Concatenate all the arguments and make the result a string.\n\
 The result is a string whose elements are the elements of all the arguments.\n\
-Each argument may be a string, a list of numbers, or a vector of numbers.")
+Each argument may be a string, a list of characters (integers),\n\
+or a vector of characters (integers).")
   (nargs, args)
      int nargs;
      Lisp_Object *args;
@@ -467,7 +473,7 @@ DEFUN ("elt", Felt, Selt, 2, 2, 0,
 }
 
 DEFUN ("member", Fmember, Smember, 2, 2, 0,
-  "Return non-nil if ELT is an element of LIST.  Comparison done with EQUAL.\n\
+  "Return non-nil if ELT is an element of LIST.  Comparison done with `equal'.\n\
 The value is actually the tail of LIST whose car is ELT.")
   (elt, list)
      register Lisp_Object elt;
@@ -504,8 +510,8 @@ The value is actually the tail of LIST whose car is ELT.")
 }
 
 DEFUN ("assq", Fassq, Sassq, 2, 2, 0,
-  "Return non-nil if ELT is `eq' to the car of an element of LIST.\n\
-The value is actually the element of LIST whose car is ELT.\n\
+  "Return non-nil if KEY is `eq' to the car of an element of LIST.\n\
+The value is actually the element of LIST whose car is KEY.\n\
 Elements of LIST that are not conses are ignored.")
   (key, list)
      register Lisp_Object key;
@@ -545,8 +551,8 @@ assq_no_quit (key, list)
 }
 
 DEFUN ("assoc", Fassoc, Sassoc, 2, 2, 0,
-  "Return non-nil if ELT is `equal' to the car of an element of LIST.\n\
-The value is actually the element of LIST whose car is ELT.")
+  "Return non-nil if KEY is `equal' to the car of an element of LIST.\n\
+The value is actually the element of LIST whose car is KEY.")
   (key, list)
      register Lisp_Object key;
      Lisp_Object list;
@@ -620,8 +626,9 @@ to be sure of changing the value of `foo'.")
 DEFUN ("delete", Fdelete, Sdelete, 2, 2, 0,
   "Delete by side effect any occurrences of ELT as a member of LIST.\n\
 The modified LIST is returned.  Comparison is done with `equal'.\n\
-If the first member of LIST is ELT, there is no way to remove it by side effect;\n\
-therefore, write `(setq foo (delete element foo))'\n\
+If the first member of LIST is ELT, deleting it is not a side effect;\n\
+it is simply using a different list.\n\
+Therefore, write `(setq foo (delete element foo))'\n\
 to be sure of changing the value of `foo'.")
   (elt, list)
      register Lisp_Object elt;
@@ -1047,7 +1054,7 @@ mapcar1 (leni, vals, fn, seq)
 DEFUN ("mapconcat", Fmapconcat, Smapconcat, 3, 3, 0,
   "Apply FN to each element of SEQ, and concat the results as strings.\n\
 In between each pair of results, stick in SEP.\n\
-Thus, \" \" as SEP results in spaces between the values return by FN.")
+Thus, \" \" as SEP results in spaces between the values returned by FN.")
   (fn, seq, sep)
      Lisp_Object fn, seq, sep;
 {
@@ -1124,6 +1131,19 @@ Also accepts Space to mean yes, or Delete to mean no.")
 
   while (1)
     {
+#ifdef HAVE_X_MENU
+      if (NILP (last_nonmenu_event) || CONSP (last_nonmenu_event))
+	{
+	  Lisp_Object pane, menu;
+	  pane = Fcons (Fcons (build_string ("Yes"), Qt),
+			Fcons (Fcons (build_string ("No"), Qnil),
+			       Qnil));
+	  menu = Fcons (prompt, pane);
+	  obj = Fx_popup_dialog (Qt, menu);
+	  answer = !NILP (obj);
+	  break;
+	}
+#endif
       cursor_in_echo_area = 1;
       message ("%s(y or n) ", XSTRING (xprompt)->data);
 
@@ -1208,14 +1228,31 @@ and can edit it until it as been confirmed.")
   register Lisp_Object ans;
   Lisp_Object args[2];
   struct gcpro gcpro1;
+  Lisp_Object menu;
 
   CHECK_STRING (prompt, 0);
+
+#ifdef HAVE_X_MENU
+  if (NILP (last_nonmenu_event) || CONSP (last_nonmenu_event))
+    {
+      Lisp_Object pane, menu, obj;
+      pane = Fcons (Fcons (build_string ("Yes"), Qt),
+		    Fcons (Fcons (build_string ("No"), Qnil),
+			   Qnil));
+      GCPRO1 (pane);
+      menu = Fcons (prompt, pane);
+      obj = Fx_popup_dialog (Qt, menu);
+      UNGCPRO;
+      return obj;
+    }
+#endif
 
   args[0] = prompt;
   args[1] = build_string ("(yes or no) ");
   prompt = Fconcat (2, args);
 
   GCPRO1 (prompt);
+
   while (1)
     {
       ans = Fdowncase (Fread_from_minibuffer (prompt, Qnil, Qnil, Qnil,

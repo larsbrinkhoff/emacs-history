@@ -2,7 +2,7 @@
 
 ;; Keywords: emulations
 
-;; Copyright (C) 1992, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -63,7 +63,7 @@
 	     command enabler name)
 	(cond ((stringp item)
 	       (setq command nil)
-	       (setq name item))
+	       (setq name (if (string-match "^-+$" item) "" item)))
 	      ((consp item)
 	       (setq command (make-lucid-menu-keymap (car item) (cdr item)))
 	       (setq name (car item)))
@@ -79,8 +79,12 @@
 	       (if (symbolp callback)
 		   (fset command callback)
 		 (fset command (list 'lambda () '(interactive) callback)))))
-	(if name 
-	    (define-key menu (vector (intern name)) (cons name command))))
+	(if (null command)
+	    ;; Handle inactive strings specially--allow any number
+	    ;; of identical ones.
+	    (setcdr menu (cons (list nil name) (cdr menu)))
+	  (if name 
+	      (define-key menu (vector (intern name)) (cons name command)))))
       (setq menu-items (cdr menu-items)))
     menu))
 
@@ -132,11 +136,66 @@ The syntax, more precisely:
   (let ((menu (make-lucid-menu-keymap (car menu-desc) (cdr menu-desc)))
 	(pos (mouse-position))
 	answer)
-    (setq answer (x-popup-menu (list (list (nth 1 pos) (nthcdr 2 pos))
-				     (car pos))
-			       menu))
-    (setq cmd (lookup-key menu (vector answer)))
-    (if cmd (call-interactively cmd))))
+    (while menu
+      (setq answer (x-popup-menu (list (list (nth 1 pos) (nthcdr 2 pos))
+				       (car pos))
+				 menu))
+      (setq cmd (lookup-key menu (vector answer)))
+      (setq menu nil)
+      (and cmd
+	   (if (keymapp cmd)
+	       (setq menu cmd)
+	     (call-interactively cmd))))))
+
+(defun popup-dialog-box (data)
+  "Pop up a dialog box.
+A dialog box description is a list.
+
+ - The first element of the list is a string to display in the dialog box.
+ - The rest of the elements are descriptions of the dialog box's buttons.
+   Each one is a vector of three elements:
+   - The first element is the text of the button.
+   - The second element is the `callback'.
+   - The third element is t or nil, whether this button is selectable.
+
+If the `callback' of a button is a symbol, then it must name a command.
+It will be invoked with `call-interactively'.  If it is a list, then it is
+evaluated with `eval'.
+
+One (and only one) of the buttons may be `nil'.  This marker means that all
+following buttons should be flushright instead of flushleft.
+
+The syntax, more precisely:
+
+   form		:=  <something to pass to `eval'>
+   command	:=  <a symbol or string, to pass to `call-interactively'>
+   callback 	:=  command | form
+   active-p	:=  <t, nil, or a form to evaluate to decide whether this
+		    button should be selectable>
+   name		:=  <string>
+   partition	:=  'nil'
+   button	:=  '['  name callback active-p ']'
+   dialog	:=  '(' name [ button ]+ [ partition [ button ]+ ] ')'"
+  (let ((name (car data))
+	(tail (cdr data))
+	converted
+	choice)
+    (while tail
+      (if (null (car tail))
+	  (setq converted (cons nil converted))
+	(let ((item (aref (car tail) 0))
+	      (callback (aref (car tail) 1))
+	      (enable (aref (car tail) 2)))
+	  (setq converted
+		(cons (if enable (cons item callback) item)
+		      converted))))
+      (setq tail (cdr tail)))
+    (setq choice (x-popup-dialog t (cons name (nreverse converted))))
+    (setq meaning (assq choice converted))
+    (if meaning
+	(if (symbolp (cdr meaning))
+	    (call-interactively (cdr meaning))
+	  (eval (cdr meaning))))))
 
 ;; This is empty because the usual elements of the menu bar 
 ;; are provided by menu-bar.el instead.
@@ -373,16 +432,17 @@ BEFORE, if provided, is the name of a menu before which this menu should
 (defvar put-buffer-names-in-file-menu t)
 
 
-(let ((frames (frame-list)))
-  (while frames
-    (modify-frame-parameters (car frames) '((menu-bar-lines . 1)))
-    (setq frames (cdr frames))))
-(or (assq 'menu-bar-lines default-frame-alist)
-    (setq default-frame-alist
-	  (cons '(menu-bar-lines . 1) default-frame-alist)))
+;; Don't unconditionally enable menu bars; leave that up to the user.
+;;(let ((frames (frame-list)))
+;;  (while frames
+;;    (modify-frame-parameters (car frames) '((menu-bar-lines . 1)))
+;;    (setq frames (cdr frames))))
+;;(or (assq 'menu-bar-lines default-frame-alist)
+;;    (setq default-frame-alist
+;;	  (cons '(menu-bar-lines . 1) default-frame-alist)))
 
 (set-menubar default-menubar)
 
-(provide 'menubar)
+(provide 'lmenu)
 
 ;;; lmenu.el ends here

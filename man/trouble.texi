@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Correcting Mistakes (Yours or Emacs's)
@@ -136,7 +136,8 @@ back to top level.  @xref{Recursive Edit}.
   If the data on the screen looks wrong, the first thing to do is see
 whether the text is really wrong.  Type @kbd{C-l}, to redisplay the
 entire screen.  If the screen appears correct after this, the problem
-was entirely in the previous screen update.
+was entirely in the previous screen update.  (Otherwise, see @ref{Text
+Garbled}.)
 
   Display updating problems often result from an incorrect termcap entry
 for the terminal you are using.  The file @file{etc/TERMS} in the Emacs
@@ -238,8 +239,8 @@ If not, and you type another @kbd{C-g}, it is suspended again.
 Presumably the quit you requested will happen soon.
 
   The double-@kbd{C-g} feature is turned off when Emacs is running under
-the X Window System, since the you can use the window manager to kill
-Emacs or to create another window and run another program.
+the X Window System, since you can use the window manager to kill Emacs
+or to create another window and run another program.
 
 @node Total Frustration
 @subsection Help for Total Frustration
@@ -376,21 +377,23 @@ the way you entered the text.@refill
 
 @cindex reporting bugs
   The best way to send a bug report is to mail it electronically to the
-Emacs maintainers at @samp{bug-gnu-emacs@@prep.ai.mit.edu}.
+Emacs maintainers at @samp{bug-gnu-emacs@@prep.ai.mit.edu}.  (If you
+want to suggest a change as an improvement, use the same address.)
 
   If you'd like to read the bug reports, you can find them on the
-repeater newsgroup @samp{gnu.emacs.bugs}; keep in mind, however, that as
-a spectator you should not criticize anything about what you see there.
+newsgroup @samp{gnu.emacs.bugs}; keep in mind, however, that as a
+spectator you should not criticize anything about what you see there.
 The purpose of bug reports is to give information to the Emacs
 maintainers.  Spectators are welcome only as long as they do not
-interfere with this.
+interfere with this.  In particular, some bug reports contain large
+amounts of data; spectators should not complain about this.
 
   Please do not post bug reports using netnews; mail is more reliable
 than netnews about reporting your correct address, which we may need in
 order to ask you for more information.
 
   If you can't send electronic mail, then mail the bug report on paper
-to this address:
+or machine-readable media to this address:
 
 @format
 GNU Emacs Bugs
@@ -545,8 +548,8 @@ first.  After they verify that they are using Emacs in a way that is
 supposed to work, they should report the bug.
 
 @item
-If you wish to mention something in the GNU Emacs source, show the
-portion in its context.  Don't just give a line number.
+If you wish to mention something in the GNU Emacs source, show the line
+of code with a few lines of context.  Don't just give a line number.
 
 The line numbers in the development sources don't match those in your
 sources.  It would take extra work for the maintainers to determine what
@@ -554,19 +557,19 @@ code is in your version at a given line number, and we could not be
 certain.
 
 @item
-Additional information from a debugger might enable someone to find a
-problem on a machine which he does not have available.  However, you
-need to think when you collect this information if you want it to be
-useful.
+Additional information from a C debugger such as GDB might enable
+someone to find a problem on a machine which he does not have available.
+However, you need to think when you collect this information if you want
+it to be useful.
 
 @cindex backtrace for bug reports
-For example, many people send just a backtrace, but that is never useful
-by itself.  A simple backtrace with arguments conveys little about what
-is happening inside GNU Emacs, because most of the arguments listed in
-the backtrace are pointers to Lisp objects.  The numeric values of these
-pointers have no significance whatever; all that matters is the contents
-of the objects they point to (and most of the contents are themselves
-pointers).
+For example, many people send just a backtrace, but that is not very
+useful by itself.  A simple backtrace with arguments often conveys
+little about what is happening inside GNU Emacs, because most of the
+arguments listed in the backtrace are pointers to Lisp objects.  The
+numeric values of these pointers have no significance whatever; all that
+matters is the contents of the objects they point to (and most of the
+contents are themselves pointers).
 
 @findex debug_print
 To provide useful information, you need to show the values of Lisp
@@ -576,11 +579,39 @@ the source to see which variables are Lisp objects, because the debugger
 thinks of them as integers.
 
 To show a variable's value in Lisp syntax, first print its value, then
-use the GDB command @code{pr} to print the Lisp object in Lisp syntax.
-(If you must use another debugger, call the function @code{debug_print}
-with the object as an argument.)  The @code{pr} command is defined
-by the file @file{src/.gdbinit} in the Emacs distribution, and it works
-only if you are debugging a running process (not with a core dump).
+use the user-defined GDB command @code{pr} to print the Lisp object in
+Lisp syntax.  (If you must use another debugger, call the function
+@code{debug_print} with the object as an argument.)  The @code{pr}
+command is defined by the file @file{src/.gdbinit} in the Emacs
+distribution, and it works only if you are debugging a running process
+(not with a core dump).
+
+To make Lisp errors stop Emacs and return to GDB, put a breakpoint at
+@code{Fsignal}.
+
+To find out which Lisp functions are running, using GDB, move up the
+stack, and each time you get to a frame for the function
+@code{Ffuncall}, type these GDB commands:
+
+@example
+p *args
+pr
+@end example
+
+@noindent
+To print the first argument that the function received, use these
+commands:
+
+@example
+p args[1]
+pr
+@end example
+
+@noindent
+You can print the other arguments likewise.  The argument @code{nargs}
+of @code{Ffuncall} says how many arguments @code{Ffuncall} received;
+these include the Lisp function itself and the arguments for that
+function.
 @end itemize
 
 Here are some things that are not necessary:
@@ -605,6 +636,20 @@ easier to spot, running under the debugger will take less time, etc.
 
 However, simplification is not vital; if you don't want to do this,
 please report the bug with your original test case.
+
+@item
+A system call trace of Emacs execution.
+
+System call traces are very useful for certain special kinds of
+debugging, but in most cases they give little useful information.  It is
+therefore strange that many people seem to think that @emph{the} way to
+report information about a crash is to send a system call trace.
+
+In most programs, a backtrace is normally far, far more informative than
+a system call trace.  Even in Emacs, a simple backtrace is generally
+more informative, though to give full information you should supplement
+the backtrace by displaying variable values and printing them as Lisp
+objects with @code{pr} (see above).
 
 @item
 A patch for the bug.
@@ -676,8 +721,8 @@ which purpose.  If we don't have time for this, we might have to ignore
 your changes entirely.
 
 If you send each change as soon as you have written it, with its own
-explanation, then the two changes never get tangled up, and we can
-consider each one properly without any extra work to disentangle them.
+explanation, then two changes never get tangled up, and we can consider
+each one properly without any extra work to disentangle them.
 
 @item
 Send each change as soon as that change is finished.  Sometimes people
@@ -696,8 +741,8 @@ always study a patch to decide whether we want to install it.  Unidiff
 format is better than contextless diffs, but not as easy to read as
 @samp{-c} format.
 
-If you have GNU diff, use @samp{diff -cp}, which shows the name of the
-function that each change occurs in.
+If you have GNU diff, use @samp{diff -c -F'^[_a-zA-Z0-9$]+ *('}, which
+shows the name of the function that each change occurs in.
 
 @item
 Write the change log entries for your changes.  This is both to save us
@@ -710,10 +755,10 @@ in large functions, it's often helpful to indicate where within the
 function the change was.
 
 On the other hand, once you have shown people where to find the change,
-you need not explain its purpose. Thus, if you add a new function, all
-you need to say about it is that it is new.  If you feel that the
-purpose needs explaining, it probably does---but the explanation will be
-much more useful if you put it in comments in the code.
+you need not explain its purpose in the change log.  Thus, if you add a
+new function, all you need to say about it is that it is new.  If you
+feel that the purpose needs explaining, it probably does---but put the
+explanation in comments in the code.  It will be more useful there.
 
 Please read the @file{ChangeLog} file to see what sorts of information
 to put in, and to learn the style that we use.  If you would like your

@@ -1,9 +1,8 @@
 ;;; gnuspost.el --- post news commands for GNUS newsreader
 
-;; Copyright (C) 1989, 1990, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1989, 1990, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
-;; Version: $Header: /home/fsf/rms/e19/lisp/RCS/gnuspost.el,v 1.16 1993/11/22 06:44:12 rms Exp $
 ;; Keywords: news
 
 ;; This file is part of GNU Emacs.
@@ -134,7 +133,8 @@ Type \\[describe-mode] once editing the article to get a list of commands."
 	     (if (eq major-mode 'gnus-article-mode) gnus-newsgroup-name))
 	    (subject nil)
 	    ;; Get default distribution.
-	    (distribution (car gnus-local-distributions)))
+	    (distribution (car gnus-local-distributions))
+	    (followup-to nil))
 	;; Connect to NNTP server if not connected yet, and get
 	;; several information.
 	(if (not (gnus-server-opened))
@@ -176,17 +176,24 @@ Type \\[describe-mode] once editing the article to get a list of commands."
 		;; Which do you like? (UMERIN)
 		;; (setq newsgroups (read-string "Newsgroups: " "general"))
 		(or newsgroups		;Use the default newsgroup.
-		    (setq newsgroups
-			  (completing-read "Newsgroup: "
-					   gnus-newsrc-assoc
-					   nil 'require-match
-					   newsgroups ;Default newsgroup.
-					   )))
+		    (let (group)
+		      (while (not
+			      (string=
+			       (setq group 
+				     (completing-read "Newsgroup: "
+						      gnus-newsrc-assoc
+						      nil 'require-match))
+			       ""))
+			(or followup-to (setq followup-to group))
+			(if newsgroups
+			    (setq newsgroups (concat newsgroups "," group))
+			  (setq newsgroups group)))))
 		(setq subject (read-string "Subject: "))
 		;; Choose a distribution from gnus-distribution-list.
 		;; completing-read should not be used with
 		;; 'require-match functionality in order to allow use
 		;; of unknow distribution.
+		(gnus-read-distributions-file)
 		(setq distribution
 		      (if (consp gnus-distribution-list)
 			  (completing-read "Distribution: "
@@ -207,6 +214,11 @@ Type \\[describe-mode] once editing the article to get a list of commands."
 	  ;; Suggested by ichikawa@flab.fujitsu.junet.
 	  (mail-position-on-field "Distribution")
 	  (insert (or distribution ""))
+	  ;; Add Followup-To header
+	  (if followup-to
+	      (progn
+		(mail-position-on-field "Followup-To")
+		(insert followup-to)))
 	  ;; Handle author copy using FCC field.
 	  (if gnus-author-copy
 	      (progn
@@ -243,6 +255,8 @@ original message into it."
 					  (search-forward "\n\n")
 					  (point)))))
 	  (setq from (mail-fetch-field "from"))
+	  ;; Get reply-to working corrrectly for gnus-auto-mail-to-author (jpm)
+	  (setq reply-to (mail-fetch-field "reply-to"))
 	  (setq	news-reply-yank-from from)
 	  (setq	subject (mail-fetch-field "subject"))
 	  (setq	date (mail-fetch-field "date"))
@@ -309,11 +323,12 @@ original message into it."
 		(mail-position-on-field "FCC")
 		(insert gnus-author-copy)))
 	  ;; Insert To: FROM field, which is expected to mail the
-	  ;; message to the author of the article too.
-	  (if (and gnus-auto-mail-to-author from)
+	  ;; message to the author of the article too.  Use Reply-To
+	  ;; field like gnus-mail-reply-using-m* (jpm).
+	  (if (and gnus-auto-mail-to-author (or reply-to from))
 	      (progn
 		(goto-char (point-min))
-		(insert "To: " from "\n")))
+		(insert "To: " (or reply-to from) "\n")))
 	  (goto-char (point-max)))
 	;; Yank original article automatically.
 	(if yank
@@ -628,10 +643,9 @@ a program specified by the rest of the value."
 
 (defun gnus-inews-login-name ()
   "Return user login name.
-Got from the variable gnus-user-login-name, the environment variables
-USER and LOGNAME, and the function user-login-name."
-  (or gnus-user-login-name
-      (getenv "USER") (getenv "LOGNAME") (user-login-name)))
+Got from the variable `gnus-user-login-name' and the function
+`user-login-name'."
+  (or gnus-user-login-name (user-login-name)))
 
 (defun gnus-inews-full-name ()
   "Return user full name.

@@ -1,5 +1,5 @@
 /* X Selection processing for emacs
-   Copyright (C) 1993 Free Software Foundation.
+   Copyright (C) 1993, 1994 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -249,7 +249,10 @@ x_own_selection (selection_name, selection_value)
   selection_atom = symbol_to_x_atom (display, selection_name);
 
   BLOCK_INPUT;
+  x_catch_errors ();
   XSetSelectionOwner (display, selection_atom, selecting_window, time);
+  x_check_errors ("Can't set selection: %s");
+  x_uncatch_errors ();
   UNBLOCK_INPUT;
 
   /* Now update the local cache */
@@ -323,9 +326,11 @@ x_get_local_selection (selection_symbol, target_type)
   else if (CONSP (target_type)
 	   && XCONS (target_type)->car == QMULTIPLE)
     {
-      Lisp_Object pairs = XCONS (target_type)->cdr;
-      int size = XVECTOR (pairs)->size;
+      Lisp_Object pairs;
+      int size;
       int i;
+      pairs = XCONS (target_type)->cdr;
+      size = XVECTOR (pairs)->size;
       /* If the target is MULTIPLE, then target_type looks like
 	  (MULTIPLE . [[SELECTION1 TARGET1] [SELECTION2 TARGET2] ... ])
 	 We modify the second element of each pair in the vector and
@@ -333,7 +338,8 @@ x_get_local_selection (selection_symbol, target_type)
        */
       for (i = 0; i < size; i++)
 	{
-	  Lisp_Object pair = XVECTOR (pairs)->contents [i];
+	  Lisp_Object pair;
+	  pair = XVECTOR (pairs)->contents [i];
 	  XVECTOR (pair)->contents [1]
 	    = x_get_local_selection (XVECTOR (pair)->contents [0],
 				     XVECTOR (pair)->contents [1]);
@@ -410,8 +416,9 @@ x_decline_selection_request (event)
   reply.property = None;
 
   BLOCK_INPUT;
-  (void) XSendEvent (reply.display, reply.requestor, False, 0L,
-		     (XEvent *) &reply);
+  XSendEvent (reply.display, reply.requestor, False, 0L,
+	      (XEvent *) &reply);
+  XFlushQueue ();
   UNBLOCK_INPUT;
 }
 
@@ -594,13 +601,18 @@ x_handle_selection_request (event)
      struct input_event *event;
 {
   struct gcpro gcpro1, gcpro2, gcpro3;
-  Lisp_Object local_selection_data = Qnil;
+  Lisp_Object local_selection_data;
   Lisp_Object selection_symbol;
-  Lisp_Object target_symbol = Qnil;
-  Lisp_Object converted_selection = Qnil;
+  Lisp_Object target_symbol;
+  Lisp_Object converted_selection;
   Time local_selection_time;
-  Lisp_Object successful_p = Qnil;
+  Lisp_Object successful_p;
   int count;
+
+  local_selection_data = Qnil;
+  target_symbol = Qnil;
+  converted_selection = Qnil;
+  successful_p = Qnil;
 
   GCPRO3 (local_selection_data, converted_selection, target_symbol);
 
@@ -676,7 +688,8 @@ x_handle_selection_request (event)
 
   /* Let random lisp code notice that the selection has been asked for.  */
   {
-    Lisp_Object rest = Vx_sent_selection_hooks;
+    Lisp_Object rest;
+    rest = Vx_sent_selection_hooks;
     if (!EQ (rest, Qunbound))
       for (; CONSP (rest); rest = Fcdr (rest))
 	call3 (Fcar (rest), selection_symbol, target_symbol, successful_p);
@@ -741,6 +754,7 @@ x_handle_selection_clear (event)
       {
 	for (; CONSP (rest); rest = Fcdr (rest))
 	  call1 (Fcar (rest), selection_symbol);
+	prepare_menu_bars ();
 	redisplay_preserve_echo_area ();
       }
   }
@@ -983,6 +997,7 @@ x_get_foreign_selection (selection_symbol, target_type)
     type_atom = symbol_to_x_atom (display, target_type);
 
   BLOCK_INPUT;
+  x_catch_errors ();
   XConvertSelection (display, selection_atom, type_atom, target_property,
 		     requestor_window, requestor_time);
   XFlushQueue ();
@@ -997,6 +1012,11 @@ x_get_foreign_selection (selection_symbol, target_type)
   secs = x_selection_timeout / 1000;
   usecs = (x_selection_timeout % 1000) * 1000;
   wait_reading_process_input (secs, usecs, reading_selection_reply, 0);
+
+  BLOCK_INPUT;
+  x_check_errors ("Cannot get selection: %s");
+  x_uncatch_errors ();
+  UNBLOCK_INPUT;
 
   if (NILP (XCONS (reading_selection_reply)->car))
     error ("timed out waiting for reply from selection owner");
@@ -1570,6 +1590,7 @@ anything that the functions on `selection-converter-alist' know about.")
   (selection_name, selection_value)
      Lisp_Object selection_name, selection_value;
 {
+  check_x ();
   CHECK_SYMBOL (selection_name, 0);
   if (NILP (selection_value)) error ("selection-value may not be nil.");
   x_own_selection (selection_name, selection_value);
@@ -1593,6 +1614,7 @@ TYPE is the type of data desired, typically `STRING'.")
   Lisp_Object val = Qnil;
   struct gcpro gcpro1, gcpro2;
   GCPRO2 (target_type, val); /* we store newly consed data into these */
+  check_x ();
   CHECK_SYMBOL (selection_symbol, 0);
 
 #if 0 /* #### MULTIPLE doesn't work yet */
@@ -1641,6 +1663,7 @@ Disowning it means there is no such selection.")
   Atom selection_atom;
   XSelectionClearEvent event;
 
+  check_x ();
   CHECK_SYMBOL (selection, 0);
   if (NILP (time))
     timestamp = last_event_timestamp;
@@ -1701,6 +1724,7 @@ and t is the same as `SECONDARY'.)")
   (selection)
      Lisp_Object selection;
 {
+  check_x ();
   CHECK_SYMBOL (selection, 0);
   if (EQ (selection, Qnil)) selection = QPRIMARY;
   if (EQ (selection, Qt)) selection = QSECONDARY;
@@ -1724,6 +1748,7 @@ and t is the same as `SECONDARY'.)")
   Window owner;
   Atom atom;
   Display *dpy = x_current_display;
+  check_x ();
   CHECK_SYMBOL (selection, 0);
   if (!NILP (Fx_selection_owner_p (selection)))
     return Qt;
@@ -1794,6 +1819,7 @@ DEFUN ("x-get-cut-buffer-internal", Fx_get_cut_buffer_internal,
   unsigned long size;
   Lisp_Object ret;
 
+  check_x ();
   CHECK_CUT_BUFFER (buffer, 0);
   buffer_atom = symbol_to_x_atom (display, buffer);
 
@@ -1828,6 +1854,7 @@ DEFUN ("x-store-cut-buffer-internal", Fx_store_cut_buffer_internal,
   int max_bytes = SELECTION_QUANTUM (display);
   if (max_bytes > MAX_SELECTION_QUANTUM) max_bytes = MAX_SELECTION_QUANTUM;
 
+  check_x ();
   CHECK_CUT_BUFFER (buffer, 0);
   CHECK_STRING (string, 0);
   buffer_atom = symbol_to_x_atom (display, buffer);
@@ -1872,6 +1899,7 @@ positive means move values forward, negative means backward.")
   Window window = RootWindow (display, 0); /* Cut buffers are on screen 0 */
   Atom props [8];
 
+  check_x ();
   CHECK_NUMBER (n, 0);
   if (XINT (n) == 0) return n;
   if (! cut_buffers_initialized) initialize_cut_buffers (display, window);

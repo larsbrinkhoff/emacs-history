@@ -1,5 +1,5 @@
 /* Work-alike for termcap, plus extra features.
-   Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -61,6 +61,10 @@ int bufsize = 128;
 #else
 #define BUFSIZE 2048
 #endif
+#endif
+
+#ifndef TERMCAP_NAME
+#define TERMCAP_NAME "/etc/termcap"
 #endif
 
 #ifndef emacs
@@ -357,7 +361,16 @@ valid_filename_p (fn)
 
 #else /* !VMS */
 
+#ifdef MSDOS /* MW, May 1993 */
+static int
+valid_filename_p (fn)
+     char *fn;
+{
+  return *fn == '/' || fn[1] == ':';
+}
+#else
 #define valid_filename_p(fn) (*(fn) == '/')
+#endif
 
 #endif /* !VMS */
 
@@ -388,9 +401,31 @@ tgetent (bp, name)
   char *indirect = NULL;	/* Terminal type in :tc= in TERMCAP value.  */
   int filep;
 
+#ifdef INTERNAL_TERMINAL
+  /* For the internal terminal we don't want to read any termcap file,
+     so fake it.  */
+  if (!strcmp (name, "internal"))
+    {
+      term = INTERNAL_TERMINAL;
+      if (!bp)
+	{
+	  malloc_size = 1 + strlen (term);
+	  bp = (char *) xmalloc (malloc_size);
+	}
+      strcpy (bp, term);
+      goto ret;
+    }
+#endif /* INTERNAL_TERMINAL */
+
   termcap_name = getenv ("TERMCAP");
   if (termcap_name && *termcap_name == '\0')
     termcap_name = NULL;
+#if defined (MSDOS) && !defined (TEST)
+  if (termcap_name && (*termcap_name == '\\'
+		       || *termcap_name == '/'
+		       || termcap_name[1] == ':'))
+    dostounix_filename(termcap_name);
+#endif
 
   filep = termcap_name && valid_filename_p (termcap_name);
 
@@ -419,15 +454,15 @@ tgetent (bp, name)
     }
 
   if (!termcap_name || !filep)
-#ifdef VMS
-    termcap_name = "emacs_library:[etc]termcap.dat";
-#else
-    termcap_name = "/etc/termcap";
-#endif
+    termcap_name = TERMCAP_NAME;
 
   /* Here we know we must search a file and termcap_name has its name.  */
 
+#ifdef MSDOS
+  fd = open (termcap_name, O_TEXT, 0);
+#else
   fd = open (termcap_name, 0, 0);
+#endif
   if (fd < 0)
     return -1;
 

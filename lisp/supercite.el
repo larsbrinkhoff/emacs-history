@@ -499,8 +499,9 @@ In version 18, the HISTORY argument is ignored."
   "Compatibility between Emacs 18 and 19 `read-string'.
 In version 18, the HISTORY argument is ignored."
   (if (memq 'v19 sc-emacs-features)
-      (funcall 'read-string prompt initial-contents history)
-    (funcall 'read-string prompt initial-contents)))
+      ;; maybe future versions will take a `history' argument:
+      (read-string prompt initial-contents)
+    (read-string prompt initial-contents)))
 
 (defun sc-submatch (matchnum &optional string)
   "Returns `match-beginning' and `match-end' sub-expression for MATCHNUM.
@@ -1786,6 +1787,7 @@ Note on function names in this list: all functions of the form
 ;; ======================================================================
 ;; published interface to mail and news readers
 
+;;;###autoload
 (defun sc-cite-original ()
   "Workhorse citing function which performs the initial citation.
 This is callable from the various mail and news readers' reply

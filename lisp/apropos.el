@@ -1,6 +1,6 @@
 ;;; apropos.el --- faster apropos commands.
 
-;; Copyright (C) 1989 Free Software Foundation, Inc.
+;; Copyright (C) 1989, 1994 Free Software Foundation, Inc.
 
 ;; Author: Joe Wells <jbw@bigbird.bu.edu>
 ;; Keywords: help
@@ -50,20 +50,11 @@
 Makes them run 2 or 3 times slower.  Set this non-nil if you have a fast
 machine.")
 
-;; If there isn't already a lisp variable named internal-doc-file-name, create
-;; it and document it.  This is so the code will work right after RMS adds
-;; internal-doc-file-name.
-;(or (boundp 'internal-doc-file-name)
-;    (setq internal-doc-file-name (concat data-directory "DOC")))
-;(or (documentation-property 'internal-doc-file-name 'variable-documentation)
-;    (put 'internal-doc-file-name 'variable-documentation
-;	 "The complete pathname of the documentation file that contains all
-;documentation for functions and variables defined before Emacs is dumped."))
-
 ;;;###autoload
 (defun apropos (regexp &optional do-all pred)
   "Show all symbols whose names contain matches for REGEXP.
-If optional argument DO-ALL is non-nil, does more (time-consuming) work such as
+If optional argument DO-ALL is non-nil (prefix argument if interactive),
+or if `apropos-do-all' is non-nil, does more (time-consuming) work such as
 showing key bindings.  Optional argument PRED is called with each symbol, and
 if it returns nil, the symbol is not shown.
 
@@ -107,7 +98,8 @@ Returns list of symbols and documentation found."
 ;;;###autoload
 (defun super-apropos (regexp &optional do-all)
   "Show symbols whose names/documentation contain matches for REGEXP.
-If optional argument DO-ALL is non-nil, does more (time-consuming) work such as
+If optional argument DO-ALL is non-nil (prefix argument if interactive),
+or if `apropos-do-all' is non-nil, does more (time-consuming) work such as
 showing key bindings and documentation that is not stored in the documentation
 file.
 
@@ -127,10 +119,11 @@ Returns list of symbols and documentation found."
 ;; Returns an alist of form ((symbol fn-doc var-doc) ...).
 
 (defun super-apropos-check-doc-file (regexp)
-  (let* ((doc-file (concat data-directory internal-doc-file-name))
-	 (doc-buffer (find-file-noselect doc-file t))
-	;;	(doc-buffer (or (get-file-buffer doc-file)
-	;;			(find-file-noselect doc-file)))
+  (let* ((doc-file (concat doc-directory internal-doc-file-name))
+	 (doc-buffer
+	  ;; Force fundamental mode for the DOC file.
+	  (let (auto-mode-alist)
+	    (find-file-noselect doc-file t)))
 	type symbol doc sym-list)
     (save-excursion
       (set-buffer doc-buffer)
@@ -153,10 +146,13 @@ Returns list of symbols and documentation found."
 			 (1- (point))
 		       (point))))
 	      item (assq symbol sym-list))
-	(or item
-	    (setq item (list symbol nil nil)
-		  sym-list (cons item sym-list)))
-	(setcar (nthcdr type item) doc)))
+	(and (if (= type 1)
+		 (and (fboundp symbol) (documentation symbol))
+	       (documentation-property symbol 'variable-documentation))
+	     (or item
+		 (setq item (list symbol nil nil)
+		       sym-list (cons item sym-list)))
+	     (setcar (nthcdr type item) doc))))
     sym-list))
 
 ;; This is passed as the argument to map-atoms, so it is called once for every
@@ -268,7 +264,9 @@ Returns list of symbols and documentation found."
 	       ;; in alist, and is not shadowed by a different local binding,
 	       ;; record it
 	       (and (symbolp command)
-		    (if regexp (string-match regexp (symbol-name command)))
+		    (if regexp
+			(string-match regexp (symbol-name command))
+		      t)
 		    (setq item (assq command alist))
 		    (if (or (vectorp sequence) (not (integerp key)))
 			(setq key (vconcat sequence (vector key)))
@@ -280,6 +278,9 @@ Returns list of symbols and documentation found."
 			(not (setq local (lookup-key current-local-map key)))
 			(numberp local)
 			(eq command local))
+		    ;; check if this binding is already recorded
+		    ;; (this can happen due to inherited keymaps)
+		    (not (member key (nthcdr 3 item)))
 		    ;; add this key binding to the item in alist
 		    (nconc item (cons key nil))))
 	      ((vectorp (car map))
@@ -294,7 +295,9 @@ Returns list of symbols and documentation found."
 			(setq command (cdr command)))
 		   ;; This is the same as the code in the previous case.
 		   (and (symbolp command)
-			(if regexp (string-match regexp (symbol-name command)))
+			(if regexp
+			    (string-match regexp (symbol-name command))
+			  t)
 			(setq item (assq command alist))
 			(if (or (vectorp sequence) (not (integerp key)))
 			    (setq key (vconcat sequence (vector key)))
@@ -306,6 +309,9 @@ Returns list of symbols and documentation found."
 			    (not (setq local (lookup-key current-local-map key)))
 			    (numberp local)
 			    (eq command local))
+			;; check if this binding is already recorded
+			;; (this can happen due to inherited keymaps)
+			(not (member key (nthcdr 3 item)))
 			;; add this key binding to the item in alist
 			(nconc item (cons key nil)))
 		   (setq i (1+ i))))))

@@ -1,6 +1,6 @@
 # Set up something to print out s-expressions.
 define pr
-set Fprin1 ($, Qexternal_debugging_output)
+set debug_print ($)
 echo \n
 end
 document pr
@@ -167,7 +167,6 @@ set print sevenbit-strings
 
 show environment DISPLAY
 show environment TERM
-show environment TERMCAP
 set args -geometry 80x40+0+0
 
 # Don't let abort actually run, as it will make

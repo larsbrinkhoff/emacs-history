@@ -1,6 +1,6 @@
 ;;; nroff-mode.el --- GNU Emacs major mode for editing nroff source
 
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: wp
@@ -33,6 +33,7 @@
 
 (defvar nroff-mode-abbrev-table nil
   "Abbrev table used while in nroff mode.")
+(define-abbrev-table 'nroff-mode-abbrev-table ())
 
 (defvar nroff-mode-map nil
      "Major mode keymap for nroff mode.")
@@ -62,6 +63,10 @@ closing requests for requests that are used in matched pairs."
   (setq local-abbrev-table nroff-mode-abbrev-table)
   (make-local-variable 'nroff-electric-mode)
   (setq nroff-electric-mode nil)
+  (make-local-variable 'outline-regexp)
+  (setq outline-regexp "\\.H[ ]+[1-7]+ ")
+  (make-local-variable 'outline-level)
+  (setq outline-level 'nroff-outline-level)
   ;; now define a bunch of variables for use by commands in this mode
   (make-local-variable 'page-delimiter)
   (setq page-delimiter "^\\.\\(bp\\|SK\\|OP\\)")
@@ -79,6 +84,12 @@ closing requests for requests that are used in matched pairs."
   (make-local-variable 'comment-indent-function)
   (setq comment-indent-function 'nroff-comment-indent)
   (run-hooks 'text-mode-hook 'nroff-mode-hook))
+
+(defun nroff-outline-level ()
+  (save-excursion
+    (looking-at outline-regexp)
+    (skip-chars-forward ".H ")
+    (string-to-int (buffer-substring (point) (+ 1 (point))))))
 
 ;;; Compute how much to indent a comment in nroff/troff source.
 ;;; By mit-erl!gildea April 86

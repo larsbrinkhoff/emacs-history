@@ -1,6 +1,6 @@
 ;;; awk-mode.el --- AWK code editing commands for Emacs
 
-;; Copyright (C) 1988 Free Software Foundation, Inc.
+;; Copyright (C) 1988, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: unix, languages
@@ -35,9 +35,9 @@
     ()
   (setq awk-mode-syntax-table (make-syntax-table))
   (modify-syntax-entry ?\\ "\\" awk-mode-syntax-table)
-  (modify-syntax-entry ?\n ">   " emacs-lisp-mode-syntax-table)
-  (modify-syntax-entry ?\f ">   " emacs-lisp-mode-syntax-table)
-  (modify-syntax-entry ?\# "<   " emacs-lisp-mode-syntax-table)
+  (modify-syntax-entry ?\n ">   " awk-mode-syntax-table)
+  (modify-syntax-entry ?\f ">   " awk-mode-syntax-table)
+  (modify-syntax-entry ?\# "<   " awk-mode-syntax-table)
   (modify-syntax-entry ?/ "." awk-mode-syntax-table)
   (modify-syntax-entry ?* "." awk-mode-syntax-table)
   (modify-syntax-entry ?+ "." awk-mode-syntax-table)
@@ -77,7 +77,7 @@ with no args, if that value is non-nil."
   (make-local-variable 'paragraph-ignore-fill-prefix)
   (setq paragraph-ignore-fill-prefix t)
   (make-local-variable 'indent-line-function)
-  (setq indent-line-function 'awk-indent-line)
+  (setq indent-line-function 'c-indent-line)
   (make-local-variable 'require-final-newline)
   (setq require-final-newline t)
   (make-local-variable 'comment-start)

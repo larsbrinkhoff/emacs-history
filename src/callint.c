@@ -1,5 +1,5 @@
 /* Call a Lisp function interactively.
-   Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -142,7 +142,8 @@ char *callint_argfuns[]
 static void
 check_mark ()
 {
-  Lisp_Object tem = Fmarker_buffer (current_buffer->mark);
+  Lisp_Object tem;
+  tem = Fmarker_buffer (current_buffer->mark);
   if (NILP (tem) || (XBUFFER (tem) != current_buffer))
     error ("The mark is not set now");
   if (!NILP (Vtransient_mark_mode) && NILP (Vmark_even_if_inactive)
@@ -321,14 +322,20 @@ Otherwise, this is done only if an arg is read using the minibuffer.")
 	}
       else if (*string == '@')
 	{
-	  Lisp_Object event =
-	    XVECTOR (this_command_keys)->contents[next_event];
+	  Lisp_Object event;
 
+	  event = XVECTOR (this_command_keys)->contents[next_event];
 	  if (EVENT_HAS_PARAMETERS (event)
 	      && XTYPE (event = XCONS (event)->cdr) == Lisp_Cons
 	      && XTYPE (event = XCONS (event)->car) == Lisp_Cons
 	      && XTYPE (event = XCONS (event)->car) == Lisp_Window)
-	    Fselect_window (event);
+	    {
+	      if (MINI_WINDOW_P (XWINDOW (event))
+		  && NILP (call1 (intern ("minibuffer-window-active-p"),
+				  event)))
+		error ("Attempt to select inactive minibuffer window");
+	      Fselect_window (event);
+	    }
 	  string++;
 	}
       else break;

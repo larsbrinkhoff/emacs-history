@@ -5,7 +5,6 @@
 ;; Author: Mike Williams <mikew@gopher.dosli.govt.nz>
 ;; Keywords: extensions, matching, mouse
 ;; Created: Thu Mar 28 13:48:23 1991
-;; Version: $Revision: 1.2 $
 
 ;; This file is part of GNU Emacs.
 
@@ -19,7 +18,7 @@
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
 
-;;; Commentary:
+;;; Commentary: ===========================================================
 ;;
 ;; This file provides routines for getting the `thing' at the location of
 ;; point, whatever that `thing' happens to be.  The `thing' is defined by
@@ -44,16 +43,9 @@
 ;;     (thing-at-point 'line)
 ;;     (thing-at-point 'page)
 
-;;; Code:
+;;; Code: =================================================================
 
 (provide 'thingatpt)
-
-;;=== Version =============================================================
-
-(defconst thing@pt-version (substring "$Revision: 1.2 $" 11 -2)
-  "The revision number of thing@pt (as string).  The complete RCS id is:
-
-  $Id: thingatpt.el,v 1.2 1993/11/23 19:33:55 rms Exp $")
 
 ;;=== Basic movement ======================================================
 

@@ -1,6 +1,6 @@
 ;;; dired-aux.el --- all of dired except what people usually use
 
-;; Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Sebastian Kremer <sk@thp.uni-koeln.de>.
 
@@ -279,7 +279,7 @@ with a prefix argument."
   ;; Quote everything except POSIX filename characters.
   ;; This should be safe enough even for really weird shells.
   (let ((result "") (start 0) end)
-    (while (string-match "[^---0-9a-zA-Z_./]" filename start)
+    (while (string-match "[^-0-9a-zA-Z_./]" filename start)
       (setq end (match-beginning 0)
 	    result (concat result (substring filename start end)
 			   "\\" (substring filename end (1+ end)))
@@ -492,11 +492,12 @@ and use this command with a prefix argument (the value does not matter)."
       (dired-log (concat "Failed to compress" from-file))
       from-file)))
 
+;;;###autoload
 (defun dired-compress-file (file)
   ;; Compress or uncompress FILE.
   ;; Return the name of the compressed or uncompressed file.
   ;; Return nil if no change in files.
-  (let ((handler (find-file-name-handler file)))
+  (let ((handler (find-file-name-handler file 'dired-compress-file)))
     (cond (handler
 	   (funcall handler 'dired-compress-file file))
 	  ((file-symlink-p file)
@@ -723,6 +724,7 @@ a prefix arg lets you edit the `ls' switches used for the new listing."
 	(set-buffer obuf)))
     success-list))
 
+;;;###autoload
 (defun dired-add-file (filename &optional marker-char)
   (dired-fun-in-all-buffers
    (file-name-directory filename)
@@ -766,20 +768,16 @@ a prefix arg lets you edit the `ls' switches used for the new listing."
 		    (dired-goto-next-nontrivial-file))
 		;; not found
 		(throw 'not-found "Subdir not found")))
-	    ;; found and point is at The Right Place:
-	    (let (buffer-read-only)
+	    (let (buffer-read-only opoint)
 	      (beginning-of-line)
+	      (setq opoint (point))
 	      (dired-add-entry-do-indentation marker-char)
-	      ;; don't expand `.' !
-	      (insert-directory (dired-make-absolute filename directory)
-				(concat dired-actual-switches "d"))
+	      ;; don't expand `.'.  Show just the file name within directory.
+	      (let ((default-directory directory))
+		(insert-directory filename
+				  (concat dired-actual-switches "d")))
+	      (dired-insert-set-properties opoint (point))
 	      (forward-line -1)
-	      ;; We want to have the non-directory part, only:
-	      (let* ((beg (dired-move-to-filename t)) ; error for strange output
-		     (end (dired-move-to-end-of-filename)))
-		(setq filename (buffer-substring beg end))
-		(delete-region beg end)
-		(insert (file-name-nondirectory filename)))
 	      (if dired-after-readin-hook;; the subdir-alist is not affected...
 		  (save-excursion;; ...so we can run it right now:
 		    (save-restriction
@@ -816,6 +814,7 @@ a prefix arg lets you edit the `ls' switches used for the new listing."
 	(forward-line 1))
     (point)))
 
+;;;###autoload
 (defun dired-remove-file (file)
   (dired-fun-in-all-buffers
    (file-name-directory file) (function dired-remove-entry) file))
@@ -827,6 +826,7 @@ a prefix arg lets you edit the `ls' switches used for the new listing."
 	   (delete-region (progn (beginning-of-line) (point))
 			  (save-excursion (forward-line 1) (point)))))))
 
+;;;###autoload
 (defun dired-relist-file (file)
   (dired-fun-in-all-buffers (file-name-directory file)
 			    (function dired-relist-entry) file))
@@ -868,10 +868,12 @@ Special value `always' suppresses confirmation.")
 	(rename-file to backup 0)	; confirm overwrite of old backup
 	(dired-relist-entry backup))))
 
+;;;###autoload
 (defun dired-copy-file (from to ok-flag)
   (dired-handle-overwrite to)
   (copy-file from to ok-flag dired-copy-preserve-time))
 
+;;;###autoload
 (defun dired-rename-file (from to ok-flag)
   (dired-handle-overwrite to)
   (rename-file from to ok-flag)		; error is caught in -create-files
@@ -1500,7 +1502,7 @@ This function takes some pains to conform to `ls -lR' output."
 (defun dired-insert-subdir-validate (dirname &optional switches)
   ;; Check that it is valid to insert DIRNAME with SWITCHES.
   ;; Signal an error if invalid (e.g. user typed `i' on `..').
-  (or (dired-in-this-tree dirname default-directory)
+  (or (dired-in-this-tree dirname (expand-file-name default-directory))
       (error  "%s: not in this directory tree" dirname))
   (if switches
       (let (case-fold-search)
@@ -1586,7 +1588,9 @@ This function takes some pains to conform to `ls -lR' output."
       (if (equal dirname (car (car (reverse dired-subdir-alist))))
 	  ;; top level directory may contain wildcards:
 	  (dired-readin-insert dired-directory)
-	(insert-directory dirname dired-actual-switches nil t)))
+	(let ((opoint (point)))
+	  (insert-directory dirname dired-actual-switches nil t)
+	  (dired-insert-set-properties opoint (point)))))
     (message "Reading directory %s...done" dirname)
     (setq end (point-marker))
     (indent-rigidly begin end 2)
@@ -1729,7 +1733,7 @@ The next char is either \\n, or \\r if DIR is hidden."
 ;;;###autoload
 (defun dired-mark-subdir-files ()
   "Mark all files except `.' and `..'."
-  (interactive "P")
+  (interactive)
   (let ((p-min (dired-subdir-min)))
     (dired-mark-files-in-region p-min (dired-subdir-max))))
 

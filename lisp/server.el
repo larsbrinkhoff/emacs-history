@@ -1,6 +1,6 @@
 ;;; server.el --- Lisp code for GNU Emacs running as server process.
 
-;; Copyright (C) 1986, 1987, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: William Sommerfeld <wesommer@athena.mit.edu>
 ;; Keywords: processes
@@ -73,8 +73,8 @@
 
 ;;; Code:
 
-(defvar server-program "emacsserver"
-  "*The program to use as the edit server")
+(defvar server-program (expand-file-name "emacsserver" exec-directory)
+  "*The program to use as the edit server.")
 
 (defvar server-visit-hook nil
   "*List of hooks to call when visiting a file for the Emacs server.")
@@ -95,6 +95,7 @@ When a buffer is marked as \"done\", it is removed from this list.")
 
 (defvar server-buffer-clients nil
   "List of clientids for clients requesting editing of current buffer.")
+(make-variable-buffer-local 'server-buffer-clients)
 ;; Changing major modes should not erase this local.
 (put 'server-buffer-clients 'permanent-local t)
 
@@ -108,9 +109,6 @@ If it is a frame, use the frame's selected window.")
 which are deleted and reused after each edit
 by the programs that invoke the emacs server.")
 
-(make-variable-buffer-local 'server-buffer-clients)
-(put 'server-buffer-clients 'permanent-local t)
-(setq-default server-buffer-clients nil)
 (or (assq 'server-buffer-clients minor-mode-alist)
     (setq minor-mode-alist (cons '(server-buffer-clients " Server") minor-mode-alist)))
 
@@ -249,10 +247,11 @@ as a suggestion for what to select next."
 	  (setq server-clients (delq client server-clients))))
       (setq old-clients (cdr old-clients)))
     (if (buffer-name buffer)
-	(save-excursion
-	  (set-buffer buffer)
-	  (setq server-buffer-clients nil)))
-    (bury-buffer buffer)
+	(progn
+	  (save-excursion
+	    (set-buffer buffer)
+	    (setq server-buffer-clients nil))
+	  (bury-buffer buffer)))
     next-buffer))
 
 (defun server-temp-file-p (buffer)
@@ -270,18 +269,36 @@ are considered temporary."
 Then bury it, and return a suggested buffer to select next."
   (let ((buffer (current-buffer)))
     (if server-buffer-clients
-	(progn
+	(let (suggested-buffer)
  	  (if (server-temp-file-p buffer)
 	      ;; For a temp file, save, and do make a non-numeric backup
 	      ;; (unless make-backup-files is nil).
 	      (let ((version-control nil)
 		    (buffer-backed-up nil))
 		(save-buffer)
-		(kill-buffer buffer))
+		(kill-buffer buffer)
+		(setq suggested-buffer (current-buffer)))
 	    (if (and (buffer-modified-p)
 		     (y-or-n-p (concat "Save file " buffer-file-name "? ")))
 		(save-buffer buffer)))
-	  (server-buffer-done buffer)))))
+	  (or (server-buffer-done buffer) suggested-buffer)))))
+
+;; If a server buffer is killed, release its client.
+;; I'm not sure this is really a good idea--do you want the client
+;; to proceed using whatever is on disk in that file?
+(defun server-kill-buffer-query-function ()
+  (or (not server-buffer-clients)
+      (yes-or-no-p (format "Buffer `%s' still has clients; kill it? "
+			   (buffer-name (current-buffer))))))
+
+(add-hook 'kill-buffer-query-functions
+ 	  'server-kill-buffer-query-function)
+
+(defun server-kill-emacs-query-function ()
+  (or (not server-clients)
+      (yes-or-no-p "Server buffers still have clients; exit anyway? ")))
+
+(add-hook 'kill-emacs-query-functions 'server-kill-emacs-query-function)
 
 (defun server-edit (&optional arg)
   "Switch to next server editing buffer; say \"Done\" for current buffer.
@@ -311,6 +328,8 @@ Arg NEXT-BUFFER is a suggestion; if it is a live buffer, use it."
 	 (select-window server-window))
 	((framep server-window)
 	 (select-window (frame-selected-window server-window))))
+  (if (window-minibuffer-p (selected-window))
+      (select-window (next-window nil 'nomini t)))
   (if next-buffer
       (if (and (bufferp next-buffer)
 	       (buffer-name next-buffer))

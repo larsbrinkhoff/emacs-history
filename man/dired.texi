@@ -703,6 +703,14 @@ Update the specified files (@code{dired-do-redisplay}).
 @item k
 Delete the specified @emph{file lines}---not the files, just the lines
 (@code{dired-do-kill-lines}).
+
+@item s
+Toggle between sorting by file name and sorting by date/time
+(@code{dired-sort-toggle-or-edit}).
+
+@item C-u s @var{switches}
+Refresh the Dired buffer using @var{switches} as
+@code{dired-listing-switches}.
 @end table
 
 @kindex g @r{(Dired)}
@@ -738,6 +746,21 @@ from the Dired buffer.
   The @kbd{g} command brings back any individual lines that you have
 killed in this way, but not subdirectories---you must use @kbd{i} to
 reinsert each subdirectory.
+
+@cindex Dired sorting
+@cindex sorting Dired buffer
+@kindex s @r{(Dired)}
+@findex dired-sort-toggle-or-edit
+  The files in a Dired buffers are normally in listed alphabetical order
+by file names.  Alternatively Dired can sort them by date/time.  The
+Dired command @kbd{s} (@code{dired-sort-toggle-or-edit}) switches
+between these two sorting modes.
+
+  The mode line in a Dired buffer indicates which way it is currently
+sorted---by name, or by date.
+
+  @kbd{C-u s @var{switches} @key{RET}} lets you specify a new value for
+@code{dired-listing-switches}.
 
 @node Dired and Find
 @section Dired and @code{find}

@@ -1,5 +1,5 @@
 /* Deal with the X Resource Manager.
-   Copyright (C) 1990, 1993 Free Software Foundation.
+   Copyright (C) 1990, 1993, 1994 Free Software Foundation.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -55,6 +55,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define MAXPATHLEN	256
 #endif
 
+#if !defined(S_ISDIR) && defined(S_IFDIR)
+#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
+#endif
+
 extern char *getenv ();
 
 /* This does cause trouble on AIX.  I'm going to take the comment at
@@ -72,6 +76,8 @@ extern struct passwd *getpwnam (const char *);
 extern struct passwd *getpwuid ();
 extern struct passwd *getpwnam ();
 #endif
+
+extern char *get_system_name ();
 
 /* Make sure not to #include anything after these definitions.  Let's
    not step on anyone's prototypes.  */
@@ -282,20 +288,17 @@ magic_file_p (string, string_len, class, escaped_suffix, suffix)
 static char *
 gethomedir ()
 {
-  int uid;
   struct passwd *pw;
   char *ptr;
   char *copy;
 
   if ((ptr = getenv ("HOME")) == NULL)
     {
-      if ((ptr = getenv ("USER")) != NULL)
+      if ((ptr = getenv ("LOGNAME")) != NULL
+	  || (ptr = getenv ("USER")) != NULL)
 	pw = getpwnam (ptr);
       else
-	{
-	  uid = getuid ();
-	  pw = getpwuid (uid);
-	}
+	pw = getpwuid (getuid ());
 
       if (pw)
 	ptr = pw->pw_dir;
@@ -320,7 +323,7 @@ file_p (path)
 
   return (access (path, 4) == 0			/* exists and is readable */
 	  && stat (path, &status) == 0		/* get the status */
-	  && (status.st_mode & S_IFDIR) == 0);	/* not a directory */
+	  && (S_ISDIR (status.st_mode)) == 0);	/* not a directory */
 }
 
 
@@ -339,23 +342,18 @@ search_magic_path (search_path, class, escaped_suffix, suffix)
       for (p = s; *p && *p != ':'; p++)
 	;
       
-      if (*p == ':' && *(p + 1) == ':')
+      if (p > s)
+	{
+	  char *path = magic_file_p (s, p - s, class, escaped_suffix, suffix);
+	  if (path)
+	    return path;
+	}
+      else if (*p == ':')
 	{
 	  char *path;
 
 	  s = "%N%S";
 	  path = magic_file_p (s, strlen (s), class, escaped_suffix, suffix);
-	  if (path)
-	    return path;
-
-	  /* Skip the first colon.  */
-	  p++;
-	  continue;
-	}
-
-      if (p > s)
-	{
-	  char *path = magic_file_p (s, p - s, class, escaped_suffix, suffix);
 	  if (path)
 	    return path;
 	}
@@ -482,26 +480,12 @@ get_environ_db ()
 {
   XrmDatabase db;
   char *p;
-  char *path = 0, *home = 0, *host = 0;
+  char *path = 0, *home = 0, *host;
 
   if ((p = getenv ("XENVIRONMENT")) == NULL)
     {
       home = gethomedir ();
-
-      {
-	int host_size = 100;
-	host = (char *) malloc (host_size);
-	
-	for (;;)
-	  {
-	    host[host_size - 1] = '\0';
-	    gethostname (host, host_size - 1);
-	    if (strlen (host) < host_size - 1)
-	      break;
-	    host = (char *) realloc (host, host_size *= 2);
-	  }
-      }
-
+      host = get_system_name ();
       path = (char *) malloc (strlen (home)
 			      + sizeof (".Xdefaults-")
 			      + strlen (host));
@@ -513,7 +497,6 @@ get_environ_db ()
 
   if (path) free (path);
   if (home) free (home);
-  if (host) free (host);
 
   return db;
 }
@@ -538,7 +521,11 @@ x_load_resources (display, xrm_string, myname, myclass)
   XrmDatabase db;
 
   x_rm_string = XrmStringToQuark (XrmStringType);
+#ifndef USE_X_TOOLKIT
+  /* pmr@osf.org says this shouldn't be done if USE_X_TOOLKIT.
+     I suspect it's because the toolkit version does this elsewhere.  */
   XrmInitialize ();
+#endif
   rdb = XrmGetStringDatabase ("");
 
   user_database = get_user_db (display);

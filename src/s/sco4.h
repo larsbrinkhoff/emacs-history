@@ -1,5 +1,5 @@
 /* System description file for SCO 3.2v4.
-   Copyright (C) 1993 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -56,11 +56,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
   sprintf (pty_name, "/dev/ptyp%d", i);
 #define PTY_TTY_NAME_SPRINTF \
   sprintf (pty_name, "/dev/ttyp%d", i);
-
-/* SCO perhaps has bcopy, et. al.  */
-#ifdef HAVE_BCOPY
-#define BSTRING
-#endif
 
 /* Sockets are an option on SCO.  If you have X, you have them.
    They also exist if you have TCP, but we don't know how to test
@@ -123,3 +118,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #else
 #define MAIL_PROGRAM_NAME "/usr/lib/mail/execmail"
 #endif
+
+/* miano@acosta.enet.dec.com says these are needed.  */
+#define bcopy(b1,b2,len) memmove (b2, b1, len)
+#define bzero(b,len) memset (b, 0, len)
+#define bcmp(b1,b2,len) memcmp (b1, b2, len)
+
+/* Tell process_send_signal to use VSUSP instead of VSWTCH.  */
+#define PREFER_VSUSP

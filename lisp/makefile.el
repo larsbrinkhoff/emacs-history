@@ -1,6 +1,6 @@
 ;;; makefile.el --- makefile editing commands for Emacs
 
-;; Copyright (C) 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Thomas Neumann <tom@smart.bo.open.de>
 ;;	Eric S. Raymond <esr@snark.thyrsus.com>
@@ -14,11 +14,10 @@
 ;; via M-TAB completion, not by preempting insertion of references.
 ;; Also, the doc strings need fixing: the first line doesn't stand alone,
 ;; and other usage is not high quality.  Symbol names don't have `...'.
-;; The Mode names is written as makefile-mode instead of Makefile mode.
 
 ;; So, for the meantime, this is not the default mode for makefiles.
 
-;; $Id: makefile.el,v 1.9 1993/06/09 11:54:21 jimb Exp $
+;; $Id: makefile.el,v 1.15 1994/04/22 20:20:49 rms Exp $
 
 ;; This file is part of GNU Emacs.
 
@@ -74,7 +73,7 @@
 ;;; Configurable stuff
 ;;; ------------------------------------------------------------
 
-(defconst makefile-mode-name "makefile"
+(defconst makefile-mode-name "Makefile"
   "The \"pretty name\" of makefile-mode, as it appears in the modeline.")
 
 (defvar makefile-browser-buffer-name "*Macros and Targets*"
@@ -169,7 +168,7 @@ not be enclosed in { } or ( ).")
   "Regex used to find macro assignment lines in a makefile.")
 
 (defconst makefile-ignored-files-in-pickup-regex
-  "\\(^\\..*\\)\\|\\(.*~$\\)\\|\\(.*,v$\\)\\|(\\.[chy]\\)"
+  "\\(^\\..*\\)\\|\\(.*~$\\)\\|\\(.*,v$\\)\\|\\(\\.[chy]\\)"
   "Regex for filenames that will NOT be included in the target list.")
 
 ;;; ------------------------------------------------------------
@@ -319,7 +318,7 @@ using makefile-pickup-macros.")
     ("foreach" "Variable" "List" "Text")
     ("origin" "Variable")
     ("shell" "Command"))
-  "A list of GNU make 3.62 function names associated with
+  "A list of GNU make function names associated with
 the prompts for each function.
 This is used in the function makefile-insert-gmake-function .")
 
@@ -410,14 +409,17 @@ makefile-special-targets-list:
    at the beginning of a line in makefile-mode."
   (interactive)
   (kill-all-local-variables)
-  (if (not (memq 'makefile-cleanup-continuations write-file-hooks))
-      (setq write-file-hooks
-	    (append write-file-hooks (list 'makefile-cleanup-continuations))))
-  (make-variable-buffer-local 'makefile-target-table)
-  (make-variable-buffer-local 'makefile-macro-table)
-  (make-variable-buffer-local 'makefile-has-prereqs)
-  (make-variable-buffer-local 'makefile-need-target-pickup)
-  (make-variable-buffer-local 'makefile-need-macro-pickup)
+  (make-local-variable 'local-write-file-hooks)
+  (setq local-write-file-hooks
+	'(makefile-cleanup-continuations makefile-warn-suspicious-lines))
+  (make-local-variable 'makefile-target-table)
+  (make-local-variable 'makefile-macro-table)
+  (make-local-variable 'makefile-has-prereqs)
+  (make-local-variable 'makefile-need-target-pickup)
+  (make-local-variable 'makefile-need-macro-pickup)
+  (make-local-variable 'comment-start)
+  (make-local-variable 'comment-end)
+  (make-local-variable 'comment-start-skip)
   (setq comment-start "#")
   (setq comment-end "")
   (setq comment-start-skip "#[ \t]*")
@@ -427,6 +429,7 @@ makefile-special-targets-list:
   ;; activate keymap
   (use-local-map makefile-mode-map)
   (set-syntax-table makefile-mode-syntax-table)
+  (setq indent-tabs-mode t)		;real TABs are important in makefiles
   (run-hooks 'makefile-mode-hook))  
 
 (defun makefile-next-dependency ()
@@ -499,8 +502,8 @@ Anywhere else just insert a dot."
       (completing-read "Refer to macro: " makefile-macro-table nil nil nil))))
    (if (not (zerop (length macro-name)))
        (if (assoc macro-name makefile-runtime-macros-list)
-	   (insert (format "$%s " macro-name))
-	 (insert (makefile-format-macro-ref macro-name) " "))))
+	   (insert (format "$%s" macro-name))
+	 (insert (makefile-format-macro-ref macro-name)))))
 
 (defun makefile-insert-target (target-name)
   "Prepare definition of a new target (dependency line)."
@@ -518,7 +521,7 @@ Anywhere else just insert a dot."
   "Complete on a list of known targets, then insert target-ref at (point) ."
   (interactive
    (list
-    (pogn
+    (progn
      (makefile-pickup-targets)
      (completing-read "Refer to target: " makefile-target-table nil nil nil))))
    (if (not (zerop (length target-name)))
@@ -651,25 +654,24 @@ names to the list of known targets."
 	   (makefile-format-macro-ref macro))))
 
 (defun makefile-browser-fill (targets macros)
-  (setq buffer-read-only nil)
-  (goto-char (point-min))
-  (erase-buffer)
-  (mapconcat
-   (function
-    (lambda (item) (insert (makefile-browser-format-target-line (car item) nil) "\n")))
-   targets
-   "")
-  (mapconcat
-   (function
-    (lambda (item) (insert (makefile-browser-format-macro-line (car item) nil) "\n")))
-   macros
-   "")
-  (sort-lines nil (point-min) (point-max))
-  (goto-char (1- (point-max)))
-  (delete-char 1)			; remove unnecessary newline at eob
-  (goto-char (point-min))
-  (forward-char makefile-browser-cursor-column)
-  (setq buffer-read-only t))
+  (let ((inhibit-read-only t))
+    (goto-char (point-min))
+    (erase-buffer)
+    (mapconcat
+     (function
+      (lambda (item) (insert (makefile-browser-format-target-line (car item) nil) "\n")))
+     targets
+     "")
+    (mapconcat
+     (function
+      (lambda (item) (insert (makefile-browser-format-macro-line (car item) nil) "\n")))
+     macros
+     "")
+    (sort-lines nil (point-min) (point-max))
+    (goto-char (1- (point-max)))
+    (delete-char 1)			; remove unnecessary newline at eob
+    (goto-char (point-min))
+    (forward-char makefile-browser-cursor-column)))
 
 ;;;
 ;;; Moving up and down in the browser
@@ -716,22 +718,21 @@ from that it has been entered."
     (setq this-line (max 1 this-line))
     (makefile-browser-toggle-state-for-line this-line)
     (goto-line this-line)
-    (setq buffer-read-only nil)
-    (beginning-of-line)
-    (if (makefile-browser-on-macro-line-p)
-	(let ((macro-name (makefile-browser-this-line-macro-name)))
+    (let ((inhibit-read-only t))
+      (beginning-of-line)
+      (if (makefile-browser-on-macro-line-p)
+	  (let ((macro-name (makefile-browser-this-line-macro-name)))
+	    (kill-line)
+	    (insert
+	     (makefile-browser-format-macro-line
+		macro-name
+		(makefile-browser-get-state-for-line this-line))))
+	(let ((target-name (makefile-browser-this-line-target-name)))
 	  (kill-line)
 	  (insert
-	   (makefile-browser-format-macro-line
-	      macro-name
-	      (makefile-browser-get-state-for-line this-line))))
-      (let ((target-name (makefile-browser-this-line-target-name)))
-	(kill-line)
-	(insert
-	 (makefile-browser-format-target-line
-	    target-name
-	    (makefile-browser-get-state-for-line this-line)))))
-    (setq buffer-read-only t)
+	   (makefile-browser-format-target-line
+	      target-name
+	      (makefile-browser-get-state-for-line this-line))))))
     (beginning-of-line)
     (forward-char makefile-browser-cursor-column)
     (if makefile-browser-auto-advance-after-selection-p
@@ -923,6 +924,28 @@ and generates the overview, one line per target name."
 	    (while (re-search-forward "\\\\[ \t]+$" (point-max) t)
 	      (replace-match "\\" t t))))))
 
+
+;;; ------------------------------------------------------------
+;;; Warn of suspicious lines
+;;; ------------------------------------------------------------
+
+(defun makefile-warn-suspicious-lines ()
+  (let ((dont-save nil))
+    (if (eq major-mode 'makefile-mode)
+	(let ((suspicious
+	       (save-excursion
+		 (goto-char (point-min))
+		 (re-search-forward
+		  "\\(^[\t]+$\\)\\|\\(^[ ]+[\t]\\)" (point-max) t))))
+	  (if suspicious
+	      (let ((line-nr (count-lines (point-min) suspicious)))
+		(setq dont-save
+		      (not (y-or-n-p
+			    (format "Suspicious line %d. Save anyway "
+				    line-nr))))))))
+    dont-save))
+	  
+
 ;;; ------------------------------------------------------------
 ;;; GNU make function support
 ;;; ------------------------------------------------------------
@@ -1015,9 +1038,12 @@ This accts according to the value of makefile-tab-after-target-colon ."
 (defun makefile-format-macro-ref (macro-name)
   "Format a macro reference according to the value of the
 configuration variable makefile-use-curly-braces-for-macros-p ."
-  (if makefile-use-curly-braces-for-macros-p
-      (format "${%s}" macro-name)
-    (format "$(%s)" macro-name)))
+  (if (or (char-equal ?\( (string-to-char macro-name))
+	  (char-equal ?\{ (string-to-char macro-name)))
+      (format "$%s" macro-name)
+    (if makefile-use-curly-braces-for-macros-p
+	(format "${%s}" macro-name)
+      (format "$(%s)" macro-name))))
 
 (defun makefile-browser-get-state-for-line (n)
   (aref makefile-browser-selection-vector (1- n)))

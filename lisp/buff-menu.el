@@ -1,6 +1,6 @@
 ;;; buff-menu.el --- buffer menu main function and support functions.
 
-;; Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 
@@ -48,6 +48,8 @@
 ; Put buffer *Buffer List* into proper mode right away
 ; so that from now on even list-buffers is enough to get a buffer menu.
 
+(defvar Buffer-menu-buffer-column nil)
+
 (defvar Buffer-menu-mode-map nil "")
 
 (if Buffer-menu-mode-map
@@ -77,6 +79,7 @@
   (define-key Buffer-menu-mode-map "m" 'Buffer-menu-mark)
   (define-key Buffer-menu-mode-map "t" 'Buffer-menu-visit-tags-table)
   (define-key Buffer-menu-mode-map "%" 'Buffer-menu-toggle-read-only)
+  (define-key Buffer-menu-mode-map [mouse-2] 'Buffer-menu-mouse-select)
 )
 
 ;; Buffer Menu mode is suitable only for specially formatted data.
@@ -87,16 +90,17 @@
 Each line describes one of the buffers in Emacs.
 Letters do not insert themselves; instead, they are commands.
 \\<Buffer-menu-mode-map>
-\\[Buffer-menu-mark] -- mark buffer to be displayed.
-\\[Buffer-menu-select] -- select buffer of line point is on.
-  Also show buffers marked with m in other windows.
+\\[Buffer-menu-mouse-select] -- select buffer you click on, in place of the buffer menu.
+\\[Buffer-menu-this-window] -- select current line's buffer in place of the buffer menu.
+\\[Buffer-menu-other-window] -- select that buffer in another window,
+  so the buffer menu buffer remains visible in its window.
+\\[Buffer-menu-switch-other-window] -- make another window display that buffer.
+\\[Buffer-menu-mark] -- mark current line's buffer to be displayed.
+\\[Buffer-menu-select] -- select current line's buffer.
+  Also show buffers marked with m, in other windows.
 \\[Buffer-menu-1-window] -- select that buffer in full-frame window.
 \\[Buffer-menu-2-window] -- select that buffer in one window,
   together with buffer selected before this one in another window.
-\\[Buffer-menu-this-window] -- select that buffer in place of the buffer menu buffer.
-\\[Buffer-menu-other-window] -- select that buffer in another window,
-  so the buffer menu buffer remains visible in its window.
-\\[Buffer-menu-switch-other-window] -- switch the other window to this buffer.
 \\[Buffer-menu-visit-tags-table] -- visit-tags-table this buffer.
 \\[Buffer-menu-not-modified] -- clear modified-flag on that buffer.
 \\[Buffer-menu-save] -- mark that buffer to be saved, and move down.
@@ -109,40 +113,41 @@ Letters do not insert themselves; instead, they are commands.
 \\[Buffer-menu-toggle-read-only] -- toggle read-only status of buffer on this line."
   (kill-all-local-variables)
   (use-local-map Buffer-menu-mode-map)
-  (setq truncate-lines t)
-  (setq buffer-read-only t)
   (setq major-mode 'Buffer-menu-mode)
   (setq mode-name "Buffer Menu")
+  (save-excursion
+    (goto-char (point-min))
+    (search-forward "Buffer")
+    (backward-word 1)
+    (setq Buffer-menu-buffer-column (current-column))
+    (forward-line 2)
+    (while (not (eobp))
+      (let ((where (Buffer-menu-buffer-name-position)))
+	(put-text-property (car where) (cdr where) 'mouse-face 'highlight))
+      (forward-line 1)))
+  (setq truncate-lines t)
+  (setq buffer-read-only t)
   (run-hooks 'buffer-menu-mode-hook))
 
-(defvar Buffer-menu-buffer-column nil)
-
-(defvar Buffer-menu-size-column nil)
-
 (defun Buffer-menu-buffer (error-if-non-existent-p)
   "Return buffer described by this line of buffer menu."
-  (if (null Buffer-menu-buffer-column)
-      (save-excursion
-       (goto-char (point-min))
-       (search-forward "Buffer")
-       (backward-word 1)
-       (setq Buffer-menu-buffer-column (current-column))
-       (search-forward "Size")
-       (backward-word 1)
-       (setq Buffer-menu-size-column (current-column))))
+  (let* ((where (Buffer-menu-buffer-name-position))
+	 (string (buffer-substring (car where) (cdr where))))
+    (or (get-buffer string)
+	(if error-if-non-existent-p
+	    (error "No buffer named \"%s\"" string)
+	  nil))))
+
+;; Find the start and end positions of the buffer name on this line.
+;; Returns a cons (START . END).
+(defun Buffer-menu-buffer-name-position ()
   (save-excursion
     (beginning-of-line)
     (forward-char Buffer-menu-buffer-column)
-    (let ((start (point))
-	  string)
-      ;; End of buffer name marked by tab or two spaces.
+    (let ((start (point)))
       (re-search-forward "\t\\|  ")
       (skip-chars-backward " \t")
-      (setq string (buffer-substring start (point)))
-      (or (get-buffer string)
-	  (if error-if-non-existent-p
-	      (error "No buffer named \"%s\"" string)
-	    nil)))))
+      (cons start (point)))))
 
 (defun buffer-menu (&optional arg)
   "Make a menu of buffers so you can save, delete or select them.
@@ -331,6 +336,18 @@ You can mark buffers with the \\<Buffer-menu-mode-map>\\[Buffer-menu-mark] comma
   (bury-buffer (other-buffer))
   (delete-other-windows))
 
+(defun Buffer-menu-mouse-select (event)
+  "Select the buffer whose line you click on."
+  (interactive "e")
+  (let (buffer)
+    (save-excursion
+      (set-buffer (window-buffer (posn-window (event-end event))))
+      (save-excursion
+	(goto-char (posn-point (event-end event)))
+	(setq buffer (Buffer-menu-buffer t))))
+    (select-window (posn-window (event-end event)))
+    (switch-to-buffer buffer)))
+
 (defun Buffer-menu-this-window ()
   "Select this line's buffer in this window."
   (interactive)
@@ -359,12 +376,12 @@ The current window remains selected."
     (bury-buffer menu)))
 
 (defun Buffer-menu-toggle-read-only ()
-  "Toggle read-only status of buffer on this line."
+  "Toggle read-only status of buffer on this line, perhaps via version control."
   (interactive)
   (let (char)
     (save-excursion
       (set-buffer (Buffer-menu-buffer t))
-      (toggle-read-only)
+      (vc-toggle-read-only)
       (setq char (if buffer-read-only ?% ? )))
     (save-excursion
       (beginning-of-line)

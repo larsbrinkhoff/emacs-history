@@ -1,5 +1,5 @@
 /* This file is the configuration file for the Linux operating system.
-   Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -155,7 +155,17 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* This is needed for disknew.c:update_frame() */
 
-#define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_pptr - (FILE)->_pbase)
+#ifdef emacs
+#ifdef _IO_STDIO_H
+/* new C libio names */
+#define PENDING_OUTPUT_COUNT(FILE) \
+  ((FILE)->_IO_write_ptr - (FILE)->_IO_write_base)
+#else /* !_IO_STDIO_H */
+/* old C++ iostream names */
+#define PENDING_OUTPUT_COUNT(FILE) \
+  ((FILE)->_pptr - (FILE)->_pbase)
+#endif /* !_IO_STDIO_H */
+#endif /* emacs */
 
 /* Linux has crt0.o in a non-standard place */
 #define START_FILES pre-crt0.o /usr/lib/crt0.o
@@ -171,8 +181,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define signal sys_signal
 #include <values.h>
 #endif
-
-#define HAVE_SETSID
 
 /* This is needed for sysdep.c */
 
@@ -226,3 +234,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #define HAVE_SYSVIPC
+
+#define A_TEXT_OFFSET(hdr) (N_MAGIC(hdr) == QMAGIC ? sizeof (struct exec) : 0)
+#define A_TEXT_SEEK(hdr) (N_TXTOFF(hdr) + A_TEXT_OFFSET(hdr))
+#define ADJUST_EXEC_HEADER \
+  unexec_text_start = N_TXTADDR(ohdr) + A_TEXT_OFFSET(ohdr)

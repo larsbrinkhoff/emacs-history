@@ -1,6 +1,6 @@
 ;;; iso-insert.el --- insert functions for ISO 8859/1.
 
-;; Copyright (C) 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1987, 1994 Free Software Foundation, Inc.
 
 ;; Author: Howard Gayle
 ;; Maintainer: FSF
@@ -563,9 +563,8 @@
    (define-key 8859-1-map "="    'insert-macron)
    (define-key 8859-1-map ">"    'insert-angle-quotation-mark-right)
    (define-key 8859-1-map "?"    'insert-inverted-question-mark)
-   (define-key 8859-1-map "A"    (make-sparse-keymap))
-   (define-key 8859-1-map "AA"   'insert-A-ring)
-   (define-key 8859-1-map "AE"   'insert-AE)
+   (define-key 8859-1-map "A"    'insert-A-ring)
+   (define-key 8859-1-map "E"    'insert-AE)
    (define-key 8859-1-map "C"    'insert-copyright-sign)
    (define-key 8859-1-map "D"    'insert-D-stroke)
    (define-key 8859-1-map "L"    'insert-pound-sign)
@@ -602,9 +601,8 @@
    (define-key 8859-1-map "`i"   'insert-i-grave)
    (define-key 8859-1-map "`o"   'insert-o-grave)
    (define-key 8859-1-map "`u"   'insert-u-grave)
-   (define-key 8859-1-map "a"    (make-sparse-keymap))
-   (define-key 8859-1-map "aa"   'insert-a-ring)
-   (define-key 8859-1-map "ae"   'insert-ae)
+   (define-key 8859-1-map "a"    'insert-a-ring)
+   (define-key 8859-1-map "e"    'insert-ae)
    (define-key 8859-1-map "c"    'insert-cent-sign)
    (define-key 8859-1-map "d"    'insert-d-stroke)
    (define-key 8859-1-map "o"    'insert-degree-sign)

@@ -1,5 +1,5 @@
 /* Lisp functions pertaining to editing.
-   Copyright (C) 1985, 1986, 1987, 1989, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985,86,87,89,93,94 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -43,7 +43,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 Lisp_Object Vsystem_name;
 Lisp_Object Vuser_real_name;	/* login name of current user ID */
 Lisp_Object Vuser_full_name;	/* full name of current user */
-Lisp_Object Vuser_name;		/* user name from USER or LOGNAME.  */
+Lisp_Object Vuser_name;		/* user name from LOGNAME or USER */
 
 void
 init_editfns ()
@@ -76,9 +76,9 @@ init_editfns ()
 
   /* Get the effective user name, by consulting environment variables,
      or the effective uid if those are unset.  */
-  user_name = (char *) getenv ("USER");
+  user_name = (char *) getenv ("LOGNAME");
   if (!user_name)
-    user_name = (char *) getenv ("LOGNAME");
+    user_name = (char *) getenv ("USER");
   if (!user_name)
     {
       pw = (struct passwd *) getpwuid (geteuid ());
@@ -295,7 +295,7 @@ Lisp_Object
 save_excursion_restore (info)
      register Lisp_Object info;
 {
-  register Lisp_Object tem, tem1;
+  register Lisp_Object tem, tem1, omark, nmark;
 
   tem = Fmarker_buffer (Fcar (info));
   /* If buffer being returned to is now deleted, avoid error */
@@ -309,7 +309,9 @@ save_excursion_restore (info)
   Fgoto_char (tem);
   unchain_marker (tem);
   tem = Fcar (Fcdr (info));
+  omark = Fmarker_position (current_buffer->mark);
   Fset_marker (current_buffer->mark, tem, Fcurrent_buffer ());
+  nmark = Fmarker_position (tem);
   unchain_marker (tem);
   tem = Fcdr (Fcdr (info));
 #if 0 /* We used to make the current buffer visible in the selected window
@@ -324,10 +326,19 @@ save_excursion_restore (info)
 
   tem1 = current_buffer->mark_active;
   current_buffer->mark_active = Fcdr (tem);
-  if (! NILP (current_buffer->mark_active))
-    call1 (Vrun_hooks, intern ("activate-mark-hook"));
-  else if (! NILP (tem1))
-    call1 (Vrun_hooks, intern ("deactivate-mark-hook"));
+  if (!NILP (Vrun_hooks))
+    {
+      /* If mark is active now, and either was not active
+	 or was at a different place, run the activate hook.  */
+      if (! NILP (current_buffer->mark_active))
+	{
+	  if (! EQ (omark, nmark))
+	    call1 (Vrun_hooks, intern ("activate-mark-hook"));
+	}
+      /* If mark has ceased to be active, run deactivate hook.  */
+      else if (! NILP (tem1))
+	call1 (Vrun_hooks, intern ("deactivate-mark-hook"));
+    }
   return Qnil;
 }
 
@@ -483,7 +494,7 @@ If POS is out of range, the value is nil.")
 DEFUN ("user-login-name", Fuser_login_name, Suser_login_name, 0, 0, 0,
   "Return the name under which the user logged in, as a string.\n\
 This is based on the effective uid, not the real uid.\n\
-Also, if the environment variable USER or LOGNAME is set,\n\
+Also, if the environment variable LOGNAME or USER is set,\n\
 that determines the value of this function.")
   ()
 {
@@ -493,7 +504,8 @@ that determines the value of this function.")
 DEFUN ("user-real-login-name", Fuser_real_login_name, Suser_real_login_name,
   0, 0, 0,
   "Return the name of the user's real uid, as a string.\n\
-Differs from `user-login-name' when running under `su'.")
+This ignores the environment variables LOGNAME and USER, so it differs from\n\
+`user-login-name' when running under `su'.")
   ()
 {
   return Vuser_real_name;
@@ -525,6 +537,13 @@ DEFUN ("system-name", Fsystem_name, Ssystem_name, 0, 0, 0,
   ()
 {
   return Vsystem_name;
+}
+
+DEFUN ("emacs-pid", Femacs_pid, Semacs_pid, 0, 0, 0,
+  "Return the process ID of Emacs, as an integer.")
+  ()
+{
+  return make_number (getpid ());
 }
 
 DEFUN ("current-time", Fcurrent_time, Scurrent_time, 0, 0, 0,
@@ -604,26 +623,25 @@ and from `file-attributes'.")
 
 /* Yield A - B, measured in seconds.  */
 static long
-difftm(a, b)
+difftm (a, b)
      struct tm *a, *b;
 {
   int ay = a->tm_year + (TM_YEAR_ORIGIN - 1);
   int by = b->tm_year + (TM_YEAR_ORIGIN - 1);
-  return
-    (
-     (
-      (
-       /* difference in day of year */
-       a->tm_yday - b->tm_yday
-       /* + intervening leap days */
-       +  ((ay >> 2) - (by >> 2))
-       -  (ay/100 - by/100)
-       +  ((ay/100 >> 2) - (by/100 >> 2))
-       /* + difference in years * 365 */
-       +  (long)(ay-by) * 365
-       )*24 + (a->tm_hour - b->tm_hour)
-      )*60 + (a->tm_min - b->tm_min)
-     )*60 + (a->tm_sec - b->tm_sec);
+  /* Some compilers can't handle this as a single return statement.  */
+  int days = (
+	      /* difference in day of year */
+	      a->tm_yday - b->tm_yday
+	      /* + intervening leap days */
+	      +  ((ay >> 2) - (by >> 2))
+	      -  (ay/100 - by/100)
+	      +  ((ay/100 >> 2) - (by/100 >> 2))
+	      /* + difference in years * 365 */
+	      +  (long)(ay-by) * 365
+	      );
+  return (60*(60*(24*days + (a->tm_hour - b->tm_hour))
+	      + (a->tm_min - b->tm_min))
+	  + (a->tm_sec - b->tm_sec));
 }
 
 DEFUN ("current-time-zone", Fcurrent_time_zone, Scurrent_time_zone, 0, 1, 0,
@@ -662,7 +680,7 @@ the data it can't find.")
       s = 0;
 #ifdef HAVE_TM_ZONE
       if (t->tm_zone)
-	s = t->tm_zone;
+	s = (char *)t->tm_zone;
 #else /* not HAVE_TM_ZONE */
 #ifdef HAVE_TZNAME
       if (t->tm_isdst == 0 || t->tm_isdst == 1)
@@ -890,7 +908,7 @@ Lisp_Object
 make_buffer_string (start, end)
      int start, end;
 {
-  Lisp_Object result, tem;
+  Lisp_Object result, tem, tem1;
 
   if (start < GPT && GPT < end)
     move_gap (start);
@@ -899,9 +917,10 @@ make_buffer_string (start, end)
   bcopy (&FETCH_CHAR (start), XSTRING (result)->data, end - start);
 
   tem = Fnext_property_change (make_number (start), Qnil, make_number (end));
+  tem1 = Ftext_properties_at (make_number (start), Qnil);
 
 #ifdef USE_TEXT_PROPERTIES
-  if (XINT (tem) != end)
+  if (XINT (tem) != end || !NILP (tem1))
     copy_intervals_to_string (result, current_buffer, start, end - start);
 #endif
 
@@ -1141,14 +1160,6 @@ and don't mark the buffer as really changed.")
   stop = XINT (end);
   look = XINT (fromchar);
 
-  if (! NILP (noundo))
-    {
-      if (MODIFF - 1 == current_buffer->save_modified)
-	current_buffer->save_modified++;
-      if (MODIFF - 1 == current_buffer->auto_save_modified)
-	current_buffer->auto_save_modified++;
-    }
-
   while (pos < stop)
     {
       if (FETCH_CHAR (pos) == look)
@@ -1156,7 +1167,16 @@ and don't mark the buffer as really changed.")
 	  if (! changed)
 	    {
 	      modify_region (current_buffer, XINT (start), stop);
-	      changed = 1;
+
+	      if (! NILP (noundo))
+		{
+		  if (MODIFF - 1 == current_buffer->save_modified)
+		    current_buffer->save_modified++;
+		  if (MODIFF - 1 == current_buffer->auto_save_modified)
+		    current_buffer->auto_save_modified++;
+		}
+
+ 	      changed = 1;
 	    }
 
 	  if (NILP (noundo))
@@ -1359,6 +1379,12 @@ use `save-excursion' outermost:\n\
   return unbind_to (count, val);
 }
 
+/* Buffer for the most recent text displayed by Fmessage.  */
+static char *message_text;
+
+/* Allocated length of that buffer.  */
+static int message_length;
+
 DEFUN ("message", Fmessage, Smessage, 1, MANY, 0,
   "Print a one-line message at the bottom of the screen.\n\
 The first argument is a control string.\n\
@@ -1382,7 +1408,19 @@ minibuffer contents show.")
     {
       register Lisp_Object val;
       val = Fformat (nargs, args);
-      message ("%s", XSTRING (val)->data);
+      /* Copy the data so that it won't move when we GC.  */
+      if (! message_text)
+	{
+	  message_text = (char *)xmalloc (80);
+	  message_length = 80;
+	}
+      if (XSTRING (val)->size > message_length)
+	{
+	  message_length = XSTRING (val)->size;
+	  message_text = (char *)xrealloc (message_text, message_length);
+	}
+      bcopy (XSTRING (val)->data, message_text, XSTRING (val)->size);
+      message2 (message_text, XSTRING (val)->size);
       return val;
     }
 }
@@ -1434,7 +1472,7 @@ Use %% to put a single % into the output.")
 	if (*format == '%')
 	  format++;
 	else if (++n >= nargs)
-	  ;
+	  error ("not enough arguments for format string");
 	else if (*format == 'S')
 	  {
 	    /* For `S', prin1 the argument and then treat like a string.  */
@@ -1451,6 +1489,8 @@ Use %% to put a single % into the output.")
 	else if (XTYPE (args[n]) == Lisp_String)
 	  {
 	  string:
+	    if (*format != 's' && *format != 'S')
+	      error ("format specifier doesn't match argument type");
 	    total += XSTRING (args[n])->size;
 	  }
 	/* Would get MPV otherwise, since Lisp_Int's `point' to low memory.  */
@@ -1577,6 +1617,346 @@ Case is ignored if `case-fold-search' is non-nil in the current buffer.")
     return Qt;
   return Qnil;
 }
+
+/* Transpose the markers in two regions of the current buffer, and
+   adjust the ones between them if necessary (i.e.: if the regions
+   differ in size).
+
+   Traverses the entire marker list of the buffer to do so, adding an
+   appropriate amount to some, subtracting from some, and leaving the
+   rest untouched.  Most of this is copied from adjust_markers in insdel.c.
+  
+   It's caller's job to see that (start1 <= end1 <= start2 <= end2),
+   and that the buffer gap will not conflict with the markers.  This
+   last requirement is odd and maybe should be taken out, but it works
+   for now because Ftranspose_regions does in fact guarantee that, in
+   addition to providing universal health-care coverage.  */
+
+void
+transpose_markers (start1, end1, start2, end2)
+     register int start1, end1, start2, end2;
+{
+  register int amt1, amt2, diff, mpos;
+  register Lisp_Object marker;
+  register struct Lisp_Marker *m;
+
+  /* Update point as if it were a marker.
+     Do this before adjusting the start/end values for the gap.  */
+  if (PT < start1)
+    ;
+  else if (PT < end1)
+    TEMP_SET_PT (PT + (end2 - end1));
+  else if (PT < start2)
+    TEMP_SET_PT (PT + (end2 - start2) - (end1 - start1));
+  else if (PT < end2)
+    TEMP_SET_PT (PT - (start2 - start1));
+
+  /* Internally, marker positions take the gap into account, so if the
+   * gap is before one or both of the regions, the region's limits
+   * must be adjusted to compensate.  The caller guaranteed that the
+   * gap is not inside any of the regions, however, so this is fairly
+   * simple.
+   */
+  if (GPT < start1)
+    {
+      register int gs = GAP_SIZE;
+      start1 += gs; end1 += gs;
+      start2 += gs; end2 += gs;
+    }
+  else if (GPT < start2)
+    {
+      /* If the regions are of equal size, the gap could, in theory,
+       * be somewhere between them. */
+      register int gs = GAP_SIZE;
+      start2 += gs; end2 += gs;
+    }
+
+  /* The difference between the region's lengths */
+  diff = (end2 - start2) - (end1 - start1);
+  
+  /* For shifting each marker in a region by the length of the other
+   * region plus the distance between the regions.
+   */
+  amt1 = (end2 - start2) + (start2 - end1);
+  amt2 = (end1 - start1) + (start2 - end1);
+
+  marker = current_buffer->markers;
+
+  while (!NILP (marker))
+    {
+      m = XMARKER (marker);
+      mpos = m->bufpos;
+      if (mpos >= start1 && mpos < end1)       /* in region 1 */
+        {
+          m->bufpos += amt1;
+        }
+      else if (mpos >= start2 && mpos < end2)  /* in region 2 */
+        {
+          m->bufpos -= amt2;
+        }
+      else if (mpos >= end1 && mpos < start2)  /* between the regions */
+        {
+          m->bufpos += diff;
+        }
+      marker = m->chain;
+    }
+}
+
+DEFUN ("transpose-regions", Ftranspose_regions, Stranspose_regions, 4, 5, 0,
+       "Transpose region START1 to END1 with START2 to END2.\n\
+The regions may not be overlapping, because the size of the buffer is\n\
+never changed in a transposition.\n\
+\n\
+Optional fifth arg LEAVE_MARKERS, if non-nil, means don't transpose\n\
+any markers that happen to be located in the regions.\n\
+\n\
+Transposing beyond buffer boundaries is an error.")
+  (startr1, endr1, startr2, endr2, leave_markers)
+     Lisp_Object startr1, endr1, startr2, endr2, leave_markers;
+{
+  register int start1, end1, start2, end2,
+  gap, len1, len_mid, len2;
+  unsigned char *start1_addr, *start2_addr, *temp;
+
+#ifdef USE_TEXT_PROPERTIES
+  INTERVAL cur_intv, tmp_interval1, tmp_interval_mid, tmp_interval2;
+  cur_intv = current_buffer->intervals;
+#endif /* USE_TEXT_PROPERTIES */
+
+  validate_region (&startr1, &endr1);
+  validate_region (&startr2, &endr2);
+
+  start1 = XFASTINT (startr1);
+  end1 = XFASTINT (endr1);
+  start2 = XFASTINT (startr2);
+  end2 = XFASTINT (endr2);
+  gap = GPT;
+
+  /* Swap the regions if they're reversed.  */
+  if (start2 < end1)
+    {
+      register int glumph = start1;
+      start1 = start2;
+      start2 = glumph;
+      glumph = end1;
+      end1 = end2;
+      end2 = glumph;
+    }
+
+  len1 = end1 - start1;
+  len2 = end2 - start2;
+
+  if (start2 < end1)
+    error ("transposed regions not properly ordered");
+  else if (start1 == end1 || start2 == end2)
+    error ("transposed region may not be of length 0");
+
+  /* The possibilities are:
+     1. Adjacent (contiguous) regions, or separate but equal regions
+     (no, really equal, in this case!), or
+     2. Separate regions of unequal size.
+     
+     The worst case is usually No. 2.  It means that (aside from
+     potential need for getting the gap out of the way), there also
+     needs to be a shifting of the text between the two regions.  So
+     if they are spread far apart, we are that much slower... sigh.  */
+
+  /* It must be pointed out that the really studly thing to do would
+     be not to move the gap at all, but to leave it in place and work
+     around it if necessary.  This would be extremely efficient,
+     especially considering that people are likely to do
+     transpositions near where they are working interactively, which
+     is exactly where the gap would be found.  However, such code
+     would be much harder to write and to read.  So, if you are
+     reading this comment and are feeling squirrely, by all means have
+     a go!  I just didn't feel like doing it, so I will simply move
+     the gap the minimum distance to get it out of the way, and then
+     deal with an unbroken array.  */
+
+  /* Make sure the gap won't interfere, by moving it out of the text
+     we will operate on.  */
+  if (start1 < gap && gap < end2)
+    {
+      if (gap - start1 < end2 - gap)
+	move_gap (start1);
+      else
+	move_gap (end2);
+    }
+
+  start1_addr = BUF_CHAR_ADDRESS (current_buffer, start1);
+  start2_addr = BUF_CHAR_ADDRESS (current_buffer, start2);
+      
+  /* Hmmm... how about checking to see if the gap is large
+     enough to use as the temporary storage?  That would avoid an
+     allocation... interesting.  Later, don't fool with it now.  */
+
+  /* Working without memmove, for portability (sigh), so must be
+     careful of overlapping subsections of the array...  */
+
+  if (end1 == start2)		/* adjacent regions */
+    {
+      modify_region (current_buffer, start1, end2);
+      record_change (start1, len1 + len2);
+
+#ifdef USE_TEXT_PROPERTIES
+      tmp_interval1 = copy_intervals (cur_intv, start1, len1);
+      tmp_interval2 = copy_intervals (cur_intv, start2, len2);
+      Fset_text_properties (start1, end2, Qnil, Qnil);
+#endif /* USE_TEXT_PROPERTIES */
+
+      /* First region smaller than second.  */
+      if (len1 < len2)
+        {
+	  /* We use alloca only if it is small,
+	     because we want to avoid stack overflow.  */
+	  if (len2 > 20000)
+	    temp = (unsigned char *) xmalloc (len2);
+	  else
+	    temp = (unsigned char *) alloca (len2);
+          bcopy (start2_addr, temp, len2);
+          bcopy (start1_addr, start1_addr + len2, len1);
+          bcopy (temp, start1_addr, len2);
+	  if (len2 > 20000)
+	    free (temp);
+        }
+      else
+	/* First region not smaller than second.  */
+        {
+	  if (len1 > 20000)
+	    temp = (unsigned char *) xmalloc (len1);
+	  else
+	    temp = (unsigned char *) alloca (len1);
+          bcopy (start1_addr, temp, len1);
+          bcopy (start2_addr, start1_addr, len2);
+          bcopy (temp, start1_addr + len2, len1);
+	  if (len1 > 20000)
+	    free (temp);
+        }
+#ifdef USE_TEXT_PROPERTIES
+      graft_intervals_into_buffer (tmp_interval1, start1 + len2,
+                                   len1, current_buffer, 0);
+      graft_intervals_into_buffer (tmp_interval2, start1,
+                                   len2, current_buffer, 0);
+#endif /* USE_TEXT_PROPERTIES */
+    }
+  /* Non-adjacent regions, because end1 != start2, bleagh...  */
+  else
+    {
+      if (len1 == len2)
+	/* Regions are same size, though, how nice.  */
+        {
+          modify_region (current_buffer, start1, end1);
+          modify_region (current_buffer, start2, end2);
+          record_change (start1, len1);
+          record_change (start2, len2);
+#ifdef USE_TEXT_PROPERTIES
+          tmp_interval1 = copy_intervals (cur_intv, start1, len1);
+          tmp_interval2 = copy_intervals (cur_intv, start2, len2);
+          Fset_text_properties (start1, end1, Qnil, Qnil);
+          Fset_text_properties (start2, end2, Qnil, Qnil);
+#endif /* USE_TEXT_PROPERTIES */
+
+	  if (len1 > 20000)
+	    temp = (unsigned char *) xmalloc (len1);
+	  else
+	    temp = (unsigned char *) alloca (len1);
+          bcopy (start1_addr, temp, len1);
+          bcopy (start2_addr, start1_addr, len2);
+          bcopy (temp, start2_addr, len1);
+	  if (len1 > 20000)
+	    free (temp);
+#ifdef USE_TEXT_PROPERTIES
+          graft_intervals_into_buffer (tmp_interval1, start2,
+                                       len1, current_buffer, 0);
+          graft_intervals_into_buffer (tmp_interval2, start1,
+                                       len2, current_buffer, 0);
+#endif /* USE_TEXT_PROPERTIES */
+        }
+
+      else if (len1 < len2)	/* Second region larger than first */
+        /* Non-adjacent & unequal size, area between must also be shifted.  */
+        {
+          len_mid = start2 - end1;
+          modify_region (current_buffer, start1, end2);
+          record_change (start1, (end2 - start1));
+#ifdef USE_TEXT_PROPERTIES
+          tmp_interval1 = copy_intervals (cur_intv, start1, len1);
+          tmp_interval_mid = copy_intervals (cur_intv, end1, len_mid);
+          tmp_interval2 = copy_intervals (cur_intv, start2, len2);
+          Fset_text_properties (start1, end2, Qnil, Qnil);
+#endif /* USE_TEXT_PROPERTIES */
+
+	  /* holds region 2 */
+	  if (len2 > 20000)
+	    temp = (unsigned char *) xmalloc (len2);
+	  else
+	    temp = (unsigned char *) alloca (len2);
+          bcopy (start2_addr, temp, len2);
+          bcopy (start1_addr, start1_addr + len_mid + len2, len1);
+          safe_bcopy (start1_addr + len1, start1_addr + len2, len_mid);
+          bcopy (temp, start1_addr, len2);
+	  if (len2 > 20000)
+	    free (temp);
+#ifdef USE_TEXT_PROPERTIES
+          graft_intervals_into_buffer (tmp_interval1, end2 - len1,
+                                       len1, current_buffer, 0);
+          graft_intervals_into_buffer (tmp_interval_mid, start1 + len2,
+                                       len_mid, current_buffer, 0);
+          graft_intervals_into_buffer (tmp_interval2, start1,
+                                       len2, current_buffer, 0);
+#endif /* USE_TEXT_PROPERTIES */
+        }
+      else
+	/* Second region smaller than first.  */
+        {
+          len_mid = start2 - end1;
+          record_change (start1, (end2 - start1));
+          modify_region (current_buffer, start1, end2);
+
+#ifdef USE_TEXT_PROPERTIES
+          tmp_interval1 = copy_intervals (cur_intv, start1, len1);
+          tmp_interval_mid = copy_intervals (cur_intv, end1, len_mid);
+          tmp_interval2 = copy_intervals (cur_intv, start2, len2);
+          Fset_text_properties (start1, end2, Qnil, Qnil);
+#endif /* USE_TEXT_PROPERTIES */
+
+	  /* holds region 1 */
+	  if (len1 > 20000)
+	    temp = (unsigned char *) xmalloc (len1);
+	  else
+	    temp = (unsigned char *) alloca (len1);
+          bcopy (start1_addr, temp, len1);
+          bcopy (start2_addr, start1_addr, len2);
+          bcopy (start1_addr + len1, start1_addr + len2, len_mid);
+          bcopy (temp, start1_addr + len2 + len_mid, len1);
+	  if (len1 > 20000)
+	    free (temp);
+#ifdef USE_TEXT_PROPERTIES
+          graft_intervals_into_buffer (tmp_interval1, end2 - len1,
+                                       len1, current_buffer, 0);
+          graft_intervals_into_buffer (tmp_interval_mid, start1 + len2,
+                                       len_mid, current_buffer, 0);
+          graft_intervals_into_buffer (tmp_interval2, start1,
+                                       len2, current_buffer, 0);
+#endif /* USE_TEXT_PROPERTIES */
+        }
+    }
+
+  /* todo: this will be slow, because for every transposition, we
+     traverse the whole friggin marker list.  Possible solutions:
+     somehow get a list of *all* the markers across multiple
+     transpositions and do it all in one swell phoop.  Or maybe modify
+     Emacs' marker code to keep an ordered list or tree.  This might
+     be nicer, and more beneficial in the long run, but would be a
+     bunch of work.  Plus the way they're arranged now is nice.  */
+  if (NILP (leave_markers))
+    {
+      transpose_markers (start1, end1, start2, end2);
+      fix_overlays_in_range (start1, end2);
+    }
+
+  return Qnil;
+}
 
 
 void
@@ -1627,6 +2007,7 @@ syms_of_editfns ()
   defsubr (&Suser_uid);
   defsubr (&Suser_real_uid);
   defsubr (&Suser_full_name);
+  defsubr (&Semacs_pid);
   defsubr (&Scurrent_time);
   defsubr (&Scurrent_time_string);
   defsubr (&Scurrent_time_zone);
@@ -1642,4 +2023,5 @@ syms_of_editfns ()
   defsubr (&Swiden);
   defsubr (&Snarrow_to_region);
   defsubr (&Ssave_restriction);
+  defsubr (&Stranspose_regions);
 }

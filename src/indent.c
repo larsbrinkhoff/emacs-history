@@ -1,5 +1,5 @@
 /* Indentation functions.
-   Copyright (C) 1985, 1986, 1987, 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985,86,87,88,93,94 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -271,6 +271,18 @@ position_indentation (pos)
 	}
     }
 }
+
+/* Test whether the line beginning at POS is indented beyond COLUMN.
+   Blank lines are treated as if they had the same indentation as the
+   preceding line.  */
+int
+indented_beyond_p (pos, column)
+     int pos, column;
+{
+  while (pos > BEGV && FETCH_CHAR (pos) == '\n')
+    pos = find_next_newline (pos - 1, -1);
+  return (position_indentation (pos) >= column);
+}
 
 DEFUN ("move-to-column", Fmove_to_column, Smove_to_column, 1, 2, 0,
   "Move point to column COLUMN in the current line.\n\
@@ -389,6 +401,11 @@ struct position val_compute_motion;
    and vpos give its cartesian location.  I'm not clear on what the
    other members are.
 
+   Note that FROMHPOS and TOHPOS should be expressed in real screen
+   columns, taking HSCROLL and the truncation glyph at the left margin
+   into account.  That is, beginning-of-line moves you to the hpos
+   -HSCROLL + (HSCROLL > 0).
+
    For example, to find the buffer position of column COL of line LINE
    of a certain window, pass the window's starting location as FROM
    and the window's upper-left coordinates as FROMVPOS and FROMHPOS.
@@ -410,18 +427,19 @@ struct position val_compute_motion;
 	    FRAME_HAS_VERTICAL_SCROLL_BARS (XFRAME (WINDOW_FRAME (window)))
 	  and frame_width = FRAME_WIDTH (XFRAME (window->frame))
 
-	Or,
-	  window_internal_width (w) - 1
+   Or you can let window_internal_width do this all for you, and write:
+	window_internal_width (w) - 1
 
    The `-1' accounts for the continuation-line backslashes; the rest
-   accounts for window borders if the window is split vertically, and
-   the scroll bars if the frame supports them.  */
+   accounts for window borders if the window is split horizontally, and
+   the scroll bars if they are turned on.  */
 
 struct position *
-compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, tab_offset)
+compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, tab_offset, win)
      int from, fromvpos, fromhpos, to, tovpos, tohpos;
      register int width;
      int hscroll, tab_offset;
+     struct window *win;
 {
   register int hpos = fromhpos;
   register int vpos = fromvpos;
@@ -430,12 +448,12 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
   register int c;
   register int tab_width = XFASTINT (current_buffer->tab_width);
   register int ctl_arrow = !NILP (current_buffer->ctl_arrow);
-  register struct Lisp_Vector *dp = buffer_display_table ();
+  register struct Lisp_Vector *dp = window_display_table (win);
   int selective
-    = XTYPE (current_buffer->selective_display) == Lisp_Int
-      ? XINT (current_buffer->selective_display)
-	: !NILP (current_buffer->selective_display) ? -1 : 0;
-  int prev_vpos, prev_hpos;
+    = (XTYPE (current_buffer->selective_display) == Lisp_Int
+       ? XINT (current_buffer->selective_display)
+       : !NILP (current_buffer->selective_display) ? -1 : 0);
+  int prev_vpos, prev_hpos = 0;
   int selective_rlen
     = (selective && dp && XTYPE (DISP_INVIS_VECTOR (dp)) == Lisp_Vector
        ? XVECTOR (DISP_INVIS_VECTOR (dp))->size : 0);
@@ -462,7 +480,7 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
       while (pos == next_invisible && pos < to)
 	{
 	  XFASTINT (position) = pos;
-	  prop = Fget_text_property (position,
+	  prop = Fget_char_property (position,
 				     Qinvisible,
 				     Fcurrent_buffer ());
 	  {
@@ -470,7 +488,9 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 
 	    /* This is just an estimate to give reasonable
 	       performance; nothing should go wrong if it is too small.  */
-	    XFASTINT (limit) = pos + 100;
+	    limit = Fnext_overlay_change (position);
+	    if (XFASTINT (limit) > pos + 100)
+	      XFASTINT (limit) = pos + 100;
 	    end = Fnext_single_property_change (position, Qinvisible,
 						Fcurrent_buffer (), limit);
 	    if (INTEGERP (end))
@@ -499,15 +519,15 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 	}
       else if (c == '\n')
 	{
-	  if (selective > 0 && position_indentation (pos + 1) >= selective)
+	  if (selective > 0 && indented_beyond_p (pos + 1, selective))
 	    {
 	      /* Skip any number of invisible lines all at once */
 	      do
 		{
 		  while (++pos < to && FETCH_CHAR (pos) != '\n');
 		}
-	      while (pos < to && position_indentation (pos + 1) >= selective);
-	      pos--;
+	      while (pos < to && indented_beyond_p (pos + 1, selective));
+	      pos--;		/* Reread the newline on the next pass.  */
 	      /* Allow for the " ..." that is displayed for them. */
 	      if (selective_rlen)
 		{
@@ -522,10 +542,10 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 	      /* A visible line.  */
 	      vpos++;
 	      hpos = 0;
-	  hpos -= hscroll;
-	  if (hscroll > 0) hpos++; /* Count the ! on column 0 */
-	  tab_offset = 0;
-	}
+	      hpos -= hscroll;
+	      if (hscroll > 0) hpos++; /* Truncation glyph on column 0 */
+	      tab_offset = 0;
+	    }
 	}
       else if (c == CR && selective < 0)
 	{
@@ -591,6 +611,103 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
   return &val_compute_motion;
 }
 
+#if 0 /* The doc string is too long for some compilers,
+	 but make-docfile can find it in this comment.  */
+DEFUN ("compute-motion", Ffoo, Sfoo, 7, 7, 0,
+  "Scan through the current buffer, calculating screen position.\n\
+Scan the current buffer forward from offset FROM,\n\
+assuming it is at position FROMPOS--a cons of the form (HPOS . VPOS)--\n\
+to position TO or position TOPOS--another cons of the form (HPOS . VPOS)--\n\
+and return the ending buffer position and screen location.\n\
+\n\
+There are three additional arguments:\n\
+\n\
+WIDTH is the number of columns available to display text;\n\
+this affects handling of continuation lines.\n\
+This is usually the value returned by `window-width', less one (to allow\n\
+for the continuation glyph).\n\
+\n\
+OFFSETS is either nil or a cons cell (HSCROLL . TAB-OFFSET).\n\
+HSCROLL is the number of columns not being displayed at the left\n\
+margin; this is usually taken from a window's hscroll member.\n\
+TAB-OFFSET is the number of columns of the first tab that aren't\n\
+being displayed, perhaps because the line was continued within it.\n\
+If OFFSETS is nil, HSCROLL and TAB-OFFSET are assumed to be zero.\n\
+\n\
+WINDOW is the window to operate on.  Currently this is used only to\n\
+find the display table.  It does not matter what buffer WINDOW displays;\n\
+`compute-motion' always operates on the current buffer.\n\
+\n\
+The value is a list of five elements:\n\
+  (POS HPOS VPOS PREVHPOS CONTIN)\n\
+POS is the buffer position where the scan stopped.\n\
+VPOS is the vertical position where the scan stopped.\n\
+HPOS is the horizontal position where the scan stopped.\n\
+\n\
+PREVHPOS is the horizontal position one character back from POS.\n\
+CONTIN is t if a line was continued after (or within) the previous character.\n\
+\n\
+For example, to find the buffer position of column COL of line LINE\n\
+of a certain window, pass the window's starting location as FROM\n\
+and the window's upper-left coordinates as FROMPOS.\n\
+Pass the buffer's (point-max) as TO, to limit the scan to the end of the\n\
+visible section of the buffer, and pass LINE and COL as TOPOS.")
+#endif
+
+DEFUN ("compute-motion", Fcompute_motion, Scompute_motion, 7, 7, 0,
+  0)
+  (from, frompos, to, topos, width, offsets, window)
+     Lisp_Object from, frompos, to, topos;
+     Lisp_Object width, offsets, window;
+{
+  Lisp_Object bufpos, hpos, vpos, prevhpos, contin;
+  struct position *pos;
+  int hscroll, tab_offset;
+
+  CHECK_NUMBER_COERCE_MARKER (from, 0);
+  CHECK_CONS (frompos, 0);
+  CHECK_NUMBER (XCONS (frompos)->car, 0);
+  CHECK_NUMBER (XCONS (frompos)->cdr, 0);
+  CHECK_NUMBER_COERCE_MARKER (to, 0);
+  CHECK_CONS (topos, 0);
+  CHECK_NUMBER (XCONS (topos)->car, 0);
+  CHECK_NUMBER (XCONS (topos)->cdr, 0);
+  CHECK_NUMBER (width, 0);
+  if (!NILP (offsets))
+    {
+      CHECK_CONS (offsets, 0);
+      CHECK_NUMBER (XCONS (offsets)->car, 0);
+      CHECK_NUMBER (XCONS (offsets)->cdr, 0);
+      hscroll = XINT (XCONS (offsets)->car);
+      tab_offset = XINT (XCONS (offsets)->cdr);
+    }
+  else
+    hscroll = tab_offset = 0;
+
+  if (NILP (window))
+    window = Fselected_window ();
+  else
+    CHECK_LIVE_WINDOW (window, 0);
+
+  pos = compute_motion (XINT (from), XINT (XCONS (frompos)->cdr),
+			XINT (XCONS (frompos)->car),
+			XINT (to), XINT (XCONS (topos)->cdr),
+			XINT (XCONS (topos)->car),
+			XINT (width), hscroll, tab_offset,
+			XWINDOW (window));
+
+  XFASTINT (bufpos) = pos->bufpos;
+  XSET (hpos, Lisp_Int, pos->hpos);
+  XSET (vpos, Lisp_Int, pos->vpos);
+  XSET (prevhpos, Lisp_Int, pos->prevhpos);
+
+  return Fcons (bufpos,
+		Fcons (hpos,
+		       Fcons (vpos,
+			      Fcons (prevhpos,
+				     Fcons (pos->contin ? Qt : Qnil, Qnil)))));
+
+}
 
 /* Return the column of position POS in window W's buffer,
    rounded down to a multiple of the internal width of W.
@@ -636,6 +753,10 @@ vmotion (from, vtarget, width, hscroll, window)
     = XTYPE (current_buffer->selective_display) == Lisp_Int
       ? XINT (current_buffer->selective_display)
 	: !NILP (current_buffer->selective_display) ? -1 : 0;
+  /* The omission of the clause
+         && marker_position (XWINDOW (window)->start) == BEG
+     here is deliberate; I think we want to measure from the prompt
+     position even if the minibuffer window has scrolled.  */
   int start_hpos = (EQ (window, minibuf_window) ? minibuf_prompt_width : 0);
 
  retry:
@@ -648,19 +769,19 @@ vmotion (from, vtarget, width, hscroll, window)
 	  prevline = find_next_newline (from, -1);
 	  while (prevline > BEGV
 		 && ((selective > 0
-		      && position_indentation (prevline) >= selective)
+		      && indented_beyond_p (prevline, selective))
 #ifdef USE_TEXT_PROPERTIES
 		     /* watch out for newlines with `invisible' property */
-		     || ! NILP (Fget_text_property (XFASTINT (prevline),
+		     || ! NILP (Fget_char_property (XFASTINT (prevline),
 						    Qinvisible,
-						    Fcurrent_buffer ()))
+						    window))
 #endif
 		 ))
 	    prevline = find_next_newline (prevline - 1, -1);
 	  pos = *compute_motion (prevline, 0,
 				 lmargin + (prevline == 1 ? start_hpos : 0),
 				 from, 1 << (INTBITS - 2), 0,
-				 width, hscroll, 0);
+				 width, hscroll, 0, XWINDOW (window));
 	}
       else
 	{
@@ -669,7 +790,8 @@ vmotion (from, vtarget, width, hscroll, window)
 	}
       return compute_motion (from, vpos, pos.hpos,
 			     ZV, vtarget, - (1 << (INTBITS - 2)),
-			     width, hscroll, pos.vpos * width);
+			     width, hscroll, pos.vpos * width,
+			     XWINDOW (window));
     }
 
   /* To move upward, go a line at a time until
@@ -685,12 +807,12 @@ vmotion (from, vtarget, width, hscroll, window)
 	  prevline = find_next_newline (prevline - 1, -1);
 	  if (prevline == BEGV
 	      || ((selective <= 0
-		   || position_indentation (prevline) < selective)
+		   || ! indented_beyond_p (prevline, selective))
 #ifdef USE_TEXT_PROPERTIES
 		  /* watch out for newlines with `invisible' property */
-		  && NILP (Fget_text_property (XFASTINT (prevline),
+		  && NILP (Fget_char_property (XFASTINT (prevline),
 					       Qinvisible,
-					       Fcurrent_buffer ()))
+					       window))
 #endif
 		  ))
 	    break;
@@ -698,7 +820,7 @@ vmotion (from, vtarget, width, hscroll, window)
       pos = *compute_motion (prevline, 0,
 			     lmargin + (prevline == 1 ? start_hpos : 0),
 			     from, 1 << (INTBITS - 2), 0,
-			     width, hscroll, 0);
+			     width, hscroll, 0, XWINDOW (window));
       vpos -= pos.vpos;
       first = 0;
       from = prevline;
@@ -721,25 +843,37 @@ vmotion (from, vtarget, width, hscroll, window)
   goto retry;
 }
 
-DEFUN ("vertical-motion", Fvertical_motion, Svertical_motion, 1, 1, 0,
+DEFUN ("vertical-motion", Fvertical_motion, Svertical_motion, 1, 2, 0,
   "Move to start of screen line LINES lines down.\n\
 If LINES is negative, this is moving up.\n\
+\n\
+The optional second argument WINDOW specifies the window to use for\n\
+parameters such as width, horizontal scrolling, and so on.\n\
+the default is the selected window.\n\
+It does not matter what buffer is displayed in WINDOW.\n\
+`vertical-motion' always uses the current buffer.\n\
+\n\
 Sets point to position found; this may be start of line\n\
- or just the start of a continuation line.\n\
+or just the start of a continuation line.\n\
 Returns number of lines moved; may be closer to zero than LINES\n\
- if beginning or end of buffer was reached.")
-  (lines)
-     Lisp_Object lines;
+if beginning or end of buffer was reached.")
+  (lines, window)
+     Lisp_Object lines, window;
 {
   struct position pos;
-  register struct window *w = XWINDOW (selected_window);
-  int width = window_internal_width (w) - 1;
+  register struct window *w;
 
   CHECK_NUMBER (lines, 0);
+  if (! NILP (window))
+    CHECK_WINDOW (window, 0);
+  else
+    XSET (window, Lisp_Window, selected_window);
 
-  pos = *vmotion (point, XINT (lines), width,
+  w = XWINDOW (window);
+
+  pos = *vmotion (point, XINT (lines), window_internal_width (w) - 1,
 		  /* Not XFASTINT since perhaps could be negative */
-		  XINT (w->hscroll), selected_window);
+		  XINT (w->hscroll), window);
 
   SET_PT (pos.bufpos);
   return make_number (pos.vpos);
@@ -757,4 +891,5 @@ Setting this variable automatically makes it local to the current buffer.");
   defsubr (&Scurrent_column);
   defsubr (&Smove_to_column);
   defsubr (&Svertical_motion);
+  defsubr (&Scompute_motion);
 }

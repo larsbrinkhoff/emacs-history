@@ -2,6 +2,10 @@
 
 @setfilename LNEWS
 
+This file describes the new Lisp features of Emacs version 19 as first
+released to the public.  For Lisp changes in subsequent Emacs 19
+releases, see the file NEWS.
+
 @section New Features in the Lisp Language
 
 @itemize @bullet

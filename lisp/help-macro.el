@@ -1,6 +1,6 @@
 ;;; help-macro.el --- Makes command line help such as help-for-help
 
-;; Copyright (C) 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Lynn Slater <lrs@indetech.com>
 ;; Created: : Mon Oct  1 11:42:39 1990
@@ -71,52 +71,79 @@
 (provide 'help-macro)
 (require 'backquote)
 
+;;;###autoload
+(defvar three-step-help nil
+  "*Non-nil means give more info about Help command in three steps.
+The three steps are simple prompt, prompt with all options,
+and window listing and describing the options.
+A value of nil means skip the middle step, so that
+\\[help-command] \\[help-command] gives the window that lists the options.")
+
 (defmacro make-help-screen (fname help-line help-text helped-map)
-  "Constructs function FNAME that when invoked shows HELP-LINE and if a help
-character is requested, shows HELP-TEXT. The user is prompted for a character
-from the HELPED-MAP and the corresponding interactive function is executed."
+  "Construct help-menu function name FNAME.
+When invoked, FNAME shows HELP-LINE and reads a command using HELPED-MAP.
+If the command is the help character is requested, FNAME displays HELP-TEXT
+and continues trying to read a command using HELPED-MAP.
+When FNAME finally does get a command, it executes that command
+and then returns."
   (` (defun (, fname) ()
 	   (, help-text)
 	   (interactive)
 	   (let ((line-prompt
 		  (substitute-command-keys (, help-line))))
-	     (message line-prompt)
-	     (let ((char (read-event))
-		   config)
+	     (if three-step-help
+		 (message line-prompt))
+	     (let* ((help-screen (documentation (quote (, fname))))
+		    (overriding-local-map (make-sparse-keymap))
+		    (minor-mode-map-alist nil)
+		    config key char)
 	       (unwind-protect
 		   (progn
+		     (setcdr overriding-local-map (, helped-map))
+		     (define-key overriding-local-map [t] 'undefined)
+		     (if three-step-help
+			 (setq key (read-key-sequence nil)
+			       char (aref key 0))
+		       (setq char ??))
 		     (if (or (eq char ??) (eq char help-char))
 			 (progn
 			   (setq config (current-window-configuration))
 			   (switch-to-buffer-other-window "*Help*")
 			   (erase-buffer)
-			   (insert (documentation (quote (, fname))))
+			   (insert help-screen)
 			   (goto-char (point-min))
-			   (while (memq char (cons help-char '(?? ?\C-v ?\ ?\177 ?\M-v)))
-			     (if (memq char '(?\C-v ?\ ))
-				 (scroll-up))
-			     (if (memq char '(?\177 ?\M-v))
-				 (scroll-down))
-			     (message "%s%s: "
-				      line-prompt
-				      (if (pos-visible-in-window-p (point-max))
-					  "" " or Space to scroll"))
-			     (let ((cursor-in-echo-area t))
-			       (setq char (read-event))))))
-		     
-		     (let ((defn (cdr (assq (if (integerp char) (downcase char) char) (, helped-map)))))
-		       (if defn
-			   (if (keymapp defn)
-			       (error "sorry, this command cannot be run from the help screen.  Start over.")
-			     (if config
+			   (while (or (memq char (cons help-char '(?? ?\C-v ?\ ?\177 delete ?\M-v)))
+				      (equal key "\M-v"))
+			     (condition-case nil
 				 (progn
-				   (set-window-configuration config)
-				   (setq config nil)))
-			     (call-interactively defn))
-			 (if (listp char)
-			     (setq unread-command-events
-				   (cons char unread-command-events)
-				   config nil)
+				   (if (memq char '(?\C-v ?\ ))
+				       (scroll-up))
+				   (if (or (memq char '(?\177 ?\M-v delete))
+					   (equal key "\M-v"))
+				       (scroll-down)))
+			       (error nil))
+			     (let ((cursor-in-echo-area t))
+			       (setq key (read-key-sequence
+					  (format "Type one of the options listed%s: "
+						  (if (pos-visible-in-window-p
+						       (point-max))
+						      "" " or Space to scroll")))
+				     char (aref key 0))))))
+		     ;; Mouse clicks are not part of the help feature,
+		     ;; so reexecute them in the standard environment.
+		     (if (listp char)
+			 (setq unread-command-events
+			       (cons char unread-command-events)
+			       config nil)
+		       (let ((defn (key-binding key)))
+			 (if defn
+			     (progn
+			       (if config
+				   (progn
+				     (set-window-configuration config)
+				     (setq config nil)))
+			       (setq overriding-local-map nil)
+			       (call-interactively defn))
 			   (ding)))))
 		 (if config
 		     (set-window-configuration config))))))

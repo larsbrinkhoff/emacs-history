@@ -1,5 +1,5 @@
 /* Evaluator for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -163,7 +163,8 @@ init_eval ()
   Vquit_flag = Qnil;
   debug_on_next_call = 0;
   lisp_eval_depth = 0;
-  when_entered_debugger = 0;
+  /* This is less than the initial value of num_nonmacro_input_chars.  */
+  when_entered_debugger = -1;
 }
 
 Lisp_Object
@@ -390,7 +391,7 @@ whose values are discarded.")
 
   val = Qnil;
 
-  if (NILP(args))
+  if (NILP (args))
     return Qnil;
 
   args_left = args;
@@ -405,7 +406,7 @@ whose values are discarded.")
 	Feval (Fcar (args_left));
       args_left = Fcdr (args_left);
     }
-  while (!NILP(args_left));
+  while (!NILP (args_left));
 
   UNGCPRO;
   return val;
@@ -413,8 +414,12 @@ whose values are discarded.")
 
 DEFUN ("setq", Fsetq, Ssetq, 0, UNEVALLED, 0,
   "(setq SYM VAL SYM VAL ...): set each SYM to the value of its VAL.\n\
-The SYMs are not evaluated.  Thus (setq x y) sets x to the value of y.\n\
-Each SYM is set before the next VAL is computed.")
+The symbols SYM are variables; they are literal (not evaluated).\n\
+The values VAL are expressions; they are evaluated.\n\
+Thus, (setq x (1+ y)) sets `x' to the value of `(1+ y)'.\n\
+The second VAL is not computed until after the first SYM is set, and so on;\n\
+each VAL can use the new value of variables set earlier in the `setq'.\n\
+The return value of the `setq' form is the value of the last VAL.")
   (args)
      Lisp_Object args;
 {
@@ -809,8 +814,7 @@ definitions to shadow the loaded ones for use in file byte-compilation.")
 	    {
 	      /* Autoloading function: will it be a macro when loaded?  */
 	      tem = Fnth (make_number (4), def);
-	      if (EQ (XCONS (tem)->car, Qt)
-		  || EQ (XCONS (tem)->car, Qmacro))
+	      if (EQ (tem, Qt) || EQ (tem, Qmacro))
 		/* Yes, load it and try again.  */
 		{
 		  do_autoload (def, sym);
@@ -990,6 +994,9 @@ A handler is applicable to an error\n\
 if CONDITION-NAME is one of the error's condition names.\n\
 If an error happens, the first applicable handler is run.\n\
 \n\
+The car of a handler may be a list of condition names\n\
+instead of a single condition name.\n\
+\n\
 When a handler handles an error,\n\
 control returns to the condition-case and the handler BODY... is executed\n\
 with VAR bound to (SIGNALED-CONDITIONS . SIGNAL-DATA).\n\
@@ -1014,8 +1021,10 @@ See also the function `signal' for more info.")
     {
       Lisp_Object tem;
       tem = Fcar (val);
-      if ((!NILP (tem)) &&
-	  (!CONSP (tem) || (XTYPE (XCONS (tem)->car) != Lisp_Symbol)))
+      if (! (NILP (tem)
+	     || (CONSP (tem)
+		 && (SYMBOLP (XCONS (tem)->car)
+		     || CONSP (XCONS (tem)->car)))))
 	error ("Invalid condition handler", tem);
     }
 
@@ -1030,8 +1039,8 @@ See also the function `signal' for more info.")
   if (_setjmp (c.jmp))
     {
       if (!NILP (h.var))
-        specbind (h.var, Fcdr (c.val));
-      val = Fprogn (Fcdr (Fcar (c.val)));
+        specbind (h.var, c.val);
+      val = Fprogn (Fcdr (h.chosen_clause));
 
       /* Note that this just undoes the binding of h.var; whoever
 	 longjumped to us unwound the stack to c.pdlcount before
@@ -1074,7 +1083,7 @@ internal_condition_case (bfun, handlers, hfun)
   c.gcpro = gcprolist;
   if (_setjmp (c.jmp))
     {
-      return (*hfun) (Fcdr (c.val));
+      return (*hfun) (c.val);
     }
   c.next = catchlist;
   catchlist = &c;
@@ -1090,12 +1099,49 @@ internal_condition_case (bfun, handlers, hfun)
   return val;
 }
 
+Lisp_Object
+internal_condition_case_1 (bfun, arg, handlers, hfun)
+     Lisp_Object (*bfun) ();
+     Lisp_Object arg;
+     Lisp_Object handlers;
+     Lisp_Object (*hfun) ();
+{
+  Lisp_Object val;
+  struct catchtag c;
+  struct handler h;
+
+  c.tag = Qnil;
+  c.val = Qnil;
+  c.backlist = backtrace_list;
+  c.handlerlist = handlerlist;
+  c.lisp_eval_depth = lisp_eval_depth;
+  c.pdlcount = specpdl_ptr - specpdl;
+  c.poll_suppress_count = poll_suppress_count;
+  c.gcpro = gcprolist;
+  if (_setjmp (c.jmp))
+    {
+      return (*hfun) (c.val);
+    }
+  c.next = catchlist;
+  catchlist = &c;
+  h.handler = handlers;
+  h.var = Qnil;
+  h.next = handlerlist;
+  h.tag = &c;
+  handlerlist = &h;
+
+  val = (*bfun) (arg);
+  catchlist = c.next;
+  handlerlist = h.next;
+  return val;
+}
+
 static Lisp_Object find_handler_clause ();
 
 DEFUN ("signal", Fsignal, Ssignal, 2, 2, 0,
-  "Signal an error.  Args are SIGNAL-NAME, and associated DATA.\n\
+  "Signal an error.  Args are ERROR-SYMBOL and associated DATA.\n\
 This function does not return.\n\n\
-A signal name is a symbol with an `error-conditions' property\n\
+An error symbol is a symbol with an `error-conditions' property\n\
 that is a list of condition names.\n\
 A handler for any of those names will get to handle this signal.\n\
 The symbol `error' should normally be one of them.\n\
@@ -1103,8 +1149,8 @@ The symbol `error' should normally be one of them.\n\
 DATA should be a list.  Its elements are printed as part of the error message.\n\
 If the signal is handled, DATA is made available to the handler.\n\
 See also the function `condition-case'.")
-  (sig, data)
-     Lisp_Object sig, data;
+  (error_symbol, data)
+     Lisp_Object error_symbol, data;
 {
   register struct handler *allhandlers = handlerlist;
   Lisp_Object conditions;
@@ -1121,13 +1167,13 @@ See also the function `condition-case'.")
   TOTALLY_UNBLOCK_INPUT;
 #endif
 
-  conditions = Fget (sig, Qerror_conditions);
+  conditions = Fget (error_symbol, Qerror_conditions);
 
   for (; handlerlist; handlerlist = handlerlist->next)
     {
       register Lisp_Object clause;
       clause = find_handler_clause (handlerlist->handler, conditions,
-				    sig, data, &debugger_value);
+				    error_symbol, data, &debugger_value);
 
 #if 0 /* Most callers are not prepared to handle gc if this returns.
 	 So, since this feature is not very useful, take it out.  */
@@ -1140,7 +1186,7 @@ See also the function `condition-case'.")
 	{
 	  /* We can't return values to code which signalled an error, but we
 	     can continue code which has signalled a quit.  */
-	  if (EQ (sig, Qquit))
+	  if (EQ (error_symbol, Qquit))
 	    return Qnil;
 	  else
 	    error ("Cannot return from the debugger in an error");
@@ -1149,16 +1195,23 @@ See also the function `condition-case'.")
 
       if (!NILP (clause))
 	{
+	  Lisp_Object unwind_data;
 	  struct handler *h = handlerlist;
+
 	  handlerlist = allhandlers;
-	  unwind_to_catch (h->tag, Fcons (clause, Fcons (sig, data)));
+	  if (data == memory_signal_data)
+	    unwind_data = memory_signal_data;
+	  else
+	    unwind_data = Fcons (error_symbol, data);
+	  h->chosen_clause = clause;
+	  unwind_to_catch (h->tag, unwind_data);
 	}
     }
 
   handlerlist = allhandlers;
   /* If no handler is present now, try to run the debugger,
      and if that fails, throw to top level.  */
-  find_handler_clause (Qerror, conditions, sig, data, &debugger_value);
+  find_handler_clause (Qerror, conditions, error_symbol, data, &debugger_value);
   Fthrow (Qtop_level, Qt);
 }
 
@@ -1196,7 +1249,6 @@ find_handler_clause (handlers, conditions, sig, data, debugger_value_ptr)
 {
   register Lisp_Object h;
   register Lisp_Object tem;
-  register Lisp_Object tem1;
 
   if (EQ (handlers, Qt))  /* t is used by handlers for all conditions, set up by C code.  */
     return Qt;
@@ -1221,12 +1273,30 @@ find_handler_clause (handlers, conditions, sig, data, debugger_value_ptr)
     }
   for (h = handlers; CONSP (h); h = Fcdr (h))
     {
-      tem1 = Fcar (h);
-      if (!CONSP (tem1))
+      Lisp_Object handler, condit;
+
+      handler = Fcar (h);
+      if (!CONSP (handler))
 	continue;
-      tem = Fmemq (Fcar (tem1), conditions);
-      if (!NILP (tem))
-        return tem1;
+      condit = Fcar (handler);
+      /* Handle a single condition name in handler HANDLER.  */
+      if (SYMBOLP (condit))
+	{
+	  tem = Fmemq (Fcar (handler), conditions);
+	  if (!NILP (tem))
+	    return handler;
+	}
+      /* Handle a list of condition names in handler HANDLER.  */
+      else if (CONSP (condit))
+	{
+	  while (CONSP (condit))
+	    {
+	      tem = Fmemq (Fcar (condit), conditions);
+	      if (!NILP (tem))
+		return handler;
+	      condit = XCONS (condit)->cdr;
+	    }
+	}
     }
   return Qnil;
 }
@@ -1237,12 +1307,42 @@ find_handler_clause (handlers, conditions, sig, data, debugger_value_ptr)
 void
 error (m, a1, a2, a3)
      char *m;
+     char *a1, *a2, *a3;
 {
   char buf[200];
-  sprintf (buf, m, a1, a2, a3);
+  int size = 200;
+  int mlen;
+  char *buffer = buf;
+  char *args[3];
+  int allocated = 0;
+  Lisp_Object string;
+
+  args[0] = a1;
+  args[1] = a2;
+  args[2] = a3;
+
+  mlen = strlen (m);
 
   while (1)
-    Fsignal (Qerror, Fcons (build_string (buf), Qnil));
+    {
+      int used = doprnt (buf, size, m, m + mlen, 3, args);
+      if (used < size)
+	break;
+      size *= 2;
+      if (allocated)
+	buffer = (char *) xrealloc (buffer, size);
+      else
+	{
+	  buffer = (char *) xmalloc (size);
+	  allocated = 1;
+	}
+    }
+
+  string = build_string (buf);
+  if (allocated)
+    free (buffer);
+
+  Fsignal (Qerror, Fcons (string, Qnil));
 }
 
 DEFUN ("commandp", Fcommandp, Scommandp, 1, 1, 0,
@@ -2171,8 +2271,7 @@ specbind (symbol, value)
     grow_specpdl ();
   specpdl_ptr->symbol = symbol;
   specpdl_ptr->func = 0;
-  ovalue = XSYMBOL (symbol)->value;
-  specpdl_ptr->old_value = EQ (ovalue, Qunbound) ? Qunbound : Fsymbol_value (symbol);
+  specpdl_ptr->old_value = ovalue = find_symbol_value (symbol);
   specpdl_ptr++;
   if (XTYPE (ovalue) == Lisp_Buffer_Objfwd)
     store_symval_forwarding (symbol, ovalue, value);
@@ -2395,7 +2494,7 @@ if that proves inconveniently small.");
 
   DEFVAR_LISP ("quit-flag", &Vquit_flag,
     "Non-nil causes `eval' to abort, unless `inhibit-quit' is non-nil.\n\
-Typing C-G sets `quit-flag' non-nil, regardless of `inhibit-quit'.");
+Typing C-g sets `quit-flag' non-nil, regardless of `inhibit-quit'.");
   Vquit_flag = Qnil;
 
   DEFVAR_LISP ("inhibit-quit", &Vinhibit_quit,
@@ -2454,7 +2553,7 @@ See also variable `debug-on-quit'.");
   Vdebug_on_error = Qnil;
 
   DEFVAR_BOOL ("debug-on-quit", &debug_on_quit,
-    "*Non-nil means enter debugger if quit is signaled (C-G, for example).\n\
+    "*Non-nil means enter debugger if quit is signaled (C-g, for example).\n\
 Does not apply if quit is handled by a `condition-case'.");
   debug_on_quit = 0;
 

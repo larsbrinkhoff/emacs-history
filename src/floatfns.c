@@ -1,5 +1,5 @@
 /* Primitive operations on floating point for GNU Emacs Lisp interpreter.
-   Copyright (C) 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1988, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -53,6 +53,13 @@ Lisp_Object Qarith_error;
 
 #ifdef LISP_FLOAT_TYPE
 
+#ifdef MSDOS
+/* These are redefined (correctly, but differently) in values.h.  */
+#undef INTBITS
+#undef LONGBITS
+#undef SHORTBITS
+#endif
+
 /* Work around a problem that happens because math.h on hpux 7
    defines two static variables--which, in Emacs, are not really static,
    because `static' is defined as nothing.  The problem is that they are
@@ -66,9 +73,9 @@ Lisp_Object Qarith_error;
 #include <math.h>
 
 /* This declaration is omitted on some systems, like Ultrix.  */
-#if !defined (hpux) && defined (HAVE_LOGB)
+#if !defined (HPUX) && defined (HAVE_LOGB) && !defined (logb)
 extern double logb ();
-#endif /* !hpux && HAVE_LOGB */
+#endif /* not HPUX and HAVE_LOGB and no logb macro */
 
 #if defined(DOMAIN) && defined(SING) && defined(OVERFLOW)
     /* If those are defined, then this is probably a `matherr' machine. */
@@ -168,14 +175,37 @@ static char *float_error_fn_name;
 #define IN_FLOAT2(d, name, num, num2) (in_float = 1, (d), in_float = 0)
 #endif
 
+/* Convert float to Lisp_Int if it fits, else signal a range error
+   using the given arguments.  */
+#define FLOAT_TO_INT(x, i, name, num)					\
+  do									\
+    {									\
+      if ((x) >= (1 << (VALBITS-1)) || (x) <= - (1 << (VALBITS-1)) - 1)	\
+	range_error (name, num);					\
+      XSET (i, Lisp_Int,  (int)(x));					\
+    }									\
+  while (0)
+#define FLOAT_TO_INT2(x, i, name, num1, num2)				\
+  do									\
+    {									\
+      if ((x) >= (1 << (VALBITS-1)) || (x) <= - (1 << (VALBITS-1)) - 1)	\
+	range_error2 (name, num1, num2);				\
+      XSET (i, Lisp_Int,  (int)(x));					\
+    }									\
+  while (0)
+
 #define arith_error(op,arg) \
   Fsignal (Qarith_error, Fcons (build_string ((op)), Fcons ((arg), Qnil)))
 #define range_error(op,arg) \
   Fsignal (Qrange_error, Fcons (build_string ((op)), Fcons ((arg), Qnil)))
+#define range_error2(op,a1,a2) \
+  Fsignal (Qrange_error, Fcons (build_string ((op)), \
+				Fcons ((a1), Fcons ((a2), Qnil))))
 #define domain_error(op,arg) \
   Fsignal (Qdomain_error, Fcons (build_string ((op)), Fcons ((arg), Qnil)))
 #define domain_error2(op,a1,a2) \
-  Fsignal (Qdomain_error, Fcons (build_string ((op)), Fcons ((a1), Fcons ((a2), Qnil))))
+  Fsignal (Qdomain_error, Fcons (build_string ((op)), \
+				 Fcons ((a1), Fcons ((a2), Qnil))))
 
 /* Extract a Lisp number as a `double', or signal an error.  */
 
@@ -433,7 +463,6 @@ DEFUN ("expt", Fexpt, Sexpt, 2, 2, 0,
 	}
       else
 	{
-	  for (; y > 0; y--)
 	  while (y > 0)
 	    {
 	      if (y & 1)
@@ -645,23 +674,40 @@ This is the same as the exponent of a float.")
   int value;
   double f = extract_float (arg);
 
+  if (f == 0.0)
+    value = -(VALMASK >> 1);
+  else
+    {
 #ifdef HAVE_LOGB
-  IN_FLOAT (value = logb (f), "logb", arg);
-  XSET (val, Lisp_Int, value);
+      IN_FLOAT (value = logb (f), "logb", arg);
 #else
 #ifdef HAVE_FREXP
-  {
-    int exp;  
-
-    IN_FLOAT (frexp (f, &exp), "logb", arg);
-    XSET (val, Lisp_Int, exp-1);
-  }
+      IN_FLOAT (frexp (f, &value), "logb", arg);
+      value--;
 #else
-  /* Would someone like to write code to emulate logb?  */
-  error ("`logb' not implemented on this operating system");
+      int i;
+      double d;
+      if (f < 0.0)
+	f = -f;
+      value = -1;
+      while (f < 0.5)
+	{
+	  for (i = 1, d = 0.5; d * d >= f; i += i)
+	    d *= d;
+	  f /= d;
+	  value -= i;
+	}
+      while (f >= 1.0)
+	{
+	  for (i = 1, d = 2.0; d * d <= f; i += i)
+	    d *= d;
+	  f /= d;
+	  value += i;
+	}
 #endif
 #endif
-
+    }
+  XSET (val, Lisp_Int, value);
   return val;
 }
 
@@ -675,7 +721,12 @@ DEFUN ("ceiling", Fceiling, Sceiling, 1, 1, 0,
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
   if (XTYPE (arg) == Lisp_Float)
-    IN_FLOAT (XSET (arg, Lisp_Int, ceil (XFLOAT (arg)->data)), "ceiling", arg);
+    {
+      double d;
+
+      IN_FLOAT (d = ceil (XFLOAT (arg)->data), "ceiling", arg);
+      FLOAT_TO_INT (d, arg, "ceiling", arg);
+    }
 
   return arg;
 }
@@ -708,8 +759,8 @@ With optional DIVISOR, return the largest integer no greater than ARG/DIVISOR.")
 	  if (f2 == 0)
 	    Fsignal (Qarith_error, Qnil);
 
-	  IN_FLOAT2 (XSET (arg, Lisp_Int, floor (f1 / f2)),
-		     "floor", arg, divisor);
+	  IN_FLOAT2 (f1 = floor (f1 / f2), "floor", arg, divisor);
+	  FLOAT_TO_INT2 (f1, arg, "floor", arg, divisor);
 	  return arg;
 	}
 #endif
@@ -732,7 +783,11 @@ With optional DIVISOR, return the largest integer no greater than ARG/DIVISOR.")
 
 #ifdef LISP_FLOAT_TYPE
   if (XTYPE (arg) == Lisp_Float)
-    IN_FLOAT (XSET (arg, Lisp_Int, floor (XFLOAT (arg)->data)), "floor", arg);
+    {
+      double d;
+      IN_FLOAT (d = floor (XFLOAT (arg)->data), "floor", arg);
+      FLOAT_TO_INT (d, arg, "floor", arg);
+    }
 #endif
 
   return arg;
@@ -748,8 +803,13 @@ DEFUN ("round", Fround, Sround, 1, 1, 0,
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
   if (XTYPE (arg) == Lisp_Float)
-    /* Screw the prevailing rounding mode.  */
-    IN_FLOAT (XSET (arg, Lisp_Int, rint (XFLOAT (arg)->data)), "round", arg);
+    {
+      double d;
+
+      /* Screw the prevailing rounding mode.  */
+      IN_FLOAT (d = rint (XFLOAT (arg)->data), "round", arg);
+      FLOAT_TO_INT (d, arg, "round", arg);
+    }
 
   return arg;
 }
@@ -763,12 +823,16 @@ Rounds the value toward zero.")
   CHECK_NUMBER_OR_FLOAT (arg, 0);
 
   if (XTYPE (arg) == Lisp_Float)
-    XSET (arg, Lisp_Int, (int) XFLOAT (arg)->data);
+    {
+      double d;
+
+      d = XFLOAT (arg)->data;
+      FLOAT_TO_INT (d, arg, "truncate", arg);
+    }
 
   return arg;
 }
 
-#if 0
 /* It's not clear these are worth adding.  */
 
 DEFUN ("fceiling", Ffceiling, Sfceiling, 1, 1, 0,
@@ -799,7 +863,7 @@ DEFUN ("fround", Ffround, Sfround, 1, 1, 0,
      register Lisp_Object arg;
 {
   double d = extract_float (arg);
-  IN_FLOAT (d = rint (XFLOAT (arg)->data), "fround", arg);
+  IN_FLOAT (d = rint (d), "fround", arg);
   return make_float (d);
 }
 
@@ -813,10 +877,9 @@ Rounds the value toward zero.")
   if (d >= 0.0)
     IN_FLOAT (d = floor (d), "ftruncate", arg);
   else
-    IN_FLOAT (d = ceil (d), arg);
+    IN_FLOAT (d = ceil (d), "ftruncate", arg);
   return make_float (d);
 }
-#endif
 
 #ifdef FLOAT_CATCH_SIGILL
 static SIGTYPE
@@ -918,11 +981,11 @@ syms_of_floatfns ()
   defsubr (&Serfc);
   defsubr (&Slog_gamma);
   defsubr (&Scube_root);
+#endif
   defsubr (&Sfceiling);
   defsubr (&Sffloor);
   defsubr (&Sfround);
   defsubr (&Sftruncate);
-#endif
   defsubr (&Sexp);
   defsubr (&Sexpt);
   defsubr (&Slog);

@@ -1,6 +1,6 @@
 ;;; lpr.el --- print Emacs buffer on line printer.
 
-;; Copyright (C) 1985, 1988, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1988, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: unix
@@ -31,13 +31,20 @@
 
 ;;;###autoload
 (defvar lpr-switches nil 
-  "*List of strings to pass as extra switch args to lpr when it is invoked.")
+  "*List of strings to pass as extra switch args to `lpr' when it is invoked.")
+
+(defvar lpr-add-options (eq system-type 'berkeley-unix)
+  "*Non-nil means construct -T and -J options for the `lpr'.")
 
 ;;;###autoload
 (defvar lpr-command
-  (if (memq system-type '(usg-unix-v dgux-unix hpux irix))
+  (if (memq system-type '(usg-unix-v dgux hpux irix))
       "lp" "lpr")
   "*Shell command for printing a file")
+
+(defvar lpr-headers-switches
+  (if (memq system-type '(usg-unix-v hpux)) nil "-p")
+  "*List of strings to use as options for `lpr' to request page headings.")
 
 (defvar print-region-function nil
   "Function to call to print the region on a printer.
@@ -85,16 +92,19 @@ See definition of `print-region-1' for calling conventions.")
 	      (setq end (point-marker)))
 	    (untabify (point-min) (point-max))))
       (if page-headers
-	  (if (eq system-type 'usg-unix-v)
-	      (progn
-		(print-region-new-buffer start end)
-		(call-process-region start end "pr" t t nil))
-	    ;; On BSD, use an option to get page headers.
-	    (setq switches (cons "-p" switches))))
+	  (if lpr-headers-switches
+	      ;; On BSD, use an option to get page headers.
+	      (setq switches (append (if (stringp lpr-headers-switches)
+					 (list lpr-headers-switches)
+				        lpr-headers-switches)
+				     switches))
+	    (print-region-new-buffer start end)
+	    (call-process-region start end "pr" t t nil)
+	    (setq start (point-min) end (point-max))))
       (apply (or print-region-function 'call-process-region)
 	     (nconc (list start end lpr-command
 			  nil nil nil)
-		    (nconc (and (eq system-type 'berkeley-unix)
+		    (nconc (and lpr-add-options
 				(list "-J" name "-T" name))
 			   switches)))
       (if (markerp end)
@@ -105,12 +115,12 @@ See definition of `print-region-1' for calling conventions.")
 ;; into a new buffer, makes that buffer current,
 ;; and sets start and end to the buffer bounds.
 ;; start and end are used free.
-(defun print-region-new-buffer (start end)
+(defun print-region-new-buffer (ostart oend)
   (or (string= (buffer-name) " *spool temp*")
       (let ((oldbuf (current-buffer)))
 	(set-buffer (get-buffer-create " *spool temp*"))
 	(widen) (erase-buffer)
-	(insert-buffer-substring oldbuf start end)
+	(insert-buffer-substring oldbuf ostart oend)
 	(setq start (point-min) end (point-max)))))
 
 (defun printify-region (begin end)

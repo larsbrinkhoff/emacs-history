@@ -1,3 +1,472 @@
+Tue May 17 00:41:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.23 released.
+
+	* configure.in [HAVE_X11]: Merge $C_SWITCH_X_SITE into CFLAGS
+	for the Xlib and Xt checks; then restore old CFLAGS.
+
+Sun May 15 01:20:57 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (HAVE_X11XTR6): Add newline before #if.
+	Add newline after #endif.
+
+Fri May 13 17:01:41 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (HAVE_X11XTR6): Arrange to define it.
+
+Thu May 12 06:51:21 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install): Depend on blessmail.
+
+Thu May 12 03:35:55 1994  David J. MacKenzie  (djm@nutrimat.gnu.ai.mit.edu)
+
+	* configure.in (mips-siemens-sysv*): Put quotes around value
+	containing blanks.
+
+Wed May 11 22:20:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (TAGS): Use the makefile in src subdir.
+
+Tue May 10 16:50:14 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in (opsys): Recognize `gnu'.
+
+Tue May 10 16:08:30 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (using NON_GNU_CPP): Fix test for CPP already set.
+
+Mon May  9 10:24:59 1994  David J. MacKenzie  (djm@nutrimat.gnu.ai.mit.edu)
+
+	* configure.in: Remove AC_LANG_C call.  Not needed with Autoconf
+	 version > 1.8.
+
+Sun May  8 07:35:11 1994  Morten Welinder  (terra@diku.dk)
+
+	* config.bat: Forcibly remove "# " style comments from makefiles.
+
+Sun May  8 15:50:34 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (uninstall): When processing lispdir and etcdir,
+	do nothing unless it exists and is a directory.
+
+Fri May  6 19:21:54 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install-arch-indep): Do install info/dired-x*.
+	Merge code in from install-doc.
+	(install-doc): Merge code back into install-arch-indep.
+	(install-arch-dep): Don't depend on install-doc.
+
+	* configure.in (run_in_place): Don't use pwd for archlibdir and docdir.
+
+Wed May  4 15:40:03 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (making src/Makefile and lib-src/Makefile):
+	Split off the autoconf substitutions and don't pass them thru cpp.
+	(undefs): Use $canonical as well as $configuration.
+
+	* make-dist: Distribute lisp/Makefile.
+
+	* configure.in: Recognize m88k-dg-dgux5.4.3* and m88k-dg-dgux5.4.2*.
+	Use lower case names for the s files.
+
+Fri May  3 12:01:09 1994  Morten Welinder  (terra@diku.dk)
+
+	* config.bat: Added possibility for different file name
+	transscriptions in lib-src.
+
+Tue May  3 04:17:46 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (lib-src): Undo previous change.
+	(blessmail): New target to run maybe-blessmail in lib-src.
+	(all): Depend on blessmail.
+
+	* Makefile.in (lib-src): Depend on src.
+
+Sat Apr 30 15:28:58 1994  Paul Reilly  (pmr@churchy.gnu.ai.mit.edu)
+
+	* configure.in (m88k-dg-dgux5.4R3): Use dgux5-4R3.
+	(m88k-dg-dgux5.4R2): dgux5.4R2.
+
+Fri Apr 29 15:25:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (window_system): Restore accidentally deleted code
+	that uses AC_FIND_X.
+
+	* make-dist: Distribute config.bat.
+
+Fri Apr 29 00:38:09 1994  Morten Welinder  (terra@diku.dk)
+
+	* config.bat: Corrected the configuration of lib-src
+	to keep up with configure.  Add note about dos version 3
+	or better needed (djgpp needs that).  Add note explaining
+	that either install in c:/emacs or edit the script.
+	Don't change to c:/emacs, but assume we're there (to minimize
+	the number of places to change).
+
+	* config.bat: Build-in the first step towards X11 support with
+	the X11 emulator that exists.  At this time it won't work,
+	and several files are missing.
+
+Thu Apr 28 00:13:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Use m/hp800.h in place of m/hp9000s800.h.
+	Don't look for -lresolv.
+
+	* Makefile.in (lib-src): Depend on src/paths.h.
+
+Wed Apr 27 01:12:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Restore deleted AC_SUBST of `configuration'.
+	Improve error message for bad --with-x-toolkit value.
+
+	* configure.in: Define CONFIGURATION in src/config.h
+	rather than substituting in src/Makefile.in.
+
+Tue Apr 26 18:05:01 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* Makefile.in (install-doc): New target.
+	(install-arch-dep): Depend on install-doc.
+	(mkdir): Create docdir.
+
+Fri Apr 22 21:39:24 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Test for libresolv.a.
+	Substitute machfile and opsysfile.
+
+Fri Apr 22 21:03:11 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* Makefile.in (.PHONY, install): Kill reference to obsolete do-install.
+	(install-arch-dep): Install under the name $(EMACS).
+
+Thu Apr 21 02:06:52 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (version): Use entire value of emacs-version.
+	(mips-siemens-sysv*): New alternative.
+
+Tue Apr 19 19:12:35 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install-arch-indep): Don't install dired-x*.
+
+Mon Apr 18 20:39:12 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* configure.in (src/Makefile, lib-src/Makefile): Delete ^L.
+	Fix definition of $undefs.
+
+Sun Apr 17 20:02:17 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (window_system): Obey --with-x11=no and --with-x10=no.
+
+	* configure.in (lib-src/Makefile.in): Use src, not lib-src, in -I.
+
+Sat Apr 16 15:02:02 1994  David J. MacKenzie  (djm@nutrimat.gnu.ai.mit.edu)
+
+	* configure.in: Call AC_LANG_C, if it's defined, after AC_PREPARE.
+
+Sat Apr 16 00:22:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (lib-src/Makefile.in): Make this from Makefile.in.in
+	and run it thru cpp, as with src/Makefile.in.
+
+	* configure.in: Use AC_SET_MAKE.
+
+Fri Apr 15 21:08:30 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (i[34]86-ncr-sysv*): Use usg5-4-2.
+
+Wed Apr 13 13:51:27 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (MAKE): Don't just assign it--use @SET_MAKE@.
+
+	* configure.in (CFLAGS): Exclude ${CFLAGS} from singlequotes.
+	(printing the choices): Make the toolkit message unconditional.
+	(USE_X_TOOLKIT): Use `none', not `no', if none.
+	(include libsrc_libs): Include config.h, and specify -I for srcdir.
+	Get rid of temp file foofoo1.
+
+Wed Apr 13 13:12:30 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* configure.in (CFLAGS): Use shell syntax, not Makefile.
+
+Tue Apr 12 11:23:19 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (window_system): If no X, set USE_X_TOOLKIT=no.
+	(printing the choices): State choice of toolkit.
+	(libsrc_libs): Recalculate after writing config.h;
+	then update lib-src/Makefile.
+
+Mon Apr 11 21:55:23 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Add sunos4shr as alternative for suns.
+	Conditionals testing for null $CC were backwards.
+
+Sun Apr 10 05:08:40 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist (msdos): Don't link patch1.  Link sed*.inp, not sed.in*.
+
+Sat Apr  9 17:42:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Handle -isc4.0*.
+
+Wed Mar 30 23:39:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (esix5): Set NON_GNU_CPP.
+
+Thu Mar 24 18:41:36 1994  Roland McGrath  (roland@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (thisdir): Nonsensical variable removed.
+	(install-arch-indep): Set shell var thisdir=`pwd` before cd and cd
+	back to $thisdir, rather than the directory `this_dir'.
+
+Thu Mar 17 19:31:18 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* Makefile.in (install-arch-indep): Add missing backslash after a
+	`then'.
+
+Mon Mar 14 17:06:48 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (thisdir): New variable.
+	(install-arch-indep): Go back to thisdir to run INSTALL_DATA.
+
+Tue Mar  8 17:37:19 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* configure.in: Add freebsd.
+
+Tue Mar  8 01:52:10 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in: Check for fpathconf.
+
+Wed Mar  2 00:56:50 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* configure.in (with_x_toolkit): Fix typo in previous change.
+
+Tue Mar  1 22:21:55 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* configure.in: New s-file for rs60000-ibm-aix3.2.5.
+
+Sat Feb 26 17:04:11 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (with_x_toolkit): Don't allow motif or open-look.
+
+Thu Feb 24 16:16:10 1994  Karl Heuer  (kwzh@hal.gnu.ai.mit.edu)
+
+	* configure.in: Fix value of docdir.
+	* Makefile.in (install-arch-indep): Install DOC* in docdir.
+
+Thu Feb 24 15:41:16 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (*-sysv4.1): Set NON_GNU_CPP. 
+
+Tue Feb 22 19:05:02 1994  Karl Heuer  (kwzh@geech.gnu.ai.mit.edu)
+
+	* configure.in: New variable docdir to control where the docstring
+	file goes.
+	Makefile.in: Use it to initialize PATH_DOC in paths.h.
+
+Tue Feb 22 16:52:54 1994  Karl Heuer  (kwzh@mole.gnu.ai.mit.edu)
+
+	* configure.in: When --run-in-place, don't inherit archlibdir.
+
+Sat Feb 19 22:23:11 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install-arch-dep, install-arch-indep):
+	New targets split up former do-install rule.
+	(do-install): Target deleted.
+
+Wed Feb 16 21:16:54 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (mips-sony-newsos*): New configuration.
+
+Mon Feb 14 11:38:35 1994  Frederic Pierresteguy  (fp@mole.gnu.ai.mit.edu)
+
+	* configure.in (rs6000-bull-bosx*): Added support for BULL dpx20.
+
+Fri Feb 11 21:27:09 1994  Karl Heuer  (kwzh@mole.gnu.ai.mit.edu)
+
+	* configure.in: Fix misspelled symbol LD_SWITCH_X_SITE_AUX.
+
+Fri Feb 11 16:29:11 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Don't initialize CC.
+
+Thu Feb 10 21:48:39 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in (creating src/Makefile): Also generate -U switches
+	for symbols in the $configuration value.
+
+	* configure.in: Check for sys_siglist being declared in system header.
+
+Thu Feb 10 14:32:21 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (creating src/Makefile): Delete blank lines
+	along with lines of whitespace.
+	(m68k-motorola-sysv*, m68000-motorola-sysv*): Compute proper CC value.
+
+Wed Feb  9 16:02:00 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Get, use, and substitute C_SWITCH_MACHINE
+	like C_SWITCH_SYSTEM.
+	(m68*-motorola-sysv*): Set CC.  Require cpu type to be m68k or m68000.
+
+Fri Feb  4 15:21:29 1994  Karl Heuer  (kwzh@mole.gnu.ai.mit.edu)
+
+	* configure.in (drem): Check for this function.
+
+Thu Feb  3 00:53:53 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (Using NON_GNU_CPP): Don't lose if it has spaces.
+	If CPP was inherited from environment, don't use NON_GNU_CPP.
+	(NON_GNU_CC): Likewise.
+	(handling with_gcc): Use explicit if in the `no' case.
+	(cc_specified): New variable; if set, don't use NON_GNU_CC.
+
+Wed Feb  2 17:34:19 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (mips-mips-riscos4*): Set NON_GNU_CPP.
+
+Tue Feb  1 18:16:09 1994  Karl Heuer  (kwzh@mole.gnu.ai.mit.edu)
+
+	* configure.in: Check whether fmod exists.
+
+Mon Jan 31 18:57:56 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* make-dist: Distribute {src,lisp}/ChangeLog.? instead of
+	{src,lisp}/OChangeLog.
+
+Sat Jan 22 18:18:23 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in: Restore Jan 8 and Jan 16 changes.  The -U hack is
+	necessary for proper operation.  This code works with the current
+	released version of Autoconf.
+
+Fri Jan 21 01:36:39 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (with_x_toolkit): Treat values athena and lucid alike.
+	(USE_X_TOOLKIT): Define it for all values except `no'.
+
+	* configure.in: Undo first Jan 8 change and Jan 16 change.
+
+Tue Jan 18 18:47:51 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Handle --with-x-toolkit.  Produce lwlib/Makefile.
+	Substitute USE_X_TOOLKIT as both C macro and Make variable.
+
+	* Makefile.in (lwlib/Makefile): New target.
+	(SUBDIR_MAKEFILES): Depend on lwlib/Makefile.
+	(clean, mostlyclean, distclean, realclean): Handle lwlib subdir.
+	(unlock, relock): Handle lwlib subdir.
+
+	* Makefile.in: Add some .PHONY targets.
+
+	* make-dist: Handle lwlib subdir like oldXMenu subdir.
+
+	* lwlib: New subdirectory.
+
+Mon Jan 17 17:17:14 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: If CPP has a value that is a directory, 
+	discard the value.
+
+Sun Jan 16 04:58:47 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in (srcdir_undefs): Add g flag to sed substitution to
+	remove -U[0-9]*.
+
+Sat Jan 15 10:14:44 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (do-install): Install the dired-x info files.
+
+	* configure.in: Provide for variable LD_SWITCH_X_SITE_AUX.
+	(See src/s/sol2.h.)
+
+Wed Jan 12 23:43:08 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (m68k-harris-cxux*, m88k-harris-cxux*): New configs.
+
+Sat Jan  8 16:37:36 1994  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* configure.in (creating src/Makefile): Put code inside 2nd arg to
+	AC_OUTPUT as it should be; hopefully noone will again see fit to
+	gratuitously break this and not make a change log entry.
+	Optimized sed processing of Makefile.in and cpp output; now
+	preserves comments previously removed from the cpp input.
+	Eliminated temp file for cpp output.  Generate -U switches to
+	undefine all identifiers that appear in the directory name
+	${srcdir}; pass these to cpp.
+
+	* configure.in (version): Fix sed regexp to match two-elt version
+	number.
+
+	* configure.in: Check for strerror.
+
+Fri Jan  7 00:55:28 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Test for bcmp.
+
+Thu Jan  6 07:36:28 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-dist (tempdir): Put subdir msdos into the distribution.
+
+Fri Jan  7 22:20:15 1993  Morten Welinder  (terra@diku.dk)
+
+	* config.bat: New file.
+
+Sun Jan  2 13:54:12 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (${SUBDIR} target): Pass down LDFLAGS and CPPFLAGS.
+
+Sat Jan  1 12:11:53 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in (m68*-next-*): Don't care about which os is specified.
+	(i[34]86-*-*): Check for *-nextstop*.
+
+Fri Dec 24 20:43:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Check for setsid.
+
+Fri Dec 17 13:11:44 1993  Richard Stallman  (rms@srarc2)
+
+	* configure.in (*-sun-solaris*): Add special case for Solaris 2.3.
+
+Wed Dec 15 14:03:05 1993  Richard Stallman  (rms@srarc2)
+
+	* Makefile.in (mkdir): Make only the lockdir writable.
+
+	* configure.in (i860-*-sysv4): Renamed from i860-*-sysvr4.
+
+Sat Dec 11 15:56:10 1993  Richard Stallman  (rms@srarc2)
+
+	* Makefile.in (libdir): Use @libdir@.
+
+Wed Dec  8 22:30:27 1993  Richard Stallman  (rms@srarc2)
+
+	* Makefile.in (install): Add empty command.
+
+Sat Dec  4 14:15:50 1993  Richard Stallman  (rms@srarc2)
+
+	* make-dist: Put man/getopt.c in the dist.
+
+	* configure.in (LIBS): Add test for existence of XSetWMProtocols.
+
+	* Makefile.in (install): Depend on ${SUBDIR}, not `all'.
+
+Fri Dec  3 16:41:58 1993  Richard Stallman  (rms@srarc2)
+
+	* configure.in (solaris): Set NON_GNU_CPP instead of CPP.
+	Set it for all solaris versions.
+	(mips-mips-riscos4*): Set NON_GNU_CC, not CC.
+	(after checking for GCC): If not GCC, and NON_GNU_CPP is set, set CPP.
+	Likewise for NON_GNU_CC and CC.
+
+Wed Dec  1 22:59:18 1993  Richard Stallman  (rms@srarc2)
+
+	* configure.in (mips-mips-riscos4*): Assign variable CC.
+	(checking ${with_gcc}): If "no", don't override CC if already set.
+	(CC): Initialize it as empty.
+
+Tue Nov 30 14:54:34 1993  Richard Stallman  (rms at srarc2)
+
+	* configure.in (Suns): Set CPP if *-solaris2.3*.
+
 Sat Nov 27 04:14:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.22 released.
@@ -8,6 +477,8 @@ Thu Nov 25 16:46:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* make-dist: When breaking links, use cp -p.
 	Copy install.sh into distribution.
+	Move the temp dir up into the parent dir;
+	don't leave the staging dir make-dist.tmp... in existence.
 	* install.sh: New file.
 
 Sun Nov 21 04:01:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)

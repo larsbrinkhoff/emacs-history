@@ -1,6 +1,6 @@
 ;;; undigest.el --- digest-cracking support for the RMAIL mail reader
 
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -26,6 +26,8 @@
 ;; See Internet RFC 934
 
 ;;; Code:
+
+(require 'rmail)
 
 (defun undigestify-rmail-message ()
   "Break up a digest message into its constituent messages.
@@ -105,7 +107,10 @@ Leaves original message, deleted, before the undigestified messages."
 	  (let ((n rmail-current-message))
 	    (rmail-forget-messages)
 	    (rmail-show-message n)
-	    (rmail-delete-forward)))
+	    (rmail-delete-forward)
+	    (if (rmail-summary-exists)
+		(rmail-select-summary
+		 (rmail-update-summary)))))
       (cond (error
 	     (narrow-to-region (point-min) (1+ (point-max)))
 	     (delete-region (point-min) (point-max))

@@ -1,10 +1,10 @@
 ;;; fortran.el --- Fortran mode for GNU Emacs
 
-;;; Copyright (c) 1986, 1993 Free Software Foundation, Inc.
+;;; Copyright (c) 1986, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Michael D. Prange <prange@erl.mit.edu>
 ;; Maintainer: bug-fortran-mode@erl.mit.edu
-;; Version 1.30.3 (November 16, 1993)
+;; Version 1.30.4 (January 20, 1994)
 ;; Keywords: languages
 
 ;; This file is part of GNU Emacs.
@@ -46,7 +46,7 @@
 
 ;;; Bugs to bug-fortran-mode@erl.mit.edu
 
-(defconst fortran-mode-version "version 1.30.3")
+(defconst fortran-mode-version "version 1.30.4")
 
 ;;; Code:
 
@@ -59,7 +59,7 @@ with a character in column 6.")
 
 ;; Buffer local, used to display mode line.
 (defvar fortran-tab-mode-string nil
-  "String to appear in mode line when TAB-format mode is on.")
+  "String to appear in mode line when TAB format mode is on.")
 
 (defvar fortran-do-indent 3
   "*Extra indentation applied to DO blocks.")
@@ -68,7 +68,7 @@ with a character in column 6.")
   "*Extra indentation applied to IF blocks.")
 
 (defvar fortran-structure-indent 3
-  "*Extra indentation applied to STRUCTURE, UNION and MAP blocks.")
+  "*Extra indentation applied to STRUCTURE, UNION, MAP and INTERFACE blocks.")
 
 (defvar fortran-continuation-indent 5
   "*Extra indentation applied to Fortran continuation lines.")
@@ -111,7 +111,8 @@ Normally a space.")
   "*Non-nil causes all numbered lines to be treated as possible DO loop ends.")
 
 (defvar fortran-blink-matching-if nil
-  "*From a Fortran ENDIF statement, blink the matching IF statement.")
+  "*From a Fortran ENDIF statement, blink the matching IF statement.
+Also, from an ENDDO statement, blink on matching DO [WHILE] statement.")
 
 (defvar fortran-continuation-string "$"
   "*Single-character string used for Fortran continuation lines.
@@ -138,7 +139,7 @@ Normally $.")
 [   ]|{   |    |    |    |    |    |    |    |    \
 |    |    |    |    |}\n"
   "*String displayed above current line by \\[fortran-column-ruler].
-This variable used in fixed-format mode.")
+This variable used in fixed format mode.")
 
 (defvar fortran-column-ruler-tab
   "0       810        20        30        40        5\
@@ -146,7 +147,7 @@ This variable used in fixed-format mode.")
 [   ]|  { |    |    |    |    |    |    |    |    \
 |    |    |    |    |}\n"
   "*String displayed above current line by \\[fortran-column-ruler].
-This variable used in TAB-format mode.")
+This variable used in TAB format mode.")
 
 (defconst bug-fortran-mode "bug-fortran-mode@erl.mit.edu"
   "Address of mailing list for Fortran mode bugs.")
@@ -295,7 +296,8 @@ Variables controlling indentation style and extra features:
  fortran-if-indent
     Extra indentation within if blocks.  (default 3)
  fortran-structure-indent
-    Extra indentation within structure, union and map blocks.  (default 3)
+    Extra indentation within structure, union, map and interface blocks.
+    (default 3)
  fortran-continuation-indent
     Extra indentation applied to continuation statements.  (default 5)
  fortran-comment-line-extra-indent
@@ -325,6 +327,7 @@ Variables controlling indentation style and extra features:
     statements.  (default nil)
  fortran-blink-matching-if 
     From a Fortran ENDIF statement, blink the matching IF statement.
+    Also, from an ENDDO statement, blink on matching DO [WHILE] statement.
     (default nil)
  fortran-continuation-string
     Single-character string to be inserted in column 5 of a continuation
@@ -491,7 +494,8 @@ Any other key combination is executed normally."
 
 (defun fortran-column-ruler ()
   "Inserts a column ruler momentarily above current line, till next keystroke.
-The ruler is defined by the value of `fortran-column-ruler'.
+The ruler is defined by the value of `fortran-column-ruler-fixed' when in fixed
+format mode, and `fortran-column-ruler-tab' when in TAB format mode.
 The key typed is executed unless it is SPC."
   (interactive)
   (momentary-string-display 
@@ -724,6 +728,42 @@ non-comment Fortran statement in the file, and nil otherwise."
 	    (goto-char matching-if)
 	    (sit-for 1)
 	    (goto-char endif-point))))))
+
+(defun fortran-blink-matching-do ()
+  ;; From a Fortran ENDDO statement, blink on the matching DO or DO WHILE
+  ;; statement.  This is basically copied from fortran-blink-matching-if.
+  (let ((count 1) (top-of-window (window-start)) matching-do
+	(enddo-point (point)) message)
+    (if (save-excursion (beginning-of-line)
+			(skip-chars-forward " \t0-9")
+			(looking-at "end[ \t]*do\\b"))
+	(progn
+	  (save-excursion
+	    (while (and (not (= count 0))
+			(not (eq (fortran-previous-statement)
+				 'first-statement))
+			(not (looking-at
+			      "^[ \t0-9]*end\\b[ \t]*[^ \t=(a-z]")))
+					; Keep local to subprogram
+	      (skip-chars-forward " \t0-9")
+	      (cond ((looking-at "do[ \t]+")
+                     (setq count (- count 1)))
+		    ((looking-at "end[ \t]*do\\b")
+		     (setq count (+ count 1)))))
+	    (if (not (= count 0))
+		(setq message "No matching do.")
+	      (if (< (point) top-of-window)
+		  (setq message (concat "Matches " (buffer-substring
+						    (progn (beginning-of-line)
+							   (point))
+						    (progn (end-of-line)
+							   (point)))))
+		(setq matching-do (point)))))
+	  (if message
+	      (message "%s" message)
+	    (goto-char matching-do)
+	    (sit-for 1)
+	    (goto-char enddo-point))))))
 
 (defun fortran-indent-line ()
   "Indents current Fortran line based on its contents and on previous lines."
@@ -748,7 +788,9 @@ non-comment Fortran statement in the file, and nil otherwise."
 	  (end-of-line)
 	  (fortran-do-auto-fill)))
     (if fortran-blink-matching-if
-	(fortran-blink-matching-if))))
+	(progn
+	  (fortran-blink-matching-if)
+	  (fortran-blink-matching-do)))))
 
 (defun fortran-indent-new-line ()
   "Reindent the current Fortran line, insert a newline and indent the newline.
@@ -805,6 +847,12 @@ An abbrev before point is expanded if `abbrev-mode' is non-nil."
 		     (setq icol (+ icol fortran-if-indent))))
 		((looking-at "\\(else\\|elseif\\)\\b")
 		 (setq icol (+ icol fortran-if-indent)))
+		((looking-at "select[ \t]*case[ \t](.*)\\b")
+		 (setq icol (+ icol fortran-if-indent)))
+		((looking-at "case[ \t]*(.*)[ \t]*\n")
+		 (setq icol (+ icol fortran-if-indent)))
+		((looking-at "case[ \t]*default\\b")
+		 (setq icol (+ icol fortran-if-indent)))
 		((looking-at "\\(otherwise\\|else[ \t]*where\\)\\b")
 		 (setq icol (+ icol fortran-if-indent)))
 		((looking-at "where[ \t]*(.*)[ \t]*\n")
@@ -812,7 +860,7 @@ An abbrev before point is expanded if `abbrev-mode' is non-nil."
 		((looking-at "do\\b")
 		 (setq icol (+ icol fortran-do-indent)))
 		((looking-at
-		  "\\(structure\\|union\\|map\\)\\b[ \t]*[^ \t=(a-z]")
+		  "\\(structure\\|union\\|map\\|interface\\)\\b[ \t]*[^ \t=(a-z]")
 		 (setq icol (+ icol fortran-structure-indent)))
 		((looking-at "end\\b[ \t]*[^ \t=(a-z]")
 		 ;; Previous END resets indent to minimum
@@ -846,6 +894,10 @@ An abbrev before point is expanded if `abbrev-mode' is non-nil."
 		    (setq icol (- icol fortran-if-indent)))
 		   ((looking-at "\\(else\\|elseif\\)\\b")
 		    (setq icol (- icol fortran-if-indent)))
+                   ((looking-at "case[ \t]*(.*)[ \t]*\n")
+		    (setq icol (- icol fortran-if-indent)))
+                   ((looking-at "case[ \t]*default\\b")
+		    (setq icol (- icol fortran-if-indent)))
 		   ((looking-at "\\(otherwise\\|else[ \t]*where\\)\\b")
 		    (setq icol (- icol fortran-if-indent)))
 		   ((looking-at "end[ \t]*where\\b")
@@ -857,8 +909,11 @@ An abbrev before point is expanded if `abbrev-mode' is non-nil."
 		    (setq icol (- icol fortran-do-indent)))
 		   ((looking-at
 		     "end[ \t]*\
-\\(structure\\|union\\|map\\)\\b[ \t]*[^ \t=(a-z]")
+\\(structure\\|union\\|map\\|interface\\)\\b[ \t]*[^ \t=(a-z]")
 		    (setq icol (- icol fortran-structure-indent)))
+		   ((looking-at
+		     "end[ \t]*select\\b[ \t]*[^ \t=(a-z]")
+		    (setq icol (- icol fortran-if-indent)))
 		   ((and (looking-at "end\\b[ \t]*[^ \t=(a-z]")
 			 (not (= icol fortran-minimum-statement-indent)))
  		    (message "Warning: `end' not in column %d.  Probably\
@@ -1205,7 +1260,7 @@ automatically breaks the line at a previous space."
 	  (insert comment-string)))))
 
 (defun fortran-analyze-file-format ()
-  "Returns nil if Fixed format is used, t if TAB formatting is used.
+  "Returns nil if fixed format is used, t if TAB formatting is used.
 Use `fortran-tab-mode-default' if no non-comment statements are found in the
 file before the end or the first `fortran-analyze-depth' lines."
   (let ((i 0))

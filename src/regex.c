@@ -3,7 +3,7 @@
    (Implements POSIX draft P10003.2/D11.2, except for
    internationalization features.)
 
-   Copyright (C) 1993 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -26,12 +26,19 @@
 
 #define _GNU_SOURCE
 
+#ifdef HAVE_CONFIG_H
+#if defined (emacs) || defined (CONFIG_BROKETS)
+/* We use <config.h> instead of "config.h" so that a compilation
+   using -I. -I$srcdir will use ./config.h rather than $srcdir/config.h
+   (which it would do because it found this file in $srcdir).  */
+#include <config.h>
+#else
+#include "config.h"
+#endif
+#endif
+
 /* We need this for `regex.h', and perhaps for the Emacs include files.  */
 #include <sys/types.h>
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 /* The `emacs' switch turns on certain matching commands
    that make sense only in Emacs. */
@@ -46,8 +53,17 @@
 
 #else  /* not emacs */
 
+#ifdef STDC_HEADERS
+#include <stdlib.h>
+#else
+char *malloc ();
+char *realloc ();
+#endif
+
+
 /* We used to test for `BSTRING' here, but only GCC and Emacs define
    `BSTRING', as far as I know, and neither of them use this code.  */
+#ifndef INHIBIT_STRING_HEADER
 #if HAVE_STRING_H || STDC_HEADERS
 #include <string.h>
 #ifndef bcmp
@@ -62,14 +78,7 @@
 #else
 #include <strings.h>
 #endif
-
-#ifdef STDC_HEADERS
-#include <stdlib.h>
-#else
-char *malloc ();
-char *realloc ();
 #endif
-
 
 /* Define the syntax stuff for \<, \>, etc.  */
 
@@ -137,32 +146,34 @@ init_syntax_once ()
    macros don't need to be guarded with references to isascii. ...
    Defining isascii to 1 should let any compiler worth its salt
    eliminate the && through constant folding."  */
-#if ! defined (isascii) || defined (STDC_HEADERS)
-#undef isascii
-#define isascii(c) 1
+
+#if defined (STDC_HEADERS) || (!defined (isascii) && !defined (HAVE_ISASCII))
+#define ISASCII(c) 1
+#else
+#define ISASCII(c) isascii(c)
 #endif
 
 #ifdef isblank
-#define ISBLANK(c) (isascii (c) && isblank (c))
+#define ISBLANK(c) (ISASCII (c) && isblank (c))
 #else
 #define ISBLANK(c) ((c) == ' ' || (c) == '\t')
 #endif
 #ifdef isgraph
-#define ISGRAPH(c) (isascii (c) && isgraph (c))
+#define ISGRAPH(c) (ISASCII (c) && isgraph (c))
 #else
-#define ISGRAPH(c) (isascii (c) && isprint (c) && !isspace (c))
+#define ISGRAPH(c) (ISASCII (c) && isprint (c) && !isspace (c))
 #endif
 
-#define ISPRINT(c) (isascii (c) && isprint (c))
-#define ISDIGIT(c) (isascii (c) && isdigit (c))
-#define ISALNUM(c) (isascii (c) && isalnum (c))
-#define ISALPHA(c) (isascii (c) && isalpha (c))
-#define ISCNTRL(c) (isascii (c) && iscntrl (c))
-#define ISLOWER(c) (isascii (c) && islower (c))
-#define ISPUNCT(c) (isascii (c) && ispunct (c))
-#define ISSPACE(c) (isascii (c) && isspace (c))
-#define ISUPPER(c) (isascii (c) && isupper (c))
-#define ISXDIGIT(c) (isascii (c) && isxdigit (c))
+#define ISPRINT(c) (ISASCII (c) && isprint (c))
+#define ISDIGIT(c) (ISASCII (c) && isdigit (c))
+#define ISALNUM(c) (ISASCII (c) && isalnum (c))
+#define ISALPHA(c) (ISASCII (c) && isalpha (c))
+#define ISCNTRL(c) (ISASCII (c) && iscntrl (c))
+#define ISLOWER(c) (ISASCII (c) && islower (c))
+#define ISPUNCT(c) (ISASCII (c) && ispunct (c))
+#define ISSPACE(c) (ISASCII (c) && isspace (c))
+#define ISUPPER(c) (ISASCII (c) && isupper (c))
+#define ISXDIGIT(c) (ISASCII (c) && isxdigit (c))
 
 #ifndef NULL
 #define NULL 0
@@ -251,6 +262,8 @@ char *alloca ();
 typedef char boolean;
 #define false 0
 #define true 1
+
+static int re_match_2_internal ();
 
 /* These are the command codes that appear in compiled regular
    expressions.  Some opcodes are followed by argument bytes.  A
@@ -877,19 +890,28 @@ static const char *re_error_msg[] =
 
 /* Avoiding alloca during matching, to placate r_alloc.  */
 
-/* Define MATCH_MAY_ALLOCATE if we need to make sure that the
+/* Define MATCH_MAY_ALLOCATE unless we need to make sure that the
    searching and matching functions should not call alloca.  On some
    systems, alloca is implemented in terms of malloc, and if we're
    using the relocating allocator routines, then malloc could cause a
    relocation, which might (if the strings being searched are in the
    ralloc heap) shift the data out from underneath the regexp
-   routines.  */
+   routines.
+
+   Here's another reason to avoid allocation: Emacs insists on
+   processing input from X in a signal handler; processing X input may
+   call malloc; if input arrives while a matching routine is calling
+   malloc, then we're scrod.  But Emacs can't just block input while
+   calling matching routines; then we don't notice interrupts when
+   they come in.  So, Emacs blocks input around all regexp calls
+   except the matching calls, which it leaves unprotected, in the
+   faith that they will not malloc.  */
 
 /* Normally, this is fine.  */
 #define MATCH_MAY_ALLOCATE
 
 /* But under some circumstances, it's not.  */
-#if defined (REL_ALLOC) && defined (C_ALLOCA)
+#if defined (emacs) || (defined (REL_ALLOC) && defined (C_ALLOCA))
 #undef MATCH_MAY_ALLOCATE
 #endif
 
@@ -912,7 +934,7 @@ static const char *re_error_msg[] =
    change it ourselves.  */
 int re_max_failures = 2000;
 
-typedef const unsigned char *fail_stack_elt_t;
+typedef unsigned char *fail_stack_elt_t;
 
 typedef struct
 {
@@ -2472,16 +2494,32 @@ regex_compile (pattern, size, syntax, bufp)
     /* Since DOUBLE_FAIL_STACK refuses to double only if the current size
        is strictly greater than re_max_failures, the largest possible stack
        is 2 * re_max_failures failure points.  */
-    fail_stack.size = (2 * re_max_failures * MAX_FAILURE_ITEMS);
-    if (fail_stack.stack)
-      fail_stack.stack =
-	(fail_stack_elt_t *) realloc (fail_stack.stack,
-				      (fail_stack.size
-				       * sizeof (fail_stack_elt_t)));
-    else
-      fail_stack.stack =
-	(fail_stack_elt_t *) malloc (fail_stack.size 
-				     * sizeof (fail_stack_elt_t));
+    if (fail_stack.size < (2 * re_max_failures * MAX_FAILURE_ITEMS))
+      {
+	fail_stack.size = (2 * re_max_failures * MAX_FAILURE_ITEMS);
+
+#ifdef emacs
+	if (! fail_stack.stack)
+	  fail_stack.stack
+	    = (fail_stack_elt_t *) xmalloc (fail_stack.size 
+					    * sizeof (fail_stack_elt_t));
+	else
+	  fail_stack.stack
+	    = (fail_stack_elt_t *) xrealloc (fail_stack.stack,
+					     (fail_stack.size
+					      * sizeof (fail_stack_elt_t)));
+#else /* not emacs */
+	if (! fail_stack.stack)
+	  fail_stack.stack
+	    = (fail_stack_elt_t *) malloc (fail_stack.size 
+					   * sizeof (fail_stack_elt_t));
+	else
+	  fail_stack.stack
+	    = (fail_stack_elt_t *) realloc (fail_stack.stack,
+					    (fail_stack.size
+					     * sizeof (fail_stack_elt_t)));
+#endif /* not emacs */
+      }
 
     /* Initialize some other variables the matcher uses.  */
     RETALLOC_IF (regstart,	 num_regs, const char *);
@@ -2715,7 +2753,7 @@ re_compile_fastmap (bufp)
   register char *fastmap = bufp->fastmap;
   unsigned char *pattern = bufp->buffer;
   unsigned long size = bufp->used;
-  const unsigned char *p = pattern;
+  unsigned char *p = pattern;
   register unsigned char *pend = pattern + size;
 
   /* Assume that each path through the pattern can be null until
@@ -3136,8 +3174,14 @@ re_search_2 (bufp, string1, size1, string2, size2, startpos, range, regs, stop)
           && !bufp->can_be_null)
 	return -1;
 
-      val = re_match_2 (bufp, string1, size1, string2, size2,
-	                startpos, regs, stop);
+      val = re_match_2_internal (bufp, string1, size1, string2, size2,
+				 startpos, regs, stop);
+#ifndef REGEX_MALLOC
+#ifdef C_ALLOCA
+      alloca (0);
+#endif
+#endif
+
       if (val >= 0)
 	return startpos;
         
@@ -3170,8 +3214,10 @@ static boolean alt_match_null_string_p (),
 
 /* This converts PTR, a pointer into one of the search strings `string1'
    and `string2' into an offset from the beginning of that string.  */
-#define POINTER_TO_OFFSET(ptr)						\
-  (FIRST_STRING_P (ptr) ? (ptr) - string1 : (ptr) - string2 + size1)
+#define POINTER_TO_OFFSET(ptr)			\
+  (FIRST_STRING_P (ptr)				\
+   ? ((regoff_t) ((ptr) - string1))		\
+   : ((regoff_t) ((ptr) - string2 + size1)))
 
 /* Macros for dealing with the split strings in re_match_2.  */
 
@@ -3231,8 +3277,8 @@ static boolean alt_match_null_string_p (),
     FREE_VAR (reg_info_dummy);						\
   } while (0)
 #else /* not REGEX_MALLOC */
-/* Some MIPS systems (at least) want this to free alloca'd storage.  */
-#define FREE_VARIABLES() alloca (0)
+/* This used to do alloca (0), but now we do that in the caller.  */
+#define FREE_VARIABLES() /* Nothing */
 #endif /* not REGEX_MALLOC */
 #else
 #define FREE_VARIABLES() /* Do nothing!  */
@@ -3259,8 +3305,11 @@ re_match (bufp, string, size, pos, regs)
      const char *string;
      int size, pos;
      struct re_registers *regs;
- {
-  return re_match_2 (bufp, NULL, 0, string, size, pos, regs, size); 
+{
+  int result = re_match_2_internal (bufp, NULL, 0, string, size,
+				    pos, regs, size);
+  alloca (0);
+  return result;
 }
 #endif /* not emacs */
 
@@ -3287,6 +3336,23 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
      struct re_registers *regs;
      int stop;
 {
+  int result = re_match_2_internal (bufp, string1, size1, string2, size2,
+				    pos, regs, stop);
+  alloca (0);
+  return result;
+}
+
+/* This is a separate function so that we can force an alloca cleanup
+   afterwards.  */
+static int
+re_match_2_internal (bufp, string1, size1, string2, size2, pos, regs, stop)
+     struct re_pattern_buffer *bufp;
+     const char *string1, *string2;
+     int size1, size2;
+     int pos;
+     struct re_registers *regs;
+     int stop;
+{
   /* General temporaries.  */
   int mcnt;
   unsigned char *p1;
@@ -3304,6 +3370,10 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
   /* Where we are in the pattern, and the end of the pattern.  */
   unsigned char *p = bufp->buffer;
   register unsigned char *pend = p + bufp->used;
+
+  /* Mark the opcode just after a start_memory, so we can test for an
+     empty subpattern when we get to the stop_memory.  */
+  unsigned char *just_past_start_mem = 0;
 
   /* We use this to map every character in the string.  */
   char *translate = bufp->translate;
@@ -3610,8 +3680,9 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
               if (regs->num_regs > 0)
                 {
                   regs->start[0] = pos;
-                  regs->end[0] = (MATCHING_IN_FIRST_STRING ? d - string1
-			          : d - string2 + size1);
+                  regs->end[0] = (MATCHING_IN_FIRST_STRING
+				  ? ((regoff_t) (d - string1))
+			          : ((regoff_t) (d - string2 + size1)));
                 }
               
               /* Go through the first `min (num_regs, regs->num_regs)'
@@ -3622,8 +3693,10 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
                     regs->start[mcnt] = regs->end[mcnt] = -1;
                   else
                     {
-		      regs->start[mcnt] = POINTER_TO_OFFSET (regstart[mcnt]);
-                      regs->end[mcnt] = POINTER_TO_OFFSET (regend[mcnt]);
+		      regs->start[mcnt]
+			= (regoff_t) POINTER_TO_OFFSET (regstart[mcnt]);
+                      regs->end[mcnt]
+			= (regoff_t) POINTER_TO_OFFSET (regend[mcnt]);
                     }
 		}
               
@@ -3782,6 +3855,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
 
           /* Move past the register number and inner group count.  */
           p += 2;
+	  just_past_start_mem = p;
           break;
 
 
@@ -3846,7 +3920,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
              information for this group that we had before trying this
              last match.  */
           if ((!MATCHED_SOMETHING (reg_info[*p])
-               || (re_opcode_t) p[-3] == start_memory)
+               || just_past_start_mem == p - 1)
 	      && (p + 2) < pend)              
             {
               boolean is_a_jump_n = false;
@@ -4198,8 +4272,10 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
 	      }
             else if ((re_opcode_t) *p2 == charset)
 	      {
+#ifdef DEBUG
 		register unsigned char c
                   = *p2 == (unsigned char) endline ? '\n' : p2[2];
+#endif
 
                 if ((re_opcode_t) p1[3] == exactn
 		    && ! (p2[1] * BYTEWIDTH > p1[4]
@@ -4400,7 +4476,6 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
           goto fail;
 
 #ifdef emacs
-#ifdef emacs19
   	case before_dot:
           DEBUG_PRINT1 ("EXECUTING before_dot.\n");
  	  if (PTR_CHAR_POS ((unsigned char *) d) >= point)
@@ -4418,7 +4493,7 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
           if (PTR_CHAR_POS ((unsigned char *) d) <= point)
   	    goto fail;
   	  break;
-#else /* not emacs19 */
+#if 0 /* not emacs19 */
 	case at_dot:
           DEBUG_PRINT1 ("EXECUTING at_dot.\n");
 	  if (PTR_CHAR_POS ((unsigned char *) d) + 1 != point)
@@ -4436,8 +4511,10 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
 	  mcnt = (int) Sword;
         matchsyntax:
 	  PREFETCH ();
-	  if (SYNTAX (*d++) != (enum syntaxcode) mcnt)
-            goto fail;
+	  /* Can't use *d++ here; SYNTAX may be an unsafe macro.  */
+	  d++;
+	  if (SYNTAX (d[-1]) != (enum syntaxcode) mcnt)
+	    goto fail;
           SET_REGS_MATCHED ();
 	  break;
 
@@ -4451,8 +4528,10 @@ re_match_2 (bufp, string1, size1, string2, size2, pos, regs, stop)
 	  mcnt = (int) Sword;
         matchnotsyntax:
 	  PREFETCH ();
-	  if (SYNTAX (*d++) == (enum syntaxcode) mcnt)
-            goto fail;
+	  /* Can't use *d++ here; SYNTAX may be an unsafe macro.  */
+	  d++;
+	  if (SYNTAX (d[-1]) == (enum syntaxcode) mcnt)
+	    goto fail;
 	  SET_REGS_MATCHED ();
           break;
 

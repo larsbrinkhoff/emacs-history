@@ -1,5 +1,6 @@
 
-/*  A Bison parser, made from getdate.y  */
+/*  A Bison parser, made from getdate.y with Bison version GNU Bison version 1.22
+  */
 
 #define YYBISON 1  /* Identify Bison output.  */
 
@@ -26,11 +27,11 @@
 **  <rsalz@bbn.com> and Jim Berets <jberets@bbn.com> in August, 1990;
 **  send any email to Rich.
 **
-**  This grammar has nine shift/reduce conflicts.
+**  This grammar has 10 shift/reduce conflicts.
 **
 **  This code is in the public domain and has no copyright.
 */
-/* SUPPRESS 287 on yaccpar_sccsid *//* Unusd static variable */
+/* SUPPRESS 287 on yaccpar_sccsid *//* Unused static variable */
 /* SUPPRESS 288 on yyerrlab *//* Label unused */
 
 #ifdef HAVE_CONFIG_H
@@ -49,40 +50,6 @@
    think this code needs to do.  */
 #ifdef emacs
 #undef static
-#endif
-
-/* The following block of alloca-related preprocessor directives is here
-   solely to allow compilation by non GNU-C compilers of the C parser
-   produced from this file by old versions of bison.  Newer versions of
-   bison include a block similar to this one in bison.simple.  */
-   
-#ifdef __GNUC__
-#define alloca __builtin_alloca
-#else
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#else
-#ifdef _AIX
- #pragma alloca
-#else
-void *alloca ();
-#endif
-#endif
-#endif
-
-#ifdef __GNUC__
-#undef alloca
-#define alloca __builtin_alloca
-#else
-#ifdef HAVE_ALLOCA_H
-#include <alloca.h>
-#else
-#ifdef _AIX /* for Bison */
- #pragma alloca
-#else
-void *alloca ();
-#endif
-#endif
 #endif
 
 #include <stdio.h>
@@ -156,12 +123,6 @@ extern struct tm	*localtime();
 static int yylex ();
 static int yyerror ();
 
-#if	!defined(lint) && !defined(SABER)
-static char RCS[] =
-	"$Header: str2date.y,v 2.1 90/09/06 08:15:06 cronan Exp $";
-#endif	/* !defined(lint) && !defined(SABER) */
-
-
 #define EPOCH		1970
 #define HOUR(x)		((time_t)(x) * 60)
 #define SECSPERDAY	(24L * 60L * 60L)
@@ -219,7 +180,7 @@ static time_t	yyRelMonth;
 static time_t	yyRelSeconds;
 
 
-#line 203 "getdate.y"
+#line 163 "getdate.y"
 typedef union {
     time_t		Number;
     enum _MERIDIAN	Meridian;
@@ -243,13 +204,15 @@ typedef
 
 #include <stdio.h>
 
+#ifndef __cplusplus
 #ifndef __STDC__
 #define const
+#endif
 #endif
 
 
 
-#define	YYFINAL		51
+#define	YYFINAL		52
 #define	YYFLAG		-32768
 #define	YYNTBASE	19
 
@@ -285,11 +248,13 @@ static const char yytranslate[] = {     0,
      6,     7,     8,     9,    10,    11,    12,    13,    14,    15
 };
 
+#if YYDEBUG != 0
 static const short yyprhs[] = {     0,
      0,     1,     4,     6,     8,    10,    12,    14,    16,    19,
     24,    29,    36,    43,    45,    47,    50,    52,    55,    58,
-    62,    68,    72,    75,    80,    83,    87,    90,    92,    95,
-    98,   100,   103,   106,   108,   111,   114,   116,   118,   119
+    62,    68,    72,    76,    79,    84,    87,    91,    94,    96,
+    99,   102,   104,   107,   110,   112,   115,   118,   120,   122,
+   123
 };
 
 static const short yyrhs[] = {    -1,
@@ -300,19 +265,23 @@ static const short yyrhs[] = {    -1,
     12,     0,    14,     0,     5,     0,    14,    15,     0,     4,
      0,     4,    17,     0,    13,     4,     0,    13,    18,    13,
      0,    13,    18,    13,    18,    13,     0,    13,    12,    12,
-     0,     9,    13,     0,     9,    13,    17,    13,     0,    13,
-     9,     0,    13,     9,    13,     0,    26,     3,     0,    26,
-     0,    13,     8,     0,    12,     8,     0,     8,     0,    12,
-    11,     0,    13,    11,     0,    11,     0,    12,    10,     0,
-    13,    10,     0,    10,     0,    13,     0,     0,     7,     0
+     0,    13,     9,    12,     0,     9,    13,     0,     9,    13,
+    17,    13,     0,    13,     9,     0,    13,     9,    13,     0,
+    26,     3,     0,    26,     0,    13,     8,     0,    12,     8,
+     0,     8,     0,    12,    11,     0,    13,    11,     0,    11,
+     0,    12,    10,     0,    13,    10,     0,    10,     0,    13,
+     0,     0,     7,     0
 };
+
+#endif
 
 #if YYDEBUG != 0
 static const short yyrline[] = { 0,
-   217,   218,   221,   224,   227,   230,   233,   236,   239,   245,
-   251,   258,   264,   274,   278,   282,   289,   293,   297,   303,
-   307,   312,   318,   322,   327,   331,   338,   342,   345,   348,
-   351,   354,   357,   360,   363,   366,   369,   374,   402,   405
+   177,   178,   181,   184,   187,   190,   193,   196,   199,   205,
+   211,   218,   224,   234,   238,   242,   249,   253,   257,   263,
+   267,   272,   278,   284,   288,   293,   297,   304,   308,   311,
+   314,   317,   320,   323,   326,   329,   332,   335,   340,   367,
+   370
 };
 
 static const char * const yytname[] = {   "$","error","$illegal.","tAGO","tDAY",
@@ -325,37 +294,39 @@ static const char * const yytname[] = {   "$","error","$illegal.","tAGO","tDAY",
 static const short yyr1[] = {     0,
     19,    19,    20,    20,    20,    20,    20,    20,    21,    21,
     21,    21,    21,    22,    22,    22,    23,    23,    23,    24,
-    24,    24,    24,    24,    24,    24,    25,    25,    26,    26,
-    26,    26,    26,    26,    26,    26,    26,    27,    28,    28
+    24,    24,    24,    24,    24,    24,    24,    25,    25,    26,
+    26,    26,    26,    26,    26,    26,    26,    26,    27,    28,
+    28
 };
 
 static const short yyr2[] = {     0,
      0,     2,     1,     1,     1,     1,     1,     1,     2,     4,
      4,     6,     6,     1,     1,     2,     1,     2,     2,     3,
-     5,     3,     2,     4,     2,     3,     2,     1,     2,     2,
-     1,     2,     2,     1,     2,     2,     1,     1,     0,     1
+     5,     3,     3,     2,     4,     2,     3,     2,     1,     2,
+     2,     1,     2,     2,     1,     2,     2,     1,     1,     0,
+     1
 };
 
 static const short yydefact[] = {     1,
-     0,    17,    15,    31,     0,    37,    34,     0,    38,    14,
-     2,     3,     4,     6,     5,     7,    28,     8,    18,    23,
-    30,    35,    32,    19,     9,    29,    25,    36,    33,     0,
-     0,     0,    16,    27,     0,    26,    22,    39,    20,    24,
-    40,    11,     0,    10,     0,    39,    21,    13,    12,     0,
-     0
+     0,    17,    15,    32,     0,    38,    35,     0,    39,    14,
+     2,     3,     4,     6,     5,     7,    29,     8,    18,    24,
+    31,    36,    33,    19,     9,    30,    26,    37,    34,     0,
+     0,     0,    16,    28,     0,    23,    27,    22,    40,    20,
+    25,    41,    11,     0,    10,     0,    40,    21,    13,    12,
+     0,     0
 };
 
 static const short yydefgoto[] = {     1,
-    11,    12,    13,    14,    15,    16,    17,    18,    44
+    11,    12,    13,    14,    15,    16,    17,    18,    45
 };
 
 static const short yypact[] = {-32768,
-     0,   -15,-32768,-32768,   -10,-32768,-32768,    25,    11,    -8,
--32768,-32768,-32768,-32768,-32768,-32768,    13,-32768,-32768,     7,
--32768,-32768,-32768,-32768,-32768,-32768,     4,-32768,-32768,    14,
-    15,    19,-32768,-32768,    24,-32768,-32768,    18,    20,-32768,
--32768,-32768,    26,-32768,    27,    -6,-32768,-32768,-32768,    31,
--32768
+     0,    -1,-32768,-32768,     4,-32768,-32768,    25,    11,    -8,
+-32768,-32768,-32768,-32768,-32768,-32768,    21,-32768,-32768,     9,
+-32768,-32768,-32768,-32768,-32768,-32768,   -10,-32768,-32768,    16,
+    19,    24,-32768,-32768,    26,-32768,-32768,-32768,    18,    13,
+-32768,-32768,-32768,    27,-32768,    28,    -6,-32768,-32768,-32768,
+    38,-32768
 };
 
 static const short yypgoto[] = {-32768,
@@ -363,26 +334,26 @@ static const short yypgoto[] = {-32768,
 };
 
 
-#define	YYLAST		41
+#define	YYLAST		42
 
 
-static const short yytable[] = {    50,
-    41,    19,    20,     2,     3,    48,    33,     4,     5,     6,
-     7,     8,     9,    10,    24,    34,    36,    25,    26,    27,
-    28,    29,    30,    35,    41,    37,    31,    38,    32,    42,
-    51,    39,    21,    43,    22,    23,    40,    45,    46,    47,
-    49
+static const short yytable[] = {    51,
+    42,    36,    37,     2,     3,    49,    33,     4,     5,     6,
+     7,     8,     9,    10,    24,    19,    20,    25,    26,    27,
+    28,    29,    30,    34,    42,    35,    31,    38,    32,    43,
+    46,    39,    21,    44,    22,    23,    40,    52,    41,    47,
+    48,    50
 };
 
 static const short yycheck[] = {     0,
-     7,    17,    13,     4,     5,    12,    15,     8,     9,    10,
-    11,    12,    13,    14,     4,     3,    13,     7,     8,     9,
-    10,    11,    12,    17,     7,    12,    16,    13,    18,    12,
-     0,    13,     8,    16,    10,    11,    13,    18,    13,    13,
-    46
+     7,    12,    13,     4,     5,    12,    15,     8,     9,    10,
+    11,    12,    13,    14,     4,    17,    13,     7,     8,     9,
+    10,    11,    12,     3,     7,    17,    16,    12,    18,    12,
+    18,    13,     8,    16,    10,    11,    13,     0,    13,    13,
+    13,    47
 };
 /* -*-C-*-  Note some compilers choke on comments on `#line' lines.  */
-#line 3 "bison.simple"
+#line 3 "/usr/local/lib/bison.simple"
 
 /* Skeleton output parser for bison,
    Copyright (C) 1984, 1989, 1990 Bob Corbett and Richard Stallman
@@ -563,7 +534,7 @@ __yy_bcopy (char *from, char *to, int count)
 #endif
 #endif
 
-#line 184 "bison.simple"
+#line 184 "/usr/local/lib/bison.simple"
 
 /* The user can define YYPARSE_PARAM as the name of an argument to be passed
    into yyparse.  The argument should have type void *.
@@ -862,37 +833,37 @@ yyreduce:
   switch (yyn) {
 
 case 3:
-#line 221 "getdate.y"
+#line 181 "getdate.y"
 {
 	    yyHaveTime++;
 	;
     break;}
 case 4:
-#line 224 "getdate.y"
+#line 184 "getdate.y"
 {
 	    yyHaveZone++;
 	;
     break;}
 case 5:
-#line 227 "getdate.y"
+#line 187 "getdate.y"
 {
 	    yyHaveDate++;
 	;
     break;}
 case 6:
-#line 230 "getdate.y"
+#line 190 "getdate.y"
 {
 	    yyHaveDay++;
 	;
     break;}
 case 7:
-#line 233 "getdate.y"
+#line 193 "getdate.y"
 {
 	    yyHaveRel++;
 	;
     break;}
 case 9:
-#line 239 "getdate.y"
+#line 199 "getdate.y"
 {
 	    yyHour = yyvsp[-1].Number;
 	    yyMinutes = 0;
@@ -901,7 +872,7 @@ case 9:
 	;
     break;}
 case 10:
-#line 245 "getdate.y"
+#line 205 "getdate.y"
 {
 	    yyHour = yyvsp[-3].Number;
 	    yyMinutes = yyvsp[-1].Number;
@@ -910,7 +881,7 @@ case 10:
 	;
     break;}
 case 11:
-#line 251 "getdate.y"
+#line 211 "getdate.y"
 {
 	    yyHour = yyvsp[-3].Number;
 	    yyMinutes = yyvsp[-1].Number;
@@ -920,7 +891,7 @@ case 11:
 	;
     break;}
 case 12:
-#line 258 "getdate.y"
+#line 218 "getdate.y"
 {
 	    yyHour = yyvsp[-5].Number;
 	    yyMinutes = yyvsp[-3].Number;
@@ -929,7 +900,7 @@ case 12:
 	;
     break;}
 case 13:
-#line 264 "getdate.y"
+#line 224 "getdate.y"
 {
 	    yyHour = yyvsp[-5].Number;
 	    yyMinutes = yyvsp[-3].Number;
@@ -940,56 +911,56 @@ case 13:
 	;
     break;}
 case 14:
-#line 274 "getdate.y"
+#line 234 "getdate.y"
 {
 	    yyTimezone = yyvsp[0].Number;
 	    yyDSTmode = DSToff;
 	;
     break;}
 case 15:
-#line 278 "getdate.y"
+#line 238 "getdate.y"
 {
 	    yyTimezone = yyvsp[0].Number;
 	    yyDSTmode = DSTon;
 	;
     break;}
 case 16:
-#line 283 "getdate.y"
+#line 243 "getdate.y"
 {
 	    yyTimezone = yyvsp[-1].Number;
 	    yyDSTmode = DSTon;
 	;
     break;}
 case 17:
-#line 289 "getdate.y"
+#line 249 "getdate.y"
 {
 	    yyDayOrdinal = 1;
 	    yyDayNumber = yyvsp[0].Number;
 	;
     break;}
 case 18:
-#line 293 "getdate.y"
+#line 253 "getdate.y"
 {
 	    yyDayOrdinal = 1;
 	    yyDayNumber = yyvsp[-1].Number;
 	;
     break;}
 case 19:
-#line 297 "getdate.y"
+#line 257 "getdate.y"
 {
 	    yyDayOrdinal = yyvsp[-1].Number;
 	    yyDayNumber = yyvsp[0].Number;
 	;
     break;}
 case 20:
-#line 303 "getdate.y"
+#line 263 "getdate.y"
 {
 	    yyMonth = yyvsp[-2].Number;
 	    yyDay = yyvsp[0].Number;
 	;
     break;}
 case 21:
-#line 307 "getdate.y"
+#line 267 "getdate.y"
 {
 	    yyMonth = yyvsp[-4].Number;
 	    yyDay = yyvsp[-2].Number;
@@ -997,7 +968,7 @@ case 21:
 	;
     break;}
 case 22:
-#line 312 "getdate.y"
+#line 272 "getdate.y"
 {
 	    /* ISO 8601 format.  yyyy-mm-dd.  */
 	    yyYear = yyvsp[-2].Number;
@@ -1006,140 +977,148 @@ case 22:
 	;
     break;}
 case 23:
-#line 318 "getdate.y"
+#line 278 "getdate.y"
+{
+	    /* e.g. 17-JUN-1992.  */
+	    yyDay = yyvsp[-2].Number;
+	    yyMonth = yyvsp[-1].Number;
+	    yyYear = -yyvsp[0].Number;
+	;
+    break;}
+case 24:
+#line 284 "getdate.y"
 {
 	    yyMonth = yyvsp[-1].Number;
 	    yyDay = yyvsp[0].Number;
 	;
     break;}
-case 24:
-#line 322 "getdate.y"
+case 25:
+#line 288 "getdate.y"
 {
 	    yyMonth = yyvsp[-3].Number;
 	    yyDay = yyvsp[-2].Number;
 	    yyYear = yyvsp[0].Number;
 	;
     break;}
-case 25:
-#line 327 "getdate.y"
+case 26:
+#line 293 "getdate.y"
 {
 	    yyMonth = yyvsp[0].Number;
 	    yyDay = yyvsp[-1].Number;
 	;
     break;}
-case 26:
-#line 331 "getdate.y"
+case 27:
+#line 297 "getdate.y"
 {
 	    yyMonth = yyvsp[-1].Number;
 	    yyDay = yyvsp[-2].Number;
 	    yyYear = yyvsp[0].Number;
 	;
     break;}
-case 27:
-#line 338 "getdate.y"
+case 28:
+#line 304 "getdate.y"
 {
 	    yyRelSeconds = -yyRelSeconds;
 	    yyRelMonth = -yyRelMonth;
 	;
     break;}
-case 29:
-#line 345 "getdate.y"
-{
-	    yyRelSeconds += yyvsp[-1].Number * yyvsp[0].Number * 60L;
-	;
-    break;}
 case 30:
-#line 348 "getdate.y"
+#line 311 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[-1].Number * yyvsp[0].Number * 60L;
 	;
     break;}
 case 31:
-#line 351 "getdate.y"
+#line 314 "getdate.y"
+{
+	    yyRelSeconds += yyvsp[-1].Number * yyvsp[0].Number * 60L;
+	;
+    break;}
+case 32:
+#line 317 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[0].Number * 60L;
 	;
     break;}
-case 32:
-#line 354 "getdate.y"
-{
-	    yyRelSeconds += yyvsp[-1].Number;
-	;
-    break;}
 case 33:
-#line 357 "getdate.y"
+#line 320 "getdate.y"
 {
 	    yyRelSeconds += yyvsp[-1].Number;
 	;
     break;}
 case 34:
-#line 360 "getdate.y"
+#line 323 "getdate.y"
+{
+	    yyRelSeconds += yyvsp[-1].Number;
+	;
+    break;}
+case 35:
+#line 326 "getdate.y"
 {
 	    yyRelSeconds++;
 	;
     break;}
-case 35:
-#line 363 "getdate.y"
-{
-	    yyRelMonth += yyvsp[-1].Number * yyvsp[0].Number;
-	;
-    break;}
 case 36:
-#line 366 "getdate.y"
+#line 329 "getdate.y"
 {
 	    yyRelMonth += yyvsp[-1].Number * yyvsp[0].Number;
 	;
     break;}
 case 37:
-#line 369 "getdate.y"
+#line 332 "getdate.y"
+{
+	    yyRelMonth += yyvsp[-1].Number * yyvsp[0].Number;
+	;
+    break;}
+case 38:
+#line 335 "getdate.y"
 {
 	    yyRelMonth += yyvsp[0].Number;
 	;
     break;}
-case 38:
-#line 374 "getdate.y"
+case 39:
+#line 340 "getdate.y"
 {
 	    if (yyHaveTime && yyHaveDate && !yyHaveRel)
 		yyYear = yyvsp[0].Number;
 	    else {
 		if(yyvsp[0].Number>10000) {
-		    time_t date_part;
-
-		    date_part= yyvsp[0].Number/10000;
 		    yyHaveDate++;
-		    yyDay= (date_part)%100;
-		    yyMonth= (date_part/100)%100;
-		    yyYear = date_part/10000;
-		} 
-	        yyHaveTime++;
-		if (yyvsp[0].Number < 100) {
-		    yyHour = yyvsp[0].Number;
-		    yyMinutes = 0;
+		    yyDay= (yyvsp[0].Number)%100;
+		    yyMonth= (yyvsp[0].Number/100)%100;
+		    yyYear = yyvsp[0].Number/10000;
 		}
 		else {
-		    yyHour = yyvsp[0].Number / 100;
-		    yyMinutes = yyvsp[0].Number % 100;
-		}
-		yySeconds = 0;
-		yyMeridian = MER24;
+		    yyHaveTime++;
+		    if (yyvsp[0].Number < 100) {
+			yyHour = yyvsp[0].Number;
+			yyMinutes = 0;
+		    }
+		    else {
+		    	yyHour = yyvsp[0].Number / 100;
+		    	yyMinutes = yyvsp[0].Number % 100;
+		    }
+		    yySeconds = 0;
+		    yyMeridian = MER24;
+	        }
 	    }
 	;
     break;}
-case 39:
-#line 402 "getdate.y"
+case 40:
+#line 367 "getdate.y"
 {
 	    yyval.Meridian = MER24;
 	;
     break;}
-case 40:
-#line 405 "getdate.y"
+case 41:
+#line 370 "getdate.y"
 {
 	    yyval.Meridian = yyvsp[0].Meridian;
 	;
     break;}
 }
    /* the action file gets copied in in place of this dollarsign */
-#line 480 "bison.simple"
+#line 480 "/usr/local/lib/bison.simple"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -1335,7 +1314,7 @@ yyerrhandle:
   yystate = yyn;
   goto yynewstate;
 }
-#line 410 "getdate.y"
+#line 375 "getdate.y"
 
 
 /* Month and day table. */
@@ -1821,31 +1800,28 @@ yylex()
     }
 }
 
-
 #define TM_YEAR_ORIGIN 1900
 
 /* Yield A - B, measured in seconds.  */
-static time_t
-difftm(a, b)
+static long
+difftm (a, b)
      struct tm *a, *b;
 {
   int ay = a->tm_year + (TM_YEAR_ORIGIN - 1);
   int by = b->tm_year + (TM_YEAR_ORIGIN - 1);
-  return
-    (
-     (
-      (
-       /* difference in day of year */
-       a->tm_yday - b->tm_yday
-       /* + intervening leap days */
-       +  ((ay >> 2) - (by >> 2))
-       -  (ay/100 - by/100)
-       +  ((ay/100 >> 2) - (by/100 >> 2))
-       /* + difference in years * 365 */
-       +  (time_t)(ay-by) * 365
-       )*24 + (a->tm_hour - b->tm_hour)
-      )*60 + (a->tm_min - b->tm_min)
-     )*60 + (a->tm_sec - b->tm_sec);
+  int days = (
+	      /* difference in day of year */
+	      a->tm_yday - b->tm_yday
+	      /* + intervening leap days */
+	      +  ((ay >> 2) - (by >> 2))
+	      -  (ay/100 - by/100)
+	      +  ((ay/100 >> 2) - (by/100 >> 2))
+	      /* + difference in years * 365 */
+	      +  (long)(ay-by) * 365
+	      );
+  return (60*(60*(24*days + (a->tm_hour - b->tm_hour))
+	      + (a->tm_min - b->tm_min))
+	  + (a->tm_sec - b->tm_sec));
 }
 
 time_t
@@ -1866,7 +1842,13 @@ get_date(p, now)
 	if (! (tm = gmtime (&ftz.time)))
 	    return -1;
 	gmt = *tm;	/* Make a copy, in case localtime modifies *tm.  */
-	ftz.timezone = difftm (&gmt, localtime (&ftz.time)) / 60;
+
+	if (! (tm = localtime (&ftz.time)))
+	    return -1;
+	
+	ftz.timezone = difftm (&gmt, tm) / 60;
+	if(tm->tm_isdst)
+	    ftz.timezone += 60;
     }
 
     tm = localtime(&now->time);
@@ -1920,6 +1902,7 @@ get_date(p, now)
 #if	defined(TEST)
 
 /* ARGSUSED */
+int
 main(ac, av)
     int		ac;
     char	*av[];

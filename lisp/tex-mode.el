@@ -1,6 +1,6 @@
 ;;; tex-mode.el --- TeX, LaTeX, and SliTeX mode commands.
 
-;; Copyright (C) 1985, 1986, 1989, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1989, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: tex
@@ -26,19 +26,19 @@
 
 ;;; Code:
 
-(require 'comint)
+(require 'shell)
 (require 'compile)
 
 ;;;###autoload
 (defvar tex-shell-file-name nil
-  "*If non-nil, is file name to use for the subshell in which TeX is run.")
+  "*If non-nil, the shell file name to run in the subshell used to run TeX.")
 
 ;;;###autoload
 (defvar tex-directory "."
   "*Directory in which temporary files are left.
-You can make this /tmp if your TEXINPUTS has no relative directories in it
+You can make this `/tmp' if your TEXINPUTS has no relative directories in it
 and you don't try to apply \\[tex-region] or \\[tex-buffer] when there are
-\\input commands with relative directories.")
+`\\input' commands with relative directories.")
 
 ;;;###autoload
 (defvar tex-offer-save t
@@ -47,16 +47,14 @@ and you don't try to apply \\[tex-region] or \\[tex-buffer] when there are
 ;;;###autoload
 (defvar tex-run-command "tex"
   "*Command used to run TeX subjob.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.")
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.")
 
 ;;;###autoload
 (defvar latex-run-command "latex"
   "*Command used to run LaTeX subjob.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.")
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.")
 
 (defvar standard-latex-block-names
       '("abstract"         "array"            "center"       "description"
@@ -78,33 +76,29 @@ Combined with `standard-latex-block-names' for minibuffer completion.")
 ;;;###autoload
 (defvar slitex-run-command "slitex"
   "*Command used to run SliTeX subjob.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.")
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.")
 
 ;;;###autoload
 (defvar tex-bibtex-command "bibtex"
   "*Command used by `tex-bibtex-file' to gather bibliographic data.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.")
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.")
 
 ;;;###autoload
 (defvar tex-dvi-print-command "lpr -d"
   "*Command used by \\[tex-print] to print a .dvi file.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.")
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.")
 
 ;;;###autoload
 (defvar tex-alt-dvi-print-command "lpr -d"
   "*Command used by \\[tex-print] with a prefix arg to print a .dvi file.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.
 
-If two printers are not enough of a choice, you can define the value
-of tex-alt-dvi-print-command to be an expression that asks what you want;
+If two printers are not enough of a choice, you can set the variable
+`tex-alt-dvi-print-command' to an expression that asks what you want;
 for example,
 
     (setq tex-alt-dvi-print-command
@@ -115,10 +109,9 @@ use.")
 
 ;;;###autoload
 (defvar tex-dvi-view-command nil
-  "*Command used by \\[tex-view] to display a .dvi file.
-If this string contains an asterisk (*), it will be replaced by the
-filename; if not, the name of the file, preceded by blank, will be added to
-this string.
+  "*Command used by \\[tex-view] to display a `.dvi' file.
+If this string contains an asterisk (`*'), that is replaced by the file name;
+otherwise, the file name, preceded by blank, is added at the end.
 
 This can be set conditionally so that the previewer used is suitable for the
 window system being used.  For example,
@@ -126,7 +119,7 @@ window system being used.  For example,
     (setq tex-dvi-view-command
           (if (eq window-system 'x) \"xdvi\" \"dvi2tty * | cat -s\"))
 
-would tell \\[tex-view] use xdvi under X windows and to use dvi2tty
+would tell \\[tex-view] to use xdvi under X windows and to use dvi2tty
 otherwise.")
 
 ;;;###autoload
@@ -139,7 +132,7 @@ Should show the queue(s) that \\[tex-print] puts jobs on.")
   "*Mode to enter for a new file that might be either TeX or LaTeX.
 This variable is used when it can't be determined whether the file
 is plain TeX or LaTeX or what because the file contains no commands.
-Normally set to either 'plain-tex-mode or 'latex-mode.")
+Normally set to either `plain-tex-mode' or `latex-mode'.")
 
 ;;;###autoload
 (defvar tex-open-quote "``"
@@ -152,7 +145,7 @@ Normally set to either 'plain-tex-mode or 'latex-mode.")
 (defvar tex-last-temp-file nil
   "Latest temporary file generated by \\[tex-region] and \\[tex-buffer].
 Deleted when the \\[tex-region] or \\[tex-buffer] is next run, or when the
-tex-shell goes away.")
+tex shell terminates.")
 
 (defvar tex-command nil
   "Command to run TeX.
@@ -169,7 +162,7 @@ The name of the file, preceded by a blank, will be added to this string.")
 
 (defvar tex-shell-cd-command "cd"
   "Command to give to shell running TeX to change directory.
-The value of tex-directory will be appended to this, separated by a space.")
+The value of `tex-directory' is appended to this, separated by a space.")
 
 (defvar tex-zap-file nil
   "Temporary file name used for text being sent as input to TeX.
@@ -186,7 +179,7 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
   "Syntax table used while in TeX mode.")
 
 (defun tex-define-common-keys (keymap)
-  "Define the keys that we want defined both in TeX mode and in the tex-shell."
+  "Define the keys that we want defined both in TeX mode and in the TeX shell."
   (define-key keymap "\C-c\C-k" 'tex-kill-job)
   (define-key keymap "\C-c\C-l" 'tex-recenter-output-buffer)
   (define-key keymap "\C-c\C-q" 'tex-show-print-queue)
@@ -222,6 +215,7 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
   (define-key tex-mode-map "\C-c\C-i" 'tex-bibtex-file)
   (define-key tex-mode-map "\C-c\C-o" 'tex-latex-block)
   (define-key tex-mode-map "\C-c\C-e" 'tex-close-latex-block)
+  (define-key tex-mode-map "\C-c\C-u" 'tex-goto-last-unclosed-latex-block)
   (define-key tex-mode-map [menu-bar tex tex-validate-region]
     '("Validate Region" . tex-validate-region))
   (define-key tex-mode-map [menu-bar tex validate-tex-buffer]
@@ -242,7 +236,8 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
 
 
 (defvar tex-shell-map nil
-  "Keymap for the tex-shell.  A comint-mode-map with a few additions.")
+  "Keymap for the TeX shell.
+Inherits `comint-mode-map' with a few additions.")
 
 (defvar compare-windows-whitespace nil)	; Pacify the byte-compiler
 
@@ -252,10 +247,10 @@ Set by \\[tex-region], \\[tex-buffer], and \\[tex-file].")
 (defun tex-mode ()
   "Major mode for editing files of input for TeX, LaTeX, or SliTeX.
 Tries to determine (by looking at the beginning of the file) whether
-this file is for plain TeX, LaTeX, or SliTeX and calls plain-tex-mode,
-latex-mode, or slitex-mode, respectively.  If it cannot be determined,
-such as if there are no commands in the file, the value of tex-default-mode
-is used."
+this file is for plain TeX, LaTeX, or SliTeX and calls `plain-tex-mode',
+`latex-mode', or `slitex-mode', respectively.  If it cannot be determined,
+such as if there are no commands in the file, the value of `tex-default-mode'
+says which mode to use."
   (interactive)
   (let (mode slash comment)
     (save-excursion
@@ -317,9 +312,9 @@ tex-show-queue-command
 	Command string used by \\[tex-show-print-queue] to show the print
 	queue that \\[tex-print] put your job on.
 
-Entering Plain-tex mode calls the value of `text-mode-hook', then the value
-of `tex-mode-hook', and then the value of `plain-tex-mode-hook'.  When the
-special subshell is initiated, the value of `tex-shell-hook' is called."
+Entering Plain-tex mode runs the hook `text-mode-hook', then the hook
+`tex-mode-hook', and finally the hook `plain-tex-mode-hook'.  When the
+special subshell is initiated, the hook `tex-shell-hook' is run."
 
   (interactive)
   (tex-common-initialization)
@@ -371,9 +366,9 @@ tex-show-queue-command
 	Command string used by \\[tex-show-print-queue] to show the print
 	queue that \\[tex-print] put your job on.
 
-Entering Latex mode calls the value of text-mode-hook, then the value of
-tex-mode-hook, and then the value of latex-mode-hook.  When the special
-subshell is initiated, the value of tex-shell-hook is called."
+Entering Latex mode runs the hook `text-mode-hook', then 
+`tex-mode-hook', and finally `latex-mode-hook'.  When the special
+subshell is initiated, `tex-shell-hook' is run."
   (interactive)
   (tex-common-initialization)
   (setq mode-name "LaTeX")
@@ -382,6 +377,27 @@ subshell is initiated, the value of tex-shell-hook is called."
   (setq tex-start-of-header "\\documentstyle")
   (setq tex-end-of-header "\\begin{document}")
   (setq tex-trailer "\\end{document}\n")
+  ;; A line containing just $$ is treated as a paragraph separator.
+  ;; A line starting with $$ starts a paragraph,
+  ;; but does not separate paragraphs if it has more stuff on it.
+  (setq paragraph-start "^[ \t]*$\\|^[\f%]\\|^[ \t]*\\$\\$\\|\
+^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|\
+^\\\\chapter\\>\\|^\\\\section\\>\\|\
+^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
+^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
+^\\\\item\\>\\|^\\\\bibitem\\>\\|^\\\\newline\\>\\|^\\\\noindent\\>\\|\
+^\\\\[a-z]*space\\>\\|^\\\\[a-z]*skip\\>\\|\
+^\\\\newpage\\>\\|^\\\\[a-z]*page\\|^\\\\footnote\\>\\|\
+^\\\\marginpar\\>\\|^\\\\parbox\\>\\|^\\\\caption\\>")
+  (setq paragraph-separate "^[ \t]*$\\|^[\f\\\\%]\\|^[ \t]*\\$\\$[ \t]*$\\|\
+^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|\
+^\\\\chapter\\>\\|^\\\\section\\>\\|\
+^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
+^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
+^\\\\item[ \t]*$\\|^\\\\bibitem[ \t]*$\\|^\\\\newline[ \t]*$\\|^\\\\noindent[ \t]*$\\|\
+^\\\\[a-z]*space[ \t]*$\\|^\\\\[a-z]*skip[ \t]*$\\|\
+^\\\\newpage[ \t]*$\\|^\\\\[a-z]*page[a-z]*[ \t]*$\\|^\\\\footnote[ \t]*$\\|\
+^\\\\marginpar[ \t]*$\\|^\\\\parbox[ \t]*$\\|^\\\\caption[ \t]*$")
   (run-hooks 'text-mode-hook 'tex-mode-hook 'latex-mode-hook))
 
 ;;;###autoload
@@ -422,10 +438,10 @@ tex-show-queue-command
 	Command string used by \\[tex-show-print-queue] to show the print
 	queue that \\[tex-print] put your job on.
 
-Entering SliTeX mode calls the value of `text-mode-hook', then the value of
-`tex-mode-hook', then the value of `latex-mode-hook', and then the value of
-`slitex-mode-hook'.  When the special subshell is initiated, the value of
-`tex-shell-hook' is called."
+Entering SliTeX mode runs the hook `text-mode-hook', then the hook
+`tex-mode-hook', then the hook `latex-mode-hook', and finally the hook
+`slitex-mode-hook'.  When the special subshell is initiated, the hook
+`tex-shell-hook' is run."
   (interactive)
   (tex-common-initialization)
   (setq mode-name "SliTeX")
@@ -434,6 +450,27 @@ Entering SliTeX mode calls the value of `text-mode-hook', then the value of
   (setq tex-start-of-header "\\documentstyle{slides}")
   (setq tex-end-of-header "\\begin{document}")
   (setq tex-trailer "\\end{document}\n")
+  ;; A line containing just $$ is treated as a paragraph separator.
+  ;; A line starting with $$ starts a paragraph,
+  ;; but does not separate paragraphs if it has more stuff on it.
+  (setq paragraph-start "^[ \t]*$\\|^[\f%]\\|^[ \t]*\\$\\$\\|\
+^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|\
+^\\\\chapter\\>\\|^\\\\section\\>\\|\
+^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
+^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
+^\\\\item\\>\\|^\\\\bibitem\\>\\|^\\\\newline\\>\\|^\\\\noindent\\>\\|\
+^\\\\[a-z]*space\\>\\|^\\\\[a-z]*skip\\>\\|\
+^\\\\newpage\\>\\|^\\\\[a-z]*page\\|^\\\\footnote\\>\\|\
+^\\\\marginpar\\>\\|^\\\\parbox\\>\\|^\\\\caption\\>")
+  (setq paragraph-separate "^[ \t]*$\\|^[\f\\\\%]\\|^[ \t]*\\$\\$[ \t]*$\\|\
+^\\\\begin\\>\\|^\\\\label\\>\\|^\\\\end\\>\\|^\\\\\\[\\|\
+^\\\\chapter\\>\\|^\\\\section\\>\\|\
+^\\\\subsection\\>\\|^\\\\subsubsection\\>\\|\
+^\\\\paragraph\\>\\|^\\\\subparagraph\\>\\|\
+^\\\\item[ \t]*$\\|^\\\\bibitem[ \t]*$\\|^\\\\newline[ \t]*$\\|^\\\\noindent[ \t]*$\\|\
+^\\\\[a-z]*space[ \t]*$\\|^\\\\[a-z]*skip[ \t]*$\\|\
+^\\\\newpage[ \t]*$\\|^\\\\[a-z]*page[a-z]*[ \t]*$\\|^\\\\footnote[ \t]*$\\|\
+^\\\\marginpar[ \t]*$\\|^\\\\parbox[ \t]*$\\|^\\\\caption[ \t]*$")
   (run-hooks
    'text-mode-hook 'tex-mode-hook 'latex-mode-hook 'slitex-mode-hook))
 
@@ -463,15 +500,20 @@ Entering SliTeX mode calls the value of `text-mode-hook', then the value of
 	(modify-syntax-entry ?' "w"))
     (set-syntax-table tex-mode-syntax-table))
   (make-local-variable 'paragraph-start)
-  (setq paragraph-start "^[ \t]*$\\|^[\f\\\\%]")
+  ;; A line containing just $$ is treated as a paragraph separator.
+  (setq paragraph-start "^[ \t]*$\\|^[\f\\\\%]\\|^[ \t]*\\$\\$")
   (make-local-variable 'paragraph-separate)
-  (setq paragraph-separate paragraph-start)
+  ;; A line starting with $$ starts a paragraph,
+  ;; but does not separate paragraphs if it has more stuff on it.
+  (setq paragraph-separate "^[ \t]*$\\|^[\f\\\\%]\\|^[ \t]*\\$\\$[ \t]*$")
   (make-local-variable 'comment-start)
   (setq comment-start "%")
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip "\\(\\(^\\|[^\\]\\)\\(\\\\\\\\\\)*\\)\\(%+ *\\)")
   (make-local-variable 'comment-indent-function)
   (setq comment-indent-function 'tex-comment-indent)
+  (make-local-variable 'parse-sexp-ignore-comments)
+  (setq parse-sexp-ignore-comments t)
   (make-local-variable 'compare-windows-whitespace)
   (setq compare-windows-whitespace 'tex-categorize-whitespace)
   (make-local-variable 'tex-command)
@@ -614,7 +656,7 @@ area if a mismatch is found."
 
 (defun tex-terminate-paragraph (inhibit-validation)
   "Insert two newlines, breaking a paragraph for TeX.
-Check for mismatched braces/$'s in paragraph being terminated.
+Check for mismatched braces or $s in paragraph being terminated.
 A prefix arg inhibits the checking."
   (interactive "*P")
   (or inhibit-validation
@@ -636,7 +678,7 @@ A prefix arg inhibits the checking."
 
 ;;; Like tex-insert-braces, but for LaTeX.
 (defun tex-latex-block (name)
-  "Creates a matching pair of lines \\begin{NAME} and \\end{NAME} at point.
+  "Creates a matching pair of lines `\\begin{NAME}' and `\\end{NAME}' at point.
 Puts point on a blank line between them."
   (interactive
    (prog2
@@ -656,10 +698,23 @@ Puts point on a blank line between them."
       (if (eobp) (insert ?\n)))))
 
 (defun tex-last-unended-begin ()
-  "Leave point at the beginning of the last \\begin{...} that is unended."
+  "Leave point at the beginning of the last `\\begin{...}' that is unended."
   (while (and (re-search-backward "\\(\\\\begin\\s *{\\)\\|\\(\\\\end\\s *{\\)")
               (looking-at "\\\\end{"))
     (tex-last-unended-begin)))
+
+(defun tex-goto-last-unclosed-latex-block ()
+  "Move point to the last unclosed \\begin{...}.
+Mark is left at original location."
+  (interactive)
+  (let ((spot))
+    (save-excursion
+      (condition-case nil
+          (tex-last-unended-begin)
+        (error (error "Couldn't find unended \\begin")))
+      (setq spot (point)))
+    (push-mark)
+    (goto-char spot)))
 
 (defun tex-close-latex-block ()
   "Creates an \\end{...} to match the last unclosed \\begin{...}."
@@ -767,7 +822,7 @@ line numbers for the errors."
     (let ((proc (get-process "tex-shell")))
       (set-process-sentinel proc 'tex-shell-sentinel)
       (process-kill-without-query proc)
-      (setq tex-shell-map (copy-keymap comint-mode-map))
+      (setq tex-shell-map (copy-keymap shell-mode-map))
       (tex-define-common-keys tex-shell-map)
       (use-local-map tex-shell-map)
       (run-hooks 'tex-shell-hook)
@@ -803,6 +858,7 @@ evaluates to a command string."
   (save-excursion
     (let* ((cmd (eval command))
 	   (proc (get-process "tex-shell"))
+	   (buf (process-buffer proc))
            (star (string-match "\\*" cmd))
 	   (string
 	    (concat
@@ -812,24 +868,31 @@ evaluates to a command string."
 		   (concat cmd " " file))
 	       cmd)
 	     (if background "&" ""))))
+      ;; Switch to buffer before checking for subproc output in it.
+      (set-buffer buf)
       ;; If text is unchanged since previous tex-send-command,
       ;; we haven't got any output.  So wait for output now.
-      (if (= (buffer-modified-tick) tex-send-command-modified-tick)
+      (if (= (buffer-modified-tick buf) tex-send-command-modified-tick)
 	  (accept-process-output proc))
-      (set-buffer (process-buffer proc))
       (goto-char (process-mark proc))
       (insert string)
       (comint-send-input)
-      (setq tex-send-command-modified-tick (buffer-modified-tick)))))
+      (setq tex-send-command-modified-tick (buffer-modified-tick buf)))))
 
-(defun tex-delete-last-temp-files ()
-  "Delete any junk files from last temp file."
+(defun tex-delete-last-temp-files (&optional not-all)
+  "Delete any junk files from last temp file.
+If NOT-ALL is non-nil, save the `.dvi' file."
   (if tex-last-temp-file
       (let* ((dir (file-name-directory tex-last-temp-file))
              (list (file-name-all-completions
                     (file-name-nondirectory tex-last-temp-file) dir)))
         (while list
-          (delete-file (concat dir (car list)))
+	  (if not-all
+	      (and
+	       ;; If arg is non-nil, don't delete the .dvi file.
+	       (not (string-match "\\.dvi$" (car list)))
+	       (delete-file (concat dir (car list))))
+	    (delete-file (concat dir (car list))))
           (setq list (cdr list))))))
 
 (add-hook 'kill-emacs-hook 'tex-delete-last-temp-files)
@@ -864,7 +927,7 @@ The value of `tex-command' specifies the command to use to run TeX."
          (zap-directory
           (file-name-as-directory (expand-file-name tex-directory)))
          (tex-out-file (concat zap-directory tex-zap-file)))
-    (tex-delete-last-temp-files)
+    (tex-delete-last-temp-files t)
     ;; Write the new temp file.
     (save-excursion
       (save-restriction

@@ -1,6 +1,6 @@
 ;;; picture.el --- "Picture mode" -- editing using quarter-plane screen model.
 
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1994 Free Software Foundation, Inc.
 
 ;; Author: K. Shane Hartman
 ;; Maintainer: FSF
@@ -76,13 +76,19 @@ If scan reaches end of buffer, stop there without error."
   "Move cursor right, making whitespace if necessary.
 With argument, move that many columns."
   (interactive "p")
-  (move-to-column-force (+ (current-column) arg)))
+  (let ((target-column (+ (current-column) arg)))
+    (move-to-column-force target-column)
+    ;; Picture mode isn't really suited to multi-column characters,
+    ;; but we might as well let the user move across them.
+    (and (< arg 0)
+	 (> (current-column) target-column)
+	 (forward-char -1))))
 
 (defun picture-backward-column (arg)
   "Move cursor left, making whitespace if necessary.
 With argument, move that many columns."
   (interactive "p")
-  (move-to-column-force (- (current-column) arg)))
+  (picture-forward-column (- arg)))
 
 (defun picture-move-down (arg)
   "Move vertically down, making whitespace if necessary.
@@ -471,7 +477,9 @@ Leaves the region surrounding the rectangle."
       (picture-substitute 'forward-char 'picture-forward-column)
       (picture-substitute 'backward-char 'picture-backward-column)
       (picture-substitute 'delete-char 'picture-clear-column)
+      ;; There are two possibilities for what is normally on DEL.
       (picture-substitute 'backward-delete-char-untabify 'picture-backward-clear-column)
+      (picture-substitute 'delete-backward-char 'picture-backward-clear-column)
       (picture-substitute 'kill-line 'picture-clear-line)
       (picture-substitute 'open-line 'picture-open-line)
       (picture-substitute 'newline 'picture-newline)
@@ -509,6 +517,7 @@ Picture mode is invoked by the command \\[picture-mode].")
 (defvar picture-mode-old-local-map)
 (defvar picture-mode-old-mode-name)
 (defvar picture-mode-old-major-mode)
+(defvar picture-mode-old-truncate-lines)
 
 ;;;###autoload
 (defun picture-mode ()
@@ -586,6 +595,8 @@ they are not defaultly assigned to keys."
     (setq picture-tab-chars (default-value 'picture-tab-chars))
     (make-local-variable 'picture-vertical-step)
     (make-local-variable 'picture-horizontal-step)
+    (make-local-variable 'picture-mode-old-truncate-lines)
+    (setq picture-mode-old-truncate-lines truncate-lines)
     (setq truncate-lines t)
     (picture-set-motion 0 1)
 
@@ -611,6 +622,7 @@ With no argument strips whitespace from end of every line in Picture buffer
     (use-local-map picture-mode-old-local-map)
     (setq major-mode picture-mode-old-major-mode)
     (kill-local-variable 'tab-stop-list)
+    (setq truncate-lines picture-mode-old-truncate-lines)
     ;; Kludge - force the mode line to be updated.  Is there a better
     ;; way to do this?
     (set-buffer-modified-p (buffer-modified-p))))

@@ -1,5 +1,5 @@
 /* Record indices of function doc strings stored in a file.
-   Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -27,6 +27,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <fcntl.h>
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifndef O_RDONLY
 #define O_RDONLY 0
 #endif
@@ -36,6 +40,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "keyboard.h"
 
 Lisp_Object Vdoc_file_name;
+
+extern Lisp_Object Voverriding_local_map;
 
 Lisp_Object
 get_doc_string (filepos)
@@ -48,13 +54,13 @@ get_doc_string (filepos)
   register int count;
   extern char *index ();
 
-  if (XTYPE (Vdata_directory) != Lisp_String
+  if (XTYPE (Vdoc_directory) != Lisp_String
       || XTYPE (Vdoc_file_name) != Lisp_String)
     return Qnil;
 
-  name = (char *) alloca (XSTRING (Vdata_directory)->size
+  name = (char *) alloca (XSTRING (Vdoc_directory)->size
 			  + XSTRING (Vdoc_file_name)->size + 8);
-  strcpy (name, XSTRING (Vdata_directory)->data);
+  strcpy (name, XSTRING (Vdoc_directory)->data);
   strcat (name, XSTRING (Vdoc_file_name)->data);
 #ifdef VMS
 #ifndef VMS4_4
@@ -183,7 +189,7 @@ subcommands.)");
   return doc;
 }
 
-DEFUN ("documentation-property", Fdocumentation_property, Sdocumentation_property, 2, 2, 0,
+DEFUN ("documentation-property", Fdocumentation_property, Sdocumentation_property, 2, 3, 0,
   "Return the documentation string that is SYMBOL's PROP property.\n\
 This is like `get', but it can refer to strings stored in the\n\
 `etc/DOC' file; and if the value is a string, it is passed through\n\
@@ -278,10 +284,10 @@ when doc strings are referred to later in the dumped Emacs.")
   name = (char *) alloca (XSTRING (filename)->size + 14);
   strcpy (name, "../etc/");
 #else /* CANNOT_DUMP */
-  CHECK_STRING (Vdata_directory, 0);
+  CHECK_STRING (Vdoc_directory, 0);
   name = (char *) alloca (XSTRING (filename)->size +
-			  XSTRING (Vdata_directory)->size + 1);
-  strcpy (name, XSTRING (Vdata_directory)->data);
+			  XSTRING (Vdoc_directory)->size + 1);
+  strcpy (name, XSTRING (Vdoc_directory)->data);
 #endif /* CANNOT_DUMP */
   strcat (name, XSTRING (filename)->data); 	/*** Add this line ***/
 #ifdef VMS
@@ -391,7 +397,11 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
   name = Qnil;
   GCPRO4 (str, tem, keymap, name);
 
-  keymap = current_buffer->keymap;
+  /* KEYMAP is either nil (which means search all the active keymaps)
+     or a specified local map (which means search just that and the
+     global map).  If non-nil, it might come from Voverriding_local_map,
+     or from a \\<mapname> construct in STR itself..  */
+  keymap = Voverriding_local_map;
 
   bsize = XSTRING (str)->size;
   bufp = buf = (unsigned char *) xmalloc (bsize);
@@ -409,6 +419,8 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	}
       else if (strp[0] == '\\' && strp[1] == '[')
 	{
+	  Lisp_Object firstkey;
+
 	  changed = 1;
 	  strp += 2;		/* skip \[ */
 	  start = strp;
@@ -423,7 +435,17 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  /* Save STRP in IDX.  */
 	  idx = strp - (unsigned char *) XSTRING (str)->data;
 	  tem = Fintern (make_string (start, length), Qnil);
-	  tem = Fwhere_is_internal (tem, keymap, Qnil, Qt, Qnil);
+	  tem = Fwhere_is_internal (tem, keymap, Qt, Qnil);
+
+	  /* Disregard menu bar bindings; it is positively annoying to
+	     mention them when there's no menu bar, and it isn't terribly
+	     useful even when there is a menu bar.  */
+	  if (!NILP (tem))
+	    {
+	      firstkey = Faref (tem, make_number (0));
+	      if (EQ (firstkey, Qmenu_bar))
+		tem = Qnil;
+	    }
 
 	  if (NILP (tem))	/* but not on any keys */
 	    {
@@ -487,7 +509,7 @@ thus, \\=\\=\\=\\= puts \\=\\= into the output, and \\=\\=\\=\\[ puts \\=\\[ int
 	  else if (start[-1] == '<')
 	    keymap = tem;
 	  else
-	    describe_map_tree (tem, 1, Qnil, Qnil, 0);
+	    describe_map_tree (tem, 1, Qnil, Qnil, 0, 1);
 	  tem = Fbuffer_string ();
 	  Ferase_buffer ();
 	  set_buffer_internal (oldbuf);

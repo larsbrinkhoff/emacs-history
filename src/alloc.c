@@ -1,5 +1,5 @@
 /* Storage allocation and gc for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985, 1986, 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1988, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -98,6 +98,9 @@ int pureptr;
 /* If nonzero, this is a warning delivered by malloc and not yet displayed.  */
 char *pending_malloc_warning;
 
+/* Pre-computed signal argument for use when memory is exhausted.  */
+Lisp_Object memory_signal_data;
+
 /* Maximum amount of C stack to save when a GC happens.  */
 
 #ifndef MAX_SAVE_STACK
@@ -148,7 +151,10 @@ display_malloc_warning ()
 /* Called if malloc returns zero */
 memory_full ()
 {
-  error ("Memory exhausted");
+  /* This used to call error, but if we've run out of memory, we could get
+     infinite recursion trying to build the string.  */
+  while (1)
+    Fsignal (Qerror, memory_signal_data);
 }
 
 /* like malloc routines but check for no memory and block interrupt input.  */
@@ -976,8 +982,9 @@ make_event_array (nargs, args)
   /* Since the loop exited, we know that all the things in it are
      characters, so we can make a string.  */
   {
-    Lisp_Object result = Fmake_string (nargs, make_number (0));
+    Lisp_Object result;
     
+    result = Fmake_string (nargs, make_number (0));
     for (i = 0; i < nargs; i++)
       {
 	XSTRING (result)->data[i] = XINT (args[i]);
@@ -1184,28 +1191,6 @@ struct backtrace
 	       /* if nargs is UNEVALLED, args points to slot holding list of unevalled args */
     char evalargs;
   };
-
-/* Two flags that are set during GC in the `size' component
-   of a string or vector.  On some machines, these flags
-   are defined by the m- file to be different bits.  */
-
-/* On vector, means it has been marked.
-   On string size field or a reference to a string,
-   means not the last reference in the chain.  */
-
-#ifndef ARRAY_MARK_FLAG
-#define ARRAY_MARK_FLAG ((MARKBIT >> 1) & ~MARKBIT)
-#endif /* no ARRAY_MARK_FLAG */
-
-/* Any slot that is a Lisp_Object can point to a string
-   and thus can be put on a string's reference-chain
-   and thus may need to have its ARRAY_MARK_FLAG set.
-   This includes the slots whose markbits are used to mark
-   the containing objects.  */
-
-#if ARRAY_MARK_FLAG == MARKBIT
-you lose
-#endif
 
 /* Garbage collection!  */
 
@@ -1232,6 +1217,7 @@ Garbage collection happens automatically if you cons more than\n\
   register struct backtrace *backlist;
   register Lisp_Object tem;
   char *omessage = echo_area_glyphs;
+  int omessage_length = echo_area_glyphs_length;
   char stack_top_variable;
   register int i;
 
@@ -1374,7 +1360,7 @@ Garbage collection happens automatically if you cons more than\n\
     gc_cons_threshold = 10000;
 
   if (omessage || minibuf_level > 0)
-    message1 (omessage);
+    message2 (omessage, omessage_length);
   else if (!noninteractive)
     message1 ("Garbage collecting...done");
 
@@ -1475,10 +1461,10 @@ mark_object (objptr)
 {
   register Lisp_Object obj;
 
-  obj = *objptr;
-  XUNMARK (obj);
-
  loop:
+  obj = *objptr;
+ loop2:
+  XUNMARK (obj);
 
   if ((PNTR_COMPARISON_TYPE) XPNTR (obj) < (PNTR_COMPARISON_TYPE) ((char *) pure + PURESIZE)
       && (PNTR_COMPARISON_TYPE) XPNTR (obj) >= (PNTR_COMPARISON_TYPE) pure)
@@ -1566,8 +1552,9 @@ mark_object (objptr)
 	    if (i != COMPILED_CONSTANTS)
 	      mark_object (&ptr1->contents[i]);
 	  }
-	objptr = &ptr1->contents[COMPILED_CONSTANTS];
-	obj = *objptr;
+	/* This cast should be unnecessary, but some Mips compiler complains
+	   (MIPS-ABI + SysVR4, DC/OSx, etc).  */
+	objptr = (Lisp_Object *) &ptr1->contents[COMPILED_CONSTANTS];
 	goto loop;
       }
 
@@ -1591,6 +1578,7 @@ mark_object (objptr)
 	mark_object (&ptr->scroll_bars);
 	mark_object (&ptr->condemned_scroll_bars);
 	mark_object (&ptr->menu_bar_items);
+	mark_object (&ptr->menu_bar_vector);
 	mark_object (&ptr->face_alist);
       }
       break;
@@ -1612,9 +1600,13 @@ mark_object (objptr)
 	ptr = ptr->next;
 	if (ptr)
 	  {
+	    /* For the benefit of the last_marked log.  */
+	    objptr = (Lisp_Object *)&XSYMBOL (obj)->next;
 	    ptrx = ptr;		/* Use of ptrx avoids compiler bug on Sun */
 	    XSETSYMBOL (obj, ptrx);
-	    goto loop;
+	    /* We can't goto loop here because *objptr doesn't contain an
+	       actual Lisp_Object with valid datatype field.  */
+	    goto loop2;
 	  }
       }
       break;
@@ -1638,14 +1630,11 @@ mark_object (objptr)
 	if (EQ (ptr->cdr, Qnil))
 	  {
 	    objptr = &ptr->car;
-	    obj = ptr->car;
-	    XUNMARK (obj);
 	    goto loop;
 	  }
 	mark_object (&ptr->car);
 	/* See comment above under Lisp_Vector for why not use ptr here.  */
 	objptr = &XCONS (obj)->cdr;
-	obj = ptr->cdr;
 	goto loop;
       }
 
@@ -2124,7 +2113,7 @@ compact_strings ()
 
 /* Debugging aids.  */
 
-DEFUN ("memory-limit", Fmemory_limit, Smemory_limit, 0, 0, "",
+DEFUN ("memory-limit", Fmemory_limit, Smemory_limit, 0, 0, 0,
   "Return the address of the last byte Emacs has allocated, divided by 1024.\n\
 This may be helpful in debugging Emacs's memory usage.\n\
 We divide the value by 1024 to make sure it fits in a Lisp integer.")
@@ -2214,6 +2203,12 @@ This limit is applied when garbage collection happens.\n\
 The size is counted as the number of bytes occupied,\n\
 which includes both saved text and other data.");
   undo_strong_limit = 30000;
+
+  /* We build this in advance because if we wait until we need it, we might
+     not be able to allocate the memory to hold it.  */
+  memory_signal_data
+    = Fcons (Qerror, Fcons (build_string ("Memory exhausted"), Qnil));
+  staticpro (&memory_signal_data);
 
   defsubr (&Scons);
   defsubr (&Slist);

@@ -1,11 +1,11 @@
 /* Client process that communicates with GNU Emacs acting as server.
-   Copyright (C) 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1987, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -52,8 +52,7 @@ main (argc, argv)
 #include <stdio.h>
 #include <errno.h>
 
-extern int sys_nerr;
-extern char *sys_errlist[];
+extern char *strerror ();
 extern int errno;
 
 main (argc, argv)
@@ -137,8 +136,7 @@ main (argc, argv)
   if (cwd == 0)
     {
       /* getwd puts message in STRING if it fails.  */
-      fprintf (stderr, "%s: %s (%s)\n", argv[0], string,
-	       (errno < sys_nerr) ? sys_errlist[errno] : "unknown error");
+      fprintf (stderr, "%s: %s (%s)\n", argv[0], string, strerror (errno));
       exit (1);
     }
 
@@ -179,20 +177,25 @@ main (argc, argv)
 #include <sys/msg.h>
 #include <stdio.h>
 
+char *getwd (), *getcwd (), *getenv ();
+
 main (argc, argv)
      int argc;
      char **argv;
 {
   int s;
   key_t key;
-  struct msgbuf * msgp =
-      (struct msgbuf *) malloc (sizeof *msgp + BUFSIZ);
+  /* Size of text allocated in MSGP.  */
+  int size_allocated = BUFSIZ;
+  /* Amount of text used in MSGP.  */
+  int used;
+  struct msgbuf *msgp
+    = (struct msgbuf *) malloc (sizeof (struct msgbuf) + size_allocated);
   struct msqid_ds * msg_st;
   char *homedir, buf[BUFSIZ];
   char gwdirb[BUFSIZ];
   char *cwd;
   char *temp;
-  char *getwd (), *getcwd (), *getenv ();
 
   if (argc < 2)
     {
@@ -243,17 +246,33 @@ main (argc, argv)
     }
 
   msgp->mtext[0] = 0;
+  used = 0;
   argc--; argv++;
   while (argc)
     {
+      int need_cwd = 0;
       if (*argv[0] == '+')
 	{
 	  char *p = argv[0] + 1;
 	  while (*p >= '0' && *p <= '9') p++;
 	  if (*p != 0)
-	    strcat (msgp->mtext, cwd);
+	    need_cwd = 1;
 	}
       else if (*argv[0] != '/')
+	need_cwd = 1;
+
+      if (need_cwd)
+	used += strlen (cwd);
+      used += strlen (argv[0]) + 1;
+      while (used + 2 > size_allocated)
+	{
+	  size_allocated *= 2;
+	  msgp = (struct msgbuf *) realloc (msgp,
+					    (sizeof (struct msgbuf)
+					     + size_allocated));
+	}
+
+      if (need_cwd)
 	strcat (msgp->mtext, cwd);
 
       strcat (msgp->mtext, argv[0]);
@@ -261,6 +280,13 @@ main (argc, argv)
       argv++; argc--;
     }
   strcat (msgp->mtext, "\n");
+#ifdef HPUX /* HPUX has a bug.  */
+  if (strlen (msgp->mtext) >= 512)
+    {
+      fprintf (stderr, "emacsclient: args too long for msgsnd\n");
+      exit (1);
+    }
+#endif
   msgp->mtype = 1;
   if (msgsnd (s, msgp, strlen (msgp->mtext)+1, 0) < 0)
     {
@@ -284,3 +310,18 @@ main (argc, argv)
 #endif /* HAVE_SYSVIPC */
 
 #endif /* HAVE_SOCKETS or HAVE_SYSVIPC */
+
+#ifndef HAVE_STRERROR
+char *
+strerror (errnum)
+     int errnum;
+{
+  extern char *sys_errlist[];
+  extern int sys_nerr;
+
+  if (errnum >= 0 && errnum < sys_nerr)
+    return sys_errlist[errnum];
+  return (char *) "Unknown error";
+}
+
+#endif /* ! HAVE_STRERROR */

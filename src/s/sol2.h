@@ -10,12 +10,15 @@
 
 #define POSIX
 
-/* Here is how to find X Windows.  The -R option says where
-   to find X windows at run time.  */
+/* Here is how to find X Windows.  LD_SWITCH_X_SITE_AUX gives an -R option
+   says where to find X windows at run time.  */
 #ifndef __GNUC__
-#define LD_SWITCH_SYSTEM -R/usr/openwin/lib
+#define LD_SWITCH_SYSTEM LD_SWITCH_X_SITE_AUX
 #else /* GCC */
-#define LD_SWITCH_SYSTEM -Xlinker -R/usr/openwin/lib
+/* We use ./prefix-args because we don't know whether LD_SWITCH_X_SITE_AUX
+   has anything in it.  It can be empty.
+   This works ok in src.  Luckily lib-src does not use LD_SWITCH_SYSTEM.  */
+#define LD_SWITCH_SYSTEM `./prefix-args -Xlinker LD_SWITCH_X_SITE_AUX`
 #endif /* GCC */
 
 /* Compile in non-ansi fashion to work around bugs in system header files.  */

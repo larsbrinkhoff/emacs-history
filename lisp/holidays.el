@@ -1,27 +1,25 @@
 ;;; holidays.el --- holiday functions for the calendar package
 
-;;; Copyright (C) 1989, 1990, 1992 Free Software Foundation, Inc.
+;;; Copyright (C) 1989, 1990, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: holidays, calendar
 
 ;; This file is part of GNU Emacs.
 
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -102,8 +100,7 @@ The holidays are those in the list calendar-holidays."
   "Find holidays for the date specified by the cursor in the calendar window."
   (interactive)
   (message "Checking holidays...")
-  (let* ((date (or (calendar-cursor-to-date)
-                   (error "Cursor is not on a date!")))
+  (let* ((date (calendar-cursor-to-date t))
          (date-string (calendar-date-string date))
          (holiday-list (check-calendar-holidays date))
          (holiday-string (mapconcat 'identity holiday-list ";  "))
@@ -155,8 +152,11 @@ holidays are found, nil if not."
       (increment-calendar-month m1 y1 -1)
       (increment-calendar-month m2 y2 1)
       (calendar-set-mode-line
-            (format "Notable Dates from %s, %d to %s, %d%%-"
-                    (calendar-month-name m1) y1 (calendar-month-name m2) y2))
+       (if (= y1 y2)
+           (format "Notable Dates from %s to %s, %d%%-"
+                   (calendar-month-name m1) (calendar-month-name m2) y2)
+         (format "Notable Dates from %s, %d to %s, %d%%-"
+                 (calendar-month-name m1) y1 (calendar-month-name m2) y2)))
       (erase-buffer)
       (insert
        (mapconcat

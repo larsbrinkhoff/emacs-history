@@ -1,6 +1,6 @@
 ;;; help.el --- help commands for Emacs
 
-;; Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: help, internal
@@ -77,6 +77,12 @@
 
 (define-key help-map "v" 'describe-variable)
 
+(define-key help-map "q" 'help-quit)
+
+(defun help-quit ()
+  (interactive)
+  nil)
+
 (defun help-with-tutorial ()
   "Select the Emacs learn-by-doing tutorial."
   (interactive)
@@ -93,9 +99,16 @@
       (search-forward "\n<<")
       (beginning-of-line)
       (delete-region (point) (progn (end-of-line) (point)))
-      (newline (- (window-height (selected-window))
+      (let ((n (- (window-height (selected-window))
 		  (count-lines (point-min) (point))
-		  6))
+		  6)))
+	(if (< n 12)
+	    (newline n)
+	  ;; Some people get confused by the large gap.
+	  (newline (/ n 2))
+	  (insert "[Middle of page left blank for didactic purposes.  "
+		  "Text continues below]")
+	  (newline (- n (/ n 2)))))
       (goto-char (point-min))
       (set-buffer-modified-p nil))))
 
@@ -155,18 +168,13 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
 	  (princ "not documented"))
 	(print-help-return-message)))))
 
-(defun describe-mode (&optional minor)
-  "Display documentation of current major mode.
-If optional MINOR is non-nil (or prefix argument is given if interactive),
-display documentation of active minor modes as well.
+(defun describe-mode ()
+  "Display documentation of current major mode and minor modes.
 For this to work correctly for a minor mode, the mode's indicator variable
 \(listed in `minor-mode-alist') must also be a function whose documentation
 describes the minor mode."
   (interactive)
   (with-output-to-temp-buffer "*Help*"
-    (princ mode-name)
-    (princ " Mode:\n")
-    (princ (documentation major-mode))
     (let ((minor-modes minor-mode-alist)
 	  (locals (buffer-local-variables)))
       (while minor-modes
@@ -179,11 +187,22 @@ describes the minor mode."
 	  (if (and local-binding
 		   (cdr local-binding)
 		   (fboundp minor-mode))
-	      (progn
-		(princ (format "\n\n\n%s minor mode (indicator%s):\n"
-			       minor-mode indicator))
-		(princ (documentation minor-mode)))))
+	      (let ((pretty-minor-mode minor-mode))
+		(if (string-match "-mode$" (symbol-name minor-mode))
+		    (setq pretty-minor-mode
+			  (capitalize
+			   (substring (symbol-name minor-mode)
+				      0 (match-beginning 0)))))
+		(while (and indicator (symbolp indicator))
+		  (setq indicator (symbol-value indicator)))
+		(princ (format "%s minor mode (indicator%s):\n"
+			       pretty-minor-mode indicator))
+		(princ (documentation minor-mode))
+		(princ "\n\n"))))
 	(setq minor-modes (cdr minor-modes))))
+    (princ mode-name)
+    (princ " mode:\n")
+    (princ (documentation major-mode))
     (print-help-return-message)))
 
 ;; So keyboard macro definitions are documented correctly
@@ -252,9 +271,12 @@ of the key sequence that ran this command."
 	(insert "\n")))
     (print-help-return-message)))
 
+(defalias 'help 'help-for-help)
 (make-help-screen help-for-help
-  "a b c f C-f i k C-k l m n p s t v w C-c C-d C-n C-w.  Type \\[help-command] again for more help: "
+  "a b c f C-f i k C-k l m n p s t v w C-c C-d C-n C-w, or ? for more help:"
   "You have typed \\[help-command], the help character.  Type a Help option:
+\(Use \\<help-map>\\[scroll-up] or \\[scroll-down] to scroll through this text.
+Type \\<help-map>\\[help-quit] to exit the Help command.)
 
 a  command-apropos.  Give a substring, and see a list of commands
 	(functions interactively callable) that contain
@@ -412,6 +434,26 @@ Returns the documentation as a string, also."
     (print-help-return-message)
     ;; Return the text we displayed.
     (save-excursion (set-buffer standard-output) (buffer-string))))
+
+(defun where-is (definition)
+  "Print message listing key sequences that invoke specified command.
+Argument is a command definition, usually a symbol with a function definition."
+  (interactive
+   (let ((fn (function-called-at-point))
+	 (enable-recursive-minibuffers t)	     
+	 val)
+     (setq val (completing-read (if fn
+				    (format "Where is command (default %s): " fn)
+				  "Where is command: ")
+				obarray 'fboundp t))
+     (list (if (equal val "")
+	       fn (intern val)))))
+  (let* ((keys (where-is-internal definition overriding-local-map nil nil))
+	 (keys1 (mapconcat 'key-description keys ", ")))
+    (if (> (length keys1) 0)
+	(message "%s is on %s" definition keys1)
+      (message "%s is not on any key" definition)))
+  nil)
 
 (defun command-apropos (string)
   "Like apropos but lists only symbols that are names of commands

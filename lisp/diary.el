@@ -1,26 +1,25 @@
 ;;; diary.el --- diary functions.
 
-;; Copyright (C) 1989, 1990, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1989, 1990, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: calendar
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -67,9 +66,7 @@ in the displayed three-month calendar."
   (let ((d-file (substitute-in-file-name diary-file)))
     (if (and d-file (file-exists-p d-file))
         (if (file-readable-p d-file)
-            (list-diary-entries (or (calendar-cursor-to-date)
-                                    (error "Cursor is not on a date!"))
-                                arg)
+            (list-diary-entries (calendar-cursor-to-date t) arg)
           (error "Your diary file is not readable!"))
       (error "You don't have a diary file!"))))
 
@@ -1331,53 +1328,31 @@ ending of that number (that is, `st', `nd', `rd' or `th', as appropriate."
 
 (defun diary-day-of-year ()
   "Day of year and number of days remaining in the year of date diary entry."
-  (let* ((year (extract-calendar-year date))
-         (day (calendar-day-number date))
-         (days-remaining (- (calendar-day-number (list 12 31 year)) day)))
-    (format "Day %d of %d; %d day%s remaining in the year"
-             day year days-remaining (if (= days-remaining 1) "" "s"))))
+  (calendar-day-of-year-string date))
 
 (defun diary-iso-date ()
   "ISO calendar equivalent of date diary entry."
-  (let ((day (% (calendar-absolute-from-gregorian date) 7))
-        (iso-date (calendar-iso-from-absolute
-                   (calendar-absolute-from-gregorian date))))
-    (format "ISO date: Day %s of week %d of %d."
-            (if (zerop day) 7 day)
-            (extract-calendar-month iso-date)
-            (extract-calendar-year iso-date))))
+  (format "ISO date: %s" (calendar-iso-date-string date)))
 
 (defun diary-islamic-date ()
   "Islamic calendar equivalent of date diary entry."
-  (let* ((i-date (calendar-islamic-from-absolute
-                  (calendar-absolute-from-gregorian date)))
-         (calendar-month-name-array calendar-islamic-month-name-array))
-    (if (>= (extract-calendar-year i-date) 1)
-        (format "Islamic date: %s" (calendar-date-string i-date nil t)))))
+  (let ((i (calendar-islamic-date-string (calendar-cursor-to-date t))))
+    (if (string-equal i "")
+        "Date is pre-Islamic"
+      (format "Islamic date (until sunset): %s" i))))
 
 (defun diary-hebrew-date ()
   "Hebrew calendar equivalent of date diary entry."
-  (let* ((h-date (calendar-hebrew-from-absolute
-                  (calendar-absolute-from-gregorian date)))
-         (calendar-month-name-array
-          (if (hebrew-calendar-leap-year-p
-               (extract-calendar-year h-date))
-              calendar-hebrew-month-name-array-leap-year
-            calendar-hebrew-month-name-array-common-year)))
-    (format "Hebrew date: %s" (calendar-date-string h-date nil t))))
+  (format "Hebrew date (until sunset): %s" (calendar-hebrew-date-string date)))
 
 (defun diary-julian-date ()
   "Julian calendar equivalent of date diary entry."
-  (format "Julian date: %s"
-          (calendar-date-string
-           (calendar-julian-from-absolute
-            (calendar-absolute-from-gregorian date)))
-          nil t))
+  (format "Julian date: %s" (calendar-julian-date-string date)))
 
 (defun diary-astro-day-number ()
   "Astronomical (Julian) day number diary entry."
-  (format "Astronomical (Julian) day number %d"
-          (+ 1721425 (calendar-absolute-from-gregorian date))))
+  (format "Astronomical (Julian) day number %s"
+          (calendar-astro-date-string date)))
 
 (defun diary-omer ()
   "Omer count diary entry.

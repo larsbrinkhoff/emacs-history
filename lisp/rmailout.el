@@ -1,6 +1,6 @@
 ;;; rmailout.el --- "RMAIL" mail reader for Emacs: output message to a file.
 
-;; Copyright (C) 1985, 1987, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: mail
@@ -23,6 +23,8 @@
 
 ;;; Code:
 
+(require 'rmail)
+
 ;; Temporary until Emacs always has this variable.
 (defvar rmail-delete-after-output nil
   "*Non-nil means automatically delete a message that is copied to a file.")
@@ -35,6 +37,17 @@ NAME-EXP may be a string constant giving the file name to use,
 or more generally it may be any kind of expression that returns
 a file name as a string.")
 
+(defun rmail-output-menu (event)
+  "Output current message to another Rmail file, chosen with a menu.
+Also set the default for subsequent \\[rmail-output-to-rmail-file] commands.
+The variables `rmail-secondary-file-directory' and
+`rmail-secondary-file-regexp' control which files are offered in the menu."
+  (interactive "e")
+  (let ((file-name (rmail-secondary-file-menu event)))
+    (if file-name
+	(rmail-output-to-rmail-file
+	 (setq rmail-default-rmail-file file-name)))))
+
 ;;; There are functions elsewhere in Emacs that use this function; check
 ;;; them out before you change the calling method.
 (defun rmail-output-to-rmail-file (file-name &optional count)
@@ -44,6 +57,9 @@ If file is being visited, the message is appended to the Emacs
 buffer visiting that file.
 If the file exists and is not an Rmail file, 
 the message is appended in inbox format.
+
+The default file name comes from `rmail-default-rmail-file',
+which is updated to the name you use in this command.
 
 A prefix argument N says to output N consecutive messages
 starting with the current one.  Deleted messages are skipped and don't count."
@@ -59,19 +75,26 @@ starting with the current one.  Deleted messages are skipped and don't count."
 		     (setq answer (eval (cdr (car tail)))))
 		 (setq tail (cdr tail))))
 	     ;; If not suggestions, use same file as last time.
-	     (or answer rmail-last-rmail-file))))
-     (list (setq rmail-last-rmail-file
-		 (read-file-name
-			    (concat "Output message to Rmail file: (default "
-				    (file-name-nondirectory default-file)
-				    ") ")
-			    (file-name-directory default-file)
-			    default-file))
+	     (or answer rmail-default-rmail-file))))
+     (list (setq rmail-default-rmail-file
+		 (let ((read-file
+			(read-file-name
+			 (concat "Output message to Rmail file: (default "
+				 (file-name-nondirectory default-file)
+				 ") ")
+			 (file-name-directory default-file)
+			 default-file)))
+		   (if (file-directory-p read-file)
+		       (expand-file-name (file-name-nondirectory default-file)
+					 read-file)
+		     (expand-file-name
+		      (or read-file default-file)
+		      (file-name-directory default-file)))))
 	   (prefix-numeric-value current-prefix-arg))))
   (or count (setq count 1))
   (setq file-name
 	(expand-file-name file-name
-			  (file-name-directory rmail-last-rmail-file)))
+			  (file-name-directory rmail-default-rmail-file)))
   (if (and (file-readable-p file-name) (not (rmail-file-p file-name)))
       (rmail-output file-name count)
     (rmail-maybe-set-message-counters)
@@ -92,11 +115,14 @@ starting with the current one.  Deleted messages are skipped and don't count."
       (let (redelete)
 	(unwind-protect
 	    (progn
+	      ;; Temporarily turn off Deleted attribute.
+	      ;; Do this outside the save-restriction, since it would
+	      ;; shift the place in the buffer where the visible text starts.
+	      (if (rmail-message-deleted-p rmail-current-message)
+		  (progn (setq redelete t)
+			 (rmail-set-attribute "deleted" nil)))
 	      (save-restriction
 		(widen)
-		(if (rmail-message-deleted-p rmail-current-message)
-		    (progn (setq redelete t)
-			   (rmail-set-attribute "deleted" nil)))
 		;; Decide whether to append to a file or to an Emacs buffer.
 		(save-excursion
 		  (let ((buf (get-file-buffer file-name))
@@ -115,6 +141,11 @@ starting with the current one.  Deleted messages are skipped and don't count."
 			;; If MSG is non-nil, buffer is in RMAIL mode.
 			(if msg
 			    (progn
+			      ;; Turn on auto save mode, if it's off in this
+			      ;; buffer but enabled by default.
+			      (and (not buffer-auto-save-file-name)
+				   auto-save-default
+				   (auto-save-mode t))
 			      (rmail-maybe-set-message-counters)
 			      (widen)
 			      (narrow-to-region (point-max) (point-max))
@@ -124,6 +155,9 @@ starting with the current one.  Deleted messages are skipped and don't count."
 			      (search-backward "\n\^_")
 			      (narrow-to-region (point) (point-max))
 			      (rmail-count-new-messages t)
+			      (if (rmail-summary-exists)
+				  (rmail-select-summary
+				    (rmail-update-summary)))
 			      (rmail-show-message msg))
 		;; Output file not in rmail mode => just insert at the end.
 		(narrow-to-region (point-min) (1+ (buffer-size)))
@@ -151,7 +185,7 @@ starting with the current one.  Deleted messages are skipped and don't count."
 ;;; There are functions elsewhere in Emacs that use this function; check
 ;;; them out before you change the calling method.
 (defun rmail-output (file-name &optional count noattribute from-gnus)
-  "Append this message to Unix mail file named FILE-NAME.
+  "Append this message to system-inbox-format mail file named FILE-NAME.
 A prefix argument N says to output N consecutive messages
 starting with the current one.  Deleted messages are skipped and don't count.
 When called from lisp code, N may be omitted.
@@ -160,27 +194,46 @@ If the pruned message header is shown on the current message, then
 messages will be appended with pruned headers; otherwise, messages
 will be appended with their original headers.
 
+The default file name comes from `rmail-last-file',
+which is updated to the name you use in this command.
+
 The optional third argument NOATTRIBUTE, if non-nil, says not
 to set the `filed' attribute, and not to display a message.
 
 The optional fourth argument FROM-GNUS is set when called from GNUS."
   (interactive
-   (list (setq rmail-last-file
-	       (read-file-name
-		(concat "Output message to Unix mail file"
-			(if rmail-last-file
-			    (concat " (default "
-				    (file-name-nondirectory rmail-last-file)
-				    "): " )
-			  ": "))			
-		(and rmail-last-file (file-name-directory rmail-last-file))
-		rmail-last-file))
-	 (prefix-numeric-value current-prefix-arg)))
+   (let ((default-file
+	   (let (answer tail)
+	     (setq tail rmail-output-file-alist)
+	     ;; Suggest a file based on a pattern match.
+	     (while (and tail (not answer))
+	       (save-excursion
+		 (goto-char (point-min))
+		 (if (re-search-forward (car (car tail)) nil t)
+		     (setq answer (eval (cdr (car tail)))))
+		 (setq tail (cdr tail))))
+	     ;; If not suggestions, use same file as last time.
+	     (or answer rmail-default-file))))
+     (list (setq rmail-default-file
+		 (let ((read-file
+			(read-file-name
+			 (concat "Output message to Unix mail file: (default "
+				 (file-name-nondirectory default-file)
+				 ") ")
+			 (file-name-directory default-file)
+			 default-file)))
+		   (if (file-directory-p read-file)
+		       (expand-file-name (file-name-nondirectory default-file)
+					 read-file)
+		     (expand-file-name
+		      (or read-file default-file)
+		      (file-name-directory default-file)))))
+	   (prefix-numeric-value current-prefix-arg))))
   (or count (setq count 1))
   (setq file-name
 	(expand-file-name file-name
-			  (and rmail-last-file
-			       (file-name-directory rmail-last-file))))
+			  (and rmail-default-file
+			       (file-name-directory rmail-default-file))))
   (if (and (file-readable-p file-name) (rmail-file-p file-name))
       (rmail-output-to-rmail-file file-name count)
     (let ((orig-count count)

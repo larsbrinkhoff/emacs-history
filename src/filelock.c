@@ -1,4 +1,4 @@
-/* Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+/* Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -36,6 +36,23 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "lisp.h"
 #include <paths.h>
 #include "buffer.h"
+
+#ifdef SYSV_SYSTEM_DIR
+#include <dirent.h>
+#else /* not SYSV_SYSTEM_DIR */
+#ifdef NONSYSTEM_DIR_LIBRARY
+#include "ndir.h"
+#else /* not NONSYSTEM_DIR_LIBRARY */
+#ifdef MSDOS
+#include <dirent.h>
+#else
+#include <sys/dir.h>
+#endif
+#endif /* not NONSYSTEM_DIR_LIBRARY */
+#ifndef MSDOS
+extern DIR *opendir ();
+#endif /* not MSDOS */
+#endif /* not SYSV_SYSTEM_DIR */
 
 extern int errno;
 
@@ -190,7 +207,8 @@ lock_file (fn)
   /* See if this file is visited and has changed on disk since it was
      visited.  */
   {
-    register Lisp_Object subject_buf = Fget_file_buffer (fn);
+    register Lisp_Object subject_buf;
+    subject_buf = Fget_file_buffer (fn);
     if (!NILP (subject_buf)
 	&& NILP (Fverify_visited_file_modtime (subject_buf))
 	&& !NILP (Ffile_exists_p (fn)))
@@ -325,6 +343,7 @@ lock_superlock (lfname)
      char *lfname;
 {
   register int i, fd;
+  DIR *lockdir;
 
   for (i = -20; i < 0 && (fd = open (superlock_path,
 				     O_WRONLY | O_EXCL | O_CREAT, 0666)) < 0;
@@ -332,6 +351,13 @@ lock_superlock (lfname)
     {
       if (errno != EEXIST)
 	return;
+
+      /* This seems to be necessary to prevent Emacs from hanging when the
+	 competing process has already deleted the superlock, but it's still
+	 in the NFS cache.  So we force NFS to synchronize the cache.  */
+      if (lockdir = opendir (lock_path))
+	closedir (lockdir);
+
       sleep (1);
     }
   if (fd >= 0)

@@ -1,4 +1,4 @@
-     GNU Project Electronic Mailing Lists.  Last Updated 22 Sep 93
+     GNU Project Electronic Mailing Lists.  Last Updated 23 Feb 94
 
 	   Please report improvements to: gnu@prep.ai.mit.edu
 
@@ -249,6 +249,20 @@ gnu-misc-discuss is likely to be less useful than sending them to the
 appropriate mailing list or gnUSENET newsgroup, since more technical
 people read those.
 
+* hurd-ann-request@prep.ai.mit.edu to subscribe to hurd-ann
+** gnUSENET newsgroup: gnu.hurd.announce
+** Send announcements to: hurd-ann@prep.ai.mit.edu
+
+This list distributes progress reports on the GNU Hurd.  It is also to
+ask people for various kinds of help on the Hurd.  It is NOT for general
+discussion.
+
+The list is filtered to remove items meant for hurd-ann-request, that
+can be answered by the moderator without bothering the list, or should
+have been sent to another list.
+
+See section '* General Information about info-* lists'.
+
 * bug-gnu-emacs-request@prep.ai.mit.edu to subscribe to bug-gnu-emacs
 ** gnUSENET newsgroup: gnu.emacs.bug
 ** Gnu Emacs bug reports to: bug-gnu-emacs@prep.ai.mit.edu
@@ -394,6 +408,36 @@ There are no other GNU mailing lists or gnUSENET newsgroups for GDB.
 
 See section '* General Information about bug-* lists and reporting
 program bugs'.
+
+* bug-octave-request@che.utexas.edu to subscribe to bug-octave
+** gnUSENET newsgroup: NONE PLANNED
+** Octave bug reports to: bug-octave@che.utexas.edu
+
+This list distributes, to the active maintainers of Octave (a system
+for numerical computations), bug reports and fixes for, and
+suggestions for improvements to Octave.
+
+The help-octave mailing list is for user discussion of Octave.
+
+See section '* General Information about bug-* lists and reporting
+program bugs'.
+
+
+* help-octave-request@che.utexas.edu to subscribe to help-octave
+** gnUSENET newsgroup: NONE PLANNED
+** Send contributions to: help-octave@che.utexas.edu
+
+This list is the place for users and installers of Octave to ask for
+help.  Please send bug reports to bug-octave instead of posting them
+here.
+
+If Octave crashes, or if you build Octave following the standard
+procedure on a system on which Octave is supposed to work on and it
+does not work at all, or if a command does not behave as it is
+documented to behave, this is a bug.  Don't send bug reports to
+help-octave; mail them to bug-octave@che.utexas.edu instead.
+
+See section '* General Information about help-* lists'.
 
 * bug-gcc-request@prep.ai.mit.edu to subscribe to bug-gcc
 ** gnUSENET newsgroup: gnu.gcc.bug
@@ -557,6 +601,9 @@ the future it will also be used for release notices.
 The list is filtered to remove items meant for info-gnu-fortran-request,
 that can be answered by the moderator without bothering the list, or
 should have been sent to another list.
+
+People on the Internet can get a current status report by fingering the
+address fortran@gnu.ai.mit.edu.
 
 See section '* General Information about info-* lists'.
 

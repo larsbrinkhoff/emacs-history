@@ -53,6 +53,10 @@ Cambridge, MA 02139, USA.
 #define	CHAR_BIT	8
 #endif
 
+#ifdef	HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #endif	/* _MALLOC_INTERNAL.  */
 
 
@@ -221,8 +225,27 @@ extern void (*__free_hook) __P ((__ptr_t __ptr));
 extern __ptr_t (*__malloc_hook) __P ((size_t __size));
 extern __ptr_t (*__realloc_hook) __P ((__ptr_t __ptr, size_t __size));
 
-/* Activate a standard collection of debugging hooks.  */
-extern int mcheck __P ((void (*__func) __P ((void))));
+/* Return values for `mprobe': these are the kinds of inconsistencies that
+   `mcheck' enables detection of.  */
+enum mcheck_status
+  {
+    MCHECK_DISABLED = -1,	/* Consistency checking is not turned on.  */
+    MCHECK_OK,			/* Block is fine.  */
+    MCHECK_FREE,		/* Block freed twice.  */
+    MCHECK_HEAD,		/* Memory before the block was clobbered.  */
+    MCHECK_TAIL			/* Memory after the block was clobbered.  */
+  };
+
+/* Activate a standard collection of debugging hooks.  This must be called
+   before `malloc' is ever called.  ABORTFUNC is called with an error code
+   (see enum above) when an inconsistency is detected.  If ABORTFUNC is
+   null, the standard function prints on stderr and then calls `abort'.  */
+extern int mcheck __P ((void (*__abortfunc) __P ((enum mcheck_status))));
+
+/* Check for aberrations in a particular malloc'd block.  You must have
+   called `mcheck' already.  These are the same checks that `mcheck' does
+   when you free or reallocate a block.  */
+extern enum mcheck_status mprobe __P ((__ptr_t __ptr));
 
 /* Activate a standard collection of tracing hooks.  */
 extern void mtrace __P ((void));
@@ -262,8 +285,54 @@ extern __ptr_t r_re_alloc __P ((__ptr_t *__handleptr, size_t __size));
 #endif
 
 #endif /* malloc.h  */
+/* Allocate memory on a page boundary.
+   Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public License as
+published by the Free Software Foundation; either version 2 of the
+License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; see the file COPYING.LIB.  If
+not, write to the Free Software Foundation, Inc., 675 Mass Ave,
+Cambridge, MA 02139, USA.
+
+   The author may be reached (Email) at the address mike@ai.mit.edu,
+   or (US mail) as Mike Haertel c/o Free Software Foundation.  */
+
+#if defined (__GNU_LIBRARY__) || defined (_LIBC)
+#include <stddef.h>
+#include <sys/cdefs.h>
+extern size_t __getpagesize __P ((void));
+#else
+#include "getpagesize.h"
+#define	 __getpagesize()	getpagesize()
+#endif
+
+#ifndef	_MALLOC_INTERNAL
+#define	_MALLOC_INTERNAL
+#include <malloc.h>
+#endif
+
+static size_t pagesize;
+
+__ptr_t
+valloc (size)
+     size_t size;
+{
+  if (pagesize == 0)
+    pagesize = __getpagesize ();
+
+  return memalign (pagesize, size);
+}
 /* Memory allocator `malloc'.
-   Copyright 1990, 1991, 1992, 1993 Free Software Foundation
+   Copyright 1990, 1991, 1992, 1993, 1994 Free Software Foundation
 		  Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -335,7 +404,7 @@ align (size)
 
   result = (*__morecore) (size);
   adj = (unsigned long int) ((unsigned long int) ((char *) result -
-						(char *) NULL)) % BLOCKSIZE;
+						  (char *) NULL)) % BLOCKSIZE;
   if (adj != 0)
     {
       adj = BLOCKSIZE - adj;
@@ -363,6 +432,11 @@ initialize ()
   _heapinfo[0].free.next = _heapinfo[0].free.prev = 0;
   _heapindex = 0;
   _heapbase = (char *) _heapinfo;
+
+  /* Account for the _heapinfo block itself in the statistics.  */
+  _bytes_used = heapsize * sizeof (malloc_info);
+  _chunks_used = 1;
+
   __malloc_initialized = 1;
   return 1;
 }
@@ -394,13 +468,17 @@ morecore (size)
 	  (*__morecore) (-size);
 	  return NULL;
 	}
-      memset (newinfo, 0, newsize * sizeof (malloc_info));
       memcpy (newinfo, _heapinfo, heapsize * sizeof (malloc_info));
+      memset (&newinfo[heapsize], 0,
+	      (newsize - heapsize) * sizeof (malloc_info));
       oldinfo = _heapinfo;
       newinfo[BLOCK (oldinfo)].busy.type = 0;
       newinfo[BLOCK (oldinfo)].busy.info.size
 	= BLOCKIFY (heapsize * sizeof (malloc_info));
       _heapinfo = newinfo;
+      /* Account for the _heapinfo block itself in the statistics.  */
+      _bytes_used += newsize * sizeof (malloc_info);
+      ++_chunks_used;
       _free_internal (oldinfo);
       heapsize = newsize;
     }
@@ -828,7 +906,7 @@ free (ptr)
   else
     _free_internal (ptr);
 }
-/* Copyright (C) 1991, 1993 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1993, 1994 Free Software Foundation, Inc.
 This file is part of the GNU C Library.
 
 The GNU C Library is free software; you can redistribute it and/or
@@ -851,12 +929,12 @@ Cambridge, MA 02139, USA.  */
 #include <malloc.h>
 #endif
 
-#undef	cfree
-
 #ifdef _LIBC
 
 #include <ansidecl.h>
 #include <gnu-stabs.h>
+
+#undef	cfree
 
 function_alias(cfree, free, void, (ptr),
 	       DEFUN(cfree, (ptr), PTR ptr))
@@ -872,7 +950,7 @@ cfree (ptr)
 
 #endif
 /* Change the size of a block allocated by `malloc'.
-   Copyright 1990, 1991, 1992, 1993 Free Software Foundation, Inc.
+   Copyright 1990, 1991, 1992, 1993, 1994 Free Software Foundation, Inc.
 		     Written May 1989 by Mike Haertel.
 
 This library is free software; you can redistribute it and/or
@@ -1026,6 +1104,10 @@ realloc (ptr, size)
 	  _heapinfo[block + blocks].busy.info.size
 	    = _heapinfo[block].busy.info.size - blocks;
 	  _heapinfo[block].busy.info.size = blocks;
+	  /* We have just created a new chunk by splitting a chunk in two.
+	     Now we will free this chunk; increment the statistics counter
+	     so it doesn't become wrong when _free_internal decrements it.  */
+	  ++_chunks_used;
 	  _free_internal (ADDRESS (block + blocks));
 	  result = ptr;
 	}
@@ -1154,10 +1236,6 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* It is best not to declare this and cast its result on foreign operating
    systems with potentially hostile include files.  */
 extern __ptr_t __sbrk __P ((int increment));
-#else
-#if defined (HPUX8) || defined (HAVE_UNISTD_H)
-#include <unistd.h>
-#endif
 #endif
 
 #ifndef NULL
@@ -1176,7 +1254,7 @@ __default_morecore (increment)
     return NULL;
   return result;
 }
-/* Copyright (C) 1991, 1992 Free Software Foundation, Inc.
+/* Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public License as
@@ -1212,7 +1290,7 @@ memalign (alignment, size)
   if (result == NULL)
     return NULL;
   adj = (unsigned long int) ((unsigned long int) ((char *) result -
-						(char *) NULL)) % alignment;
+						  (char *) NULL)) % alignment;
   if (adj != 0)
     {
       struct alignlist *l;
@@ -1228,58 +1306,12 @@ memalign (alignment, size)
 	      free (result);
 	      return NULL;
 	    }
+	  l->next = _aligned_blocks;
+	  _aligned_blocks = l;
 	}
       l->exact = result;
       result = l->aligned = (char *) result + alignment - adj;
-      l->next = _aligned_blocks;
-      _aligned_blocks = l;
     }
 
   return result;
-}
-/* Allocate memory on a page boundary.
-   Copyright (C) 1991, 1992, 1993 Free Software Foundation, Inc.
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with this library; see the file COPYING.LIB.  If
-not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-Cambridge, MA 02139, USA.
-
-   The author may be reached (Email) at the address mike@ai.mit.edu,
-   or (US mail) as Mike Haertel c/o Free Software Foundation.  */
-
-#if defined (__GNU_LIBRARY__) || defined (_LIBC)
-#include <stddef.h>
-#include <sys/cdefs.h>
-extern size_t __getpagesize __P ((void));
-#else
-#include "getpagesize.h"
-#define	 __getpagesize()	getpagesize()
-#endif
-
-#ifndef	_MALLOC_INTERNAL
-#define	_MALLOC_INTERNAL
-#include <malloc.h>
-#endif
-
-static size_t pagesize;
-
-__ptr_t
-valloc (size)
-     size_t size;
-{
-  if (pagesize == 0)
-    pagesize = __getpagesize ();
-
-  return memalign (pagesize, size);
 }

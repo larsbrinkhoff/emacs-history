@@ -426,37 +426,37 @@ XMenuCreate(display, parent, def_env)
    * Create and store the inactive pattern pixmap.
    */
   {
-    char *data = NULL;
+    unsigned char *data = NULL;
     int width, height;
 
     switch (inact_pnum) 
       {
       case 0:
-	data = dimple1_bits;
+	data = (char *)dimple1_bits;
 	width = dimple1_width;
 	height = dimple1_height;
 	break;
 
       case 1:
-	data = dimple3_bits;
+	data = (char *)dimple3_bits;
 	width = dimple3_width;
 	height = dimple3_height;
 	break;
 
       case 2:
-	data = gray1_bits;
+	data = (char *)gray1_bits;
 	width = gray1_width;
 	height = gray1_height;
 	break;
 
       case 3:
-	data = gray3_bits;
+	data = (char *)gray3_bits;
 	width = gray3_width;
 	height = gray3_height;
 	break;
 
       case 4:
-	data = cross_weave_bits;
+	data = (char *)cross_weave_bits;
 	width = cross_weave_width;
 	height = cross_weave_height;
 	break;

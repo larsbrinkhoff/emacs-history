@@ -1,5 +1,5 @@
 /* Functions for the X window system.
-   Copyright (C) 1989, 1992, 1993 Free Software Foundation.
+   Copyright (C) 1989, 1992, 1993, 1994 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -48,6 +48,36 @@ extern void abort ();
 #include "[.bitmaps]gray.xbm"
 #endif
 
+#ifdef USE_X_TOOLKIT
+#include <X11/Shell.h>
+
+#include <X11/Xaw/Paned.h>
+#include <X11/Xaw/Label.h>
+
+#ifdef USG
+#undef USG	/* ####KLUDGE for Solaris 2.2 and up */
+#include <X11/Xos.h>
+#define USG
+#else
+#include <X11/Xos.h>
+#endif
+
+#include "widget.h"
+
+#include "../lwlib/lwlib.h"
+
+/* The one and only application context associated with the connection
+   to the one and only X display that Emacs uses.  */
+XtAppContext Xt_app_con;
+
+/* The one and only application shell.  Emacs screens are popup shells of this
+   application.  */
+Widget Xt_app_shell;
+
+extern void free_frame_menubar ();
+extern void free_frame_menubar ();
+#endif /* USE_X_TOOLKIT */
+
 #define min(a,b) ((a) < (b) ? (a) : (b))
 #define max(a,b) ((a) > (b) ? (a) : (b))
 
@@ -73,6 +103,7 @@ extern char *x_id_name;
 /* The background and shape of the mouse pointer, and shape when not
    over text or in the modeline. */
 Lisp_Object Vx_pointer_shape, Vx_nontext_pointer_shape, Vx_mode_pointer_shape;
+Lisp_Object Vx_cross_pointer_shape;
 
 /* Color of chars displayed in cursor box. */
 Lisp_Object Vx_cursor_fore_pixel;
@@ -115,6 +146,9 @@ extern Atom Xatom_wm_delete_window;
 /* Other WM communication */
 extern Atom Xatom_wm_configure_denied; /* When our config request is denied */
 extern Atom Xatom_wm_window_moved;     /* When the WM moves us. */
+
+/* EditRes protocol */
+extern Atom Xatom_editres_name;
 
 #else	/* X10 */
 
@@ -195,6 +229,9 @@ Lisp_Object Qvertical_scroll_bars;
 Lisp_Object Qvisibility;
 Lisp_Object Qwindow_id;
 Lisp_Object Qx_frame_parameter;
+Lisp_Object Qx_resource_name;
+Lisp_Object Quser_position;
+Lisp_Object Quser_size;
 
 /* The below are defined in frame.c. */
 extern Lisp_Object Qheight, Qminibuffer, Qname, Qonly, Qwidth;
@@ -204,7 +241,7 @@ extern Lisp_Object Vwindow_system_version;
 
 
 /* Error if we are not connected to X.  */
-static void
+void
 check_x ()
 {
   if (x_current_display == 0)
@@ -230,12 +267,89 @@ x_window_to_frame (wdesc)
       if (XGCTYPE (frame) != Lisp_Frame)
         continue;
       f = XFRAME (frame);
+#ifdef USE_X_TOOLKIT
+      if (f->display.nothing == 1) 
+	return 0;
+      if ((f->display.x->edit_widget 
+	   && XtWindow (f->display.x->edit_widget) == wdesc)
+          || f->display.x->icon_desc == wdesc)
+        return f;
+#else /* not USE_X_TOOLKIT */
       if (FRAME_X_WINDOW (f) == wdesc
           || f->display.x->icon_desc == wdesc)
         return f;
+#endif /* not USE_X_TOOLKIT */
     }
   return 0;
 }
+
+#ifdef USE_X_TOOLKIT
+/* Like x_window_to_frame but also compares the window with the widget's
+   windows.  */
+
+struct frame *
+x_any_window_to_frame (wdesc)
+     int wdesc;
+{
+  Lisp_Object tail, frame;
+  struct frame *f;
+  struct x_display *x;
+
+  for (tail = Vframe_list; XGCTYPE (tail) == Lisp_Cons;
+       tail = XCONS (tail)->cdr)
+    {
+      frame = XCONS (tail)->car;
+      if (XGCTYPE (frame) != Lisp_Frame)
+        continue;
+      f = XFRAME (frame);
+      if (f->display.nothing == 1) 
+	return 0;
+      x = f->display.x;
+      /* This frame matches if the window is any of its widgets.  */
+      if (wdesc == XtWindow (x->widget) 
+	  || wdesc == XtWindow (x->column_widget) 
+	  || wdesc == XtWindow (x->edit_widget))
+	return f;
+      /* Match if the window is this frame's menubar.  */
+      if (x->menubar_widget 
+	  && wdesc == XtWindow (x->menubar_widget))
+	return f;
+    }
+  return 0;
+}
+
+/* Return the frame whose principal (outermost) window is WDESC.
+   If WDESC is some other (smaller) window, we return 0.  */
+
+struct frame *
+x_top_window_to_frame (wdesc)
+     int wdesc;
+{
+  Lisp_Object tail, frame;
+  struct frame *f;
+  struct x_display *x;
+
+  for (tail = Vframe_list; XGCTYPE (tail) == Lisp_Cons;
+       tail = XCONS (tail)->cdr)
+    {
+      frame = XCONS (tail)->car;
+      if (XGCTYPE (frame) != Lisp_Frame)
+        continue;
+      f = XFRAME (frame);
+      if (f->display.nothing == 1) 
+	return 0;
+      x = f->display.x;
+      /* This frame matches if the window is its topmost widget.  */
+      if (wdesc == XtWindow (x->widget))
+	return f;
+      /* Match if the window is this frame's menubar.  */
+      if (x->menubar_widget 
+	  && wdesc == XtWindow (x->menubar_widget))
+	return f;
+    }
+  return 0;
+}
+#endif /* USE_X_TOOLKIT */
 
 
 /* Connect the frame-parameter names for X frames
@@ -384,9 +498,10 @@ x_set_frame_parameters (f, alist)
 	left = val;
       else
 	{
-	  register Lisp_Object param_index = Fget (prop, Qx_frame_parameter);
-	  register Lisp_Object old_value = get_frame_param (f, prop);
+	  register Lisp_Object param_index, old_value;
 
+	  param_index = Fget (prop, Qx_frame_parameter);
+	  old_value = get_frame_param (f, prop);
 	  store_frame_param (f, prop, val);
 	  if (XTYPE (param_index) == Lisp_Int
 	      && XINT (param_index) >= 0
@@ -432,6 +547,47 @@ x_set_frame_parameters (f, alist)
   }
 }
 
+/* Store the positions of frame F into XPTR and YPTR.
+   These are the positions of the containing window manager window,
+   not Emacs's own window.  */
+
+void
+x_real_positions (f, xptr, yptr)
+     FRAME_PTR f;
+     int *xptr, *yptr;
+{
+  int win_x = 0, win_y = 0;
+  Window child;
+
+  /* Find the position of the outside upper-left corner of
+     the inner window, with respect to the outer window.  */
+  if (f->display.x->parent_desc != ROOT_WINDOW)
+    {
+      BLOCK_INPUT;
+      XTranslateCoordinates (x_current_display,
+			       
+			     /* From-window, to-window.  */
+#ifdef USE_X_TOOLKIT
+			     XtWindow (f->display.x->widget),
+#else
+			     f->display.x->window_desc,
+#endif
+			     f->display.x->parent_desc,
+
+			     /* From-position, to-position.  */
+			     0, 0, &win_x, &win_y,
+
+			     /* Child of win.  */
+			     &child);
+      UNBLOCK_INPUT;
+
+      win_x += f->display.x->border_width;
+      win_y += f->display.x->border_width;
+    }
+  *xptr = f->display.x->left_pos - win_x;
+  *yptr = f->display.x->top_pos - win_y;
+}
+
 /* Insert a description of internally-recorded parameters of frame X
    into the parameter alist *ALISTPTR that is to be given to the user.
    Only parameters that are specific to the X window system
@@ -453,6 +609,7 @@ x_report_frame_params (f, alistptr)
   sprintf (buf, "%d", FRAME_X_WINDOW (f));
   store_in_alist (alistptr, Qwindow_id,
        	   build_string (buf));
+  FRAME_SAMPLE_VISIBILITY (f);
   store_in_alist (alistptr, Qvisibility,
 		  (FRAME_VISIBLE_P (f) ? Qt
 		   : FRAME_ICONIFIED_P (f) ? Qicon : Qnil));
@@ -593,7 +750,7 @@ x_set_mouse_color (f, arg, oldval)
      struct frame *f;
      Lisp_Object arg, oldval;
 {
-  Cursor cursor, nontext_cursor, mode_cursor;
+  Cursor cursor, nontext_cursor, mode_cursor, cross_cursor;
   int mask_color;
 
   if (!EQ (Qnil, arg))
@@ -637,6 +794,16 @@ x_set_mouse_color (f, arg, oldval)
     }
   else
     mode_cursor = XCreateFontCursor (x_current_display, XC_xterm);
+  x_check_errors ("bad modeline pointer cursor: %s");
+
+  if (!EQ (Qnil, Vx_cross_pointer_shape))
+    {
+      CHECK_NUMBER (Vx_cross_pointer_shape, 0);
+      cross_cursor = XCreateFontCursor (x_current_display,
+                                          XINT (Vx_cross_pointer_shape));
+    }
+  else
+    cross_cursor = XCreateFontCursor (x_current_display, XC_crosshair);
 
   /* Check and report errors with the above calls.  */
   x_check_errors ("can't set cursor shape: %s");
@@ -661,6 +828,8 @@ x_set_mouse_color (f, arg, oldval)
 		    &fore_color, &back_color);
     XRecolorCursor (x_current_display, mode_cursor,
 		    &fore_color, &back_color);
+    XRecolorCursor (x_current_display, cross_cursor,
+                    &fore_color, &back_color);
   }
 #else /* X10 */
   cursor = XCreateCursor (16, 16, MouseCursor, MouseMask,
@@ -688,6 +857,10 @@ x_set_mouse_color (f, arg, oldval)
       && f->display.x->modeline_cursor != 0)
       XFreeCursor (XDISPLAY f->display.x->modeline_cursor);
   f->display.x->modeline_cursor = mode_cursor;
+  if (cross_cursor != f->display.x->cross_cursor
+      && f->display.x->cross_cursor != 0)
+      XFreeCursor (XDISPLAY f->display.x->cross_cursor);
+  f->display.x->cross_cursor = cross_cursor;
 #endif	/* HAVE_X11 */
 
   XFlushQueue ();
@@ -710,7 +883,7 @@ x_set_cursor_color (f, arg, oldval)
   /* Make sure that the cursor color differs from the background color.  */
   if (f->display.x->cursor_pixel == f->display.x->background_pixel)
     {
-      f->display.x->cursor_pixel == f->display.x->mouse_pixel;
+      f->display.x->cursor_pixel = f->display.x->mouse_pixel;
       if (f->display.x->cursor_pixel == fore_pixel)
 	fore_pixel = f->display.x->background_pixel;
     }
@@ -856,6 +1029,9 @@ x_set_icon_type (f, arg, oldval)
   /* If the window was unmapped (and its icon was mapped),
      the new icon is not mapped, so map the window in its stead.  */
   if (FRAME_VISIBLE_P (f))
+#ifdef USE_X_TOOLKIT
+    XtPopup (f->display.x->widget, XtGrabNone);
+#endif
     XMapWindow (XDISPLAY FRAME_X_WINDOW (f));
 
   XFlushQueue ();
@@ -925,7 +1101,7 @@ x_set_internal_border_width (f, arg, oldval)
   if (FRAME_X_WINDOW (f) != 0)
     {
       BLOCK_INPUT;
-      x_set_window_size (f, f->width, f->height);
+      x_set_window_size (f, 0, f->width, f->height);
 #if 0
       x_set_resize_hint (f);
 #endif
@@ -944,7 +1120,7 @@ x_set_visibility (f, value, oldval)
   XSET (frame, Lisp_Frame, f);
 
   if (NILP (value))
-    Fmake_frame_invisible (frame);
+    Fmake_frame_invisible (frame, Qt);
   else if (EQ (value, Qicon))
     Ficonify_frame (frame);
   else
@@ -993,8 +1169,21 @@ x_set_menu_bar_lines (f, value, oldval)
   else
     nlines = 0;
 
+#ifdef USE_X_TOOLKIT
+  FRAME_MENU_BAR_LINES (f) = 0;
+  if (nlines)
+    FRAME_EXTERNAL_MENU_BAR (f) = 1;
+  else
+    {
+      if (FRAME_EXTERNAL_MENU_BAR (f) == 1)
+	free_frame_menubar (f);
+      FRAME_EXTERNAL_MENU_BAR (f) = 0;
+      f->display.x->menubar_widget = 0;
+    }
+#else /* not USE_X_TOOLKIT */
   FRAME_MENU_BAR_LINES (f) = nlines;
   x_set_menu_bar_lines_1 (f->root_window, nlines - olines);
+#endif /* not USE_X_TOOLKIT */
 }
 
 /* Change the name of frame F to NAME.  If NAME is nil, set F's name to
@@ -1041,7 +1230,6 @@ x_set_name (f, name, explicit)
   if (FRAME_X_WINDOW (f))
     {
       BLOCK_INPUT;
-
 #ifdef HAVE_X11R4
       {
 	XTextProperty text;
@@ -1049,16 +1237,21 @@ x_set_name (f, name, explicit)
 	text.encoding = XA_STRING;
 	text.format = 8;
 	text.nitems = XSTRING (name)->size;
+#ifdef USE_X_TOOLKIT
+	XSetWMName (x_current_display, XtWindow (f->display.x->widget), &text);
+	XSetWMIconName (x_current_display, XtWindow (f->display.x->widget),
+			&text);
+#else /* not USE_X_TOOLKIT */
 	XSetWMName (x_current_display, FRAME_X_WINDOW (f), &text);
 	XSetWMIconName (x_current_display, FRAME_X_WINDOW (f), &text);
+#endif /* not USE_X_TOOLKIT */
       }
-#else
+#else /* not HAVE_X11R4 */
       XSetIconName (XDISPLAY FRAME_X_WINDOW (f),
 		    XSTRING (name)->data);
       XStoreName (XDISPLAY FRAME_X_WINDOW (f),
 		  XSTRING (name)->data);
-#endif
-
+#endif /* not HAVE_X11R4 */
       UNBLOCK_INPUT;
     }
 
@@ -1117,7 +1310,7 @@ x_set_vertical_scroll_bars (f, arg, oldval)
 	 However, if the window hasn't been created yet, we shouldn't
 	 call x_set_window_size.  */
       if (FRAME_X_WINDOW (f))
-	x_set_window_size (f, FRAME_WIDTH (f), FRAME_HEIGHT (f));
+	x_set_window_size (f, 0, FRAME_WIDTH (f), FRAME_HEIGHT (f));
     }
 }
 
@@ -1129,7 +1322,26 @@ x_set_vertical_scroll_bars (f, arg, oldval)
 static void
 validate_x_resource_name ()
 {
-  if (! STRINGP (Vx_resource_name))
+  if (STRINGP (Vx_resource_name))
+    {
+      int len = XSTRING (Vx_resource_name)->size;
+      unsigned char *p = XSTRING (Vx_resource_name)->data;
+      int i;
+
+      /* Allow only letters, digits, - and _,
+	 because those are all that X allows.  */
+      for (i = 0; i < len; i++)
+	{
+	  int c = p[i];
+	  if (! ((c >= 'a' && c <= 'z')
+		 || (c >= 'A' && c <= 'Z')
+		 || (c >= '0' && c <= '9')
+		 || c == '-' || c == '_'))
+	    goto fail;
+	}
+    }
+  else
+  fail:
     Vx_resource_name = make_string ("emacs", 5);
 }
 
@@ -1153,6 +1365,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
   register char *value;
   char *name_key;
   char *class_key;
+  Lisp_Object resname;
 
   check_x ();
 
@@ -1167,12 +1380,13 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
     error ("x-get-resource: must specify both COMPONENT and SUBCLASS or neither");
 
   validate_x_resource_name ();
+  resname = Vx_resource_name;
 
   if (NILP (component))
     {
       /* Allocate space for the components, the dots which separate them,
 	 and the final '\0'.  */
-      name_key = (char *) alloca (XSTRING (Vx_resource_name)->size
+      name_key = (char *) alloca (XSTRING (resname)->size
 				  + XSTRING (attribute)->size
 				  + 2);
       class_key = (char *) alloca ((sizeof (EMACS_CLASS) - 1)
@@ -1180,7 +1394,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
 				   + 2);
 
       sprintf (name_key, "%s.%s",
-	       XSTRING (Vx_resource_name)->data,
+	       XSTRING (resname)->data,
 	       XSTRING (attribute)->data);
       sprintf (class_key, "%s.%s",
 	       EMACS_CLASS,
@@ -1188,7 +1402,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
     }
   else
     {
-      name_key = (char *) alloca (XSTRING (Vx_resource_name)->size
+      name_key = (char *) alloca (XSTRING (resname)->size
 				  + XSTRING (component)->size
 				  + XSTRING (attribute)->size
 				  + 3);
@@ -1199,7 +1413,7 @@ and the class is `Emacs.CLASS.SUBCLASS'.")
 				   + 3);
 
       sprintf (name_key, "%s.%s.%s",
-	       XSTRING (Vx_resource_name)->data,
+	       XSTRING (resname)->data,
 	       XSTRING (component)->data,
 	       XSTRING (attribute)->data);
       sprintf (class_key, "%s.%s.%s",
@@ -1269,7 +1483,7 @@ The defaults are specified in the file `~/.Xdefaults'.")
 }
 
 #define Fx_get_resource(attribute, class, component, subclass) \
-  Fx_get_default(attribute)
+  Fx_get_default (attribute)
 
 #endif	/* X10 */
 
@@ -1334,12 +1548,13 @@ x_get_arg (alist, param, attribute, class, type)
 	      /* As a special case, we map the values `true' and `on'
 		 to Qt, and `false' and `off' to Qnil.  */
 	      {
-		Lisp_Object lower = Fdowncase (tem);
-		if (!strcmp (XSTRING (tem)->data, "on")
-		    || !strcmp (XSTRING (tem)->data, "true"))
+		Lisp_Object lower;
+		lower = Fdowncase (tem);
+		if (!strcmp (XSTRING (lower)->data, "on")
+		    || !strcmp (XSTRING (lower)->data, "true"))
 		  return Qt;
-		else if (!strcmp (XSTRING (tem)->data, "off")
-		      || !strcmp (XSTRING (tem)->data, "false"))
+		else if (!strcmp (XSTRING (lower)->data, "off")
+		      || !strcmp (XSTRING (lower)->data, "false"))
 		  return Qnil;
 		else
 		  return Fintern (tem, Qnil);
@@ -1382,62 +1597,63 @@ x_default_parameter (f, alist, prop, deflt, xprop, xclass, type)
 
 DEFUN ("x-parse-geometry", Fx_parse_geometry, Sx_parse_geometry, 1, 1, 0,
        "Parse an X-style geometry string STRING.\n\
-Returns an alist of the form ((top . TOP), (left . LEFT) ... ).")
+Returns an alist of the form ((top . TOP), (left . LEFT) ... ).\n\
+The properties returned may include `top', `left', `height', and `width'.\n\
+The value of `left' or `top' may be an integer or `-'.\n\
+`-' means \"minus zero\".")
      (string)
      Lisp_Object string;
 {
   int geometry, x, y;
   unsigned int width, height;
-  Lisp_Object values[4];
+  Lisp_Object result;
 
   CHECK_STRING (string, 0);
 
   geometry = XParseGeometry ((char *) XSTRING (string)->data,
 			     &x, &y, &width, &height);
 
-  switch (geometry & 0xf)	/* Mask out {X,Y}Negative */
+#if 0
+  if (!!(geometry & XValue) != !!(geometry & YValue))
+    error ("Must specify both x and y position, or neither");
+#endif
+
+  result = Qnil;
+  if (geometry & XValue)
     {
-    case (XValue | YValue):
-      /* What's one pixel among friends?
-	 Perhaps fix this some day by returning symbol `extreme-top'... */
+      Lisp_Object element;
+
       if (x == 0 && (geometry & XNegative))
-	x = -1;
-      if (y == 0 && (geometry & YNegative))
-	y = -1;
-      values[0] = Fcons (Qleft, make_number (x));
-      values[1] = Fcons (Qtop, make_number (y));
-      return Flist (2, values);
-      break;
-
-    case (WidthValue | HeightValue):
-      values[0] = Fcons (Qwidth, make_number (width));
-      values[1] = Fcons (Qheight, make_number (height));
-      return Flist (2, values);
-      break;
-
-    case (XValue | YValue | WidthValue | HeightValue):
-      if (x == 0 && (geometry & XNegative))
-	x = -1;
-      if (y == 0 && (geometry & YNegative))
-	y = -1;
-      values[0] = Fcons (Qwidth, make_number (width));
-      values[1] = Fcons (Qheight, make_number (height));
-      values[2] = Fcons (Qleft, make_number (x));
-      values[3] = Fcons (Qtop, make_number (y));
-      return Flist (4, values);
-      break;
-
-    case 0:
-	return Qnil;
-      
-    default:
-      error ("Must specify x and y value, and/or width and height");
+	element = Fcons (Qleft, Qminus);
+      else
+	element = Fcons (Qleft, make_number (x));
+      result = Fcons (element, result);
     }
+
+  if (geometry & YValue)
+    {
+      Lisp_Object element;
+
+      if (y == 0 && (geometry & YNegative))
+	element = Fcons (Qtop, Qminus);
+      else
+	element = Fcons (Qtop, make_number (y));
+      result = Fcons (element, result);
+    }
+
+  if (geometry & WidthValue)
+    result = Fcons (Fcons (Qwidth, make_number (width)), result);
+  if (geometry & HeightValue)
+    result = Fcons (Fcons (Qheight, make_number (height)), result);
+
+  return result;
 }
 
 #ifdef HAVE_X11
 /* Calculate the desired size and position of this window,
-   or set rubber-band prompting if none. */
+   and return the flags saying which aspects were specified.
+
+   This function does not make the coordinates positive.  */
 
 #define DEFAULT_ROWS 40
 #define DEFAULT_COLS 80
@@ -1447,7 +1663,7 @@ x_figure_window_size (f, parms)
      struct frame *f;
      Lisp_Object parms;
 {
-  register Lisp_Object tem0, tem1;
+  register Lisp_Object tem0, tem1, tem2;
   int height, width, left, top;
   register int geometry;
   long window_prompting = 0;
@@ -1464,16 +1680,24 @@ x_figure_window_size (f, parms)
 
   tem0 = x_get_arg (parms, Qheight, 0, 0, number);
   tem1 = x_get_arg (parms, Qwidth, 0, 0, number);
-  if (! EQ (tem0, Qunbound) && ! EQ (tem1, Qunbound))
+  tem2 = x_get_arg (parms, Quser_size, 0, 0, number);
+  if (! EQ (tem0, Qunbound) || ! EQ (tem1, Qunbound))
     {
-      CHECK_NUMBER (tem0, 0);
-      CHECK_NUMBER (tem1, 0);
-      f->height = XINT (tem0);
-      f->width = XINT (tem1);
-      window_prompting |= USSize;
+      if (!EQ (tem0, Qunbound))
+	{
+	  CHECK_NUMBER (tem0, 0);
+	  f->height = XINT (tem0);
+	}
+      if (!EQ (tem1, Qunbound))
+	{
+	  CHECK_NUMBER (tem1, 0);
+	  f->width = XINT (tem1);
+	}
+      if (!NILP (tem2) && !EQ (tem2, Qunbound))
+	window_prompting |= USSize;
+      else
+	window_prompting |= PSize;
     }
-  else if (! EQ (tem0, Qunbound) || ! EQ (tem1, Qunbound))
-    error ("Must specify *both* height and width");
 
   f->display.x->vertical_scroll_bar_extra
     = (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
@@ -1484,58 +1708,288 @@ x_figure_window_size (f, parms)
 
   tem0 = x_get_arg (parms, Qtop, 0, 0, number);
   tem1 = x_get_arg (parms, Qleft, 0, 0, number);
-  if (! EQ (tem0, Qunbound) && ! EQ (tem1, Qunbound))
+  tem2 = x_get_arg (parms, Quser_position, 0, 0, number);
+  if (! EQ (tem0, Qunbound) || ! EQ (tem1, Qunbound))
     {
-      CHECK_NUMBER (tem0, 0);
-      CHECK_NUMBER (tem1, 0);
-      f->display.x->top_pos = XINT (tem0);
-      f->display.x->left_pos = XINT (tem1);
-      x_calc_absolute_position (f);
-      window_prompting |= USPosition;
-    }
-  else if (! EQ (tem0, Qunbound) || ! EQ (tem1, Qunbound))
-    error ("Must specify *both* top and left corners");
+      if (EQ (tem0, Qminus))
+	{
+	  f->display.x->top_pos = 0;
+	  window_prompting |= YNegative;
+	}
+      else if (EQ (tem0, Qunbound))
+	f->display.x->top_pos = 0;
+      else
+	{
+	  CHECK_NUMBER (tem0, 0);
+	  f->display.x->top_pos = XINT (tem0);
+	  if (f->display.x->top_pos < 0)
+	    window_prompting |= YNegative;
+	}
 
-#if 0 /* PPosition and PSize mean "specified explicitly,
-	 by the program rather than by the user".  So it is wrong to
-	 set them if nothing was specified.  */
-  switch (window_prompting)
-    {
-    case USSize | USPosition:
-      return window_prompting;
-      break;
+      if (EQ (tem1, Qminus))
+	{
+	  f->display.x->left_pos = 0;
+	  window_prompting |= XNegative;
+	}
+      else if (EQ (tem1, Qunbound))
+	f->display.x->left_pos = 0;
+      else
+	{
+	  CHECK_NUMBER (tem1, 0);
+	  f->display.x->left_pos = XINT (tem1);
+	  if (f->display.x->left_pos < 0)
+	    window_prompting |= XNegative;
+	}
 
-    case USSize:		/* Got the size, need the position. */
-      window_prompting |= PPosition;
-      return window_prompting;
-      break;
-	  
-    case USPosition:		/* Got the position, need the size. */
-      window_prompting |= PSize;
-      return window_prompting;
-      break;
-	  
-    case 0:			/* Got nothing, take both from geometry. */
-      window_prompting |= PPosition | PSize;
-      return window_prompting;
-      break;
-	  
-    default:
-      /* Somehow a bit got set in window_prompting that we didn't
-	 put there.  */
-      abort ();
+      if (!NILP (tem2))
+	window_prompting |= USPosition;
+      else
+	window_prompting |= PPosition;
     }
-#endif
+
   return window_prompting;
 }
 
-static void
-x_window (f)
-     struct frame *f;
+#if !defined (HAVE_X11R4) && !defined (HAVE_XSETWMPROTOCOLS)
+
+Status
+XSetWMProtocols (dpy, w, protocols, count)
+     Display *dpy;
+     Window w;
+     Atom *protocols;
+     int count;
 {
+  Atom prop;
+  prop = XInternAtom (dpy, "WM_PROTOCOLS", False);
+  if (prop == None) return False;
+  XChangeProperty (dpy, w, prop, XA_ATOM, 32, PropModeReplace,
+		   (unsigned char *) protocols, count);
+  return True;
+}
+#endif /* not HAVE_X11R4 && not HAVE_XSETWMPROTOCOLS */
+
+#ifdef USE_X_TOOLKIT
+
+/* If the WM_PROTOCOLS property does not already contain WM_TAKE_FOCUS
+   and WM_DELETE_WINDOW, then add them.  (They may already be present
+   because of the toolkit (Motif adds them, for example, but Xt doesn't).  */
+
+static void
+hack_wm_protocols (widget)
+     Widget widget;
+{
+  Display *dpy = XtDisplay (widget);
+  Window w = XtWindow (widget);
+  int need_delete = 1;
+  int need_focus = 1;
+
+  BLOCK_INPUT;
+  {
+    Atom type, *atoms = 0;
+    int format = 0;
+    unsigned long nitems = 0;
+    unsigned long bytes_after;
+
+    if (Success == XGetWindowProperty (dpy, w, Xatom_wm_protocols,
+				       0, 100, False, XA_ATOM,
+				       &type, &format, &nitems, &bytes_after,
+				       (unsigned char **) &atoms)
+	&& format == 32 && type == XA_ATOM)
+      while (nitems > 0)
+	{
+	  nitems--;
+	  if (atoms [nitems] == Xatom_wm_delete_window)   need_delete = 0;
+	  else if (atoms [nitems] == Xatom_wm_take_focus) need_focus = 0;
+	}
+    if (atoms) XFree ((char *) atoms);
+  }
+  {
+    Atom props [10];
+    int count = 0;
+    if (need_delete) props [count++] = Xatom_wm_delete_window;
+    if (need_focus)  props [count++] = Xatom_wm_take_focus;
+    if (count)
+      XChangeProperty (dpy, w, Xatom_wm_protocols, XA_ATOM, 32, PropModeAppend,
+		       (unsigned char *) props, count);
+  }
+  UNBLOCK_INPUT;
+}
+#endif
+
+#ifdef USE_X_TOOLKIT
+
+/* Create and set up the X widget for frame F.  */
+
+static void
+x_window (f, window_prompting, minibuffer_only)
+     struct frame *f;
+     long window_prompting;
+     int minibuffer_only;
+{
+  XClassHint class_hints;
   XSetWindowAttributes attributes;
   unsigned long attribute_mask;
+
+  Widget shell_widget;
+  Widget pane_widget;
+  Widget screen_widget;
+  char* name;
+  Arg al [25];
+  int ac;
+
+  BLOCK_INPUT;
+
+  if (STRINGP (f->name))
+    name = (char*) XSTRING (f->name)->data;
+  else
+    name = "emacs";
+
+  ac = 0;
+  XtSetArg (al[ac], XtNallowShellResize, 1); ac++;
+  XtSetArg (al[ac], XtNinput, 1); ac++;
+  shell_widget = XtCreatePopupShell ("shell",
+				     topLevelShellWidgetClass,
+				     Xt_app_shell, al, ac);
+
+  f->display.x->widget = shell_widget;
+  /* maybe_set_screen_title_format (shell_widget); */
+
+
+  ac = 0;
+  XtSetArg (al[ac], XtNborderWidth, 0); ac++;
+  pane_widget = XtCreateWidget ("pane",
+				panedWidgetClass,
+				shell_widget, al, ac);
+
+  f->display.x->column_widget = pane_widget;
+
+  if (!minibuffer_only && FRAME_EXTERNAL_MENU_BAR (f))
+    initialize_frame_menubar (f);
+
+  /* mappedWhenManaged to false tells to the paned window to not map/unmap 
+     the emacs screen when changing menubar.  This reduces flickering.  */
+
+  ac = 0;
+  XtSetArg (al[ac], XtNmappedWhenManaged, 0); ac++;
+  XtSetArg (al[ac], XtNshowGrip, 0); ac++;
+  XtSetArg (al[ac], XtNallowResize, 1); ac++;
+  XtSetArg (al[ac], XtNresizeToPreferred, 1); ac++;
+  XtSetArg (al[ac], XtNemacsFrame, f); ac++;
+  screen_widget = XtCreateWidget (name,
+				  emacsFrameClass,
+				  pane_widget, al, ac);
+ 
+  f->display.x->edit_widget = screen_widget;
+ 
+  if (f->display.x->menubar_widget)
+    XtManageChild (f->display.x->menubar_widget);
+  XtManageChild (screen_widget); 
+
+  /* Do some needed geometry management.  */
+  {
+    int len;
+    char *tem, shell_position[32];
+    Arg al[2];
+    int ac = 0;
+    int menubar_size 
+      = (f->display.x->menubar_widget
+	 ? (f->display.x->menubar_widget->core.height
+	    + f->display.x->menubar_widget->core.border_width)
+	 : 0);
+
+    if (window_prompting & USPosition)
+      {
+	int left = f->display.x->left_pos;
+	int xneg = window_prompting & XNegative;
+	int top = f->display.x->top_pos;
+	int yneg = window_prompting & YNegative;
+	if (left < 0)
+	  left = -left;
+	if (top < 0)
+	  top = -top;
+	sprintf (shell_position, "=%dx%d%c%d%c%d", PIXEL_WIDTH (f), 
+		 PIXEL_HEIGHT (f) + menubar_size,
+		 (xneg ? '-' : '+'), left,
+		 (yneg ? '-' : '+'), top);
+      }
+    else
+      sprintf (shell_position, "=%dx%d", PIXEL_WIDTH (f), 
+	       PIXEL_HEIGHT (f) + menubar_size);
+    len = strlen (shell_position) + 1;
+    tem = (char *) xmalloc (len);
+    strncpy (tem, shell_position, len);
+    XtSetArg (al[ac], XtNgeometry, tem); ac++;
+    XtSetValues (shell_widget, al, ac);
+  }
+
+  x_calc_absolute_position (f);
+
+  XtManageChild (pane_widget);
+  XtRealizeWidget (shell_widget);
+
+  FRAME_X_WINDOW (f) = XtWindow (screen_widget); 
+
+  validate_x_resource_name ();
+  class_hints.res_name = (char *) XSTRING (Vx_resource_name)->data;
+  class_hints.res_class = EMACS_CLASS;
+  XSetClassHint (x_current_display, XtWindow (shell_widget), &class_hints);
+
+  f->display.x->wm_hints.input = True;
+  f->display.x->wm_hints.flags |= InputHint;
+  XSetWMHints (x_current_display, FRAME_X_WINDOW (f), &f->display.x->wm_hints);
+
+  hack_wm_protocols (shell_widget);
+
+  /* Do a stupid property change to force the server to generate a
+     propertyNotify event so that the event_stream server timestamp will
+     be initialized to something relevant to the time we created the window.
+     */
+  XChangeProperty (XtDisplay (screen_widget), XtWindow (screen_widget),
+		   Xatom_wm_protocols, XA_ATOM, 32, PropModeAppend,
+		   (unsigned char*) NULL, 0);
+
+ /* Make all the standard events reach the Emacs frame.  */
+  attributes.event_mask = STANDARD_EVENT_SET;
+  attribute_mask = CWEventMask;
+  XChangeWindowAttributes (XtDisplay (shell_widget), XtWindow (shell_widget),
+			   attribute_mask, &attributes);
+
+  XtMapWidget (screen_widget);
+
+  /* x_set_name normally ignores requests to set the name if the
+     requested name is the same as the current name.  This is the one
+     place where that assumption isn't correct; f->name is set, but
+     the X server hasn't been told.  */
+  {
+    Lisp_Object name;
+    int explicit = f->explicit_name;
+
+    f->explicit_name = 0;
+    name = f->name;
+    f->name = Qnil;
+    x_set_name (f, name, explicit);
+  }
+
+  XDefineCursor (XDISPLAY FRAME_X_WINDOW (f),
+		 f->display.x->text_cursor);
+
+  UNBLOCK_INPUT;
+
+  if (FRAME_X_WINDOW (f) == 0)
+    error ("Unable to create window");
+}
+
+#else /* not USE_X_TOOLKIT */
+
+/* Create and set up the X window for frame F.  */
+
+x_window (f)
+     struct frame *f;
+
+{
   XClassHint class_hints;
+  XSetWindowAttributes attributes;
+  unsigned long attribute_mask;
 
   attributes.background_pixel = f->display.x->background_pixel;
   attributes.border_pixel = f->display.x->border_pixel;
@@ -1577,26 +2031,31 @@ x_window (f)
   XSetWMProtocols (x_current_display, FRAME_X_WINDOW (f),
 		   &Xatom_wm_delete_window, 1);
 
+
   /* x_set_name normally ignores requests to set the name if the
      requested name is the same as the current name.  This is the one
      place where that assumption isn't correct; f->name is set, but
      the X server hasn't been told.  */
   {
-    Lisp_Object name = f->name;
+    Lisp_Object name;
     int explicit = f->explicit_name;
 
-    f->name = Qnil;
     f->explicit_name = 0;
+    name = f->name;
+    f->name = Qnil;
     x_set_name (f, name, explicit);
   }
 
   XDefineCursor (XDISPLAY FRAME_X_WINDOW (f),
 		 f->display.x->text_cursor);
+
   UNBLOCK_INPUT;
 
   if (FRAME_X_WINDOW (f) == 0)
-    error ("Unable to create window.");
+    error ("Unable to create window");
 }
+
+#endif /* not USE_X_TOOLKIT */
 
 /* Handle the icon stuff for this window.  Perhaps later we might
    want an x_set_icon_position which can be called interactively as
@@ -1658,13 +2117,13 @@ x_make_gc (f)
   BLOCK_INPUT;
 
   /* Create the GC's of this frame.
-     Note that many default values are used. */
+     Note that many default values are used.  */
 
   /* Normal video */
   gc_values.font = f->display.x->font->fid;
   gc_values.foreground = f->display.x->foreground_pixel;
   gc_values.background = f->display.x->background_pixel;
-  gc_values.line_width = 0;	/* Means 1 using fast algorithm. */
+  gc_values.line_width = 0;	/* Means 1 using fast algorithm.  */
   f->display.x->normal_gc = XCreateGC (x_current_display,
 				       FRAME_X_WINDOW (f),
 				       GCLineWidth | GCFont
@@ -1680,7 +2139,7 @@ x_make_gc (f)
 					| GCLineWidth,
 					&gc_values);
 
-  /* Cursor has cursor-color background, background-color foreground. */
+  /* Cursor has cursor-color background, background-color foreground.  */
   gc_values.foreground = f->display.x->background_pixel;
   gc_values.background = f->display.x->cursor_pixel;
   gc_values.fill_style = FillOpaqueStippled;
@@ -1695,7 +2154,7 @@ x_make_gc (f)
 
   /* Create the gray border tile used when the pointer is not in
      the frame.  Since this depends on the frame's pixel values,
-     this must be done on a per-frame basis. */
+     this must be done on a per-frame basis.  */
   f->display.x->border_tile
     = (XCreatePixmapFromBitmapData
        (x_current_display, ROOT_WINDOW, 
@@ -1722,11 +2181,12 @@ be shared by the new frame.")
 {
 #ifdef HAVE_X11
   struct frame *f;
-  Lisp_Object frame, tem, tem0, tem1;
+  Lisp_Object frame, tem;
   Lisp_Object name;
   int minibuffer_only = 0;
   long window_prompting = 0;
   int width, height;
+  int count = specpdl_ptr - specpdl;
 
   check_x ();
 
@@ -1763,6 +2223,8 @@ be shared by the new frame.")
     {
       f->name = name;
       f->explicit_name = 1;
+      /* use the frame's title when getting resources for this frame.  */
+      specbind (Qx_resource_name, name);
     }
 
   XSET (frame, Lisp_Frame, f);
@@ -1802,6 +2264,7 @@ be shared by the new frame.")
     x_default_parameter (f, parms, Qfont, font, 
 			 "font", "Font", string);
   }
+
   x_default_parameter (f, parms, Qborder_width, make_number (2),
 		       "borderwidth", "BorderWidth", number);
   /* This defaults to 2 in order to match xterm.  We recognize either
@@ -1834,10 +2297,34 @@ be shared by the new frame.")
   x_default_parameter (f, parms, Qborder_color, build_string ("black"),
 		       "borderColor", "BorderColor", string);
 
+  x_default_parameter (f, parms, Qmenu_bar_lines, make_number (0),
+		       "menuBarLines", "MenuBarLines", number);
+
   f->display.x->parent_desc = ROOT_WINDOW;
   window_prompting = x_figure_window_size (f, parms);
 
+  if (window_prompting & XNegative)
+    {
+      if (window_prompting & YNegative)
+	f->display.x->win_gravity = SouthEastGravity;
+      else
+	f->display.x->win_gravity = NorthEastGravity;
+    }
+  else
+    {
+      if (window_prompting & YNegative)
+	f->display.x->win_gravity = SouthWestGravity;
+      else
+	f->display.x->win_gravity = NorthWestGravity;
+    }
+
+  f->display.x->size_hint_flags = window_prompting;
+
+#ifdef USE_X_TOOLKIT
+  x_window (f, window_prompting, minibuffer_only);
+#else
   x_window (f);
+#endif
   x_icon (f, parms);
   x_make_gc (f);
   init_frame_faces (f);
@@ -1862,23 +2349,28 @@ be shared by the new frame.")
   f->height = f->width = 0;
   change_frame_size (f, height, width, 1, 0);
 
-  x_default_parameter (f, parms, Qmenu_bar_lines, make_number (0),
-		       "menuBarLines", "MenuBarLines", number);
-
-  tem0 = x_get_arg (parms, Qtop, 0, 0, number);
-  tem1 = x_get_arg (parms, Qleft, 0, 0, number);
+/* With the toolkit, the geometry management is done in x_window.  */
+#ifndef USE_X_TOOLKIT
   BLOCK_INPUT;
-  x_wm_set_size_hint (f, window_prompting, XINT (tem0), XINT (tem1));
+  x_wm_set_size_hint (f, window_prompting, 0);
   UNBLOCK_INPUT;
+#endif /* USE_X_TOOLKIT */
 
   tem = x_get_arg (parms, Qunsplittable, 0, 0, boolean);
   f->no_split = minibuffer_only || EQ (tem, Qt);
 
+  /* It is now ok to make the frame official
+     even if we get an error below.
+     And the frame needs to be on Vframe_list
+     or making it visible won't work.  */
+  Vframe_list = Fcons (frame, Vframe_list);
+
   /* Make the window appear on the frame and enable display,
      unless the caller says not to.  */
   {
-    Lisp_Object visibility = x_get_arg (parms, Qvisibility, 0, 0, symbol);
+    Lisp_Object visibility;
 
+    visibility = x_get_arg (parms, Qvisibility, 0, 0, symbol);
     if (EQ (visibility, Qunbound))
       visibility = Qt;
 
@@ -1891,7 +2383,7 @@ be shared by the new frame.")
       ;
   }
 
-  return frame;
+  return unbind_to (count, frame);
 #else /* X10 */
   struct frame *f;
   Lisp_Object frame, tem;
@@ -2117,8 +2609,9 @@ be shared by the new frame.")
 
   /* Make the window appear on the frame and enable display.  */
   {
-    Lisp_Object visibility = x_get_arg (parms, Qvisibility, 0, 0, symbol);
+    Lisp_Object visibility;
 
+    visibility = x_get_arg (parms, Qvisibility, 0, 0, symbol);
     if (EQ (visibility, Qunbound))
       visibility = Qt;
 
@@ -2129,8 +2622,20 @@ be shared by the new frame.")
 
   SET_FRAME_GARBAGED (f);
 
+  Vframe_list = Fcons (frame, Vframe_list);
   return frame;
 #endif /* X10 */
+}
+
+Lisp_Object
+x_get_focus_frame ()
+{
+  Lisp_Object xfocus;
+  if (! x_focus_frame)
+    return Qnil;
+
+  XSET (xfocus, Lisp_Frame, x_focus_frame);
+  return xfocus;
 }
 
 DEFUN ("focus-frame", Ffocus_frame, Sfocus_frame, 1, 1, 0,
@@ -2211,7 +2716,7 @@ x_rubber_band (f, x, y, width, height, geo, str, hscroll, vscroll)
 			     + (hscroll ? HSCROLL_HEIGHT : 0)),
 			    width, height, f->display.x->font,
 			    FONT_WIDTH (f->display.x->font),
-			    FONT_HEIGHT (f->display.x->font));
+			    f->display.x->line_height);
   XFreePixmap (frame.border);
   XFreePixmap (frame.background);
 
@@ -2257,8 +2762,8 @@ FACE is a face name - a symbol.\n\
 The return value is a list of strings, suitable as arguments to\n\
 set-face-font.\n\
 \n\
-The list does not include fonts Emacs can't use (i.e.  proportional\n\
-fonts), even if they match PATTERN and FACE.")
+Fonts Emacs can't use (i.e. proportional fonts) may or may not be excluded\n\
+even if they match PATTERN and FACE.")
   (pattern, face, frame)
     Lisp_Object pattern, face, frame;
 {
@@ -2268,6 +2773,7 @@ fonts), even if they match PATTERN and FACE.")
   XFontStruct *size_ref;
   Lisp_Object list;
 
+  check_x ();
   CHECK_STRING (pattern, 0);
   if (!NILP (face))
     CHECK_SYMBOL (face, 1);
@@ -2279,7 +2785,13 @@ fonts), even if they match PATTERN and FACE.")
   else
     {
       FRAME_PTR f = NILP (frame) ? selected_frame : XFRAME (frame);
-      int face_id = face_name_id_number (f, face);
+      int face_id;
+
+      /* Don't die if we get called with a terminal frame.  */
+      if (! FRAME_X_P (f))
+	error ("non-X frame used in `x-list-fonts'");
+
+      face_id = face_name_id_number (f, face);
 
       if (face_id < 0 || face_id >= FRAME_N_PARAM_FACES (f)
 	  || FRAME_PARAM_FACES (f) [face_id] == 0)
@@ -2293,11 +2805,20 @@ fonts), even if they match PATTERN and FACE.")
     }
 
   BLOCK_INPUT;
+
+  /* Solaris 2.3 has a bug in XListFontsWithInfo.  */
+#ifdef BROKEN_XLISTFONTSWITHINFO
+  names = XListFonts (x_current_display,
+                      XSTRING (pattern)->data,
+                      2000, /* maxnames */
+                      &num_fonts); /* count_return */
+#else
   names = XListFontsWithInfo (x_current_display,
 			      XSTRING (pattern)->data,
 			      2000, /* maxnames */
 			      &num_fonts, /* count_return */
 			      &info); /* info_return */
+#endif
   UNBLOCK_INPUT;
 
   list = Qnil;
@@ -2309,14 +2830,31 @@ fonts), even if they match PATTERN and FACE.")
 
       tail = &list;
       for (i = 0; i < num_fonts; i++)
-	if (! size_ref 
-	    || same_size_fonts (&info[i], size_ref))
-	  {
-	    *tail = Fcons (build_string (names[i]), Qnil);
-	    tail = &XCONS (*tail)->cdr;
-	  }
+        {
+	  XFontStruct *thisinfo;
 
+#ifdef BROKEN_XLISTFONTSWITHINFO
+          BLOCK_INPUT;
+          thisinfo = XLoadQueryFont (x_current_display, names[i]);
+          UNBLOCK_INPUT;
+#else
+	  thisinfo = &info[i];
+#endif
+          if (thisinfo && (! size_ref
+			   || same_size_fonts (thisinfo, size_ref)))
+	    {
+	      *tail = Fcons (build_string (names[i]), Qnil);
+	      tail = &XCONS (*tail)->cdr;
+	    }
+        }
+
+      BLOCK_INPUT;
+#ifdef BROKEN_XLISTFONTSWITHINFO
+      XFreeFontNames (names);
+#else
       XFreeFontInfo (names, info, num_fonts);
+#endif
+      UNBLOCK_INPUT;
     }
 
   return list;
@@ -2556,7 +3094,7 @@ x_char_width (f)
 x_char_height (f)
      register struct frame *f;
 {
-  return FONT_HEIGHT (f->display.x->font);
+  return f->display.x->line_height;
 }
 
 #if 0  /* These no longer seem like the right way to do things.  */
@@ -2575,7 +3113,7 @@ x_rectangle (f, gc, left_char, top_char, chars, lines)
   int height;
   int left = (left_char * FONT_WIDTH (f->display.x->font)
 		    + f->display.x->internal_border_width);
-  int top = (top_char *  FONT_HEIGHT (f->display.x->font)
+  int top = (top_char * f->display.x->line_height
 		   + f->display.x->internal_border_width);
 
   if (chars < 0)
@@ -2583,9 +3121,9 @@ x_rectangle (f, gc, left_char, top_char, chars, lines)
   else
     width = FONT_WIDTH (f->display.x->font) * chars;
   if (lines < 0)
-    height = FONT_HEIGHT (f->display.x->font) / 2;
+    height = f->display.x->line_height / 2;
   else
-    height = FONT_HEIGHT (f->display.x->font) * lines;
+    height = f->display.x->line_height * lines;
 
   XDrawRectangle (x_current_display, FRAME_X_WINDOW (f),
 		  gc, left, top, width, height);
@@ -2703,11 +3241,11 @@ outline_region (f, gc, top_x, top_y, bottom_x, bottom_y)
 {
   register int ibw = f->display.x->internal_border_width;
   register int font_w = FONT_WIDTH (f->display.x->font);
-  register int font_h = FONT_HEIGHT (f->display.x->font);
+  register int font_h = f->display.x->line_height;
   int y = top_y;
   int x = line_len (y);
-  XPoint *pixel_points = (XPoint *)
-    alloca (((bottom_y - top_y + 2) * 4) * sizeof (XPoint));
+  XPoint *pixel_points
+    = (XPoint *) alloca (((bottom_y - top_y + 2) * 4) * sizeof (XPoint));
   register XPoint *this_point = pixel_points;
 
   /* Do the horizontal top line/lines */
@@ -3040,7 +3578,7 @@ DEFUN ("x-horizontal-line", Fx_horizontal_line, Sx_horizontal_line, 1, 1, "e",
   XGCValues gc_values;
 #endif
   register int previous_y;
-  register int line = (x_mouse_y + 1) * FONT_HEIGHT (f->display.x->font)
+  register int line = (x_mouse_y + 1) * f->display.x->line_height
     + f->display.x->internal_border_width;
   register int left = f->display.x->internal_border_width
     + (w->left
@@ -3079,7 +3617,7 @@ DEFUN ("x-horizontal-line", Fx_horizontal_line, Sx_horizontal_line, 1, 1, "e",
 	  && x_mouse_y < XINT (w->top) + XINT (w->height) - 1)
 	{
 	  previous_y = x_mouse_y;
-	  line = (x_mouse_y + 1) * FONT_HEIGHT (f->display.x->font)
+	  line = (x_mouse_y + 1) * f->display.x->line_height
 	    + f->display.x->internal_border_width;
 	  XDrawLine (x_current_display, FRAME_X_WINDOW (f),
 		     line_gc, left, line, right, line);
@@ -3630,6 +4168,7 @@ Optional second arg XRM_STRING is a string of resources in xrdb format.")
 					    "WM_CONFIGURE_DENIED", False);
   Xatom_wm_window_moved =  XInternAtom (x_current_display, "WM_MOVED",
 					False);
+  Xatom_editres_name =  XInternAtom (x_current_display, "Editres", False);
   UNBLOCK_INPUT;
 #else /* not HAVE_X11 */
   XFASTINT (Vwindow_system_version) = 10;
@@ -3642,6 +4181,12 @@ DEFUN ("x-close-current-connection", Fx_close_current_connection,
        0, 0, 0, "Close the connection to the current X server.")
   ()
 {
+  /* Note: If we're going to call check_x here, then the fatal error
+     can't happen.  For the moment, this check is just for safety,
+     so a user won't try out the function and get a crash.  If it's
+     really intended only to be called when killing emacs, then there's
+     no reason for it to have a lisp interface at all.  */
+  check_x();
 #ifdef HAVE_X11
   /* This is ONLY used when killing emacs;  For switching displays
      we'll have to take care of setting CloseDownMode elsewhere. */
@@ -3675,6 +4220,16 @@ easier.")
   return Qnil;
 }
 
+/* Wait for responses to all X commands issued so far for FRAME.  */
+
+void
+x_sync (frame)
+     Lisp_Object frame;
+{
+  BLOCK_INPUT;
+  XSync (x_current_display, False);
+  UNBLOCK_INPUT;
+}
 
 syms_of_xfns ()
 {
@@ -3738,6 +4293,12 @@ syms_of_xfns ()
   staticpro (&Qwindow_id);
   Qx_frame_parameter = intern ("x-frame-parameter");
   staticpro (&Qx_frame_parameter);
+  Qx_resource_name = intern ("x-resource-name");
+  staticpro (&Qx_resource_name);
+  Quser_position = intern ("user-position");
+  staticpro (&Quser_position);
+  Quser_size = intern ("user-size");
+  staticpro (&Quser_size);
   /* This is the end of symbol initialization.  */
 
   Fput (Qundefined_color, Qerror_conditions,
@@ -3777,6 +4338,8 @@ switches, if present.");
 	      "The shape of the pointer when over the mode line.");
 #endif
   Vx_mode_pointer_shape = Qnil;
+
+  Vx_cross_pointer_shape = Qnil;
 
   DEFVAR_LISP ("x-cursor-fore-pixel", &Vx_cursor_fore_pixel,
 	       "A string indicating the foreground color of the cursor box.");

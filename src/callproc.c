@@ -1,11 +1,11 @@
 /* Synchronous subprocess invocation for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -20,13 +20,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #include <signal.h>
 #include <errno.h>
+#include <stdio.h>
 
 #include <config.h>
 
 extern int errno;
-#ifndef VMS
-extern char *sys_errlist[];
-#endif
+extern char *strerror ();
 
 /* Define SIGCHLD as an alias for SIGCLD.  */
 
@@ -38,8 +37,17 @@ extern char *sys_errlist[];
 
 #include <sys/file.h>
 #ifdef USG5
+#define INCLUDED_FCNTL
 #include <fcntl.h>
 #endif
+
+#ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
+#define INCLUDED_FCNTL
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/param.h>
+#include <errno.h>
+#endif /* MSDOS */
 
 #ifndef O_RDONLY
 #define O_RDONLY 0
@@ -55,6 +63,7 @@ extern char *sys_errlist[];
 #include <paths.h>
 #include "process.h"
 #include "syssignal.h"
+#include "systty.h"
 
 #ifdef VMS
 extern noshare char **environ;
@@ -64,12 +73,25 @@ extern char **environ;
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-Lisp_Object Vexec_path, Vexec_directory, Vdata_directory;
+#ifdef MSDOS
+/* When we are starting external processes we need to know whether they
+   take binary input (no conversion) or text input (\n is converted to
+   \r\n).  Similar for output: if newlines are written as \r\n then it's
+   text process output, otherwise it's binary.  */
+Lisp_Object Vbinary_process_input;
+Lisp_Object Vbinary_process_output;
+#endif
+
+Lisp_Object Vexec_path, Vexec_directory, Vdata_directory, Vdoc_directory;
 Lisp_Object Vconfigure_info_directory;
 
 Lisp_Object Vshell_file_name;
 
 Lisp_Object Vprocess_environment;
+
+#ifdef MSDOS
+Lisp_Object Qbuffer_file_type;
+#endif
 
 /* True iff we are about to fork off a synchronous process or if we
    are waiting for it.  */
@@ -84,6 +106,13 @@ int synch_process_retcode;
 
 extern Lisp_Object Vdoc_file_name;
 
+/* Clean up when exiting Fcall_process.
+   On MSDOS, delete the temporary file on any kind of termination.
+   On Unix, kill the process and any children on termination by signal.  */
+
+/* Nonzero if this is termination due to exit.  */
+static int call_process_exited;
+
 #ifndef VMS  /* VMS version is in vmsproc.c.  */
 
 static Lisp_Object
@@ -100,7 +129,22 @@ Lisp_Object
 call_process_cleanup (fdpid)
      Lisp_Object fdpid;
 {
+#ifdef MSDOS
+  /* for MSDOS fdpid is really (fd . tempfile)  */
+  register Lisp_Object file;
+  file = Fcdr (fdpid);
+  close (XFASTINT (Fcar (fdpid)));
+  if (strcmp (XSTRING (file)-> data, NULL_DEVICE) != 0)
+    unlink (XSTRING (file)->data);
+#else /* not MSDOS */
   register int pid = XFASTINT (Fcdr (fdpid));
+
+
+  if (call_process_exited)
+    {
+      close (XFASTINT (Fcar (fdpid)));
+      return Qnil;
+    }
 
   if (EMACS_KILLPG (pid, SIGINT) == 0)
     {
@@ -116,6 +160,7 @@ call_process_cleanup (fdpid)
     }
   synch_process_alive = 0;
   close (XFASTINT (Fcar (fdpid)));
+#endif /* not MSDOS */
   return Qnil;
 }
 
@@ -143,10 +188,20 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   register unsigned char **new_argv
     = (unsigned char **) alloca ((max (2, nargs - 2)) * sizeof (char *));
   struct buffer *old = current_buffer;
+#ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
+  char *outf, *tempfile;
+  int outfilefd;
+#endif
 #if 0
   int mask;
 #endif
   CHECK_STRING (args[0], 0);
+
+#ifndef subprocesses
+  /* Without asynchronous processes we cannot have BUFFER == 0.  */
+  if (nargs >= 3 && XTYPE (args[2]) == Lisp_Int)
+    error ("Operating system cannot handle asynchronous subprocesses");
+#endif /* subprocesses */
 
   if (nargs >= 2 && ! NILP (args[1]))
     {
@@ -189,9 +244,9 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 
     GCPRO3 (infile, buffer, current_dir);
 
-    current_dir = 
-      expand_and_dir_to_file
-	(Funhandled_file_name_directory (current_dir), Qnil);
+    current_dir
+      = expand_and_dir_to_file (Funhandled_file_name_directory (current_dir),
+				Qnil);
     if (NILP (Ffile_accessible_directory_p (current_dir)))
       report_file_error ("Setting current directory",
 			 Fcons (current_buffer->directory, Qnil));
@@ -201,6 +256,25 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 
   display = nargs >= 4 ? args[3] : Qnil;
 
+  filefd = open (XSTRING (infile)->data, O_RDONLY, 0);
+  if (filefd < 0)
+    {
+      report_file_error ("Opening process input file", Fcons (infile, Qnil));
+    }
+  /* Search for program; barf if not found.  */
+  {
+    struct gcpro gcpro1;
+
+    GCPRO1 (current_dir);
+    openp (Vexec_path, args[0], EXEC_SUFFIXES, &path, 1);
+    UNGCPRO;
+  }
+  if (NILP (path))
+    {
+      close (filefd);
+      report_file_error ("Searching for program", Fcons (args[0], Qnil));
+    }
+  new_argv[0] = XSTRING (path)->data;
   {
     register int i;
     for (i = 4; i < nargs; i++)
@@ -208,30 +282,44 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 	CHECK_STRING (args[i], i);
 	new_argv[i - 3] = XSTRING (args[i])->data;
       }
-    /* Program name is first command arg */
-    new_argv[0] = XSTRING (args[0])->data;
     new_argv[i - 3] = 0;
   }
 
-  filefd = open (XSTRING (infile)->data, O_RDONLY, 0);
-  if (filefd < 0)
+#ifdef MSDOS /* MW, July 1993 */
+  /* These vars record information from process termination.
+     Clear them now before process can possibly terminate,
+     to avoid timing error if process terminates soon.  */
+  synch_process_death = 0;
+  synch_process_retcode = 0;
+
+  if ((outf = egetenv ("TMP")) || (outf = egetenv ("TEMP")))
+    strcpy (tempfile = alloca (strlen (outf) + 20), outf);
+  else
     {
-      report_file_error ("Opening process input file", Fcons (infile, Qnil));
+      tempfile = alloca (20);
+      *tempfile = '\0';
     }
-  /* Search for program; barf if not found.  */
-  openp (Vexec_path, args[0], EXEC_SUFFIXES, &path, 1);
-  if (NILP (path))
+  dostounix_filename (tempfile);
+  if (*tempfile == '\0' || tempfile[strlen (tempfile) - 1] != '/') 
+    strcat (tempfile, "/");
+  strcat (tempfile, "detmp.XXX");
+  mktemp (tempfile);
+
+  outfilefd = creat (tempfile, S_IREAD | S_IWRITE);
+  if (outfilefd < 0)
     {
       close (filefd);
-      report_file_error ("Searching for program", Fcons (args[0], Qnil));
+      report_file_error ("Opening process output file", Fcons (tempfile, Qnil));
     }
-  new_argv[0] = XSTRING (path)->data;
+#endif
 
   if (XTYPE (buffer) == Lisp_Int)
     fd[1] = open (NULL_DEVICE, O_WRONLY), fd[0] = -1;
   else
     {
+#ifndef MSDOS
       pipe (fd);
+#endif
 #if 0
       /* Replaced by close_process_descs */
       set_exclusive_use (fd[0]);
@@ -257,6 +345,20 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
     synch_process_death = 0;
     synch_process_retcode = 0;
 
+#ifdef MSDOS /* MW, July 1993 */
+    /* ??? Someone who knows MSDOG needs to check whether this properly
+       closes all descriptors that it opens.  */
+    pid = run_msdos_command (new_argv, current_dir, filefd, outfilefd);
+    close (outfilefd);
+    fd1 = -1; /* No harm in closing that one!  */
+    fd[0] = open (tempfile, NILP (Vbinary_process_output) ? O_TEXT : O_BINARY);
+    if (fd[0] < 0)
+      {
+	unlink (tempfile);
+	close (filefd);
+	report_file_error ("Cannot re-open temporary file", Qnil);
+      }
+#else /* not MSDOS */
     pid = vfork ();
 
     if (pid == 0)
@@ -270,28 +372,28 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 #endif /* USG */
 	child_setup (filefd, fd1, fd1, new_argv, 0, current_dir);
       }
-
-#if 0
-    /* Tell SIGCHLD handler to look for this pid.  */
-    synch_process_pid = pid;
-    /* Now let SIGCHLD come through.  */
-    sigsetmask (mask);
-#endif
+#endif /* not MSDOS */
 
     environ = save_environ;
 
+    /* Close most of our fd's, but not fd[0]
+       since we will use that to read input from.  */
     close (filefd);
-    close (fd1);
+    if (fd1 >= 0)
+      close (fd1);
   }
 
   if (pid < 0)
     {
-      close (fd[0]);
+      if (fd[0] >= 0)
+	close (fd[0]);
       report_file_error ("Doing vfork", Qnil);
     }
 
   if (XTYPE (buffer) == Lisp_Int)
     {
+      if (fd[0] >= 0)
+	close (fd[0]);
 #ifndef subprocesses
       /* If Emacs has been built with asynchronous subprocess support,
 	 we don't need to do this, I think because it will then have
@@ -301,8 +403,17 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
       return Qnil;
     }
 
+  /* Enable sending signal if user quits below.  */
+  call_process_exited = 0;
+
+#ifdef MSDOS
+  /* MSDOS needs different cleanup information.  */
+  record_unwind_protect (call_process_cleanup,
+			 Fcons (make_number (fd[0]), build_string (tempfile)));
+#else
   record_unwind_protect (call_process_cleanup,
 			 Fcons (make_number (fd[0]), make_number (pid)));
+#endif /* not MSDOS */
 
 
   if (XTYPE (buffer) == Lisp_Buffer)
@@ -313,6 +424,7 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 
   {
     register int nread;
+    int first = 1;
 
     while ((nread = read (fd[0], buf, sizeof buf)) > 0)
       {
@@ -320,7 +432,12 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
 	if (!NILP (buffer))
 	  insert (buf, nread);
 	if (!NILP (display) && INTERACTIVE)
-	  redisplay_preserve_echo_area ();
+	  {
+	    if (first)
+	      prepare_menu_bars ();
+	    first = 0;
+	    redisplay_preserve_echo_area ();
+	  }
 	immediate_quit = 1;
 	QUIT;
       }
@@ -332,6 +449,10 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   immediate_quit = 0;
 
   set_buffer_internal (old);
+
+  /* Don't kill any children that the subprocess may have left behind
+     when exiting.  */
+  call_process_exited = 1;
 
   unbind_to (count, Qnil);
 
@@ -365,20 +486,48 @@ If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
      register Lisp_Object *args;
 {
   register Lisp_Object filename_string, start, end;
+#ifdef MSDOS
+  char *tempfile;
+#else
   char tempfile[20];
+#endif
   int count = specpdl_ptr - specpdl;
+#ifdef MSDOS
+  char *outf = '\0';
+
+  if ((outf = egetenv ("TMP")) || (outf = egetenv ("TEMP")))
+    strcpy (tempfile = alloca (strlen (outf) + 20), outf);
+  else
+    {
+      tempfile = alloca (20);
+      *tempfile = '\0';
+    }
+  dostounix_filename (tempfile);
+  if (tempfile[strlen (tempfile) - 1] != '/')
+    strcat (tempfile, "/");
+  strcat (tempfile, "detmp.XXX");
+#else /* not MSDOS */
 
 #ifdef VMS
   strcpy (tempfile, "tmp:emacsXXXXXX.");
 #else
   strcpy (tempfile, "/tmp/emacsXXXXXX");
 #endif
+#endif /* not MSDOS */
+
   mktemp (tempfile);
 
   filename_string = build_string (tempfile);
   start = args[0];
   end = args[1];
+#ifdef MSDOS
+  specbind (Qbuffer_file_type, Vbinary_process_input);
   Fwrite_region (start, end, filename_string, Qnil, Qlambda);
+  unbind_to (count, Qnil);
+#else
+  Fwrite_region (start, end, filename_string, Qnil, Qlambda);
+#endif
+
   record_unwind_protect (delete_temp_file, filename_string);
 
   if (!NILP (args[3]))
@@ -417,20 +566,28 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
      int set_pgrp;
      Lisp_Object current_dir;
 {
+#ifdef MSDOS
+  /* The MSDOS port of gcc cannot fork, vfork, ... so we must call system
+     instead.  */
+#else /* not MSDOS */
   char **env;
 
-  register int pid = getpid();
+  int pid = getpid ();
 
+#ifdef SET_EMACS_PRIORITY
   {
     extern int emacs_priority;
 
-    nice (- emacs_priority);
+    if (emacs_priority < 0)
+      nice (- emacs_priority);
   }
+#endif
 
 #ifdef subprocesses
   /* Close Emacs's descriptors that this process should not have.  */
   close_process_descs ();
 #endif
+  close_load_descs ();
 
   /* Note that use of alloca is always safe here.  It's obvious for systems
      that do not have true vfork or that have true (stack) alloca.
@@ -507,11 +664,16 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
 
   /* Make sure that in, out, and err are not actually already in
      descriptors zero, one, or two; this could happen if Emacs is
-     started with its standard in, our, or error closed, as might
+     started with its standard in, out, or error closed, as might
      happen under X.  */
   in = relocate_fd (in, 3);
-  out = relocate_fd (out, 3);
-  err = relocate_fd (err, 3);
+  if (out == err)
+    err = out = relocate_fd (out, 3);
+  else
+    {
+      out = relocate_fd (out, 3);
+      err = relocate_fd (err, 3);
+    }
 
   close (0);
   close (1);
@@ -531,7 +693,8 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
 #else
   setpgrp (pid, pid);
 #endif /* USG */
-  setpgrp_of_tty (pid);
+  /* setpgrp_of_tty is incorrect here; it uses input_fd.  */
+  EMACS_SET_TTY_PGRP (0, &pid);
 
 #ifdef vipc
   something missing here;
@@ -546,6 +709,7 @@ child_setup (in, out, err, new_argv, set_pgrp, current_dir)
   write (1, "Couldn't exec the program ", 26);
   write (1, new_argv[0], strlen (new_argv[0]));
   _exit (1);
+#endif /* not MSDOS */
 }
 
 /* Move the file descriptor FD so that its number is not less than MIN.
@@ -562,9 +726,10 @@ relocate_fd (fd, min)
       if (new == -1)
 	{
 	  char *message1 = "Error while setting up child: ";
+	  char *errmessage = strerror (errno);
 	  char *message2 = "\n";
 	  write (2, message1, strlen (message1));
-	  write (2, sys_errlist[errno], strlen (sys_errlist[errno]));
+	  write (2, errmessage, strlen (errmessage));
 	  write (2, message2, strlen (message2));
 	  _exit (1);
 	}
@@ -587,8 +752,9 @@ getenv_internal (var, varlen, value, valuelen)
 
   for (scan = Vprocess_environment; CONSP (scan); scan = XCONS (scan)->cdr)
     {
-      Lisp_Object entry = XCONS (scan)->car;
-      
+      Lisp_Object entry;
+
+      entry = XCONS (scan)->car;
       if (XTYPE (entry) == Lisp_String
 	  && XSTRING (entry)->size > varlen
 	  && XSTRING (entry)->data[varlen] == '='
@@ -603,7 +769,7 @@ getenv_internal (var, varlen, value, valuelen)
   return 0;
 }
 
-DEFUN ("getenv", Fgetenv, Sgetenv, 1, 2, 0,
+DEFUN ("getenv", Fgetenv, Sgetenv, 1, 1, 0,
   "Return the value of environment variable VAR, as a string.\n\
 VAR should be a string.  Value is nil if VAR is undefined in the environment.\n\
 This function consults the variable ``process-environment'' for its value.")
@@ -639,14 +805,18 @@ egetenv (var)
 #endif /* not VMS */
 
 /* This is run before init_cmdargs.  */
-
+  
 init_callproc_1 ()
 {
   char *data_dir = egetenv ("EMACSDATA");
-    
+  char *doc_dir = egetenv ("EMACSDOC");
+
   Vdata_directory
-    = Ffile_name_as_directory (build_string (data_dir ? data_dir
+    = Ffile_name_as_directory (build_string (data_dir ? data_dir 
 					     : PATH_DATA));
+  Vdoc_directory
+    = Ffile_name_as_directory (build_string (doc_dir ? doc_dir
+					     : PATH_DOC));
 
   /* Check the EMACSPATH environment variable, defaulting to the
      PATH_EXEC path from paths.h.  */
@@ -664,15 +834,14 @@ init_callproc ()
   register char * sh;
   Lisp_Object tempdir;
 
-  if (initialized && !NILP (Vinvocation_directory))
+#ifndef MSDOS
+  if (initialized && !NILP (Vinstallation_directory))
     {
-      /* Add to the path the ../lib-src dir of the Emacs executable,
-	 if that dir exists.  */
-      Lisp_Object tem, tem1;
-      tem = Fexpand_file_name (build_string ("../lib-src"),
-			       Vinvocation_directory);
-      tem1 = Ffile_exists_p (tem);
-      if (!NILP (tem1) && NILP (Fmember (tem, Vexec_path)))
+      /* Add to the path the lib-src subdir of the installation dir.  */
+      Lisp_Object tem;
+      tem = Fexpand_file_name (build_string ("lib-src"),
+			       Vinstallation_directory);
+      if (NILP (Fmember (tem, Vexec_path)))
 	{
 	  Vexec_path = nconc2 (Vexec_path, Fcons (tem, Qnil));
 	  Vexec_directory = Ffile_name_as_directory (tem);
@@ -681,30 +850,53 @@ init_callproc ()
 	     Do so if ../etc exists and has our DOC-... file in it.  */
 	  if (data_dir == 0)
 	    {
-	      Lisp_Object tem, tem2, tem3;
-	      tem = Fexpand_file_name (build_string ("../etc"),
-				       Vinvocation_directory);
-	      tem2 = Fexpand_file_name (Vdoc_file_name, tem);
-	      tem3 = Ffile_exists_p (tem2);
-	      if (!NILP (tem3))
-		Vdata_directory = Ffile_name_as_directory (tem);
+	      tem = Fexpand_file_name (build_string ("etc"),
+				       Vinstallation_directory);
+	      Vdoc_directory = Ffile_name_as_directory (tem);
 	    }
 	}
     }
 
+  /* Look for the files that should be in etc.  We don't use
+     Vinstallation_directory, because these files are never installed
+     in /bin near the executable, and they are never in the build
+     directory when that's different from the source directory.
+
+     Instead, if these files are not in the nominal place, we try the
+     source directory.  */
+  if (data_dir == 0)
+    {
+      Lisp_Object tem, tem1, newdir;
+
+      tem = Fexpand_file_name (build_string ("GNU"), Vdata_directory);
+      tem1 = Ffile_exists_p (tem);
+      if (NILP (tem1))
+	{
+	  newdir = Fexpand_file_name (build_string ("../etc/"),
+				      build_string (PATH_DUMPLOADSEARCH));
+	  tem = Fexpand_file_name (build_string ("GNU"), newdir);
+	  tem1 = Ffile_exists_p (tem);
+	  if (!NILP (tem1))
+	    Vdata_directory = newdir;
+	}
+    }
+#endif
+
   tempdir = Fdirectory_file_name (Vexec_directory);
   if (access (XSTRING (tempdir)->data, 0) < 0)
     {
-      printf ("Warning: arch-dependent data dir (%s) does not exist.\n",
-	      XSTRING (Vexec_directory)->data);
+      fprintf (stderr,
+	       "Warning: arch-dependent data dir (%s) does not exist.\n",
+	       XSTRING (Vexec_directory)->data);
       sleep (2);
     }
 
   tempdir = Fdirectory_file_name (Vdata_directory);
   if (access (XSTRING (tempdir)->data, 0) < 0)
     {
-      printf ("Warning: arch-independent data dir (%s) does not exist.\n",
-	      XSTRING (Vdata_directory)->data);
+      fprintf (stderr,
+	       "Warning: arch-independent data dir (%s) does not exist.\n",
+	       XSTRING (Vdata_directory)->data);
       sleep (2);
     }
 
@@ -731,6 +923,19 @@ set_process_environment ()
 
 syms_of_callproc ()
 {
+#ifdef MSDOS
+  Qbuffer_file_type = intern ("buffer-file-type");
+  staticpro (&Qbuffer_file_type);
+
+  DEFVAR_LISP ("binary-process-input", &Vbinary_process_input,
+    "*If non-nil then new subprocesses are assumed to take binary input.");
+  Vbinary_process_input = Qnil;
+
+  DEFVAR_LISP ("binary-process-output", &Vbinary_process_output,
+    "*If non-nil then new subprocesses are assumed to produce binary output.");
+  Vbinary_process_output = Qnil;
+#endif
+
   DEFVAR_LISP ("shell-file-name", &Vshell_file_name,
     "*File name to load inferior shells from.\n\
 Initialized from the SHELL environment variable.");
@@ -746,6 +951,10 @@ especially executable programs intended for Emacs to invoke.");
   DEFVAR_LISP ("data-directory", &Vdata_directory,
     "Directory of architecture-independent files that come with GNU Emacs,\n\
 intended for Emacs to use.");
+
+  DEFVAR_LISP ("doc-directory", &Vdoc_directory,
+    "Directory containing the DOC file that comes with GNU Emacs.\n\
+This is usually the same as data-directory.");
 
   DEFVAR_LISP ("configure-info-directory", &Vconfigure_info_directory,
     "For internal use by the build procedure only.\n\

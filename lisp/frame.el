@@ -1,6 +1,6 @@
 ;;; frame.el --- multi-frame management independent of window systems.
 
-;;;; Copyright (C) 1993 Free Software Foundation, Inc.
+;;;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -58,8 +58,36 @@ These supersede the values given in `default-frame-alist'.")
 
 (setq pop-up-frame-function
       (function (lambda ()
-		  (new-frame pop-up-frame-alist))))
+		  (make-frame pop-up-frame-alist))))
 
+(defvar special-display-frame-alist 
+  '((height . 14) (width . 80) (unsplittable . t))
+  "*Alist of frame parameters used when creating special frames.
+Special frames are used for buffers whose names are in
+`special-display-buffer-names' and for buffers whose names match
+one of the regular expressions in `special-display-regexps'.
+This variable can be set in your init file, like this:
+  (setq special-display-frame-alist '((width . 80) (height . 20)))
+These supersede the values given in `default-frame-alist'.")
+
+;; Display BUFFER in its own frame, reusing an existing window if any.
+;; Return the window chosen.
+;; Currently we do not insist on selecting the window within its frame.
+(defun special-display-popup-frame (buffer)
+  (let ((window (get-buffer-window buffer t)))
+    (if window
+	;; If we have a window already, make it visible.
+	(let ((frame (window-frame window)))
+	  (make-frame-visible frame)
+	  (raise-frame frame)
+	  window)
+      ;; If no window yet, make one in a new frame.
+      (let ((frame (make-frame special-display-frame-alist)))
+	(set-window-buffer (frame-selected-window frame) buffer)
+	(set-window-dedicated-p (frame-selected-window frame) t)
+	(frame-selected-window frame)))))
+
+(setq special-display-function 'special-display-popup-frame)
 
 ;;;; Arrangement of frames at startup
 
@@ -84,6 +112,8 @@ These supersede the values given in `default-frame-alist'.")
 ;; Record the parameters used in frame-initialize to make the initial frame.
 (defvar frame-initial-frame-alist)
 
+(defvar frame-initial-geometry-arguments nil)
+
 ;;; startup.el calls this function before loading the user's init
 ;;; file - if there is no frame with a minibuffer open now, create
 ;;; one to display messages while loading the init file.
@@ -102,35 +132,13 @@ These supersede the values given in `default-frame-alist'.")
 		    (append initial-frame-alist default-frame-alist))
 	      (setq default-minibuffer-frame
 		    (setq frame-initial-frame
-			  (new-frame initial-frame-alist)))
+			  (make-frame initial-frame-alist)))
 	      ;; Delete any specifications for window geometry parameters
 	      ;; so that we won't reapply them in frame-notice-user-settings.
 	      ;; It would be wrong to reapply them then,
 	      ;; because that would override explicit user resizing.
 	      (setq initial-frame-alist
-		    (frame-remove-geometry-params initial-frame-alist))
-	      ;; Handle `reverse' as a parameter.
-	      (if (cdr (or (assq 'reverse initial-frame-alist)
-			   (assq 'reverse default-frame-alist)
-			   (cons nil
-				 (member (x-get-resource "reverseVideo" "ReverseVideo")
-					 '("on" "true")))))
-		  (let ((params (frame-parameters frame-initial-frame)))
-		    (modify-frame-parameters
-		     frame-initial-frame
-		     ;; Must set cursor-color after background color.
-		     ;; So put it first.
-		     (list (cons 'cursor-color
-				 (cdr (assq 'background-color params)))
-			   (cons 'foreground-color
-				 (cdr (assq 'background-color params)))
-			   (cons 'background-color
-				 (cdr (assq 'foreground-color params)))
-			   (cons 'mouse-color
-				 (cdr (assq 'background-color params)))
-			   (cons 'border-color
-				 (cdr (assq 'background-color params)))))))))
-
+		    (frame-remove-geometry-params initial-frame-alist))))
 	;; At this point, we know that we have a frame open, so we 
 	;; can delete the terminal frame.
 	(delete-frame terminal-frame)
@@ -175,17 +183,39 @@ These supersede the values given in `default-frame-alist'.")
 			      '(minibuffer . t)))
 		     t))
 	    ;; Create the new frame.
-	    (let ((new
-		   (new-frame
-		    (append initial-frame-alist
-			    default-frame-alist
-			    (frame-parameters frame-initial-frame)))))
-
+	    (let (parms new)
+	      ;; If the frame isn't visible yet, wait till it is.
+	      ;; If the user has to position the window,
+	      ;; Emacs doesn't know its real position until
+	      ;; the frame is seen to be visible.
+	      (while (not (cdr (assq 'visibility
+				     (frame-parameters frame-initial-frame))))
+		(sleep-for 1))
+	      (setq parms (append initial-frame-alist
+				  default-frame-alist
+				  (frame-parameters frame-initial-frame)
+				  nil))
+	      ;; Get rid of `reverse', because that was handled
+	      ;; when we first made the frame.
+	      (setq parms (cons '(reverse) (delq (assq 'reverse parms) parms)))
+	      (if (assq 'height frame-initial-geometry-arguments)
+		  (setq parms (delq (assq 'height parms) parms)))
+	      (if (assq 'width frame-initial-geometry-arguments)
+		  (setq parms (delq (assq 'width parms) parms)))
+	      (if (assq 'left frame-initial-geometry-arguments)
+		  (setq parms (delq (assq 'left parms) parms)))
+	      (if (assq 'top frame-initial-geometry-arguments)
+		  (setq parms (delq (assq 'top parms) parms)))
+	      (setq new
+		    (make-frame
+		     ;; Use the geometry args that created the existing
+		     ;; frame, rather than the parms we get for it.
+		     (append frame-initial-geometry-arguments parms)))
 	      ;; The initial frame, which we are about to delete, may be
 	      ;; the only frame with a minibuffer.  If it is, create a
 	      ;; new one.
 	      (or (delq frame-initial-frame (minibuffer-frame-list))
-		  (new-frame (append minibuffer-frame-alist
+		  (make-frame (append minibuffer-frame-alist
 				     '((minibuffer . only)))))
 
 	      ;; If the initial frame is serving as a surrogate
@@ -274,7 +304,7 @@ These supersede the values given in `default-frame-alist'.")
 ;;; considered (see next-frame).
 (defun get-other-frame ()
   (let ((s (if (equal (next-frame (selected-frame)) (selected-frame))
-	       (new-frame)
+	       (make-frame)
 	     (next-frame (selected-frame)))))
     s))
 
@@ -344,16 +374,22 @@ additional frame parameters that Emacs recognizes for X window frames."
 (defun frame-remove-geometry-params (param-list)
   "Return the parameter list PARAM-LIST, but with geometry specs removed.
 This deletes all bindings in PARAM-LIST for `top', `left', `width',
-and `height' parameters.
+`height', `user-size' and `user-position' parameters.
 Emacs uses this to avoid overriding explicit moves and resizings from
 the user during startup."
   (setq param-list (cons nil param-list))
   (let ((tail param-list))
     (while (consp (cdr tail))
       (if (and (consp (car (cdr tail)))
-	       (memq (car (car (cdr tail))) '(height width top left)))
-	  (setcdr tail (cdr (cdr tail)))
+	       (memq (car (car (cdr tail)))
+		     '(height width top left user-position user-size)))
+	  (progn
+	    (setq frame-initial-geometry-arguments
+		  (cons (car (cdr tail)) frame-initial-geometry-arguments))
+	    (setcdr tail (cdr (cdr tail))))
 	(setq tail (cdr tail)))))
+  (setq frame-initial-geometry-arguments
+	(nreverse frame-initial-geometry-arguments))
   (cdr param-list))
 
 
@@ -459,7 +495,9 @@ If FRAME is omitted, describe the currently selected frame."
 When called interactively, prompt for the name of the font to use."
   (interactive "sFont name: ")
   (modify-frame-parameters (selected-frame)
-			   (list (cons 'font font-name))))
+			   (list (cons 'font font-name)))
+  ;; Update faces that want a bold or italic version of the default font.
+  (frame-update-faces (selected-frame)))
 
 (defun set-background-color (color-name)
   "Set the background color of the selected frame to COLOR.
@@ -570,7 +608,7 @@ should use `set-frame-width' instead."
 (defalias 'ctl-x-5-prefix ctl-x-5-map)
 (define-key ctl-x-map "5" 'ctl-x-5-prefix)
 
-(define-key ctl-x-5-map "2" 'new-frame)
+(define-key ctl-x-5-map "2" 'make-frame)
 (define-key ctl-x-5-map "0" 'delete-frame)
 (define-key ctl-x-5-map "o" 'other-frame)
 

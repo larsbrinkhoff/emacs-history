@@ -3,7 +3,7 @@
 ;; You may use these commands to handle an address list or other
 ;; small data base.
 
-;; Copyright (C) 1990, 1991, 1993 Free Software Foundation
+;; Copyright (C) 1990, 1991, 1993, 1994 Free Software Foundation
 
 ;; Maintainer: Robert J. Chassell <bob@gnu.ai.mit.edu>
 
@@ -460,7 +460,7 @@ contain matches to the regexp.\)")
     'pages-directory-goto)
   (define-key pages-directory-map "\C-c\C-p\C-a" 'add-new-page))
 
-(defvar original-page-delimiter "^"
+(defvar original-page-delimiter "^\f"
   "Default page delimiter.")
 
 (defun set-page-delimiter (regexp reset-p)
@@ -473,7 +473,7 @@ resets the page-delimiter to the original value."
   
   (interactive
    (if current-prefix-arg
-       (list original-page-delimiter "^")
+       (list original-page-delimiter "^\f")
      (list (read-string "Set page-delimiter to regexp: " page-delimiter)
            nil)))
   (make-local-variable 'original-page-delimiter)
@@ -547,7 +547,7 @@ directory for only the accessible portion of the buffer."
   
   (let ((target-buffer (current-buffer))
         (pages-directory-buffer
-         (concat pages-directory-prefix " " (buffer-name) " "))
+	 (concat pages-directory-prefix " " (buffer-name)))
         (linenum 1)
         (pages-buffer-original-position (point))
         (pages-buffer-original-page 0))
@@ -658,7 +658,7 @@ Used by `pages-directory' function."
             (insert (format "%3d: " line-count))))
       
       (terpri))
-    (forward-line 1)))
+    (end-of-line 1)))
 
 (defun pages-directory-mode ()
   "Mode for handling the pages-directory buffer.

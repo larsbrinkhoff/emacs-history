@@ -8,10 +8,13 @@
 #define A_TEXT_OFFSET(x)    (sizeof (struct exec))
 #define A_TEXT_SEEK(hdr) (N_TXTOFF(hdr) + A_TEXT_OFFSET(hdr))
 
-#define HAVE_SETSID
-
 #define LIBS_DEBUG
 #define LIB_X11_LIB -L/usr/X11/lib -lX11
 #define LIBS_SYSTEM -lutil -lkvm -lcompat
 
 #define HAVE_GETLOADAVG
+
+#undef BSD_PGRPS
+
+/* The dumped Emacs records the timezone it was dumped in.  */
+#define LOCALTIME_CACHE

@@ -33,6 +33,12 @@
 #  undef open
 #endif
 
+#if !defined (HAVE_MEMSET)
+#undef memset
+#define memset(ptr, ignore, count) bzero (ptr, count)
+#endif
+
+
 #if defined (STDC_HEADERS)
 #  include <string.h>
 #  include <stdlib.h>

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @iftex
 @chapter Miscellaneous Commands
@@ -24,9 +24,9 @@ features.  Full documentation will appear elsewhere.
 To start @sc{gnus}, type @kbd{M-x gnus @key{RET}}.
 
 @menu
-* Buffers of GNUS::   The Newsgroups, Summary and Article buffers.
-* GNUS Startup::      What you should know about starting GNUS.
-* Summary of GNUS::   A short description of the basic GNUS commands.
+* Buffers of GNUS::	   The Newsgroups, Summary and Article buffers.
+* GNUS Startup::	   What you should know about starting GNUS.
+* Summary of GNUS::	   A short description of the basic GNUS commands.
 @end menu
 
 @node Buffers of GNUS
@@ -363,21 +363,27 @@ in a line constitutes field 1, the second such run constitutes field
 2, etc.
 
 Specify which field to sort by with a numeric argument: 1 to sort by
-field 1, etc.  A negative argument means sort into descending order.
-Thus, minus 2 means sort by field 2 in reverse-alphabetical order.  If
-several lines have identical contents in the field being sorted, they
+field 1, etc.  A negative argument means count fields from the right
+instead of from the left; thus, minus 1 means sort by the last field.
+If several lines have identical contents in the field being sorted, they
 keep same relative order that they had in the original buffer.
 
 @item M-x sort-numeric-fields
 Like @kbd{M-x sort-fields} except the specified field is converted
-to a number for each line, and the numbers are compared.  @samp{10}
+to an integer for each line, and the numbers are compared.  @samp{10}
 comes before @samp{2} when considered as text, but after it when
-considered as a number.
+considered as a number.  A negative argument means count fields
+from the right (from the end of the line).
 
 @item M-x sort-columns
 Like @kbd{M-x sort-fields} except that the text within each line
 used for comparison comes from a fixed range of columns.  See below
 for an explanation.
+
+@item M-x reverse-region
+Reverse the order of the lines in the region.  This is useful for
+sorting into descending order by fields or columns, since those sort
+commands do not have a feature for doing that.
 @end table
 
   For example, if the buffer contains this:
@@ -468,6 +474,7 @@ You can then give commands interactively.
 * Shell Mode::             Special Emacs commands used with permanent shell.
 * History: Shell History.  Repeating previous commands in a shell buffer.
 * Options: Shell Options.  Options for customizing Shell mode.
+* Remote Host::            Connecting to another computer.
 @end menu
 
 @node Single Shell
@@ -603,7 +610,15 @@ a regexp string that matches the prompts that your shell uses.
 @findex comint-dynamic-complete
 Complete the command name or file name before point in the shell buffer
 (@code{comint-dynamic-complete}).  @key{TAB} also completes history
-references; see @ref{History References}.
+references (@pxref{History References}) and environment variable names.
+
+@vindex shell-completion-fignore
+@vindex comint-completion-fignore
+The variable @code{shell-completion-fignore} specifies a list of file
+name extensions to ignore in Shell mode completion.  The default setting
+ignores file names ending in @samp{~}, @samp{#} or @samp{%}.  Other
+related Comint modes use the variable @code{comint-completion-fignore}
+instead.
 
 @item M-?
 @kindex M-? @r{(Shell mode)}
@@ -661,7 +676,9 @@ Kill the last batch of output from a shell command
 out lots of output that just gets in the way.
 
 @item C-c C-r
+@itemx C-M-l
 @kindex C-c C-r @r{(Shell mode)}
+@kindex C-M-l @r{(Shell mode)}
 @findex comint-show-output
 Scroll to display the beginning of the last batch of output at the top
 of the window; also move the cursor there (@code{comint-show-output}).
@@ -697,6 +714,14 @@ Send @var{text} as input to the shell, after reading it without
 echoing.  This is useful when a shell command runs a program that asks
 for a password.
 
+Alternatively, you can arrange for Emacs to notice password prompts
+and turn off echoing for them, as follows:
+
+@example
+(add-hook `comint-output-filter-functions
+          `comint-watch-for-password-prompt)
+@end example
+
 @item M-x comint-continue-subjob
 @findex comint-continue-subjob
 Continue the shell process.  This is useful if you accidentally suspend
@@ -704,11 +729,31 @@ the shell process.@footnote{You should not suspend the shell process.
 Suspending a subjob of the shell is a completely different matter--that
 is normal practice, but you must use the shell to continue the subjob;
 this command won't do it.}
+
+@item M-x shell-strip-ctrl-m
+@findex shell-strip-ctrl-m
+Discard all control-m characters from the shell output.
 @end table
 
   Shell mode also customizes the paragraph commands so that only shell
 promps start new paragraphs.  Thus, a paragraph consists of an input
 command plus the output that follows it in the buffer.
+
+@cindex Comint mode
+  Shell mode is a derivative of Comint mode, a general purpose mode for
+communicating with interactive subprocesses.  Most of the features of
+Shell mode actually come from Comint mode, as you can see from the
+command names listed above.  The specialization of Shell mode in
+particular include the choice of regular expression for detecting
+prompts, the directory tracking feature, and a few user commands.
+
+  Other Emacs features that use variants of Comint mode include GUD
+(@pxref{Debuggers}) and @kbd{M-x run-lisp} (@pxref{External Lisp}).
+
+@findex comint-run
+  You can use @kbd{M-x comint-run} to execute any program of your choice
+in a subprocess using unmodified Comint mode---without the
+specializations of Shell mode.
 
 @node Shell History
 @subsection Shell Command History
@@ -821,23 +866,28 @@ history reference.  For example, you can fetch the most recent
 command beginning with @samp{mv} with @kbd{! m v @key{TAB}}.  You could
 then resubmit this command to the shell by typing @key{RET} as usual.
 
+@vindex comint-prompt-regexp
+  History references take effect only following a shell prompt.  The
+variable @code{comint-prompt-regexp} specifies how to recognize a shell
+prompt.
+
 @node Shell Options
 @subsection Shell Mode Options
 
 @vindex comint-scroll-to-bottom-on-input
-If the variable @code{comint-scroll-to-bottom-on-input} is
+  If the variable @code{comint-scroll-to-bottom-on-input} is
 non-@code{nil}, insertion and yank commands scroll the selected window
 the bottom before inserting.
 
 @vindex comint-scroll-show-maximum-output
-If @code{comint-scroll-show-maximum-output} is non-@code{nil} (which is the
+  If @code{comint-scroll-show-maximum-output} is non-@code{nil} (which is the
 default), then scrolling due to arrival of output tries to place the
 last line of text at the bottom line of the window, so as to show as
 much useful text as possible.  (This mimics the scrolling behavior of
 many terminals.)
 
 @vindex comint-scroll-to-bottom-on-output
-By setting @code{comint-scroll-to-bottom-on-output}, you can opt for
+  By setting @code{comint-scroll-to-bottom-on-output}, you can opt for
 having point jump to the end of the buffer whenever output arrives---no
 matter where in the buffer point was before.  If the value is
 @code{this}, point jumps in the selected window.  If the value is
@@ -847,7 +897,7 @@ show the current buffer.  The default value is @code{nil}, which means
 point does not jump to the end.
 
 @vindex comint-input-ignoredups
-The variable @code{comint-input-ignoredups} controls whether successive
+  The variable @code{comint-input-ignoredups} controls whether successive
 identical inputs are stored in the input history.  A non-@code{nil}
 value means to omit an input that is the same as the previous input.
 The default is @code{nil}, which means to store each input even if it is
@@ -856,7 +906,7 @@ equal to the previous input.
 @vindex comint-completion-addsuffix
 @vindex comint-completion-recexact
 @vindex comint-completion-autolist
-Three variables customize filename completion
+  Three variables customize file name completion.  The variable
 @code{comint-completion-addsuffix} controls whether completion inserts a
 space or a slash to indicate a fully completed file or directory name
 (non-@code{nil} means do insert a space or slash).
@@ -867,41 +917,83 @@ algorithm cannot add even a single character.
 the possible completions whenever completion is not exact.
 
 @vindex comint-input-autoexpand
-Shell mode can optionally expand history references in the buffer when
+  Shell mode can optionally expand history references in the buffer when
 you send them to the shell.  To request this, set the variable
 @code{comint-input-autoexpand} to @code{input}.
 
 @findex comint-magic-space
-You can make @key{SPC} perform history expansion by binding @key{SPC} to
+  You can make @key{SPC} perform history expansion by binding @key{SPC} to
 the command @code{comint-magic-space}.
 
 @findex comint-dynamic-complete-variable
-The command @code{comint-dynamic-complete-variable} does variable name
+  The command @code{comint-dynamic-complete-variable} does variable name
 completion using the environment variables as set within Emacs.  The
 variables controlling filename completion apply to variable name
 completion too.  This command is normally available through the menu
 bar.
 
 @vindex shell-command-execonly
-Command completion normally considers only executable files.
+  Command completion normally considers only executable files.
 If you set @code{shell-command-execonly} to @code{nil},
 it considers nonexecutable files as well.
 
 @vindex shell-input-ring-file-name
-In a new Shell mode buffer, the input history is initialized from the
+  In a new Shell mode buffer, the input history is initialized from the
 file name specified in the variable @code{shell-input-ring-file-name}.
 By default, this is @code{"~/.history"}.
 
 @cindex shell-pushd-tohome
 @cindex shell-pushd-dextract
 @cindex shell-pushd-dunique
-You can now configure the behavior of @samp{pushd}.  Variables control
+  You can now configure the behavior of @samp{pushd}.  Variables control
 whether @samp{pushd} behaves like @samp{cd} if no argument is given
 (@code{shell-pushd-tohome}), pop rather than rotate with a numeric
 argument (@code{shell-pushd-dextract}), and only add directories to the
 directory stack if they are not already on it
 (@code{shell-pushd-dunique}).  The values you choose should match the
 underlying shell, of course.
+
+@node Remote Host
+@subsection Remote Host
+@cindex remote host
+@cindex connecting to remote host
+@cindex Telnet
+@cindex Rlogin
+
+  Emacs provides two commands for logging in to another computer
+and communicating with it through an Emacs buffer.
+
+@table @kbd
+@item M-x telnet @key{RET} @var{hostname} @key{RET}
+Set up a Telnet connection to the computer named @var{hostname}.
+@item M-x rlogin @key{RET} @var{hostname} @key{RET}
+Set up an Rlogin connection to the computer named @var{hostname}.
+@end table
+
+@findex telnet
+  Use @kbd{M-x telnet} to set up a Telnet connection to another
+computer.  (Telnet is the standard Internet protocol for remote login.)
+It reads the host name of the other computer as an argument with the
+minibuffer.  Once the connection is established, talking to the other
+computer works like talking to a subshell: you can edit input with the
+usual Emacs commands, and send it a line at a time by typing @key{RET}.
+The output is inserted in the Telnet buffer interspersed with the input.
+
+@findex rlogin
+@vindex rlogin-explicit-args
+  Use @kbd{M-x rlogin} to set up an Rlogin connection.  Rlogin is
+another remote login communication protocol, essentially much like the
+Telnet protocol but incompatible with it, and supported only by
+Unix-like systems.  Rlogin's advantages are that you can arrange not to
+have to give your user name and password when communicating between two
+machines you frequently use, and that you can make an 8-bit-clean
+connection.  (To do that in Emacs, set @code{rlogin-explicit-args} to
+@code{("-8")}.)
+
+  @kbd{M-x rlogin} sets up the default file directory of the Emacs
+buffer to access the remote host via FTP (@pxref{File Names}), and it
+tracks the shell commands that change the current directory just like
+Shell mode.
 
 @node Narrowing, Hardcopy, Shell, Top
 @section Narrowing
@@ -1142,7 +1234,7 @@ Leave Hexl mode, going back to the major mode this buffer had before you
 invoked @code{hexl-mode}.
 @end table
 
-@node Emacs Server, Recursive Edit, Editing Binary Files, Top
+@node Emacs Server, Saving Emacs Sessions, Editing Binary Files, Top
 @section Using Emacs as a Server
 @pindex emacsclient
 @pindex server
@@ -1224,7 +1316,36 @@ you finish with the file.  Use the variable
 this sense; its value should be a regular expression that matches file
 names that are temporary.
 
-@node Recursive Edit, Dissociated Press, Emacs Server, Top
+@node Saving Emacs Sessions, Recursive Edit, Emacs Server, Top
+@section Saving Emacs Sessions
+@cindex saving sessions
+@cindex desktop
+
+  You can use the Desktop library to save the state of Emacs from one
+session to another.  Saving the state means that Emacs starts up with
+the same set of buffers, major modes, buffer positions, and so on that
+the previous Emacs session had.
+
+  To use Desktop, you should first add these lines to your @file{.emacs}
+file, preferably at or near the end:
+
+@example
+(load "desktop")
+(desktop-load-default)
+(desktop-read)
+@end example
+
+@noindent
+@findex desktop-save
+Then, to enable state saving in a particular Emacs session, use the
+command @kbd{M-x desktop-save}.  Once you have done this, the state of
+this Emacs session will be saved when you exit Emacs.
+
+  In order for Emacs to recover the state from a previous session, you
+must start it with the same current directory as you used when you
+started the previous session.
+
+@node Recursive Edit, Dissociated Press, Saving Emacs Sessions, Top
 @section Recursive Editing Levels
 @cindex recursive editing level
 @cindex editing level, recursive

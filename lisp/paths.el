@@ -1,6 +1,6 @@
 ;;; paths.el --- define pathnames for use by various Emacs commands.
 
-;; Copyright (C) 1986, 1988 Free Software Foundation, Inc.
+;; Copyright (C) 1986, 1988, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -42,7 +42,10 @@
 	      (nconc start
 		     (list (expand-file-name "../info/" data-directory)))))
     start)
-  "List of directories to search for Info documentation files.")
+  "List of directories to search for Info documentation files.
+They are searched in the order they are given in this list.
+Therefore, the directory of Info files that come with Emacs
+normally should come last (so that local files override standard ones).")
 
 (defvar news-path "/usr/spool/news/"
   "The root directory below which all news files are stored.")
@@ -77,31 +80,17 @@ there is no need to set this variable.")
   "*The name of your organization, as a string.
 The `ORGANIZATION' environment variable is used instead if defined.")
 
-(defvar mh-progs
-  (cond ((file-directory-p "/usr/bin/mh/") "/usr/bin/mh/") ;Ultrix 4.2
-	((file-directory-p "/usr/new/mh/") "/usr/new/mh/") ;Ultrix <4.2
-        ((file-directory-p "/usr/local/bin/mh/") "/usr/local/bin/mh/")
-        ((file-directory-p "/usr/local/mh/") "/usr/local/mh/")
-        (t "/usr/local/bin/"))
-  "Directory containing MH commands.")
-
-(defvar mh-lib
-  (cond ((file-directory-p "/usr/lib/mh/") "/usr/lib/mh/") ;Ultrix 4.2
-	((file-directory-p "/usr/new/lib/mh/") "/usr/new/lib/mh/") ;Ultrix <4.2
-        ((file-directory-p "/usr/local/lib/mh/") "/usr/local/lib/mh/")
-        (t "/usr/local/bin/mh/"))
-  "Directory of MH library.")
-
-(defvar rmail-file-name "~/RMAIL"
-  "Name of user's primary mail file.")
-
 (defvar gnus-startup-file "~/.newsrc"
   "The file listing groups to which user is subscribed.
 Will use `gnus-startup-file'-SERVER instead if exists.")
 
+(defvar rmail-file-name "~/RMAIL"
+  "Name of user's primary mail file.")
+
 (defconst rmail-spool-directory
-  (cond ((memq system-type '(dgux-unix hpux usg-unix-v unisoft-unix rtu
-				       irix))
+  (cond ((string-match "^[^-]+-[^-]+-sco3.2v4" system-configuration)
+	 "/usr/spool/mail/")
+	((memq system-type '(dgux hpux usg-unix-v unisoft-unix rtu irix))
 	 "/usr/mail/")
 	((eq system-type 'netbsd)
 	 "/var/mail/")
@@ -121,12 +110,6 @@ Its name should end with a slash.")
   "If non-nil, Emacs startup does (load (concat term-file-prefix (getenv \"TERM\")))
 You may set this variable to nil in your `.emacs' file if you do not wish
 the terminal-initialization file to be loaded.")
-
-;; Solaris 2 has both of these files; prefer /usr/ucb/man
-;; because the other has nonstandard argument conventions.
-(defconst manual-program (if (file-exists-p "/usr/ucb/man")
-			     "/usr/ucb/man" "/usr/bin/man")
-  "Program to run to print man pages.")
 
 (defconst abbrev-file-name 
   (if (eq system-type 'vax-vms)

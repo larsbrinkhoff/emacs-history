@@ -1,6 +1,6 @@
 ;;; cal-french.el --- calendar functions for the French Revolutionary calendar.
 
-;; Copyright (C) 1988, 1989, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1988, 1989, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Edward M. Reingold <reingold@cs.uiuc.edu>
 ;; Keywords: calendar
@@ -8,20 +8,19 @@
 
 ;; This file is part of GNU Emacs.
 
-;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY.  No author or distributor
-;; accepts responsibility to anyone for the consequences of using it
-;; or for whether it serves any particular purpose or works at all,
-;; unless he says so in writing.  Refer to the GNU Emacs General Public
-;; License for full details.
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
 
-;; Everyone is granted permission to copy, modify and redistribute
-;; GNU Emacs, but only under the conditions described in the
-;; GNU Emacs General Public License.   A copy of this license is
-;; supposed to have been given to you along with GNU Emacs so you
-;; can know your rights and responsibilities.  It should be in a
-;; file named COPYING.  Among other things, the copyright notice
-;; and this notice must be preserved on all copies.
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 ;;; Commentary:
 
@@ -127,27 +126,34 @@ The absolute date is the number of days elapsed since the
                (1- (calendar-absolute-from-french (list month 1 year))))))
     (list month day year))))
 
-(defun calendar-print-french-date ()
-  "Show the French Revolutionary calendar equivalent of the selected date."
-  (interactive)
+(defun calendar-french-date-string (&optional date)
+  "String of French Revolutionary date of Gregorian DATE.
+Returns the empty string if DATE is pre-French Revolutionary.
+Defaults to today's date if DATE is not given."
   (let* ((french-date (calendar-french-from-absolute
                        (calendar-absolute-from-gregorian
-                        (or (calendar-cursor-to-date)
-                            (error "Cursor is not on a date!")))))
+                        (or date (calendar-current-date)))))
          (y (extract-calendar-year french-date))
          (m (extract-calendar-month french-date))
          (d (extract-calendar-day french-date)))
-    (if (< y 1)
+    (cond
+     ((< y 1) "")
+     ((= m 13) (format "Jour %s de l'Anne'e %d de la Revolution"
+                       (aref french-calendar-special-days-array (1- d))
+                       y))
+     (t (format "Decade %s, %s de %s de l'Anne'e %d de la Revolution"
+                (make-string (1+ (/ (1- d) 10)) ?I)
+                (aref french-calendar-day-name-array (% (1- d) 10))
+                (aref french-calendar-month-name-array (1- m))
+                y)))))
+
+(defun calendar-print-french-date ()
+  "Show the French Revolutionary calendar equivalent of the selected date."
+  (interactive)
+  (let ((f (calendar-french-date-string (calendar-cursor-to-date t))))
+    (if (string-equal f "")
         (message "Date is pre-French Revolution")
-      (if (= m 13)
-          (message "Jour %s de l'Anne'e %d de la Revolution"
-                   (aref french-calendar-special-days-array (1- d))
-                   y)
-        (message "Decade %s, %s de %s de l'Anne'e %d de la Revolution"
-                 (make-string (1+ (/ (1- d) 10)) ?I)
-                 (aref french-calendar-day-name-array (% (1- d) 10))
-                 (aref french-calendar-month-name-array (1- m))
-                 y)))))
+      (message f))))
 
 (defun calendar-goto-french-date (date &optional noecho)
   "Move cursor to French Revolutionary date DATE.
@@ -168,11 +174,12 @@ Echo French Revolutionary date unless NOECHO is t."
                                (mapcar
                                 '(lambda (x) (concat "Jour " x))
                                 french-calendar-special-days-array)
+                             (nreverse
                               (cdr;; we don't want rev. day in a non-leap yr.
                                (nreverse
                                 (mapcar
                                  '(lambda (x) (concat "Jour " x))
-                                 french-calendar-special-days-array)))))))
+                                 french-calendar-special-days-array))))))))
           (completion-ignore-case t)
           (month (cdr (assoc
                        (capitalize
@@ -192,7 +199,7 @@ Echo French Revolutionary date unless NOECHO is t."
           (day (if (> month 12)
                    (- month 12)
                  (calendar-read
-                  "Jour (1-10)): "
+                  "Jour (1-10): "
                   '(lambda (x) (and (<= 1 x) (<= x 10))))))
           (month (if (> month 12) 13 month))
           (day (+ day (* 10 (1- decade)))))
@@ -203,21 +210,10 @@ Echo French Revolutionary date unless NOECHO is t."
 
 (defun diary-french-date ()
   "French calendar equivalent of date diary entry."
-  (let* ((french-date (calendar-french-from-absolute
-                       (calendar-absolute-from-gregorian date)))
-         (y (extract-calendar-year french-date))
-         (m (extract-calendar-month french-date))
-         (d (extract-calendar-day french-date)))
-    (if (> y 0)
-      (if (= m 13)
-          (format "Jour %s de l'Anne'e %d de la Revolution"
-                   (aref french-calendar-special-days-array (1- d))
-                   y)
-        (format "Decade %s, %s de %s de l'Anne'e %d de la Revolution"
-                 (make-string (1+ (/ (1- d) 10)) ?I)
-                 (aref french-calendar-day-name-array (% (1- d) 10))
-                 (aref french-calendar-month-name-array (1- m))
-                 y)))))
+  (let ((f (calendar-french-date-string (calendar-cursor-to-date t))))
+    (if (string-equal f "")
+        "Date is pre-French Revolution"
+      f)))
 
 (provide 'cal-french)
 

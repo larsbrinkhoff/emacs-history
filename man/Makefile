@@ -2,14 +2,18 @@
 #### Just a few targets required by the coding standards.
 
 MAKEINFO = makeinfo
-TEXINDEX_OBJS = texindex.o ../lib-src/getopt.o ../lib-src/getopt.o
-INFO_TARGETS = ../info/emacs ../info/cl.info ../info/forms ../info/vip \
-	       ../info/gnus ../info/sc ../info/info
-DVI_TARGETS = emacs.dvi cl.dvi forms.dvi vip.dvi gnus.dvi sc.dvi
+TEXINDEX_OBJS = texindex.o getopt.o
+INFO_TARGETS = ../info/emacs ../info/cl ../info/forms ../info/vip \
+	       ../info/gnus ../info/sc ../info/info ../info/dired-x
+DVI_TARGETS = emacs.dvi cl.dvi forms.dvi vip.dvi gnus.dvi sc.dvi dired-x.dvi
 INFOSOURCES = info.texi info-stnd.texi
 
+# The following rule does not work with all versions of `make'.
+.SUFFIXES: .texi .dvi
 .texi.dvi:
 	texi2dvi $<
+
+TEXI2DVI = texi2dvi
 
 EMACSSOURCES= \
 	emacs.texi \
@@ -53,7 +57,7 @@ EMACSSOURCES= \
 
 info: $(INFO_TARGETS)
 
-dvi: texindex $(DVI_TARGETS)
+dvi: $(DVI_TARGETS)
 
 texindex: ${TEXINDEX_OBJS}
 	$(CC) -o texindex ${TEXINDEX_OBJS}
@@ -61,35 +65,50 @@ texindex: ${TEXINDEX_OBJS}
 texindex.o: texindex.c
 	$(CC) -Demacs -I../src -I../lib-src -c texindex.c
 
+getopt.o: getopt.c
+	$(CC) -Demacs -I../src -I../lib-src -c getopt.c
+
 ../info/info: ${INFOSOURCES}
 	$(MAKEINFO) --no-split info.texi
 
-info.dvi: ${INFOSOURCES}
+info.dvi: texindex ${INFOSOURCES}
+	$(TEXI2DVI) info.texi
 
 ../info/emacs: ${EMACSSOURCES}
 	$(MAKEINFO) emacs.texi
 
-emacs.dvi: ${EMACSSOURCES}
+emacs.dvi: texindex ${EMACSSOURCES}
+	$(TEXI2DVI) emacs.texi
 
-../info/cl.info: cl.texi
+../info/cl: cl.texi
 	$(MAKEINFO) cl.texi
-cl.dvi: cl.texi
+cl.dvi: texindex cl.texi
+	$(TEXI2DVI) cl.texi
+
+../info/dired-x: dired-x.texi
+	$(MAKEINFO) dired-x.texi
+dired-x.dvi: texindex dired-x.texi
+	$(TEXI2DVI) dired-x.texi
 
 ../info/forms: forms.texi
 	$(MAKEINFO) forms.texi
-forms.dvi: forms.texi
+forms.dvi: texindex forms.texi
+	$(TEXI2DVI) forms.texi
 
 ../info/sc: sc.texi
 	$(MAKEINFO) sc.texi
-sc.dvi: sc.texi
+sc.dvi: texindex sc.texi
+	$(TEXI2DVI) sc.texi
 
 ../info/vip: vip.texi
 	$(MAKEINFO) vip.texi
-vip.dvi: vip.texi
+vip.dvi: texindex vip.texi
+	$(TEXI2DVI) vip.texi
 
 ../info/gnus: gnus.texi
 	$(MAKEINFO) gnus.texi
-gnus.dvi: gnus.texi
+gnus.dvi: texindex gnus.texi
+	$(TEXI2DVI) gnus.texi
 
 ../etc/GNU: gnu1.texi gnu.texi
 	makeinfo --no-headers -o ../etc/GNU gnu1.texi

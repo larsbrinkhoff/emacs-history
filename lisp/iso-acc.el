@@ -1,5 +1,5 @@
 ;;; iso-acc.el -- minor mode providing electric accent keys
-;;; Copyright (C) 1993 Free Software Foundation, Inc.
+;;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Johan Vromans <jv@mh.nl>
 ;; Version: 1.7 (modified)
@@ -128,12 +128,16 @@
     ((?\~ ?o) ?\365)
     ((?\~ ?>) ?\273)
     ((?\~ ?<) ?\253)
+    ((?\~ ?\ ) ?\~)
+    ((?\~ ?\~) ?\270) ;; cedilla accent
     ((?\/ ?A) ?\305) ;; A-with-ring (Norwegian and Danish)
     ((?\/ ?E) ?\306) ;; AE-ligature (Norwegian and Danish)
     ((?\/ ?O) ?\330)
     ((?\/ ?a) ?\345) ;; a-with-ring (Norwegian and Danish)
     ((?\/ ?e) ?\346) ;; ae-ligature (Norwegian and Danish)
     ((?\/ ?o) ?\370)
+    ((?\/ ?\ ) ?\/)
+    ((?\/ ?\/) ?\260) ;; ring accent (actually degree sign?)
     )
   "Association list for ISO accent combinations.")
 

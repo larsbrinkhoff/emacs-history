@@ -1,5 +1,5 @@
 /* systty.h - System-dependent definitions for terminals.
-   Copyright (C) 1993 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -53,22 +53,28 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifndef NO_TERMIO
 #include <termio.h>
 #endif /* not NO_TERMIO */
+#ifndef INCLUDED_FCNTL
+#define INCLUDED_FCNTL
 #include <fcntl.h>
-#else
+#endif
+#else /* not HAVE_TERMIO */
 #ifdef HAVE_TERMIOS
 #if defined(_AIX) && defined(_I386)
 #include <termios.h>		/* termios.h needs to be before termio.h */
 #include <termio.h>
-#else
+#else /* not HAVE_TERMIOS */
 #ifndef NO_TERMIO
 #include <termio.h>
 #endif
 #include <termios.h>
 #endif /* _AIX && _I386 */
+#define INCLUDED_FCNTL
 #include <fcntl.h>
 #else /* neither HAVE_TERMIO nor HAVE_TERMIOS */
 #ifndef VMS
+#ifndef MSDOS
 #include <sgtty.h>
+#endif
 #else /* VMS */
 #include <descrip.h>
 static struct iosb
@@ -81,15 +87,9 @@ static struct iosb
 
 extern int waiting_for_ast;
 extern int stop_input;
-#if 0 /* VAX C doeasn't understand initializing declarations */
-extern int input_ef = 0;
-extern int timer_ef = 0;
-extern int process_ef = 0;
-#else
 extern int input_ef;
 extern int timer_ef;
 extern int process_ef;
-#endif
 extern int input_eflist;
 extern int timer_eflist;
 
@@ -113,6 +113,10 @@ static struct sensemode {
 #endif /* VMS */
 #endif /* not HAVE_TERMIOS */
 #endif /* not HAVE_TERMIO */
+
+#ifdef __GNU_LIBRARY__
+#include <termios.h>
+#endif
 
 #ifdef AIX
 /* Get files for keyboard remapping */
@@ -352,7 +356,11 @@ struct emacs_tty {
 #ifdef VMS
   struct sensemode main;
 #else
+#ifdef MSDOS
+  int main;
+#else
   struct sgttyb main;
+#endif
 #endif
 #endif
 #endif
@@ -385,7 +393,11 @@ struct emacs_tty {
 
 #ifdef HAVE_TERMIOS
 
+#ifdef TABDLY
 #define EMACS_TTY_TABS_OK(p) (((p)->main.c_oflag & TABDLY) != TAB3)
+#else
+#define EMACS_TTY_TABS_OK(p) 1
+#endif
 
 #else /* not def HAVE_TERMIOS */
 #ifdef HAVE_TERMIO
@@ -399,7 +411,11 @@ struct emacs_tty {
 
 #else
 
+#ifdef MSDOS
+#define EMACS_TTY_TABS_OK(p) 0
+#else /* not MSDOS */
 #define EMACS_TTY_TABS_OK(p) (((p)->main.sg_flags & XTABS) != XTABS)
+#endif /* not MSDOS */
 
 #endif /* not def VMS */
 #endif /* not def HAVE_TERMIO */

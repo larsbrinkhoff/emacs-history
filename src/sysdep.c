@@ -1,11 +1,11 @@
 /* Interfaces to system-dependent kernel and library entries.
-   Copyright (C) 1985, 1986, 1987, 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 86, 87, 88, 93, 94 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -64,10 +64,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <sys/stat.h>
 #include <errno.h>
 
-extern int errno;
-#ifndef VMS
-extern char *sys_errlist[];
+#ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida, MW Aug 1993 */
+#include <dos.h>
+#include "dosfns.h"
+#include "msdos.h"
+#include <sys/param.h>
 #endif
+
+extern int errno;
 
 #ifdef VMS
 #include <rms.h>
@@ -113,7 +117,9 @@ extern char *sys_errlist[];
 #undef FASYNC
 #endif
 
+#ifndef MSDOS
 #include <sys/ioctl.h>
+#endif
 #include "systty.h"
 #include "syswait.h"
 
@@ -127,7 +133,7 @@ extern char *sys_errlist[];
 #ifndef MEMORY_IN_STRING_H
 #include <memory.h>
 #endif
-#ifdef TIOCGWINSZ
+#if defined (TIOCGWINSZ) || defined (ISC4_0)
 #ifdef NEED_SIOCTL
 #include <sys/sioctl.h>
 #endif
@@ -135,7 +141,7 @@ extern char *sys_errlist[];
 #include <sys/stream.h>
 #include <sys/ptem.h>
 #endif
-#endif /* TIOCGWINSZ */
+#endif /* TIOCGWINSZ or ISC4_0 */
 #endif /* USG */
 
 extern int quit_char;
@@ -217,8 +223,13 @@ discard_tty_input ()
     ioctl (input_fd, TIOCFLUSH, &zero);
   }
 #else /* not Apollo */
+#ifdef MSDOS	/* Demacs 1.1.1 91/10/16 HIRANO Satoshi */
+  while (dos_keyread () != -1)
+  	;
+#else /* not MSDOS */
   EMACS_GET_TTY (input_fd, &buf);
   EMACS_SET_TTY (input_fd, &buf, 0);
+#endif /* not MSDOS */
 #endif /* not Apollo */
 #endif /* not VMS */
 }
@@ -247,6 +258,9 @@ init_baud_rate ()
     ospeed = 0;
   else
     {
+#ifdef MSDOS
+    ospeed = 15;
+#else
 #ifdef VMS
       struct sensemode sg;
 
@@ -281,6 +295,7 @@ init_baud_rate ()
 #endif /* not HAVE_TERMIO */
 #endif /* not HAVE_TERMIOS */
 #endif /* not VMS */
+#endif /* not MSDOS */
     }
    
   baud_rate = (ospeed < sizeof baud_convert / sizeof baud_convert[0]
@@ -441,6 +456,7 @@ flush_pending_output (channel)
 child_setup_tty (out)
      int out;
 {
+#ifndef MSDOS
   struct emacs_tty s;
 
   EMACS_GET_TTY (out, &s);
@@ -448,14 +464,18 @@ child_setup_tty (out)
 #if defined (HAVE_TERMIO) || defined (HAVE_TERMIOS)
   s.main.c_oflag |= OPOST;	/* Enable output postprocessing */
   s.main.c_oflag &= ~ONLCR;	/* Disable map of NL to CR-NL on output */
+#ifdef NLDLY
   s.main.c_oflag &= ~(NLDLY|CRDLY|TABDLY|BSDLY|VTDLY|FFDLY);
   				/* No output delays */
+#endif
   s.main.c_lflag &= ~ECHO;	/* Disable echo */
   s.main.c_lflag |= ISIG;	/* Enable signals */
-  s.main.c_iflag &= ~IUCLC;	/* Disable map of upper case to lower on
-				   input */
-  s.main.c_oflag &= ~OLCUC;	/* Disable map of lower case to upper on
-				   output */
+#ifdef IUCLC
+  s.main.c_iflag &= ~IUCLC;	/* Disable downcasing on input.  */
+#endif
+#ifdef OLCUC
+  s.main.c_oflag &= ~OLCUC;	/* Disable upcasing on output.  */
+#endif
   s.main.c_cflag = (s.main.c_cflag & ~CSIZE) | CS8; /* Don't strip 8th bit */
 #if 0
   /* Said to be unnecessary:  */
@@ -524,6 +544,7 @@ child_setup_tty (out)
     ioctl (out, FIOASYNC, &zero);
   }
 #endif /* RTU */
+#endif /* not MSDOS */
 }
 #endif /* not VMS */
 
@@ -588,7 +609,7 @@ sys_suspend ()
     }
   return -1;
 #else
-#ifdef SIGTSTP
+#if defined(SIGTSTP) && !defined(MSDOS)
 
   {
     int pgrp = EMACS_GETPGRP (0);
@@ -605,6 +626,22 @@ sys_suspend ()
 /* On a system where suspending is not implemented,
    instead fork a subshell and let it talk directly to the terminal
    while we wait.  */
+  sys_subshell ();
+
+#endif /* no USG_JOBCTRL */
+#endif /* no SIGTSTP */
+#endif /* not VMS */
+}
+
+/* Fork a subshell.  */
+
+sys_subshell ()
+{
+#ifndef VMS
+#ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida */
+  int st;
+  char oldwd[MAXPATHLEN+1]; /* Fixed length is safe on MSDOS.  */
+#endif
   int pid = fork ();
   struct save_signal saved_handlers[5];
 
@@ -624,9 +661,13 @@ sys_suspend ()
     {
       char *sh;
 
+#ifdef MSDOS	/* MW, Aug 1993 */
+      getwd (oldwd);
+#endif
       sh = (char *) egetenv ("SHELL");
       if (sh == 0)
 	sh = "sh";
+
       /* Use our buffer's default directory for the subshell.  */
       {
 	Lisp_Object dir;
@@ -637,7 +678,7 @@ sys_suspend ()
 	   which somehow wedges the hp compiler.  So instead... */
 
 	dir = intern ("default-directory");
-	/* Can't use NULL */
+	/* Can't use NILP */
 	if (XFASTINT (Fboundp (dir)) == XFASTINT (Qnil))
 	  goto xyzzy;
 	dir = Fsymbol_value (dir);
@@ -656,28 +697,32 @@ sys_suspend ()
       close_process_descs ();	/* Close Emacs's pipes/ptys */
 #endif
 
-#ifdef PRIO_PROCESS
+#ifdef SET_EMACS_PRIORITY
       {
 	extern int emacs_priority;
 
-	if (emacs_priority)
+	if (emacs_priority < 0)
 	  nice (-emacs_priority);
       }
 #endif
 
+#ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida */
+      st = system (sh);
+      chdir (oldwd);
+      if (st)
+        report_file_error ("Can't execute subshell", Fcons (build_string (sh), Qnil));
+#else /* not MSDOS */
       execlp (sh, sh, 0);
       write (1, "Can't execute subshell", 22);
       _exit (1);
+#endif /* not MSDOS */
     }
 
   save_signal_handlers (saved_handlers);
   synch_process_alive = 1;
   wait_for_termination (pid);
   restore_signal_handlers (saved_handlers);
-
-#endif /* no USG_JOBCTRL */
-#endif /* no SIGTSTP */
-#endif /* not VMS */
+#endif /* !VMS */
 }
 
 save_signal_handlers (saved_handlers)
@@ -759,6 +804,32 @@ unrequest_sigio ()
 
 #else /* not FASYNC, not STRIDE */
  
+#ifdef _CX_UX
+
+#include <termios.h>
+
+request_sigio ()
+{
+  int on = 1;
+  sigset_t st;
+
+  sigemptyset(&st);
+  sigaddset(&st, SIGIO);
+  ioctl (input_fd, FIOASYNC, &on);
+  interrupts_deferred = 0;
+  sigprocmask(SIG_UNBLOCK, &st, (sigset_t *)0);
+}
+
+unrequest_sigio ()
+{
+  int off = 0;
+
+  ioctl (input_fd, FIOASYNC, &off);
+  interrupts_deferred = 1;
+}
+
+#else /* ! _CX_UX */
+
 request_sigio ()
 {
   croak ("request_sigio");
@@ -769,13 +840,14 @@ unrequest_sigio ()
   croak ("unrequest_sigio");
 }
  
+#endif /* _CX_UX */
 #endif /* STRIDE */
 #endif /* FASYNC */
 #endif /* F_SETFL */
 
 /* Saving and restoring the process group of Emacs's terminal.  */
 
-#ifdef BSD
+#ifdef BSD_PGRPS
 
 /* The process group of which Emacs was a member when it initially
    started.
@@ -819,7 +891,7 @@ widen_foreground_group ()
   setpgrp (0, inherited_pgroup);
 }
 
-#endif
+#endif /* BSD_PGRPS */
 
 /* Getting and setting emacs_tty structures.  */
 
@@ -852,10 +924,11 @@ emacs_get_tty (fd, settings)
     return -1;
 
 #else
+#ifndef MSDOS
   /* I give up - I hope you have the BSD ioctls.  */
   if (ioctl (fd, TIOCGETP, &settings->main) < 0)
     return -1;
-
+#endif /* not MSDOS */
 #endif
 #endif
 #endif
@@ -943,9 +1016,11 @@ emacs_set_tty (fd, settings, waitp)
     return -1;
 
 #else
+#ifndef MSDOS
   /* I give up - I hope you have the BSD ioctls.  */
   if (ioctl (fd, (waitp) ? TIOCSETP : TIOCSETN, &settings->main) < 0)
     return -1;
+#endif /* not MSDOS */
 
 #endif
 #endif
@@ -1049,7 +1124,7 @@ init_sys_modes ()
 #endif
 #endif /* not VMS */
 
-#ifdef BSD
+#ifdef BSD_PGRPS
   if (! read_socket_hook && EQ (Vwindow_system, Qnil))
     narrow_foreground_group ();
 #endif
@@ -1069,7 +1144,7 @@ init_sys_modes ()
       tty.main.c_lflag &= ~ECHO;	/* Disable echo */
       tty.main.c_lflag &= ~ICANON;	/* Disable erase/kill processing */
 #ifdef IEXTEN
-      tty.main.c_iflag &= ~IEXTEN;	/* Disable other editing characters.  */
+      tty.main.c_lflag &= ~IEXTEN;	/* Disable other editing characters.  */
 #endif
       tty.main.c_lflag |= ISIG;	/* Enable signals */
       if (flow_control)
@@ -1154,10 +1229,12 @@ init_sys_modes ()
 	tty.main.tt_char &= ~TT$M_TTSYNC;
       tty.main.tt2_char |= TT2$M_PASTHRU | TT2$M_XON;
 #else /* not VMS (BSD, that is) */
+#ifndef MSDOS
       tty.main.sg_flags &= ~(ECHO | CRMOD | XTABS);
       if (meta_key)
 	tty.main.sg_flags |= ANYP;
       tty.main.sg_flags |= interrupt_input ? RAW : CBREAK;
+#endif
 #endif /* not VMS (BSD, that is) */
 #endif /* not HAVE_TERMIO */
 
@@ -1195,6 +1272,10 @@ init_sys_modes ()
 #ifdef HAVE_LTCHARS
       tty.ltchars = new_ltchars;
 #endif /* HAVE_LTCHARS */
+#ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida, MW Aug 1993 */
+      internal_terminal_init ();
+      dos_ttraw ();
+#endif
 
       EMACS_SET_TTY (input_fd, &tty, 0);
 
@@ -1290,10 +1371,10 @@ tabs_safe_p ()
   EMACS_GET_TTY (input_fd, &tty);
   return EMACS_TTY_TABS_OK (&tty);
 }
-
+
 /* Get terminal size from system.
-   Store number of lines into *heightp and width into *widthp.
-   If zero or a negative number is stored, the value is not valid.  */
+   Store number of lines into *HEIGHTP and width into *WIDTHP.
+   We store 0 if there's no valid information.  */
 
 get_frame_size (widthp, heightp)
      int *widthp, *heightp;
@@ -1336,12 +1417,53 @@ get_frame_size (widthp, heightp)
   *widthp = tty.scr_wid;
   *heightp = tty.scr_len;
 
+#else
+#ifdef MSDOS
+  *widthp = ScreenCols ();
+  *heightp = ScreenRows ();
 #else /* system doesn't know size */
-
   *widthp = 0;
   *heightp = 0;
+#endif
 
 #endif /* not VMS */
+#endif /* not SunOS-style */
+#endif /* not BSD-style */
+}
+
+/* Set the logical window size associated with descriptor FD
+   to HEIGHT and WIDTH.  This is used mainly with ptys.  */
+
+int
+set_window_size (fd, height, width)
+     int fd, height, width;
+{
+#ifdef TIOCSWINSZ
+
+  /* BSD-style.  */
+  struct winsize size;
+  size.ws_row = height;
+  size.ws_col = width;
+
+  if (ioctl (fd, TIOCSWINSZ, &size) == -1)
+    return 0; /* error */
+  else
+    return 1;
+
+#else
+#ifdef TIOCSSIZE
+
+  /* SunOS - style.  */
+  struct ttysize size;  
+  size.ts_lines = height;
+  size.ts_cols = width;
+
+  if (ioctl (fd, TIOCGSIZE, &size) == -1)
+    return 0;
+  else
+    return 1;
+#else
+  return -1;
 #endif /* not SunOS-style */
 #endif /* not BSD-style */
 }
@@ -1394,6 +1516,9 @@ reset_sys_modes ()
     }
 #endif /* F_SETOWN */
 #endif /* F_SETOWN_BUG */
+#ifdef O_NDELAY
+  fcntl (input_fd, F_SETFL, fcntl (input_fd, F_GETFL, 0) & ~O_NDELAY);
+#endif
 #endif /* F_SETFL */
 #ifdef BSD4_1
   if (interrupt_input)
@@ -1403,11 +1528,15 @@ reset_sys_modes ()
   while (EMACS_SET_TTY (input_fd, &old_tty, 0) < 0 && errno == EINTR)
     ;
 
+#ifdef MSDOS	/* Demacs 1.1.2 91/10/20 Manabu Higashida */
+  dos_ttcooked ();
+#endif
+
 #ifdef AIX
   hft_reset ();
 #endif
 
-#ifdef BSD
+#ifdef BSD_PGRPS
   widen_foreground_group ();
 #endif
 }
@@ -1591,6 +1720,7 @@ wait_for_kbd_input ()
 	  if (dsp)
 	    {
 	      update_mode_lines++;
+	      prepare_menu_bars ();
 	      redisplay_preserve_echo_area ();
 	    }
 	}
@@ -1719,7 +1849,7 @@ unrequest_sigio ()
  *
  */
 
-#ifndef CANNOT_UNEXEC
+#if !defined (CANNOT_UNEXEC) && !defined (HAVE_TEXT_START)
 char *
 start_of_text ()
 {
@@ -1735,7 +1865,7 @@ start_of_text ()
 #endif /* GOULD */
 #endif /* TEXT_START */
 }
-#endif /* not CANNOT_UNEXEC */
+#endif /* not CANNOT_UNEXEC and not HAVE_TEXT_START */
 
 /*
  *	Return the address of the start of the data segment prior to
@@ -1824,7 +1954,7 @@ end_of_data ()
 
 #endif /* not CANNOT_DUMP */
 
-/* Get_system_name returns as its value
+/* get_system_name returns as its value
  a string for the Lisp function system-name to return. */
 
 #ifdef BSD4_1
@@ -1833,93 +1963,129 @@ end_of_data ()
 
 /* Can't have this within the function since `static' is #defined to 
    nothing for some USG systems.  */
-#ifdef USG
-#ifdef HAVE_GETHOSTNAME
-static char get_system_name_name[256];
-#else /* not HAVE_GETHOSTNAME */
-static struct utsname get_system_name_name;
-#endif /* not HAVE_GETHOSTNAME */
-#endif /* USG */
+static char *get_system_name_cache;
+static int get_system_name_predump_p;
 
 #ifndef BSD4_1
-#ifndef USG
 #ifndef VMS
 #ifdef HAVE_SOCKETS
 #include <sys/socket.h>
 #include <netdb.h>
 #endif /* HAVE_SOCKETS */
 #endif /* not VMS */
-#endif /* not USG */
 #endif /* not BSD4_1 */
 
 char *
 get_system_name ()
 {
-#ifdef USG
-#ifdef HAVE_GETHOSTNAME
-  gethostname (get_system_name_name, sizeof (get_system_name_name));
-  return get_system_name_name;
-#else /* not HAVE_GETHOSTNAME */
-  uname (&get_system_name_name);
-  return (get_system_name_name.nodename);
-#endif /* not HAVE_GETHOSTNAME */
-#else /* Not USG */
 #ifdef BSD4_1
   return sysname;
-#else /* not USG, not 4.1 */
-  static char system_name_saved[32];
-#ifdef VMS
-  char *sp;
-  if ((sp = egetenv ("SYS$NODE")) == 0)
-    sp = "vax-vms";
-  else
-    {
-      char *end;
-
-      if ((end = index (sp, ':')) != 0)
-	*end = '\0';
-    }
-  strcpy (system_name_saved, sp);
-#else /* not VMS */
-  gethostname (system_name_saved, sizeof (system_name_saved));
-#ifdef HAVE_SOCKETS
-  /* Turn the hostname into the official, fully-qualified hostname.
-     Don't do this if we're going to dump; this can confuse system
-     libraries on some machines and make the dumped emacs core dump. */
+#else
 #ifndef CANNOT_DUMP
-  if (initialized)
-#endif /* not CANNOT_DUMP */
+  /* If the cached value is from before the dump, and we've dumped
+     since then, then the cached value is no good. */
+  if (get_system_name_predump_p && initialized && get_system_name_cache)
     {
-      struct hostent *hp;
-      hp = gethostbyname (system_name_saved);
-      if (hp && strlen (hp->h_name) < sizeof(system_name_saved))
-	strcpy (system_name_saved, hp->h_name);
+      xfree (get_system_name_cache);
+      get_system_name_cache = 0;
     }
-#endif /* HAVE_SOCKETS */
-#endif /* not VMS */
-  return system_name_saved;
-#endif /* not USG, not 4.1 */
-#endif /* not USG */
-}
-
+#endif
+  if (!get_system_name_cache)
+    {
+      /* No cached value, so get the name from the system.  */
 #ifdef VMS
-#ifndef HAVE_GETHOSTNAME
-void gethostname(buf, len)
-    char *buf;
-    int len;
-{
-    char *s;
-    s = getenv ("SYS$NODE");
-    if (s == NULL)
-        buf[0] = '\0';
-    else {
-        strncpy (buf, s, len - 2);
-        buf[len - 1] = '\0';
-    } /* else */
-} /* static void gethostname */
-#endif /* ! HAVE_GETHOSTNAME */
-#endif /* VMS */
+      char *sp;
+      if ((sp = egetenv ("SYS$NODE")) == 0)
+	sp = "vax-vms";
+      else
+	{
+	  char *end;
 
+	  if ((end = index (sp, ':')) != 0)
+	    *end = '\0';
+	}
+      get_system_name_cache = (char *) xmalloc (strlen (sp) + 1);
+      strcpy (get_system_name_cache, sp);
+#else
+#ifndef HAVE_GETHOSTNAME
+      struct utsname uts;
+      uname (&uts);
+      get_system_name_cache = (char *) xmalloc (strlen (uts.nodename) + 1);
+      strcpy (get_system_name_cache, uts.nodename);
+#else /* HAVE_GETHOSTNAME */
+      {
+	int hostname_size = 256;
+	char *hostname = (char *) xmalloc (hostname_size);
+
+	/* Try to get the host name; if the buffer is too short, try
+	   again.  Apparently, the only indication gethostname gives of
+	   whether the buffer was large enough is the presence or absence
+	   of a '\0' in the string.  Eech.  */
+	for (;;)
+	  {
+	    gethostname (hostname, hostname_size - 1);
+	    hostname[hostname_size - 1] = '\0';
+
+	    /* Was the buffer large enough for the '\0'?  */
+	    if (strlen (hostname) < hostname_size - 1)
+	      break;
+
+	    hostname_size <<= 1;
+	    hostname = (char *) xrealloc (hostname, hostname_size);
+	  }
+	get_system_name_cache = hostname;
+#ifdef HAVE_SOCKETS
+	/* Turn the hostname into the official, fully-qualified hostname.
+	   Don't do this if we're going to dump; this can confuse system
+	   libraries on some machines and make the dumped emacs core dump. */
+#ifndef CANNOT_DUMP
+	if (initialized)
+#endif /* not CANNOT_DUMP */
+	  {
+	    struct hostent *hp = gethostbyname (hostname);
+	    if (hp)
+	      {
+		char *fqdn = hp->h_name;
+		char *p;
+
+		if (!index (fqdn, '.'))
+		  {
+		    /* We still don't have a fully qualified domain name.
+		       Try to find one in the list of alternate names */
+		    char **alias = hp->h_aliases;
+		    while (*alias && !index (*alias, '.'))
+		      alias++;
+		    if (*alias)
+		      fqdn = *alias;
+		  }
+		hostname = (char *) xrealloc (hostname, strlen (fqdn) + 1);
+		strcpy (hostname, fqdn);
+#if 0
+		/* Convert the host name to lower case.  */
+		/* Using ctype.h here would introduce a possible locale
+		   dependence that is probably wrong for hostnames.  */
+		p = hostname
+		while (*p)
+		  {
+		    if (*p >= 'A' && *p <= 'Z')
+		      *p += 'a' - 'A';
+		    p++;
+		  }
+#endif
+	      }
+	  }
+#endif /* HAVE_SOCKETS */
+	get_system_name_cache = hostname;
+      }
+#endif /* HAVE_GETHOSTNAME */
+#endif /* VMS */
+#ifndef CANNOT_DUMP
+      get_system_name_predump_p = !initialized;
+#endif
+    }
+  return (get_system_name_cache);
+#endif /* BSD4_1 */
+}
 
 #ifndef VMS
 #ifndef HAVE_SELECT
@@ -2020,6 +2186,9 @@ select (nfds, rfds, wfds, efds, timeout)
 #ifdef FIONREAD
 		      status = ioctl (fd, FIONREAD, &avail);
 #else /* no FIONREAD */
+#ifdef MSDOS
+		      abort (); /* I don't think we need it.  */
+#else /* not MSDOS */
 		      /* Hoping it will return -1 if nothing available
 			 or 0 if all 0 chars requested are read.  */
 		      if (proc_buffered_char[fd] >= 0)
@@ -2030,6 +2199,7 @@ select (nfds, rfds, wfds, efds, timeout)
 			  if (avail > 0)
 			    proc_buffered_char[fd] = buf;
 			}
+#endif /* not MSDOS */
 #endif /* no FIONREAD */
 		    }
 		  if (status >= 0 && avail > 0)
@@ -2050,6 +2220,10 @@ select (nfds, rfds, wfds, efds, timeout)
       while (select_alarmed == 0 && *local_timeout != 0
 	     && process_tick == update_tick)
 	{
+#ifdef MSDOS
+	  sleep_or_kbd_hit (SELECT_PAUSE, (orfds & 1) != 0);
+	  select_alarm ();
+#else /* not MSDOS */
 	  /* If we are interested in terminal input,
 	     wait by reading the terminal.
 	     That makes instant wakeup for terminal input at least.  */
@@ -2061,6 +2235,7 @@ select (nfds, rfds, wfds, efds, timeout)
 	    }
 	  else
 	    pause ();
+#endif /* not MSDOS */
 	}
       (*local_timeout) -= SELECT_PAUSE;
       /* Reset the old alarm if there was one */
@@ -2268,7 +2443,14 @@ sys_signal (int signal_number, signal_handler_t action)
 #else
   sigemptyset (&new_action.sa_mask);
   new_action.sa_handler = action;
+#ifdef SA_RESTART
+  /* Emacs mostly works better with restartable system services. If this
+   * flag exists, we probably want to turn it on here.
+   */
+  new_action.sa_flags = SA_RESTART;
+#else
   new_action.sa_flags = 0;
+#endif
   sigaction (signal_number, &new_action, &old_action);
   return (old_action.sa_handler);
 #endif /* DGUX */
@@ -2558,6 +2740,21 @@ char *sys_errlist[] =
 #endif /* SHAREABLE_LIB_BUG */
 #endif /* LINK_CRTL_SHARE */
 #endif /* VMS */
+
+#ifndef HAVE_STRERROR
+char *
+strerror (errnum)
+     int errnum;
+{
+  extern char *sys_errlist[];
+  extern int sys_nerr;
+
+  if (errnum >= 0 && errnum < sys_nerr)
+    return sys_errlist[errnum];
+  return (char *) "Unknown error";
+}
+
+#endif /* ! HAVE_STRERROR */
 
 #ifdef INTERRUPTIBLE_OPEN
 
@@ -2624,7 +2821,7 @@ sys_write (fildes, buf, nbyte)
 	  if (errno == EINTR)
 	    continue;
 	  else
-	    return (-1);
+	    return (bytes_written ? bytes_written : -1);
 	}
 
       buf += rtnval;
@@ -2723,6 +2920,28 @@ char *sys_siglist[NSIG + 1] =
   "user defined signal 2",		/* 17 SIGUSR2 */
   "death of a child",			/* 18 SIGCLD */
   "power-fail restart",			/* 19 SIGPWR */
+#ifdef sun
+  "window size change",			    /* 20 SIGWINCH */
+  "urgent socket condition",		    /* 21 SIGURG */
+  "pollable event occured",		    /* 22 SIGPOLL */
+  "stop (cannot be caught or ignored)", /*  23 SIGSTOP */
+  "user stop requested from tty",	    /* 24 SIGTSTP */
+  "stopped process has been continued",	/* 25 SIGCONT */
+  "background tty read attempted",	    /* 26 SIGTTIN */
+  "background tty write attempted",    /* 27 SIGTTOU */
+  "virtual timer expired",		    /* 28 SIGVTALRM */
+  "profiling timer expired",		    /* 29 SIGPROF */
+  "exceeded cpu limit",			    /* 30 SIGXCPU */
+  "exceeded file size limit",		    /* 31 SIGXFSZ */
+  "process's lwps are blocked",	    /*  32 SIGWAITING */
+  "special signal used by thread library", /* 33 SIGLWP */
+#ifdef SIGFREEZE
+  "Special Signal Used By CPR",	    /* 34 SIGFREEZE */
+#endif
+#ifdef SIGTHAW
+  "Special Signal Used By CPR",	    /* 35 SIGTHAW */
+#endif
+#endif /* sun */
 #endif /* not AIX */
   0
   };
@@ -2851,7 +3070,7 @@ dup2 (oldd, newd)
 #ifdef F_DUPFD
   fd = fcntl (oldd, F_DUPFD, newd);
   if (fd != newd)
-    error ("can't dup2 (%i,%i) : %s", oldd, newd, sys_errlist[errno]);
+    error ("can't dup2 (%i,%i) : %s", oldd, newd, strerror (errno));
 #else
   fd = dup (old);
   if (fd == -1)
@@ -3178,10 +3397,14 @@ readdirver (dirp)
 /*
  * Make a directory.
  */
+#ifdef MKDIR_PROTOTYPE
+MKDIR_PROTOTYPE
+#else
 int
 mkdir (dpath, dmode)
      char *dpath;
      int dmode;
+#endif
 {
   int cpid, status, fd;
   struct stat statbuf;
@@ -3265,17 +3488,17 @@ rmdir (dpath)
 	  dup2 (fd, 1);
 	  dup2 (fd, 2);
         }
-      execl ("/bin/rmdir", "rmdir", dpath, (char *) 0);
-      _exit (-1);		/* Can't exec /bin/mkdir */
-
-    default:			/* Parent process */
       wait_for_termination (cpid);
+  if (synch_process_death != 0 || synch_process_retcode != 0)
+      return -1;		/* /bin/rmdir failed */
+    default:			/* Parent process */
+      while (cpid != wait (&status));	/* Wait for kid to finish */
     }
 
-  if (synch_process_death != 0 || synch_process_retcode != 0)
+  if (WIFSIGNALED (status) || WEXITSTATUS (status) != 0)
     {
       errno = EIO;		/* We don't know why, but */
-      return -1;		/* /bin/rmdir failed */
+      return -1;		/* /bin/mkdir failed */
     }
 
   return 0;

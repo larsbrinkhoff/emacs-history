@@ -1,6 +1,6 @@
 ;;; window.el --- GNU Emacs window commands aside from those written in C.
 
-;;; Copyright (C) 1985, 1989, 1992, 1993 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1989, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 
@@ -83,6 +83,7 @@ This is convenient on slow terminals, but point can move strangely.")
 (defun split-window-vertically (&optional arg)
   "Split current window into two windows, one above the other.
 The uppermost window gets ARG lines and the other gets the rest.
+Negative arg means select the size of the lowermost window instead.
 With no argument, split equally or close to it.
 Both windows display the same buffer now current.
 
@@ -98,8 +99,10 @@ new mode line."
   (interactive "P")
   (let ((old-w (selected-window))
 	(old-point (point))
+	(size (and arg (prefix-numeric-value arg)))
 	new-w bottom switch)
-    (setq new-w (split-window nil (and arg (prefix-numeric-value arg))))
+    (and size (< size 0) (setq size (+ (window-height) size)))
+    (setq new-w (split-window nil size))
     (or split-window-keep-point
 	(progn
 	  (save-excursion
@@ -140,6 +143,7 @@ ARG columns.  No arg means split equally."
   "Shrink the WINDOW to be as small as possible to display its contents.
 Do nothing if the buffer contains more lines than the present window height,
 or if some of the window's contents are scrolled out of view,
+or if the window is not the full width of the frame,
 or if the window is the only window of its frame."
   (interactive)
   (save-excursion
@@ -156,9 +160,17 @@ or if the window is the only window of its frame."
 	  (window-min-height 0)
 	  (buffer-read-only nil)
 	  (modified (buffer-modified-p))
-	  (buffer (current-buffer)))
+	  (buffer (current-buffer))
+	  (mini (cdr (assq 'minibuffer (frame-parameters))))
+	  (edges (window-edges (selected-window))))
       (if (and (< 1 (count-windows))
-	       (pos-visible-in-window-p (point-min) window))
+	       (= (window-width) (screen-width))
+	       (pos-visible-in-window-p (point-min) window)
+	       (or (not mini)
+		   (< (nth 3 edges)
+		      (nth 1 (window-edges mini)))
+		   (> (nth 1 edges)
+		      (cdr (assq 'menu-bar-lines (frame-parameters))))))
 	  (unwind-protect
 	      (progn
 		(select-window (or window w))

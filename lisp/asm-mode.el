@@ -94,7 +94,8 @@ called near the beginning of mode initialization.
 
 Turning on Asm mode runs the hook `asm-mode-hook' at the end of initialization.
 
-Special commands:\\{asm-mode-map}
+Special commands:
+\\{asm-mode-map}
 "
   (interactive)
   (kill-all-local-variables)
@@ -123,7 +124,6 @@ Special commands:\\{asm-mode-map}
   (setq comment-end "")
   (make-local-variable 'comment-column)
   (setq comment-column 32)
-  (auto-fill-mode 1)
   (setq fill-prefix "\t")
   (run-hooks 'asm-mode-hook)
   )
@@ -189,7 +189,7 @@ repeatedly until you are satisfied with the kind of comment."
 
    ;; Nonblank line with no comment chars in it?
    ;; Then start a comment at the current comment column
-   ((asm-line-matches (format "^[^%c]+$" asm-comment-char))
+   ((asm-line-matches (format "^[^%c\n]+$" asm-comment-char))
     (indent-for-comment))
 
    ;; Flush-left comment present?  Just insert character.

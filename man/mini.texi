@@ -95,10 +95,13 @@ Find File: /u2/emacs/src//etc/termcap
 @end example
 
 @noindent
+@cindex // in file name
+@cindex double slash in file name
+@cindex slashes repeated in file name
 Two slashes in a row are not normally meaningful in a file name, but
-they are allowed in GNU Emacs.  They mean, ``ignore everything before the
-second slash in the pair.''  Thus, @samp{/u2/emacs/src/} is ignored, and
-you get the file @file{/etc/termcap}.
+they are allowed in GNU Emacs.  They mean, ``ignore everything before
+the second slash in the pair.''  Thus, @samp{/u2/emacs/src/} is ignored
+in the example above, and you get the file @file{/etc/termcap}.
 
   If you set @code{insert-default-directory} to @code{nil}, the default
 directory is not inserted in the minibuffer.  This way, the minibuffer
@@ -225,14 +228,6 @@ first as described below (@code{minibuffer-complete-and-exit}).
 @item ?
 Print a list of all possible completions of the text in the minibuffer
 (@code{minibuffer-list-completions}).
-@kindex Mouse-2
-@findex mouse-choose-completion
-@item Mouse-2
-Clicking mouse button 2 on a completion in the list of possible
-completions chooses that completion (@code{mouse-choose-completion}).
-Like the above commands, this command is used while you are in the
-minibuffer; but click in the list of completions, not in the minibuffer
-itself.
 @end table
 
 @kindex SPC
@@ -245,6 +240,25 @@ but it stops completing after @samp{fill-}.  This gives
 way to @samp{auto-fill-mode}.  @key{SPC} in the minibuffer when
 completion is available runs the command
 @code{minibuffer-complete-word}.
+
+  Here are some commands you can use to choose a completion from a
+window that displays a list of completions:
+
+@table @kbd
+@kindex Mouse-2
+@findex mouse-choose-completion
+@item Mouse-2
+Clicking mouse button 2 on a completion in the list of possible
+completions chooses that completion (@code{mouse-choose-completion}).
+You use this command while you are in the minibuffer; but you must click
+in the list of completions, not in the minibuffer itself.
+@findex choose-completion
+@item @key{RET}
+Typing @key{RET} @emph{in the completion list buffer} chooses the
+completion that point is in or next to (@code{choose-completion}).  To
+use this command, you must first switch windows to the window that shows
+the list of completions.
+@end table
 
 @node Strict Completion
 @subsection Strict Completion

@@ -1,6 +1,6 @@
 ;;; startup.el --- process Emacs shell arguments
 
-;; Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -58,9 +58,17 @@
 (defvar command-line-processed nil "t once command line has been processed")
 
 (defconst inhibit-startup-message nil
-  "*Non-nil inhibits the initial startup messages.
+  "*Non-nil inhibits the initial startup message.
 This is for use in your personal init file, once you are familiar
 with the contents of the startup message.")
+
+(defconst inhibit-startup-echo-area-message nil
+  "*Non-nil inhibits the initial startup echo area message.
+Inhibition takes effect only if your `.emacs' file contains
+a line of the form
+ (setq inhibit-startup-echo-area-message \"YOUR-USER-NAME\")
+Thus, someone else using a copy of your `.emacs' file will see
+the startup message unless he personally acts to inhibit it.")
 
 (defconst inhibit-default-init nil
   "*Non-nil inhibits loading the `default' library.")
@@ -74,13 +82,17 @@ remaining command-line args are in the variable `command-line-args-left'.")
 (defvar command-line-functions nil    ;; lrs 7/31/89
   "List of functions to process unrecognized command-line arguments.
 Each function should access the dynamically bound variables
-argi (the current argument) and command-line-args-left (the remaining
+`argi' (the current argument) and `command-line-args-left' (the remaining
 arguments).  The function should return non-nil only if it recognizes and
-processes argi.  If it does so, it may consume successive arguments by
-altering command-line-args-left to remove them.")
+processes `argi'.  If it does so, it may consume successive arguments by
+altering `command-line-args-left' to remove them.")
+
+(defvar command-line-default-directory nil
+  "Default directory to use for command line arguments.
+This is normally copied from `default-directory' when Emacs starts.")
 
 (defvar before-init-hook nil
-  "Functions to call after handling urgent options but before loading init file.
+  "Functions to call after handling urgent options but before init files.
 The frame system uses this to open frames to display messages while
 Emacs loads the user's initialization file.")
 
@@ -90,34 +102,34 @@ The call is not protected by a condition-case, so you can set `debug-on-error'
 in `.emacs', and put all the actual code on `after-init-hook'.")
 
 (defvar term-setup-hook nil
-  "Functions to be called after loading terminal-specific lisp code.
+  "Functions to be called after loading terminal-specific Lisp code.
 See `run-hooks'.  This variable exists for users to set,
 so as to override the definitions made by the terminal-specific file.
 Emacs never sets this variable itself.")
 
 (defvar keyboard-type nil
-  "The brand of keyboard you are using.  This variable is used to define
+  "The brand of keyboard you are using.
+This variable is used to define
 the proper function and keypad keys for use under X.  It is used in a
 fashion analogous to the environment value TERM.")
 
 (defvar window-setup-hook nil
-  "Function called to initialize window system display.
-Emacs calls this after processing the command line arguments and loading
-the user's init file.
-
-Users should not set this variable; use term-setup-hook instead.")
+  "Normal hook run to initialize window system display.
+Emacs runs this hook after processing the command line arguments and loading
+the user's init file.")
 
 (defconst initial-major-mode 'lisp-interaction-mode
   "Major mode command symbol to use for the initial *scratch* buffer.")
 
 (defvar init-file-user nil
   "Identity of user whose `.emacs' file is or was read.
-The value may be the null string or a string containing a user's name.
-If the value is a null string, it means that the init file was taken from
-the user that originally logged in.
+The value is nil if no init file is being used; otherwise, it may be either
+the null string, meaning that the init file was taken from the user that
+originally logged in, or it may be a string containing a user's name.
 
-In all cases, `(concat \"~\" init-file-user \"/\")' evaluates to the
-directory name of the directory where the `.emacs' file was looked for.")
+In either of the latter cases, `(concat \"~\" init-file-user \"/\")'
+evaluates to the name of the directory where the `.emacs' file was
+looked for.")
 
 (defvar site-run-file "site-start"
   "File containing site-wide run-time initializations.
@@ -151,24 +163,41 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
 			   (delete (concat "PWD=" pwd)
 				   process-environment)))))))
     (setq default-directory (abbreviate-file-name default-directory))
-    (unwind-protect
-	(command-line)
-      ;; Do this again, in case .emacs defined more abbreviations.
-      (setq default-directory (abbreviate-file-name default-directory))
-      (run-hooks 'emacs-startup-hook)
-      (and term-setup-hook
-	   (run-hooks 'term-setup-hook))
-      ;; Modify the initial frame based on what .emacs puts into
-      ;; ...-frame-alist.
-      (if (fboundp 'frame-notice-user-settings)
-	  (frame-notice-user-settings))
-      ;; Now we know the user's default font, so add it to the menu.
-      (if (fboundp 'font-menu-add-default)
-	  (font-menu-add-default))
-      (and window-setup-hook
-	   (run-hooks 'window-setup-hook)))))
+    (let ((menubar-bindings-done nil))
+      (unwind-protect
+	  (command-line)
+	;; Do this again, in case .emacs defined more abbreviations.
+	(setq default-directory (abbreviate-file-name default-directory))
+	(run-hooks 'emacs-startup-hook)
+	(and term-setup-hook
+	     (run-hooks 'term-setup-hook))
+	;; Modify the initial frame based on what .emacs puts into
+	;; ...-frame-alist.
+	(if (fboundp 'frame-notice-user-settings)
+	    (frame-notice-user-settings))
+	;; Now we know the user's default font, so add it to the menu.
+	(if (fboundp 'font-menu-add-default)
+	    (font-menu-add-default))
+	(and window-setup-hook
+	     (run-hooks 'window-setup-hook))
+	(or menubar-bindings-done
+	    (precompute-menubar-bindings))))))
+
+;; Precompute the keyboard equivalents in the menu bar items.
+(defun precompute-menubar-bindings ()
+  (if (eq window-system 'x)
+      (let ((submap (lookup-key global-map [menu-bar])))
+	(while submap
+	  (and (consp (car submap))
+	       (symbolp (car (car submap)))
+	       (stringp (car-safe (cdr (car submap))))
+	       (keymapp (cdr (cdr (car submap))))
+	       (x-popup-menu nil (cdr (cdr (car submap)))))
+	  (setq submap (cdr submap))))))
 
 (defun command-line ()
+  (setq command-line-default-directory default-directory)
+
   ;; See if we should import version-control from the environment variable.
   (let ((vc (getenv "VERSION_CONTROL")))
     (cond ((eq vc nil))			;don't do anything if not set
@@ -234,10 +263,10 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
     (setcdr command-line-args args))
 
   ;; Under X Windows, this creates the X frame and deletes the terminal frame.
-  (if (fboundp 'frame-initialize)
-      (frame-initialize))
   (if (fboundp 'face-initialize)
       (face-initialize))
+  (if (fboundp 'frame-initialize)
+      (frame-initialize))
 
   (run-hooks 'before-init-hook)
 
@@ -252,35 +281,52 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
   (setq inhibit-startup-message nil)
 
   ;; Load that user's init file, or the default one, or none.
-  (let ((debug-on-error init-file-debug)
-	;; This function actually reads the init files.
-	(inner
-	 (function
-	  (lambda ()
-	    (if init-file-user
-		(progn (load (if (eq system-type 'vax-vms)
-				 "sys$login:.emacs"
-			       (concat "~" init-file-user "/.emacs"))
-			     t t t)
-		       (or inhibit-default-init
-			   (let ((inhibit-startup-message nil))
-			     ;; Users are supposed to be told their rights.
-			     ;; (Plus how to get help and how to undo.)
-			     ;; Don't you dare turn this off for anyone
-			     ;; except yourself.
-			     (load "default" t t)))))))))
-    (if init-file-debug
-	;; Do this without a condition-case if the user wants to debug.
-	(funcall inner)
-      (condition-case error
-	  (progn
-	    (funcall inner)
-	    (setq init-file-had-error nil))
-	(error (message "Error in init file: %s%s%s"
-			(get (car error) 'error-message)
-			(if (cdr error) ": ")
-			(mapconcat 'prin1-to-string (cdr error) ", "))
-	       (setq init-file-had-error t)))))
+  (let (debug-on-error-from-init-file
+	debug-on-error-should-be-set
+	(debug-on-error-initial
+	 (if (eq init-file-debug t) 'startup init-file-debug)))
+    (let ((debug-on-error debug-on-error-initial)
+	  ;; This function actually reads the init files.
+	  (inner
+	   (function
+	    (lambda ()
+	      (if init-file-user
+		  (progn
+		    (setq user-init-file 
+			  (cond 
+			   ((eq system-type 'ms-dos)
+			    (concat "~" init-file-user "/_emacs"))
+			   ((eq system-type 'vax-vms) 
+			    "sys$login:.emacs")
+			   (t 
+			    (concat "~" init-file-user "/.emacs"))))
+		    (load user-init-file t t t)
+		    (or inhibit-default-init
+			(let ((inhibit-startup-message nil))
+			  ;; Users are supposed to be told their rights.
+			  ;; (Plus how to get help and how to undo.)
+			  ;; Don't you dare turn this off for anyone
+			  ;; except yourself.
+			  (load "default" t t)))))))))
+      (if init-file-debug
+	  ;; Do this without a condition-case if the user wants to debug.
+	  (funcall inner)
+	(condition-case error
+	    (progn
+	      (funcall inner)
+	      (setq init-file-had-error nil))
+	  (error (message "Error in init file: %s%s%s"
+			  (get (car error) 'error-message)
+			  (if (cdr error) ": " "")
+			  (mapconcat 'prin1-to-string (cdr error) ", "))
+		 (setq init-file-had-error t))))
+      ;; If we can tell that the init file altered debug-on-error,
+      ;; arrange to preserve the value that it set up.
+      (or (eq debug-on-error debug-on-error-initial)
+	  (setq debug-on-error-should-be-set t
+		debug-on-error-from-init-file debug-on-error)))
+    (if debug-on-error-should-be-set
+	(setq debug-on-error debug-on-error-from-init-file)))
 
   (run-hooks 'after-init-hook)
 
@@ -310,6 +356,26 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
 
 (defun command-line-1 (command-line-args-left)
   (or noninteractive (input-pending-p) init-file-had-error
+      (and inhibit-startup-echo-area-message
+	   (let ((buffer (get-buffer-create " *temp*")))
+	     (prog1
+		 (condition-case nil
+		     (save-excursion
+		       (set-buffer buffer)
+		       (insert-file-contents user-init-file)
+		       (re-search-forward
+			(concat
+			 "([ \t\n]*setq[ \t\n]+"
+			 "inhibit-startup-echo-area-message[ \t\n]+"
+			 (regexp-quote
+			  (prin1-to-string
+			   (if (string= init-file-user "")
+			       (user-login-name)
+			     init-file-user)))
+			 "[ \t\n]*)")
+			nil t))
+		   (error nil))
+	       (kill-buffer buffer))))
       (message (if (eq (key-binding "\C-h\C-p") 'describe-project)
 		   "For information about the GNU Project and its goals, type C-h C-p."
 		 (substitute-command-keys
@@ -342,7 +408,7 @@ this variable, if non-nil; 2. `~/.emacs'; 3. `default.el'.")
 		 (progn
 		   (insert (emacs-version)
 			   "
-Copyright (C) 1993 Free Software Foundation, Inc.\n\n")
+Copyright (C) 1994 Free Software Foundation, Inc.\n\n")
 		   ;; If keys have their default meanings,
 		   ;; use precomputed string to save lots of time.
 		   (if (and (eq (key-binding "\C-h") 'help-command)
@@ -371,6 +437,11 @@ GNU Emacs comes with ABSOLUTELY NO WARRANTY; type \\[describe-no-warranty] for f
 You may give out copies of Emacs; type \\[describe-copying] to see the conditions.
 Type \\[describe-distribution] for information on getting the latest version.")))
 		   (set-buffer-modified-p nil)
+		   ;; Do this now to avoid an annoying delay if the user
+		   ;; clicks the menu bar during the sit-for.
+		   (sit-for 0)
+		   (precompute-menubar-bindings)
+		   (setq menubar-bindings-done t)
 		   (sit-for 120))
 	       (save-excursion
 		 ;; In case the Emacs server has already selected
@@ -378,7 +449,7 @@ Type \\[describe-distribution] for information on getting the latest version."))
 		 (set-buffer (get-buffer "*scratch*"))
 		 (erase-buffer)
 		 (set-buffer-modified-p nil)))))
-    (let ((dir default-directory)
+    (let ((dir command-line-default-directory)
 	  (file-count 0)
 	  first-file-buffer
 	  (line 0))

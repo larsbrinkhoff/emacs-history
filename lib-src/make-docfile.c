@@ -1,5 +1,5 @@
 /* Generate doc-string file for GNU Emacs from source files.
-   Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1992, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -32,6 +32,17 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  */
 
 #include <stdio.h>
+#ifdef MSDOS
+#include <fcntl.h>
+#endif /* MSDOS */
+
+#ifdef MSDOS
+#define READ_TEXT "rt"
+#define READ_BINARY "rb"
+#else /* not MSDOS */
+#define READ_TEXT "r"
+#define READ_BINARY "r"
+#endif /* not MSDOS */
 
 FILE *outfile;
 
@@ -42,6 +53,11 @@ main (argc, argv)
   int i;
   int err_count = 0;
 
+#ifdef MSDOS
+  _fmode = O_BINARY;	/* all of files are treated as binary files */
+  (stdout)->_flag &= ~_IOTEXT;
+  _setmode (fileno (stdout), O_BINARY);
+#endif /* MSDOS */
   outfile = stdout;
 
   /* If first two args are -o FILE, output to FILE.  */
@@ -77,11 +93,11 @@ scan_file (filename)
 {
   int len = strlen (filename);
   if (!strcmp (filename + len - 4, ".elc"))
-    return scan_lisp_file (filename);
+    return scan_lisp_file (filename, READ_BINARY);
   else if (!strcmp (filename + len - 3, ".el"))
-    return scan_lisp_file (filename);
+    return scan_lisp_file (filename, READ_TEXT);
   else
-    return scan_c_file (filename);
+    return scan_c_file (filename, READ_TEXT);
 }
 
 char buf[128];
@@ -137,19 +153,23 @@ read_c_string (infile, printflag)
   return c;
 }
 
-/* Write to file OUT the argument names of the function whose text is in BUF.
+/* Write to file OUT the argument names of function FUNC, whose text is in BUF.
    MINARGS and MAXARGS are the minimum and maximum number of arguments.  */
 
-write_c_args (out, buf, minargs, maxargs)
+write_c_args (out, func, buf, minargs, maxargs)
      FILE *out;
-     char *buf;
+     char *func, *buf;
      int minargs, maxargs;
 {
   register char *p;
   int in_ident = 0;
   int just_spaced = 0;
+  int need_space = 1;
 
-  fprintf (out, "arguments: ");
+  fprintf (out, "(%s", func);
+
+  if (*buf == '(')
+    ++buf;
 
   for (p = buf; *p; p++)
     {
@@ -167,6 +187,9 @@ write_c_args (out, buf, minargs, maxargs)
 	    {
 	      in_ident = 1;
 	      ident_start = 1;
+
+	      if (need_space)
+		putc (' ', out);
 
 	      if (minargs == 0 && maxargs > 0)
 		fprintf (out, "&optional ");
@@ -200,9 +223,15 @@ write_c_args (out, buf, minargs, maxargs)
 	  just_spaced = 0;
 	}
       else if (c != ' ' || ! just_spaced)
-	putc (c, out);
+	{
+	  if (c >= 'a' && c <= 'z')
+	    /* Upcase the letter.  */
+	    c += 'A' - 'a';
+	  putc (c, out);
+	}
 
       just_spaced = (c == ' ');
+      need_space = 0;
     }
 }
 
@@ -211,8 +240,8 @@ write_c_args (out, buf, minargs, maxargs)
    Looks for DEFUN constructs such as are defined in ../src/lisp.h.
    Accepts any word starting DEF... so it finds DEFSIMPLE and DEFPRED.  */
 
-scan_c_file (filename)
-     char *filename;
+scan_c_file (filename, mode)
+     char *filename, *mode;
 {
   FILE *infile;
   register int c;
@@ -225,7 +254,7 @@ scan_c_file (filename)
   if (filename[strlen (filename) - 1] == 'o')
     filename[strlen (filename) - 1] = 'c';
 
-  infile = fopen (filename, "r");
+  infile = fopen (filename, mode);
 
   /* No error if non-ex input file */
   if (infile == NULL)
@@ -382,7 +411,7 @@ scan_c_file (filename)
 	      *p = '\0';
 	      /* Output them.  */
 	      fprintf (outfile, "\n\n");
-	      write_c_args (outfile, argbuf, minargs, maxargs);
+	      write_c_args (outfile, buf, argbuf, minargs, maxargs);
 	    }
 	}
     }
@@ -458,13 +487,13 @@ read_lisp_symbol (infile, buffer)
 }
 
 
-scan_lisp_file (filename)
-     char *filename;
+scan_lisp_file (filename, mode)
+     char *filename, *mode;
 {
   FILE *infile;
   register int c;
 
-  infile = fopen (filename, "r");
+  infile = fopen (filename, mode);
   if (infile == NULL)
     {
       perror (filename);
@@ -690,7 +719,6 @@ scan_lisp_file (filename)
 	 The opening quote (and leading backslash-newline) have already
 	 been read.
        */
-      putc ('\n', outfile);
       putc (037, outfile);
       putc (type, outfile);
       fprintf (outfile, "%s\n", buffer);

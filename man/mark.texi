@@ -36,7 +36,8 @@ mark in the @dfn{mark ring}.
 			  when there is one.
 * Using Region::	Summary of ways to operate on contents of the region.
 * Marking Objects::	Commands to put region around textual units.
-* Mark Ring::   Previous mark positions saved so you can go back there.
+* Mark Ring::   	Previous mark positions saved so you can go back there.
+* Global Mark Ring::    Previous mark positions in various buffers.
 @end menu
 
 @node Setting Mark
@@ -281,4 +282,23 @@ ring.
 marker objects in the order most recent first.  This variable is local
 in every buffer.
 
+@node Global Mark Ring
+@section The Global Mark Ring
+@cindex global mark ring
+
+  Each Emacs buffer has its own mark ring.  In addition, Emacs has a
+single @dfn{global mark ring}.
+
+  The global mark ring stores positions in various Emacs buffers.
+Setting the mark always makes an entry on the current buffer's mark
+ring.  If you have switched buffers since the previous mark setting, the
+new mark position makes an entry on the global mark ring also.  The
+result is that the global mark ring holds a sequence of buffers that you
+have been in, and for each buffer, it records a place where you set the
+mark.
+
+  The command @kbd{C-x C-@key{SPC}} (@code{pop-global-mark}) jumps to
+the buffer and position of the latest entry in the global ring.  It also
+rotates the ring, so that successive uses of @kbd{C-x C-@key{SPC}} take
+you to earlier and earlier buffers.
 

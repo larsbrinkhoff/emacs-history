@@ -1,8 +1,7 @@
 ;;; GNUS: an NNTP-based News Reader for GNU Emacs
-;; Copyright (C) 1987, 1988, 1989, 1990, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1987,88,89,90,93,94 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@mse.kyutech.ac.jp>
-;; Version: $Header: /home/fsf/rms/e19/lisp/RCS/gnus.el,v 1.30 1993/11/17 13:41:50 rms Exp $
 ;; Keywords: news
 
 ;; This file is part of GNU Emacs.
@@ -205,7 +204,7 @@ or your confirmations may be required.")
 
 (defvar gnus-user-login-name nil
   "*The login name of the user.
-Got from the USER and LOGNAME environment variable if undefined.")
+Got from the function `user-login-name' if undefined.")
 
 (defvar gnus-user-full-name nil
   "*The full name of the user.
@@ -823,6 +822,8 @@ the hash tables.")
 (put 'gnus-summary-mode 'mode-class 'special)
 (put 'gnus-article-mode 'mode-class 'special)
 
+(autoload 'gnus-uu-ctl-map "gnus-uu" nil nil 'keymap)
+(autoload 'gnus-uu-mark-article "gnus-uu" nil t)
 
 ;;(put 'gnus-eval-in-buffer-window 'lisp-indent-hook 1)
 
@@ -938,6 +939,8 @@ Optional argument HASHSIZE specifies the table size."
   (define-key gnus-group-mode-map "P" 'gnus-group-prev-group)
   (define-key gnus-group-mode-map "\C-n" 'gnus-group-next-group)
   (define-key gnus-group-mode-map "\C-p" 'gnus-group-prev-group)
+  (define-key gnus-group-mode-map [down] 'gnus-group-next-group)
+  (define-key gnus-group-mode-map [up] 'gnus-group-prev-group)
   (define-key gnus-group-mode-map "\r" 'next-line)
   ;;(define-key gnus-group-mode-map "/" 'isearch-forward)
   (define-key gnus-group-mode-map "<" 'beginning-of-buffer)
@@ -1561,7 +1564,9 @@ New newsgroup is added to .newsrc automatically."
 (defun gnus-group-list-all-groups ()
   "List all of newsgroups in the Newsgroup buffer."
   (interactive)
-  (gnus-group-list-groups t))
+  (message "Listing all groups...")
+  (gnus-group-list-groups t)
+  (message "Listing all groups...done"))
 
 (defun gnus-group-get-new-news ()
   "Get newly arrived articles. In fact, read the active file again."
@@ -1692,6 +1697,8 @@ The hook gnus-exit-gnus-hook is called before actually quitting."
     nil
   (setq gnus-summary-mode-map (make-keymap))
   (suppress-keymap gnus-summary-mode-map)
+  (define-key gnus-summary-mode-map "\C-c\C-v" 'gnus-uu-ctl-map)
+  (define-key gnus-summary-mode-map "#" 'gnus-uu-mark-article)
   (define-key gnus-summary-mode-map " " 'gnus-summary-next-page)
   (define-key gnus-summary-mode-map "\177" 'gnus-summary-prev-page)
   (define-key gnus-summary-mode-map "\r" 'gnus-summary-scroll-up)
@@ -1707,6 +1714,8 @@ The hook gnus-exit-gnus-hook is called before actually quitting."
   (define-key gnus-summary-mode-map "\C-c\C-p" 'gnus-summary-prev-digest)
   (define-key gnus-summary-mode-map "\C-n" 'gnus-summary-next-subject)
   (define-key gnus-summary-mode-map "\C-p" 'gnus-summary-prev-subject)
+  (define-key gnus-summary-mode-map [down] 'gnus-summary-next-subject)
+  (define-key gnus-summary-mode-map [up] 'gnus-summary-prev-subject)
   (define-key gnus-summary-mode-map "\en" 'gnus-summary-next-unread-subject)
   (define-key gnus-summary-mode-map "\ep" 'gnus-summary-prev-unread-subject)
   ;;(define-key gnus-summary-mode-map "\C-cn" 'gnus-summary-next-group)
@@ -2348,7 +2357,7 @@ the same subject will be searched for."
 	(regexp 
 	 (format "^%s[ \t]+\\([0-9]+\\):.\\[[^]\r\n]*\\][ \t]+%s"
 		 ;;(if unread " " ".")
-		 (cond ((eq unread t) " ") (unread "[ ---]") (t "."))
+		 (cond ((eq unread t) " ") (unread "[- ]") (t "."))
 		 (if subject
 		     (concat "\\([Rr][Ee]:[ \t]+\\)*"
 			     (regexp-quote (gnus-simplify-subject subject))
@@ -3316,7 +3325,7 @@ Argument COUNT specifies number of articles unmarked"
       (let ((buffer-read-only nil))
 	(save-excursion
 	  (goto-char (point-min))
-	  (delete-non-matching-lines "^[ ---]"))
+	  (delete-non-matching-lines "^[- ]"))
 	;; Adjust point.
 	(if (eobp)
 	    (gnus-summary-prev-subject 1)
@@ -4910,9 +4919,10 @@ If optional argument NEXT is non-nil, it is inserted before NEXT."
 (defun gnus-capitalize-newsgroup (newsgroup)
   "Capitalize NEWSGROUP name with treating '.' and '-' as part of words."
   ;; Suggested by "Jonathan I. Kamens" <jik@pit-manager.MIT.EDU>.
-  (let ((current-syntax-table (copy-syntax-table (syntax-table))))
+  (let ((current-syntax-table (syntax-table)))
     (unwind-protect
 	(progn
+	  (set-syntax-table (copy-syntax-table current-syntax-table))
 	  (modify-syntax-entry ?- "w")
 	  (modify-syntax-entry ?. "w")
 	  (capitalize newsgroup))
@@ -6632,7 +6642,7 @@ If optional argument RAWFILE is non-nil, the raw startup file is read."
     ;; Parse each newsgroup description such as "comp.all".  Commas
     ;; and white spaces can be a newsgroup separator.
     (while
-	(string-match "^[ \t\n,]*\\(!?\\)\\([^--- \t\n,][^ \t\n,]*\\)" options)
+	(string-match "^[ \t\n,]*\\(!?\\)\\([^- \t\n,][^ \t\n,]*\\)" options)
       (setq yes-or-no
 	    (substring options (match-beginning 1) (match-end 1)))
       (setq newsgroup

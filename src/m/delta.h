@@ -1,7 +1,7 @@
 /* Machine description file for the Motorola Delta.
    Tested on mvme147 board using R3V7 without X.  Tested with gcc.
    Tested on mvme167 board using R3V7 without X.  Tested with cc, gnucc, gcc.
-   Copyright (C) 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1986, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -135,36 +135,21 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define CLASH_DETECTION
 
-/* configure fails to find these two.  */
-
-#define HAVE_RANDOM
-#define HAVE_XSCREENNUMBEROFSCREEN
-
-/* pearce@ll.mit.edu says this is needed.  */
-
-#define BROKEN_FIONREAD
-
-/* No shared X library.  */
-
-#undef LIB_X11_LIB
-#define LIB_X11_LIB -lX11
-
-/* We have no 'pt' library as usg5-3.h expects.  */
-#undef LIBX11_SYSTEM
-#define LIBX11_SYSTEM -lnls -lnsl_s
-
-#undef USG_SHARED_LIBRARIES
-
 /* Machine specific stuff */
-
 #define HAVE_PTYS
 #define SYSV_PTYS
 #define HAVE_SELECT
-#define HAVE_SOCKETS		/***** only if NSE has been installed *****/
-#define HAVE_UNISTD_H
+#ifdef HAVE_INET_SOCKETS	/* this comes from autoconf  */
+# define HAVE_SOCKETS		/* NSE may or may not have been installed */
+#endif
 #define HAVE_TIMEVAL
 #define SIGNALS_VIA_CHARACTERS
-#define memmove safe_bcopy
+#define BROKEN_CLOSEDIR		/* builtin closedir is interruptible */
+#undef HAVE_BCOPY		/* b* functions are just stubs to mem* ones */
+#define bcopy(from,to,bytes)	memcpy(to,from,bytes)
+#define bzero(to,bytes)		memset(to,0,bytes)
+#define bcmp memcmp
+#define memmove safe_bcopy	/* for overlapping copies */
 #undef KERNEL_FILE
 #define KERNEL_FILE "/sysv68"
 #undef LDAV_SYMBOL
@@ -197,6 +182,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* X library is in 'nonstandard' location. */
 /* This should be taken care of by configure -pot@cnuce.cnr.it
 # define LD_SWITCH_MACHINE -L/usr/lib/X11/ */
+# define HAVE_RANDOM
+# define BROKEN_FIONREAD	/* pearce@ll.mit.edu says this is needed. */
+# define HAVE_XSCREENNUMBEROFSCREEN
+# undef LIB_X11_LIB		/* no shared libraries */
+# define LIB_X11_LIB -lX11
+# undef USG_SHARED_LIBRARIES    /* once again, no shared libs */
+# undef LIBX11_SYSTEM		/* no -lpt as usg5-3.h expects */
+# define LIBX11_SYSTEM -lnls -lnsl_s
 #endif /* HAVE_X_WINDOWS */
 
 #ifdef __GNUC__
@@ -213,9 +206,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 # ifdef __STDC__
  /* Compiling with gnucc (not through ccd).  This means -traditional is
-    not set.  Let us set it, because I didn't manage yet to make it
-    compile without -traditional. -pot@cnuce.cnr.it. */
-#  define C_SWITCH_MACHINE -traditional -mfp0ret -m68881 -Dconst=
+    not set.  Let us set it, because gmalloc.c includes <stddef.h>,
+    and we don't have that (as of SYSV68 R3V7).
+    Removing the -finline-functions option to gnucc causes an
+    executable emacs smaller by about 10%. */
+#  define C_SWITCH_MACHINE -mfp0ret -m68881 -traditional -Dconst= -fdelayed-branch -fstrength-reduce -finline-functions -fcaller-saves
 #  define LIB_GCC /lib/gnulib881
 # endif /* __STDC__ */
 
@@ -229,6 +224,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 		 the Green Hills compiler to create stack frames even for
 		 functions with few local variables. */
 #  define C_SWITCH_MACHINE -ga -O
+#  define GAP_USE_BCOPY		/* *++to = *++from  is inefficient */
+#  define BCOPY_UPWARD_SAFE 0
+#  define BCOPY_DOWNWARD_SAFE 1	/* bcopy does: mov.b (%a1)+,(%a0)+ */
 # else
  /* We are using the standard AT&T Portable C Compiler */
 #  define SWITCH_ENUM_BUG

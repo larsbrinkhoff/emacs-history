@@ -1,5 +1,5 @@
 /* "Face" primitives.
-   Copyright (C) 1993 Free Software Foundation.
+   Copyright (C) 1993, 1994 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -170,7 +170,7 @@ int region_face;
    does not specify that display aspect.  */
 #define FACE_DEFAULT (~0)
 
-Lisp_Object Qface, Qwindow, Qpriority;
+Lisp_Object Qface, Qmouse_face;
 
 static void build_face ( /* FRAME_PTR, struct face * */ );
 int face_name_id_number ( /* FRAME_PTR, Lisp_Object name */ );
@@ -481,6 +481,9 @@ init_frame_faces (f)
   ensure_face_ready (f, 0);
   ensure_face_ready (f, 1);
 
+  FRAME_N_COMPUTED_FACES (f) = 0;
+  FRAME_SIZE_COMPUTED_FACES (f) = 0;
+
   new_computed_face (f, FRAME_PARAM_FACES (f)[0]);
   new_computed_face (f, FRAME_PARAM_FACES (f)[1]);
   recompute_basic_faces (f);
@@ -569,11 +572,10 @@ new_computed_face (f, new_face)
       int new_size = i + 32;
 
       FRAME_COMPUTED_FACES (f)
-	= (struct face **)
-	  (FRAME_SIZE_COMPUTED_FACES (f) == 0
-	   ? xmalloc (new_size * sizeof (struct face *))
-	   : xrealloc (FRAME_COMPUTED_FACES (f),
-		       new_size * sizeof (struct face *)));
+	= (struct face **) (FRAME_SIZE_COMPUTED_FACES (f) == 0
+			    ? xmalloc (new_size * sizeof (struct face *))
+			    : xrealloc (FRAME_COMPUTED_FACES (f),
+					new_size * sizeof (struct face *)));
       FRAME_SIZE_COMPUTED_FACES (f) = new_size;
     }
 
@@ -634,10 +636,11 @@ ensure_face_ready (f, id)
     FRAME_PARAM_FACES (f) [id] = allocate_face ();
 }
 
-/* Computing faces appropriate for a given piece of text in a buffer.  */
-
-/* Return non-zero if FONT1 and FONT2 have the same size bounding box.
+/* Return non-zero if FONT1 and FONT2 have the same width.
+   We do not check the height, because we can now deal with
+   different heights.
    We assume that they're both character-cell fonts.  */
+
 int
 same_size_fonts (font1, font2)
      XFontStruct *font1, *font2;
@@ -646,24 +649,43 @@ same_size_fonts (font1, font2)
   XCharStruct *bounds2 = &font2->min_bounds;
 
   return (bounds1->width == bounds2->width);
-/* Checking the following caused bad results in some cases
-   when fonts that should be the same size
-   actually have very slightly different size.
-   It is possible that this reintroduces the bug whereby line positions
-   were not right.  However, the right way to fix that is to change xterm.c
-   so that the vertical positions of lines
-   depend only on the height of the frame's font.
-	  && bounds1->ascent == bounds2->ascent
-	  && bounds1->descent == bounds2->descent);  */
 }
 
+/* Update the line_height of frame F according to the biggest font in
+   any face.  Return nonzero if if line_height changes.  */
+
+int
+frame_update_line_height (f)
+     FRAME_PTR f;
+{
+  int i;
+  int biggest = FONT_HEIGHT (f->display.x->font);
+
+  for (i = 0; i < f->display.x->n_param_faces; i++)
+    if (f->display.x->param_faces[i] != 0
+	&& f->display.x->param_faces[i]->font != (XFontStruct *) FACE_DEFAULT)
+      {
+	int height = FONT_HEIGHT (f->display.x->param_faces[i]->font);
+	if (height > biggest)
+	  biggest = height;
+      }
+
+  if (biggest == f->display.x->line_height)
+    return 0;
+
+  f->display.x->line_height = biggest;
+  return 1;
+}
+
 /* Modify face TO by copying from FROM all properties which have
    nondefault settings.  */
+
 static void 
 merge_faces (from, to)
      struct face *from, *to;
 {
-  /* Only merge the font if it's the same size as the base font.  */
+  /* Only merge the font if it's the same width as the base font.
+     Otherwise ignore it, since we can't handle it properly.  */
   if (from->font != (XFontStruct *) FACE_DEFAULT
       && same_size_fonts (from->font, to->font))
     to->font = from->font;
@@ -679,6 +701,7 @@ merge_faces (from, to)
 
 /* Set up the basic set of facial parameters, based on the frame's
    data; all faces are deltas applied to this.  */
+
 static void
 compute_base_face (f, face)
      FRAME_PTR f;
@@ -697,27 +720,26 @@ compute_base_face (f, face)
   face->cached_index = -1;
 }
 
+/* Return the face ID to use to display a special glyph which selects
+   FACE_CODE as the face ID, assuming that ordinarily the face would
+   be CURRENT_FACE.  F is the frame.  */
 
-struct sortvec
+int
+compute_glyph_face (f, face_code, current_face)
+     struct frame *f;
+     int face_code, current_face;
 {
-  Lisp_Object overlay;
-  int beg, end;
-  int priority;
-};
+  struct face face;
 
-static int
-sort_overlays (s1, s2)
-     struct sortvec *s1, *s2;
-{
-  if (s1->priority != s2->priority)
-    return s1->priority - s2->priority;
-  if (s1->beg != s2->beg)
-    return s1->beg - s2->beg;
-  if (s1->end != s2->end)
-    return s2->end - s1->end;
-  return 0;
+  face = *FRAME_COMPUTED_FACES (f)[current_face];
+
+  if (face_code >= 0 && face_code < FRAME_N_PARAM_FACES (f)
+      && FRAME_PARAM_FACES (f) [face_code] != 0)
+    merge_faces (FRAME_PARAM_FACES (f) [face_code], &face);
+
+  return intern_computed_face (f, &face);
 }
-
+
 /* Return the face ID associated with a buffer position POS.
    Store into *ENDPTR the position at which a different face is needed.
    This does not take account of glyphs that specify their own face codes.
@@ -727,25 +749,28 @@ sort_overlays (s1, s2)
    REGION_BEG, REGION_END delimit the region, so it can be highlighted.
 
    LIMIT is a position not to scan beyond.  That is to limit
-   the time this function can take.  */
+   the time this function can take.
+
+   If MOUSE is nonzero, use the character's mouse-face, not its face.  */
 
 int
-compute_char_face (f, w, pos, region_beg, region_end, endptr, limit)
+compute_char_face (f, w, pos, region_beg, region_end, endptr, limit, mouse)
      struct frame *f;
      struct window *w;
      int pos;
      int region_beg, region_end;
      int *endptr;
      int limit;
+     int mouse;
 {
   struct face face;
   Lisp_Object prop, position;
   int i, j, noverlays;
   int facecode;
   Lisp_Object *overlay_vec;
-  struct sortvec *sortvec;
   Lisp_Object frame;
   int endpos;
+  Lisp_Object propname;
 
   /* W must display the current buffer.  We could write this function
      to use the frame and buffer of W, but right now it doesn't.  */
@@ -759,12 +784,19 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit)
     endpos = region_beg;
 
   XFASTINT (position) = pos;
-  prop = Fget_text_property (position, Qface, w->buffer);
+
+  if (mouse)
+    propname = Qmouse_face;
+  else
+    propname = Qface;
+
+  prop = Fget_text_property (position, propname, w->buffer);
+
   {
     Lisp_Object limit1, end;
 
     XFASTINT (limit1) = (limit < endpos ? limit : endpos);
-    end = Fnext_single_property_change (position, Qface, w->buffer, limit1);
+    end = Fnext_single_property_change (position, propname, w->buffer, limit1);
     if (INTEGERP (end))
       endpos = XINT (end);
   }
@@ -809,52 +841,12 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit)
 	merge_faces (FRAME_PARAM_FACES (f) [facecode], &face);
     }
 
-  /* Put the valid and relevant overlays into sortvec.  */
-  sortvec = (struct sortvec *) alloca (noverlays * sizeof (struct sortvec));
-
-  for (i = 0, j = 0; i < noverlays; i++)
-    {
-      Lisp_Object overlay = overlay_vec[i];
-
-      if (OVERLAY_VALID (overlay)
-	  && OVERLAY_POSITION (OVERLAY_START (overlay)) > 0
-	  && OVERLAY_POSITION (OVERLAY_END (overlay)) > 0)
-	{
-	  Lisp_Object window;
-	  window = Foverlay_get (overlay, Qwindow);
-
-	  /* Also ignore overlays limited to one window
-	     if it's not the window we are using.  */
-	  if (XTYPE (window) != Lisp_Window
-	      || XWINDOW (window) == w)
-	    {
-	      Lisp_Object tem;
-
-	      /* This overlay is good and counts:
-		 put it in sortvec.  */
-	      sortvec[j].overlay = overlay;
-	      sortvec[j].beg = OVERLAY_POSITION (OVERLAY_START (overlay));
-	      sortvec[j].end = OVERLAY_POSITION (OVERLAY_END (overlay));
-	      tem = Foverlay_get (overlay, Qpriority);
-	      if (INTEGERP (tem))
-		sortvec[j].priority = XINT (tem);
-	      else
-		sortvec[j].priority = 0;
-	      j++;
-	    }
-	}
-    }
-  noverlays = j;
-
-  /* Sort the overlays into the proper order: increasing priority.  */
-
-  if (noverlays > 1)
-    qsort (sortvec, noverlays, sizeof (struct sortvec), sort_overlays);
+  noverlays = sort_overlays (overlay_vec, noverlays, w);
 
   /* Now merge the overlay data in that order.  */
   for (i = 0; i < noverlays; i++)
     {
-      prop = Foverlay_get (sortvec[i].overlay, Qface);
+      prop = Foverlay_get (overlay_vec[i], propname);
       if (!NILP (prop))
 	{
 	  Lisp_Object oend;
@@ -863,9 +855,9 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit)
 	  facecode = face_name_id_number (f, prop);
 	  if (facecode >= 0 && facecode < FRAME_N_PARAM_FACES (f)
 	      && FRAME_PARAM_FACES (f) [facecode] != 0)
-	    merge_faces (FRAME_PARAM_FACES (f) [facecode], &face);
+	    merge_faces (FRAME_PARAM_FACES (f)[facecode], &face);
 
-	  oend = OVERLAY_END (sortvec[i].overlay);
+	  oend = OVERLAY_END (overlay_vec[i]);
 	  oendpos = OVERLAY_POSITION (oend);
 	  if (oendpos < endpos)
 	    endpos = oendpos;
@@ -877,37 +869,18 @@ compute_char_face (f, w, pos, region_beg, region_end, endptr, limit)
       if (region_end < endpos)
 	endpos = region_end;
       if (region_face >= 0 && region_face < next_face_id)
-	merge_faces (FRAME_PARAM_FACES (f) [region_face], &face);
+	merge_faces (FRAME_PARAM_FACES (f)[region_face], &face);
     }
 
   *endptr = endpos;
 
   return intern_computed_face (f, &face);
 }
-
-/* Return the face ID to use to display a special glyph which selects
-   FACE_CODE as the face ID, assuming that ordinarily the face would
-   be BASIC_FACE.  F is the frame.  */
-int
-compute_glyph_face (f, face_code)
-     struct frame *f;
-     int face_code;
-{
-  struct face face;
-
-  compute_base_face (f, &face);
-
-  if (face_code >= 0 && face_code < FRAME_N_PARAM_FACES (f)
-      && FRAME_PARAM_FACES (f) [face_code] != 0)
-    merge_faces (FRAME_PARAM_FACES (f) [face_code], &face);
-
-  return intern_computed_face (f, &face);
-}
-
-
+
 /* Recompute the GC's for the default and modeline faces.
    We call this after changing frame parameters on which those GC's
    depend.  */
+
 void
 recompute_basic_faces (f)
      FRAME_PTR f;
@@ -1013,6 +986,8 @@ DEFUN ("set-face-attribute-internal", Fset_face_attribute_internal,
       if (face->font != f->display.x->font)
 	unload_font (f, face->font);
       face->font = font;
+      if (frame_update_line_height (f))
+	x_set_window_size (f, 0, f->width, f->height);
     }
   else if (EQ (attr_name, intern ("foreground")))
     {
@@ -1098,12 +1073,10 @@ face_name_id_number (f, name)
 void
 syms_of_xfaces ()
 {
-  Qwindow = intern ("window");
-  staticpro (&Qwindow);
   Qface = intern ("face");
   staticpro (&Qface);
-  Qpriority = intern ("priority");
-  staticpro (&Qpriority);
+  Qmouse_face = intern ("mouse-face");
+  staticpro (&Qmouse_face);
 
   DEFVAR_INT ("region-face", &region_face,
     "Face number to use to highlight the region\n\

@@ -1,5 +1,5 @@
 /* GNU Emacs routines to deal with syntax tables; also word and list parsing.
-   Copyright (C) 1985, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -84,7 +84,7 @@ find_defun_start (pos)
     return find_start_value;
 
   /* Back up to start of line.  */
-  tem = scan_buffer ('\n', pos, -1, &shortage);
+  tem = scan_buffer ('\n', pos, -1, &shortage, 1);
 
   while (tem > BEGV)
     {
@@ -92,7 +92,7 @@ find_defun_start (pos)
       if (SYNTAX (FETCH_CHAR (tem)) == Sopen)
 	break;
       /* Move to beg of previous line.  */
-      tem = scan_buffer ('\n', tem, -2, &shortage);
+      tem = scan_buffer ('\n', tem, -2, &shortage, 1);
     }
 
   /* Record what we found, for the next try.  */
@@ -197,7 +197,7 @@ unsigned char syntax_spec_code[0400] =
     0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,
     0377, 0377, 0377, 0377,
 	(char) Scomment, 0377, (char) Sendcomment, 0377,
-    0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,   /* @, A, ... */
+    (char) Sinherit, 0377, 0377, 0377, 0377, 0377, 0377, 0377,   /* @, A ... */
     0377, 0377, 0377, 0377, 0377, 0377, 0377, 0377,
     0377, 0377, 0377, 0377, 0377, 0377, 0377, (char) Sword,
     0377, 0377, 0377, 0377, (char) Sescape, 0377, 0377, (char) Ssymbol,
@@ -209,9 +209,9 @@ unsigned char syntax_spec_code[0400] =
 
 /* Indexed by syntax code, give the letter that describes it. */
 
-char syntax_code_spec[13] =
+char syntax_code_spec[14] =
   {
-    ' ', '.', 'w', '_', '(', ')', '\'', '\"', '$', '\\', '/', '<', '>'
+    ' ', '.', 'w', '_', '(', ')', '\'', '\"', '$', '\\', '/', '<', '>', '@'
   };
 
 DEFUN ("char-syntax", Fchar_syntax, Schar_syntax, 1, 1, 0,
@@ -240,8 +240,9 @@ The first character of S should be one of the following:\n\
   (           open-parenthesis.     )   close-parenthesis.\n\
   \"           string quote.         \\   escape.\n\
   $           paired delimiter.     '   expression quote or prefix operator.\n\
-  <           comment starter.      >   comment ender.\n\                  
-  /           character-quote.\n\
+  <           comment starter.      >   comment ender.\n\
+  /           character-quote.      @   inherit from `standard-syntax-table'.\n\
+\n\
 Only single-character comment start and end sequences are represented thus.\n\
 Two-character sequences are represented as described below.\n\
 The second character of S is the matching parenthesis,\n\
@@ -255,8 +256,8 @@ Defined flags are the characters 1, 2, 3, 4, b, and p.\n\
 \n\
 There can be up to two orthogonal comment sequences. This is to support\n\
 language modes such as C++.  By default, all comment sequences are of style\n\
-a, but you can set the comment sequence style to b (on the second character of a\n\
-comment-start, or the first character of a comment-end sequence) by using\n\
+a, but you can set the comment sequence style to b (on the second character\n\
+of a comment-start, or the first character of a comment-end sequence) using\n\
 this flag:\n\
  b means C is part of comment sequence b.\n\
 \n\
@@ -419,6 +420,8 @@ describe_syntax (value)
       insert_string ("comment"); break;
     case Sendcomment:
       insert_string ("endcomment"); break;
+    case Sinherit:
+      insert_string ("inherit"); break;
     default:
       insert_string ("invalid");
       return;
@@ -596,8 +599,13 @@ between them, return t; otherwise return nil.")
   while (count1 > 0)
     {
       stop = ZV;
-      while (from < stop)
+      do
 	{
+	  if (from == stop)
+	    {
+	      SET_PT (from);
+	      return Qnil;
+	    }
 	  c = FETCH_CHAR (from);
 	  code = SYNTAX (c);
 	  from++;
@@ -614,45 +622,40 @@ between them, return t; otherwise return nil.")
 	      comstyle = SYNTAX_COMMENT_STYLE (FETCH_CHAR (from));
 	      from++;
 	    }
-
-	  if (code == Scomment)
-	    {
-	      while (1)
-		{
-		  if (from == stop)
-		    {
-		      immediate_quit = 0;
-		      SET_PT (from);
-		      return Qnil;
-		    }
-		  c = FETCH_CHAR (from);
-		  if (SYNTAX (c) == Sendcomment
-		      && SYNTAX_COMMENT_STYLE (c) == comstyle)
-		    /* we have encountered a comment end of the same style
-		       as the comment sequence which began this comment
-		       section */
-		    break;
-		  from++;
-		  if (from < stop && SYNTAX_COMEND_FIRST (c)
-		      && SYNTAX_COMEND_SECOND (FETCH_CHAR (from))
-		      && SYNTAX_COMMENT_STYLE (c) == comstyle)
-		    /* we have encountered a comment end of the same style
-		       as the comment sequence which began this comment
-		       section */
-		    { from++; break; }
-		}
-	      /* We have skipped one comment.  */
-	      break;
-	    }
-	  else if (code != Swhitespace && code != Sendcomment)
+	}
+      while (code == Swhitespace || code == Sendcomment);
+      if (code != Scomment)
+	{
+	  immediate_quit = 0;
+	  SET_PT (from - 1);
+	  return Qnil;
+	}
+      /* We're at the start of a comment.  */
+      while (1)
+	{
+	  if (from == stop)
 	    {
 	      immediate_quit = 0;
-	      SET_PT (from - 1);
+	      SET_PT (from);
 	      return Qnil;
 	    }
+	  c = FETCH_CHAR (from);
+	  if (SYNTAX (c) == Sendcomment
+	      && SYNTAX_COMMENT_STYLE (c) == comstyle)
+	    /* we have encountered a comment end of the same style
+	       as the comment sequence which began this comment
+	       section */
+	    break;
+	  from++;
+	  if (from < stop && SYNTAX_COMEND_FIRST (c)
+	      && SYNTAX_COMEND_SECOND (FETCH_CHAR (from))
+	      && SYNTAX_COMMENT_STYLE (c) == comstyle)
+	    /* we have encountered a comment end of the same style
+	       as the comment sequence which began this comment
+	       section */
+	    { from++; break; }
 	}
-
-      /* End of comment reached */
+      /* We have skipped one comment.  */
       count1--;
     }
 

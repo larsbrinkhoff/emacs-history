@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Files, Buffers, Fixit, Top
 @chapter File Handling
@@ -203,7 +203,7 @@ visit a directory.
   If you visit a file that the operating system won't let you modify,
 Emacs makes the buffer read-only, so that you won't go ahead and make
 changes that you'll have trouble saving afterward.  You can make the
-buffer writable with @kbd{C-x C-q} (@code{toggle-read-only}).
+buffer writable with @kbd{C-x C-q} (@code{vc-toggle-read-only}).
 @xref{Misc Buffer}.
 
 @kindex C-x C-r
@@ -502,6 +502,12 @@ value is @samp{nil} or @samp{existing}, then @code{version-control}
 becomes @code{nil}; if it is @samp{never} or @samp{simple}, then
 @code{version-control} becomes @code{never}.
 
+  For files under version control (@pxref{Version Control}), the
+variable @code{vc-make-backup-files} determines whether to make backup
+files.  By default, it is @code{nil}, since backup files are redundant
+when you store all the previous versions in a version control system.
+@xref{Editing with VC}.
+
 @node Backup Deletion
 @subsubsection Automatic Deletion of Backups
 
@@ -718,6 +724,13 @@ something different (the functions @code{make-auto-save-file-name} and
 @code{auto-save-file-name-p}).  The file name to be used for auto-saving
 in a buffer is calculated when auto-saving is turned on in that buffer.
 
+  When you delete a substantial part of the text in a large buffer, auto
+save turns off temporarily in that buffer.  This is so that if you
+delete text accidentally, it is likely to remain present in the auto
+save file.  To reenable auto-saving after this happens, simply save the
+file explicitly with @kbd{C-x C-s}.  Using @kbd{C-u 1 M-x
+auto-save-mode} also cancels this particular state.
+
 @vindex auto-save-visited-file-name
   If you want auto-saving to be done in the visited file, set the variable
 @code{auto-save-visited-file-name} to be non-@code{nil}.  In this mode,
@@ -903,6 +916,9 @@ the source file so that other people can lock it and thus modify it.
 can do both of them with a single Emacs command: @w{@kbd{C-x C-q}}
 (@code{vc-toggle-read-only}).
 
+  A @dfn{snapshot} is a coherent collection of versions of the various
+files that make up a program.  @xref{Snapshots}.
+
 @node Editing with VC
 @subsection Editing with Version Control
 
@@ -1001,8 +1017,8 @@ a change and then discover a trivial error in it; you can cancel the
 erroneous check-in, fix the error, and repeat the check-in.
 
   Be careful when invoking @kbd{C-x v c}, as it is easy to throw away a
-lot of work with it.  To help you be careful, this command always asks
-for confirmation with @samp{yes}.
+lot of work with it.  To help you be careful, this command always
+requires confirmation with @samp{yes}.
 
 @kindex C-x v i
 @findex vc-register
@@ -1370,14 +1386,17 @@ or a snapshot against a named version.
 @subsubsection Snapshot Caveats
 
 @cindex named configurations (RCS)
-VC's snapshot facilities are modeled on RCS's named-configuration
+  VC's snapshot facilities are modeled on RCS's named-configuration
 support.  They use RCS's native facilities for this, so under VC
 snapshots made using RCS are visible even when you bypass VC.
 
 @c worded verbosely to avoid overfull hbox.
-For SCCS, VC implements snapshots itself.  The files it uses contain
+  For SCCS, VC implements snapshots itself.  The files it uses contain
 name/file/version-number triples.  These snapshots are visible only
 through VC.
+
+  A snapshot is a set of checked-in versions.  So make sure that all the
+files are checked in and not locked when you make a snapshot.
 
   File renaming and deletion can create some difficulties with snapshots.
 This is not a VC-specific problem, but a general design issue in version

@@ -1,14 +1,14 @@
 ;;; find-dired.el --- run a `find' command and dired the output
 
-;;; Copyright (C) 1992 Free Software Foundation, Inc.
+;;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Roland McGrath <roland@gnu.ai.mit.edu>,
 ;;	   Sebastian Kremer <sk@thp.uni-koeln.de>
 ;; Maintainer: Sebastian Kremer <sk@thp.uni-koeln.de>
 ;; Keywords: unix
 
-(defconst find-dired-version (substring "$Revision: 1.13 $" 11 -2)
-  "$Id: find-dired.el,v 1.13 1993/05/28 00:58:08 roland Exp $")
+(defconst find-dired-version (substring "$Revision: 1.16 $" 11 -2)
+  "$Id: find-dired.el,v 1.16 1994/05/03 23:39:55 kwzh Exp $")
 
 ;;; This program is free software; you can redistribute it and/or modify
 ;;; it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 ;;    find-dired|Roland McGrath, Sebastian Kremer
 ;;    |roland@gnu.ai.mit.edu, sk@thp.uni-koeln.de
 ;;    |Run a `find' command and dired the output
-;;    |$Date: 1993/05/28 00:58:08 $|$Revision: 1.13 $|
+;;    |$Date: 1994/05/03 23:39:55 $|$Revision: 1.16 $|
 
 ;; INSTALLATION ======================================================
 
@@ -128,7 +128,7 @@ The command run (after changing into DIR) is
 		      (function find-dired-filter))
   (set-process-sentinel (get-buffer-process (current-buffer))
 			(function find-dired-sentinel))
-  (setq mode-line-process '(": %s")))
+  (setq mode-line-process '(":%s")))
 
 ;;;###autoload
 (defun find-name-dired (dir pattern)
@@ -206,7 +206,7 @@ Thus ARG can also contain additional grep options."
 	      (insert " at " (substring (current-time-string) 0 19))
 	      (forward-char 1)
 	      (setq mode-line-process
-		    (concat ": "
+		    (concat ":"
 			    (symbol-name (process-status proc))))
 	      ;; Since the buffer and mode line will show that the
 	      ;; process is dead, we can delete it now.  Otherwise it
@@ -229,7 +229,7 @@ BUFFER is the buffer or (buffer-name) to associate with the process.
  with any buffer
 Third arg is command name, the name of a shell command.
 Remaining arguments are the arguments for the command.
-Wildcards and redirection are handle as usual in the shell."
+Wildcards and redirection are handled as usual in the shell."
   (if (eq system-type 'vax-vms)
       (apply 'start-process name buffer args)
     (start-process name buffer shell-file-name "-c"

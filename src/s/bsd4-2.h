@@ -1,5 +1,5 @@
 /* Definitions file for GNU Emacs running on bsd 4.2
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -24,11 +24,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  */
 
 #ifndef BSD4_2
-#define BSD4_2
+#define BSD4_2 1
 #endif /* BSD4_2 */
 
 #ifndef BSD
-#define BSD
+#define BSD 42
 #endif /* BSD */
 
 /* SYSTEM_TYPE should indicate the kind of system you are using.
@@ -134,3 +134,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /* We do have vfork.  */
 
 #define HAVE_VFORK
+
+/* Process groups work in the traditional BSD manner.  */
+
+#define BSD_PGRPS

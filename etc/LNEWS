@@ -1,6 +1,10 @@
 This is Info file LNEWS, produced by Makeinfo-1.54 from the input file
 news.texi.
 
+This file describes the new Lisp features of Emacs version 19 as first
+released to the public.  For Lisp changes in subsequent Emacs 19
+releases, see the file NEWS.
+
 New Features in the Lisp Language
 =================================
 

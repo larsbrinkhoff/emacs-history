@@ -1,6 +1,6 @@
 ;;; novice.el --- handling of disabled commands ("novice mode") for Emacs.
 
-;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal, help
@@ -42,7 +42,10 @@
   (let (char)
     (save-window-excursion
      (with-output-to-temp-buffer "*Help*"
-       (if (= (aref (this-command-keys) 0) ?\M-x)
+       (if (eq (aref (this-command-keys) 0)
+	       (if (stringp (this-command-keys))
+		   (aref "\M-x" 0)
+		 ?\M-x))
 	   (princ "You have invoked the disabled command ")
 	 (princ "You have typed ")
 	 (princ (key-description (this-command-keys)))
@@ -76,7 +79,9 @@ N to do nothing (command remains disabled)."))
 	 (ding)
 	 (message "Please type y, n or Space: "))))
     (if (= char ?y)
-	(if (y-or-n-p "Enable command for future editing sessions also? ")
+	(if (and user-init-file
+		 (not (string= "" user-init-file))
+		 (y-or-n-p "Enable command for future editing sessions also? "))
 	    (enable-command this-command)
 	  (put this-command 'disabled nil)))
     (if (/= char ?n)
@@ -90,7 +95,8 @@ to future sessions."
   (interactive "CEnable command: ")
   (put command 'disabled nil)
   (save-excursion
-   (set-buffer (find-file-noselect (substitute-in-file-name "~/.emacs")))
+   (set-buffer (find-file-noselect
+		(substitute-in-file-name user-init-file)))
    (goto-char (point-min))
    (if (search-forward (concat "(put '" (symbol-name command) " ") nil t)
        (delete-region
@@ -107,9 +113,12 @@ to future sessions."
 The user's .emacs file is altered so that this will apply
 to future sessions."
   (interactive "CDisable command: ")
+  (if (not (commandp command))
+      (error "Invalid command name `%s'" command))
   (put command 'disabled t)
   (save-excursion
-   (set-buffer (find-file-noselect (substitute-in-file-name "~/.emacs")))
+   (set-buffer (find-file-noselect
+		(substitute-in-file-name user-init-file)))
    (goto-char (point-min))
    (if (search-forward (concat "(put '" (symbol-name command) " ") nil t)
        (delete-region

@@ -1,5 +1,5 @@
 /* systime.h - System-dependent definitions for time manipulations.
-   Copyright (C) 1993 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -86,11 +86,19 @@ extern long timezone;
 #define EMACS_SET_SECS(time, seconds)	    ((time).tv_sec  = (seconds))
 #define EMACS_SET_USECS(time, microseconds) ((time).tv_usec = (microseconds))
 
+/* On SVR4, the compiler may complain if given this extra BSD arg.  */
+#ifdef USG5_4
+#define EMACS_GET_TIME(time)                                  \
+{                                                             \
+  gettimeofday (&(time));                                     \
+}
+#else /* not USG5_4 */
 #define EMACS_GET_TIME(time)					\
 {								\
   struct timezone dummy;					\
   gettimeofday (&(time), &dummy);				\
 }
+#endif /* not USG5_4 */
 
 #define EMACS_ADD_TIME(dest, src1, src2)			\
 {								\
@@ -109,9 +117,9 @@ extern long timezone;
 }
 
 #define EMACS_TIME_NEG_P(time)					\
-  ((time).tv_sec < 0						\
+  ((long)(time).tv_sec < 0					\
    || ((time).tv_sec == 0					\
-       && (time).tv_usec < 0))
+       && (long)(time).tv_usec < 0))
 
 #else /* ! defined (HAVE_TIMEVAL) */
 

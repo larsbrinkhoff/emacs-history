@@ -1,5 +1,5 @@
 /* Generic frame functions.
-   Copyright (C) 1993 Free Software Foundation.
+   Copyright (C) 1993, 1994 Free Software Foundation.
 
 This file is part of GNU Emacs.
 
@@ -22,12 +22,12 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <config.h>
 #include "lisp.h"
 #include "frame.h"
+#include "termhooks.h"
+#include "window.h"
 
 #ifdef MULTI_FRAME
 
 #include "buffer.h"
-#include "window.h"
-#include "termhooks.h"
 
 /* These help us bind and responding to switch-frame events.  */
 #include "commands.h"
@@ -85,6 +85,7 @@ Lisp_Object Qunsplittable;
 Lisp_Object Qmenu_bar_lines;
 Lisp_Object Qwidth;
 Lisp_Object Qx;
+Lisp_Object Qvisible;
 
 extern Lisp_Object Vminibuffer_list;
 extern Lisp_Object get_minibuffer ();
@@ -166,6 +167,9 @@ make_frame (mini_p)
   f->scroll_bars = Qnil;
   f->condemned_scroll_bars = Qnil;
   f->face_alist = Qnil;
+  f->menu_bar_items = Qnil;
+  f->menu_bar_vector = Qnil;
+  f->menu_bar_items_used = 0;
 
   root_window = make_window ();
   if (mini_p)
@@ -230,8 +234,6 @@ make_frame (mini_p)
   /* Make sure this window seems more recently used than
      a newly-created, never-selected window.  */
   XFASTINT (XWINDOW (f->selected_window)->use_time) = ++window_select_count;
-
-  Vframe_list = Fcons (frame, Vframe_list);
 
   return f;
 }
@@ -316,9 +318,14 @@ struct frame *
 make_terminal_frame ()
 {
   register struct frame *f;
+  Lisp_Object frame;
 
   Vframe_list = Qnil;
   f = make_frame (1);
+
+  XSET (frame, Lisp_Frame, f);
+  Vframe_list = Fcons (frame, Vframe_list);
+
   f->name = build_string ("terminal");
   FRAME_SET_VISIBLE (f, 1);
   f->display.nothing = 1;   /* Nonzero means frame isn't deleted.  */
@@ -326,30 +333,10 @@ make_terminal_frame ()
   return f;
 }
 
-DEFUN ("select-frame", Fselect_frame, Sselect_frame, 1, 2, "e",
-  "Select the frame FRAME.\n\
-Subsequent editing commands apply to its selected window.\n\
-The selection of FRAME lasts until the next time the user does\n\
-something to select a different frame, or until the next time this\n\
-function is called.")
-  (frame, no_enter)
-    Lisp_Object frame, no_enter;
-{
-  return Fhandle_switch_frame (frame, no_enter);
-}
-
-
-DEFUN ("handle-switch-frame", Fhandle_switch_frame, Shandle_switch_frame, 1, 2, "e",
-  "Handle a switch-frame event EVENT.\n\
-Switch-frame events are usually bound to this function.\n\
-A switch-frame event tells Emacs that the window manager has requested\n\
-that the user's events be directed to the frame mentioned in the event.\n\
-This function selects the selected window of the frame of EVENT.\n\
-\n\
-If EVENT is frame object, handle it as if it were a switch-frame event\n\
-to that frame.")
-  (frame, no_enter)
+static Lisp_Object
+do_switch_frame (frame, no_enter, track)
      Lisp_Object frame, no_enter;
+     int track;
 {
   /* If FRAME is a switch-frame event, extract the frame we should
      switch to.  */
@@ -358,11 +345,19 @@ to that frame.")
       && CONSP (XCONS (frame)->cdr))
     frame = XCONS (XCONS (frame)->cdr)->car;
 
-  CHECK_LIVE_FRAME (frame, 0);
+  /* This used to say CHECK_LIVE_FRAME, but apparently it's possible for
+     a switch-frame event to arrive after a frame is no longer live,
+     especially when deleting the initial frame during startup.  */
+  CHECK_FRAME (frame, 0);
+  if (! FRAME_LIVE_P (XFRAME (frame)))
+    return Qnil;
 
   if (selected_frame == XFRAME (frame))
     return frame;
 
+  /* This is too greedy; it causes inappropriate focus redirection
+     that's hard to get rid of.  */
+#if 0
   /* If a frame's focus has been redirected toward the currently
      selected frame, we should change the redirection to point to the
      newly selected frame.  This means that if the focus is redirected
@@ -370,23 +365,41 @@ to that frame.")
      can use `other-window' to switch between all the frames using
      that minibuffer frame, and the focus redirection will follow us
      around.  */
-  {
-    Lisp_Object tail;
+  if (track)
+    {
+      Lisp_Object tail;
 
-    for (tail = Vframe_list; CONSP (tail); tail = XCONS (tail)->cdr)
-      {
-	Lisp_Object focus;
+      for (tail = Vframe_list; CONSP (tail); tail = XCONS (tail)->cdr)
+	{
+	  Lisp_Object focus;
 
-	if (XTYPE (XCONS (tail)->car) != Lisp_Frame)
-	  abort ();
+	  if (XTYPE (XCONS (tail)->car) != Lisp_Frame)
+	    abort ();
 
-	focus = FRAME_FOCUS_FRAME (XFRAME (XCONS (tail)->car));
+	  focus = FRAME_FOCUS_FRAME (XFRAME (XCONS (tail)->car));
 
-	if (XTYPE (focus) == Lisp_Frame
-	    && XFRAME (focus) == selected_frame)
-	  Fredirect_frame_focus (XCONS (tail)->car, frame);
-      }
-  }
+	  if (XTYPE (focus) == Lisp_Frame
+	      && XFRAME (focus) == selected_frame)
+	    Fredirect_frame_focus (XCONS (tail)->car, frame);
+	}
+    }
+#else /* ! 0 */
+  /* Instead, apply it only to the frame we're pointing to.  */
+#ifdef HAVE_X_WINDOWS
+  if (track)
+    {
+      Lisp_Object focus, xfocus;
+
+      xfocus = x_get_focus_frame ();
+      if (FRAMEP (xfocus))
+	{
+	  focus = FRAME_FOCUS_FRAME (XFRAME (xfocus));
+	  if (FRAMEP (focus) && XFRAME (focus) == selected_frame)
+	    Fredirect_frame_focus (xfocus, frame);
+	}
+    }
+#endif /* HAVE_X_WINDOWS */
+#endif /* ! 0 */
 
   selected_frame = XFRAME (frame);
   if (! FRAME_MINIBUF_ONLY_P (selected_frame))
@@ -406,6 +419,35 @@ to that frame.")
   return frame;
 }
 
+DEFUN ("select-frame", Fselect_frame, Sselect_frame, 1, 2, "e",
+  "Select the frame FRAME.\n\
+Subsequent editing commands apply to its selected window.\n\
+The selection of FRAME lasts until the next time the user does\n\
+something to select a different frame, or until the next time this\n\
+function is called.")
+  (frame, no_enter)
+    Lisp_Object frame, no_enter;
+{
+  return do_switch_frame (frame, no_enter, 1);
+}
+
+
+DEFUN ("handle-switch-frame", Fhandle_switch_frame, Shandle_switch_frame, 1, 2, "e",
+  "Handle a switch-frame event EVENT.\n\
+Switch-frame events are usually bound to this function.\n\
+A switch-frame event tells Emacs that the window manager has requested\n\
+that the user's events be directed to the frame mentioned in the event.\n\
+This function selects the selected window of the frame of EVENT.\n\
+\n\
+If EVENT is frame object, handle it as if it were a switch-frame event\n\
+to that frame.")
+  (frame, no_enter)
+     Lisp_Object frame, no_enter;
+{
+  return do_switch_frame (frame, no_enter, 0);
+}
+
+
 DEFUN ("selected-frame", Fselected_frame, Sselected_frame, 0, 0, 0,
   "Return the frame that is now selected.")
   ()
@@ -414,7 +456,7 @@ DEFUN ("selected-frame", Fselected_frame, Sselected_frame, 0, 0, 0,
   XSET (tem, Lisp_Frame, selected_frame);
   return tem;
 }
-
+
 DEFUN ("window-frame", Fwindow_frame, Swindow_frame, 1, 1, 0,
   "Return the frame object that window WINDOW is on.")
   (window)
@@ -422,6 +464,33 @@ DEFUN ("window-frame", Fwindow_frame, Swindow_frame, 1, 1, 0,
 {
   CHECK_LIVE_WINDOW (window, 0);
   return XWINDOW (window)->frame;
+}
+
+DEFUN ("frame-first-window", Fframe_first_window, Sframe_first_window, 0, 1, 0,
+  "Returns the topmost, leftmost window of FRAME.\n\
+If omitted, FRAME defaults to the currently selected frame.")
+  (frame)
+     Lisp_Object frame;
+{
+  Lisp_Object w;
+
+  if (NILP (frame))
+    w = selected_frame->root_window;
+  else
+    {
+      CHECK_LIVE_FRAME (frame, 0);
+      w = XFRAME (frame)->root_window;
+    }
+  while (NILP (XWINDOW (w)->buffer))
+    {
+      if (! NILP (XWINDOW (w)->hchild))
+	w = XWINDOW (w)->hchild;
+      else if (! NILP (XWINDOW (w)->vchild))
+	w = XWINDOW (w)->vchild;
+      else
+	abort ();
+    }
+  return w;
 }
 
 DEFUN ("frame-root-window", Fframe_root_window, Sframe_root_window, 0, 1, 0,
@@ -453,6 +522,30 @@ If omitted, FRAME defaults to the currently selected frame.")
   return XFRAME (frame)->selected_window;
 }
 
+DEFUN ("set-frame-selected-window", Fset_frame_selected_window,
+       Sset_frame_selected_window, 2, 2, 0,
+  "Set the selected window of frame object FRAME to WINDOW.\n\
+If FRAME is nil, the selected frame is used.\n\
+If FRAME is the selected frame, this makes WINDOW the selected window.")
+  (frame, window)
+     Lisp_Object frame, window;
+{
+  if (NILP (frame))
+    XSET (frame, Lisp_Frame, selected_frame);
+  else
+    CHECK_LIVE_FRAME (frame, 0);
+
+  CHECK_LIVE_WINDOW (window, 1);
+
+  if (! EQ (frame, WINDOW_FRAME (XWINDOW (window))))
+    error ("In `set-frame-selected-window', WINDOW is not on FRAME");
+
+  if (XFRAME (frame) == selected_frame)
+    return Fselect_window (window);
+
+  return XFRAME (frame)->selected_window = window;
+}
+
 DEFUN ("frame-list", Fframe_list, Sframe_list,
        0, 0, 0,
        "Return a list of all frames.")
@@ -465,7 +558,9 @@ DEFUN ("frame-list", Fframe_list, Sframe_list,
    If MINIBUF is nil, exclude minibuffer-only frames.
    If MINIBUF is a window, include only frames using that window for
    their minibuffer.
-   If MINIBUF is non-nil, and not a window, include all frames.  */
+   If MINIBUF is `visible', include all visible frames.
+   Otherwise, include all frames.  */
+
 Lisp_Object
 next_frame (frame, minibuf)
      Lisp_Object frame;
@@ -485,8 +580,9 @@ next_frame (frame, minibuf)
   while (1)
     for (tail = Vframe_list; CONSP (tail); tail = XCONS (tail)->cdr)
       {
-	Lisp_Object f = XCONS (tail)->car;
+	Lisp_Object f;
 
+	f = XCONS (tail)->car;
 	if (passed)
 	  {
 	    /* Decide whether this frame is eligible to be returned.  */
@@ -502,7 +598,13 @@ next_frame (frame, minibuf)
 		if (! FRAME_MINIBUF_ONLY_P (XFRAME (f)))
 		  return f;
 	      }
-	    else if (XTYPE (minibuf) == Lisp_Window)
+	    else if (EQ (minibuf, Qvisible))
+	      {
+		FRAME_SAMPLE_VISIBILITY (XFRAME (f));
+		if (FRAME_VISIBLE_P (XFRAME (f)))
+		  return f;
+	      }
+	    else if (WINDOWP (minibuf))
 	      {
 		if (EQ (FRAME_MINIBUF_WINDOW (XFRAME (f)), minibuf))
 		  return f;
@@ -520,7 +622,9 @@ next_frame (frame, minibuf)
    If MINIBUF is nil, exclude minibuffer-only frames.
    If MINIBUF is a window, include only frames using that window for
    their minibuffer.
-   If MINIBUF is non-nil and not a window, include all frames.  */
+   If MINIBUF is `visible', include all visible frames.
+   Otherwise, include all frames.  */
+
 Lisp_Object
 prev_frame (frame, minibuf)
      Lisp_Object frame;
@@ -536,8 +640,9 @@ prev_frame (frame, minibuf)
   prev = Qnil;
   for (tail = Vframe_list; CONSP (tail); tail = XCONS (tail)->cdr)
     {
-      Lisp_Object f = XCONS (tail)->car;
+      Lisp_Object f;
 
+      f = XCONS (tail)->car;
       if (XTYPE (f) != Lisp_Frame)
 	abort ();
 
@@ -554,6 +659,12 @@ prev_frame (frame, minibuf)
       else if (XTYPE (minibuf) == Lisp_Window)
 	{
 	  if (EQ (FRAME_MINIBUF_WINDOW (XFRAME (f)), minibuf))
+	    prev = f;
+	}
+      else if (EQ (minibuf, Qvisible))
+	{
+	  FRAME_SAMPLE_VISIBILITY (XFRAME (f));
+	  if (FRAME_VISIBLE_P (XFRAME (f)))
 	    prev = f;
 	}
       else
@@ -580,7 +691,8 @@ If omitted, FRAME defaults to the selected frame.\n\
 If optional argument MINIFRAME is nil, exclude minibuffer-only frames.\n\
 If MINIFRAME is a window, include only frames using that window for their\n\
 minibuffer.\n\
-If MINIFRAME is non-nil and not a window, include all frames.")
+If MINIFRAME is `visible', include all visible frames.\n\
+Otherwise, include all frames.")
   (frame, miniframe)
      Lisp_Object frame, miniframe;
 {
@@ -601,7 +713,8 @@ If omitted, FRAME defaults to the selected frame.\n\
 If optional argument MINIFRAME is nil, exclude minibuffer-only frames.\n\
 If MINIFRAME is a window, include only frames using that window for their\n\
 minibuffer.\n\
-If MINIFRAME is non-nil and not a window, include all frames.")
+If MINIFRAME is `visible', include all visible frames.\n\
+Otherwise, include all frames.")
   (frame, miniframe)
      Lisp_Object frame, miniframe;
 {
@@ -614,8 +727,52 @@ If MINIFRAME is non-nil and not a window, include all frames.")
 
   return prev_frame (frame, miniframe);
 }
-
 
+/* Return 1 if it is ok to delete frame F;
+   0 if all frames aside from F are invisible.
+   (Exception: if F is the terminal frame, and we are using X, return 1.)  */
+
+static int
+other_visible_frames (f)
+     FRAME_PTR f;
+{
+  /* We know the selected frame is visible,
+     so if F is some other frame, it can't be the sole visible one.  */
+  if (f == selected_frame)
+    {
+      Lisp_Object frames;
+      int count = 0;
+
+      for (frames = Vframe_list;
+	   CONSP (frames);
+	   frames = XCONS (frames)->cdr)
+	{
+	  Lisp_Object this;
+
+	  this = XCONS (frames)->car;
+	  /* Verify that the frame's window still exists
+	     and we can still talk to it.  And note any recent change
+	     in visibility.  */
+#ifdef HAVE_X_WINDOWS
+	  if (FRAME_X_P (XFRAME (this)))
+	    {
+	      x_sync (this);
+	      FRAME_SAMPLE_VISIBILITY (XFRAME (this));
+	    }
+#endif
+
+	  if (FRAME_VISIBLE_P (XFRAME (this))
+	      || FRAME_ICONIFIED_P (XFRAME (this))
+	      /* Allow deleting the terminal frame when at least
+		 one X frame exists!  */
+	      || (FRAME_X_P (XFRAME (this)) && !FRAME_X_P (f)))
+	    count++;
+	}
+      return count > 1;
+    }
+  return 1;
+}
+
 DEFUN ("delete-frame", Fdelete_frame, Sdelete_frame, 0, 2, "",
   "Delete FRAME, permanently eliminating it from use.\n\
 If omitted, FRAME defaults to the selected frame.\n\
@@ -641,29 +798,8 @@ but if the second optional argument FORCE is non-nil, you may do so.")
   if (! FRAME_LIVE_P (f))
     return Qnil;
 
-  /* If all other frames are invisible, refuse to delete.
-     (Exception: allow deleting the terminal frame when using X.)  */
-  if (f == selected_frame && NILP (force))
-    {
-      Lisp_Object frames;
-      int count = 0;
-
-      for (frames = Vframe_list;
-	   CONSP (frames);
-	   frames = XCONS (frames)->cdr)
-	{
-	  Lisp_Object this = XCONS (frames)->car;
-
-	  if (FRAME_VISIBLE_P (XFRAME (this))
-	      || FRAME_ICONIFIED_P (XFRAME (this))
-	      /* Allow deleting the terminal frame when at least
-		 one X frame exists!  */
-	      || (FRAME_X_P (XFRAME (this)) && !FRAME_X_P (f)))
-	    count++;
-	}
-      if (count == 1)
-	error ("Attempt to delete the only frame");
-    }
+  if (NILP (force) && !other_visible_frames (f))
+    error ("Attempt to delete the sole visible or iconified frame");
 
   /* Does this frame have a minibuffer, and is it the surrogate
      minibuffer for any other frame?  */
@@ -675,14 +811,13 @@ but if the second optional argument FORCE is non-nil, you may do so.")
 	   CONSP (frames);
 	   frames = XCONS (frames)->cdr)
 	{
-	  Lisp_Object this = XCONS (frames)->car;
+	  Lisp_Object this;
+	  this = XCONS (frames)->car;
 
 	  if (! EQ (this, frame)
 	      && EQ (frame,
-		     (WINDOW_FRAME
-		      (XWINDOW
-		       (FRAME_MINIBUF_WINDOW
-			(XFRAME (this)))))))
+		     WINDOW_FRAME (XWINDOW
+				   (FRAME_MINIBUF_WINDOW (XFRAME (this))))))
 	    error ("Attempt to delete a surrogate minibuffer frame");
 	}
     }
@@ -750,14 +885,16 @@ but if the second optional argument FORCE is non-nil, you may do so.")
       Lisp_Object frames;
 
       /* The last frame we saw with a minibuffer, minibuffer-only or not.  */
-      Lisp_Object frame_with_minibuf = Qnil;
+      Lisp_Object frame_with_minibuf;
 
+      frame_with_minibuf = Qnil;
       for (frames = Vframe_list;
 	   CONSP (frames);
 	   frames = XCONS (frames)->cdr)
 	{
-	  Lisp_Object this = XCONS (frames)->car;
+	  Lisp_Object this;
 
+	  this = XCONS (frames)->car;
 	  if (XTYPE (this) != Lisp_Frame)
 	    abort ();
 	  f = XFRAME (this);
@@ -800,6 +937,7 @@ and nil for X and Y.")
   Lisp_Object lispy_dummy;
   enum scroll_bar_part party_dummy;
   Lisp_Object x, y;
+  int col, row;
   unsigned long long_dummy;
 
   f = selected_frame;
@@ -811,14 +949,52 @@ and nil for X and Y.")
 			    &lispy_dummy, &party_dummy,
 			    &x, &y,
 			    &long_dummy);
+  if (! NILP (x))
+    {
+      col = XINT (x);
+      row = XINT (y);
+      pixel_to_glyph_coords (f, col, row, &col, &row, 0, 1);
+      XSETINT (x, col);
+      XSETINT (y, row);
+    }
+  XSET (lispy_dummy, Lisp_Frame, f);
+  return Fcons (lispy_dummy, Fcons (x, y));
+}
 
+DEFUN ("mouse-pixel-position", Fmouse_pixel_position,
+       Smouse_pixel_position, 0, 0, 0,
+  "Return a list (FRAME X . Y) giving the current mouse frame and position.\n\
+The position is given in pixel units, where (0, 0) is the\n\
+upper-left corner.\n\
+If Emacs is running on a mouseless terminal or hasn't been programmed\n\
+to read the mouse position, it returns the selected frame for FRAME\n\
+and nil for X and Y.")
+  ()
+{
+  FRAME_PTR f;
+  Lisp_Object lispy_dummy;
+  enum scroll_bar_part party_dummy;
+  Lisp_Object x, y;
+  int col, row;
+  unsigned long long_dummy;
+
+  f = selected_frame;
+  x = y = Qnil;
+
+  /* It's okay for the hook to refrain from storing anything.  */
+  if (mouse_position_hook)
+    (*mouse_position_hook) (&f,
+			    &lispy_dummy, &party_dummy,
+			    &x, &y,
+			    &long_dummy);
   XSET (lispy_dummy, Lisp_Frame, f);
   return Fcons (lispy_dummy, Fcons (x, y));
 }
 
 DEFUN ("set-mouse-position", Fset_mouse_position, Sset_mouse_position, 3, 3, 0,
   "Move the mouse pointer to the center of character cell (X,Y) in FRAME.\n\
-WARNING:  If you use this under X, you should do `unfocus-frame' afterwards.")
+WARNING:  If you use this under X windows,\n\
+you should call `unfocus-frame' afterwards.")
   (frame, x, y)
      Lisp_Object frame, x, y;
 {
@@ -831,6 +1007,28 @@ WARNING:  If you use this under X, you should do `unfocus-frame' afterwards.")
   if (FRAME_X_P (XFRAME (frame)))
     /* Warping the mouse will cause  enternotify and focus events. */
     x_set_mouse_position (XFRAME (frame), x, y);
+#endif
+
+  return Qnil;
+}
+
+DEFUN ("set-mouse-pixel-position", Fset_mouse_pixel_position,
+       Sset_mouse_pixel_position, 3, 3, 0,
+  "Move the mouse pointer to pixel position (X,Y) in FRAME.\n\
+WARNING:  If you use this under X windows,\n\
+you should call `unfocus-frame' afterwards.")
+  (frame, x, y)
+     Lisp_Object frame, x, y;
+{
+  CHECK_LIVE_FRAME (frame, 0);
+  CHECK_NUMBER (x, 2);
+  CHECK_NUMBER (y, 1);
+
+  /* I think this should be done with a hook.  */
+#ifdef HAVE_X_WINDOWS
+  if (FRAME_X_P (XFRAME (frame)))
+    /* Warping the mouse will cause  enternotify and focus events. */
+    x_set_mouse_pixel_position (XFRAME (frame), x, y);
 #endif
 
   return Qnil;
@@ -861,16 +1059,21 @@ If omitted, FRAME defaults to the currently selected frame.")
 }
 
 DEFUN ("make-frame-invisible", Fmake_frame_invisible, Smake_frame_invisible,
-       0, 1, "",
+       0, 2, "",
   "Make the frame FRAME invisible (assuming it is an X-window).\n\
-If omitted, FRAME defaults to the currently selected frame.")
-  (frame)
-     Lisp_Object frame;
+If omitted, FRAME defaults to the currently selected frame.\n\
+Normally you may not make FRAME invisible if all other frames are invisible,\n\
+but if the second optional argument FORCE is non-nil, you may do so.")
+  (frame, force)
+     Lisp_Object frame, force;
 {
   if (NILP (frame))
     XSET (frame, Lisp_Frame, selected_frame);
 
   CHECK_LIVE_FRAME (frame, 0);
+
+  if (NILP (force) && !other_visible_frames (XFRAME (frame)))
+    error ("Attempt to make invisible the sole visible or iconified frame");
 
   /* Don't let the frame remain selected.  */
   if (XFRAME (frame) == selected_frame)
@@ -936,6 +1139,8 @@ Return the symbol `icon' if frame is visible only as an icon.")
      Lisp_Object frame;
 {
   CHECK_LIVE_FRAME (frame, 0);
+
+  FRAME_SAMPLE_VISIBILITY (XFRAME (frame));
 
   if (FRAME_VISIBLE_P (XFRAME (frame)))
     return Qt;
@@ -1132,7 +1337,7 @@ If FRAME is omitted, return information on the currently selected frame.")
      Lisp_Object frame;
 {
   Lisp_Object alist;
-  struct frame *f;
+  FRAME_PTR f;
 
   if (EQ (frame, Qnil))
     f = selected_frame;
@@ -1142,19 +1347,19 @@ If FRAME is omitted, return information on the currently selected frame.")
       f = XFRAME (frame);
     }
 
-  if (f->display.nothing == 0)
+  if (!FRAME_LIVE_P (f))
     return Qnil;
 
   alist = Fcopy_alist (f->param_alist);
   store_in_alist (&alist, Qname, f->name);
-  store_in_alist (&alist, Qheight, make_number (f->height));
-  store_in_alist (&alist, Qwidth, make_number (f->width));
-  store_in_alist (&alist, Qmodeline, (f->wants_modeline ? Qt : Qnil));
+  store_in_alist (&alist, Qheight, make_number (FRAME_HEIGHT (f)));
+  store_in_alist (&alist, Qwidth, make_number (FRAME_WIDTH (f)));
+  store_in_alist (&alist, Qmodeline, (FRAME_WANTS_MODELINE_P (f) ? Qt : Qnil));
   store_in_alist (&alist, Qminibuffer,
 		  (! FRAME_HAS_MINIBUF_P (f) ? Qnil
-		   : (FRAME_MINIBUF_ONLY_P (f) ? Qonly
-                   : FRAME_MINIBUF_WINDOW (f))));
-  store_in_alist (&alist, Qunsplittable, (f->no_split ? Qt : Qnil));
+		   : FRAME_MINIBUF_ONLY_P (f) ? Qonly
+		   : FRAME_MINIBUF_WINDOW (f)));
+  store_in_alist (&alist, Qunsplittable, (FRAME_NO_SPLIT_P (f) ? Qt : Qnil));
   store_in_alist (&alist, Qmenu_bar_lines, (FRAME_MENU_BAR_LINES (f)));
 
   /* I think this should be done with a hook.  */
@@ -1335,7 +1540,7 @@ but that the idea of the actual height of the frame should not be changed.")
   if (FRAME_X_P (f))
     {
       if (XINT (rows) != f->width)
-	x_set_window_size (f, f->width, XINT (rows));
+	x_set_window_size (f, 1, f->width, XINT (rows));
     }
   else
 #endif
@@ -1365,7 +1570,7 @@ but that the idea of the actual width of the frame should not be changed.")
   if (FRAME_X_P (f))
     {
       if (XINT (cols) != f->width)
-	x_set_window_size (f, XINT (cols), f->height);
+	x_set_window_size (f, 1, XINT (cols), f->height);
     }
   else
 #endif
@@ -1391,7 +1596,7 @@ DEFUN ("set-frame-size", Fset_frame_size, Sset_frame_size, 3, 3, 0,
   if (FRAME_X_P (f))
     {
       if (XINT (rows) != f->height || XINT (cols) != f->width)
-	x_set_window_size (f, XINT (cols), XINT (rows));
+	x_set_window_size (f, 1, XINT (cols), XINT (rows));
     }
   else
 #endif
@@ -1420,7 +1625,7 @@ the rightmost or bottommost possible position (that stays within the screen).")
   /* I think this should be done with a hook.  */
 #ifdef HAVE_X_WINDOWS
   if (FRAME_X_P (f))
-    x_set_offset (f, XINT (xoffset), XINT (yoffset));
+    x_set_offset (f, XINT (xoffset), XINT (yoffset), 1);
 #endif
 
   return Qt;
@@ -1468,12 +1673,14 @@ syms_of_frame ()
   staticpro (&Qonly);
   Qunsplittable = intern ("unsplittable");
   staticpro (&Qunsplittable);
+  Qmenu_bar_lines = intern ("menu-bar-lines");
+  staticpro (&Qmenu_bar_lines);
   Qwidth = intern ("width");
   staticpro (&Qwidth);
   Qx = intern ("x");
   staticpro (&Qx);
-  Qmenu_bar_lines = intern ("menu-bar-lines");
-  staticpro (&Qmenu_bar_lines);
+  Qvisible = intern ("visible");
+  staticpro (&Qvisible);
 
   staticpro (&Vframe_list);
 
@@ -1517,12 +1724,15 @@ For values specific to the separate minibuffer frame, see\n\
   defsubr (&Swindow_frame);
   defsubr (&Sframe_root_window);
   defsubr (&Sframe_selected_window);
+  defsubr (&Sset_frame_selected_window);
   defsubr (&Sframe_list);
   defsubr (&Snext_frame);
   defsubr (&Sprevious_frame);
   defsubr (&Sdelete_frame);
   defsubr (&Smouse_position);
+  defsubr (&Smouse_pixel_position);
   defsubr (&Sset_mouse_position);
+  defsubr (&Sset_mouse_pixel_position);
 #if 0
   defsubr (&Sframe_configuration);
   defsubr (&Srestore_frame_configuration);
@@ -1558,11 +1768,23 @@ keys_of_frame ()
 /* If we're not using multi-frame stuff, we still need to provide some
    support functions.  */
 
+Lisp_Object Qheight;
+Lisp_Object Qminibuffer;
+Lisp_Object Qmodeline;
+Lisp_Object Qname;
+Lisp_Object Qunsplittable;
+Lisp_Object Qmenu_bar_lines;
+Lisp_Object Qwidth;
+
+Lisp_Object Vterminal_frame;
+
 /* Unless this function is defined, providing set-frame-height and
    set-frame-width doesn't help compatibility any, since they both
    want this as their first argument.  */
 DEFUN ("selected-frame", Fselected_frame, Sselected_frame, 0, 0, 0,
-  "Return the frame that is now selected.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   ()
 {
   Lisp_Object tem;
@@ -1570,10 +1792,9 @@ DEFUN ("selected-frame", Fselected_frame, Sselected_frame, 0, 0, 0,
   return tem;
 }
 DEFUN ("framep", Fframep, Sframep, 1, 1, 0,
-  "Return non-nil if OBJECT is a frame.\n\
-Value is t for a termcap frame (a character-only terminal),\n\
-`x' for an Emacs frame that is really an X window.\n\
-Also see `live-frame-p'.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (object)
      Lisp_Object object;
 {
@@ -1581,9 +1802,9 @@ Also see `live-frame-p'.")
 }
 
 DEFUN ("set-frame-height", Fset_frame_height, Sset_frame_height, 2, 3, 0,
-  "Specify that the frame FRAME has LINES lines.\n\
-Optional third arg non-nil means that redisplay should use LINES lines\n\
-but that the idea of the actual height of the frame should not be changed.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame, rows, pretend)
      Lisp_Object frame, rows, pretend;
 {
@@ -1594,9 +1815,9 @@ but that the idea of the actual height of the frame should not be changed.")
 }
 
 DEFUN ("set-frame-width", Fset_frame_width, Sset_frame_width, 2, 3, 0,
-  "Specify that the frame FRAME has COLS columns.\n\
-Optional third arg non-nil means that redisplay should use COLS columns\n\
-but that the idea of the actual width of the frame should not be changed.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame, cols, pretend)
      Lisp_Object frame, cols, pretend;
 {
@@ -1607,7 +1828,9 @@ but that the idea of the actual width of the frame should not be changed.")
 }
 
 DEFUN ("set-frame-size", Fset_frame_size, Sset_frame_size, 3, 3, 0,
-  "Sets size of FRAME to COLS by ROWS, measured in characters.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame, cols, rows)
      Lisp_Object frame, cols, rows;
 {
@@ -1618,7 +1841,7 @@ DEFUN ("set-frame-size", Fset_frame_size, Sset_frame_size, 3, 3, 0,
 
   return Qnil;
 }
-
+
 DEFUN ("frame-height", Fframe_height, Sframe_height, 0, 1, 0,
   "Return number of lines available for display on FRAME.\n\
 If FRAME is omitted, describe the currently selected frame.")
@@ -1639,9 +1862,9 @@ If FRAME is omitted, describe the currently selected frame.")
 
 DEFUN ("frame-char-height", Fframe_char_height, Sframe_char_height,
   0, 1, 0,
-  "Height in pixels of a line in the font in frame FRAME.\n\
-If FRAME is omitted, the selected frame is used.\n\
-For a terminal frame, the value is always 1.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame)
      Lisp_Object frame;
 {
@@ -1651,11 +1874,9 @@ For a terminal frame, the value is always 1.")
 
 DEFUN ("frame-char-width", Fframe_char_width, Sframe_char_width,
   0, 1, 0,
-  "Width in pixels of characters in the font in frame FRAME.\n\
-If FRAME is omitted, the selected frame is used.\n\
-The width is the same for all characters, because\n\
-currently Emacs supports only fixed-width fonts.\n\
-For a terminal screen, the value is always 1.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame)
      Lisp_Object frame;
 {
@@ -1664,9 +1885,9 @@ For a terminal screen, the value is always 1.")
 
 DEFUN ("frame-pixel-height", Fframe_pixel_height, 
        Sframe_pixel_height, 0, 1, 0,
-  "Return FRAME's height in pixels.\n\
-For a terminal frame, the result really gives the height in characters.\n\
-If FRAME is omitted, the selected frame is used.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame)
      Lisp_Object frame;
 {
@@ -1675,9 +1896,9 @@ If FRAME is omitted, the selected frame is used.")
 
 DEFUN ("frame-pixel-width", Fframe_pixel_width, 
        Sframe_pixel_width, 0, 1, 0,
-  "Return FRAME's width in pixels.\n\
-For a terminal frame, the result really gives the width in characters.\n\
-If FRAME is omitted, the selected frame is used.")
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
   (frame)
      Lisp_Object frame;
 {
@@ -1712,8 +1933,104 @@ but that the idea of the actual width of the screen should not be changed.")
   return Qnil;
 }
 
+DEFUN ("mouse-position", Fmouse_position, Smouse_position, 0, 0, 0,
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
+  ()
+{
+  return Fcons (Qnil, Fcons (Qnil, Qnil));
+}
+
+void
+store_in_alist (alistptr, prop, val)
+     Lisp_Object *alistptr, val;
+     Lisp_Object prop;
+{
+  register Lisp_Object tem;
+
+  tem = Fassq (prop, *alistptr);
+  if (EQ (tem, Qnil))
+    *alistptr = Fcons (Fcons (prop, val), *alistptr);
+  else
+    Fsetcdr (tem, val);
+}
+
+DEFUN ("frame-parameters", Fframe_parameters, Sframe_parameters, 0, 1, 0,
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
+  (frame)
+     Lisp_Object frame;
+{
+  Lisp_Object alist;
+  FRAME_PTR f;
+
+  if (EQ (frame, Qnil))
+    f = selected_frame;
+  else
+    {
+      CHECK_FRAME (frame, 0);
+      f = XFRAME (frame);
+    }
+
+  if (!FRAME_LIVE_P (f))
+    return Qnil;
+
+  alist = Qnil;
+  store_in_alist (&alist, Qname, build_string ("emacs"));
+  store_in_alist (&alist, Qheight, make_number (FRAME_HEIGHT (f)));
+  store_in_alist (&alist, Qwidth, make_number (FRAME_WIDTH (f)));
+  store_in_alist (&alist, Qmodeline, (FRAME_WANTS_MODELINE_P (f) ? Qt : Qnil));
+  store_in_alist (&alist, Qminibuffer, FRAME_MINIBUF_WINDOW (f));
+  store_in_alist (&alist, Qunsplittable, (FRAME_NO_SPLIT_P (f) ? Qt : Qnil));
+  store_in_alist (&alist, Qmenu_bar_lines, (FRAME_MENU_BAR_LINES (f)));
+
+  return alist;
+}
+
+DEFUN ("modify-frame-parameters", Fmodify_frame_parameters, 
+       Smodify_frame_parameters, 2, 2, 0,
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
+  (frame, alist)
+     Lisp_Object frame, alist;
+{
+  return Qnil;
+}
+
+DEFUN ("frame-live-p", Fframe_live_p, Sframe_live_p, 1, 1, 0,
+  /* Don't confuse make-docfile by having two doc strings for this function.
+     make-docfile does not pay attention to #if, for good reason!  */
+  0)
+  (frame)
+     Lisp_Object frame;
+{
+  return Qt;
+}
+
 syms_of_frame ()
 {
+  Qheight = intern ("height");
+  staticpro (&Qheight);
+  Qminibuffer = intern ("minibuffer");
+  staticpro (&Qminibuffer);
+  Qmodeline = intern ("modeline");
+  staticpro (&Qmodeline);
+  Qname = intern ("name");
+  staticpro (&Qname);
+  Qunsplittable = intern ("unsplittable");
+  staticpro (&Qunsplittable);
+  Qmenu_bar_lines = intern ("menu-bar-lines");
+  staticpro (&Qmenu_bar_lines);
+  Qwidth = intern ("width");
+  staticpro (&Qwidth);
+
+  DEFVAR_LISP ("terminal-frame", &Vterminal_frame,
+    "The initial frame-object, which represents Emacs's stdout.");
+  XFASTINT (Vterminal_frame) = 0;
+
   defsubr (&Sselected_frame);
   defsubr (&Sframep);
   defsubr (&Sframe_char_height);
@@ -1729,6 +2046,10 @@ syms_of_frame ()
   Ffset (intern ("screen-height"), intern ("frame-height"));
   defsubr (&Sframe_width);
   Ffset (intern ("screen-width"), intern ("frame-width"));
+  defsubr (&Smouse_position);
+  defsubr (&Sframe_parameters);
+  defsubr (&Smodify_frame_parameters);
+  defsubr (&Sframe_live_p);
 }
 
 keys_of_frame ()
@@ -1736,7 +2057,3 @@ keys_of_frame ()
 }
 
 #endif /* not MULTI_FRAME */
-
-
-
-

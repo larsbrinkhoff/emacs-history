@@ -4,45 +4,56 @@
   ----------------------------------------     ---------- -------- ----------
 * indicates New or Substantially Updated items.
 
-* Source Code CD-ROM v. 2, if a corporation	  Y49,000 ________ __________
+* Compiler Tools Binaries CD-ROM version 1, if a  Y36,000 ________ __________
+  corporation or other organization is ultimately
+  paying.
+
+* Compiler Tools Binaries CD-ROM version 1, if an  Y9,000 ________ __________
+  individual is ultimately paying.
+
+* Source Code CD-ROM version 3, if a corporation  Y49,000 ________ __________
   or other organization is ultimately paying.
 
-* Source Code CD-ROM v. 2, if an individual	  Y15,000 ________ __________
+* Source Code CD-ROM version 3, if an individual  Y15,000 ________ __________
   is ultimately paying.
 
+* Subscription to next four versions of the	 Y180,000 ________ __________
+  Source Code CD-ROMs.	(There is no subscription
+  yet to the Compiler Tools Binaries CD-ROM.)
+
 * Source Code on Tape				  Y34,500 ________ __________
-  (per tape; see bulletin of file etc/ORDERS in
-   the GNU Emacs distribution for more details)
+  (per tape; see the next page for more details.)
 
 * Emacs manual, with reference card		   Y4,600 ________ __________
-  (Eighth Edition for v. 19)
+  (Ninth Edition for version 19)
 
-  Emacs Lisp Reference manual (Ed. 1.05)	   Y8,850 ________ __________
+* Emacs Lisp Reference manual (Ed. 2.1 for v. 19)  Y8,900 ________ __________
 
   Emacs Calc manual, with reference card	   Y9,300 ________ __________
-  (v. 2.02)
+  (Edition 2.02 for version 2.02)
 
-  Using and Porting GNU CC version 2.4		   Y8,850 ________ __________
+  Using and Porting GNU CC manual		   Y8,900 ________ __________
+  (June 93 Edition for version 2.4)
 
-  Using and Porting GNU CC version 1.42		   Y3,900 ________ __________
+  GNU C Library Reference manual		   Y9,300 ________ __________
+  (June 93 Edition for version 1.07)
 
-* GNU C Library Reference manual		   Y9,300 ________ __________
+* Debugging with GDB manual, with reference card   Y3,900 ________ __________
+  (Edition 4.09 for version 4.9)
 
-  Debugging with GDB, with reference card	   Y3,900 ________ __________
-  (Ed. 4.03 for v. 4.3)
+* Texinfo manual (Edition 2.16 for version 3)	   Y3,500 ________ __________
 
-  Texinfo manual (Ed. 2.16)			   Y3,450 ________ __________
+  Termcap manual (Second edition for version 1.2)  Y2,700 ________ __________
 
-  Termcap manual (Second edition)		   Y2,700 ________ __________
+  Bison manual, with reference card		   Y2,700 ________ __________
+  (December 1993 Edition for Version 1.23)
 
-  Bison manual, with reference card (v. 1.20)	   Y2,700 ________ __________
+  Gawk manual (Edition 0.16 for version 2.16)	   Y3,500 ________ __________
 
-  Gawk manual (Ed. 0.13 for v. 2.13)		   Y3,450 ________ __________
-
-  Make manual (Ed. 0.40 for v. 3.63)		   Y3,450 ________ __________
+  Make manual (Edition 0.43 for version 3.69)	   Y3,500 ________ __________
 
   Flex manual, with reference card		   Y2,700 ________ __________
-  (Ed. 1.02 for v. 2.3)
+  (Edition 1.03 for version 2.3.7)
 
   Packet of ten Emacs reference cards		   Y1,500 ________ __________
 
@@ -54,16 +65,16 @@
 
   Packet of ten Flex reference cards		   Y1,500 ________ __________
 
-  FSF T-shirt (size M)				   Y5,500 ________ __________
+* FSF T-shirt (size M)				   Y5,500 ________ __________
   Color:  Natural or Black  (circle)
 
-  FSF T-shirt (size L)				   Y5,500 ________ __________
+* FSF T-shirt (size L)				   Y5,500 ________ __________
   Color:  Natural or Black  (circle)
 
-  FSF T-shirt (size XL)				   Y5,500 ________ __________
+* FSF T-shirt (size XL)				   Y5,500 ________ __________
   Color:  Natural or Black  (circle)
 
-  FSF T-shirt (size XXL)			   Y5,500 ________ __________
+* FSF T-shirt (size XXL)			   Y5,500 ________ __________
   Color:  Natural or Black  (circle)
 
   Shipping							       Y1,500
@@ -98,9 +109,11 @@ with your order.
 
   ____ I am interested in working as a volunteer for the FSF.
 
-  Prices and contents may change without notice after January 31, 1994.
+  Prices and contents may change without notice after June 30, 1994.
 
-  Fax toll-free to 0066-3382-0158 or 0031-13-2473.  For use in Japan only.
+  Version: Jan 1994 ASCII etc/ORDERS.JAPAN
+
+  Fax toll-free to 0031-13-2473 or 0066-3382-0158.  For use in Japan only.
 
 			 Free Software Foundation
 			 675 Massachusetts Avenue
@@ -111,52 +124,53 @@ with your order.
 
 		  GNU ORDER FORM ADDITIONAL INSTRUCTIONS
 
-Within Japan, you may fax your order toll-free to 0066-3382-0158.  If you
-are able to pay for international direct dial, please fax your order
-directly to 001-1-617-492-9057.	 This will save the FSF the toll charges.
-Orders may also be sent by e-mail to japan-fsf-orders@prep.ai.mit.edu
-or by ordinary mail to:
+Within Japan, you may fax your order toll-free to 0031-13-2473 or to
+0066-3382-0158.	 If you are able to pay for international direct dial, please
+fax your order directly to 001-1-617-492-9057.	This will save the FSF the
+toll charges.  Inquires may be made to gnu@prep.ai.mit.edu.  Orders may also
+be sent by e-mail to japan-fsf-orders@prep.ai.mit.edu or by ordinary mail to:
 
     Free Software Foundation
     675 Massachusetts Avenue
     Cambridge, MA  02139
     U.S.A.
 
-All orders must be prepaid.  Payment may be made by bank transfer to the
-following account:
+Orders may be prepaid either by credit card or by bank transfer.  The credit
+cards we accept are JCB, Visa, MasterCard, Diner's Club, and Carte Blanche.
+Bank transfer payments should be made to the following account:
 
     Bank:	      Sanwa Bank
     Branch:	      Azabu Branch (#620)
     Account name:     Free Software Foundation
     Account number:   3683216
 
-Prices and contents may change without notice after January 31, 1994.  All
+Prices and contents may change without notice after June 30, 1994.  All
 software and publications are distributed with permission to copy and to
-redistribute.  Texinfo source for each manual is on the Source Code
-CD-ROM and/or on the appropriate tape.
+redistribute.  Texinfo source for each manual is on the Source Code CD-ROM
+and/or on the appropriate tape.
 
-The minimum order amount (before postage) is Y5,000.  The FSF regrets
-that it cannot fill orders for smaller amounts.	 Please contact the FSF
-directly by telephone at 001-1-617-876-3296 or by fax at
-001-1-617-492-9057 prior to placing any orders for greater than Y500,000.
+The minimum order amount (before postage) is Y5,000.  The FSF regrets that it
+cannot fill orders for smaller amounts.	 Please contact the FSF directly by
+telephone at 001-1-617-876-3296 or by fax at 001-1-617-492-9057 prior to
+placing any orders for greater than Y500,000.
 
-The FSF offers a deluxe package to Japanese corporations which consists
-of source code in your preferred format, a complete set of custom
-binaries for your preferred architecture and operating system, and a
-complete documentation set with reference cards.  Purchasers of the
-corporate deluxe package will also receive invitations to future private
-presentations conducted by Richard Stallman in Japan.  The price for the
-corporate deluxe package is Y1,000,000.	 For more information, contact
-the FSF directly.
+The FSF offers a deluxe package to Japanese corporations which consists of
+source code in your preferred format, a complete set of custom binaries for
+your preferred architecture and operating system, and a complete documentation
+set with reference cards.  Purchasers of the corporate deluxe package will
+also receive invitations to future private presentations conducted by Richard
+Stallman in Japan.  The price for the corporate deluxe package is Y1,000,000.
+For more information, contact the FSF directly.
 
-Software may also be ordered on magnetic tape.	The following tape titles
-are available: Emacs, Languages, Experimental, Utilities, BSD NET2,
-Scheme, X11R5-Required, and X11R5-Optional.  The following tape formats
-are available:
+Software may also be ordered on magnetic tape.	The following tape titles are
+available: Emacs, Languages, Utilities, BSD NET2, Scheme, X11R5-Required, and
+X11R5-Optional.	 The following tape formats are available:
 
     Generic Unix tar 9-track 1600bpi 1/2" reel
 
-    Generix Unix tar Exabyte 8mm cartridge tape
+*   Generic Unix tar DAT 4mm cartridge tape
+
+    Generic Unix tar Exabyte 8mm cartridge tape
 
     Sun Unix tar QIC-24 DC300XLP 1/4" cartridge tape
     (may also be read on other systems)
@@ -170,12 +184,11 @@ are available:
     VMS backup 9-track 1600bpi 1/2" reel
     (only two titles:  GNU Emacs and GCC/GAS/Bison)
 
-Please indicate your desired tape titles and formats on a separate sheet
-of paper and fax that along with your order.  If you need information
-regarding which programs are on which tapes, please consult the June
-1993 GNU Bulletin or a recent copy of the file etc/ORDERS in the GNU Emacs
-distribution.  If you do not have a copy of the GNU Bulletin, please
-contact the FSF.
+Please indicate your desired tape titles and formats on a separate sheet of
+paper and fax that along with your order.  If you need information regarding
+which programs are on which tapes, please consult the Japanese edition of the
+January 1994 GNU Bulletin.  If you do not have a copy of the Japanese edition
+of the GNU Bulletin, please contact the FSF.
 
 For T-shirt orders, please circle desired color.
 
@@ -185,7 +198,7 @@ speaking engagements.
 
 All sales are final.
 
-Prices and contents may change without notice after January 31, 1994.
+Prices and contents may change without notice after June 30, 1994.
 
 		       Please do not fax this page.
 

@@ -1,6 +1,6 @@
 ;;; terminal.el --- terminal emulator for GNU Emacs.
 
-;; Copyright (C) 1986, 1987, 1988, 1989, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1986,87,88,89,93,94 Free Software Foundation, Inc.
 
 ;; Author: Richard Mlynarik <mly@eddie.mit.edu>
 ;; Maintainer: FSF
@@ -202,7 +202,7 @@ Other chars following \"%s\" are interpreted as follows:\n"
 	 (princ (substitute-command-keys "\\{terminal-escape-map}\n"))
 	 (princ (format "\nSubcommands of \"%s\" (%s)\n"
 			(where-is-internal 'te-escape-extended-command
-					   terminal-escape-map nil t)
+					   terminal-escape-map t)
 			'te-escape-extended-command))
 	 (let ((l (if (fboundp 'sortcar)
 		      (sortcar (copy-sequence te-escape-command-alist)
@@ -377,7 +377,7 @@ allowing the next page of output to appear"
       (princ "Terminal-emulator more break.\n\n")
       (princ (format "Type \"%s\" (te-more-break-resume)\n%s\n"
 		     (where-is-internal 'te-more-break-resume
-					terminal-more-break-map nil t)
+					terminal-more-break-map t)
 		     (documentation 'te-more-break-resume)))
       (princ (substitute-command-keys "\\{terminal-more-break-map}\n"))
       (princ "Any other key is passed through to the program
@@ -484,7 +484,7 @@ lets you type a terminal emulator command."
 (defun terminal-edit-mode ()
   "Major mode for editing the contents of a terminal-emulator buffer.
 The editing commands are the same as in Fundamental mode,
-together with a command \\<terminal-edit-mode-map>to return to terminal emulation: \\[terminal-cease-edit]."
+together with a command \\<terminal-edit-map>to return to terminal emulation: \\[terminal-cease-edit]."
   (use-local-map terminal-edit-map)
   (setq major-mode 'terminal-edit-mode)
   (setq mode-name "Terminal Edit")
@@ -540,9 +540,10 @@ together with a command \\<terminal-edit-mode-map>to return to terminal emulatio
       (setq te-more-count -1)))
 
   (setq mode-line-modified (default-value 'mode-line-modified))
+  (use-local-map terminal-map)
   (setq major-mode 'terminal-mode)
   (setq mode-name "terminal")
-  (setq mode-line-process '(": %s")))
+  (setq mode-line-process '(":%s")))
 
 ;;;; more break hair
 
@@ -1122,10 +1123,6 @@ work with `terminfo' we will try to use it."
 	  (setq te-process
 		(start-process "terminal-emulator" (current-buffer)
 			       "/bin/sh" "-c"
-			       ;; Yuck!!! Start a shell to set some terminal
-			       ;; control characteristics.  Then start the
-			       ;; "env" program to setup the terminal type
-			       ;; Then finally start the program we wanted.
 			       (format "%s; exec %s"
 				       te-stty-string
 				       (mapconcat 'te-quote-arg-for-sh
@@ -1140,18 +1137,16 @@ work with `terminfo' we will try to use it."
   (message "Entering emacs terminal-emulator...  Type %s %s for help"
 	   (single-key-description terminal-escape-char)
 	   (mapconcat 'single-key-description
-		      (where-is-internal 'te-escape-help
-					 terminal-escape-map
-					 nil t)
+		      (where-is-internal 'te-escape-help terminal-escape-map t)
 		      " ")))
 
 
 (defun te-parse-program-and-args (s)
-  (cond ((string-match "\\`\\([a-zA-Z0-9-+=_.@/:]+[ \t]*\\)+\\'" s)
+  (cond ((string-match "\\`\\([-a-zA-Z0-9+=_.@/:]+[ \t]*\\)+\\'" s)
 	 (let ((l ()) (p 0))
 	   (while p
 	     (setq l (cons (if (string-match
-				"\\([a-zA-Z0-9-+=_.@/:]+\\)\\([ \t]+\\)*"
+				"\\([-a-zA-Z0-9+=_.@/:]+\\)\\([ \t]+\\)*"
 				s p)
 			       (prog1 (substring s p (match-end 1))
 				 (setq p (match-end 0))
@@ -1178,7 +1173,7 @@ of the terminal-emulator"
   (setq mode-name "terminal")
 ; (make-local-variable 'Helper-return-blurb)
 ; (setq Helper-return-blurb "return to terminal simulator")
-  (setq mode-line-process '(": %s"))
+  (setq mode-line-process '(":%s"))
   (setq buffer-read-only t)
   (setq truncate-lines t)
   (make-local-variable 'terminal-escape-char)
@@ -1213,7 +1208,7 @@ of the terminal-emulator"
 ;;;; what a complete loss
 
 (defun te-quote-arg-for-sh (string)
-  (cond ((string-match "\\`[a-zA-Z0-9-+=_.@/:]+\\'"
+  (cond ((string-match "\\`[-a-zA-Z0-9+=_.@/:]+\\'"
 		       string)
 	 string)
 	((not (string-match "[$]" string))

@@ -1,5 +1,5 @@
 /* Lisp object printing and output streams.
-   Copyright (C) 1985, 1986, 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1988, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -169,7 +169,7 @@ glyph_to_str_cpy (glyphs, str)
 
 #define PRINTCHAR(ch) printchar (ch, printcharfun)
 
-/* Index of first unused element of FRAME_MESSAGE_BUF(selected_frame). */
+/* Index of first unused element of FRAME_MESSAGE_BUF(mini_frame). */
 static int printbufidx;
 
 static void
@@ -193,6 +193,9 @@ printchar (ch, fun)
 
   if (EQ (fun, Qt))
     {
+      FRAME_PTR mini_frame
+	= XFRAME (WINDOW_FRAME (XWINDOW (minibuf_window)));
+
       if (noninteractive)
 	{
 	  putchar (ch);
@@ -200,17 +203,19 @@ printchar (ch, fun)
 	  return;
 	}
 
-      if (echo_area_glyphs != FRAME_MESSAGE_BUF (selected_frame)
+      if (echo_area_glyphs != FRAME_MESSAGE_BUF (mini_frame)
 	  || !message_buf_print)
 	{
-	  echo_area_glyphs = FRAME_MESSAGE_BUF (selected_frame);
+	  echo_area_glyphs = FRAME_MESSAGE_BUF (mini_frame);
 	  printbufidx = 0;
+	  echo_area_glyphs_length = 0;
 	  message_buf_print = 1;
 	}
 
-      if (printbufidx < FRAME_WIDTH (selected_frame) - 1)
-	FRAME_MESSAGE_BUF (selected_frame)[printbufidx++] = ch;
-      FRAME_MESSAGE_BUF (selected_frame)[printbufidx] = 0;
+      if (printbufidx < FRAME_WIDTH (mini_frame) - 1)
+	FRAME_MESSAGE_BUF (mini_frame)[printbufidx++] = ch;
+      FRAME_MESSAGE_BUF (mini_frame)[printbufidx] = 0;
+      echo_area_glyphs_length = printbufidx;
 
       return;
     }
@@ -239,6 +244,9 @@ strout (ptr, size, printcharfun)
     }
   if (EQ (printcharfun, Qt))
     {
+      FRAME_PTR mini_frame
+	= XFRAME (WINDOW_FRAME (XWINDOW (minibuf_window)));
+
       i = size >= 0 ? size : strlen (ptr);
 #ifdef MAX_PRINT_CHARS
       if (max_print)
@@ -252,19 +260,21 @@ strout (ptr, size, printcharfun)
 	  return;
 	}
 
-      if (echo_area_glyphs != FRAME_MESSAGE_BUF (selected_frame)
+      if (echo_area_glyphs != FRAME_MESSAGE_BUF (mini_frame)
 	  || !message_buf_print)
 	{
-	  echo_area_glyphs = FRAME_MESSAGE_BUF (selected_frame);
+	  echo_area_glyphs = FRAME_MESSAGE_BUF (mini_frame);
 	  printbufidx = 0;
+	  echo_area_glyphs_length = 0;
 	  message_buf_print = 1;
 	}
 
-      if (i > FRAME_WIDTH (selected_frame) - printbufidx - 1)
-	i = FRAME_WIDTH (selected_frame) - printbufidx - 1;
-      bcopy (ptr, &FRAME_MESSAGE_BUF (selected_frame) [printbufidx], i);
+      if (i > FRAME_WIDTH (mini_frame) - printbufidx - 1)
+	i = FRAME_WIDTH (mini_frame) - printbufidx - 1;
+      bcopy (ptr, &FRAME_MESSAGE_BUF (mini_frame) [printbufidx], i);
       printbufidx += i;
-      FRAME_MESSAGE_BUF (selected_frame) [printbufidx] = 0;
+      echo_area_glyphs_length = printbufidx;
+      FRAME_MESSAGE_BUF (mini_frame) [printbufidx] = 0;
 
       return;
     }
@@ -301,8 +311,8 @@ print_string (string, printcharfun)
 }
 
 DEFUN ("write-char", Fwrite_char, Swrite_char, 1, 2, 0,
-  "Output character CHAR to stream STREAM.\n\
-STREAM defaults to the value of `standard-output' (which see).")
+  "Output character CHAR to stream PRINTCHARFUN.\n\
+PRINTCHARFUN defaults to the value of `standard-output' (which see).")
   (ch, printcharfun)
      Lisp_Object ch, printcharfun;
 {
@@ -438,8 +448,8 @@ to get the buffer displayed.  It gets one argument, the buffer to display.")
 static void print ();
 
 DEFUN ("terpri", Fterpri, Sterpri, 0, 1, 0,
-  "Output a newline to STREAM.\n\
-If STREAM is omitted or nil, the value of `standard-output' is used.")
+  "Output a newline to stream PRINTCHARFUN.\n\
+If PRINTCHARFUN is omitted or nil, the value of `standard-output' is used.")
   (printcharfun)
      Lisp_Object printcharfun;
 {
@@ -460,7 +470,7 @@ DEFUN ("prin1", Fprin1, Sprin1, 1, 2, 0,
   "Output the printed representation of OBJECT, any Lisp object.\n\
 Quoting characters are printed when needed to make output that `read'\n\
 can handle, whenever this is possible.\n\
-Output stream is STREAM, or value of `standard-output' (which see).")
+Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
@@ -519,7 +529,7 @@ DEFUN ("princ", Fprinc, Sprinc, 1, 2, 0,
   "Output the printed representation of OBJECT, any Lisp object.\n\
 No quoting characters are used; no delimiters are printed around\n\
 the contents of strings.\n\
-Output stream is STREAM, or value of standard-output (which see).")
+Output stream is PRINTCHARFUN, or value of standard-output (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
@@ -541,7 +551,7 @@ DEFUN ("print", Fprint, Sprint, 1, 2, 0,
   "Output the printed representation of OBJECT, with newlines around it.\n\
 Quoting characters are printed when needed to make output that `read'\n\
 can handle, whenever this is possible.\n\
-Output stream is STREAM, or value of `standard-output' (which see).")
+Output stream is PRINTCHARFUN, or value of `standard-output' (which see).")
   (obj, printcharfun)
      Lisp_Object obj, printcharfun;
 {
@@ -587,6 +597,15 @@ to make it write to the debugging output.\n")
   putc (XINT (character), stderr);
   
   return character;
+}
+
+/* This is the interface for debugging printing.  */
+
+void
+debug_print (arg)
+     Lisp_Object arg;
+{
+  Fprin1 (arg, Qexternal_debugging_output);
 }
 
 #ifdef LISP_FLOAT_TYPE
@@ -782,6 +801,11 @@ print (obj, printcharfun, escapeflag)
 		{
 		  PRINTCHAR ('\\');
 		  PRINTCHAR ('n');
+		}
+	      else if (c == '\f' && print_escape_newlines)
+		{
+		  PRINTCHAR ('\\');
+		  PRINTCHAR ('f');
 		}
 	      else
 		{
@@ -1059,7 +1083,8 @@ A value of nil means no limit.");
   Vprint_level = Qnil;
 
   DEFVAR_BOOL ("print-escape-newlines", &print_escape_newlines,
-    "Non-nil means print newlines in strings as backslash-n.");
+    "Non-nil means print newlines in strings as backslash-n.\n\
+Also print formfeeds as backslash-f.");
   print_escape_newlines = 0;
 
   /* prin1_to_string_buffer initialized in init_buffer_once in buffer.c */

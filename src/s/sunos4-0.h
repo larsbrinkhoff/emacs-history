@@ -5,6 +5,9 @@
 #define O_NDELAY        FNDELAY /* Non-blocking I/O (4.2 style) */
 #endif
 
+/* We use the Sun syntax -Bstatic unconditionally, because even when we
+   use GCC, these are passed through to the linker, not handled by GCC
+   directly.  */
 #define LD_SWITCH_SYSTEM -e __start -Bstatic
 
 /* In SunOS 4.1, a static function called by tzsetwall reportedly
@@ -12,3 +15,10 @@
    GNU malloc's memory pool.  But Sun's malloc doesn't seem to mind. */
 
 #define SYSTEM_MALLOC
+
+#ifdef __GNUC__
+/* We must define mkdir with this arg prototype
+   to match GCC's fixed stat.h.  */
+#define MKDIR_PROTOTYPE \
+  int mkdir (const char *dpath, unsigned short dmode)
+#endif /* __GNUC__ */

@@ -2,406 +2,2149 @@ The actual order form follows the descriptions of media contents
 
 Please send suggestions for improvements to gnu@prep.ai.mit.edu or the postal
 address at the end of the order form.  Thank You.
-
-Contents of CD-ROM, Deluxe Distribution, and Each Tape on the FSF Order Form
-****************************************************************************
 
-      PRICE AND CONTENTS MAY CHANGE WITHOUT NOTICE AFTER January 31, 1994.
+Most of this file is excerpted from the January 1994 GNU's Bulletin.
 
-GNU Source Code CD-ROM
-
-The 2nd edition of the GNU Source Code CD-ROM contains sources to the
-distribution of the GNU Project including: Emacs 18 and 19, GCC, G++, GDB,
-Bison, GAS, Make, GAWK, Texinfo, the GNU Utilities, RCS and CVS, f2c,
-Ghostscript, tar, gnuplot, diff, and BASH, as well as the MIT X Window
-System required components.
-
-This CD includes everything on our Emacs, Languages, Utilities, Experimental,
-and X11 Required tapes as of May 1993.	Note that the contents of the
-BSD-Net2, X11 Optional and MIT Scheme tapes are not on the CD.
-
-The CD also contains some packages ported to Intel 80386 and 80486-based
-machines running MS-DOS: Demacs, DJGPP, and MIT Scheme.	 In addition, it
-contains Mtools, which is a public domain collection of programs to allow Unix
-systems to read, write, and manipulate files on an MS-DOS file system
-(typically a diskette).
-
-The CD is in ISO 9660 format with Rockridge extensions, and can be mounted as
-a read-only file system on most operating systems.  You can build most of this
-software without needing to copy the sources off the CD.  It requires only
-enough free disk space for the object files and the intermediate build
-targets.  Except for several of the MS-DOS packages and GCC for Sun's Solaris
-2, there are no precompiled programs on this CD.  You will need a C compiler
-(programs which need some other interpreter or compiler normally provide the C
-source for a bootstrapping program).
+---------------------------------------------------------------------
 
 
-Deluxe Distribution
+FSF Order Form with Descriptions			January, 1994
 
-The Deluxe Distribution Package includes executables and source for all GNU
-software in a choice of formats, as well as a printed copy of each of GNU
-manuals and an ISO 9660 CD-ROM that contains sources of GNU software.
-
-You may choose one of the following machines and operating systems: HP 9000
-series 200, 300, 700, or 800 (4.3 BSD or HPUX); RS/6000 (AIX); Sony NEWS 68k
-(4.3 BSD or NewsOS 4); Sun 3, 4, or SPARC (SunOS 4 or Solaris).	 If your
-machine or system is not listed, or if a specific program has not been ported
-to that machine, please call the FSF office.
-
-We will supply the software on one of the following media in Unix tar format:
-1600 or 6250 bpi, 1/2 inch, reel to reel tape; Sun DC300XLP 1/4 inch
-cartridge, QIC-24; HP 16 track DC600HC 1/4 inch cartridge; IBM RS/6000 1/4
-inch cartridge, QIC-150; and Exabyte 8mm tape.	If your computer cannot read
-any of these, please call us.
-
-The manuals included are one each of the Bison, Calc, Gawk, GNU C Compiler,
-GNU C Library Reference, GNU Debugger, Flex, GNU Emacs Lisp Reference, Make,
-Texinfo, and Termcap manuals; six copies of the GNU Emacs manual; and a packet
-of reference cards for GNU Emacs, Calc, the GNU Debugger, Bison, and Flex.
+Free Software Foundation, Inc.		      Telephone: +1-617-876-3296
+675 Massachusetts Avenue		      FAX: +1-617-492-9057
+Cambridge, MA	02139-3309		      FAX (in Japan):
+USA						  0031-13-2473 (KDD)
+Electronic mail: `gnu@prep.ai.mit.edu'		  0066-3382-0158 (IDC)
 
 
-GNU Emacs Tape
+Contents
+--------
 
-The tape includes source code for:
-* GNU Emacs 18 and 19 (the extensible, customizable, self-documenting,
-  real-time display editor)
-* The GNU Emacs Manual, as Texinfo source
-* The GNU Emacs Lisp Reference Manual, as Texinfo source
-* Calc (the extensible, advanced desk calculator and mathematical tool that
-  runs as part of GNU Emacs)
-* The Calc Manual, as Texinfo source
-* CLISP (a Common Lisp implementation)
-* Xerox's PCL (a large subset of CLOS, the Common Lisp Object System)
-* gzip (GNU's data compression program to uncompress source on the tape)
-* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
-  documentation system, included with GNU Emacs.  Texinfo is used to produce
-  both on-line and printed documents.)
-* The Texinfo Manual, as Texinfo source
-* GNU make
-* The GNU Make Manual, as Texinfo source
-
-
-GNU Languages Tape
-
-The tape includes source code for:
-* GCC 1 (the GNU C Compiler, including COFF support)
-* The Manual `Using and Porting GNU CC 1', as Texinfo source
-* G++ 1 (the C++ front end to GCC)
-* The GNU G++ Users Guide, as Texinfo source (not yet published on paper)
-* libg++ 1 (the G++ class library)
-* NIH Class Library (formerly known as OOPS)
-* BFD (Binary File Descriptor Library)
-* GDB 4 (The GNU source-level C and C++ debugger)
-* The manual, Debugging with GDB, as Texinfo source
-* ae (works with GCC to produce more complete profiling information)
-* GNU binary file utilities (ar, gprof, ld, nm, ranlib, size, & strip)
-* Bison (a free, compatible replacement for yacc)
-* The Bison Manual, as Texinfo source
-* COFF support for GNU software tools
-* DejaGnu (a framework for testing other programs)
-* expect (runs scripts to conduct dialogs with programs)
-* tcl (an embeddable tool command language)
-* dld (a dynamic linker)
-* f2c  (a FORTRAN-77 to C translator)
-* Flex (Vern Paxson's fast rewrite of lex)
-* The Flex Manual, as Texinfo source
-* Gas (the GNU Assembler)
-* Gawk (the GNU implementation of the AWK programming language)
-* The Gawk Manual, as Texinfo source
-* gdbm library (GNU implementation of the standard dbm & ndbm libraries)
-* gmp library (arbitrary precision arithmetic on signed integers & rationals)
-* gperf (a perfect hash-table generator)
-* GNU indent
-* p2c (a Pascal-to-C translator)
-* Perl (a programming language interpreter)
-* GNU Smalltalk (the GNU implementation of this programming language system)
-* regexp library (GNU implementation of the regular expression library)
-* superopt (optimal function sequence generator)
-* Tile Forth (an implementation of the Forth language)
-* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
-  documentation system, included with GNU Emacs.  Texinfo is used to produce
-  both on-line and printed documents.)
-* The Texinfo Manual, as Texinfo source
-* gzip (GNU's data compression program to uncompress source on the tape)
-* GNU make
-* The GNU Make Manual, as Texinfo source
+	Donations Translate Into Free Software
+	Cygnus Matches Donations!
+	GNU Documentation
+	GNU Software Available Now
+	   Contents of the Emacs Tape
+	   Contents of the Languages Tape
+	   Contents of the Utilities Tape
+	   Contents of the Scheme Tape
+	   Contents of the X11 Tapes
+	   Berkeley Networking 2 Tape
+	   VMS Emacs and VMS Compiler Tapes
+	Source Code CD-ROM
+	Compiler Tools Binaries CD-ROM
+	Tape & CD-ROM Subscription Service
+	The Deluxe Distribution
+	MS-DOS Distribution
+	   Contents of the Demacs diskettes
+	   Contents of the DJGPP diskettes
+	   Contents of the Selected Utilities diskettes
+	   Contents of the Windows diskette
+	FSF T-shirt
+	Free Software Foundation Order Form
 
 
-GNU Utilities Tape
 
-The tape includes source code for:
-* autoconf (produces shell scripts to automatically configure software builds)
-* Bash (GNU's Bourne Again SHell)
-* GNU bc, dc & cpio
-* CVS (Concurrent Version System)
-* GNU diffutils (cmp, diff, diff3 & sdiff)
-* doschk (checks if file names are under 15 characters and in MS-DOS format)
-* elvis (a clone of the vi/ex Unix editor)
-* es (extensible rc-like shell with lexical scope, first class functions, etc.)
-* Fax (a fax spooling system)
-* Gnats (a bug-tracking system)
-* GNU find & finger
-* GNU fontutils (create and support fonts for use with Ghostscript or TeX)
-* acm (multiplayer aerial combat simulation for the X window system)
-* ms (MandelSpawn, a parallel Mandelbrot program for the X window system)
-* GNU Chess (a chess playing program with interfaces to both X & ttys)
-* GNU Shogi (plays a japanese game like chess; has both tty & X interfaces)
-* Nethack (a rogue-like game)
-* GNU GO (the GNU implementation of the game of GO)
-* GNU hello (produces a familiar, friendly greeting)
-* hp2xx
-* Ghostscript (a Postscript interpreter)
-* Ghostview (an X11 user interface for the Ghostscript interpreter)
-* gnuplot (an interactive mathematical plotting program)
-* GNU gptx (a permuted index generator, including KWIC)
-* GNU grep, egrep & fgrep
-* groff & mgm macros (GNU troff & pic, eqn, tbl, refer; -man, -ms, -mm macros;
-  drivers for Postscript and typewriter-like devices; & xditview previewer)
-* less (display paginator similar to more & pg with better features)
-* GNU m4
-* mtools (allows Unix systems to manipulate files on an MS-DOS file system)
-* patch
-* rc (shell with far more C-like syntax and far cleaner quoting than csh or sh)
-* RCS (Revision Control System)
-* recode (converts files between many character sets and usages)
-* screen (a terminal multiplexor that allows you to handle several independent
-  ``screens'' (ttys) on a single physical terminal)
-* GNU sed & tar
-* GNU Termcap library
-* The GNU Termcap Manual, as Texinfo source
-* GNU time
-* GNU tput (a portable way to allow shell scripts to use special terminal
-  capabilities)
-* Taylor UUCP (the GNU implementation of the UUCP communication suite)
-* wdiff (report diffs on a word by word basis)
-* GNU fileutils (chgrp, chmod, chown, cp, dd, df, du, install, ln, ls, mkdir,
-  mkfifo, mknod, mktime, mv, mvdir, rm, rmdir, touch & vdir)
-* GNU shellutils (basename, date, dirname, echo, env, expr, false, groups, id,
-  logname, nice, nohup, pathchk, printenv, printf, sleep, stty, su, tee, test,
-  true, tty, uname, who, whoami, & yes)
-* GNU textutils (cat, cksum, comm, csplit, cut, expand, fold, head, join, nl,
-  od, paste, pr, sort, split, sum, tac, tail, tr, unexpand, uniq, & wc)
-* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
-  documentation system, included with GNU Emacs.  Texinfo is used to produce
-  both on-line and printed documents.)
-* The Texinfo Manual, as Texinfo source
-* GNU make
-* The GNU Make Manual, as Texinfo source
-* gzip (GNU's data compression program to uncompress source on the tape)
+Donations Translate Into Free Software
+**************************************
+
+If you appreciate Emacs, GNU CC, Ghostscript, and other free software, you
+may wish to help us make sure there is more in the future-remember,
+*donations translate into more free software!*
+
+Your donation to us is tax-deductible in the United States.  We gladly accept
+*all* currencies, although the U.S. dollar is the most convenient.
+
+If your employer has a matching gifts program for charitable donations,
+please arrange to have your donation matched by your employer (or in some
+cases by Cygnus Support, see "Cygnus Matched Donations!").  If you do not
+know, please ask your personnel department.  Also try and get the FSF listed
+on the any list of organizations for the matching gifts program.
+
+	$500	 $250	  $100	   $50	   other $________
+
+	Other currency:________
+
+Circle the amount you are donating, cut out this form, and send it with your
+donation to:
+
+	Free Software Foundation
+	675 Massachusetts Avenue
+	Cambridge, MA	02139-3309
+	USA
+
+You can also charge a donation to either Visa, Mastercard, JCB, Diner's Club,
+or Carte Blanche.  Charges may also be emailed to `gnu@prep.ai.mit.edu' or
+faxed to +1-617-492-9057; in Japan fax to: 0031-13-2473 (KDD) or
+0066-3382-0158 (IDC)
+
+     Card type: __________________  Expiration Date: _____________
+
+     Account Number: _____________________________________________
+
+     Your Signature: _____________________________________________
 
 
-GNU Experimental Tape
 
-The tape includes source code for:
-* GCC 2 (the GNU C/C++/Objective-C Compiler with many new features)
-* The Manual `Using and Porting GNU CC 2', as Texinfo source
-* Compiled binaries of GCC for Sun Solaris systems
-* GNU binary file utilities 2 (ar, gprof, ld, nm, ranlib, size, & strip -
-  completely rewritten to use the BFD library)
-* BFD (Binary File Descriptor Library)
-* GNU C Library (POSIX.1 compliant, upward compatible with 4.3 BSD & System V)
-* The GNU C Library Reference Manual
-* libg++ 2 (the G++ class library)
-* Oleo (a spreadsheet program)
-* GNU Graphics (graph, plot, xplot, plot2ps, spline, et al.)
-* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
-  documentation system, included with GNU Emacs.  Texinfo is used to produce
-  both on-line and printed documents.)
-* The Texinfo Manual, as Texinfo source
-* GNU make
-* The GNU Make Manual, as Texinfo source
-* gzip (GNU's data compression program to uncompress source on the tape)
+Cygnus Matches Donations!
+*************************
+
+To encourage cash donations to the Free Software Foundation, Cygnus Support
+will continue to contribute corporate funds to FSF to accompany gifts by its
+employees, and by its customers and their employees.
+
+Donations payable to the Free Software Foundation should be sent by eligible
+persons to Cygnus Support, which will add its gifts and forward the total to
+the FSF each quarter.  The FSF will provide the contributor with a receipt to
+recognize the contribution (which is tax-deductible on U.S.  tax returns).
+For more information, please contact Cygnus at `info@cygnus.com.'
+
+
+
+GNU Documentation
+*****************
+
+GNU is dedicated to having quality, easy-to-use on-line and printed
+documentation.	GNU manuals are intended to explain the underlying concepts,
+describe how to use all the features of each program, and give examples of
+command use.  GNU manuals are distributed as Texinfo source files, which
+yield both typeset hardcopy and on-line hypertext-like display via the
+menu-driven Info system.  These manuals, source for which is provided with
+our software, are also available in hardcopy; see the "Free Software
+Foundation Order Form."
+
+Several GNU manuals are bound as soft cover books with "lay-flat" bindings.
+This allows you to open them so they lie flat on a table without creasing the
+binding.  Each book has an inner cloth spine and an outer cardboard cover
+that will not break or crease as an ordinary paperback will.  The other GNU
+manuals are also bound so they lie flat when opened, using other
+technologies.  See the "Free Software Foundation Order Form" for a list of
+each.
+
+Edition numbers of the manual and version number of the program listed after
+each manual's names were current at the time this Bulletin was published.
+
+The `Emacs Manual' (9th Edition for Version 19) describes editing with GNU
+Emacs.	It also explains advanced features, such as outline mode and regular
+expression search, how to use special modes for programming in languages like
+C++ and TeX, how to use the `tags' utility, how to compile and correct code,
+and how to make your own keybindings and other elementary customizations.
+
+The `GNU Emacs Lisp Reference Manual' (Edition 2.1 for Version 19) covers
+this programming language in depth, including data types, control structures,
+functions, macros, syntax tables, searching and matching, modes, windows,
+keymaps, markers, byte compilation, and the operating system interface.
+
+The `Texinfo Manual' (Edition 2.19 for Version 3) explains the markup
+language used to generate both the online Info documentation and typeset
+hardcopies.  It tells you how to make tables, lists, chapters, nodes,
+indexes, cross references, how to use Texinfo mode in GNU Emacs, and how to
+catch mistakes.
+
+The `GAWK Manual' (Edition 0.16 for Version 2.16) tells how to use the GNU
+implementation of `awk'.  It is written for someone who has never used `awk'
+and describes all the features of this powerful string and record
+manipulation language.
+
+The `Make Manual' (Edition 0.43 for Version 3.68) describes GNU `make', a
+program used to rebuild parts of other programs.  The manual tells how to
+write "makefiles", which specify how a program is to be compiled and how its
+files depend on each other.  Included are an introductory chapter for novice
+users and a section about automatically generated dependencies.
+
+`Debugging with GDB' (Edition 4.09 for Version 4.9) tells how to use the GNU
+Debugger, run your program under debugger control, examine and alter data,
+modify the flow of control within a program, and use GDB through GNU Emacs.
+
+The `Bison Manual' (December 1993 Edition for Version 1.23) teaches you how
+to write context-free grammars for the Bison program that convert into
+C-coded parsers.  You need no prior knowledge of parser generators.
+
+The `Flex Manual' (Edition 1.03 for Version 2.3.7) tells you how to write a
+lexical scanner definition for the `flex' program to create a C ++ or C-coded
+scanner that will recognize the patterns described.  You need no prior
+knowledge of scanner generators.
+
+`Using and Porting GNU CC' (June 1993 Edition for Version 2.4) explains how
+to run, install and port the GNU C compiler.
+
+The `Termcap Manual' (2nd Edition for Version 1.2), often described as "twice
+as much as you ever wanted to know about termcap," details the format of the
+termcap database, the definitions of terminal capabilities, and the process
+of interrogating a terminal description.  This manual is primarily for
+programmers.
+
+The `Emacs Calc Manual' (Edition 2.02 for Version 2.02) includes both a
+tutorial and a reference manual for Calc.  It describes how to do ordinary
+arithmetic, how to use Calc for algebra, calculus and other forms of
+mathematics, and how to extend Calc.
+
+The `C Library Reference Manual' (June 93 Edition for Version 1.07) describes
+most of the facilities of the GNU C library, including both what Unix calls
+"library functions" and "system calls."	 We are doing limited copier runs of
+this manual until it becomes more stable.  It is new, and needs corrections
+and improvements.  Please send them to `bug-glibc-manual@prep.ai.mit.edu'.
+
+
+
+GNU Software Available Now
+**************************
+
+We offer:
+
+   * Source Code CD-ROM (see "Source Code CD-ROM")
+
+   * Compiler Tools Binaries CD-ROM (see "Compiler Tools Binaries CD-ROM")
+
+   * MS-DOS Diskettes with some GNU software (see "MS-DOS Distribution")
+
+   * VMS tapes (which include sources and executables) for GNU Emacs and the
+     GNU C compiler (see "VMS Emacs and VMS Compiler Tapes")
+
+We also offer Unix software source distributions tapes in `tar' format on the
+following media:
+
+   * 4mm DAT cartridges
+
+   * 8mm Exabyte cartridges
+
+   * Sun QIC-24 cartridges (readable on some other systems)
+
+   * Hewlett-Packard 16-track cartridges
+
+   * IBM RS/6000 QIC-150 cartridges (readable on some other systems) (the
+     RS/6000 Emacs tape has an Emacs binary as well)
+
+   * 1600bpi 9-track reel tape
+
+The contents of the reel and various cartridge tapes for Unix systems are the
+same (except for the RS/6000 Emacs tape, which also has executables for
+Emacs); only the media are different (see the "Free Software Foundation Order
+Form").	 Source code for the manuals is included in Texinfo format.  We
+welcome all bug reports sent to the appropriate electronic mailing list (ask
+`gnu@prep.ai.mit.edu' for a list).
+
+Some of the files on the tapes may be compressed with `gzip' to make them
+fit.  Refer to the top-level `README' file at the beginning of each tape for
+instructions on uncompressing them.  `uncompress' and `unpack' *do not work*!
+
+Version numbers listed after program names, in the articles describing the
+contents of each media, were current at the time this Bulletin was published.
+When you order a distribution tape or diskette, some of the programs might
+be newer, and therefore the version number higher.
+
+Key to cross reference:
+
+    BinCD
+	  Binaries CD-ROM
+
+    DemcsD
+	  Demacs Diskettes
+
+    DjgppD
+	  Djgpp Diskettes
+
+    EmcsT
+	  Emacs Tape
+
+    LangT
+	  Language Tape
+
+    SchmT
+	  Scheme Tape
+
+    SrcCD
+	  Source CD-ROM
+
+    UtilD
+	  Selected Utilities Diskettes
+
+    UtilT
+	  Utilities Tape
+
+    VMSCompT
+	  VMS Compiler Tape
+
+    VMSEmcsT
+	  VMS Emacs Tape
+
+    WdwsD
+	  Windows Diskette
+
+    X11OptT
+	  X11 Optional Tape
+
+    X11ReqT
+	  X11 Required Tape
+
+GNU software currently available:
+
+   * `acm'     (SrcCD, UtilT)
+
+     `acm' is a LAN-oriented, multiplayer aerial combat simulation that runs
+     under the X Window System.	 Players engage in air to air combat against
+     one another using heat seeking missiles and cannons.  Eventually we hope
+     to turn this into a more general purpose flight simulator.
+
+   * Autoconf	  (SrcCD, UtilT)
+
+     Autoconf produces shell scripts which automatically configure source code
+     packages.	These scripts adapt the packages to many kinds of Unix-like
+     systems without manual user intervention.	Autoconf creates a script for
+     a package from a template file which lists the operating system features
+     which the package can use, in the form of `m4' macro calls.  Most GNU
+     programs now use Autoconf-generated configure scripts.
+
+   * BASH     (SrcCD, UtilT)
+
+     The GNU shell, BASH (Bourne Again SHell), is compatible with the Unix
+     `sh' and offers many extensions found in `csh' and `ksh'.	BASH has job
+     control, `csh'-style command history, and command-line editing (with
+     Emacs and `vi' modes built-in and the ability to rebind keys) via the
+     readline library.
+
+   * `bc'     (SrcCD, UtilT)
+
+     `bc' is an interactive algebraic language with arbitrary precision.  GNU
+     `bc' follows the POSIX 1003.2 draft standard, with several extensions
+     including multi-character variable names, an `else' statement and full
+     Boolean expressions.
+
+   * BFD     (BinCD, LangT, SrcCD)
+
+     The Binary File Descriptor library allows a program which operates on
+     object files (e.g. `ld' or GDB) to support many different formats in a
+     clean way.	 BFD provides a portable interface, so that only BFD needs to
+     know the actual details of a particular format.  One consequence of this
+     design is that all programs using BFD will support formats such as a.out,
+     COFF, ELF & OSF-Rose.  BFD comes with Texinfo documentation.
+
+     Presently BFD is not distributed separately but is included with packages
+     that use it, because it is not yet completely stable.
+
+   * Binutils	  (BinCD, LangT, SrcCD)
+
+     The Binutils includes the programs: `ar', `c++filt', `demangle', `gprof',
+     `ld', `nlmconv', `nm', `objcopy', `objdump', `ranlib', `size', `strings',
+     & `strip'.
+
+     Binutils Version 2 is completely rewritten to use the BFD library.	 The
+     GNU linker `ld' emits source-line numbered error messages for
+     multiply-defined symbols and undefined references.	 `nlmconv' converts
+     object files into Novell NetWare Loadable Modules.	 The `objdump'
+     program can disassemble code for a29k, ALPHA, H8/300, H8/500, HP-PA,
+     i386, i960, m68k, m88k, MIPS, SH, SPARC, & Z8000 processors, and can
+     display other data such as symbols and relocations from any file format
+     understood by BFD.
+
+   * Bison     (BinCD, LangT, SrcCD, VMSCompT)
+
+     Bison is an upwardly compatible replacement for the parser generator
+     `yacc'.  Sources for the `Bison Manual' and reference card are included.
+
+   * GNU C Library     (LangT, SrcCD)
+
+     The library supports ANSI C-1989 and POSIX 1003.1-1990 and has most of
+     the functions specified in POSIX 1003.2 draft 11.2.  It is upward
+     compatible with 4.4 BSD and includes many System V functions, plus GNU
+     extensions.
+
+     Version 1.07 uses a standard GNU `configure' script.  It runs on Sun-3
+     (SunOS 4.1), Sun-4 (SunOS 4.1 & Solaris 2), HP 9000/300 (4.3 BSD), SONY
+     News 800 (NewsOS 3 or 4), MIPS DECstation (Ultrix 4), DEC Alpha (OSF/1),
+     i386/i486 (System V, SVR4, BSD, SCO 3.2 & SCO ODT 2.0) & Sequent Symmetry
+     i386 (Dynix 3).  Texinfo source for the `GNU C Library Reference Manual'
+     is included.
+
+   * Calc     (EmcsT, SrcCD)
+
+     Calc (written by Dave Gillespie in Emacs Lisp) is an extensible,
+     advanced desk calculator and mathematical tool that runs as part of GNU
+     Emacs.  It comes with source for the `Calc Manual' and reference card,
+     which serves as a tutorial and reference.	If you wish, you can use Calc
+     just as a simple four-function calculator, but it provides additional
+     features including choice of algebraic or RPN (stack-based) entry,
+     logarithmic functions, trigonometric and financial functions, arbitrary
+     precision, complex numbers, vectors, matrices, dates, times, infinities,
+     sets, algebraic simplification, differentiation, and integration.	Calc
+     also outputs to `gnuplot'.
+
+   * GNU Chess	   (UtilT, SrcCD)
+
+     GNU Chess is a program that plays chess with you.	It is written
+     entirely in the C language and has been ported to the PC, the Cray-2 &
+     numerous other machines.  It has also been ported to other operating
+     systems, including Microsoft Windows and MS-DOS, though these versions
+     are not supported by the maintainer.  There are both text and X display
+     interfaces.
+
+     GNU Chess implements many specialized features including the null move
+     heuristic, a hash table with aging, the history heuristic (another form
+     of the earlier killer heuristic), caching of static evaluations, and a
+     sophisticated database which lets it play the first several moves in the
+     game quickly.
+
+     GNU Chess won the Uniform Platform event held in August 1992 in London,
+     England.  Nine programs competed, running on identical hardware.
+
+     GNU Chess is primarily supported by Stuart Cracraft on behalf of the FSF.
+
+	     Stuart Cracraft
+	     P.O. Box 2841
+	     Laguna Hills, CA	92653
+	     USA
+	     Phone: (714) 770-8532
+	     E-mail: `cracraft@ai.mit.edu'
+
+   * CLISP     (EmcsT, SrcCD)
+
+     CLISP is a Common Lisp implementation by Bruno Haible and Michael Stoll.
+     It mostly supports the Common Lisp described by `Common LISP: The
+     Language (1st edition)'.  CLISP includes an interpreter, a byte-compiler
+     and, for some machines, a screen editor.  CLISP needs only 1.5 MB of
+     memory and runs on many microcomputers (including the Atari ST, Amiga
+     500-2000, most MS-DOS systems & OS/2) & on some Unix workstations
+     (Linux, SunOS (SPARC), Sun-386i, HP-UX (HP 9000/800) & others).
+
+   * `cpio'	(UtilD, UtilT, SrcCD)
+
+     `cpio' is an alternative archive program with all the features of SVR4
+     `cpio', including support for the final POSIX 1003.1 `ustar' standard.
+     `mt' a program to position magnetic tapes is included with `cpio'.
+
+   * CVS     (UtilT, SrcCD)
+
+     CVS, the Concurrent Version System, manages software revision and release
+     control in a multi-developer, multi-directory, multi-group environment.
+     It works best in conjunction with RCS versions 4 and above, but will
+     parse older RCS formats with the loss of CVS's fancier features.  See
+     Berliner, Brian, "CVS-II: Parallelizing Software Development,"
+     `Proceedings of the Winter 1990 USENIX Association Conference'.
+
+   * `dc'     (UtilT, SrcCD)
+
+     `dc' is an RPN calculator.	 GNU `bc' does not require a separate `dc'
+     program to run.  This version of `dc' will eventually be merged with GNU
+     `bc'.
+
+   * DejaGnu	 (LangT, SrcCD)
+
+     DejaGnu is a framework for testing other programs that provides a single
+     front end for all tests.  The flexibility and consistency of the DejaGnu
+     framework make it easy to write tests for any program.  DejaGnu comes
+     with `expect' and Tcl.
+
+   * Diffutils	   (UtilD, UtilT, SrcCD)
+
+     GNU `diff' compares files showing line-by-line changes in several
+     flexible formats.	It is much faster than traditional Unix versions.
+     The Diffutils distribution contains `diff', `diff3', `sdiff', and `cmp'.
+
+   * DJGPP     (BinCD, DjgppD)
+
+     DJ Delorie has ported GCC/G++ 2.5.7 to the i386 MS-DOS platform.  The
+     DJGPP package also contains a 32-bit 80386 DOS extender with symbolic
+     debugger; development libraries; and ports of Bison, `flex', GAS, and
+     the GNU binary utilities.	Full source code is provided.
+
+     DJGPP supports SVGA (up to 1024x768), XMS & VDISK memory allocation,
+     `himem.sys', VCPI (e.g. QEMM, DESQview, & 386MAX), and DPMI (e.g.
+     Windows 3.x, OS/2, QEMM, & QDPMI).
+
+     It is available via FTP from `ftp.clarkson.edu' in `/pub/msdos/djgpp'.
+     You can subscribe to a mailing list on DJGPP by sending your e-mail
+     address to `djgpp-request@sun.soe.clarkson.edu'.  In addition, the FSF
+     distributes it on floppy disks and on the Compiler Tools Binaries CD-ROM.
+
+     See the description for GCC in this section for more information.
+
+   * `dld'     (LangT, SrcCD)
+
+     `dld' is a dynamic linker written by W. Wilson Ho.	 Linking your program
+     with the `dld' library allows you to dynamically load object files into
+     the running binary.  Currently supported are VAX (Ultrix), Sun 3 (SunOS
+     3.4 and 4.0), SPARC (SunOS 4.0), Sequent Symmetry (Dynix), and Atari ST.
+
+   * `doschk'	  (UtilT, SrcCD)
+
+     This program is intended as a utility to help software developers ensure
+     that their source file names are distinguishable on System V platforms
+     with 14-character filenames and on MS-DOS with 11 character filenames.
+
+   * `ecc'     (UtilT, SrcCD)
+
+     `ecc' is a Reed-Solomon error correction checking program, which can
+     correct three byte errors in a block of 255 bytes and detect more severe
+     errors.
+
+   * Elib     (EmcsT, SrcCD)
+
+     This is a small library of Emacs Lisp functions, including routines for
+     using AVL trees and doubly-linked lists.
+
+   * `elvis'	 (UtilT, SrcCD)
+
+     `elvis' is a clone of the `vi'/`ex' Unix editor.  It supports nearly all
+     of the `vi'/`ex' commands in both visual and line mode.  `elvis' runs
+     under BSD, System V, Xenix, Minix, MS-DOS & Atari TOS, and should be
+     easy to port to many other systems.
+
+   * GNU Emacs 18     (DemcsD, EmcsT, SrcCD, VMSEmcsT)
+
+     In 1975, Richard Stallman developed the first Emacs, an extensible,
+     customizable real-time display editor.  GNU Emacs is his second
+     implementation.  It offers true Lisp--smoothly integrated into the
+     editor--for writing extensions, and provides an interface to MIT's X
+     Window System.  In addition to its powerful native command set,
+     extensions which emulate other popular editors are distributed: vi, EDT
+     (DEC's VMS editor) and Gosling (aka Unipress) Emacs.  It has many other
+     features which make it a full computing support environment.  It is
+     described by the `GNU Emacs Manual', the `GNU Emacs Lisp Reference
+     Manual' and a reference card.  Source for all three come with the
+     software.
+
+     GNU Emacs 18.59 runs on many Unix systems (in hardware order): Alliant
+     FX/80 & FX/2800, Altos 3068, Amdahl (UTS), Apollo, AT&T (3Bs & 7300 PC),
+     DG Aviion, Bull DPX/2 (2nn & 3nn) CCI 5/32 & 6/32, Celerity, Convex,
+     Digital (DECstation 3100 & 5000 (PMAXes), Mips, VAX (BSD, SysV & VMS)),
+     Motorola Delta 147 & 187 Dual, Elxsi 6400, Encore (DPC, APC & XPC),
+     Gould, HP (9000 series 200, 300, 700 & 800, but not 500), HLH Orion
+     (original & 1/05), IBM (RS/6000 (AIX), RT/PC (4.2 & AIX) & PS/2 (AIX (386
+     only))), ISI (Optimum V, 80386), Intel 860 & 80386 (BSD, Esix, SVR3,
+     SVR4, SCO, ISC, IX, AIX & others (see "MS-DOS Distribution")), Iris
+     (2500, 2500 Turbo & 4D), Masscomp, MIPS, National Semiconductor 32000,
+     NeXT (Mach), NCR Tower 32 (SVR2 & SVR3), Nixdorf Targon 31, Nu (TI &
+     LMI), pfa50, Plexus, Prime EXL, Pyramid (original & MIPS), Sequent
+     (Balance & Symmetry), SONY News (m68k & MIPS), Stride (system release 2),
+     all Suns including 386i (all SunOS & some Solaris vers.), Tadpole, Tahoe,
+     Tandem Integrity S2, Tektronix (16000 & 4300), Triton 88, Ustation E30
+     (SS5E), Whitechapel (MG1) & Wicat.
+
+     In operating system order: AIX (RS/6000, RT/PC, 386-PS/2), BSD (vers.
+     4.1, 4.2, 4.3), DomainOS, Esix (386), HP-UX (HP 9000 series 200, 300,
+     700, 800 but not 500), ISC (386), IX (386), Mach, Microport, NewsOS
+     (Sony m68k & MIPS) SCO (386), SVR0 (Vax, AT&T 3Bs), SVR2, SVR3, SVR4,
+     Solaris 2.0, SunOS, UTS (Amdahl), Ultrix (vers. 3.0, 4,1), Uniplus 5.2
+     (Dual machines), VMS (vers. 4.0, 4.2, 4.4, 5.5) & Xenix (386).
+
+   * GNU Emacs 19     (EmcsT, SrcCD)
+
+     Unlike some other recent derivations of Emacs, GNU Emacs 19 continues to
+     work on character-only terminals as well as under the X Window System.
+     New features in Emacs 19 include: multiple X windows ("frames" to
+     Emacs), with a separate X window for the minibuffer or with a minibuffer
+     attached to each X window; property lists associated with regions of
+     text in a buffer; multiple fonts and colors defined by those properties;
+     simplified and improved processing of function keys, mouse clicks and
+     mouse movement; X selection processing, including clipboard selections;
+     hooks to be run if point or mouse moves outside a certain range; menu
+     bars and popup menus defined by keymaps; scrollbars; before and after
+     change hooks; source-level debugging of Emacs Lisp programs; European
+     character sets support; floating point numbers; improved buffer
+     allocation, using a new mechanism capable of returning storage to the
+     system when a buffer is killed; interfacing with the X resource manager;
+     GNU configuration scheme support; good RCS support; & many updated
+     libraries.
+
+     GNU Emacs 19.22 is known to work on (in hardware order): Bull DPX/2 2nn
+     & 3nn (SVR3) & sps7 (SVR2); Clipper; Cubix QBx (SysV); DEC MIPS (Ultrix
+     4.2 & OSF/1, not VMS); Motorola Delta 147 & 187 (SVR3, SVR4, & m88kbcs);
+     Elxsi 6400 (SysV); Gould Power Node & NP1 (BSD 4.2 & 4.3); Honeywell
+     XPS100 (SysV); HP9000 series 200, 300, 700, 800 (BSD 4.3 or HP-UX 7, 8,
+     9); i386 & i486 (386BSD, AIX, BSDI/386, FreeBSD, Esix, ISC, Linux,
+     NetBSD, SCO3.2v4 with ODT, SysV, Xenix); RS6000 (AIX 3.2); RT/PC (AIX or
+     BSD); Iris 4D (Irix 4.x & 5.x); National Semiconductor 32K (Genix); NeXT
+     (BSD or Mach 2 w/ NeXTStep 3.0); Prime EXL (SysV); Pyramid (BSD);
+     Sequent Symmetry (BSD); Sun 3 & 4, SPARC 1, 1+, 2, 10 & Classic (SunOS
+     4.0, 4.1, Solaris 2); Tadpole 68k (SysV); Tektronix XD88 (SVR3) & 4300
+     (BSD); & Titan P2 & P3 (SysV).
+
+     In operating system order: AIX (i386, RS6000, RT/PC); BSD 4.1, 4.2, 4.3
+     (i386, Gould Power Node & NP1, HP9000 series 300, NeXT, Pyramid,
+     Symmetry, Tektronix 4300, RT/PC); Esix (i386); Genix (ns32k); HP-UX 7,
+     8, 9 (HP 9000 series 200, 300, 700, 800, but not 500); Irix 4 & 5 (Iris
+     4D); ISC (i386); Linux (i386); NetBSD (i386, HP9000 series 300); Mach 2
+     & 3 (i386, NeXT); SCO 3.2v4 (i386); SVR2 (Bull sps7); SVR3 (Bull DPX/2
+     2nn & 3nn, Motorola Delta 147 & 187, Tektronix XD88); SVR4 (Motorola
+     Delta 147 & 187); Solaris 2 (SPARC 1, 1+, 2, 10, Classic); SunOS 4.0,
+     4.1 (Sun 3 & 4, SPARC 1, 1+, 2, 10 & Classic); Ultrix 4.2 (DEC MIPS); &
+     Xenix (i386).
+
+     Other configurations supported by Emacs 18 should work with few changes;
+     as users tell us more about their experiences with different systems, we
+     will augment the list.
+
+   * `es'     (UtilT, SrcCD)
+
+     This is an extensible shell based on `rc' that has first class
+     functions, lexical scope, an exception system, and rich return values
+     (i.e. functions can return values other than just numbers).  Like `rc',
+     it is great for both interactive use and for scripting, particularly
+     because its quoting rules are much less baroque than the C or Bourne
+     shells.
+
+   * `expect'	  (LangT, SrcCD)
+
+     `expect' runs scripts to conduct dialogs with programs.  It is
+     distributed along with Tcl and DejaGnu.
+
+   * `f2c'     (LangT, SrcCD)
+
+     `f2c' converts Fortran-77 source files into C or C++, which can then be
+     compiled with GCC.
+
+   * Fax     (UtilT, SrcCD)
+
+     Fax is the freely-available MIT AI Lab fax spooling system, which
+     provides Group 3 fax transmission and reception services for a networked
+     Unix system.  It requires a faxmodem which conforms to the new EIA-592
+     Asynchronous Facsimile DCE Control Standard, Service Class 2.
+
+   * Fileutils	   (UtilD, UtilT, SrcCD)
+
+     Fileutils work on files: `chgrp', `chmod', `chown', `cp', `dd', `df',
+     `dir', `du', `install', `ln', `ls', `mkdir', `mkfifo', `mknod', `mv',
+     `mvdir', `rm', `rmdir', `touch', & `vdir'.	 Only some of these are on
+     the Selected Utilities diskettes.
+
+   * `find'	(UtilD, UtilT, SrcCD)
+
+     `find' is frequently used both interactively and in shell scripts to
+     find files which match certain criteria and perform arbitrary operations
+     on them.  `xargs' and `locate' are also included.
+
+   * `finger'	  (UtilT, SrcCD)
+
+     GNU Finger, which serves as a direct replacement for existing finger
+     programs, solves this problem.  For sites with many hosts, a single host
+     may be designated as the finger "server" host.  This host collects
+     information about who is logged in to other hosts at that site.  If a
+     user at site A wants to know about users logged on at site B, a single
+     query to any machine at the site will return complete information.
+
+   * `flex'	(LangT, UtilD, SrcCD)
+
+     `flex' is a mostly-compatible replacement for the `lex' scanner
+     generator, written by Vern Paxson of the Lawrence Berkeley Laboratory.
+     `flex' generates far more efficient scanners than `lex' does.  Sources
+     for the `Flex Manual' and reference card are included.
+
+   * Fontutils	   (UtilT, SrcCD)
+
+     The Fontutils can create fonts for use with Ghostscript or TeX, starting
+     with a scanned type image and converting the bitmaps to outlines.	They
+     also contain general conversion programs and other utilities.
+
+   * GAS     (BinCD, LangT, SrcCD)
+
+     The GNU assembler has been rewritten to use the BFD library.  Native
+     assembly works for: Sun 3, 4, & SPARC (SunOS 4.1 or Solaris 2); i386
+     (AIX, 386BSD, BSDI/386, Linux); m68k (BSD, HP-UX, Convergent
+     Technologies SysV); MIPS (Ultrix, Irix); Hitachi H8/500; & VAX (BSD,
+     Ultrix, VMS).
+
+     Cross assembling can be done for: i386 (SCO, go32 MS-DOS/DJGPP);
+     ebmon29k; Hitachi H8/300; i960 (COFF); MIPS ECOFF (Ultrix, Iris, MIPS
+     Magnum); Nindy 960; vxworks (68k or 960); & Zilog Z8000.
+
+   * GAWK     (LangT, SrcCD)
+
+     GAWK is upwardly compatible with the System V Release 4 version of
+     `awk'.  Texinfo source for the `GAWK Manual' comes with the software.
+
+   * GCC     (BinCD, DjgppD, LangT, SrcCD)
+
+     Version 2 of the GNU C compiler supports three languages: C, C++ and
+     Objective C; the source file name suffix or a compiler option selects
+     the language.  The front end support for Objective C was donated by NeXT.
+     The runtime support needed to run Objective C programs is now distributed
+     with GCC (this does not include any Objective C classes aside from
+     `object').	 As much as possible, G++ is kept compatible with the
+     evolving draft ANSI standard, but not with `cfront' (AT&T's compiler),
+     which has been diverging from ANSI.
+
+     The GNU C compiler is a fairly portable optimizing compiler which
+     performs automatic register allocation, common sub-expression
+     elimination, invariant code motion from loops, induction variable
+     optimizations, constant propagation and copy propagation, delayed
+     popping of function call arguments, tail recursion elimination,
+     integration of inline functions and frame pointer elimination,
+     instruction scheduling, loop unrolling, filling of delay slots, leaf
+     function optimization, optimized multiplication by constants, a certain
+     amount of common subexpression elimination (CSE) between basic blocks
+     (though not all of the supported machine descriptions provide for
+     scheduling or delay slots), a feature for assigning attributes to
+     instructions, and many local optimizations that are automatically
+     deduced from the machine description.  Function-wide CSE has been
+     written, but needs to be cleaned up before it can be installed.
+     Position-independent code is supported on the 68k, i386, Hitachi Slt,
+     Hitachi H8/300, Clipper, 88k, SPARC & SPARClite.
+
+     GCC can open-code most arithmetic on 64-bit values (type `long long
+     int').  It supports extended floating point (type `long double') on the
+     68k; other machines will follow.
+
+     GCC supports full ANSI C, traditional C and GNU C extensions.  GNU C has
+     been extended to support nested functions, nonlocal gotos, and taking the
+     address of a label.
+
+     GCC can generate a.out, COFF, ELF & OSF-Rose files when used with a
+     suitable assembler.  It can produce debugging information in these
+     formats: BSD stabs, COFF, ECOFF, ECOFF with stabs, & DWARF.
+
+     GCC generates code for: a29k, Alpha, ARM, Convex cN, Clipper, Elxsi,
+     H8300, HP-PA (1.0 and 1.1) i370, i386, i486, i860, i960, m68k, m68020,
+     m88k, MIPS, ns32k, Pyramid, ROMP, RS6000, SH, SPARC, SPARClite, VAX, and
+     we32k.
+
+     Operating systems supported include: AIX, ACIS, AOS, BSD, Clix, Ctix,
+     DG/UX, Dynix, Genix, HP-UX, ISC, Irix, Linux, Luna, LynxOS, Mach, Minix,
+     NeWSOS, OSF, OSF-Rose, RISCOS, SCO, Solaris 2, SunOS 4, SysV, Ultrix,
+     Unos, & VMS.
+
+     The old (version 1) machine descriptions for the Alliant, Tahoe and Spur
+     (as well as a new port for the Tron) do not work, but are still included
+     in the distribution in case someone wants to work on them.
+
+     Using the configuration scheme for GCC, building a cross-compiler is as
+     easy as building a compiler for the same target machine.  Version 2
+     supports more general calling conventions: it can pass arguments "by
+     reference" and can preallocate the space for stack arguments.  GCC 2 on
+     the SPARC uses the SPARC conventions for structure arguments and return
+     values.
+
+     Source for the GCC manual, `Using and Porting GNU CC', is included with
+     the compiler.  The manual describes how to run and install the GNU C
+     compiler, and how to port it to new systems.  It describes new features
+     and incompatibilities of the compiler, but people not familiar with C
+     will also need a good reference on the C programming language.
+
+
+   * GDB     (BinCD, LangT, SrcCD)
+
+     In GDB, object files and symbol tables are now read via the BFD library,
+     which allows a single copy of GDB to debug programs of multiple object
+     file formats such as a.out and COFF.  Other new features include command
+     language improvements, remote debugging over serial lines or TCP/IP, and
+     watchpoints (breakpoints triggered when the value of an expression
+     changes).	Exception handling, SunOS shared libraries and C++ multiple
+     inheritance are only supported when used with GCC version 2.
+
+     Both X and GNU Emacs user interfaces to GDB are available, in addition to
+     its command line interpreter.
+
+     GDB uses a standard remote interface to a simulator library which (so
+     far) contains simulators for the Zilog Z8001/2, the Hitachi H8/300,
+     H8/500 & Super-H.
+
+     GDB can perform cross-debugging.  To say that GDB *targets* a platform
+     means that it can perform native or cross-debugging for it.  To say that
+     GDB can *host* a given platform means that it can be built on it, but
+     cannot necessarily debug native programs.	GDB can:
+
+	* *target* & *host*: DEC Alpha (OSF/1), Amiga 3000 (Amix), DECstation
+	  3100 & 5000 (Ultrix), HP 9000/300 (BSD), IBM RS/6000 (AIX), i386
+	  (BSD, SCO, Linux, LynxOS), Motorola Delta m88k (System V), NCR 3000
+	  (SVR4), SGI Iris (MIPS running Irix V3 & V4), SONY News (NewsOS
+	  3.x), Sun-3 & SPARC (SunOS 4.1, Solaris 2.0) & Ultracomputer (29K
+	  running Sym1).
+
+	* *target*, but not *host*: i960 Nindy, AMD 29000 (COFF & a.out),
+	  Fujitsu SPARClite, Hitachi H8/300, m68k & m68332.
+
+	* *host*, but not *target*: Intel 386 (Mach), IBM RT/PC (AIX) &
+	  HP/Apollo 68k (BSD).
+
+     In addition, GDB can use the symbol tables emitted by the compilers
+     supplied by most vendors of MIPS-based machines, including DEC.  (These
+     symbol tables are in a format which almost nobody else uses.)  Source for
+     the manual `Debugging with GDB' and a reference card are included.
+
+   * `gdbm'	(LangT, UtilD, SrcCD)
+
+     The `gdbm' library is the GNU replacement for the traditional `dbm' and
+     `ndbm' libraries.	It implements a database using quick lookup by
+     hashing.  `gdbm' does not need sparse file formats (unlike its Unix
+     counterparts).
+
+   * Ghostscript     (UtilT, SrcCD)
+
+     Ghostscript is GNU's graphics language which is almost fully compatible
+     with Postscript.
+
+   * Ghostview	   (UtilT, SrcCD)
+
+     Ghostview provides an X11 user interface for the Ghostscript interpreter.
+     Ghostview and Ghostscript function as two cooperating programs; Ghostview
+     creates a viewing window and Ghostscript draws in it.  There is a port
+     for Ghostview to MS-Windows.
+
+   * `gmp'     (LangT, SrcCD)
+
+     GNU MP is a library for arbitrary precision arithmetic on signed integers
+     and rational numbers.  It has a rich set of functions with a regular
+     interface.
+
+   * GNATS     (UtilT, SrcCD)
+
+     Gnats (GNats: A Tracking System) is a bug-tracking system.	 It is based
+     upon the paradigm of a central site or organization which receives
+     problem reports and negotiates their resolution by electronic mail.
+     Although it's been used primarily as a software bug-tracking system so
+     far, it is sufficiently generalized so that it could be used for
+     handling system administration issues, project management or any number
+     of other applications.
+
+   * `gnuplot'	   (UtilT, SrcCD)
+
+     `gnuplot' is an interactive program for plotting mathematical
+     expressions and data.  It handles both curves (2 dimensions) and surfaces
+     (3 dimensions).  Curiously, the program was neither written nor named for
+     the GNU Project; the name is a coincidence.
+
+   * GnuGo     (UtilT, SrcCD)
+
+     GnuGo plays the game of Go (Wei-Chi); it is not yet very sophisticated.
+
+   * `gperf'	 (LangT, SrcCD)
+
+     `gperf' is a "perfect" hash-table generation utility.  There are
+     actually two implementations of `gperf', one written in C and one in
+     C++.  Both will produce hash functions in either C or C++.
+
+   * GNU Graphics     (UtilT, SrcCD)
+
+     GNU Graphics is a set of programs which produce plots from ASCII or
+     binary data.  It supports output to Tektronix 4010, Postscript, and the
+     X Window System or compatible devices.  Features include support for
+     output in ln03 and TekniCAD TDA file formats; a replacement for the
+     `spline' program; examples of shell scripts using `graph' and `plot'; a
+     statistics toolkit; and the use of `configure' for installation.
+
+     Existing ports need retesting.  Contact Rich Murphey, `Rich@rice.edu',
+     if you can help test/port it to anything beyond a SPARCstation.
+
+   * `grep'/`egrep'/`fgrep'	(UtilD, UtilT, SrcCD)
+
+     The `[ef]grep' programs are GNU's versions of the Unix programs of the
+     same name.	 They are much faster than the traditional Unix versions.
+
+   * `groff' and `mgm'	   (UtilT, SrcCD)
+
+     `groff' is a document formatting system, which includes implementations
+     of `troff', `pic', `eqn', `tbl', `refer', the `man', `ms' and `mm'
+     macros, as well as drivers for Postscript, TeX dvi format, and
+     typewriter-like devices.  Also included is a modified version of the
+     Berkeley `me' macros and an enhanced version of the X11 `xditview'
+     previewer.
+
+     `mgm' is a macro package for `groff'.  It is almost compatible with the
+     DWB `mm' macros and has several extensions.
+
+   * `gzip'	(DjgppD, EmcsT, LangT, SrcCD, UtilT)
+
+     Some of the contents of our tape and FTP distributions are compressed.
+     We have software on our tapes and FTP sites to uncompress these files.
+     Due to patent troubles with `compress', we have switched to another
+     compression program, `gzip'.  `gzip' can expand LZW-compressed files but
+     uses a different algorithm for compression which generally produces
+     better results.  It also uncompresses files compressed with System V's
+     `pack' program.
+
+   * `hello'	 (UtilT, SrcCD)
+
+     The GNU `hello' program produces a familiar, friendly greeting.  It
+     allows non-programmers to use a classic computer science tool which would
+     otherwise be unavailable to them.	Because it is protected by the GNU
+     General Public License, users are free to share and change it.
+
+     Like any truly useful program, `hello' provides a built-in mail reader.
+
+   * `hp2xx'	 (UtilT, SrcCD)
+
+     GNU hp2xx reads HP-GL files, decomposes all drawing commands into
+     elementary vectors, and converts them into a variety of vector and raster
+     output formats.  It is also an HP-GL previewer.  Currently supported
+     vector formats include encapsulated Postscript, Uniplex RGIP, Metafont
+     and various special TeX-related formats, and simplified HP-GL (line
+     drawing only) for imports.	 Raster formats supported include IMG, PBM,
+     PCX, & HP-PCL (including Deskjet & DJ5xxC support).  Previewers work
+     under X11 (Unix), OS/2 (PM & full screen), MS-DOS (SVGA, VGA, & HGC).
+
+   * `indent'	  (UtilD, UtilT, SrcCD)
+
+     GNU `indent' is a modified version of the freely-redistributable BSD
+     program of the same name.	It formats C source according to GNU coding
+     standards by default, though the BSD default and other formats are
+     available as options.
+
+   * `ispell'	  (UtilT, SrcCD)
+
+     Ispell is an interactive spell checker that suggests "near misses" as
+     replacements for unrecognized words.  System and user-maintained
+     dictionaries can be used.	Standalone and GNU Emacs interfaces are
+     available.
+
+   * JACAL     *Not available from the FSF*
+
+     JACAL is a symbolic mathematics system for the simplification and
+     manipulation of equations and single and multiple-valued algebraic
+     expressions constructed of numbers, variables, radicals, and algebraic
+     functions, differential operators and holonomic functions.	 In addition,
+     vectors and matrices of the above objects are included.
+
+     JACAL was written in Scheme by Aubrey Jaffer.  It comes with an IEEE
+     P1178 and R4RS compliant version of Scheme ("SCM") written in C.  SCM
+     runs on Amiga, Atari-ST, MS-DOS, NOS/VE, VMS, Unix and similar systems.
+     SLIB is a portable Scheme library used by JACAL.  Get JACAL, SLIB, and
+     SCM sources via anonymous FTP from either `nexus.yorku.ca' in
+     `/pub/scheme/new', `altdorf.ai.mit.edu' in `/archive/scm' or
+     `prep.ai.mit.edu' in `/pub/gnu/jacal'.
+
+     The FSF is not distributing JACAL on any media.  To receive an IBM PC
+     floppy disk with the source and executable files, send $99.00 to:
+
+	     Aubrey Jaffer
+	     84 Pleasant Street
+	     Wakefield, MA   01880
+	     USA
+
+   * `less'	(UtilD, UtilT, SrcCD)
+
+     `less' is a display paginator similar to `more' and `pg' but with
+     various features (such as the ability to scroll backwards) that most
+     pagers lack.
+
+   * libg++	(BinCD, LangT, SrcCD)
+
+     The GNU C++ library is an extensive collection of C++ `forest' classes,
+     a new IOStream library for input/output routines, and support tools for
+     use with G++.  Among the classes supported are Obstacks,
+     multiple-precision Integers and Rationals, Complex numbers, arbitrary
+     length Strings, BitSets, and BitStrings.  There is also a set of
+     pseudo-generic prototype files available for generating common container
+     classes.  Partial documentation in Texinfo format is included (not yet
+     published on paper).
+
+   * `m4'     (UtilD, UtilT, SrcCD)
+
+     GNU `m4' is an implementation of the traditional Unix macro processor.
+     It is mostly SVR4 compatible, although it has some extensions (for
+     example, handling more than 9 positional parameters to macros).  `m4'
+     also has built-in functions for including files, running shell commands,
+     doing arithmetic, etc.
+
+   * `make'	(BinCD, EmcsT, LangT, UtilD, UtilT, SrcCD)
+
+     GNU `make' supports POSIX 1003.2 and has all but a few obscure features
+     of the BSD and System V versions of `make', as well as many of our own
+     extensions.  GNU extensions include long options, parallel compilation,
+     conditional execution and functions for text manipulation.	 Texinfo
+     source for the `Make Manual' comes with the program.
+
+     GNU `make' is on several of our tapes because some native `make'
+     programs lack the `VPATH' feature essential for using the GNU configure
+     system to its full extent.	 A shell script is included to build GNU
+     `make' on such systems.
+
+   * MandelSpawn     (UtilT, SrcCD)
+
+     A parallel Mandelbrot generation program for the MIT X Window System.
+
+   * mtools	(UtilT, SrcCD)
+
+     mtools is a set of public domain programs to allow Unix systems to read,
+     write and manipulate files on an MS-DOS file system (usually a diskette).
+
+   * MULE     (SrcCD)
+
+     MULE is a MULtilingual Enhancement to GNU Emacs 18.  It can handle many
+     character sets at once including Japanese, Chinese, Korean, Vietnamese,
+     Thai, Greek, the ISO Latin-1 through Latin-5 character sets, Ukrainian,
+     Russian, and other Cyrillic alphabets.  A text buffer in MULE can
+     contain a mixture of characters from these languages.  To input any of
+     these characters, you can use various input methods provided by MULE
+     itself.  In addition, if you use MULE under some terminal emulator
+     (kterm, cxterm, or exterm), you can use its input methods.
+
+   * NetHack	 (UtilT, SrcCD)
+
+     NetHack is a display-oriented adventure game similar to Rogue.  Both
+     ASCII and X displays are supported.
+
+   * NIH Class Library	   (LangT, SrcCD)
+
+     The NIH Class Library (formerly known as "OOPS", Object-Oriented Program
+     Support) is a portable collection of G++ classes, similar to those in
+     Smalltalk-80, which has been developed by Keith Gorlen of the National
+     Institutes of Health (NIH), using the C++ programming language.
+
+   * Octave	(LangT)
+
+     Octave is a high-level language, primarily intended for numerical
+     computations.  It provides a convenient command line interface for
+     solving linear and nonlinear problems numerically.
+
+     Octave can do arithmetic for real and complex scalars and matrices, solve
+     sets of nonlinear algebraic equations, integrate functions over finite
+     and infinite intervals, and integrate systems of ordinary differential
+     and differential-algebraic equations.
+
+     Octave is available via anonymous ftp from `ftp.che.utexas.edu' in the
+     directory `/pub/octave'.  The files are in gzipped tar format (see the
+     file `README' on `prep.ai.mit.edu:/pub/gnu').
+
+     The Octave distribution includes a 150+ page Texinfo manual.
+
+   * Oleo     (UtilT, SrcCD)
+
+     Oleo is a spreadsheet program (better for you than the more expensive
+     spreadsheets).  It supports the X Window System and character-based
+     terminals, and can output Embedded Postscript renditions of spreadsheets.
+     Keybindings should be familiar to Emacs users and are configurable.
+     Under X and in Postscript output, Oleo supports multiple, variable width
+     fonts.
+
+   * `p2c'     (LangT, SrcCD)
+
+     `p2c' is a Pascal-to-C translator written by Dave Gillespie.  It is
+     intended primarily for use on 32-bit machines, though porting it to
+     convert code to work on 16-bit machines may be possible.
+
+   * `patch'	 (UtilT, SrcCD)
+
+     `patch' is our version of Larry Wall's program to take `diff's output
+     and apply those differences to an original file to generate the modified
+     version.
+
+   * PCL     (EmcsT, SrcCD)
+
+     PCL is a free implementation of a large subset of CLOS, the Common Lisp
+     Object System.  PCL was written by Xerox Corporation.
+
+   * `perl'	(LangT, SrcCD)
+
+     Larry Wall's `perl' combines the features and capabilities of `sed',
+     `awk', `sh' and C, as well as interfaces to all the system calls and
+     many C library routines.  Perl Mode for editing `perl' code comes with
+     GNU Emacs 19.
+
+   * `ptx'     (UtilD, UtilT, SrcCD)
+
+     `ptx' is the GNU version of `ptx', a permuted index generator.  Among
+     other things, it produces readable "KWIC" (KeyWords In Context) indexes
+     without the need of `nroff'.  There is an option to output TeX code.
+
+   * `rc'     (UtilT, SrcCD)
+
+     `rc' is a shell that features a C-like syntax (much more so than `csh')
+     and far cleaner quoting rules than the C or Bourne shells.	 It's
+     intended to be used interactively, but is also great for writing
+     scripts.  It inspired the shell `es'.
+
+   * RCS     (UtilD, UtilT, SrcCD)
+
+     The Revision Control System, RCS, is used for version control and
+     management of software projects.  When used with GNU `diff', RCS can
+     handle binary files (executables, object files, 8-bit data, etc).	Also
+     see the entry for "CVS".
+
+   * `recode'	  (UtilT, SrcCD)
+
+     `recode' converts files between character sets and usages.	 When exact
+     transliterations are not possible, it may get rid of the offending
+     characters or fall back on approximations.	 This program recognizes or
+     produces nearly 150 different character sets and is able to transliterate
+     files between almost any pair.  Most RFC 1345 character sets are
+     supported.
+
+   * regex     (LangT, SrcCD)
+
+     The GNU regular expression library supports POSIX.2, except for
+     internationalization features.  In the past, it has been included in many
+     GNU programs which use regex routines.  Now it is finally available
+     separately.
+
+   * Scheme	   (SchmT, SrcCD)
+
+     For information about Scheme, see "Contents of the Scheme Tape".  The
+     version on the Source Code CD-ROM only works under MS-DOS.
+
+   * `screen'	  (UtilT, SrcCD)
+
+     `screen' is a terminal multiplexor that runs several separate "screens"
+     (ttys) on a single physical terminal.  Each virtual terminal emulates a
+     DEC VT100 plus several ANSI X3.64 and ISO 2022 functions.	`screen'
+     sessions can be detached and resumed later on a different terminal.
+
+   * `sed'     (UtilD, UtilT, SrcCD)
+
+     `sed' is a stream-oriented version of `ed'.  It is used copiously in
+     shell scripts.  GNU sed comes with the rx library, which is a faster
+     version of regex.
+
+   * Shellutils	    (UtilT, SrcCD)
+
+     Shellutils are used interactively or in shell scripts: `basename',
+     `date', `dirname', `echo', `env', `expr', `false', `groups', `id',
+     `nice', `nohup', `printenv', `printf', `sleep', `stty', `su', `tee',
+     `test', `true', `tty', `uname', `who', `whoami', & `yes'.
+
+   * GNU Shogi	   (UtilT, SrcCD)
+
+     Shogi is a Japanese game similar to Chess; a major difference is that
+     captured pieces can be returned into play.
+
+     GNU Shogi has been created by modifying GNU Chess; GNU Shogi implements
+     the same features as GNU Chess and uses similar heuristics.  As a new
+     feature, sequences of partial board patterns can be introduced in order
+     to help the program play a good order of moves towards specific opening
+     patterns.	There is both a text and X display interface.
+
+     GNU Shogi is primarily supported by Matthias Mutz on behalf of FSF.
+
+	     Matthias Mutz
+	     Universitaet Passau, FMI
+	     94030 Passau
+	     Germany
+	     E-mail: `mutz@kirk.fmi.uni-passau.de'
+
+   * Smalltalk	   (LangT, SrcCD)
+
+     GNU Smalltalk is an interpreted object-oriented programming language
+     system written in portable C.  Features include an incremental garbage
+     collector, a binary image save capability, the ability to invoke
+     user-written C code and pass parameters to it, a GNU Emacs editing mode,
+     optional byte-code compilation tracing and byte-code execution tracing,
+     and automatically loaded per-user initialization files.
+
+   * superopt	  (LangT, SrcCD)
+
+     Superopt is a function sequence generator that uses an exhaustive
+     generate-and-test approach to find the shortest instruction sequence for
+     a given function.	You provide the GNU superoptimizer a function, a CPU
+     to generate code for, and how many instructions you can accept.  Its
+     application in GCC is described in the `ACM SIGPLAN PLDI'92'
+     proceedings.  Superopt supports: SPARC, m68k, m68020, m88k, IBM RS/6000,
+     AMD 29000, Intel 80x86, Pyramid, DEC Alpha, & HP-PA.
+
+   * `tar'     (UtilT, SrcCD)
+
+     GNU `tar' includes multivolume support, the ability to archive sparse
+     files, automatic archive compression/decompression, remote archives and
+     special features that allow `tar' to be used for incremental and full
+     backups.  Unfortunately GNU `tar' implements an early draft of the POSIX
+     1003.1 `ustar' standard which is different from the final standard.
+     Adding support for the new changes in a backward-compatible fashion is
+     not trivial.
+
+   * Termcap Library	 (UtilT, SrcCD)
+
+     The GNU Termcap library is a drop-in replacement for `libtermcap.a' on
+     any system.  It does not place an arbitrary limit on the size of Termcap
+     entries, unlike most other Termcap libraries.  Included is source for the
+     `Termcap Manual' in Texinfo format.
+
+   * TeX     *Not available from the FSF*
+
+     TeX is document formatting system that handles complicated typesetting,
+     including mathematics.  It is the standard formatter for the GNU system.
+
+     We do not distribute TeX because you can get it from the University of
+     Washington, who serve as the center for maintenance of the Unix version
+     of TeX.
+
+     To order a full distribution written in `tar' on either a 1/4-inch
+     4-track QIC-24 cartridge or a 4mm DAT cartridge, send $210.00 to:
+
+	     Northwest Computing Support Center
+	     DR-10, Thomson Hall 35
+	     University of Washington
+	     Seattle, WA   98195
+	     E-mail: `unixtex@u.washington.edu'
+	     Phone: (206) 543-6259
+
+     Please make checks payable to the University of Washington.  Checks must
+     be in U.S. Dollars, drawn on a U.S. bank.	Prepaid orders are preferred
+     but purchase orders are acceptable; however, purchase orders carry an
+     extra charge of $10.00 to pay for invoice processing.  Overseas sites:
+     please add to the base cost $20.00 for shipment via air parcel post, or
+     $30.00 for shipment via courier.  Please check with the above for
+     current prices and formats.
+
+   * Texinfo	 (EmcsT, LangT, SrcCD, UtilD, UtilT)
+
+     Texinfo is a set of utilities which generate printed manuals and online
+     hypertext-style documentation (called "Info"), and provide means for
+     reading the online versions.  Version 3 contains both GNU Emacs Lisp and
+     standalone C programs, as well as source for the `Texinfo Manual'.
+
+   * Textutils	   (UtilT, SrcCD)
+
+     The Textutils programs manipulate textual data: `cat', `cksum', `comm',
+     `csplit', `cut', `expand', `fold', `head', `join', `nl', `od', `paste',
+     `pr', `sort', `split', `sum', `tac', `tail', `tr', `unexpand', `uniq', &
+     `wc'.
+
+   * Tcl     (LangT, SrcCD)
+
+     Tcl is an embeddable tool command language.  `expect' and DejaGnu work
+     with and use Tcl.
+
+   * Tile Forth	    (LangT, SrcCD)
+
+     Tile Forth is a 32-bit implementation of the Forth-83 standard written in
+     C, allowing it to be easily moved between different computers
+     (traditionally, Forth implementations are written in assembler to use
+     the underlying hardware as optimally as possible, but this also makes
+     them less portable).
+
+   * `time'	(UtilT, SrcCD)
+
+     `time' is used to report statistics (usually from a shell) about the
+     amount of user, system and real time used by a process.
+
+   * `tput'	(UtilT, SrcCD)
+
+     `tput' is a portable way to allow shell scripts to use special terminal
+     capabilities.  GNU `tput' uses the Termcap database, rather than
+     Terminfo as most implementations do.
+
+   * UUCP     (UtilT, SrcCD)
+
+     This version of UUCP was written by Ian Lance Taylor, and is the standard
+     UUCP system for GNU.  It currently supports the `f', `g' (in all window
+     and packet sizes), `G', `t' and `e' protocols, as well a Zmodem protocol
+     and two new bidirectional protocols.  If you have a Berkeley sockets
+     library, it can make TCP connections.  If you have TLI libraries, it can
+     make TLI connections.
+
+   * `uuencode'	    (UtilT, SrcCD)
+
+     Uuencode and uudecode are used to transmit binary files over
+     transmission mediums that do not support other than simple ASCII data.
+
+   * `wdiff'	 (UtilT, SrcCD)
+
+     `wdiff' compares two files, finding which words have been deleted or
+     added to the first in order to obtain the second.	We hope eventually to
+     integrate it, as well as some ideas from a similar program called
+     `spiff', into future releases of GNU `diff'.
+
+
+
+Contents of the Emacs Tape
+--------------------------
+
+This tape contains a Common Lisp implementation, GNU Emacs, assorted
+extensions that work with GNU Emacs, and a few other important utilities.
+
+   * Calc 2.02b
+
+   * CLISP 1993.11.08
+
+   * Elib 0.06
+
+   * GNU Emacs 18.59
+
+   * GNU Emacs 19.22
+
+   * `GNU Emacs Lisp Reference Manual', Edition 2.02.1
+
+   * `gzip' 1.2.4
+
+   * `make' 3.70
+
+   * PCL 1993.03.18
+
+   * Texinfo 3.1
+
+
+
+Contents of the Languages Tape
+------------------------------
+
+This tape contains programming tools: compilers, interpreters, and related
+programs (parsers, conversion programs, debuggers, etc.).
+
+   * Binutils 2.3
+
+   * Bison 1.22
+
+   * C Library 1.06.7
+
+   * DejaGnu 1.1.1
+
+   * `dld' 3.2.3
+
+   * `expect' 4.7.6
+
+   * `ecc' 1.2.1
+
+   * `f2c' 1993.04.28
+
+   * `flex' 2.4.5
+
+   * GAS 2.2
+
+   * GAWK 2.15.3
+
+   * GCC 2.5.7 (includes G++ & Objective C)
+
+   * GDB 4.11
+
+   * `gdbm' 1.7.1
+
+   * `gmp' 1.3.2
+
+   * `gperf' 2.1a
+
+   * `gzip' 1.2.4
+
+   * `indent' 1.8
+
+   * libg++ 2.5.3
+
+   * `make' 3.70
+
+   * NIH Class Library 3.0
+
+   * Octave 1.0
+
+   * `p2c' 1.20
+
+   * `perl' 4.036
+
+   * regex 0.12
+
+   * Smalltalk 1.1.1
+
+   * Superopt 2.3
+
+   * Tcl 6.7
+
+   * Texinfo 3.1
+
+   * Tile Forth 2.1
+
+
+
+Contents of the Utilities Tape
+------------------------------
+
+This tape consists mostly of smaller utilities and miscellaneous applications
+not available on the other GNU tapes.
+
+   * `acm' 4.2
+
+   * Autoconf 1.7
+
+   * BASH 1.13.5
+
+   * `bc' 1.02
+
+   * Chess 4.0.pl62
+
+   * `cpio' 2.3
+
+   * CVS 1.3
+
+   * `dc' 0.2
+
+   * Diffutils 2.6
+
+   * `doschk' 1.1
+
+   * `elvis' 1.7
+
+   * `es' 0.84
+
+   * Fax 3.2.1
+
+   * Fileutils 3.9
+
+   * `find' 3.8
+
+   * `finger' 1.37
+
+   * Fontutils 0.6
+
+   * Ghostscript 2.6.1
+
+   * Ghostview 1.5
+
+   * GNATS 3.2
+
+   * `gnuplot' 3.5
+
+   * GnuGo 1.1
+
+   * Graphics 0.17
+
+   * `grep'/`egrep'/`fgrep' 2.0
+
+   * Groff 1.08
+
+   * `gzip' 1.2.4
+
+   * `hello' 1.3
+
+   * `hp2xx' 3.1.4
+
+   * `ispell' 4.0
+
+   * `less' 177
+
+   * `m4' 1.1
+
+   * `make' 3.70
+
+   * MandelSpawn 0.07
+
+   * mtools 2.0.7
+
+   * NetHack 3.1.3
+
+   * Oleo 1.5
+
+   * `patch' 2.1
+
+   * `ptx' 0.3
+
+   * `rc' 1.4
+
+   * RCS 5.6.0.1
+
+   * `recode' 3.3
+
+   * `screen' 3.5.2
+
+   * `sed' 2.03
+
+   * Shellutils 1.9.2
+
+   * Shogi 1.1.pl02
+
+   * `tar' 1.11.2
+
+   * Termcap 1.2
+
+   * Texinfo 3.1
+
+   * Textutils 1.9
+
+   * `time' 1.6
+
+   * `tput' 1.0
+
+   * UUCP 1.04
+
+   * `uuencode' 1.0
+
+   * `wdiff' 0.4
+
+
+
+Contents of the Scheme Tape
+---------------------------
+
+Scheme is a simplified, lexically-scoped dialect of Lisp.  It was designed at
+MIT and other universities to teach students the art of programming, and to
+research new parallel programming constructs and compilation techniques.
+
+This tape contains MIT Scheme 7.1, which conforms to the "Revised^4 Report On
+the Algorithmic Language Scheme" (MIT AI Lab Memo 848b), for which TeX source
+is included.  It is written partly in C, but is presently hard to bootstrap.
+Binaries which can be used to bootstrap Scheme are available for the
+following systems:
+
+   * HP 9000 series 300, 400, 700 & 800 running HP-UX 7.0 or 8.0
+
+   * NeXT running NeXT OS 1.0 or 2.0
+
+   * Sun-3 or Sun-4 running SunOS 4.1
+
+   * DECstation 3100/5100 running Ultrix 4.0
+
+   * Sony NWS-3250 running NEWS OS 5.01
+
+   * Vax running 4.3 BSD
+
+If your system is not on this list and you don't enjoy the bootstrap
+challenge, see the "JACAL" entry in the "GNU Software Available Now."
+
+
+
+Contents of the X11 Tapes
+-------------------------
+
+The two X11 tapes contain Version 11, Release 5 of the MIT X Window System.
+The first FSF tape contains all of the core software, documentation and some
+contributed clients.  We call this the "required" X tape since it is
+necessary for running X or running GNU Emacs under X.  The second,
+"optional", FSF tape contains contributed libraries and other toolkits, the
+Andrew User Interface System, games, and other programs.
+
+The X11 Required tape also contains all fixes and patches released to date.
+We update this tape as new fixes and patches are released.
+
 
 
 Berkeley Networking 2 Tape
+--------------------------
 
 The Berkeley "Net2" release contains the second 4.3 BSD distribution and is
-newer than both 4.3BSD-Tahoe and 4.3BSD-Reno.  It includes nearly the entire
-BSD software system except for a few utilities, some parts of the kernel, and
-some library routines which your own C library is likely to provide.  This
-release contains much more software than the older releases, including third
-party software like Kerberos and some GNU software (for example, GCC, now the
-standard BSD compiler).	 Except for kernel sources, the GNU Project has
-replacements on other tapes for many of the missing programs.
+newer than both 4.3 BSD-Tahoe and 4.3 BSD-Reno.	 It includes most of the BSD
+software system except for a few utilities, some parts of the kernel and some
+library routines which your own C library is likely to provide (we have
+replacements on other tapes for many of the missing programs).	This release
+also contains third party software including Kerberos and some GNU software.
 
 
-MIT Scheme tape
 
-The tape contains sources, and binaries for various machines, for MIT Scheme
-(a dialect of Lisp).
+VMS Emacs and VMS Compiler Tapes
+--------------------------------
+
+We offer two VMS tapes.	 One has just the GNU Emacs editor ( none of the other
+software on the Emacs Tape, described above, is included).  The other has the
+GNU C compiler, Bison (to compile GCC), GAS (to assemble GCC's output) and
+some library and include files (none of the other software on the Languages
+Tape, described above, is included.).  We are not aware of a GDB port for VMS.
+Both VMS tapes have executables from which you can bootstrap, as the DEC VMS C
+compiler cannot compile GCC.  Please do not ask us to devote effort to VMS
+support, because it is peripheral to the GNU Project.
 
 
-X11r5 Required Tape
 
-This tape has source code for the required MIT X Window System X11r5,
-including core software and documentation, and contributed client software.
+Source Code CD-ROM
+******************
+
+The Free Software Foundation has produced its third source CD-ROM.  It
+contains the following:
+
+   * `acm' 3.1
+
+   * Autoconf 1.7
+
+   * BASH 1.13.4
+
+   * `bc' 1.02
+
+   * Binutils 1.9 & 2.3
+
+   * Bison 1.22
+
+   * GNU C Library 1.06.7
+
+   * Calc 2.02b
+
+   * GNU Chess 4.0p62
+
+   * CLISP 1993.11.08
+
+   * `cperf' 2.1a
+
+   * `cpio' 2.3
+
+   * CVS 1.3
+
+   * `dc' 0.2
+
+   * DejaGnu 1.0.1
+
+   * diffutils 2.6
+
+   * `dld' 3.2.3
+
+   * `doschk' 1.1
+
+   * `ecc' 1.2.1
+
+   * elib 0.06
+
+   * `elvis' 1.7
+
+   * Emacs 18.59 & Emacs 19.21
+
+   * `es' 0.84
+
+   * `f2c' 1993.04.28
+
+   * Fax 3.2.1
+
+   * Fileutils 3.9
+
+   * `find' 3.8
+
+   * `finger' 1.37
+
+   * `flex' 2.3.8
+
+   * Fontutils 0.6
+
+   * GAS 1.36.utah, 1.38.1, & 2.2
+
+   * Gawk 2.15.3
+
+   * GCC 2.5.4
+
+   * GDB 4.11
+
+   * `gdbm' 1.7.1
+
+   * Ghostscript 2.6.1
+
+   * Ghostview 1.5
+
+   * Ghostview for Windows 1.0
+
+   * `gmp' 1.3.2
+
+   * GNATS 3.01
+
+   * `gnuplot' 3.5
+
+   * GnuGo 1.1
+
+   * Graphics 0.17
+
+   * `grep'/`egrep'/`fgrep' 2.0
+
+   * Groff 1.08
+
+   * `gzip' 1.2.4
+
+   * `hello' 1.3
+
+   * `hp2xx' 3.1.3a
+
+   * `indent' 1.8
+
+   * `ispell' 4.0
+
+   * `less' 177
+
+   * `libg++' 2.5.1
+
+   * `m4' 1.1
+
+   * `make' 3.69.1
+
+   * MandelSpawn 0.06
+
+   * mtools 2.0.7
+
+   * MULE 1.0
+
+   * Nethack 3.1.3
+
+   * NIHCL 3.0
+
+   * Oleo 1.5
+
+   * `p2c' 1.20
+
+   * `patch' 2.1
+
+   * PCL 1993.03.18
+
+   * `perl' 4.036
+
+   * `ptx' 0.3
+
+   * `rc' 1.4
+
+   * RCS 5.6.0.1
+
+   * `recode' 3.2.4
+
+   * regex 0.12
+
+   * MIT Scheme (MS-DOS) 7.2
+
+   * `screen' 3.5.2
+
+   * `sed' 1.18 & 2.03
+
+   * Shellutils 1.9.1
+
+   * GNU Shogi 1.1p02
+
+   * Smalltalk 1.1.1
+
+   * Superopt 2.3
+
+   * `tar' 1.11.2
+
+   * Termcap library 1.2
+
+   * Texinfo 3.1
+
+   * Textutils 1.9.1
+
+   * Tile Forth 2.1
+
+   * `time' 1.6
+
+   * `tput' 1.0
+
+   * UUCP 1.04
+
+   * `uuencode' 1.0
+
+   * `wdiff' 0.04
+
+   * X11R5
+
+The CD-ROM also contains Texinfo source for the `GNU Emacs Lisp Reference
+Manual' Edition 2.02 for version 19 and a snapshot of the Emacs Lisp Archive
+at Ohio State University.  (You can get libraries in this archive by UUCP
+(ask `staff@cis.ohio-state.edu' for directions) or by anonymous FTP from
+`archive.cis.ohio-state.edu' in `/pub/gnu/emacs/elisp-archive'.)
+
+The contents of the MIT Scheme, VMS, and Net2 tapes are not included
+
+The CD-ROM is in ISO 9660 format and can be mounted as a read-only file
+system on most operating systems.  If your driver supports it you can mount
+the CD-ROM with "Rock Ridge" extensions and it will look just like an
+ordinary Unix file system, rather than one full of truncated and otherwise
+mangled names that fit the vanilla ISO 9660 specifications.
+
+You can build most of this software without needing to copy the sources off
+the CD.	 Only sufficient disk space for object files and intermediate build
+targets is required.  Except for the MIT Scheme binaries for MS-DOS and the
+Ghostview for Windows executable, there are no precompiled programs on this
+CD.  You will need a C compiler (programs which need some other interpreter
+or compiler normally provide the C source for a bootstrapping program).
+
+If a business is ultimately paying, the CD costs $400.	It costs $100 if you,
+an individual, are paying out of your own pocket.
+
+   * What do the individual and company prices mean?
+
+     The software on our disk is free; anyone can copy it and anyone can run
+     it.  What we charge for is the physical disk and the service of
+     distribution.
+
+     We charge two different prices depending on who is buying.	 When a
+     company or other organization buys the disk, we charge $400.  When an
+     individual buys the same disk, we charge just $100.
+
+     This distinction is not a matter of who is allowed to use the software.
+     In either case, once you have a copy, you can distribute as many copies
+     as you wish, and there's no restriction on who can have or run them.
+     The price distinction is entirely a matter of what kind of entity pays
+     for the CD.
+
+     You, the reader, are certainly an individual, not a company.  If you are
+     buying a disk "in person", then you are probably doing so as an
+     individual.  But if you expect to be reimbursed by your employer, then
+     the disk is really for the company, so please pay the company price and
+     get reimbursed for the company price.  We won't try to check up on
+     you--we use the honor system--so please cooperate.
+
+     Buying CDs at the company price is especially helpful for the GNU
+     project; just 80 CDs at the company price will support an FSF programmer
+     or tech writer for a year.
+
+   * Why is there an individual price?
+
+     In the past, our distribution tapes have been ordered mainly by
+     companies.	 The CD at the price of $400 provides them with all of our
+     software for a much lower price than they would previously have paid for
+     six different tapes.  To lower the price more would cut into the FSF's
+     funds very badly.
+
+     However, for individuals, $400 is too high a price; hardly anyone could
+     afford that.  So we decided to make CDs available to individuals at the
+     lower price of $100, but not do the same for companies.
+
+   * Is there a maximum price?
+
+     Our stated prices are minimums.  Feel free to pay a higher price if you
+     wish to support GNU development more.  The sky's the limit; we will
+     accept as high a price as you can offer.  Or simply give a
+     tax-deductible donation to the Free Software Foundation, which is a
+     tax-exempt public charity.
 
 
-X11r5 Optional Tape
 
-This tape has source code for the optional MIT X Window System X11r5,
-including contributed software, libraries, games, Andrew and toolkits.
-
+Compiler Tools Binaries CD-ROM
+******************************
+
+We are now offering a CD-ROM that contains executables for GNU compiler tools
+for some systems which lack a compiler.	 This will allow users of those
+systems to compile GNU and other free software without having to buy a
+proprietary compiler.
+
+The CD-ROM is in ISO 9660 format and can be mounted as a read-only file
+system on most operating systems.  If your driver supports it you can mount
+the CD-ROM with "Rock Ridge" extensions and it will look just like an
+ordinary Unix file system, rather than one full of truncated and otherwise
+mangled names that fit the vanilla ISO 9660 specifications.
+
+We hope to have more systems included with each update of this CD-ROM.	If
+you can help build binaries for new systems (especially for systems that
+don't come with a C compiler), or have a system to suggest, please contact us
+at either address on the front cover.
+
+These programs:
+
+   * DJGPP 1.11.m1
+
+   * GCC/G++/Objective C 2.5.7
+
+   * GDB 4.11
+
+   * GAS 2.2
+
+   * Binutils 2.3
+
+   * Bison 1.22
+
+   * Flex 2.4.5
+
+   * Make 3.70
+
+   * libg++ 2.5.3
+
+For these platforms:
+
+   * `i386-msdos'
+
+   * `hppa1.1-hp-hpux9'
+
+   * `sparc-sun-solaris2'
+
+   * `sparc-sun-sunos4.1'
+
+
+
+Tape & CD-ROM Subscription Service
+**********************************
+
+If you do not have net access, our subscription service enables you to stay
+current with the latest FSF developments.  For a one-time cost equivalent to
+three tapes or CD-ROMs, we will mail you four new versions of the tape of
+your choice or the Source Code CD-ROM.	The tapes are sent each quarter, the
+Source Code CD-ROMs are sent as they are issued.  (The Source Code CD-ROM is
+currently issued twice a year, but we may issue it more frequently in the
+future.)
+
+Regularly, we will send you a new version of an Emacs, Languages, Utilities,
+or MIT X Window System Required tape or the Source CD-ROM.  The BSD Net-2,
+MIT Scheme, and MIT X Window System Optional tapes are not changed often
+enough to warrant quarterly updates.  The Compiler Tools Binaries CD-ROM is
+so new we do not yet know if we will be offering subscriptions to it.
+
+Since Emacs 19 is now on the Emacs Tape and the Source CD-ROM, a subscription
+to either will be a convenient way to keep current with Emacs 19 updates as
+it moves through beta-test.
+
+A subscription is also an easy way to keep up with the regular bug fixes to
+the MIT X Window System.  We update the X11 Required tape, as fixes and
+patches for the X Window System are issued throughout the year.	 Each new
+edition of the Source CD-ROM also has updated sources for the X Window System.
+See sections "Tape Subscriptions" and "CD-ROM Subscriptions" on the "Free
+Software Foundation Order Form".
+
+
+
+The Deluxe Distribution
+***********************
+
+The Free Software Foundation has been repeatedly asked to create a package
+that provides executables for all of our software.  Usually we offer only
+sources.  In addition to providing binaries with the source code, the Deluxe
+Distribution includes copies of all our printed manuals and reference cards.
+
+The FSF Deluxe Distribution contains the binaries and sources to hundreds of
+different programs including GNU Emacs, the GNU C Compiler, the GNU Debugger,
+the complete MIT X Window System, and all the GNU utilities.
+
+You may choose one of these machines and operating systems: HP 9000 series
+300, 700 or 800 (4.3 BSD or HP-UX); RS/6000 (AIX); SONY News 68k (4.3 BSD or
+NewsOS 4); Sun-3, Sun-4, or SPARC (SunOS 4 or Solaris).	 If your machine or
+system is not listed, or if a specific program has not been ported to that
+machine, please call the FSF office at the phone number below or send e-mail
+to `gnu@prep.ai.mit.edu'.
+
+We supply the software on one of these media in Unix tar format: 1600 or 6250
+bpi, 1/2 inch, reel to reel tape; Sun DC300XLP 1/4 inch cartridge, QIC-24; HP
+16 track DC600HC 1/4 inch cartridge; IBM RS/6000 1/4 inch cartridge, QIC-150;
+Exabyte 8mm cartridge; DAT 4mm cartridge.  If your computer cannot read any
+of these, please call us.
+
+The manuals included are one each of the Bison, Calc, Gawk, GNU C Compiler,
+GNU C Library, GNU Debugger, Flex, GNU Emacs Lisp Reference, Make, Texinfo &
+Termcap manuals; six copies of the manual for GNU Emacs; & a packet of
+reference cards each for GNU Emacs, Calc, the GNU Debugger, Bison, & Flex.
+
+In addition, every Deluxe Distribution includes CD-ROMs (in ISO 9660 format
+with Rock Ridge extensions) that contains sources of our software & compiler
+tool binaries for some systems.
+
+The Deluxe Distribution costs $5000.  It is for people who want to get
+everything compiled for them or who want to make a purchase that helps the
+FSF in a large way.  To order, please fill out the "Deluxe Distribution"
+sections in the "Free Software Foundation Order Form" and send it to:
+
+	Free Software Foundation, Inc.
+	675 Massachusetts Avenue
+	Cambridge, MA	02139-3309
+	USA
+	Electronic mail: gnu@prep.ai.mit.edu
+	Phone: +1-617-876-3296
+	FAX: +1-617-492-9057
+	FAX (in Japan):
+	  0031-13-2473 (KDD)
+	  0066-3382-0158 (IDC)
+
+
+
+MS-DOS Distribution
+*******************
+
+The FSF distributes, on 3.5 inch 1.44MB diskettes, some of the GNU software
+ported to MS-DOS.  The disks have both sources and executables.
+
+
+
+Contents of the Demacs diskettes
+--------------------------------
+
+Demacs is a version of GNU Emacs 18.55 ported to MS-DOS, with some changes
+from Emacs 18.57.  Two versions are actually included: one which handles
+8-bit character sets; and one based on an early version of MULE which handles
+16-bit character sets including Kanji.	We distribute them on five diskettes.
+
+Demacs runs on Intel 80386 and 80486-based machines running MS-DOS.  It is
+compatible with XMS memory managers and VCPI, but not yet with Microsoft
+Windows extended mode or other DPMI managers.
+
+
+
+Contents of the DJGPP diskettes
+-------------------------------
+
+We distribute DJGPP on 22 diskettes.  DJGPP requires at least 5MB of hard
+disk space to install, and 512K of RAM to use.	See `GNU Software Available
+Now" for more information on DJGPP.
+
+
+
+Contents of the Selected Utilities diskettes
+--------------------------------------------
+
+The GNUish MS-DOS Project releases GNU software ported to PC compatibles.  In
+general, this software will run on 8086 and 80286-based machines; an 80386 is
+not required.  Some of these utilities are necessarily missing features.
+Included are: `cpio', `diff', some file utilities, `find', `flex', `gdbm',
+`grep', `indent', `less', `m4', `make', MAWK, MicroEmacs, `ptx', RCS, `sed',
+`shar', `sort', & Texinfo.
+
+
+
+Contents of the Windows diskette
+--------------------------------
+
+We are distributing versions of GNU Chess and `gnuplot' ported to Microsoft
+Windows on a single diskette.
+
+
+
+FSF T-shirt
+***********
+
+We still have our Free Software Foundation T-shirts available, designed by
+Cambridge artist Jamal Hannah.	The front of the t-shirt has an image of a
+GNU hacking at a workstation with the text "GNU's Not Unix" above and the
+text "Free Software Foundation" below.	They are available in two colors,
+Natural and Black.  Natural is an off-white, unbleached, undyed,
+environment-friendly cotton, printed with black ink, and is great for
+tye-dyeing or displaying as is.	 Black is printed with white ink and is
+perfect for late night hacking.	 All shirts are thick 100% cotton, and are
+available in sizes M, L, XL and XXL.
+
+The front of the t-shirt has an image of a GNU hacking at a workstation with
+the text "GNU's Not Unix" above and the text "Free Software Foundation" below.
+We have just added a copy of the GNU General Public License to the back of
+the t-shirt, which use to be blank.
+
+Use the "Free Software Foundation Order Form" to order your shirt, and
+consider getting one as a present for your favorite hacker!
+
+
+
 Free Software Foundation Order Form
 ***********************************
 
-Price and contents may change without notice after January 31, 1994.  All items
-are distributed with permission to copy and to redistribute.  Texinfo source
-for each manual is on the appropriate tape, diskette, or CD-ROM; the prices
-for these magnetic media do not include printed manuals.  All items are
-provided on an "as is" basis, with no warranty of any kind.  Please allow six
-weeks for delivery (though it won't usually take that long).
+All items are distributed with permission to copy and to redistribute.
+Texinfo source for each manual is on the appropriate tape, diskette, or
+CD-ROM; the prices for these magnetic media do not include printed
+documentation.	All items are provided on an "as is" basis, with no warranty
+of any kind.  Please allow six weeks for delivery (though it won't usually
+take that long).
 
 
-      PRICE AND CONTENTS MAY CHANGE WITHOUT NOTICE AFTER January 31, 1994.
+      PRICE AND CONTENTS MAY CHANGE WITHOUT NOTICE AFTER June 30, 1994.
 
-The following tapes in the formats indicated:
 
-		     Please circle the dollar amount for each tape you order.
+The following tapes in the formats indicated (see sub-section for each tape in
+"GNU Software Available Now" for contents):
 
-			Reel to	  Sun (1)    HP	      IBM (2)	Exabyte
-			reel			      RS/6000
-(c.t. = cartridge tape) Unix tar  Unix tar  Unix tar  Unix tar	Unix tar
-(n/a = not available)	9-track	  QIC-24    16-track  QIC-150
-			1600 bpi  DC300XLP  DC600HC   DC600A
-Tape contents above.	1/2" reel 1/4" c.t. 1/4" c.t. 1/4" c.t. 8mm c.t.
+	Please circle the dollar amount for each tape you order.
 
-Emacs			$200	  $210	    $230      $215 (3)	$205
-Languages		$200	  $210	    $230       n/a	$205
-Experimental		$200	  $210	    $230      $215	$205
-Utilities		$200	  $210	    $230      $215	$205
-BSD-Net2		$200	  $210	    $230      $215	$205
-Scheme			$200	  $210	    $230      $215	$205
-X11r5-Required		$200	  $210	    $230      $215	$205
-X11r5-Optional		$200	  $210	    $230      $215	$205
+  *** NEW !!! ***	*** 4mm DAT tapes ***
+
+		Reel to	 Sun (1)    HP	      IBM (2)	Exabyte	 DAT
+		reel			      RS/6000		  NEW!!
+		Unix tar  Unix tar  Unix tar  Unix tar	Unix tar Unix tar
+		9-track	  QIC-24    16-track  QIC-150
+		1600 bpi  DC300XLP  DC600HC   DC600A
+		1/2" reel 1/4" c.t. 1/4" c.t. 1/4" c.t. 8mm c.t. 4mm c.t.
+	(c.t. = cartridge tape)
+	(n/a = not available)
+Emacs		$200	  $210	    $230      $215 (3)	$205	 $225
+Languages	$200	  $210	    $230       n/a	$205	 $225
+Utilities	$200	  $210	    $230      $215	$205	 $225
+BSD-Net2	$200	  $210	    $230      $215	$205	 $225
+Scheme		$200	  $210	    $230      $215	$205	 $225
+X11r5-Required	$200	  $210	    $230      $215	$205	 $225
+X11r5-Optional	$200	  $210	    $230      $215	$205	 $225
 
 	 (1) Sun tapes can be read on some other Unix systems.
 	 (2) IBM RS/6000 tapes can be read on some other Unix systems.
 	 (3) The IBM Emacs tape also has binaries for GNU Emacs.
 
 
-Subscriptions, 4 updates for one year:
+Subscriptions, 4 updates for one year (see "Tape & CD-ROM Subscription
+Service"):
 
-FSF's Subscription Service provides four new versions of the tape of your
-choice.	 It is offered only for tapes that change frequently.
-
-Emacs			$600	  $630	    $690      $645	$615
-Languages		$600	  $630	    $690       n/a	$615
-Experimental		$600	  $630	    $690      $645	$615
-Utilities		$600	  $630	    $690      $645	$615
-X11r5-Required		$600	  $630	    $690      $645	$615
+Emacs		$600	  $630	    $690      $645	$615	 $675
+Languages	$600	  $630	    $690       n/a	$615	 $675
+Utilities	$600	  $630	    $690      $645	$615	 $675
+X11r5-Required	$600	  $630	    $690      $645	$615	 $675
 
       Subtotal $ ______	 Please put total of the above circled amounts here.
 
+
 The following, on 1600 bpi reel-to-reel 9 track 1/2" tapes, in VMS BACKUP
-format (aka interchange format):
+format (aka interchange format) (see "VMS Emacs and VMS Compiler Tapes"):
 
 ____ @ $195  = $ ______	  VMS Emacs, GNU Emacs source & executables only.
-			  None of the other software on the GNU Emacs Tape,
-			  described above, is included
-____ @ $195  = $ ______	  VMS Languages, GCC, GAS, and Bison source and
-			  executables only.  None of the other software on the
-			  GNU Languages Tape, described above, is included.
+
+____ @ $195  = $ ______	  VMS Compiler, GCC, GAS, and Bison source and
+			  executables only.
 
 
-FSF Deluxe Distribution (contents described above):
+FSF Deluxe Distribution (see "The Deluxe Distribution" and end of order form):
 
-Machine: _____________________________________________________________________
+____ @ $5000 = $ ______	 The Deluxe Distribution, with manuals, and
+			 executables.
 
-Operating system: ____________________________________________________________
 
-Media type: __________________________________________________________________
+Compiler Tools Binaries CD-ROM, in ISO 9660 format (see "Compiler Tools
+Binaries CD-ROM"):
 
-____ @ $5000 = $ ______	  Deluxe Distribution, with manuals, reference cards.
-			  source code and executables.
+  *** NEW !!! ***
 
-The following source and executables for MS-DOS, on 3.5" 1.44MB diskettes:
+____ @ $240  = $ ______	  GNU Compiler Tools Binaries CD-ROM for
+			  corporations and other organizations.	 NEW!!
+____ @	$60  = $ ______	  GNU Compiler Tools Binaries CD-ROM for individuals.
+			  NEW!!
 
-____ @ $ 90  = $ ______	  Demacs (a port of GNU Emacs) on diskettes, for 80386
-			  and up.  Two versions are included.  One handles
-			  8-bit characters sets.  The other, based on Nemacs,
-			  handles 16-bit character sets, including Kanji.
-____ @ $ 80  = $ ______	  DJGPP on diskettes, GCC version 2, for 80386
-			  and up.  DJGPP is a complete port of GCC, libraries,
-			  development utilities, and a symbolic debugger, for
-			  Intel 80386 and 80486--based machines running
-			  MS-DOS.  DJGPP requires at least 5MB of hard disk
-			  space to install, and 512K of RAM to use.  It is
-			  compatible with XMS memory managers and VCPI, but
-			  not with Microsoft Windows extended mode or other
-			  DPMI managers.  It cannot emulate multitasking (e.g.
-			  fork) or signals.
-____ @ $ 85  = $ ______	  Selected Utilities from the GNUish MS-DOS Project on
-			  diskettes, 8086 and up.  The utilities include:
-			  RCS, flex, GAWK, cpio, diff, MicroEmacs, find,
-			  some file utilities, gdbm, grep, libc, ptx,
-			  indent, less, m4, make, sed, shar, sort, and
-			  Texinfo.  Some of these utilities are necessarily
-			  missing features.
-____ @ $ 40  = $ ______	  Windows diskette, GNU Chess and gnuplot for
-			  Microsoft Windows.
 
-CD-ROM, in ISO 9660 format (CD-ROM described above):
+
+Source Code CD-ROM, in ISO 9660 format (see "Source Code CD-ROM"):
 
 ____ @ $400  = $ ______	  GNU Source Code CD-ROM for corporations and
 			  other organizations.
 ____ @ $100  = $ ______	  GNU Source Code CD-ROM for individuals.
 
 
-The following manuals, 6 by 9.25 inches, soft cover with an illustration,
-offset printed, "lay-flat" binding:
+Subscriptions, next 4 updates, of the Source Code CD-ROM, in ISO 9660 format
+(see "Tape & CD-ROM Subscription Service"):
 
   *** NEW !!! ***
 
-____ @ $ 25  = $ ______	  GNU Emacs manual, unit price for 1 to 5 copies,
-			  430 pages, new 8th edition with a reference card.
-____ @ $ 17  = $ ______	  GNU Emacs manuals, unit price for 6 or more.
+____ @ $1200 = $ ______	  Subscription to the GNU Source Code CD-ROM for
+			  corporations and other organizations.	 NEW!!
+____ @ $300  = $ ______	  Subscription to the GNU Source Code CD-ROM for
+			  individuals.	NEW!!
 
-____ @ $ 50  = $ ______	  GNU Emacs Lisp Reference manual, 614 pages in
-			  2 volumes.
-____ @ $200  = $ ______	  A box of 5 GNU Emacs Lisp Reference manuals.
 
-____ @ $ 20  = $ ______	  Debugging with GDB, 182 pages, with a reference
+The following source and executables for MS-DOS, on 3.5" 1.44MB diskettes
+(see "MS-DOS Distribution"):
+
+____ @ $ 90  = $ ______	  Demacs diskettes, GNU Emacs, for 80386 and up.
+
+____ @ $ 80  = $ ______	  DJGPP diskettes, GCC version 2, for 80386 and up.
+
+____ @ $ 85  = $ ______	  Selected Utilities diskettes, 8086 and up.
+
+____ @ $ 40  = $ ______	  Windows diskette, GNU Chess and gnuplot for
+			  Microsoft Windows.
+
+
+The following manuals, 7 by 9.25 inches, soft cover with an illustration,
+offset printed, "lay-flat" binding (see "GNU Documentation"):
+
+____ @ $ 25  = $ ______	  GNU Emacs version 18 manual, unit price for 1 to 5
+			  copies, about 410 pages, with a reference card.
+____ @ $ 17  = $ ______	  GNU Emacs version 18 manuals, unit price for 6 or
+			  more.
+____ @ $ 50  = $ ______	  GNU Emacs Lisp Reference version 18 manual, about
+			  614 pages in 2 volumes.
+____ @ $200  = $ ______	  A box of 5 GNU Emacs Lisp Reference version 18
+			  manuals.
+
+  *** NEW !!! ***
+____ @ $ 25  = $ ______	  GNU Emacs version 19 manual, unit price for 1 to 5
+			  copies, about 418 pages, new 9th edition with a
+			  reference card.  NEW!!
+____ @ $ 17  = $ ______	  GNU Emacs version 19 manuals, unit price for 6 or
+			  more.
+____ @ $ 50  = $ ______	  GNU Emacs Lisp Reference version 19 manual, about
+			  756 pages in 2 volumes.
+____ @ $200  = $ ______	  A box of 5 GNU Emacs Lisp Reference version 19
+			  manuals.
+
+____ @ $ 20  = $ ______	  Debugging with GDB, about 182 pages, with a reference
 			  card.
-____ @ $ 20  = $ ______	  Texinfo manual, 248 pages.  Texinfo is GNU's
-			  structured documentation system, included with GNU
-			  Emacs.  Texinfo is used to produce both on-line and
-			  printed documents.  This manual describes how to
-			  write Texinfo documents.
-____ @ $ 20  = $ ______	  Gawk manual, 191 pages.
+____ @ $ 20  = $ ______	  Texinfo manual, about 248 pages.
 
-____ @ $ 20  = $ ______	  Make manual, 164 pages.
+____ @ $ 20  = $ ______	  Gawk manual, about 188 pages.
 
-____ @ $ 15  = $ ______	  Bison manual, 98 pages, with a reference card.
+____ @ $ 20  = $ ______	  Make manual, about 158 pages.
 
-____ @ $ 15  = $ ______	  Flex manual, 120 pages, with a reference card.
+____ @ $ 20  = $ ______	  Bison manual, about 98 pages, with a reference card.
+
+____ @ $ 20  = $ ______	  Flex manual, about 124 pages, with a reference card.
 
 
-The following manual, 6 by 9.25 inches, soft cover, photocopied, GBC binding:
 
-____ @ $ 15  = $ ______	  Termcap manual, 68 pages.  Documents the termcap
-			  library and GNU's extensions to it.  The GNU termcap
-			  library is included with GNU Emacs.
+The following manuals, 7 by 9.25 inches, soft cover, photocopied, GBC binding:
 
-The following manuals, 8.5 by 11 inches, soft cover, photocopied, GBC binding:
+____ @ $ 50  = $ ______	  Using and Porting GNU CC version 2.3, about 428
+			  pages.
+____ @ $ 50  = $ ______	  GNU C Library Reference Manual, about 670 pages.
 
-____ @ $ 50  = $ ______	  Using and Porting GNU CC version 2.4, 388 pages.
+____ @ $ 15  = $ ______	  Termcap manual, 68 pages.
 
-____ @ $ 20  = $ ______	  Using and Porting GNU CC version 1.42, 206 pages.
 
-  *** NEW !!! ***
 
-____ @ $ 50  = $ ______	  GNU C Library Reference Manual, 698 pages. NEW!
+The following manual, 8.5 by 11 inches, soft cover, photocopied, GBC binding:
 
-____ @ $ 50  = $ ______	  GNU Emacs Calc manual, 596 pages, with a reference
-			  card.	 Calc is an extensible, advanced mathematical
-			  tool and desk calculator that runs under GNU Emacs.
+____ @ $ 50  = $ ______	  GNU Emacs Calc manual, about 596 pages, with a
+			  reference card.
+
 
 The following reference cards, unit price, without the manuals:
 
-____ @ $  2  = $ ______	  GNU Emacs reference card - version 18.
+____ @ $  2  = $ ______	  GNU Emacs version 18 reference card.
 
-____ @ $  2  = $ ______	  GNU Emacs reference card - version 19.
+____ @ $  2  = $ ______	  GNU Emacs version 19 reference card.
 
 ____ @ $  2  = $ ______	  GNU Emacs Calc reference card.
 
@@ -412,9 +2155,12 @@ ____ @ $  2  = $ ______	  Bison reference card.
 ____ @ $  2  = $ ______	  Flex reference card.
 
 
+
 The following reference cards, in packets of ten:
 
-____ @ $ 10  = $ ______	  GNU Emacs reference cards.
+____ @ $ 10  = $ ______	  GNU Emacs version 18 reference cards.
+
+____ @ $ 10  = $ ______	  GNU Emacs version 19 reference cards.
 
 ____ @ $ 10  = $ ______	  GNU Emacs Calc reference cards.
 
@@ -425,12 +2171,13 @@ ____ @ $ 10  = $ ______	  Bison reference cards.
 ____ @ $ 10  = $ ______	  Flex reference cards.
 
 
-GNU/FSF T-shirts, thick 100% cotton:
 
-The front of the t-shirt has an image of a GNU hacking at a workstation with
-the text "GNU's Not Unix" above and the text "Free Software Foundation below.
-Natural is an off-white, unbleached, undyed, environment-friendly cotton,
-printed with black ink.	 Black is printed with white ink.
+GNU/FSF T-shirts, thick 100% cotton (see "FSF T-shirts"):
+
+  *** NEW !!! ***
+
+The back of the t-shirt, which used to be blank, now has a copy of the GNU
+General Public License on it.  NEW!!
 
 ____ @ $ 15  = $ ______	  Size M     ____ natural  ____ black.
 
@@ -452,10 +2199,9 @@ ____ @ $ 15  = $ ______	  Size XXL   ____ natural  ____ black.
 			  reference cards; i.e.,
 			  shipping for all other items = $5 + $1 * n.
 	     + $ ______	  Outside of U.S., Canada, and Puerto Rico for
-			  shipping: for each box of GNU Emacs Lisp Reference
-			  manuals, add $60.  For all other items, add $20 base
-			  charge, and then add $10 more for each item (except
-			  reference cards) in the order; i.e.,
+			  shipping:  Add $20 base charge, and then add $10
+			  more for *each* item (except reference cards) in the
+			  order; i.e.,
 			  shipping for all other items = $20 + $10 * n.
 	     + $ ______	  Optional (tax-deductible in the U.S.) donation.
 		 ------
@@ -463,12 +2209,44 @@ ____ @ $ 15  = $ ______	  Size XXL   ____ natural  ____ black.
 	 TOTAL $ ______	  We pay for shipping via UPS ground transportation in
 			  the contiguous 48 states and Canada.
 
-Orders filled only upon receipt of check or money order in U.S. dollars.
-We do not have the staff to handle the billing of unpaid orders.
-Please help keep our lives simple by including your payment with your order.
 
 
-Please make checks payable to the Free Software Foundation.
+Please answer the following questions:
+
+  How did you hear about the GNU Project? ____________________________________
+
+  ____________________________________________________________________________
+
+  ____________________________________________________________________________
+
+  Do you also have network access to GNU software?    Yes ______     No ______
+
+
+
+If you are ordering a CD-ROM, please answer the following questions:
+
+  Is this a replacement for a previous edition of the GNU Source Code CD-ROM?
+
+	Yes ______  No ______
+
+  If FSF offered a less expensive CD-ROM, which had only GNU Emacs on it, but
+  also included binaries for several platforms, would you purchase it: (check
+  one)
+	______ instead of the Source Code CD-ROM?
+
+	______ in addition to the Source Code CD-ROM?
+
+	______ Would not purchase it.
+
+
+
+Orders filled only upon receipt of check, money order or credit card order in
+U.S. dollars.  We do not have the staff to handle the billing of unpaid
+orders.	 Please help keep our lives simple by including your payment with your
+order.
+
+
+Please make checks payable to the "Free Software Foundation".
 
 
 Name: ________________________________________________________________________
@@ -484,18 +2262,54 @@ City/State/Province: _________________________________________________________
 Zip Code/Postal Code/Country: ________________________________________________
 
 Telephone number in case of a problem with your order.
-Overseas orders, please put FAX numbers. _____________________________________
+For international orders, please include a FAX numbers. ______________________
 
-For orders from outside the U.S.: Orders must be paid in U.S. dollars. You
-are responsible for paying all duties, tariffs, and taxes.  If you refuse
-to pay the charges, the shipper will return or abandon the order.
+
+For orders from outside the U.S.:
+
+Orders must be paid in U.S. dollars.  You are responsible for paying all
+duties, tariffs, and taxes.  If you refuse to pay the charges, the shipper
+will return or abandon the order.
+
+
+For Deluxe Distributions:
+
+Machine: _____________________________________________________________________
+
+Operating system: ____________________________________________________________
+
+Media type: __________________________________________________________________
+
+
+
+For Credit Card Orders:
+
+FSF takes these credit cards: Visa, Mastercard, JCB, Diner's Club, and Carte
+Blanche.  Please note that we are charged about 5% of an order's total amount
+in credit card processing fees.	 Please consider paying by check instead, or
+adding on a 5% donation to make up the difference.  To place a credit card
+order, please give us this information:
+
+Card type: ___________________________________________________________________
+
+Account Number: ______________________________________________________________
+
+Expiration Date: _____________________________________________________________
+
+Your Signature: ______________________________________________________________
+
+
 
 			 Please mail orders to: Free Software Foundation
 						675 Massachusetts Avenue
-PRICES AND CONTENTS MAY CHANGE			Cambridge, MA  02139  USA
-WITHOUT NOTICE AFTER January 31, 1994.		+1 617 876 3296
+Version: Jan 1994 ASCII etc/ORDERS		Cambridge, MA  02139  USA
+						+1 617 876 3296
+						FAX: +1 617 492 9057
+						FAX numbers in Japan:
+PRICES AND CONTENTS MAY CHANGE				0031-13-2473 (KDD)
+WITHOUT NOTICE AFTER June 30, 1994.			0066-3382-0158 (IDC)
 
-----------------------------------------------------------------------
+---------------------------------------------------------------------
 local variables:
 mode: text
 fill-column: 78

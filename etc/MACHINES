@@ -152,6 +152,10 @@ Bull DPX/2 models 2nn or 3nn (m68k-bull-sysv3)
   call enters in an infinite loop. F_SETOWN_BUG has been defined to avoid 
   calling it.
 
+Bull DPX/20 (rs6000-bull-bosx)
+
+  Version 19 works.
+
 Bull sps7 (m68k-bull-sysv2)
 
   Changes partially merged in version 19, but some fixes are probably required.
@@ -191,13 +195,16 @@ Cydra 5 (cydra-cydrome-sysv)
   18.51 worked in one version of their operating system but stopped
   working in a newer version.  This has not been fixed.
 
+Data General Aviion (m88k-dg-dgux)
+
+  19.23 works; however, the GCC provided with DGUX 5.4R3.00 fails to
+  compile src/emacs.c.  GCC 2.5.8 does work.
+
+  System versions other than DGUX 5.4R3.00 have not been tested.
+
 DECstation (mips-dec-ultrix or mips-dec-osf)
 
   19.22 is believed to work on Ultrix 4.2.
-  
-  If you are not using DECnet, then remove the definition of
-  LIBS_MACHINE from `src/m/pmax.h', in order to prevent linking with
-  the `libdnet.a' library.
 
   See under Ultrix for problems using X windows on Ultrix.
   Note that this is a MIPS machine.
@@ -211,20 +218,20 @@ DECstation (mips-dec-ultrix or mips-dec-osf)
 
 Motorola Delta 147 (m68k-motorola-sysv)
 
-  Emacs runs as of version 19.17.
+  Emacs runs as of version 19.23.
 
   Motorola Delta boxes running System V/68 release 3.
   Tested on 147 board with SVR3V7, no X and gcc.
   Tested on 167 board with SVR3V7, no X, cc, gnucc and gcc.
 
-  There are three ways to use the gnucc provided with R3V7.  Either
-  link /bin/ccd/cc to /bin/cc and then configure (supposing that CC
-  is unset or set to cc).  Or configure like this: `CC=/bin/ccd/cc
-  configure', or else configure like this: `CC=gnucc configure'.
+  The installation script chooses the compiler itself.  gnucc is
+  preferred.
 
-  If you have not installed the optional NSE package (Network Services
-  Extensions), then edit src/m/delta.h and remove the line where
-  HAVE_SOCKETS is defined.
+  There is still a bug, probably a memory allocation error of some
+  kind.  Emacs 19.23 bombs reproducibly when byte-compiling large
+  elisp files.  If compiled with SYSTEM_MALLOC, it manages to
+  byte-compile, but bombs more often on common tasks, usually those
+  implying an enlargement of a buffer.
 
 Motorola Delta 187 (m88k-motorola-sysv,
 		    m88k-motorola-sysvr4, or
@@ -287,6 +294,18 @@ Gould Power Node (pn-gould-bsd4.2 or pn-gould-bsd4.3)
 Gould NP1 (np1-gould-bsd)
 
   Version 19 supposedly works.
+
+Harris Night Hawk (m68k-harris-cxux or m88k-harris-cxux)
+
+  This port was added in 19.23.  The configuration actually tested was
+  a Night Hawk 4800 running CX/UX 7.0.
+
+  If you have GCC ported and want to build with it, you probably need to
+  change things (like compiler switches) defined in the s/cxux.h file.
+
+  With CX/UX 7.0 and later releases, you need to build after setting the
+  SDE_TARGET environment variable to COFF (a port using ELF and shared
+  libraries has not yet been done).
 
 Honeywell XPS100 (xps100-honeywell-sysv)
 
@@ -399,7 +418,11 @@ IBM RS/6000 (rs6000-ibm-aix)
   corrupted; if you have a fix, please send it to us.
 
   Compiling with -O using the IBM compiler has been known
-  to make Emacs work incorrectly.
+  to make Emacs work incorrectly.  It's reported that on
+  AIX 3.2.5 with an IBM compiler earlier than 1.03.00.14,
+  cc -O fails for some files.  You need to install any
+  PTF containing APAR #IX42810 to bring the compiler to
+  the 1.03.00.14 level to allow optimized compiles.
 
   As of 19.11, if you strip the Emacs executable, it ceases to work.
 
@@ -460,8 +483,11 @@ Intel 386 (i386-*-isc, 		i386-*-esix,
   It may also be correct for Microport systems.
   Use i386-*-sco3.2v4 for SCO 3.2v4; Emacs runs as of version 19.6.
 
-  Use i386-*-bsd386 for BSDI BSD/386; Emacs runs as of version 19.10.
+  Use i386-*-bsd386 for BSDI BSD/386; Emacs runs as of version 19.23.
   Make on that system is broken; use GNU make instead.
+  Shell bugs in version 1.0 of BSD/386 cause configure
+  to do the wrong thing with --with-x-toolkit; the workaround is to edit
+  configure to run another shell such as bash.
 
   For System V release 3, use i386-*-sysv3.
   For System V release 4, use i386-*-sysv4.
@@ -760,9 +786,9 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   likely due to a bug in Solaris 2.2's multiprocessor support,
   rather than an Emacs bug.
 
-  On Solaris 2.2 with SUNWspro 2.0.1, src/Makefile gets bad data--
-  spurious spaces.  This is probably the fault of CPP.  No workaround yet
-  except to compile with GCC instead.
+  On Solaris 2.2 with SUNWspro 2.0.1, src/Makefile used to get bad data--
+  spurious spaces.  In 19.23, changes in configure ought to use a different
+  cpp that avoids this problem.
 
   On Solaris, if linking gives the error that `bss_end' and `main'
   are undefined, it may mean that the C preprocessor did the wrong
@@ -839,7 +865,7 @@ Tektronix 16000 box (6130?) (ns16k-tektronix-bsd)
 
 Tektronix 4300 (m68k-tektronix-bsd)
 
-  Emacs 18.51 worked.
+  Emacs 19.21 works.
 
 Titan P2 or P3 (titan-titan-sysv)
 

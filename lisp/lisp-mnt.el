@@ -1,13 +1,13 @@
 ;;; lisp-mnt.el --- minor mode for Emacs Lisp maintainers
 
-;; Copyright (C) 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Maintainer: Eric S. Raymond <esr@snark.thyrsus.com>
 ;; Created: 14 Jul 1992
-;; Version: $Id: lisp-mnt.el,v 1.4 1993/07/26 18:40:03 rms Exp $
+;; Version: $Id: lisp-mnt.el,v 1.8 1994/05/03 23:21:00 kwzh Exp $
 ;; Keywords: docs
-;; Bogus-Bureaucratic-Cruft: Gruad will get you if you don't watch out!
+;; X-Bogus-Bureaucratic-Cruft: Gruad will get you if you don't watch out!
 
 ;; This file is part of GNU Emacs.
 
@@ -89,9 +89,10 @@
 ;;    * Keywords line --- used by the finder code (now under construction)
 ;; for finding elisp code related to a topic.
 ;;
-;;    * Bogus-Bureaucratic-Cruft line --- this is a joke.  I figured I should
-;; satirize this design before someone else did.  Also, it illustrates the
-;; possibility that other headers may be added in the future for new purposes.
+;;    * X-Bogus-Bureaucratic-Cruft line --- this is a joke and an example
+;; of a comment header.  Headers starting with `X-' should never be used
+;; for any real purpose; this is the way to safely add random headers
+;; without invoking the wrath of any program.
 ;;
 ;;    * Commentary line --- enables lisp code to find the developer's and
 ;; maintainers' explanations of the package internals.
@@ -420,11 +421,15 @@ Prompts for bug subject.  Leaves you in a mail buffer."
   (let ((package (buffer-name))
 	(addr (lm-maintainer))
 	(version (lm-version)))
-    (mail nil (or addr bug-gnu-emacs) topic)
+    (mail nil
+	  (if addr
+	      (concat (car addr) " <" (cdr addr) ">")
+	    bug-gnu-emacs)
+	  topic)
     (goto-char (point-max))
     (insert "\nIn "
 	    package
-	    (and version (concat " version " version))
+	    (if version (concat " version " version) "")
 	    "\n\n")
     (message
      (substitute-command-keys "Type \\[mail-send] to send bug report."))))

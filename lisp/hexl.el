@@ -1,6 +1,6 @@
 ;;; hexl.el --- edit a file in a hex dump format using the hexl filter.
 
-;; Copyright (C) 1989 Free Software Foundation, Inc.
+;; Copyright (C) 1989, 1994 Free Software Foundation, Inc.
 
 ;; Author: Keith Gabryelski <ag@wheaties.ai.mit.edu>
 ;; Maintainer: FSF
@@ -170,17 +170,17 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
     (make-local-variable 'write-contents-hooks)
     (add-hook 'write-contents-hooks 'hexl-save-buffer)
 
+    (make-local-variable 'hexl-max-address)
+
     (let ((modified (buffer-modified-p))
- 	  (read-only buffer-read-only)
+	  (inhibit-read-only t)
 	  (original-point (1- (point))))
       (if (not (or (eq arg 1) (not arg)))
-;; if no argument then we guess at hexl-max-address
+	  ;; if no argument then we guess at hexl-max-address
           (setq hexl-max-address (+ (* (/ (1- (buffer-size)) 68) 16) 15))
-        (setq buffer-read-only nil)
         (setq hexl-max-address (1- (buffer-size)))
         (hexlify-buffer)
         (set-buffer-modified-p modified)
-        (setq buffer-read-only read-only)
         (hexl-goto-address original-point)))))
 
 (defvar hexl-in-save-buffer nil)
@@ -202,7 +202,8 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
 				   (set-buffer name)
 				   (dehexlify-buffer)
 				   ;; Prevent infinite recursion.
-				   (let ((hexl-in-save-buffer t))
+				   (let ((hexl-in-save-buffer t)
+					 (buffer-file-type t)) ; for ms-dos
 				     (save-buffer))
 				   (setq modified (buffer-modified-p))
 				   (delete-region (point-min) (point-max))
@@ -219,7 +220,9 @@ You can use \\[hexl-find-file] to visit a file in hexl-mode.
   "Edit file FILENAME in hexl-mode.
 Switch to a buffer visiting file FILENAME, creating one in none exists."
   (interactive "fFilename: ")
-  (find-file filename)
+  (if (eq system-type 'ms-dos)
+      (find-file-binary filename)
+    (find-file filename))
   (if (not (eq major-mode 'hexl-mode))
       (hexl-mode)))
 
@@ -229,13 +232,11 @@ With arg, don't unhexlify buffer."
   (interactive "p")
   (if (or (eq arg 1) (not arg))
       (let ((modified (buffer-modified-p))
-	    (read-only buffer-read-only)
+	    (inhibit-read-only t)
 	    (original-point (1+ (hexl-current-address))))
-	(setq buffer-read-only nil)
 	(dehexlify-buffer)
 	(remove-hook 'write-contents-hook 'hexl-save-buffer)
 	(set-buffer-modified-p modified)
-	(setq buffer-read-only read-only)
 	(goto-char original-point)))
   (setq mode-name hexl-mode-old-mode-name)
   (use-local-map hexl-mode-old-local-map)
@@ -499,12 +500,16 @@ You may also type up to 3 octal digits, to insert a character with that code"
 (defun hexlify-buffer ()
   "Convert a binary buffer to hexl format"
   (interactive)
-  (shell-command-on-region (point-min) (point-max) hexlify-command t))
+  (let ((binary-process-output nil) ; for Ms-Dos
+	(binary-process-input t))
+    (shell-command-on-region (point-min) (point-max) hexlify-command t)))
 
 (defun dehexlify-buffer ()
   "Convert a hexl format buffer to binary."
   (interactive)
-  (shell-command-on-region (point-min) (point-max) dehexlify-command t))
+  (let ((binary-process-output t) ; for Ms-Dos
+	(binary-process-input nil))
+    (shell-command-on-region (point-min) (point-max) dehexlify-command t)))
 
 (defun hexl-char-after-point ()
   "Return char for ASCII hex digits at point."
@@ -556,9 +561,9 @@ You may also type up to 3 octal digits, to insert a character with that code"
        (+ (* (/ address 16) 68) 52 (% address 16)))
       (delete-char 1)
       (insert (hexl-printable-character ch))
-      (if (eq address hexl-max-address)
-	  (hexl-goto-address address)
-	(hexl-goto-address (1+ address)))
+      (or (eq address hexl-max-address)
+	  (setq address (1+ address)))
+      (hexl-goto-address address)
       (setq num (1- num)))))
 
 ;; hex conversion
@@ -592,6 +597,15 @@ You may also type up to 3 octal digits, to insert a character with that code"
 (if hexl-mode-map
     nil
     (setq hexl-mode-map (make-sparse-keymap))
+
+    (define-key hexl-mode-map [left] 'hexl-backward-char)
+    (define-key hexl-mode-map [right] 'hexl-forward-char)
+    (define-key hexl-mode-map [up] 'hexl-previous-line)
+    (define-key hexl-mode-map [down] 'hexl-next-line)
+    (define-key hexl-mode-map [M-left] 'hexl-backward-short)
+    (define-key hexl-mode-map [M-right] 'hexl-forward-short)
+    (define-key hexl-mode-map [next] 'hexl-scroll-up)
+    (define-key hexl-mode-map [prev] 'hexl-scroll-down)
 
     (define-key hexl-mode-map "\C-a" 'hexl-beginning-of-line)
     (define-key hexl-mode-map "\C-b" 'hexl-backward-char)

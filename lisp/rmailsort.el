@@ -1,9 +1,9 @@
 ;;; rmailsort.el --- Rmail: sort messages.
 
-;; Copyright (C) 1990, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1990, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Masanobu UMEDA <umerin@mse.kyutech.ac.jp>
-;; Version: $Header: /home/fsf/rms/e19/lisp/RCS/rmailsort.el,v 1.16 1993/11/24 08:08:56 rms Exp $
+;; Version: $Header: /gd/gnu/emacs/19.0/lisp/RCS/rmailsort.el,v 1.22 1994/05/03 22:46:37 kwzh Exp $
 ;; Keywords: mail
 
 ;; This file is part of GNU Emacs.
@@ -50,8 +50,9 @@ If prefix argument REVERSE is non-nil, sort them in reverse order."
 			  (let ((key (or (rmail-fetch-field msg "Subject") ""))
 				(case-fold-search t))
 			    ;; Remove `Re:'
-			    (if (string-match "^\\(re:[ \t]+\\)*" key)
-				(substring key (match-end 0)) key))))))
+			    (if (string-match "^\\(re:[ \t]*\\)*" key)
+				(substring key (match-end 0))
+			      key))))))
 
 (defun rmail-sort-by-author (reverse)
   "Sort messages of current Rmail file by author.
@@ -106,8 +107,35 @@ If prefix argument REVERSE is non-nil, sort them in reverse order."
   (rmail-sort-messages reverse
 		       (function
 			(lambda (msg)
-			  (count-lines (rmail-msgbeg msgnum)
-				       (rmail-msgend msgnum))))))
+			  (count-lines (rmail-msgbeg msg)
+				       (rmail-msgend msg))))))
+
+(defun rmail-sort-by-keywords (reverse labels)
+  "Sort messages of current Rmail file by labels.
+If prefix argument REVERSE is non-nil, sort them in reverse order.
+KEYWORDS is a comma-separated list of labels."
+  (interactive "P\nsSort by labels: ")
+  (or (string-match "[^ \t]" labels)
+      (error "No labels specified"))
+  (setq labels (concat (substring labels (match-beginning 0)) ","))
+  (let (labelvec)
+    (while (string-match "[ \t]*,[ \t]*" labels)
+      (setq labelvec (cons 
+		      (concat ", ?\\("
+			      (substring labels 0 (match-beginning 0))
+			      "\\),")
+		      labelvec))
+      (setq labels (substring labels (match-end 0))))
+    (setq labelvec (apply 'vector (nreverse labelvec)))
+    (rmail-sort-messages reverse
+			 (function
+			  (lambda (msg)
+			    (let ((n 0))
+			      (while (and (< n (length labelvec))
+					  (not (rmail-message-labels-p
+						msg (aref labelvec n))))
+				(setq n (1+ n)))
+			      n))))))
 
 ;; Basic functions
 
@@ -153,7 +181,7 @@ If 1st argument REVERSE is non-nil, sort them in reverse order.
 	    (msgnum 1)
 	    (msginfo nil))
 	;; There's little hope that we can easily undo after that.
-	(buffer-flush-undo (current-buffer))
+	(buffer-disable-undo (current-buffer))
 	(goto-char (rmail-msgbeg 1))
 	;; To force update of all markers.
 	(insert-before-markers ?Z)
@@ -177,7 +205,10 @@ If 1st argument REVERSE is non-nil, sort them in reverse order.
 	(setq quit-flag nil)
 	(buffer-enable-undo)
 	(rmail-set-message-counters)
-	(rmail-show-message current-message)))))
+	(rmail-show-message current-message)
+	(if (rmail-summary-exists)
+	    (rmail-select-summary
+	     (rmail-update-summary)))))))
 
 (defun rmail-fetch-field (msg field)
   "Return the value of the header FIELD of MSG.

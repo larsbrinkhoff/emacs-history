@@ -1,6 +1,6 @@
 ;;; macros.el --- non-primitive commands for keyboard macros.
 
-;; Copyright (C) 1985, 1986, 1987, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: abbrev
@@ -76,26 +76,38 @@ use this command, and then save the file."
       (goto-char beg)
       (while (< (point) end)
 	(let ((char (following-char)))
-	  (cond ((< char 32)
+	  (cond ((= char 0)
+		 (delete-region (point) (1+ (point)))
+		 (insert "\\C-@"))
+		((< char 27)
 		 (delete-region (point) (1+ (point)))
 		 (insert "\\C-" (+ 96 char)))
+		((< char 32)
+		 (delete-region (point) (1+ (point)))
+		 (insert "\\C-" (+ 64 char)))
 		((< char 127)
 		 (forward-char 1))
 		((= char 127)
 		 (delete-region (point) (1+ (point)))
 		 (insert "\\C-?"))
+		((= char 128)
+		 (delete-region (point) (1+ (point)))
+		 (insert "\\M-\\C-@"))
+		((< char 155)
+		 (delete-region (point) (1+ (point)))
+		 (insert "\\M-\\C-" (- char 32)))
 		((< char 160)
 		 (delete-region (point) (1+ (point)))
-		 (insert "\\M-C-" (- char 32)))
+		 (insert "\\M-\\C-" (- char 64)))
 		((< char 255)
 		 (delete-region (point) (1+ (point)))
 		 (insert "\\M-" (- char 128)))
 		((= char 255)
 		 (delete-region (point) (1+ (point)))
-		 (insert "\\M-C-?"))))))
+		 (insert "\\M-\\C-?"))))))
     (insert ")\n")
     (if keys
-	(let ((keys (where-is-internal macroname nil)))
+	(let ((keys (where-is-internal macroname '(keymap))))
 	  (while keys
 	    (insert "(global-set-key ")
 	    (prin1 (car keys) (current-buffer))
@@ -235,7 +247,6 @@ and then select the region of un-tablified names and use
       (set-marker end-marker nil)
       (set-marker next-line-marker nil))))
 
-;;;###autoload
-(define-key ctl-x-map "q" 'kbd-macro-query)
+;;;###autoload (define-key ctl-x-map "q" 'kbd-macro-query)
 
 ;;; macros.el ends here

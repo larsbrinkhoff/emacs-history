@@ -1,5 +1,5 @@
 ;;; x-win.el --- parse switches controlling interface with X window system
-;; Copyright (C) 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: FSF
 ;; Keywords: terminals
@@ -169,10 +169,15 @@
 
 ;; Handle the geometry option
 (defun x-handle-geometry (switch)
-  (setq initial-frame-alist
-	(append initial-frame-alist
-		(x-parse-geometry (car x-invocation-args)))
-	x-invocation-args (cdr x-invocation-args)))
+  (let ((geo (x-parse-geometry (car x-invocation-args))))
+    (setq initial-frame-alist
+	  (append initial-frame-alist
+		  (if (or (assq 'left geo) (assq 'top geo))
+		      '((user-position . t)))
+		  (if (or (assq 'height geo) (assq 'width geo))
+		      '((user-size . t)))
+		  geo)
+	  x-invocation-args (cdr x-invocation-args))))
 
 ;; Handle the -name and -rn options.  Set the variable x-resource-name
 ;; to the option's operand; if the switch was `-name', set the name of
@@ -196,8 +201,8 @@
 (defvar x-invocation-args nil)
 
 (defun x-handle-args (args)
-  "Here the X-related command line options in ARGS are processed,
-before the user's startup file is loaded.  They are copied to
+  "Process the X-related command line options in ARGS.
+This is done before the user's startup file is loaded.  They are copied to
 x-invocation args from which the X-related things are extracted, first
 the switch (e.g., \"-fg\") in the following code, and possible values
 (e.g., \"black\") in the option handler code (e.g., x-handle-switch).
@@ -464,9 +469,7 @@ This returns ARGS with the arguments that have been processed removed."
   (interactive)
   (if (eq (cdr (assq 'visibility (frame-parameters))) t)
       (iconify-frame)
-    (let ((foo (selected-frame)))
-      (make-frame-invisible foo)
-      (make-frame-visible foo))))
+    (make-frame-visible)))
 
 (substitute-key-definition 'suspend-emacs 'iconify-or-deiconify-frame
 			   global-map)
@@ -497,6 +500,40 @@ This returns ARGS with the arguments that have been processed removed."
 (put 'clear 'ascii-character 12)
 (put 'return 'ascii-character 13)
 (put 'escape 'ascii-character ?\e)
+
+;; Set up to recognize vendor-specific keysyms.
+;; Unless/until there is a real conflict,
+;; we need not try to make this list depend on
+;; the type of X server in use.
+(setq system-key-alist
+      '(
+	;; These are some HP keys.
+	(  168 . mute-acute)
+	(  169 . mute-grave)
+	(  170 . mute-asciicircum)
+	(  171 . mute-diaeresis)
+	(  172 . mute-asciitilde)
+	(  175 . lira)
+	(  190 . guilder)
+	(  252 . block)
+	(  256 . longminus)
+	(65388 . reset)
+	(65389 . system)
+	(65390 . user)
+	(65391 . clearline)
+	(65392 . insertline)
+	(65393 . deleteline)
+	(65394 . insertchar)
+	(65395 . deletechar)
+	(65396 . backtab)
+	(65397 . kp-backtab)
+	;; This is used by DEC's X server.
+	(65280 . remove)
+	;; These are for Sun.
+	(392976 . f35)
+    	(392977 . f36)
+	(393056 . req)
+	))
 
 ;;;; Selections and cut buffers
 
@@ -510,6 +547,10 @@ This returns ARGS with the arguments that have been processed removed."
 (defvar x-cut-buffer-max 20000
   "Max number of characters to put in the cut buffer.")
 
+(defvar x-select-enable-clipboard nil
+  "Non-nil means cutting and pasting uses the clipboard.
+This is in addition to the primary selection.")
+
 ;;; Make TEXT, a string, the primary X selection.
 ;;; Also, set the value of X cut buffer 0, for backward compatibility
 ;;; with older X applications.
@@ -522,17 +563,26 @@ This returns ARGS with the arguments that have been processed removed."
       (x-set-cut-buffer text push)
     (x-set-cut-buffer "" push))
   (x-set-selection 'PRIMARY text)
+  (if x-select-enable-clipboard
+      (x-set-selection 'CLIPBOARD text))
   (setq x-last-selected-text text))
 
-;;; Return the value of the current X selection.  For compatibility
-;;; with older X applications, this checks cut buffer 0 before
-;;; retrieving the value of the primary selection.
+;;; Return the value of the current X selection.
+;;; Consult the selection, then the cut buffer.  Treat empty strings
+;;; as if they were unset.
 (defun x-cut-buffer-or-selection-value ()
   (let (text)
 
-    ;; Consult the selection, then the cut buffer.  Treat empty strings
-    ;; as if they were unset.
-    (setq text (x-get-selection 'PRIMARY))
+    ;; Don't die if x-get-selection signals an error.
+    (condition-case c
+	(setq text (x-get-selection 'PRIMARY))
+      (error (message "%s" c)))
+    (if (string= text "") (setq text nil))
+
+    (if x-select-enable-clipboard
+	(condition-case c
+	    (setq text (x-get-selection 'CLIPBOARD))
+	  (error (message "%s" c))))
     (if (string= text "") (setq text nil))
     (or text (setq text (x-get-cut-buffer 0)))
     (if (string= text "") (setq text nil))
@@ -563,6 +613,8 @@ This returns ARGS with the arguments that have been processed removed."
       (while (setq i (string-match "[.*]" x-resource-name))
 	(aset x-resource-name i ?-))))
 
+(menu-bar-mode t)
+
 (x-open-connection (or x-display-name
 		       (setq x-display-name (getenv "DISPLAY")))
 		   x-command-line-resources)
@@ -571,6 +623,11 @@ This returns ARGS with the arguments that have been processed removed."
 
 (setq x-cut-buffer-max (min (- (/ (x-server-max-request-size) 2) 100)
 			    x-cut-buffer-max))
+
+;; Sun expects the menu bar cut and paste commands to use the clipboard.
+(if (string-match "X11/NeWS - Sun Microsystems Inc\\."
+		  (x-server-vendor))
+    (menu-bar-enable-clipboard))
 
 ;; Apply a geometry resource to the initial frame.  Put it at the end
 ;; of the alist, so that anything specified on the command line takes

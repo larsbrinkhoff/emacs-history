@@ -698,6 +698,7 @@ window on the screen at the same time.
    Both windows display this tutorial.  The cursor stays in the top window.
 
 >> Type C-M-v to scroll the bottom window.
+   (If you don't have a real Meta key, type ESC C-v.)
 
 >> Type C-x o ("o" for "other") to move the cursor to the bottom window.
 >> Use C-v and M-v in the bottom window to scroll it.
@@ -779,6 +780,11 @@ character saying what kind of help you want.  If you are REALLY lost,
 type C-h ? and Emacs will tell you what kinds of help it can give.
 If you have typed C-h and decide you don't want any help, just
 type C-g to cancel it.
+
+(Some sites rebind the character C-h.  They really shouldn't do this
+as a blanket measure, so complain to the operator.  Meanwhile, if C-h
+does not display a message about help at the bottom of the screen, try
+typing M-x help RET instead.)
 
 The most basic HELP feature is C-h c.  Type C-h, a c, and a
 command character or sequence, and Emacs displays a very brief

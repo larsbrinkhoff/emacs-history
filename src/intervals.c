@@ -1,5 +1,5 @@
 /* Code for doing intervals.
-   Copyright (C) 1993 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -46,6 +46,11 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* The rest of the file is within this conditional.  */
 #ifdef USE_TEXT_PROPERTIES
+
+/* Test for membership, allowing for t (actually any non-cons) to mean the
+   universal set.  */
+
+#define TMEM(sym, set) (CONSP (set) ? ! NILP (Fmemq (sym, set)) : ! NILP (set))
 
 /* Factor for weight-balancing interval trees.  */
 Lisp_Object interval_balance_threshold;
@@ -284,34 +289,35 @@ rotate_right (interval)
 {
   INTERVAL i;
   INTERVAL B = interval->left;
-  int len = LENGTH (interval);
+  int old_total = interval->total_length;
 
   /* Deal with any Parent of A;  make it point to B.  */
   if (! ROOT_INTERVAL_P (interval))
     if (AM_LEFT_CHILD (interval))
-      interval->parent->left = interval->left;
+      interval->parent->left = B;
     else
-      interval->parent->right = interval->left;
-  interval->left->parent = interval->parent;
+      interval->parent->right = B;
+  B->parent = interval->parent;
 
-  /* B gets the same length as A, since it get A's position in the tree.  */
-  interval->left->total_length = interval->total_length;
+  /* Make B the parent of A */
+  i = B->right;
+  B->right = interval;
+  interval->parent = B;
 
-  /* B becomes the parent of A.  */
-  i = interval->left->right;
-  interval->left->right = interval;
-  interval->parent = interval->left;
-
-  /* A gets c as left child.  */
+  /* Make A point to c */
   interval->left = i;
   if (! NULL_INTERVAL_P (i))
     i->parent = interval;
-  interval->total_length = (len + LEFT_TOTAL_LENGTH (interval)
-			    + RIGHT_TOTAL_LENGTH (interval));
+
+  /* A's total length is decreased by the length of B and its left child.  */
+  interval->total_length -= B->total_length - LEFT_TOTAL_LENGTH (interval);
+
+  /* B must have the same total length of A.  */
+  B->total_length = old_total;
 
   return B;
 }
-
+
 /* Assuming that a right child exists, perform the following operation:
 
     A               B   
@@ -327,32 +333,119 @@ rotate_left (interval)
 {
   INTERVAL i;
   INTERVAL B = interval->right;
-  int len = LENGTH (interval);
+  int old_total = interval->total_length;
 
-  /* Deal with the parent of A.  */
+  /* Deal with any parent of A;  make it point to B.  */
   if (! ROOT_INTERVAL_P (interval))
     if (AM_LEFT_CHILD (interval))
-      interval->parent->left = interval->right;
+      interval->parent->left = B;
     else
-      interval->parent->right = interval->right;
-  interval->right->parent = interval->parent;
-
-  /* B must have the same total length of A.  */
-  interval->right->total_length = interval->total_length;
+      interval->parent->right = B;
+  B->parent = interval->parent;
 
   /* Make B the parent of A */
-  i = interval->right->left;
-  interval->right->left = interval;
-  interval->parent = interval->right;
+  i = B->left;
+  B->left = interval;
+  interval->parent = B;
 
   /* Make A point to c */
   interval->right = i;
   if (! NULL_INTERVAL_P (i))
     i->parent = interval;
-  interval->total_length = (len + LEFT_TOTAL_LENGTH (interval)
-			    + RIGHT_TOTAL_LENGTH (interval));
+
+  /* A's total length is decreased by the length of B and its right child.  */
+  interval->total_length -= B->total_length - RIGHT_TOTAL_LENGTH (interval);
+
+  /* B must have the same total length of A.  */
+  B->total_length = old_total;
 
   return B;
+}
+
+/* Balance an interval tree with the assumption that the subtrees
+   themselves are already balanced.  */
+
+static INTERVAL
+balance_an_interval (i)
+     INTERVAL i;
+{
+  register int old_diff, new_diff;
+
+  while (1)
+    {
+      old_diff = LEFT_TOTAL_LENGTH (i) - RIGHT_TOTAL_LENGTH (i);
+      if (old_diff > 0)
+	{
+	  new_diff = i->total_length - i->left->total_length
+	    + RIGHT_TOTAL_LENGTH (i->left) - LEFT_TOTAL_LENGTH (i->left);
+	  if (abs (new_diff) >= old_diff)
+	    break;
+	  i = rotate_right (i);
+	  balance_an_interval (i->right);
+	}
+      else if (old_diff < 0)
+	{
+	  new_diff = i->total_length - i->right->total_length
+	    + LEFT_TOTAL_LENGTH (i->right) - RIGHT_TOTAL_LENGTH (i->right);
+	  if (abs (new_diff) >= -old_diff)
+	    break;
+	  i = rotate_left (i);
+	  balance_an_interval (i->left);
+	}
+      else
+	break;
+    }
+  return i;
+}
+
+/* Balance INTERVAL, potentially stuffing it back into its parent
+   Lisp Object.  */
+
+static INLINE INTERVAL
+balance_possible_root_interval (interval)
+     register INTERVAL interval;
+{
+  Lisp_Object parent;
+
+  if (interval->parent == NULL_INTERVAL)
+    return interval;
+
+  parent = (Lisp_Object) (interval->parent);
+  interval = balance_an_interval (interval);
+
+  if (XTYPE (parent) == Lisp_Buffer)
+    XBUFFER (parent)->intervals = interval;
+  else if (XTYPE (parent) == Lisp_String)
+    XSTRING (parent)->intervals = interval;
+
+  return interval;
+}
+
+/* Balance the interval tree TREE.  Balancing is by weight
+   (the amount of text).  */
+
+static INTERVAL
+balance_intervals_internal (tree)
+     register INTERVAL tree;
+{
+  /* Balance within each side.  */
+  if (tree->left)
+    balance_intervals (tree->left);
+  if (tree->right)
+    balance_intervals (tree->right);
+  return balance_an_interval (tree);
+}
+
+/* Advertised interface to balance intervals.  */
+
+INTERVAL
+balance_intervals (tree)
+     INTERVAL tree;
+{
+  if (tree == NULL_INTERVAL)
+    return NULL_INTERVAL;
+
+  return balance_intervals_internal (tree);
 }
 
 /* Split INTERVAL into two pieces, starting the second piece at
@@ -380,7 +473,7 @@ split_interval_right (interval, offset)
   new->position = position + offset;
   new->parent = interval;
 
-  if (LEAF_INTERVAL_P (interval) || NULL_RIGHT_CHILD (interval))
+  if (NULL_RIGHT_CHILD (interval))
     {
       interval->right = new;
       new->total_length = new_length;
@@ -392,8 +485,10 @@ split_interval_right (interval, offset)
   new->right = interval->right;
   interval->right->parent = new;
   interval->right = new;
-
   new->total_length = new_length + new->right->total_length;
+
+  balance_an_interval (new);
+  balance_possible_root_interval (interval);
 
   return new;
 }
@@ -436,7 +531,10 @@ split_interval_left (interval, offset)
   new->left = interval->left;
   new->left->parent = new;
   interval->left = new;
-  new->total_length = new_length + LEFT_TOTAL_LENGTH (new);
+  new->total_length = new_length + new->left->total_length;
+
+  balance_an_interval (new);
+  balance_possible_root_interval (interval);
 
   return new;
 }
@@ -464,6 +562,8 @@ find_interval (tree, position)
 
   if (relative_position > TOTAL_LENGTH (tree))
     abort ();			/* Paranoia */
+
+  tree = balance_possible_root_interval (tree);
 
   while (1)
     {
@@ -631,7 +731,7 @@ adjust_intervals_for_insertion (tree, position, length)
 
 /* Effect an adjustment corresponding to the addition of LENGTH characters
    of text.  Do this by finding the interval containing POSITION in the
-   interval tree TREE, and then adjusting all of it's ancestors by adding
+   interval tree TREE, and then adjusting all of its ancestors by adding
    LENGTH to them.
 
    If POSITION is the first character of an interval, meaning that point
@@ -694,17 +794,21 @@ adjust_intervals_for_insertion (tree, position, length)
       /* Even if we are positioned between intervals, we default
 	 to the left one if it exists.  We extend it now and split
 	 off a part later, if stickyness demands it.  */
-      for (temp = prev ? prev : i; ! NULL_INTERVAL_P (temp); temp = temp->parent)
-	temp->total_length += length;
+      for (temp = prev ? prev : i;! NULL_INTERVAL_P (temp); temp = temp->parent)
+	{
+	  temp->total_length += length;
+	  temp = balance_possible_root_interval (temp);
+	}
       
       /* If at least one interval has sticky properties,
 	 we check the stickyness property by property.  */
       if (END_NONSTICKY_P (prev) || FRONT_STICKY_P (i))
 	{
-	  Lisp_Object pleft = NULL_INTERVAL_P (prev) ? Qnil : prev->plist;
-	  Lisp_Object pright = NULL_INTERVAL_P (i) ? Qnil : i->plist;
+	  Lisp_Object pleft, pright;
 	  struct interval newi;
 
+	  pleft = NULL_INTERVAL_P (prev) ? Qnil : prev->plist;
+	  pright = NULL_INTERVAL_P (i) ? Qnil : i->plist;
 	  newi.plist = merge_properties_sticky (pleft, pright);
 
 	  if(! prev) /* i.e. position == BEG */
@@ -739,67 +843,117 @@ adjust_intervals_for_insertion (tree, position, length)
   else
     {
       for (temp = i; ! NULL_INTERVAL_P (temp); temp = temp->parent)
-	temp->total_length += length;
+	{
+	  temp->total_length += length;
+	  temp = balance_possible_root_interval (temp);
+	}
     }
       
   return tree;
 }
 
+/* Any property might be front-sticky on the left, rear-sticky on the left,
+   front-sticky on the right, or rear-sticky on the right; the 16 combinations
+   can be arranged in a matrix with rows denoting the left conditions and
+   columns denoting the right conditions:
+      _  __  _
+_     FR FR FR FR
+FR__   0  1  2  3
+ _FR   4  5  6  7
+FR     8  9  A  B
+  FR   C  D  E  F
+
+   left-props  = '(front-sticky (p8 p9 pa pb pc pd pe pf)
+		   rear-nonsticky (p4 p5 p6 p7 p8 p9 pa pb)
+		   p0 L p1 L p2 L p3 L p4 L p5 L p6 L p7 L
+		   p8 L p9 L pa L pb L pc L pd L pe L pf L)
+   right-props = '(front-sticky (p2 p3 p6 p7 pa pb pe pf)
+		   rear-nonsticky (p1 p2 p5 p6 p9 pa pd pe)
+		   p0 R p1 R p2 R p3 R p4 R p5 R p6 R p7 R
+		   p8 R p9 R pa R pb R pc R pd R pe R pf R)
+
+   We inherit from whoever has a sticky side facing us.  If both sides
+   do (cases 2, 3, E, and F), then we inherit from whichever side has a
+   non-nil value for the current property.  If both sides do, then we take
+   from the left.
+
+   When we inherit a property, we get its stickiness as well as its value.
+   So, when we merge the above two lists, we expect to get this:
+
+   result      = '(front-sticky (p6 p7 pa pb pc pd pe pf)
+		   rear-nonsticky (p6 pa)
+		   p0 L p1 L p2 L p3 L p6 R p7 R
+		   pa R pb R pc L pd L pe L pf L)
+
+   The optimizable special cases are:
+       left rear-nonsticky = nil, right front-sticky = nil (inherit left)
+       left rear-nonsticky = t,   right front-sticky = t   (inherit right)
+       left rear-nonsticky = t,   right front-sticky = nil (inherit none)
+*/
+
 Lisp_Object
 merge_properties_sticky (pleft, pright)
      Lisp_Object pleft, pright;
 {
-  register Lisp_Object props = Qnil, front = Qnil, rear = Qnil;
-  
-  Lisp_Object lfront = textget (pleft, Qfront_sticky);
-  Lisp_Object lrear = textget (pleft, Qrear_nonsticky);
-  Lisp_Object rfront = textget (pright, Qfront_sticky);
-  Lisp_Object rrear = textget (pright, Qrear_nonsticky);
+  register Lisp_Object props, front, rear;
+  Lisp_Object lfront, lrear, rfront, rrear;
+  register Lisp_Object tail1, tail2, sym, lval, rval;
+  int use_left, use_right;
 
-  register Lisp_Object tail1, tail2, sym;
+  props = Qnil;
+  front = Qnil;
+  rear  = Qnil;
+  lfront = textget (pleft, Qfront_sticky);
+  lrear  = textget (pleft, Qrear_nonsticky);
+  rfront = textget (pright, Qfront_sticky);
+  rrear  = textget (pright, Qrear_nonsticky);
 
-  /* Go through each element of PLEFT.  */
-  for (tail1 = pleft; ! NILP (tail1); tail1 = Fcdr (Fcdr (tail1)))
+  /* Go through each element of PRIGHT.  */
+  for (tail1 = pright; ! NILP (tail1); tail1 = Fcdr (Fcdr (tail1)))
     {
       sym = Fcar (tail1);
 
       /* Sticky properties get special treatment.  */
       if (EQ (sym, Qrear_nonsticky) || EQ (sym, Qfront_sticky))
 	continue;
-      
-      if (CONSP (lrear) ? NILP (Fmemq (sym, lrear)) : NILP (lrear))
+
+      rval = Fcar (Fcdr (tail1));
+      for (tail2 = pleft; ! NILP (tail2); tail2 = Fcdr (Fcdr (tail2)))
+	if (EQ (sym, Fcar (tail2)))
+	  break;
+      lval = (NILP (tail2) ? Qnil : Fcar( Fcdr (tail2)));
+
+      use_left = ! TMEM (sym, lrear);
+      use_right = TMEM (sym, rfront);
+      if (use_left && use_right)
 	{
-	  /* rear-sticky is dominant, we needn't search in PRIGHT.  */
-	  
-	  props = Fcons (sym, Fcons (Fcar (Fcdr (tail1)), props));
-	  if ((CONSP (lfront) || NILP (lfront))
-	      && ! NILP (Fmemq (sym, lfront)))
-	    front = Fcons (sym, front);
+	  use_left = ! NILP (lval);
+	  use_right = ! NILP (rval);
 	}
-      else
+      if (use_left)
 	{
-	  /* Go through PRIGHT, looking for sym.  */
-	  for (tail2 = pright; ! NILP (tail2); tail2 = Fcdr (Fcdr (tail2)))
-	    if (EQ (sym, Fcar (tail2)))
-	      {
-		
-		if (CONSP (rfront)
-		    ? ! NILP (Fmemq (sym, rfront)) : ! NILP (rfront))
-		  {
-		    /* Nonsticky at the left and sticky at the right,
-		       so take the right one.  */
-		    props = Fcons (sym, Fcons (Fcar (Fcdr (tail2)), props));
-		    front = Fcons (sym, front);
-		    if ((CONSP (rrear) || NILP (rrear))
-			&& ! NILP (Fmemq (sym, rrear)))
-		      rear = Fcons (sym, rear);
-		  }
-		break;
-	      }
+	  /* We build props as (value sym ...) rather than (sym value ...)
+	     because we plan to nreverse it when we're done.  */
+	  if (! NILP (lval))
+	    props = Fcons (lval, Fcons (sym, props));
+	  if (TMEM (sym, lfront))
+	    front = Fcons (sym, front);
+	  if (TMEM (sym, lrear))
+	    rear = Fcons (sym, rear);
+	}
+      else if (use_right)
+	{
+	  if (! NILP (rval))
+	    props = Fcons (rval, Fcons (sym, props));
+	  if (TMEM (sym, rfront))
+	    front = Fcons (sym, front);
+	  if (TMEM (sym, rrear))
+	    rear = Fcons (sym, rear);
 	}
     }
-  /* Now let's see what to keep from PRIGHT.  */
-  for (tail2 = pright; ! NILP (tail2); tail2 = Fcdr (Fcdr (tail2)))
+
+  /* Now go through each element of PLEFT.  */
+  for (tail2 = pleft; ! NILP (tail2); tail2 = Fcdr (Fcdr (tail2)))
     {
       sym = Fcar (tail2);
 
@@ -807,31 +961,38 @@ merge_properties_sticky (pleft, pright)
       if (EQ (sym, Qrear_nonsticky) || EQ (sym, Qfront_sticky))
 	continue;
 
-      /* If it ain't sticky, we don't take it.  */
-      if (CONSP (rfront)
-	  ? NILP (Fmemq (sym, rfront)) : NILP (rfront))
-	continue;
-      
-      /* If sym is in PLEFT we already got it.  */
-      for (tail1 = pleft; ! NILP (tail1); tail1 = Fcdr (Fcdr (tail1)))
+      /* If sym is in PRIGHT, we've already considered it.  */
+      for (tail1 = pright; ! NILP (tail1); tail1 = Fcdr (Fcdr (tail1)))
 	if (EQ (sym, Fcar (tail1)))
 	  break;
-      
-      if (NILP (tail1))
+      if (! NILP (tail1))
+	continue;
+
+      lval = Fcar (Fcdr (tail2));
+
+      /* Since rval is known to be nil in this loop, the test simplifies.  */
+      if (! TMEM (sym, lrear))
 	{
-	  props = Fcons (sym, Fcons (Fcar (Fcdr (tail2)), props));
+	  if (! NILP (lval))
+	    props = Fcons (lval, Fcons (sym, props));
+	  if (TMEM (sym, lfront))
+	    front = Fcons (sym, front);
+	}
+      else if (TMEM (sym, rfront))
+	{
+	  /* The value is nil, but we still inherit the stickiness
+	     from the right.  */
 	  front = Fcons (sym, front);
-	  if ((CONSP (rrear) || NILP (rrear))
-	      && ! NILP (Fmemq (sym, rrear)))
+	  if (TMEM (sym, rrear))
 	    rear = Fcons (sym, rear);
 	}
     }
-  if (! NILP (front))
-    props = Fcons (Qfront_sticky, Fcons (front, props));
+  props = Fnreverse (props);
   if (! NILP (rear))
-    props = Fcons (Qrear_nonsticky, Fcons (rear, props));
+    props = Fcons (Qrear_nonsticky, Fcons (Fnreverse (rear), props));
+  if (! NILP (front))
+    props = Fcons (Qfront_sticky, Fcons (Fnreverse (front), props));
   return props;
-  
 }
 
 
@@ -884,7 +1045,8 @@ delete_interval (i)
 
   if (ROOT_INTERVAL_P (i))
     {
-      Lisp_Object owner = (Lisp_Object) i->parent;
+      Lisp_Object owner;
+      owner = (Lisp_Object) i->parent;
       parent = delete_node (i);
       if (! NULL_INTERVAL_P (parent))
 	parent->parent = (INTERVAL) owner;
@@ -1272,13 +1434,15 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
   if (NULL_INTERVAL_P (source))
     {
       Lisp_Object buf;
-      if (!inherit)
+      if (!inherit && ! NULL_INTERVAL_P (tree))
 	{
 	  XSET (buf, Lisp_Buffer, buffer);
 	  Fset_text_properties (make_number (position),
 				make_number (position + length),
 				Qnil, buf);
 	}
+      if (! NULL_INTERVAL_P (buffer->intervals))
+	buffer->intervals = balance_an_interval (buffer->intervals);
       return;
     }
 
@@ -1355,7 +1519,7 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
      
   while (! NULL_INTERVAL_P (over))
     {
-      if (LENGTH (over) + 1 < LENGTH (under))
+      if (LENGTH (over) < LENGTH (under))
 	{
 	  this = split_interval_left (under, LENGTH (over));
 	  copy_properties (under, this);
@@ -1370,7 +1534,8 @@ graft_intervals_into_buffer (source, position, length, buffer, inherit)
       over = next_interval (over);
     }
 
-  buffer->intervals = balance_intervals (buffer->intervals);
+  if (! NULL_INTERVAL_P (buffer->intervals))
+    buffer->intervals = balance_an_interval (buffer->intervals);
   return;
 }
 
@@ -1420,8 +1585,7 @@ textget_direct (plist, prop)
 }
 
 /* Set point in BUFFER to POSITION.  If the target position is 
-   before an invisible character which is not displayed with a special glyph,
-   move back to an ok place to display.  */
+   before an intangible character, move to an ok place.  */
 
 void
 set_point (position, buffer)
@@ -1485,12 +1649,10 @@ set_point (position, buffer)
       return;
     }
 
-  /* If the new position is before an invisible character
-     that has an `invisible' property of value `hidden',
+  /* If the new position is before an intangible character,
      move forward over all such.  */
   while (! NULL_INTERVAL_P (to)
-	 && EQ (textget (to->plist, Qinvisible), Qhidden)
-	 && ! DISPLAY_INVISIBLE_GLYPH (to))
+	 && ! NILP (textget (to->plist, Qintangible)))
     {
       toprev = to;
       to = next_interval (to);
@@ -1671,17 +1833,18 @@ verify_interval_modification (buf, start, end)
 		     front-sticky, inhibit insertion.
 		     Check for read-only as well as category.  */
 		  if (! NILP (after)
-		      && NILP (Fmemq (after, Vinhibit_read_only))
-		      && (! NILP (Fmemq (Qread_only,
-					 textget (i->plist, Qfront_sticky)))
+		      && NILP (Fmemq (after, Vinhibit_read_only)))
+		    {
+		      Lisp_Object tem;
+
+		      tem = textget (i->plist, Qfront_sticky);
+		      if (TMEM (Qread_only, tem)
 			  || (NILP (textget_direct (i->plist, Qread_only))
-			      && ! NILP (Fmemq (Qcategory,
-						textget (i->plist,
-							 Qfront_sticky))))))
-		    error ("Attempt to insert within read-only text");
+			      && TMEM (Qcategory, tem)))
+			error ("Attempt to insert within read-only text");
+		    }
 		}
-	      else
-		after = Qnil;
+
 	      if (! NULL_INTERVAL_P (prev))
 		{
 		  before = textget (prev->plist, Qread_only);
@@ -1690,27 +1853,41 @@ verify_interval_modification (buf, start, end)
 		     rear-nonsticky, inhibit insertion.
 		     Check for read-only as well as category.  */
 		  if (! NILP (before)
-		      && NILP (Fmemq (before, Vinhibit_read_only))
-		      && NILP (Fmemq (Qread_only,
-				      textget (prev->plist, Qrear_nonsticky)))
-		      && (! NILP (textget_direct (prev->plist,Qread_only))
-			  || NILP (Fmemq (Qcategory,
-					  textget (prev->plist,
-						   Qrear_nonsticky)))))
-		    error ("Attempt to insert within read-only text");
+		      && NILP (Fmemq (before, Vinhibit_read_only)))
+		    {
+		      Lisp_Object tem;
+
+		      tem = textget (prev->plist, Qrear_nonsticky);
+		      if (! TMEM (Qread_only, tem)
+			  && (! NILP (textget_direct (prev->plist,Qread_only))
+			      || ! TMEM (Qcategory, tem)))
+			error ("Attempt to insert within read-only text");
+		    }
 		}
-	      else
-		before = Qnil;
 	    }
 	  else if (! NULL_INTERVAL_P (i))
-	    before = after = textget (i->plist, Qread_only);
-	  if (! NULL_INTERVAL_P (i) && ! NULL_INTERVAL_P (prev))
 	    {
-	      /* If I and PREV differ, neither of them has a sticky
-		 read-only property. It only remains to check, whether
-		 they have a common read-only property.  */
-	      if (! NILP (before) && EQ (before, after))
-		error ("Attempt to insert within read-only text");
+	      after = textget (i->plist, Qread_only);
+		  
+	      /* If interval I is read-only and read-only is
+		 front-sticky, inhibit insertion.
+		 Check for read-only as well as category.  */
+	      if (! NILP (after) && NILP (Fmemq (after, Vinhibit_read_only)))
+		{
+		  Lisp_Object tem;
+
+		  tem = textget (i->plist, Qfront_sticky);
+		  if (TMEM (Qread_only, tem)
+		      || (NILP (textget_direct (i->plist, Qread_only))
+			  && TMEM (Qcategory, tem)))
+		    error ("Attempt to insert within read-only text");
+
+		  tem = textget (prev->plist, Qrear_nonsticky);
+		  if (! TMEM (Qread_only, tem)
+		      && (! NILP (textget_direct (prev->plist, Qread_only))
+			  || ! TMEM (Qcategory, tem)))
+		    error ("Attempt to insert within read-only text");
+		}
 	    }
 	}
 
@@ -1762,70 +1939,6 @@ verify_interval_modification (buf, start, end)
     }
 }
 
-/* Balance an interval node if the amount of text in its left and right
-   subtrees differs by more than the percentage specified by
-   `interval-balance-threshold'.  */
-
-static INTERVAL
-balance_an_interval (i)
-     INTERVAL i;
-{
-  register int total_children_size = (LEFT_TOTAL_LENGTH (i)
-				      + RIGHT_TOTAL_LENGTH (i));
-  register int threshold = (XFASTINT (interval_balance_threshold)
-			    * (total_children_size / 100));
-
-  /* Balance within each side.  */
-  balance_intervals (i->left);
-  balance_intervals (i->right);
-
-  if (LEFT_TOTAL_LENGTH (i) > RIGHT_TOTAL_LENGTH (i)
-      && (LEFT_TOTAL_LENGTH (i) - RIGHT_TOTAL_LENGTH (i)) > threshold)
-    {
-      i = rotate_right (i);
-      /* If that made it unbalanced the other way, take it back.  */
-      if (RIGHT_TOTAL_LENGTH (i) > LEFT_TOTAL_LENGTH (i)
-	  && (RIGHT_TOTAL_LENGTH (i) - LEFT_TOTAL_LENGTH (i)) > threshold)
-	return rotate_left (i);
-      return i;
-    }
-
-  if (RIGHT_TOTAL_LENGTH (i) > LEFT_TOTAL_LENGTH (i)
-      && (RIGHT_TOTAL_LENGTH (i) - LEFT_TOTAL_LENGTH (i)) > threshold)
-    {
-      i = rotate_left (i);
-      if (LEFT_TOTAL_LENGTH (i) > RIGHT_TOTAL_LENGTH (i)
-	  && (LEFT_TOTAL_LENGTH (i) - RIGHT_TOTAL_LENGTH (i)) > threshold)
-	return rotate_right (i);
-      return i;
-    }
-
-  return i;
-}
-
-/* Balance the interval tree TREE.  Balancing is by weight
-   (the amount of text).  */
-
-INTERVAL
-balance_intervals (tree)
-     register INTERVAL tree;
-{
-  register INTERVAL new_tree;
-
-  if (NULL_INTERVAL_P (tree))
-    return NULL_INTERVAL;
-
-  new_tree = tree;
-  do
-    {
-      tree = new_tree;
-      new_tree = balance_an_interval (new_tree);
-    }
-  while (new_tree != tree);
-
-  return new_tree;
-}
-
 /* Produce an interval tree reflecting the intervals in
    TREE from START to START + LENGTH.  */
 
@@ -1866,7 +1979,7 @@ copy_intervals (tree, start, length)
       got += prevlen;
     }
 
-  return balance_intervals (new);
+  return balance_an_interval (new);
 }
 
 /* Give STRING the properties of BUFFER from POSITION to LENGTH.  */

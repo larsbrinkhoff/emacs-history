@@ -1,10 +1,871 @@
-GNU Emacs NEWS -- history of user-visible changes.  27 Nov 1993
-Copyright (C) 1993 Free Software Foundation, Inc.
+GNU Emacs NEWS -- history of user-visible changes.  15 May 1994
+Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
-For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
-see the file LNEWS.
+For older news, see the file ONEWS.
+
+User Editing Changes in 19.23.
+
+* Emacs 19.23 can run on MS-DOG.  See the file MSDOS in the same
+directory as this file.
+
+* Emacs 19.23 can work with an X toolkit.  You must specify toolkit
+operation when you configure Emacs: use the option
+--with-x-toolkit=yes.  (This option uses code developed by Lucid;
+thanks to Frederic Pierresteguy for helping to adapt it.)
+
+* Emacs now has dialog boxes; yes/no and y/n questions automatically
+use them in commands invoked with the mouse.  For more information,
+see below under "Lisp programming changes".
+
+* Menus now display the keyboard equivalents (if any) of the menu
+commands in parentheses after the menu item.
+
+* Kill commands, used in a read-only buffer, now move point across
+the text they would otherwise have killed.  This way, you can use
+repeated kill commands to transfer text into the kill ring.
+
+* There is now a global mark ring in addition to the mark ring that is local
+to each buffer.  The global mark ring stores positions in any buffer.  Any
+time the mark is set and the current buffer is different from the last time
+the mark was set, the new mark is pushed on the global mark ring as well.
+The new command C-x C-SPC (pop-global-mark) pops the global mark ring and
+jumps to the last mark pushed, first switching to that buffer.
+
+* Query Replace is now available in the Edit menu.
+
+* ESC no longer simply exits a Query Replace.  It now exits the Query
+Replace and remains pending.  Thus, ESC A and M-A are now equivalent
+in Query Replace.
+
+To simply exit a Query Replace, type RET or Period.
+
+* M-mouse-2 now puts point at the end of the yanked secondary selection.
+
+* Mouse-1 in the mode line now simply selects the window above that
+mode line.  Mouse-2 in the mode line selects that window and expands
+it to fill the frame it is in.
+
+* You can now use mouse-2 in a Dired buffer or Tar mode buffer to find
+a file you click on, in a compilation buffer to go to a particular
+error message, and in a *Occur* buffer to go to a particular
+occurrence.
+
+(It was already possible to do likewise in Info and in completion list
+buffers.)
+
+What's more, the sensitive areas of the buffer now highlight when you
+move the mouse over them.
+
+* In a completion list buffer, the command RET now chooses the completion
+that is around or next to point.
+
+* If you specify the foreground color for the `mode-line' face, and
+mode-line-inverse-video is non-nil, then the default background color
+is the usual foreground color.
+
+* revert-buffer now preserves markers pointing within the unchanged
+text (if any) at the beginning and end of the file.
+
+* Version control checkin and checkout preserve all markers if the
+file does not contain any of the magic version header sequences that
+are updated automatically by RCS and SCCS.  If such version headers
+are present, checkin and checkout preserve a marker unless it comes
+between two such sequences.  (So it's a good idea to put all the
+header sequences close together.)
+
+* When a large deletion shuts off auto save temporarily in a buffer,
+you can now turn it on again by saving the buffer with C-x C-s (as was
+possible in Emacs 18).  You can also turn it on again with M-1 M-x
+auto-save (as has been possible in Emacs 19).
+
+* C-x r d now runs the command delete-rectangle.
+
+* The new command imenu-choose-buffer-index shows you a menu of
+interesting places in the current buffer and lets you select one; then
+it moves point there.  The definition of interesting places depends on
+the major mode, but typically this includes function definitions and
+such.  Normally, imenu displays the menu in a buffer; but if you bind
+it to a mouse event, it shows a mouse popup menu.
+
+* You can make certain chosen buffers, that normally appear in a
+separate window, appear in special frames of their own.  To do this,
+set special-display-buffer-names to a list of buffer names; any buffer
+whose name is in that list automatically gets a special frame when it
+is to be displayed in another window.
+
+A good value to try is ("*compilation*" "*grep*" "*TeX Shell*").
+
+More generally, you can set special-display-regexps to a list of regular
+expressions; then each buffer whose name matches any of those regular
+expressions gets its own frame.
+
+The variable special-display-frame-alist specifies the frame
+parameters for these frames.  It has a default value, so you don't
+need to set it.
+
+* If you set sentence-end-double-space to nil, the fill commands
+expect just one space at the end of a sentence.  (If you want the
+sentence commands to accept single spaces, you must modify the regexp
+sentence-end also.)
+
+* You can suppress the startup echo area message by adding text like
+this to your .emacs file:
+
+(setq inhibit-startup-echo-area-message "YOUR-LOGIN-NAME")
+
+Simply setting inhibit-startup-echo-area-message to your login name is
+not sufficient to inhibit the message; Emacs explicitly checks whether
+.emacs contains an expression as shown above.  Your login name must
+appear in the expression as a Lisp string constant.
+
+This way, you can easily inhibit the message for yourself if you wish,
+but thoughtless copying of your .emacs file will not inhibit the
+message for someone else.
+
+* Outline minor mode now uses C-c C-o as a prefix instead of just C-c.
+
+* In Outline mode, hide-subtree is now C-c C-d.  (It was C-c C-h; but
+that is now a conventional way to ask for help about C-c commands.)
+
+* There are two additional commands in Outline mode.
+M-x hide-sublevels
+  hides all headers except the topmost N levels.
+M-x hide-other
+  hides everything about the body that point is in
+  plus the headers leading up from there to the top of the tree.
+
+* In iso-transl and iso-insert, the sequences for entering A-ring and
+the AE ligature are now just A and E (plus the initial C-x 8 or Alt).
+You used to have to enter AA or AE, after the C-x 8 prefix of course.
+Likewise for lower case a-ring and ae.
+
+* iso-transl now defines convenient Alt keys as well as the C-x 8 prefix.
+Instead of prefixing a sequence with C-x 8, you can add Alt to the
+first character of the sequence.  For example, Alt-" a is now a way
+to enter an a-umlaut.
+
+* CC mode is a greatly improved mode for C and C++.
+See the following page.
+
+* tcl mode is a new major mode.  It provides features for
+editing, indenting and running tcl programs.
+
+* Compilation minor mode lets you parse error messages in any buffer,
+not just a normal compilation output buffer.  Type M-x
+compilation-minor-mode to enable the minor mode; then C-c C-c jumps to
+the source location for the error at point, as in the `*compilation*'
+buffer.  If you use compilation-minor-mode in an Rlogin buffer, it
+automatically accesses remote source files by ftp.
+
+* Comint and shell mode changes:
+
+** Comint modes (including Shell mode, GUD modes, etc.) now bind
+C-M-l to the command comint-show-output.  This command scrolls the
+buffer to show the last batch of output from the subprogram.
+
+** Completion in Comint modes now truly operates on the string before
+point, rather than the word that point is within.
+
+** Comint mode file name completion ignores those files that end with a
+string in the new variable comint-completion-fignore.  This variable's
+default value is nil.
+
+** Shell mode uses the variable shell-completion-fignore to set
+comint-completion-fignore.  The default value is nil, but some
+people prefer ("~" "#" "%").
+
+** The function `comint-watch-for-password-prompt' can be used to 
+suppress echoing when a subprocess asks for a password.  To use it,
+do this:
+
+(add-hook `comint-output-filter-functions
+	  `comint-watch-for-password-prompt)
+
+** You can use M-x shell-strip-ctrl-m to strip ^M characters from
+process output.
+
+** In Shell mode, TAB now completes environment variables, if possible,
+and expands directory references.
+
+** You can use M-x comint-run to execute any program of your choice in
+a comint mode.  Some programs such as shells, rlogin, and debuggers
+have their own specialized modes; this command is one way to use
+comint to run programs for which no such specialized mode exits.  (You
+can also run a shell with M-x shell and run the program of your choice
+under the shell--but that gives you the specializations of Shell
+mode.)
+
+* When you run GUD (M-x gdb, M-x dbx, and so on), you can use TAB
+to do file name completion in the minibuffer.
+
+The "Complete" menu includes an item for directory expansion.
+
+* GUD working with future versions of GDB will permit TAB for
+GDB-style symbol completion.  This will work with GDB 4.13.
+
+* Rmail no longer gets new mail automatically when you visit an Rmail
+file specified by name--not even if it is your primary Rmail file.  To
+get new mail, type `g'.  This feature is an advantage because you now
+have a choice of whether to get new mail.  (This change actually
+occurred in an earlier version, but wasn't listed here then, since it
+made the code do what the documentation already said.)
+
+* Rmail now highlights certain fields automatically, when you use X
+windows.  The variable rmail-highlighted-headers controls which
+fields.
+
+* If you set rmail-summary-window-size to an integer, Rmail uses
+a window that many lines high for the summary buffer.
+
+* rmail-input-menu is a new command that visits an Rmail file letting
+you choose which file with a mouse menu.  rmail-output-menu is
+similar; it outputs the current message, using a mouse menu to choose
+which Rmail file.  These commands use the variables
+rmail-secondary-file-directory and rmail-secondary-file-regexp.
+
+* The mh-e package has been changed substantially.
+See the file ./MH-E-NEWS for details.
+
+* The calendar and diary have new features.
+
+The menu bar for the calendar contains most of the calendar commands,
+arranged into logical categories.
+
+Mouse-2 now performs specific-date-related commands when clicked on a
+date in the calendar window and common three-month-related commands
+when clicked elsewhere in the calendar window.
+
+You can set up colored/shaded highlighting of holidays, diary entry
+dates, and today's date, by setting calendar-holiday-marker,
+diary-entry-marker, and calendar-today-marker to a face instead of a
+character.  Using a special face is now the default if you are using a
+window system.
+
+* The appt package for displaying appointment reminders has new
+features.
+
+** The appt alarm window stays for the full duration of
+appt-display-duration.  It no longer disappears when you start typing
+text.
+
+** You can change the way the appointment window is created/deleted by
+setting the variables appt-disp-window-function and
+appt-delete-window-function.
+
+For instance, these variables can be set to functions that display
+appointments in pop-up frames, which are lowered or iconified after
+appt-display-duration seconds.
+
+* desktop.el can now save a list of buffer-local variables,
+and saves more global ones.
+
+* Pascal mode has been completely rewritten.  It now features
+completing of function names, variables and type definitions around
+current point (like M-TAB does with lisp-symbols).  There's also an
+outline mode (M-x pascal-outline) that hides the bodies of all
+functions you're not working with.
+
+* Edebug has a number of changes:
+
+** Edebug syntax error reporting is improved.
+
+** Top-level forms and defining forms other than defun and defmacro may
+now be debugged with Edebug.
+
+** Edebug specifications may now contain body, &define, name, arg or
+arglist, def-body, and def-form, to support definitions.
+
+** edebug-all-defuns is renamed to edebug-all-defs.
+def-edebug-form-spec is replaced by def-edebug-form whose arguments
+are unevaluated.  The old names are still available for now.
+
+** Frequency counts and coverage data may be displayed for functions being
+debugged.
+
+** A global break condition is now checked at every stop point.
+
+** The previous condition at a breakpoint may now be edited.
+
+** A new "next" mode stops only after expression evaluation.
+
+** A new command, top-level-nonstop, does not even stop for unwind-protect,
+as top-level would.
+
+Changes in CC mode in Emacs 19.23.
+
+`cc-mode' provides ANSI C, K&R C, and ARM C++ language editing.  It
+represents the merge of c++-mode.el and c-mode.el.  cc-mode provides a
+new, more flexible indentation engine so that indentation
+customization is more intuitive.  There are two steps to calculating
+indentation: first, CC mode analyzes the line for syntactic content,
+then based on this content it applies user defined offsets and adds
+this offset to the indentation of some previous line.
+
+The syntactic analysis determines if the line describes a `statement',
+`substatement', `class-open', `member-init-intro', etc.  These are
+described in detail with C-h v c-offsets-alist.  You can change the
+offsets interactively with C-c C-o (c-set-offsets), or
+programmatically in your c-mode-common-hook, which is run both by
+c-mode and c++-mode.  You can also set up "styles" in the same way
+that you could with c-mode.el.   The variable c-basic-offset controls
+the basic offset given to a level of indentation.
+
+If, for example, you wanted to change this style:
+
+int foo (int i) 
+{
+    switch (i) {
+    case 1:
+        printf ("its a foo\n");
+        break;
+    default:
+        printf ("don't know what it is\n");
+        break;
+    }
+}
+
+into this:
+
+int foo (int i) 
+{
+    switch (i) {
+      case 1:
+        printf ("its a foo\n");
+        break;
+      default:
+        printf ("don't know what it is\n");
+        break;
+    }
+}
+
+you could add the following to your .emacs file:
+
+(defun my-c-mode-common-hook ()
+  (c-set-offset 'case-label 2)
+  (c-set-offset 'statement-case-intro 2))
+(add-hook 'c-mode-common-hook 'my-c-mode-common-hook)
+
+* New variables:
+
+c-offsets-alist contains an association list of syntactic symbols and
+their relative offsets.  Do a "C-h v c-offsets-alist" to get a list of
+all syntactic symbols currently defined, and their meanings.  You
+should not change this variable directly; use the supplied interface
+commands c-set-offset and c-set-style.
+
+c-mode-common-hook is run by both c-mode and c++-mode during their
+common initializations.  You should put any customizations that are
+the same for both C and C++ into this hook.
+
+The variable c-strict-semantics-p is used mainly for debugging.  When
+non-nil, CC mode signals an error if it returns a syntactic symbol
+that can't be found in c-offsets-alist.
+
+If you want CC mode to echo the syntactic analysis for a particular
+line when you hit the TAB key, set c-echo-semantic-information-p to
+non-nil.
+
+c-basic-offset controls the standard amount of offset for a level of
+indentation.  You can set a syntactic symbol's offset to + or - as a
+short-hand for positive or negative c-basic-offset.
+
+c-comment-only-line-offset lets you control indentation given to lines
+which contain only a comment, in the case of C++ line style comments,
+or the introduction to a C block comment.  Comment-only lines at
+column zero can be anchored there independent of the indentation given
+to other comment-only lines.
+
+c-block-comments-indent-p controls the style of C block comment
+re-indentation.  If you put leading stars in front of comment
+continuation lines, you should set this variable to nil.
+
+c-cleanup-list is a list describing certain C and C++ constructs to be
+"cleaned up" as they are typed, but only when the auto-newline feature
+is turned on.  In C++, make sure this variable contains at least
+'scope-operator so that double colons will not be separated by a
+newline.
+
+Colons (`:') and braces (`{` and `}') are special in C and C++.  For
+certain constructs, you may like them to hang on the right edge of the
+code, or you may like them to start a new line of code.  You can use
+the two variables c-hanging-braces-alist and c-hanging-colons-alist
+to control whether newlines are placed before and/or after colons and
+braces when certain C and C++ constructs are entered.  For example,
+you can control whether the colon that introduces a C++ member
+initialization list hangs on the right edge, starts a new line, or has
+no newlines either before or after it.
+
+c-special-indent-hook is run after a line is indented by CC mode.  You
+can perform any custom indentations here.
+
+c-delete-function is the function that is called when a single
+character is deleted with the c-electric-delete command (DEL).
+
+c-electric-pound-behavior describes what happens when you enter the
+`#' that introduces a cpp macro.
+
+If c-tab-always-indent is neither t nor nil, then TAB inserts a tab
+when within strings, comments, and cpp directives, but it reindents
+the line unconditionally.
+
+c-inhibit-startup-warnings-p inhibits warnings about any old
+version of Emacs you might be running, which could be incompatible
+with cc-mode.
+
+* There are two new minor-mode features in CC mode: auto-newline and
+hungry-delete.  Auto-newline inserts newlines automatically as you
+type certain constructs.  Hungry-delete consumes all preceding
+whitespace (spaces, tabs, and newlines) when the delete key is hit.
+You can toggle auto-newline on and off on a per-buffer basis by
+hitting C-c C-a.  You can toggle hungry-delete on and off by hitting
+C-c C-d.   You can toggle them both on and off together with C-c C-t.
+
+* Slash (`/') and star (`*') are now both electric characters.
+
+* New commands:
+
+The new C-c C-o (c-set-offset) command can be used to interactively change
+the offset for a particular syntactic symbol.
+
+The new command C-c : (c-scope-operator) inserts the C++ scope operator in
+c++-mode only.
+
+The new command C-c C-q (c-indent-defun) indents the entire enclosing
+top-level function or class.
+
+The new command C-c C-s (c-show-semantic-information) echos the current
+syntactic analysis without re-indenting the current line.
+
+The new commands M-x c-forward-into-nomenclature and M-x
+c-backward-into-nomenclature (currently otherwise unbound to a key
+sequence), make movement easier when using the C++ variable naming
+convention of VariableNamesWithoutUnderscoresButEachWordCapitalized.
+
+* Command from c-mode.el that have been renamed in cc-mode.el:
+
+  electric-c-brace      => c-electric-brace
+  electric-c-semi       => c-electric-semi&comma
+  electric-c-sharp-sign => c-electric-pound
+  mark-c-function       => c-mark-function
+  electric-c-terminator => c-electric-colon
+  indent-c-exp          => c-indent-exp
+  set-c-style           => c-set-style
+
+* Variables from c-mode.el that are obsolete with cc-mode.el:
+
+  c-indent-level
+  c-brace-imaginary-offset
+  c-brace-offset
+  c-argdecl-indent
+  c-label-offset
+  c-continued-statement-offset
+  c-continued-brace-offset
+
+Lisp programming changes in Emacs 19.23.
+
+* To pop up a dialog box, call x-popup-dialog.
+It takes two arguments, POSITION and CONTENTS.
+
+POSITION specifies which frame to place the dialog box over;
+the dialog box always goes on the center of the frame.
+POSITION may be a mouse event, a window, a frame,
+or t meaning use the frame that the mouse is in.
+
+CONTENTS specifies the contents of the dialog box.
+It looks like a single pane of a popup menu:
+(TITLE ITEM1 ITEM2 ...), where each ITEM has the form (STRING . VALUE).
+The return value is VALUE from the chosen item.
+
+An ITEM may also be just a string--that makes a nonselectable item.
+An ITEM may also be nil--that means to put all preceding items
+on the left of the dialog box and all following items on the right.
+(By default, approximately half appear on each side.)
+
+If your Emacs is not using an X toolkit, then it cannot display a
+real dialog box; so instead it displays a pop-up menu in the center
+of the frame.
+
+* y-or-n-p, yes-or-no-p and map-y-or-n-p now use menus or dialog boxes
+to ask their question(s) if the command that is running was reached by
+a mouse event.
+
+If you want to control which way these functions work, bind the
+variable last-nonmenu-event around the call.  These functions use the
+keyboard if that variable holds a keyboard event (actually, any
+non-list); they use the mouse if that variable holds a mouse event
+(actually, any list).
+
+* The mouse-face property is now implemented, both in overlays and as
+a text property.  It specifies a face to use when the mouse is in the
+range of text for which the property is specified.
+
+* When text has a non-nil `intangible' property, you cannot move point
+within it or right before it.  If you try, point actually moves to the
+end of the intangible text.  Note that this means that backward-char
+is a no-op when there is an intangible character to the left of point.
+
+* minibuffer-exit-hook is a new normal hook that is run when you
+exit the minibuffer.
+
+* The variable x-cross-pointer-shape specifies the cursor shape to use
+when the mouse is over text that has a mouse-face property.
+
+* The new variable interpreter-mode-alist specifes major modes to use
+for shell scripts that specify a command interpreter.  Its elements
+look like (INTERPRETER . MODE); for example, ("perl" . perl-mode) is
+one element present by default.  This feature applies only when the
+file name doesn't indicate which mode to use.
+
+* If you use a minibuffer-only frame, set the variable
+minibuffer-auto-raise to t, and entering the minibuffer will then
+raise the minibuffer frame.
+
+* If pop-up-frames is t, display-buffer now looks for an existing
+window in any visible frame, showing the specified buffer, and uses
+such a window in preference to making a new frame.
+
+* In the functions next-window, previous-window, next-frame,
+previous-frame, get-buffer-window, get-lru-window, get-largest-window
+and delete-windows-on, if you specify `visible' for the last argument,
+it means to consider all visible frames.
+
+* Mouse events now give the X and Y coordinates in pixels, rather than
+in characters.  You can convert these values to characters by dividing by
+the values of (frame-char-width) and (frame-char-height).
+
+* The new functions mouse-pixel-position and set-mouse-pixel-position
+read and set the mouse position in units of pixels.  The existing
+functions mouse-position and set-mouse-position continue to work with
+units of characters.
+
+* The new function compute-motion is useful for computing the width
+of certain text when it is displayed.
+
+* The function vertical-motion now takes an option second argument WINDOW
+which says which window to use for the display calculations.
+
+vertical-motion always operates on the current buffer.
+It is ok to specify a window displaying some other buffer.
+Then vertical-motion uses the width, hscroll and display-table of
+the specified window, but still scans the current buffer.
+
+* An error no longer sets last-command to t; the value of last-command
+does reflect the previous command (the one that got an error).
+
+If you do not want a particular command to be recognized as the
+previous command in the case where it got an error, you must code that
+command to prevent this.  Set this-command to t at the beginning of
+the command, and set this-command back to its proper value at the end,
+like this:
+
+  (defun foo (args...)
+    (interactive ...)
+    (setq this-command t)
+    ...do the work...
+    (setq this-command 'foo))
+
+or like this:
+
+  (defun foo (args...)
+    (interactive ...)
+    (let ((old-this-command this-command))
+      (setq this-command t)
+      ...do the work...
+      (setq this-command old-this-command)))
+
+The undo and yank commands do this.
+
+* If you specify an explicit title for a new frame when you create it,
+the title is used as the resource name when looking up X resources to
+control the shape of that frame.  If you don't specify the frame title, 
+the value of x-resource-name is used, as before.
+
+* The frame parameter user-position, if non-nil, says that the user
+has specified the frame position.  Emacs reports this to the window
+manager, to tell it not to override the position that the user
+specified.
+
+* Major modes can now set change-major-mode-hook to arrange for state
+to be cleaned up when the user switches to a new major mode.  The function
+kill-all-local-variables runs this hook.  For best results, make the hook a
+buffer-local variable so that it will disappear after doing its job and will
+not interfere with the subsequent major mode.
+
+* The new variable overriding-local-map, if non-nil, specifies a keymap
+that overrides the current local map, all minor mode keymaps, and all
+text property keymaps.  Incremental search uses this feature to override
+all other keymaps temporarily.
+
+* A key definition in a menu keymap can now have additional structure:
+in addition to (ITEMNAME [HELPSTRING] . COMMAND) which was allowed
+before, the form (ITEMNAME [HELPSTRING] (...) . COMMAND) is
+allowed.  (HELPSTRING is optional, and is not currently used.)
+
+Here (...) represents a sublist containing information about keyboard
+key sequences that run the same command COMMAND.  Displaying the menu
+automatically creates and updates the sublist when appropriate; you
+need never set these up yourself.
+
+lookup-key, key-binding, and similar functions return just COMMAND,
+not the whole binding.
+
+To precompute this information for a given keymap, you can do
+  (x-popup-menu nil KEYMAP).
+
+* When you specify coordinates for x-popup-menu as a list ((XOFFSET
+YOFFSET) WINDOW), the coordinates are now measured in pixels.
+
+* where-is-internal now takes just four arguments:
+DEFINITION KEYMAP FIRSTONLY NOINDIRECT.
+The single argument KEYMAP replaces two arguments KEYMAP and KEYMAP1.
+
+If KEYMAP is non-nil, where-is-internal searches only KEYMAP and the
+global keymap.
+
+If KEYMAP is nil, where-is-internal searches all the currently active
+keymaps, but finds the active keymaps as if overriding-local-map were
+nil.
+
+If you pass a list of the form (keymap) as KEYMAP, where-is-internal
+searches only the global map.  (This is not a special case--it follows
+from the specifications above.)
+
+If you pass the value of overriding-local-map as KEYMAP, where-is-internal
+searches in exactly the same was as command execution does.
+
+* Use the macro define-derived-mode to define a new major mode that
+inherits the definition of another major mode.  Here's how to define a
+command named hypertext-mode that inherits from the command text-mode:
+
+    (define-derived-mode hypertext-mode text-mode "Hypertext"
+      "Major mode for hypertext.\n\n\\{hypertext-mode-map}"
+      (setq case-fold-search nil))
+
+    (define-key hypertext-mode-map [down-mouse-3] 'do-hyper-link)
+
+The new mode has its own keymap, which inherits from that of the
+original mode.  It also has its own syntax and abbrev tables, which
+are initialized by copying those of the original mode.  It also has
+its own mode hook.  All are given names made by appending a suffix
+to the name of the new mode.
+
+* A syntax table can now inherit the data for some characters from
+standard-syntax-table, while specifying other characters itself.
+Syntax code 13 means "inherit this character from the standard syntax
+table."  In modify-syntax-entry, the character `@' represents this code.
+
+The function `make-syntax-table' now creates a syntax table which
+inherits all letters and control characters (0 to 31 and 128 to 255)
+from the standard syntax table, while copying the other characters
+from the standard syntax table.  Most syntax tables in Emacs are set
+up this way.
+
+This sort of inheritance is useful for people who set up character
+sets with additional alphabetic characters in the range 128 to 255.
+Just changing the standard syntax for these characters affects all
+major modes.
+
+* The new function transpose-regions swaps two regions of the buffer.
+It preserves the markers in those two regions, so that they stay with
+the surrounding text as it is swapped.
+
+* revert-buffer now runs before-revert-hook at the beginning and
+after-revert-hook at the end.  These can be used by minor modes
+that need to clean up state variables.
+
+* The new function get-char-property is like get-text-property, but
+checks for overlays with properties as well as for text properties.
+It checks for overlays first, in order of descending priority, and
+text properties last.
+
+get-char-property allows windows as the OBJECT argument, as well
+as buffers and strings.  If you specify a window, then only overlays
+active on that window are considered.
+
+* Overlays can have the `invisible' property.
+
+* The function insert-file-contents now takes an optional fifth 
+argument called REPLACE.  If this is t, it means to replace the
+contents of the buffer (actually, just the accessible portion)
+with the contents of the file.
+
+This is better than simply deleting and inserting the whole thing
+because (1) it preserves some marker positions and (2) it puts less
+data in the undo list.
+
+* If you set auto-save-list-file-name to a non-nil value, it specifies
+a file; then auto-saving writes a list of all auto save file names of
+all Emacs buffers into that file.
+
+* The variable inhibit-first-line-modes-regexps specifies classes of
+file names for which -*- on the first line should not be looked for.
+
+* The variables before-change-functions and after-change-functions
+hold lists of functions to call before and after a change in the
+buffer's text.  They work much like before-change-function and
+after-change-function, except that they hold a list of functions
+instead of just one.
+
+These variables will eventually make before-change-function and
+after-change-function obsolete.
+
+* The variable kill-buffer-query-functions holds a list of functions
+to be called with no arguments when a buffer is about to be killed.
+(That buffer is the current buffer when the function is called.)
+If any of the functions returns nil, the buffer is not killed
+(and the remaining functions in the list are not called).
+
+* The variable kill-emacs-query-functions holds a list of functions
+to be called with no arguments when you ask to exit Emacs.
+If any of the functions returns nil, the exit is canceled
+(and the remaining functions in the list are not called).
+
+* The argument for buffer-disable-undo is now optional,
+like the argument for buffer-enable-undo.
+
+* The new variable system-configuration holds the canonical three-part
+GNU configuration name for which Emacs was built.
+
+* The function system-name now tries harder to return a fully qualified
+domain name.
+
+* The variable emacs-major-version holds the major version number
+of Emacs.  (Currently 19.)
+
+* The variable emacs-minor-version holds the minor version number
+of Emacs.  (Currently 23.)
+
+* The default value of comint-input-autoexpand is now nil.
+However, Shell mode sets it from the value of shell-input-autoexpand,
+whose default value is `history'.
+
+* The new function set-process-window-size specifies the terminal window
+size for a subprocess.  On some systems it sends the subprocess a signal
+to let it know that the size has changed.
+
+* %P is a new way to display a percentage in the mode line.  It
+displays the percentage of the buffer text that is above the *bottom*
+of the window (which includes the text visible, in the window as well
+as the text above the top).  It dispays `Top' as well as the
+percentage if the top of the buffer is visible on screen.
+
+* %+ in the mode line specs displays `*' if the buffer is modified,
+and otherwise `-'.  It never displays `%', as `%*' would do; whether the
+buffer is read-only has no effect on %+.
+
+* The new functions ffloor, fceil, fround and ftruncate take a
+floating point argument and return a floating point result whose value
+is a nearby integer.  ffloor returns the nearest integer below; fceil,
+the nearest integer above; ftrucate, the nearest integer in the
+direction towards zero; fround, the nearest integer.
+
+* Setting `print-escape-newlines' to a non-nil value now also makes
+formfeeds print as ``\f''.
+
+* auto-mode-alist now has a new feature.  If an element has the form
+(REGEXP FUNCTION t), and REGEXP matches the file name, then after calling
+FUNCTION, Emacs deletes the part of the file name that matched REGEXP
+and then searches auto-mode-alist again for a new match.
+
+This is useful for uncompression packages.  An entry of this sort for
+.gz can uncompress the file and then put the uncompressed file in the
+proper mode according to the name sans .gz.
+
+* The new function emacs-pid returns the process ID number of Emacs.
+
+* user-login-name now consistently checks the LOGNAME environment
+variable before USER.  user-original-login-name is obsolete, since it
+provides the same functionality.  To ignore the environment variables,
+use user-real-login-name.
+
+* There is a more general way of handling the system-specific X
+keysyms.  Set the variable system-key-alist to an alist containing
+elements of the form (CODE . SYMBOL), where CODE is the numeric keysym
+code minus the "vendor specific" bit, and symbol is the name for the
+function key.
+
+* You can use the variable command-line-functions to set up functions
+to process unrecognized command line arguments.  The variable's value
+should be a list of functions of no arguments.  The functions are
+called successively until one of them returns non-nil.
+
+Each function should access the free variables argi (the current
+argument) and command-line-args-left (the remaining arguments).  The
+function should return non-nil only if it recognizes and processes the
+argument in argi.  If it does so, it may consume following arguments
+as well by removing them from command-line-args-left.
+
+* There's a new way for a magic file name handler to run a primitive
+and inhibit handling of the file name.  Here is how to do it:
+
+(let ((inhibit-file-name-handlers
+       (cons 'ange-ftp-file-handler 
+             (and (eq inhibit-file-name-operation operation)
+                      inhibit-file-name-handlers)))
+      (inhibit-file-name-operation operation))
+  (apply this-operation args))
+
+The function find-file-name-handler now takes two arguments.  The
+second argument is OPERATION, the operation for which the handler is
+being sought.
+
+People have suggested that the second argument should be optional, for
+backward compatibility.  It would be nice if that were possible, but
+it is not.  There is simply no way for find-file-name-handler to do
+the right thing without receiving the proper value for its second
+argument.
+
+* The variable completion-regexp-list affects the completion
+primitives try-completion and all-completions.  They consider
+only the possible completions that match each regexp in the list.
+
+* Case conversion in the function replace-match has been changed.
+
+The old behavior was this: if any word in the old text was
+capitalized, replace-match capitalized each word of the replacement
+text.
+
+The new behavior is this: if the first word in the old text is capitalized,
+replace-match capitalizes the first word of the replacement text.
+
+* You can now specify a case table with CANON non-nil and EQV nil.
+Then the EQV part of the case table is deduced from CANON.
+
+* The new function minibuffer-prompt takes no arguments and returns
+the current minibuffer prompt string.
+
+The new function minibuffer-prompt-width takes no arguments and
+returns the display width of the minibuffer prompt string.
+
+* The new function frame-first-window returns the window at the
+upper left corner of a given frame.
+
+* wholenump is a new alias for natnump.
+
+* The variable installation-directory, if non-@code{nil}, names a
+directory within which to look for the `lib-src' and `etc'
+subdirectories.  This is non-nil when Emacs can't find those
+directories in their standard installed locations, but can find them
+near where the Emacs executable was found.
+
+* invocation-name and invocation-directory are now variables as well
+as functions.  The variable values are the same values that the
+functions return: the Emacs program name sans directories, and the
+directory it was found in.  (invocation-directory may be nil, if Emacs
+can't determine which directory it should be.)
+
+* Installation change regarding version number counting.
+
+The version number of an Emacs executable contains three numbers.
+The first two describe the Emacs release and the third increments
+each time you build Emacs.
+
+Now the file version.el contains only the first two version numbers.
+The third component is now determined on the basis of the names of the
+existing executable files.  This means that version.el is not altered
+by building Emacs.
 
 Changes in 19.22.
 
@@ -329,8 +1190,7 @@ turn the character that follows into a hyper character:
 (define-key function-key-map "\C-ch" 'hyperify)
 
 (defun hyperify (prompt)
-  (let ((e (if prompt (message "%s%s" prompt (single-key-description 
-	   (read-event)))
+  (let ((e (read-event)))
     (vector (if (numberp e)
 		(logior (lsh 1 20) e)
 	      (if (memq 'hyper (event-modifiers e))
@@ -2489,8 +3349,8 @@ old file versions, executables, DOC files, and other
 architecture-specific or easy-to-recreate files are not included in
 the tar file.
 
-For older news, see the file ONEWS.
-For Lisp changes in Emacs 19, see the file news.texi.
+For older news, see the file ONEWS.  For Lisp changes in (the first
+release of) Emacs 19, see the file LNEWS.
 
 ----------------------------------------------------------------------
 Copyright information:

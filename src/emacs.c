@@ -1,5 +1,5 @@
 /* Fully extensible Emacs, running on Unix, intended for GNU.
-   Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -53,6 +53,10 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define O_RDWR 2
 #endif
 
+extern void malloc_warning ();
+extern char *index ();
+extern char *strerror ();
+
 /* Command line args from shell, as list of strings */
 Lisp_Object Vcommand_line_args;
 
@@ -63,6 +67,10 @@ Lisp_Object Vinvocation_name;
 /* The directory name from which Emacs was invoked.  */
 Lisp_Object Vinvocation_directory;
 
+/* The directory name in which to find subdirs such as lisp and etc.
+   nil means get them only from PATH_LOADSEARCH.  */
+Lisp_Object Vinstallation_directory;
+
 /* Hook run by `kill-emacs' before it does really anything.  */
 Lisp_Object Vkill_emacs_hook;
 
@@ -71,8 +79,11 @@ Lisp_Object Vkill_emacs_hook;
   on subsequent starts.  */
 int initialized;
 
-/* Variable whose value is symbol giving operating system type */
+/* Variable whose value is symbol giving operating system type.  */
 Lisp_Object Vsystem_type;
+
+/* Variable whose value is string giving configuration built for.  */
+Lisp_Object Vsystem_configuration;
   
 /* If non-zero, emacs should not attempt to use an window-specific code,
    but instead should use the virtual terminal under which it was started */
@@ -83,7 +94,7 @@ int inhibit_window_system;
    priority; Those functions have their own extern declaration.  */
 int emacs_priority;
 
-#ifdef BSD
+#ifdef BSD_PGRPS
 /* See sysdep.c.  */
 extern int inherited_pgroup;
 #endif
@@ -147,10 +158,28 @@ fatal_error_signal (sig)
      Remember that since we're in a signal handler, the signal we're
      going to send is probably blocked, so we have to unblock it if we
      want to really receive it.  */
+#ifndef MSDOS
   sigunblock (sigmask (fatal_error_code));
+#endif
   kill (getpid (), fatal_error_code);
 #endif /* not VMS */
 }
+
+#ifdef SIGDANGER
+
+/* Handler for SIGDANGER.  */
+SIGTYPE
+memory_warning_signal (sig)
+     int sig;
+{
+  signal (sig, memory_warning_signal);
+
+  malloc_warning ("Operating system warns that virtual memory is running low.\n");
+
+  /* It might be unsafe to call do_auto_save now.  */
+  force_auto_save_soon ();
+}
+#endif
 
 /* Code for dealing with Lisp access to the Unix command line */
 
@@ -161,6 +190,7 @@ init_cmdargs (argc, argv, skip_args)
      int skip_args;
 {
   register int i;
+  Lisp_Object name, dir;
 
   Vinvocation_name = Ffile_name_nondirectory (build_string (argv[0]));
   Vinvocation_directory = Ffile_name_directory (build_string (argv[0]));
@@ -173,6 +203,63 @@ init_cmdargs (argc, argv, skip_args)
 		       EXEC_SUFFIXES, &found, 1);
       if (yes == 1)
 	Vinvocation_directory = Ffile_name_directory (found);
+    }
+
+  Vinstallation_directory = Qnil;
+
+  if (!NILP (Vinvocation_directory))
+    {
+      dir = Vinvocation_directory;
+      name = Fexpand_file_name (Vinvocation_name, dir);
+      while (1)
+	{
+	  Lisp_Object tem, lib_src_exists;
+	  Lisp_Object etc_exists, info_exists;
+
+	  /* See if dir contains subdirs for use by Emacs.
+	     Check for the ones that would exist in a build directory,
+	     not including lisp and info.  */
+	  tem = Fexpand_file_name (build_string ("lib-src"), dir);
+	  lib_src_exists = Ffile_exists_p (tem);
+	  if (!NILP (lib_src_exists))
+	    {
+	      tem = Fexpand_file_name (build_string ("etc"), dir);
+	      etc_exists = Ffile_exists_p (tem);
+	      if (!NILP (etc_exists))
+		{
+		  Vinstallation_directory
+		    = Ffile_name_as_directory (dir);
+		  break;
+		}
+	    }
+
+	  /* See if dir's parent contains those subdirs.  */
+	  tem = Fexpand_file_name (build_string ("../lib-src"), dir);
+	  lib_src_exists = Ffile_exists_p (tem);
+	  if (!NILP (lib_src_exists))
+	    {
+	      tem = Fexpand_file_name (build_string ("../etc"), dir);
+	      etc_exists = Ffile_exists_p (tem);
+	      if (!NILP (etc_exists))
+		{
+		  tem = Fexpand_file_name (build_string (".."), dir);
+		  Vinstallation_directory
+		    = Ffile_name_as_directory (tem);
+		  break;
+		}
+	    }
+
+	  /* If the Emacs executable is actually a link,
+	     next try the dir that the link points into.  */
+	  tem = Ffile_symlink_p (name);
+	  if (!NILP (tem))
+	    {
+	      name = tem;
+	      dir = Ffile_name_directory (name);
+	    }
+	  else
+	    break;
+	}
     }
 
   Vcommand_line_args = Qnil;
@@ -216,6 +303,7 @@ extern noshare char **environ;
    Provide dummy definitions to avoid error.
    (We don't have any real constructors or destructors.)  */
 #ifdef __GNUC__
+#ifndef GCC_CTORS_IN_LIBC
 __do_global_ctors ()
 {}
 __do_global_ctors_aux ()
@@ -227,6 +315,7 @@ __do_global_dtors ()
 char * __CTOR_LIST__[2] = { (char *) (-1), 0 };
 #endif
 char * __DTOR_LIST__[2] = { (char *) (-1), 0 };
+#endif /* GCC_CTORS_IN_LIBC */
 __main ()
 {}
 #endif /* __GNUC__ */
@@ -242,8 +331,6 @@ main (argc, argv, envp)
   int skip_args = 0;
   extern int errno;
   extern sys_nerr;
-  extern char *sys_errlist[];
-  extern void malloc_warning ();
 
 /* Map in shared memory, if we are using that.  */
 #ifdef HAVE_SHM
@@ -322,11 +409,16 @@ main (argc, argv, envp)
 
   clearerr (stdin);
 
-#ifdef BSD
-  {
-    inherited_pgroup = EMACS_GETPGRP (0);
-    setpgrp (0, getpid ());
-  }
+#ifdef BSD_PGRPS
+  if (initialized)
+    {
+      inherited_pgroup = EMACS_GETPGRP (0);
+      setpgrp (0, getpid ());
+    }
+#else
+#if defined (USG5) && defined (INTERRUPT_INPUT)
+  setpgrp ();
+#endif
 #endif
 
 
@@ -351,11 +443,24 @@ main (argc, argv, envp)
     }
 #endif	/* not SYSTEM_MALLOC */
 
-#ifdef PRIO_PROCESS
+#ifdef MSDOS
+  /* We do all file input/output as binary files.  When we need to translate
+     newlines, we do that manually.  */
+  _fmode = O_BINARY;
+  (stdin)->_flag &= ~_IOTEXT;
+  (stdout)->_flag &= ~_IOTEXT;
+  (stderr)->_flag &= ~_IOTEXT;
+#endif /* MSDOS */
+
+#ifdef SET_EMACS_PRIORITY
   if (emacs_priority)
     nice (emacs_priority);
   setuid (getuid ());
-#endif /* PRIO_PROCESS */
+#endif /* SET_EMACS_PRIORITY */
+
+#ifdef EXTRA_INITIALIZE
+  EXTRA_INITIALIZE;
+#endif
 
   inhibit_window_system = 0;
 
@@ -369,12 +474,7 @@ main (argc, argv, envp)
       result = open (argv[skip_args], O_RDWR, 2 );
       if (result < 0)
 	{
-	  char *errstring;
-
-	  if (errno >= 0 && errno < sys_nerr)
-	    errstring = sys_errlist[errno];
-	  else
-	    errstring = "undocumented error code";
+	  char *errstring = strerror (errno);
 	  fprintf (stderr, "emacs: %s: %s\n", argv[skip_args], errstring);
 	  exit (1);
 	}
@@ -447,19 +547,14 @@ main (argc, argv, envp)
       signal (SIGXFSZ, fatal_error_signal);
 #endif /* SIGXFSZ */
 
+#ifdef SIGDANGER
+      /* This just means available memory is getting low.  */
+      signal (SIGDANGER, memory_warning_signal);
+#endif
+
 #ifdef AIX
-      signal (SIGDANGER, fatal_error_signal);
-      signal (20, fatal_error_signal);
-      signal (21, fatal_error_signal);
-      signal (22, fatal_error_signal);
-      signal (24, fatal_error_signal);
-#if 0 /* mvn@library.ucla.edu says these are SIGIO on AIX 3.2.4.  */
-      signal (23, fatal_error_signal);
-#ifdef SIGIO
-      signal (SIGAIO, fatal_error_signal);
-      signal (SIGPTY, fatal_error_signal);
-#endif
-#endif
+/* 20 is SIGCHLD, 21 is SIGTTIN, 22 is SIGTTOU.  */
+      signal (SIGXCPU, fatal_error_signal);
 #ifndef _I386
       signal (SIGIOINT, fatal_error_signal);
 #endif
@@ -492,10 +587,23 @@ main (argc, argv, envp)
   init_eval ();
   init_data ();
 
+#ifdef MSDOS
+  /* Call early 'cause init_environment needs it.  */
+  init_dosfns ();
+  /* Set defaults for several environment variables.  */
+  if (initialized) init_environment (argc, argv, skip_args);
+#endif
+
   /* egetenv is a pretty low-level facility, which may get called in
      many circumstances; it seems flimsy to put off initializing it
      until calling init_callproc.  */
   set_process_environment ();
+  /* AIX crashes are reported in system versions 3.2.3 and 3.2.4
+     if this is not done.  Do it after set_process_environment so that we
+     don't pollute Vprocess_environment.  */
+#ifdef AIX
+  putenv ("LANG=C");
+#endif
 
   init_buffer ();	/* Init default directory of main buffer */
 
@@ -575,6 +683,7 @@ main (argc, argv, envp)
       syms_of_search ();
       syms_of_frame ();
       syms_of_syntax ();
+      syms_of_term ();
       syms_of_undo ();
 
       /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
@@ -704,6 +813,9 @@ shut_down_emacs (sig, no_x, stuff)
      int sig, no_x;
      Lisp_Object stuff;
 {
+  /* Prevent running of hooks from now on.  */
+  Vrun_hooks = Qnil;
+
   /* If we are controlling the terminal, reset terminal modes */
 #ifdef EMACS_HAVE_TTY_PGRP
   {
@@ -766,7 +878,6 @@ This function exists on systems that use HAVE_SHM.")
 {
   extern int my_edata;
   Lisp_Object tem;
-  extern void malloc_warning ();
 
   CHECK_STRING (intoname, 0);
   intoname = Fexpand_file_name (intoname, Qnil);
@@ -802,7 +913,6 @@ and announce itself normally when it is run.")
 {
   extern int my_edata;
   Lisp_Object tem;
-  extern void malloc_warning ();
 
   CHECK_STRING (intoname, 0);
   intoname = Fexpand_file_name (intoname, Qnil);
@@ -847,7 +957,6 @@ decode_env_path (evarname, defalt)
      char *evarname, *defalt;
 {
   register char *path, *p;
-  extern char *index ();
 
   Lisp_Object lpath;
 
@@ -897,6 +1006,10 @@ syms_of_emacs ()
     "Value is symbol indicating type of operating system you are using.");
   Vsystem_type = intern (SYSTEM_TYPE);
 
+  DEFVAR_LISP ("system-configuration", &Vsystem_configuration,
+    "Value is string indicating configuration Emacs was built for.");
+  Vsystem_configuration = build_string (CONFIGURATION);
+
   DEFVAR_BOOL ("noninteractive", &noninteractive1,
     "Non-nil means Emacs is running without interactive terminal.");
 
@@ -911,11 +1024,23 @@ expect to be able to interact with the user.");
     "Priority for Emacs to run at.\n\
 This value is effective only if set before Emacs is dumped,\n\
 and only if the Emacs executable is installed with setuid to permit\n\
-it to change priority.  (Emacs sets its uid back to the real uid.)");
+it to change priority.  (Emacs sets its uid back to the real uid.)\n\
+Currently, you need to define SET_EMACS_PRIORITY in `config.h'\n\
+before you compile Emacs, to enable the code for this feature.");
   emacs_priority = 0;
 
-  staticpro (&Vinvocation_name);
-  Vinvocation_name = Qnil;
-  staticpro (&Vinvocation_directory);
-  Vinvocation_directory = Qnil;
+  DEFVAR_LISP ("invocation-name", &Vinvocation_name,
+    "The program name that was used to run Emacs.\n\
+Any directory names are omitted.");
+
+  DEFVAR_LISP ("invocation-directory", &Vinvocation_directory,
+    "The directory in which the Emacs executable was found, to run it.\n\
+The value is nil if that directory's name is not known.");
+
+  DEFVAR_LISP ("installation-directory", &Vinstallation_directory,
+    "A directory within which to look for the `lib-src' and `etc' directories.\n\
+This is non-nil when we can't find those directories in their standard\n\
+installed locations, but we can find them\n\
+near where the Emacs executable was found.");
+  Vinstallation_directory = Qnil;
 }

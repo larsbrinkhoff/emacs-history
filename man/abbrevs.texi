@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Abbrevs, Picture, Building, Top
 @chapter Abbrevs
@@ -115,10 +115,12 @@ mode, since those two definitions are independent for one abbrev.
 @node Expanding Abbrevs
 @section Controlling Abbrev Expansion
 
-  An abbrev expands whenever it is present in the buffer just before point
-and a self-inserting punctuation character (@key{SPC}, comma, etc.@:) is
-typed.  Most often the way an abbrev is used is to insert the abbrev
-followed by punctuation.
+  An abbrev expands whenever it is present in the buffer just before
+point and you type a self-inserting whitespace or punctuation character
+(@key{SPC}, comma, etc.@:).  More precisely, any character that is not a
+word constituent expands an abbrev, and any word constituent character
+can be part of an abbrev.  The most common way to use an abbrev is to
+insert it and then insert a punctuation character to expand it.
 
 @vindex abbrev-all-caps
   Abbrev expansion preserves case; thus, @samp{foo} expands into @samp{find
@@ -153,10 +155,10 @@ the command @kbd{M-'} (@code{abbrev-prefix-mark}) in between the prefix
 @samp{re} and the abbrev @samp{cnst}.  First, insert @samp{re}.  Then type
 @kbd{M-'}; this inserts a minus sign in the buffer to indicate that it has
 done its work.  Then insert the abbrev @samp{cnst}; the buffer now contains
-@samp{re-cnst}.  Now insert a punctuation character to expand the abbrev
+@samp{re-cnst}.  Now insert a non-word character to expand the abbrev
 @samp{cnst} into @samp{construction}.  The minus sign is deleted at this
 point, because @kbd{M-'} left word for this to be done.  The resulting text
-is the desired @samp{reconstruction}.@refill
+is the desired @samp{reconstruction}.
 
   If you actually want the text of the abbrev in the buffer, rather than
 its expansion, you can accomplish this by inserting the following
@@ -167,10 +169,10 @@ buffer.
   If you expand an abbrev by mistake, you can undo the expansion
 (replace the expansion by the original abbrev text) with @kbd{M-x
 unexpand-abbrev}.  @kbd{C-_} (@code{undo}) can also be used to undo the
-expansion; but first it undoes the insertion of the following
-punctuation character.  Therefore, if you want both the punctuation
-character and the unexpanded abbrev, you must reinsert the punctuation
-character, quoting it with @kbd{C-q}.
+expansion; but first it undoes the insertion of the following non-word
+character.  Therefore, if you want both the non-word character and the
+unexpanded abbrev, you must reinsert the terminating character, quoting
+it with @kbd{C-q}.
 
 @findex expand-region-abbrevs
   @kbd{M-x expand-region-abbrevs} searches through the region for defined
@@ -255,9 +257,10 @@ Insert all abbrevs and their expansions into current buffer.
 
 @findex write-abbrev-file
   @kbd{M-x write-abbrev-file} reads a file name using the minibuffer and
-writes a description of all current abbrev definitions into that file.  The
-text stored in the file looks like the output of @kbd{M-x list-abbrevs}.
-This is used to save abbrev definitions for use in a later session.
+writes a description of all current abbrev definitions into that file.
+This is used to save abbrev definitions for use in a later session.  The
+text stored in the file is a series of Lisp expressions that, when
+executed, define the same abbrevs that you currently have.
 
 @findex read-abbrev-file
 @findex quietly-read-abbrev-file

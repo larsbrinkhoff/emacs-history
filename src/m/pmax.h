@@ -50,6 +50,11 @@ NOTE-END  */
 #define HAVE_ALLOCA
 #endif
 
+#ifndef OSF1
+/* Ultrix saves the time zone in core; must clear it.  */
+#define LOCALTIME_CACHE
+#endif
+
 /* mcc@timessqr.gc.cuny.edu says this makes Emacs work with DECnet.  */
 #ifdef HAVE_LIBDNET
 #define LIBS_MACHINE -ldnet
@@ -78,4 +83,12 @@ NOTE-END  */
 
    Using the MIT X11 distribution instead of the one provided by Dec will
    also solve the problem, but I doubt you can convince everyone to do this. */
-#define C_SWITCH_X_MACHINE -DNeedFunctionPrototypes=0
+/* Addendum: the MIT X11 distribution neglects to define certain symbols
+   when NeedFunctionPrototypes is 0, but still tries to use them when
+   NeedVarargsProrotypes is 1 (which is its default value).  So if we're
+   going to disable non-variadic prototypes, we also need to disable
+   variadic prototypes.  --kwzh@gnu.ai.mit.edu */
+#define C_SWITCH_X_MACHINE -DNeedFunctionPrototypes=0 -DNeedVarargsPrototypes=0
+
+/* Enable a fix in process.c.  */
+#define SET_CHILD_PTY_PGRP

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Customization, Quitting, Emulation, Top
 @chapter Customization
@@ -18,23 +18,23 @@ put something in your @file{.emacs} file or other appropriate file to do the
 customization in each session.  @xref{Init File}.
 
 @menu
-* Minor Modes::              Each minor mode is one feature you can turn on
-                               independently of any others.
-* Variables::                Many Emacs commands examine Emacs variables
-                               to decide what to do; by setting variables,
-                               you can control their functioning.
-* Keyboard Macros::          A keyboard macro records a sequence of
-                               keystrokes to be replayed with a single
-                               command. 
-* Key Bindings::             The keymaps say what command each key runs.
-                               By changing them, you can "redefine keys".
-* Keyboard Translations::    If your keyboard passes an undesired code
-                               for a key, you can tell Emacs to
-                               substitute another code. 
-* Syntax::                   The syntax table controls how words and
-                                expressions are parsed.
-* Init File::                How to write common customizations in the
-                               @file{.emacs} file. 
+* Minor Modes::		   Each minor mode is one feature you can turn on
+			     independently of any others.
+* Variables::		   Many Emacs commands examine Emacs variables
+			     to decide what to do; by setting variables,
+			     you can control their functioning.
+* Keyboard Macros::	   A keyboard macro records a sequence of
+			     keystrokes to be replayed with a single
+			     command. 
+* Key Bindings::	   The keymaps say what command each key runs.
+			     By changing them, you can "redefine keys".
+* Keyboard Translations::  If your keyboard passes an undesired code
+			     for a key, you can tell Emacs to
+			     substitute another code. 
+* Syntax::		   The syntax table controls how words and
+			      expressions are parsed.
+* Init File::		   How to write common customizations in the
+                             @file{.emacs} file. 
 @end menu
 
 @node Minor Modes
@@ -146,12 +146,12 @@ specifies the position of the right margin (as a number of characters from
 the left margin) to be used by the fill commands (@pxref{Filling}).
 
 @menu
-* Examining::           Examining or setting one variable's value.
-* Edit Options::        Examining or editing list of all variables' values.
-* Hooks::		Hook variables let you specify programs for parts
-			  of Emacs to run on particular occasions.
-* Locals::              Per-buffer values of variables.
-* File Variables::      How files can specify variable values.
+* Examining::	     Examining or setting one variable's value.
+* Edit Options::     Examining or editing list of all variables' values.
+* Hooks::	     Hook variables let you specify programs for parts
+		       of Emacs to run on particular occasions.
+* Locals::	     Per-buffer values of variables.
+* File Variables::   How files can specify variable values.
 @end menu
 
 @node Examining
@@ -566,9 +566,9 @@ defined and also has been, in effect, executed once.  You can then do the
 whole thing over again by invoking the macro.
 
 @menu
-* Basic Kbd Macro::     Defining and running keyboard macros.
-* Save Kbd Macro::      Giving keyboard macros names; saving them in files.
-* Kbd Macro Query::     Keyboard macros that do different things each use.
+* Basic Kbd Macro::  Defining and running keyboard macros.
+* Save Kbd Macro::   Giving keyboard macros names; saving them in files.
+* Kbd Macro Query::  Keyboard macros that do different things each use.
 @end menu
 
 @node Basic Kbd Macro
@@ -726,6 +726,7 @@ name which usually consists of lower case letters and hyphens.
 * Rebinding::        How to redefine one key's meaning conveniently.
 * Init Rebinding::   Rebinding keys with your init file, @file{.emacs}.
 * Function Keys::    Rebinding terminal function keys.
+* Named ASCII Chars::Distinguishing @key{TAB} from @kbd{C-i}, and so on.
 * Mouse Buttons::    Rebinding mouse buttons in Emacs.
 * Disabling::        Disabling a command means confirmation is required
                        before it can be executed.  This is done to protect
@@ -778,7 +779,7 @@ can have bindings for them.
   On many terminals, typing a function key actually sends the computer a
 sequence of characters; the precise details of the sequence depends on
 which function key and on the model of terminal you are using.  (Often
-he sequence starts with @kbd{@key{ESC} [}.)  If Emacs understands your
+the sequence starts with @kbd{@key{ESC} [}.)  If Emacs understands your
 terminal type properly, it recognizes the character sequences forming
 function keys wherever they occur in a key sequence (not just at the
 beginning).  Thus, for most purposes, you can pretend the function keys
@@ -1018,14 +1019,15 @@ or as:
 @end example
 
 @noindent
-When the key sequence consists of characters, like this one, you can
-write it as a string or as a vector.  The first format specifies the key
-sequence as a string, @code{"\C-z"}.  The second format uses a vector to
-specify the key sequence.  The square brackets (@samp{[@dots{}]})
-delimit the contents of the vector.  The vector in this example contains
-just one element, which is the integer code corresponding to @kbd{C-z}.
-The question mark is the Lisp syntax for a character constant; the
-character must follow with no intervening spaces.
+When the key sequence consists of ASCII characters and Meta characters,
+like this one, you can write it as a string or as a vector.
+The first format specifies the key sequence as a string, @code{"\C-z"}.
+The second format uses a vector to specify the key sequence.  The square
+brackets (@samp{[@dots{}]}) delimit the contents of the vector.  The
+vector in this example contains just one element, which is the integer
+code corresponding to @kbd{C-z}.  The question mark is the Lisp syntax
+for a character constant; the character must follow with no intervening
+spaces.
 
   The single-quote before @code{shell} marks it as a constant symbol
 rather than a variable.  If you omit the quote, Emacs tries to evaluate
@@ -1042,6 +1044,16 @@ or:
 
 @example
 (global-set-key [?\C-x ?l] 'make-symbolic-link)
+@end example
+
+  When the key sequence includes function keys or mouse button events,
+or non-ASCII characters such as @code{C-=} or @code{H-a}, you must use a
+vector.
+
+@example
+(global-set-key [?\C-=] 'make-symbolic-link)
+(global-set-key [?\H-a] 'make-symbolic-link)
+(global-set-key [C-H-mouse-1] 'make-symbolic-link)
 @end example
 
 @node Function Keys
@@ -1133,6 +1145,33 @@ how to make @kbd{Hyper-Meta-@key{RIGHT}} move forward a word:
 @example
 (global-set-key [H-M-right] 'forward-word)
 @end example
+
+@node Named ASCII Chars
+@subsection Named ASCII Control Characters
+
+  @key{TAB}, @key{RET}, @key{BS}, @key{LFD}, @key{ESC} and @key{DEL}
+started out as names for certain ASCII control characters, used so often
+that they have special keys of their own.  Later, users found it
+convenient to distinguish in Emacs between these keys and the ``same''
+control characters typed with the @key{CTRL} key.
+
+  Emacs 19 distinguishes these two kinds of input, when used with the X
+Window System.  It treats the ``special'' keys as function keys named
+@code{tab}, @code{return}, @code{backspace}, @code{linefeed},
+@code{escape}, and @code{delete}.  These function keys translate
+automatically into the corresponding ASCII characters @emph{if} they
+have no bindings of their own.  As a result, neither users nor Lisp
+programs need to pay attention to the distinction unless they care to.
+
+  If you do not want to distinguish between (for example) @key{TAB}
+and @kbd{C-i}, then make a binding for the ASCII character @key{TAB}
+(octal code 011).  If you do want to distinguish, make one binding
+for this ASCII character, and another for the ``function key''
+@code{tab}.
+
+  With an ordinary ASCII terminal, there is no way to distinguish
+between @key{TAB} and @kbd{C-i} (and so on), because the terminal sends
+the same character in both cases.
 
 @node Mouse Buttons
 @subsection Rebinding Mouse Buttons
@@ -1241,7 +1280,7 @@ The mouse was in the mode line of a window.
 @item vertical-line
 The mouse was in the vertical line separating side-by-side windows.
 @item vertical-scroll-bar
-The mouse was in a horizontal scroll bar.  This is the kind of scroll
+The mouse was in a vertical scroll bar.  This is the kind of scroll
 bar people normally use.
 @item horizontal-scroll-bar
 The mouse was in a horizontal scroll bar.  Horizontal scroll bars do
@@ -1353,8 +1392,8 @@ character includes both the string you would have to give to
 @code{modify-syntax-entry} to set up that character's current syntax,
 and some English to explain that string if necessary.
 
-  For full information on the syntax table, see @ref{Syntax Table,,
-Syntax Table, elisp, The Emacs Lisp Reference Manual}.
+  For full information on the syntax table, see @ref{Syntax Tables,,
+Syntax Tables, elisp, The Emacs Lisp Reference Manual}.
 
 @node Init File
 @section The Init File, @file{~/.emacs}
@@ -1362,6 +1401,7 @@ Syntax Table, elisp, The Emacs Lisp Reference Manual}.
 @cindex Emacs initialization file
 @cindex key rebinding, permanent
 @cindex rebinding keys, permanently
+@cindex startup (init file)
 
   When Emacs is started, it normally loads a Lisp program from the file
 @file{.emacs} in your home directory.  We call this file your @dfn{init
@@ -1386,10 +1426,10 @@ Compilation, elisp, the Emacs Lisp Reference Manual}, for more
 information about compiling Emacs Lisp programs.
 
 @menu
-* Init Syntax::     Syntax of constants in Emacs Lisp.
-* Init Examples::   How to do some things with an init file.
-* Terminal Init::   Each terminal type can have an init file.
-* Find Init::	    How Emacs finds the init file.
+* Init Syntax::	     Syntax of constants in Emacs Lisp.
+* Init Examples::    How to do some things with an init file.
+* Terminal Init::    Each terminal type can have an init file.
+* Find Init::	     How Emacs finds the init file.
 @end menu
 
 @node Init Syntax
@@ -1608,10 +1648,10 @@ suffixes @samp{.elc} and @samp{.el}.  Normally it appears in the
 subdirectory @file{term} of the directory where most Emacs libraries are
 kept.@refill
 
-  The usual purpose of the terminal-specific library is to define the
-escape sequences used by the terminal's function keys using the library
-@file{keypad.el}.  See the file
-@file{term/vt100.el} for an example of how this is done.@refill
+  The usual purpose of the terminal-specific library is to map the
+escape sequences used by the terminal's function keys onto more
+meaningful names, using @code{function-key-map}.  See the file
+@file{term/lk201.el} for an example of how this is done.@refill
 
   When the terminal type contains a hyphen, only the part of the name
 before the first hyphen is significant in choosing the library name.
@@ -1644,8 +1684,8 @@ that you should get your own editor customizations even if you are
 running as the super user.
 
   More precisely, Emacs first determines which user's init file to use.
-It gets the user name from the environment variables @code{USER} and
-@code{LOGNAME}; if neither of those exists, it uses effective user-ID.
+It gets the user name from the environment variables @code{LOGNAME} and
+@code{USER}; if neither of those exists, it uses effective user-ID.
 If that user name matches the real user-ID, then Emacs uses @code{HOME};
 otherwise, it looks up the home directory corresponding to that user
 name in the system's data base of users.

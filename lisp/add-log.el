@@ -1,6 +1,6 @@
 ;;; add-log.el --- change log maintenance commands for Emacs
 
-;; Copyright (C) 1985, 1986, 1988, 1993 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1988, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Keywords: maint
 
@@ -50,7 +50,11 @@ an `@' character, followed by the value returned by `system-name'.")
 
 (defun change-log-name ()
   (or change-log-default-name
-      (if (eq system-type 'vax-vms) "$CHANGE_LOG$.TXT" "ChangeLog")))
+      (if (eq system-type 'vax-vms) 
+	  "$CHANGE_LOG$.TXT" 
+	(if (eq system-type 'ms-dos)
+	    "changelo"
+	  "ChangeLog"))))
 
 ;;;###autoload
 (defun prompt-for-change-log-name ()
@@ -280,9 +284,10 @@ Prefix arg means justify as well."
     (fill-paragraph justify)))
 
 (defvar add-log-current-defun-header-regexp
-  "^\\([A-Z][A-Z_ ]*[A-Z_]\\|[a-z_---A-Z]+\\)[ \t]*[:=]"
+  "^\\([A-Z][A-Z_ ]*[A-Z_]\\|[-_a-zA-Z]+\\)[ \t]*[:=]"
   "*Heuristic regexp used by `add-log-current-defun' for unknown major modes.")
 
+;;;###autoload
 (defun add-log-current-defun ()
   "Return name of function definition point is in, or nil.
 
@@ -316,7 +321,7 @@ Has a preference of looking backwards."
 		       (skip-chars-forward " ")
 		       (buffer-substring (point)
 					 (progn (forward-sexp 1) (point))))))
-		((and (memq major-mode '(c-mode 'c++-mode))
+		((and (memq major-mode '(c-mode c++-mode c++-c-mode))
 		      (save-excursion (beginning-of-line)
 				      ;; Use eq instead of = here to avoid
 				      ;; error when at bob and char-after
@@ -332,7 +337,7 @@ Has a preference of looking backwards."
 		 (skip-chars-forward " \t")
 		 (buffer-substring (point)
 				   (progn (forward-sexp 1) (point))))
-		((memq major-mode '(c-mode 'c++-mode))
+		((memq major-mode '(c-mode c++-mode c++-c-mode))
 		 (beginning-of-line)
 		 ;; See if we are in the beginning part of a function,
 		 ;; before the open brace.  If so, advance forward.

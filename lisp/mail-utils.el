@@ -23,7 +23,7 @@
 
 ;;; Commentary:
 
-;; Utility functions for maol and netnews handling.  These handle fine
+;; Utility functions for mail and netnews handling.  These handle fine
 ;; points of header parsing.
 
 ;;; Code:
@@ -128,7 +128,7 @@ Usenet paths ending in an element that matches are removed also."
 	    (concat (if rmail-default-dont-reply-to-names
 			(concat rmail-default-dont-reply-to-names "\\|")
 		        "")
-		    (concat (regexp-quote (user-original-login-name))
+		    (concat (regexp-quote (user-login-name))
 			    "\\>"))))
   (let ((match (concat "\\(^\\|,\\)[ \t\n]*\\([^,\n]*!\\|\\)\\("
 		       rmail-dont-reply-to-names
@@ -152,6 +152,7 @@ Usenet paths ending in an element that matches are removed also."
 	(substring userids (match-end 0))
       userids)))
 
+;;;###autoload
 (defun mail-fetch-field (field-name &optional last all)
   "Return the value of the header field FIELD-NAME.
 The buffer is expected to be narrowed to just the headers of the message.

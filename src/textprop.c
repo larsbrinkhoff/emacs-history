@@ -1,5 +1,5 @@
 /* Interface code for dealing with text properties.
-   Copyright (C) 1993 Free Software Foundation, Inc.
+   Copyright (C) 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -21,6 +21,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "lisp.h"
 #include "intervals.h"
 #include "buffer.h"
+#include "window.h"
 
 
 /* NOTES:  previous- and next- property change will have to skip
@@ -48,7 +49,7 @@ Lisp_Object Qlocal_map;
 
 /* Visual properties text (including strings) may have. */
 Lisp_Object Qforeground, Qbackground, Qfont, Qunderline, Qstipple;
-Lisp_Object Qinvisible, Qread_only, Qhidden;
+Lisp_Object Qinvisible, Qread_only, Qintangible;
 
 /* Sticky properties */
 Lisp_Object Qfront_sticky, Qrear_nonsticky;
@@ -340,8 +341,9 @@ add_properties (plist, i, object)
       for (tail2 = i->plist; ! NILP (tail2); tail2 = Fcdr (Fcdr (tail2)))
 	if (EQ (sym1, Fcar (tail2)))
 	  {
-	    register Lisp_Object this_cdr = Fcdr (tail2);
+	    register Lisp_Object this_cdr;
 
+	    this_cdr = Fcdr (tail2);
 	    /* Found the property.  Now check its value. */
 	    found = 1;
 
@@ -395,10 +397,10 @@ remove_properties (plist, i, object)
      INTERVAL i;
      Lisp_Object object;
 {
-  register Lisp_Object tail1, tail2, sym;
-  register Lisp_Object current_plist = i->plist;
+  register Lisp_Object tail1, tail2, sym, current_plist;
   register int changed = 0;
 
+  current_plist = i->plist;
   /* Go through each element of plist. */
   for (tail1 = plist; ! NILP (tail1); tail1 = Fcdr (Fcdr (tail1)))
     {
@@ -425,7 +427,8 @@ remove_properties (plist, i, object)
       tail2 = current_plist;
       while (! NILP (tail2))
 	{
-	  register Lisp_Object this = Fcdr (Fcdr (tail2));
+	  register Lisp_Object this;
+	  this = Fcdr (Fcdr (tail2));
 	  if (EQ (sym, Fcar (this)))
 	    {
 	      if (XTYPE (object) == Lisp_Buffer)
@@ -519,6 +522,67 @@ If POSITION is at the end of OBJECT, the value is nil.")
   return textget (i->plist, prop);
 }
 
+DEFUN ("get-char-property", Fget_char_property, Sget_char_property, 2, 3, 0,
+  "Return the value of position POS's property PROP, in OBJECT.\n\
+OBJECT is optional and defaults to the current buffer.\n\
+If POS is at the end of OBJECT, the value is nil.\n\
+If OBJECT is a buffer, then overlay properties are considered as well as\n\
+text properties.\n\
+If OBJECT is a window, then that window's buffer is used, but window-specific\n\
+overlays are considered only if they are associated with OBJECT.")
+  (pos, prop, object)
+     Lisp_Object pos, object;
+     register Lisp_Object prop;
+{
+  struct window *w = 0;
+
+  CHECK_NUMBER_COERCE_MARKER (pos, 0);
+
+  if (NILP (object))
+    XSET (object, Lisp_Buffer, current_buffer);
+
+  if (WINDOWP (object))
+    {
+      w = XWINDOW (object);
+      XSET (object, Lisp_Buffer, w->buffer);
+    }
+  if (BUFFERP (object))
+    {
+      int posn = XINT (pos);
+      int noverlays;
+      Lisp_Object *overlay_vec, tem;
+      int next_overlay;
+      int len;
+
+      /* First try with room for 40 overlays.  */
+      len = 40;
+      overlay_vec = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
+
+      noverlays = overlays_at (posn, 0, &overlay_vec, &len, &next_overlay);
+
+      /* If there are more than 40,
+	 make enough space for all, and try again.  */
+      if (noverlays > len)
+	{
+	  len = noverlays;
+	  overlay_vec = (Lisp_Object *) alloca (len * sizeof (Lisp_Object));
+	  noverlays = overlays_at (posn, 0, &overlay_vec, &len, &next_overlay);
+	}
+      noverlays = sort_overlays (overlay_vec, noverlays, w);
+
+      /* Now check the overlays in order of decreasing priority.  */
+      while (--noverlays >= 0)
+	{
+	  tem = Foverlay_get (overlay_vec[noverlays], prop);
+	  if (!NILP (tem))
+	    return (tem);
+	}
+    }
+  /* Not a buffer, or no appropriate overlay, so fall through to the
+     simpler case.  */
+  return (Fget_text_property (pos, prop, object));
+}
+
 DEFUN ("next-property-change", Fnext_property_change,
        Snext_property_change, 1, 3, 0,
   "Return the position of next property change.\n\
@@ -536,6 +600,9 @@ past position LIMIT; return LIMIT if nothing is found before LIMIT.")
 
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);
+
+  if (!NILP (limit))
+    CHECK_NUMBER_COERCE_MARKER (limit, 0);
 
   i = validate_interval_range (object, &pos, &pos, soft);
   if (NULL_INTERVAL_P (i))
@@ -596,7 +663,7 @@ The property values are compared with `eq'.\n\
 Return nil if the property is constant all the way to the end of OBJECT.\n\
 If the value is non-nil, it is a position greater than POS, never equal.\n\n\
 If the optional fourth argument LIMIT is non-nil, don't search\n\
-past position LIMIT; fail if nothing is found before LIMIT.")
+past position LIMIT; return LIMIT if nothing is found before LIMIT.")
   (pos, prop, object, limit)
      Lisp_Object pos, prop, object, limit;
 {
@@ -605,6 +672,9 @@ past position LIMIT; fail if nothing is found before LIMIT.")
 
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);
+
+  if (!NILP (limit))
+    CHECK_NUMBER_COERCE_MARKER (limit, 0);
 
   i = validate_interval_range (object, &pos, &pos, soft);
   if (NULL_INTERVAL_P (i))
@@ -634,7 +704,7 @@ The optional second argument OBJECT is the string or buffer to scan.\n\
 Return nil if the property is constant all the way to the start of OBJECT.\n\
 If the value is non-nil, it is a position less than POS, never equal.\n\n\
 If the optional third argument LIMIT is non-nil, don't search\n\
-back past position LIMIT; fail if nothing is found before LIMIT.")
+back past position LIMIT; return LIMIT if nothing is found until LIMIT.")
   (pos, object, limit)
      Lisp_Object pos, object, limit;
 {
@@ -643,9 +713,16 @@ back past position LIMIT; fail if nothing is found before LIMIT.")
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);
 
+  if (!NILP (limit))
+    CHECK_NUMBER_COERCE_MARKER (limit, 0);
+
   i = validate_interval_range (object, &pos, &pos, soft);
   if (NULL_INTERVAL_P (i))
     return limit;
+
+  /* Start with the interval containing the char before point.  */
+  if (i->position == XFASTINT (pos))
+    i = previous_interval (i);
 
   previous = previous_interval (i);
   while (! NULL_INTERVAL_P (previous) && intervals_equal (previous, i)
@@ -672,7 +749,7 @@ The property values are compared with `eq'.\n\
 Return nil if the property is constant all the way to the start of OBJECT.\n\
 If the value is non-nil, it is a position less than POS, never equal.\n\n\
 If the optional fourth argument LIMIT is non-nil, don't search\n\
-back past position LIMIT; fail if nothing is found before LIMIT.")
+back past position LIMIT; return LIMIT if nothing is found until LIMIT.")
      (pos, prop, object, limit)
      Lisp_Object pos, prop, object, limit;
 {
@@ -682,9 +759,16 @@ back past position LIMIT; fail if nothing is found before LIMIT.")
   if (NILP (object))
     XSET (object, Lisp_Buffer, current_buffer);
 
+  if (!NILP (limit))
+    CHECK_NUMBER_COERCE_MARKER (limit, 0);
+
   i = validate_interval_range (object, &pos, &pos, soft);
   if (NULL_INTERVAL_P (i))
     return limit;
+
+  /* Start with the interval containing the char before point.  */
+  if (i->position == XFASTINT (pos))
+    i = previous_interval (i);
 
   here_val = textget (i->plist, prop);
   previous = previous_interval (i);
@@ -1242,7 +1326,7 @@ percentage by which the left interval tree should not differ from the right.");
   interval_balance_threshold = 8;
 
   DEFVAR_LISP ("inhibit-point-motion-hooks", &Vinhibit_point_motion_hooks,
-	       "If nonnil, don't call the text property values of\n\
+	       "If non-nil, don't call the text property values of\n\
 `point-left' and `point-entered'.");
   Vinhibit_point_motion_hooks = Qnil;
 	       
@@ -1262,8 +1346,8 @@ percentage by which the left interval tree should not differ from the right.");
   Qread_only = intern ("read-only");
   staticpro (&Qinvisible);
   Qinvisible = intern ("invisible");
-  staticpro (&Qhidden);
-  Qhidden = intern ("hidden");
+  staticpro (&Qintangible);
+  Qintangible = intern ("intangible");
   staticpro (&Qcategory);
   Qcategory = intern ("category");
   staticpro (&Qlocal_map);

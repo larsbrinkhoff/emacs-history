@@ -2,23 +2,19 @@
    Also has _setjmp and _longjmp for pyramids.
    Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
 
-This file is part of GNU Emacs.
+   This program is free software; you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by the
+   Free Software Foundation; either version 2, or (at your option) any
+   later version.
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
-
+   You should have received a copy of the GNU General Public License
+   along with this program; if not, write to the Free Software
+   Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Both 68000 systems I have run this on have had broken versions of alloca.
    Also, I am told that non-berkeley systems do not have it at all.
@@ -26,7 +22,11 @@ and this notice must be preserved on all copies.  */
    on all 68000 systems.  */
 
 #define NOT_C_CODE
+#ifdef emacs
 #include <config.h>
+#else
+#include "config.h"
+#endif
 
 #ifndef HAVE_ALLOCA  /* define this to use system's alloca */
 
@@ -116,7 +116,7 @@ alloca:
    this compiler saves used registers relative to %sp instead of %fp.
    alright, just make new copy of saved register set whenever we allocate
    new space from stack..
-   this is true at last until SVR3V5.1 . bug has reported to Motorola. */
+   this is true at last until SVR3V7 . bug has reported to Motorola. */
 	set	MAXREG,10	# max no of registers to save (d2-d7, a2-a5)
         mov.l   (%sp)+,%a1	# pop return addr from top of stack
         mov.l   (%sp)+,%d0	# pop size in bytes from top of stack

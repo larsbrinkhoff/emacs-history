@@ -1,5 +1,5 @@
 /* Primitive operations on Lisp data types for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985, 1986, 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1988, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -29,6 +29,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #endif
 
 #include "syssignal.h"
+
+#ifdef MSDOS
+/* These are redefined (correctly, but differently) in values.h.  */
+#undef INTBITS
+#undef LONGBITS
+#undef SHORTBITS
+#endif
 
 #ifdef LISP_FLOAT_TYPE
 
@@ -61,7 +68,7 @@ Lisp_Object Qsetting_constant, Qinvalid_read_syntax;
 Lisp_Object Qinvalid_function, Qwrong_number_of_arguments, Qno_catch;
 Lisp_Object Qend_of_file, Qarith_error, Qmark_inactive;
 Lisp_Object Qbeginning_of_buffer, Qend_of_buffer, Qbuffer_read_only;
-Lisp_Object Qintegerp, Qnatnump, Qsymbolp, Qlistp, Qconsp;
+Lisp_Object Qintegerp, Qnatnump, Qwholenump, Qsymbolp, Qlistp, Qconsp;
 Lisp_Object Qstringp, Qarrayp, Qsequencep, Qbufferp;
 Lisp_Object Qchar_or_string_p, Qmarkerp, Qinteger_or_marker_p, Qvectorp;
 Lisp_Object Qbuffer_or_string_p;
@@ -288,7 +295,8 @@ DEFUN ("byte-code-function-p", Fbyte_code_function_p, Sbyte_code_function_p,
   return Qnil;
 }
 
-DEFUN ("char-or-string-p", Fchar_or_string_p, Schar_or_string_p, 1, 1, 0, "T if OBJECT is a character (a number) or a string.")
+DEFUN ("char-or-string-p", Fchar_or_string_p, Schar_or_string_p, 1, 1, 0,
+  "T if OBJECT is a character (an integer) or a string.")
   (obj)
      register Lisp_Object obj;
 {
@@ -297,7 +305,7 @@ DEFUN ("char-or-string-p", Fchar_or_string_p, Schar_or_string_p, 1, 1, 0, "T if 
   return Qnil;
 }
 
-DEFUN ("integerp", Fintegerp, Sintegerp, 1, 1, 0, "T if OBJECT is a number.")
+DEFUN ("integerp", Fintegerp, Sintegerp, 1, 1, 0, "T if OBJECT is an integer.")
   (obj)
      Lisp_Object obj;
 {
@@ -316,7 +324,8 @@ DEFUN ("integer-or-marker-p", Finteger_or_marker_p, Sinteger_or_marker_p, 1, 1, 
   return Qnil;
 }
 
-DEFUN ("natnump", Fnatnump, Snatnump, 1, 1, 0, "T if OBJECT is a nonnegative number.")
+DEFUN ("natnump", Fnatnump, Snatnump, 1, 1, 0,
+  "T if OBJECT is a nonnegative integer.")
   (obj)
      Lisp_Object obj;
 {
@@ -497,6 +506,8 @@ DEFUN ("fmakunbound", Ffmakunbound, Sfmakunbound, 1, 1, 0, "Make SYMBOL's functi
      register Lisp_Object sym;
 {
   CHECK_SYMBOL (sym, 0);
+  if (NILP (sym) || EQ (sym, Qt))
+    return Fsignal (Qsetting_constant, Fcons (sym, Qnil));
   XSYMBOL (sym)->function = Qunbound;
   return sym;
 }
@@ -537,7 +548,8 @@ DEFUN ("fset", Ffset, Sfset, 2, 2, 0,
      register Lisp_Object sym, newdef;
 {
   CHECK_SYMBOL (sym, 0);
-
+  if (NILP (sym) || EQ (sym, Qt))
+    return Fsignal (Qsetting_constant, Fcons (sym, Qnil));
   if (!NILP (Vautoload_queue) && !EQ (XSYMBOL (sym)->function, Qunbound))
     Vautoload_queue = Fcons (Fcons (sym, XSYMBOL (sym)->function),
 			     Vautoload_queue);
@@ -656,9 +668,9 @@ store_symval_forwarding (sym, valcontents, newval)
     case Lisp_Buffer_Objfwd:
       {
 	unsigned int offset = XUINT (valcontents);
-	Lisp_Object type =
-	  *(Lisp_Object *)(offset + (char *)&buffer_local_types);
+	Lisp_Object type;
 
+	type = *(Lisp_Object *)(offset + (char *)&buffer_local_types);
 	if (! NILP (type) && ! NILP (newval)
 	    && XTYPE (newval) != XINT (type))
 	  buffer_slot_type_mismatch (valcontents, newval);
@@ -774,8 +786,9 @@ DEFUN ("symbol-value", Fsymbol_value, Ssymbol_value, 1, 1, 0,
   (sym)
      Lisp_Object sym;
 {
-  Lisp_Object val = find_symbol_value (sym);
+  Lisp_Object val;
 
+  val = find_symbol_value (sym);
   if (EQ (val, Qunbound))
     return Fsignal (Qvoid_variable, Fcons (sym, Qnil));
   else
@@ -1028,10 +1041,17 @@ for this variable.")
 }
 
 DEFUN ("setq-default", Fsetq_default, Ssetq_default, 2, UNEVALLED, 0,
-       "\
-(setq-default SYM VAL SYM VAL ...): set each SYM's default value to its VAL.\n\
-VAL is evaluated; SYM is not.  The default value is seen in buffers that do\n\
-not have their own values for this variable.")
+       "Set the default value of variable VAR to VALUE.\n\
+VAR, the variable name, is literal (not evaluated);\n\
+VALUE is an expression and it is evaluated.\n\
+The default value of a variable is seen in buffers\n\
+that do not have their own values for the variable.\n\
+\n\
+More generally, you can use multiple variables and values, as in\n\
+  (setq-default SYM VALUE SYM VALUE...)\n\
+This sets each SYM's default value to the corresponding VALUE.\n\
+The VALUE for the Nth SYM can refer to the new default values\n\
+of previous SYMs.")
   (args)
      Lisp_Object args;
 {
@@ -1101,6 +1121,8 @@ DEFUN ("make-local-variable", Fmake_local_variable, Smake_local_variable,
   1, 1, "vMake Local Variable: ",
   "Make VARIABLE have a separate value in the current buffer.\n\
 Other buffers will continue to share a common default value.\n\
+\(The buffer-local value of VARIABLE starts out as the same value\n\
+VARIABLE previously had.  If VARIABLE was void, it remains void.\)\n\
 See also `make-variable-buffer-local'.\n\n\
 If the variable is already arranged to become local when set,\n\
 this function causes a local value to exist for this buffer,\n\
@@ -1129,8 +1151,6 @@ just as if the variable were set.")
   /* Make sure sym is set up to hold per-buffer values */
   if (XTYPE (valcontents) != Lisp_Some_Buffer_Local_Value)
     {
-      if (EQ (valcontents, Qunbound))
-	XSYMBOL (sym)->value = Qnil;
       tem = Fcons (Qnil, do_symval_forwarding (valcontents));
       XCONS (tem)->car = tem;
       XSYMBOL (sym)->value = Fcons (XSYMBOL (sym)->value, Fcons (Qnil, tem));
@@ -1302,8 +1322,8 @@ ARRAY may be a vector or a string, or a byte-code object.  INDEX starts at 0.")
 }
 
 DEFUN ("aset", Faset, Saset, 3, 3, 0,
-  "Store into the element of ARRAY at index INDEX the value NEWVAL.\n\
-ARRAY may be a vector or a string.  INDEX starts at 0.")
+  "Store into the element of ARRAY at index IDX the value NEWELT.\n\
+ARRAY may be a vector or a string.  IDX starts at 0.")
   (array, idx, newelt)
      register Lisp_Object array;
      Lisp_Object idx, newelt;
@@ -1535,7 +1555,8 @@ NUM may be an integer or a floating point number.")
 
 DEFUN ("string-to-number", Fstring_to_number, Sstring_to_number, 1, 1, 0,
   "Convert STRING to a number by parsing it as a decimal number.\n\
-This parses both integers and floating point numbers.")
+This parses both integers and floating point numbers.\n\
+It ignores leading spaces and tabs.")
   (str)
      register Lisp_Object str;
 {
@@ -1640,6 +1661,10 @@ arith_driver (code, nargs, args)
 }
 
 #ifdef LISP_FLOAT_TYPE
+
+#undef isnan
+#define isnan(x) ((x) != (x))
+
 Lisp_Object
 float_arith_driver (accum, argnum, code, nargs, args)
      double accum;
@@ -1697,11 +1722,11 @@ float_arith_driver (accum, argnum, code, nargs, args)
 	case Alogxor:
 	  return wrong_type_argument (Qinteger_or_marker_p, val);
 	case Amax:
-	  if (!argnum || next > accum)
+	  if (!argnum || isnan (next) || next > accum)
 	    accum = next;
 	  break;
 	case Amin:
-	  if (!argnum || next < accum)
+	  if (!argnum || isnan (next) || next < accum)
 	    accum = next;
 	  break;
 	}
@@ -1768,6 +1793,19 @@ Both must be integers or markers.")
   return val;
 }
 
+#ifndef HAVE_FMOD
+double
+fmod (f1, f2)
+     double f1, f2;
+{
+#ifdef HAVE_DREM  /* Some systems use this non-standard name.  */
+  return (drem (f1, f2));
+#else  /* Other systems don't seem to have it at all.  */
+  return (f1 - f2 * floor (f1/f2));
+#endif
+}
+#endif /* ! HAVE_FMOD */
+
 DEFUN ("mod", Fmod, Smod, 2, 2, 0,
   "Returns X modulo Y.\n\
 The result falls between zero (inclusive) and Y (exclusive).\n\
@@ -1791,11 +1829,7 @@ Both X and Y must be numbers or markers.")
       if (f2 == 0)
 	Fsignal (Qarith_error, Qnil);
 
-#if defined (USG) || defined (sun) || defined (ultrix) || defined (hpux)
       f1 = fmod (f1, f2);
-#else
-      f1 = drem (f1, f2);
-#endif
       /* If the "remainder" comes out with the wrong sign, fix it.  */
       if ((f1 < 0) != (f2 < 0))
 	f1 += f2;
@@ -1995,6 +2029,7 @@ syms_of_data ()
   Qsymbolp = intern ("symbolp");
   Qintegerp = intern ("integerp");
   Qnatnump = intern ("natnump");
+  Qwholenump = intern ("wholenump");
   Qstringp = intern ("stringp");
   Qarrayp = intern ("arrayp");
   Qsequencep = intern ("sequencep");
@@ -2178,6 +2213,7 @@ syms_of_data ()
   staticpro (&Qsymbolp);
   staticpro (&Qintegerp);
   staticpro (&Qnatnump);
+  staticpro (&Qwholenump);
   staticpro (&Qstringp);
   staticpro (&Qarrayp);
   staticpro (&Qsequencep);
@@ -2275,6 +2311,8 @@ syms_of_data ()
   defsubr (&Sadd1);
   defsubr (&Ssub1);
   defsubr (&Slognot);
+
+  Fset (Qwholenump, Qnatnump);
 }
 
 SIGTYPE

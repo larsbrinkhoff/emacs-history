@@ -1,6 +1,6 @@
 /* Lisp parsing and input streams.
    Copyright (C) 1985, 1986, 1987, 1988, 1989,
-   1993 Free Software Foundation, Inc.
+   1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -47,6 +47,14 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifdef STDC_HEADERS
 #include <stdlib.h>
 #endif
+
+#ifdef MSDOS
+/* These are redefined (correctly, but differently) in values.h.  */
+#undef INTBITS
+#undef LONGBITS
+#undef SHORTBITS
+#endif
+
 #include <math.h>
 #endif /* LISP_FLOAT_TYPE */
 
@@ -68,6 +76,9 @@ Lisp_Object Vload_history;
 
 /* This is useud to build the load history. */
 Lisp_Object Vcurrent_load_list;
+
+/* List of descriptors now open for Fload.  */
+static Lisp_Object load_descriptor_list;
 
 /* File for get_file_char to read from.  Use by load */
 static FILE *instream;
@@ -151,7 +162,11 @@ unreadchar (readcharfun, c)
      Lisp_Object readcharfun;
      int c;
 {
-  if (XTYPE (readcharfun) == Lisp_Buffer)
+  if (c == -1)
+    /* Don't back up the pointer if we're unreading the end-of-input mark,
+       since readchar didn't advance it when we read it.  */
+    ;
+  else if (XTYPE (readcharfun) == Lisp_Buffer)
     {
       if (XBUFFER (readcharfun) == current_buffer)
 	SET_PT (point - 1);
@@ -195,12 +210,16 @@ read_filtered_event (no_switch_frame, ascii_required, error_nonascii)
 #ifdef standalone
   return make_number (getchar ());
 #else
-  register Lisp_Object val;
-  register Lisp_Object delayed_switch_frame = Qnil;
+  register Lisp_Object val, delayed_switch_frame;
+
+  delayed_switch_frame = Qnil;
 
   /* Read until we get an acceptable event.  */
  retry:
   val = read_char (0, 0, 0, Qnil, 0);
+
+  if (XTYPE (val) == Lisp_Buffer)
+    goto retry;
 
   /* switch-frame events are put off until after the next ASCII
      character.  This is better than signalling an error just because
@@ -237,7 +256,7 @@ read_filtered_event (no_switch_frame, ascii_required, error_nonascii)
 	{
 	  if (error_nonascii)
 	    {
-	      unread_command_events = Fcons (val, Qnil);
+	      Vunread_command_events = Fcons (val, Qnil);
 	      error ("Non-character input-event");
 	    }
 	  else
@@ -292,6 +311,7 @@ DEFUN ("get-file-char", Fget_file_char, Sget_file_char, 0, 0, 0,
 
 static void readevalloop ();
 static Lisp_Object load_unwind ();
+static Lisp_Object load_descriptor_unwind ();
 
 DEFUN ("load", Fload, Sload, 1, 4, 0,
   "Execute a file of Lisp code named FILE.\n\
@@ -319,12 +339,15 @@ Return t if file exists.")
   /* 1 means inhibit the message at the beginning.  */
   int nomessage1 = 0;
   Lisp_Object handler;
+#ifdef MSDOS
+  char *dosmode = "rt";
+#endif
 
   CHECK_STRING (str, 0);
   str = Fsubstitute_in_file_name (str);
 
   /* If file name is magic, call the handler.  */
-  handler = Ffind_file_name_handler (str);
+  handler = Ffind_file_name_handler (str, Qload);
   if (!NILP (handler))
     return call5 (handler, Qload, str, noerror, nomessage, nosuffix);
 
@@ -332,8 +355,10 @@ Return t if file exists.")
      since it would try to load a directory as a Lisp file */
   if (XSTRING (str)->size > 0)
     {
+      GCPRO1 (str);
       fd = openp (Vload_path, str, !NILP (nosuffix) ? "" : ".elc:.el:",
 		  &found, 0);
+      UNGCPRO;
     }
 
   if (fd < 0)
@@ -352,9 +377,12 @@ Return t if file exists.")
       struct stat s1, s2;
       int result;
 
-      stat (XSTRING (found)->data, &s1);
+#ifdef MSDOS
+      dosmode = "rb";
+#endif
+      stat ((char *)XSTRING (found)->data, &s1);
       XSTRING (found)->data[XSTRING (found)->size - 1] = 0;
-      result = stat (XSTRING (found)->data, &s2);
+      result = stat ((char *)XSTRING (found)->data, &s2);
       if (result >= 0 && (unsigned) s1.st_mtime < (unsigned) s2.st_mtime)
 	{
 	  message ("Source file `%s' newer than byte-compiled file",
@@ -366,7 +394,12 @@ Return t if file exists.")
       XSTRING (found)->data[XSTRING (found)->size - 1] = 'c';
     }
 
+#ifdef MSDOS
+  close (fd);
+  stream = fopen ((char *) XSTRING (found)->data, dosmode);
+#else
   stream = fdopen (fd, "r");
+#endif
   if (stream == 0)
     {
       close (fd);
@@ -384,6 +417,9 @@ Return t if file exists.")
   *ptr = stream;
   XSET (lispstream, Lisp_Internal_Stream, (int) ptr);
   record_unwind_protect (load_unwind, lispstream);
+  record_unwind_protect (load_descriptor_unwind, load_descriptor_list);
+  load_descriptor_list
+    = Fcons (make_number (fileno (stream)), load_descriptor_list);
   load_in_progress++;
   readevalloop (Qget_file_char, stream, str, Feval, 0);
   unbind_to (count, Qnil);
@@ -409,6 +445,23 @@ load_unwind (stream)  /* used as unwind-protect function in load */
   return Qnil;
 }
 
+static Lisp_Object
+load_descriptor_unwind (oldlist)
+     Lisp_Object oldlist;
+{
+  load_descriptor_list = oldlist;
+}
+
+/* Close all descriptors in use for Floads.
+   This is used when starting a subprocess.  */
+
+void
+close_load_descs ()
+{
+  Lisp_Object tail;
+  for (tail = load_descriptor_list; !NILP (tail); tail = XCONS (tail)->cdr)
+    close (XFASTINT (XCONS (tail)->car));
+}
 
 static int
 complete_filename_p (pathname)
@@ -422,6 +475,9 @@ complete_filename_p (pathname)
 #ifdef VMS
 	  || index (s, ':')
 #endif /* VMS */
+#ifdef MSDOS	/* MW, May 1993 */
+	  || (s[0] != '\0' && s[1] == ':' && s[2] == '/')
+#endif
 	  );
 }
 
@@ -453,7 +509,9 @@ openp (path, str, suffix, storeptr, exec_only)
   int want_size;
   register Lisp_Object filename;
   struct stat st;
+  struct gcpro gcpro1;
 
+  GCPRO1 (str);
   if (storeptr)
     *storeptr = Qnil;
 
@@ -511,7 +569,7 @@ openp (path, str, suffix, storeptr, exec_only)
 		  /* We succeeded; return this descriptor and filename.  */
 		  if (storeptr)
 		    *storeptr = build_string (fn);
-		  return fd;
+		  RETURN_UNGCPRO (fd);
 		}
 	    }
 
@@ -520,10 +578,11 @@ openp (path, str, suffix, storeptr, exec_only)
 	    break;
 	  nsuffix += lsuffix + 1;
 	}
-      if (absolute) return -1;
+      if (absolute)
+	RETURN_UNGCPRO (-1);
     }
 
-  return -1;
+  RETURN_UNGCPRO (-1);
 }
 
 
@@ -1153,11 +1212,21 @@ read1 (readcharfun)
 		if (p == read_buffer)
 		  cancel = 1;
 	      }
-	    else if (c & CHAR_META)
-	      /* Move the meta bit to the right place for a string.  */
-	      *p++ = (c & ~CHAR_META) | 0x80;
 	    else
-	      *p++ = c;
+	      {
+		/* Allow `\C- ' and `\C-?'.  */
+		if (c == (CHAR_CTL | ' '))
+		  c = 0;
+		else if (c == (CHAR_CTL | '?'))
+		  c = 127;
+
+		if (c & CHAR_META)
+		  /* Move the meta bit to the right place for a string.  */
+		  c = (c & ~CHAR_META) | 0x80;
+		if (c & ~0xff)
+		  error ("Invalid modifier in string");
+		*p++ = c;
+	      }
 	  }
 	if (c < 0) return Fsignal (Qend_of_file, Qnil);
 
@@ -1455,8 +1524,9 @@ intern (str)
 {
   Lisp_Object tem;
   int len = strlen (str);
-  Lisp_Object obarray = Vobarray;
+  Lisp_Object obarray;
 
+  obarray = Vobarray;
   if (XTYPE (obarray) != Lisp_Vector || XVECTOR (obarray)->size == 0)
     obarray = check_obarray (obarray);
   tem = oblookup (obarray, str, len);
@@ -1530,8 +1600,8 @@ oblookup (obarray, ptr, size)
   register Lisp_Object tail;
   Lisp_Object bucket, tem;
 
-  if (XTYPE (obarray) != Lisp_Vector ||
-      (obsize = XVECTOR (obarray)->size) == 0)
+  if (XTYPE (obarray) != Lisp_Vector
+      || (obsize = XVECTOR (obarray)->size) == 0)
     {
       obarray = check_obarray (obarray);
       obsize = XVECTOR (obarray)->size;
@@ -1800,16 +1870,23 @@ init_lread ()
       if (! NILP (Fequal (dump_path, Vload_path)))
 	{
 	  Vload_path = decode_env_path (0, normal);
-	  if (!NILP (Vinvocation_directory))
+	  if (!NILP (Vinstallation_directory))
 	    {
-	      /* Add to the path the ../lisp dir of the Emacs executable,
-		 if that dir exists.  */
+	      /* Add to the path the lisp subdir of the
+		 installation dir, if it exists.  */
 	      Lisp_Object tem, tem1;
-	      tem = Fexpand_file_name (build_string ("../lisp"),
-				       Vinvocation_directory);
+	      tem = Fexpand_file_name (build_string ("lisp"),
+				       Vinstallation_directory);
 	      tem1 = Ffile_exists_p (tem);
-	      if (!NILP (tem1) && NILP (Fmember (tem, Vload_path)))
-		Vload_path = nconc2 (Vload_path, Fcons (tem, Qnil));
+	      if (!NILP (tem1))
+		{
+		  if (NILP (Fmember (tem, Vload_path)))
+		    Vload_path = nconc2 (Vload_path, Fcons (tem, Qnil));
+		}
+	      else
+		/* That dir doesn't exist, so add the build-time
+		   Lisp dirs instead.  */
+		Vload_path = nconc2 (Vload_path, dump_path);
 	    }
 	}
     }
@@ -1831,8 +1908,9 @@ init_lread ()
 	  {
 	    dirfile = Fdirectory_file_name (dirfile);
 	    if (access (XSTRING (dirfile)->data, 0) < 0)
-	      printf ("Warning: lisp library (%s) does not exist.\n",
-		      XSTRING (Fcar (path_tail))->data);
+	      fprintf (stderr,
+		       "Warning: Lisp directory `%s' does not exist.\n",
+		       XSTRING (Fcar (path_tail))->data);
 	  }
       }
   }
@@ -1846,6 +1924,8 @@ init_lread ()
   Vvalues = Qnil;
 
   load_in_progress = 0;
+
+  load_descriptor_list = Qnil;
 }
 
 void
@@ -1911,6 +1991,9 @@ or variables, and cons cells `(provide . FEATURE)' and `(require . FEATURE)'.");
   DEFVAR_LISP ("current-load-list", &Vcurrent_load_list,
     "Used for internal purposes by `load'.");
   Vcurrent_load_list = Qnil;
+
+  load_descriptor_list = Qnil;
+  staticpro (&load_descriptor_list);
 
   Qcurrent_load_list = intern ("current-load-list");
   staticpro (&Qcurrent_load_list);

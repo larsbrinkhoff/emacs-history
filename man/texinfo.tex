@@ -1,6 +1,6 @@
 %% TeX macros to handle texinfo files
 
-%   Copyright (C) 1985, 86, 88, 90, 91, 92, 1993 Free Software Foundation, Inc.
+%   Copyright (C) 1985, 86, 88, 90, 91, 92, 93, 1994 Free Software Foundation, Inc.
 
 %This texinfo.tex file is free software; you can redistribute it and/or
 %modify it under the terms of the GNU General Public License as
@@ -22,7 +22,9 @@
 %You are forbidden to forbid anyone else to use, share and improve
 %what you give them.   Help stamp out software-hoarding!
 
-\def\texinfoversion{2.118}
+% This automatically updates the version number based on RCS.
+\def\deftexinfoversion$#1: #2 ${\def\texinfoversion{#2}}
+\deftexinfoversion$Revision: 2.126 $
 \message{Loading texinfo package [Version \texinfoversion]:}
 
 % Print the version number if in a .fmt file.
@@ -30,6 +32,7 @@
 
 % Save some parts of plain tex whose names we will redefine.
 
+\let\ptextilde=\~
 \let\ptexlbrace=\{
 \let\ptexrbrace=\}
 \let\ptexdots=\dots
@@ -45,6 +48,7 @@
 \let\ptexL=\L
 
 \def\tie{\penalty 10000\ }     % Save plain tex definition of ~.
+\let\~ = \tie                  % And make it available as @~.
 
 \message{Basics,}
 \chardef\other=12
@@ -52,6 +56,19 @@
 % If this character appears in an error message or help string, it
 % starts a new line in the output.
 \newlinechar = `^^J
+
+% Set up fixed words for English.
+\ifx\putwordChapter\undefined{\gdef\putwordChapter{Chapter}}\fi%
+\def\putwordInfo{Info}%
+\ifx\putwordSee\undefined{\gdef\putwordSee{See}}\fi%
+\ifx\putwordsee\undefined{\gdef\putwordsee{see}}\fi%
+\ifx\putwordfile\undefined{\gdef\putwordfile{file}}\fi%
+\ifx\putwordpage\undefined{\gdef\putwordpage{page}}\fi%
+\ifx\putwordsection\undefined{\gdef\putwordsection{section}}\fi%
+\ifx\putwordSection\undefined{\gdef\putwordSection{Section}}\fi%
+\ifx\putwordTableofContents\undefined{\gdef\putwordTableofContents{Table of Contents}}\fi%
+\ifx\putwordShortContents\undefined{\gdef\putwordShortContents{Short Contents}}\fi%
+\ifx\putwordAppendix\undefined{\gdef\putwordAppendix{Appendix}}\fi%
 
 % Ignore a token.
 %
@@ -297,13 +314,13 @@
 
 % Single-spacing is done by various environments (specifically, in
 % \nonfillstart and \quotations).
-\newskip\singlespaceskip \singlespaceskip = \baselineskip
+\newskip\singlespaceskip \singlespaceskip = 12.5pt
 \def\singlespace{%
-% Why was this kern here?  It messes up equalizing space above and below
-% environments.  --karl, 6may93
-%{\advance \baselineskip by -\singlespaceskip
-%\kern \baselineskip}%
-\baselineskip=\singlespaceskip
+  % Why was this kern here?  It messes up equalizing space above and below
+  % environments.  --karl, 6may93
+  %{\advance \baselineskip by -\singlespaceskip
+  %\kern \baselineskip}%
+  \setleading \singlespaceskip
 }
 
 %% Simple single-character @ commands
@@ -389,8 +406,8 @@
       \obeylines
     \fi
     %
-    % We do @comment here in case we are called inside an environment,
-    % such as @example, where each end-of-line in the input causes an
+    % Do @comment since we are called inside an environment such as
+    % @example, where each end-of-line in the input causes an
     % end-of-line in the output.  We don't want the end-of-line after
     % the `@group' to put extra space in the output.  Since @group
     % should appear on a line by itself (according to the Texinfo
@@ -460,7 +477,7 @@ where each line of input produces a line of output.}
 
 % @dots{}  output some dots
 
-\def\dots{.$\,$.$\,$.\:}
+\def\dots{$\ldots$}
 
 % @page    forces the start of a new page
 
@@ -584,6 +601,8 @@ where each line of input produces a line of output.}
   \let\up = \relax
   \let\set = \relax
   \let\clear = \relax
+  \let\item = \relax
+  \let\message = \relax
 }
 
 % Ignore @ignore ... @end ignore.
@@ -819,15 +838,15 @@ where each line of input produces a line of output.}
 
 \def\donoderef{\ifx\lastnode\relax\else
 \expandafter\expandafter\expandafter\setref{\lastnode}\fi
-\let\lastnode=\relax}
+\global\let\lastnode=\relax}
 
 \def\unnumbnoderef{\ifx\lastnode\relax\else
 \expandafter\expandafter\expandafter\unnumbsetref{\lastnode}\fi
-\let\lastnode=\relax}
+\global\let\lastnode=\relax}
 
 \def\appendixnoderef{\ifx\lastnode\relax\else
 \expandafter\expandafter\expandafter\appendixsetref{\lastnode}\fi
-\let\lastnode=\relax}
+\global\let\lastnode=\relax}
 
 \let\refill=\relax
 
@@ -846,7 +865,7 @@ where each line of input produces a line of output.}
 \outer\def\bye{\pagealignmacro\tracingstats=1\ptexend}
 
 \def\inforef #1{\inforefzzz #1,,,,**}
-\def\inforefzzz #1,#2,#3,#4**{See Info file \file{\ignorespaces #3{}},
+\def\inforefzzz #1,#2,#3,#4**{\putwordSee{} \putwordInfo{} \putwordfile{} \file{\ignorespaces #3{}},
   node \samp{\ignorespaces#1{}}}
 
 \message{fonts,}
@@ -1712,6 +1731,32 @@ July\or August\or September\or October\or November\or December\fi
 \def\singlecodeindexer #1{\doind{\indexname}{\code{#1}}}
 
 \def\indexdummies{%
+% Take care of the plain tex accent commands.
+\def\"{\realbackslash "}%
+\def\`{\realbackslash `}%
+\def\'{\realbackslash '}%
+\def\^{\realbackslash ^}%
+\def\~{\realbackslash ~}%
+\def\={\realbackslash =}%
+\def\b{\realbackslash b}%
+\def\c{\realbackslash c}%
+\def\d{\realbackslash d}%
+\def\u{\realbackslash u}%
+\def\v{\realbackslash v}%
+\def\H{\realbackslash H}%
+% Take care of the plain tex special European modified letters.
+\def\oe{\realbackslash oe}%
+\def\ae{\realbackslash ae}%
+\def\aa{\realbackslash aa}%
+\def\OE{\realbackslash OE}%
+\def\AE{\realbackslash AE}%
+\def\AA{\realbackslash AA}%
+\def\o{\realbackslash o}%
+\def\O{\realbackslash O}%
+\def\l{\realbackslash l}%
+\def\L{\realbackslash L}%
+\def\ss{\realbackslash ss}%
+% Take care of texinfo commands likely to appear in an index entry.
 \def\_{{\realbackslash _}}%
 \def\w{\realbackslash w }%
 \def\bf{\realbackslash bf }%
@@ -1749,6 +1794,31 @@ July\or August\or September\or October\or November\or December\fi
 \def\indexdummydots{...}
 
 \def\indexnofonts{%
+% Just ignore accents.
+\let\"=\indexdummyfont
+\let\`=\indexdummyfont
+\let\'=\indexdummyfont
+\let\^=\indexdummyfont
+\let\~=\indexdummyfont
+\let\==\indexdummyfont
+\let\b=\indexdummyfont
+\let\c=\indexdummyfont
+\let\d=\indexdummyfont
+\let\u=\indexdummyfont
+\let\v=\indexdummyfont
+\let\H=\indexdummyfont
+% Take care of the plain tex special European modified letters.
+\def\oe{oe}%
+\def\ae{ae}%
+\def\aa{aa}%
+\def\OE{OE}%
+\def\AE{AE}%
+\def\AA{AA}%
+\def\o{o}%
+\def\O{O}%
+\def\l{l}%
+\def\L{L}%
+\def\ss{ss}%
 \let\w=\indexdummyfont
 \let\t=\indexdummyfont
 \let\r=\indexdummyfont
@@ -2223,7 +2293,7 @@ July\or August\or September\or October\or November\or December\fi
 \gdef\thischaptername{#1}%
 % We don't substitute the actual chapter name into \thischapter
 % because we don't want its macros evaluated now.
-\xdef\thischapter{Chapter \the\chapno: \noexpand\thischaptername}%
+\xdef\thischapter{\putwordChapter{} \the\chapno: \noexpand\thischaptername}%
 {\chapternofonts%
 \edef\temp{{\realbackslash chapentry {#1}{\the\chapno}{\noexpand\folio}}}%
 \escapechar=`\\%
@@ -2239,13 +2309,13 @@ July\or August\or September\or October\or November\or December\fi
 \def\appendixzzz #1{\seccheck{appendix}%
 \secno=0 \subsecno=0 \subsubsecno=0
 \global\advance \appendixno by 1 \message{Appendix \appendixletter}%
-\chapmacro {#1}{Appendix \appendixletter}%
+\chapmacro {#1}{\putwordAppendix{} \appendixletter}%
 \gdef\thissection{#1}%
 \gdef\thischaptername{#1}%
-\xdef\thischapter{Appendix \appendixletter: \noexpand\thischaptername}%
+\xdef\thischapter{\putwordAppendix{} \appendixletter: \noexpand\thischaptername}%
 {\chapternofonts%
 \edef\temp{{\realbackslash chapentry
-  {#1}{Appendix \appendixletter}{\noexpand\folio}}}%
+  {#1}{\putwordAppendix{} \appendixletter}{\noexpand\folio}}}%
 \escapechar=`\\%
 \write \contentsfile \temp  %
 \appendixnoderef %
@@ -2611,7 +2681,7 @@ July\or August\or September\or October\or November\or December\fi
 
 % Normal (long) toc.
 \outer\def\contents{%
-   \startcontents{Table of Contents}%
+   \startcontents{\putwordTableofContents}%
       \input \jobname.toc
    \endgroup
    \vfill \eject
@@ -2619,7 +2689,7 @@ July\or August\or September\or October\or November\or December\fi
 
 % And just the chapters.
 \outer\def\summarycontents{%
-   \startcontents{Short Contents}%
+   \startcontents{\putwordShortContents}%
       %
       \let\chapentry = \shortchapentry
       \let\unnumbchapentry = \shortunnumberedentry
@@ -2658,7 +2728,7 @@ July\or August\or September\or October\or November\or December\fi
 % We could simplify the code here by writing out an \appendixentry
 % command in the toc file for appendices, instead of using \chapentry
 % for both, but it doesn't seem worth it.
-\setbox0 = \hbox{\shortcontrm Appendix }
+\setbox0 = \hbox{\shortcontrm \putwordAppendix }
 \newdimen\shortappendixwidth \shortappendixwidth = \wd0
 
 \def\shortchaplabel#1{%
@@ -2812,6 +2882,7 @@ July\or August\or September\or October\or November\or December\fi
 \catcode`\>=12
 \escapechar=`\\
 %
+\let\~=\ptextilde
 \let\{=\ptexlbrace
 \let\}=\ptexrbrace
 \let\.=\ptexdot
@@ -2986,9 +3057,9 @@ July\or August\or September\or October\or November\or December\fi
   \let\Esmallexample = \nonfillfinish
   %
   % Smaller interline space and fonts for small examples.
-  \baselineskip 10pt
+  \setleading{10pt}%
   \indexfonts \tt
-  \rawbackslash % output the \ character from the current font
+  \rawbackslash % make \ output the \ character from the current font (tt)
   \gobble
 }
 
@@ -3533,13 +3604,13 @@ July\or August\or September\or October\or November\or December\fi
 % file, #5 the name of the printed manual.  All but the node name can be
 % omitted.
 %
-\def\pxref#1{see \xrefX[#1,,,,,,,]}
-\def\xref#1{See \xrefX[#1,,,,,,,]}
+\def\pxref#1{\putwordsee{} \xrefX[#1,,,,,,,]}
+\def\xref#1{\putwordSee{} \xrefX[#1,,,,,,,]}
 \def\ref#1{\xrefX[#1,,,,,,,]}
 \def\xrefX[#1,#2,#3,#4,#5,#6]{\begingroup%
 \def\printedmanual{\ignorespaces #5}%
 \def\printednodename{\ignorespaces #3}%
-%
+\def\correctnodename{{\normalturnoffactive\printednodename}}%
 \setbox1=\hbox{\printedmanual}%
 \setbox0=\hbox{\printednodename}%
 \ifdim \wd0=0pt%
@@ -3569,10 +3640,10 @@ July\or August\or September\or October\or November\or December\fi
 % the node name again, so it is as if TeX is seeing it for the first
 % time.
 \ifdim \wd1>0pt
-section ``\printednodename'' in \cite{\printedmanual}%
+\putwordsection{} ``\correctnodename'' in \cite{\printedmanual}%
 \else%
 \turnoffactive%
-\refx{#1-snt}{} [\printednodename], page\tie\refx{#1-pg}{}%
+\refx{#1-snt}{} [\correctnodename], \putwordpage\tie\refx{#1-pg}{}%
 \fi
 \endgroup}
 
@@ -3599,21 +3670,21 @@ section ``\printednodename'' in \cite{\printedmanual}%
 \def\Ynothing{}
 
 \def\Ysectionnumberandtype{%
-\ifnum\secno=0 Chapter\xreftie\the\chapno %
-\else \ifnum \subsecno=0 Section\xreftie\the\chapno.\the\secno %
+\ifnum\secno=0 \putwordChapter\xreftie\the\chapno %
+\else \ifnum \subsecno=0 \putwordSection\xreftie\the\chapno.\the\secno %
 \else \ifnum \subsubsecno=0 %
-Section\xreftie\the\chapno.\the\secno.\the\subsecno %
+\putwordSection\xreftie\the\chapno.\the\secno.\the\subsecno %
 \else %
-Section\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
+\putwordSection\xreftie\the\chapno.\the\secno.\the\subsecno.\the\subsubsecno %
 \fi \fi \fi }
 
 \def\Yappendixletterandtype{%
-\ifnum\secno=0 Appendix\xreftie'char\the\appendixno{}%
-\else \ifnum \subsecno=0 Section\xreftie'char\the\appendixno.\the\secno %
+\ifnum\secno=0 \putwordAppendix\xreftie'char\the\appendixno{}%
+\else \ifnum \subsecno=0 \putwordSection\xreftie'char\the\appendixno.\the\secno %
 \else \ifnum \subsubsecno=0 %
-Section\xreftie'char\the\appendixno.\the\secno.\the\subsecno %
+\putwordSection\xreftie'char\the\appendixno.\the\secno.\the\subsecno %
 \else %
-Section\xreftie'char\the\appendixno.\the\secno.\the\subsecno.\the\subsubsecno %
+\putwordSection\xreftie'char\the\appendixno.\the\secno.\the\subsecno.\the\subsubsecno %
 \fi \fi \fi }
 
 \gdef\xreftie{'tie}
@@ -3896,6 +3967,8 @@ Section\xreftie'char\the\appendixno.\the\secno.\the\subsecno.\the\subsubsecno %
 \global\tolerance=700
 \global\hfuzz=1pt
 \global\contentsrightmargin=0pt
+\global\deftypemargin=0pt
+\global\defbodyindent=.5cm
 
 \global\pagewidth=\hsize
 \global\pageheight=\vsize
@@ -3993,17 +4066,6 @@ Section\xreftie'char\the\appendixno.\the\secno.\the\subsecno.\the\subsubsecno %
 %\catcode 27=\active
 %\def^^[{$\diamondsuit$}
 
-% Used sometimes to turn off (effectively) the active characters
-% even after parsing them.
-\def\turnoffactive{\let"=\normaldoublequote
-\let~=\normaltilde
-\let^=\normalcaret
-\let_=\normalunderscore
-\let|=\normalverticalbar
-\let<=\normalless
-\let>=\normalgreater
-\let+=\normalplus}
-
 % Set up an active definition for =, but don't enable it most of the time.
 {\catcode`\==\active
 \global\def={{\tt \char 61}}}
@@ -4027,6 +4089,28 @@ Section\xreftie'char\the\appendixno.\the\secno.\the\subsecno.\the\subsubsecno %
 
 % \catcode 17=0   % Define control-q
 \catcode`\\=\active
+
+% Used sometimes to turn off (effectively) the active characters
+% even after parsing them.
+@def@turnoffactive{@let"=@normaldoublequote
+@let\=@realbackslash
+@let~=@normaltilde
+@let^=@normalcaret
+@let_=@normalunderscore
+@let|=@normalverticalbar
+@let<=@normalless
+@let>=@normalgreater
+@let+=@normalplus}
+
+@def@normalturnoffactive{@let"=@normaldoublequote
+@let\=@normalbackslash
+@let~=@normaltilde
+@let^=@normalcaret
+@let_=@normalunderscore
+@let|=@normalverticalbar
+@let<=@normalless
+@let>=@normalgreater
+@let+=@normalplus}
 
 % If a .fmt file is being used, we don't want the `\input texinfo' to show up.
 % That is what \eatinput is for; after that, the `\' should revert to printing

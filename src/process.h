@@ -1,5 +1,5 @@
 /* Definitions for asynchronous process control in GNU Emacs.
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -74,6 +74,12 @@ struct Lisp_Process
 };
 
 #define ChannelMask(n) (1<<(n))
+
+/* Indexed by descriptor, gives the process (if any) for that descriptor.  */
+extern Lisp_Object chan_process[];
+
+/* Alist of elements (NAME . PROCESS).  */
+extern Lisp_Object Vprocess_alist;
 
 /* True iff we are about to fork off a synchronous process or if we
    are waiting for it.  */

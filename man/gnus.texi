@@ -2708,8 +2708,8 @@ GNUS.@refill
 @vindex LOGNAME
 @cindex login name
 @item gnus-user-login-name
-Specifies your login name.  The login name is got from the @code{USER}
-and @code{LOGNAME} environment variables and the function
+Specifies your login name.  The login name is got from the @code{LOGNAME}
+and @code{USER} environment variables and the function
 @code{user-login-name}, if undefined.
 
 @vindex gnus-user-full-name

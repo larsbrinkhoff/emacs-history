@@ -1,5 +1,5 @@
 ;;; c-mode.el --- C code editing commands for Emacs
-;; Copyright (C) 1985, 1986, 1987, 1992 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: c
@@ -33,29 +33,53 @@
   "Abbrev table in use in C mode.")
 (define-abbrev-table 'c-mode-abbrev-table ())
 
-(defvar c-mode-map ()
+(defvar c-mode-map (make-sparse-keymap)
   "Keymap used in C mode.")
-(if c-mode-map
-    ()
-  (setq c-mode-map (make-sparse-keymap))
-  (define-key c-mode-map "{" 'electric-c-brace)
-  (define-key c-mode-map "}" 'electric-c-brace)
-  (define-key c-mode-map ";" 'electric-c-semi)
-  (define-key c-mode-map "#" 'electric-c-sharp-sign)
-  (define-key c-mode-map ":" 'electric-c-terminator)
-  (define-key c-mode-map "\e\C-h" 'mark-c-function)
-  (define-key c-mode-map "\e\C-q" 'indent-c-exp)
-  (define-key c-mode-map "\ea" 'c-beginning-of-statement)
-  (define-key c-mode-map "\ee" 'c-end-of-statement)
-  (define-key c-mode-map "\eq" 'c-fill-paragraph)
-  (define-key c-mode-map "\C-c\C-n" 'c-forward-conditional)
-  (define-key c-mode-map "\C-c\C-p" 'c-backward-conditional)
-  (define-key c-mode-map "\C-c\C-u" 'c-up-conditional)
-  (define-key c-mode-map "\177" 'backward-delete-char-untabify)
-  (define-key c-mode-map "\t" 'c-indent-command))
 
-;; cmacexp is lame because it uses no preprocessor symbols.
-;; It isn't very extensible either -- hardcodes /lib/cpp.
+(define-key c-mode-map "{" 'electric-c-brace)
+(define-key c-mode-map "}" 'electric-c-brace)
+(define-key c-mode-map ";" 'electric-c-semi)
+(define-key c-mode-map "#" 'electric-c-sharp-sign)
+(define-key c-mode-map ":" 'electric-c-terminator)
+(define-key c-mode-map "\e\C-h" 'mark-c-function)
+(define-key c-mode-map "\e\C-q" 'indent-c-exp)
+(define-key c-mode-map "\ea" 'c-beginning-of-statement)
+(define-key c-mode-map "\ee" 'c-end-of-statement)
+(define-key c-mode-map "\eq" 'c-fill-paragraph)
+(define-key c-mode-map "\C-c\C-n" 'c-forward-conditional)
+(define-key c-mode-map "\C-c\C-p" 'c-backward-conditional)
+(define-key c-mode-map "\C-c\C-u" 'c-up-conditional)
+(define-key c-mode-map "\177" 'backward-delete-char-untabify)
+(define-key c-mode-map "\t" 'c-indent-command)
+
+(define-key c-mode-map [menu-bar] (make-sparse-keymap))
+
+(define-key c-mode-map [menu-bar c]
+  (cons "C" (make-sparse-keymap "C")))
+
+(define-key c-mode-map [menu-bar c comment-region]
+  '("Comment Out Region" . comment-region))
+(define-key c-mode-map [menu-bar c c-macro-expand]
+  '("Macro Expand Region" . c-macro-expand))
+(define-key c-mode-map [menu-bar c c-backslash-region]
+  '("Backslashify" . c-backslash-region))
+(define-key c-mode-map [menu-bar c indent-exp]
+  '("Indent Expression" . indent-c-exp))
+(define-key c-mode-map [menu-bar c indent-line]
+  '("Indent Line" . c-indent-command))
+(define-key c-mode-map [menu-bar c fill]
+  '("Fill Comment Paragraph" . c-fill-paragraph))
+(define-key c-mode-map [menu-bar c up]
+  '("Up Conditional" . c-up-conditional))
+(define-key c-mode-map [menu-bar c backward]
+  '("Backward Conditional" . c-backward-conditional))
+(define-key c-mode-map [menu-bar c forward]
+  '("Forward Conditional" . c-forward-conditional))
+(define-key c-mode-map [menu-bar c backward-stmt]
+  '("Backward Statement" . c-beginning-of-statement))
+(define-key c-mode-map [menu-bar c forward-stmt]
+  '("Forward Statement" . c-end-of-statement))
+
 (autoload 'c-macro-expand "cmacexp"
   "Display the result of expanding all C macros occurring in the region.
 The expansion is entirely correct because it uses the C preprocessor."
@@ -206,6 +230,10 @@ if that value is non-nil."
   (setq indent-region-function 'c-indent-region)
   (make-local-variable 'require-final-newline)
   (setq require-final-newline t)
+  (make-local-variable 'outline-regexp)
+  (setq outline-regexp "[^#\n\^M]")
+  (make-local-variable 'outline-level)
+  (setq outline-level 'c-outline-level)
   (make-local-variable 'comment-start)
   (setq comment-start "/* ")
   (make-local-variable 'comment-end)
@@ -219,6 +247,11 @@ if that value is non-nil."
   (make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
   (run-hooks 'c-mode-hook))
+
+(defun c-outline-level ()
+  (save-excursion
+    (skip-chars-forward "\t ")
+    (current-column)))
 
 ;; This is used by indent-for-comment
 ;; to decide how much to indent a comment in C code
@@ -262,73 +295,11 @@ preserving the comment indentation or line-starting decorations."
 	    (skip-chars-forward " \t\n")
 	    (and (looking-at comment-start-skip)
 		 (setq comment-start-place (point))))))
-    (if (or first-line
-	    ;; t if we enter a comment between start of function and this line.
-	    (eq (calculate-c-indent) t)
-	    ;; t if this line contains a comment starter.
-	    (setq first-line
-		  (save-excursion
-		    (beginning-of-line)
-		    (prog1
-			(re-search-forward comment-start-skip
-					   (save-excursion (end-of-line)
-							   (point))
-					   t)
-		      (setq comment-start-place (point))))))
-	;; Inside a comment: fill one comment paragraph.
-	(let ((fill-prefix
-	       ;; The prefix for each line of this paragraph
-	       ;; is the appropriate part of the start of this line,
-	       ;; up to the column at which text should be indented.
-	       (save-excursion
-		 (beginning-of-line)
-		 (if (looking-at "[ \t]*/\\*.*\\*/")
-		     (progn (re-search-forward comment-start-skip)
-			    (make-string (current-column) ?\ ))
-		   (if first-line (forward-line 1))
-
-		   (let ((line-width (progn (end-of-line) (current-column))))
-		     (beginning-of-line)
-		     (prog1
-			 (buffer-substring
-			  (point)
-
-			  ;; How shall we decide where the end of the
-			  ;; fill-prefix is?
-			  ;; calculate-c-indent-within-comment bases its value
-			  ;; on the indentation of previous lines; if they're
-			  ;; indented specially, it could return a column
-			  ;; that's well into the current line's text.  So
-			  ;; we'll take at most that many space, tab, or *
-			  ;; characters, and use that as our fill prefix.
-			  (let ((max-prefix-end
-				 (progn
-				   (move-to-column
-				    (calculate-c-indent-within-comment t)
-				    t)
-				   (point))))
-			    (beginning-of-line)
-			    (skip-chars-forward " \t*" max-prefix-end)
-			    (point)))
-
-		       ;; If the comment is only one line followed by a blank
-		       ;; line, calling move-to-column above may have added
-		       ;; some spaces and tabs to the end of the line; the
-		       ;; fill-paragraph function will then delete it and the
-		       ;; newline following it, so we'll lose a blank line
-		       ;; when we shouldn't.  So delete anything
-		       ;; move-to-column added to the end of the line.  We
-		       ;; record the line width instead of the position of the
-		       ;; old line end because move-to-column might break a
-		       ;; tab into spaces, and the new characters introduced
-		       ;; there shouldn't be deleted.
-
-		       ;; If you can see a better way to do this, please make
-		       ;; the change.  This seems very messy to me.
-		       (delete-region (progn (move-to-column line-width)
-					     (point))
-				      (progn (end-of-line) (point))))))))
-
+    (if (and (eq major-mode 'c++-mode)
+	     (save-excursion
+	       (beginning-of-line)
+	       (looking-at ".*//")))
+	(let (fill-prefix
 	      (paragraph-start
 	       ;; Lines containing just a comment start or just an end
 	       ;; should not be filled into paragraphs they are next to.
@@ -338,49 +309,158 @@ preserving the comment indentation or line-starting decorations."
 	      (paragraph-separate
 	       (concat
 		paragraph-separate
-		"\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
-	      (chars-to-delete 0))
-	  (save-restriction
-	    ;; Don't fill the comment together with the code following it.
-	    ;; So temporarily exclude everything before the comment start,
-	    ;; and everything after the line where the comment ends.
-	    ;; If comment-start-place is non-nil, the comment starter is there.
-	    ;; Otherwise, point is inside the comment.
-	    (narrow-to-region (save-excursion
-				(if comment-start-place
-				    (goto-char comment-start-place)
-				  (search-backward "/*"))
-				;; Protect text before the comment start 
-				;; by excluding it.  Add spaces to bring back 
-				;; proper indentation of that point.
-				(let ((column (current-column)))
-				  (prog1 (point)
-				    (setq chars-to-delete column)
-				    (insert-char ?\  column))))
-			      (save-excursion
-				(if comment-start-place
-				    (goto-char (+ comment-start-place 2)))
-				(search-forward "*/" nil 'move)
-				(forward-line 1)
-				(point)))
-	    
-	    (fill-paragraph arg)
-	    (save-excursion
-	      ;; Delete the chars we inserted to avoid clobbering
-	      ;; the stuff before the comment start.
-	      (goto-char (point-min))
-	      (if (> chars-to-delete 0)
-		  (delete-region (point) (+ (point) chars-to-delete)))
-	      ;; Find the comment ender (should be on last line of buffer,
-	      ;; given the narrowing) and don't leave it on its own line.
-	      (goto-char (point-max))
-	      (forward-line -1)
-	      (search-forward "*/" nil 'move)
-	      (beginning-of-line)
-	      (if (looking-at "[ \t]*\\*/")
-		  (delete-indentation)))))
-      ;; Outside of comments: do ordinary filling.
-      (fill-paragraph arg))))
+		"\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$")))
+	  (save-excursion
+	    (beginning-of-line)
+	    ;; Move up to first line of this comment.
+	    (while (and (not (bobp)) (looking-at "[ \t]*//"))
+	      (forward-line -1))
+	    (if (not (looking-at ".*//"))
+		(forward-line 1))
+	    ;; Find the comment start in this line.
+	    (re-search-forward "[ \t]*//[ \t]*")
+	    ;; Set the fill-prefix to be what all lines except the first
+	    ;; should start with.
+	    (let ((endcol (current-column)))
+	      (skip-chars-backward " \t")
+	      (setq fill-prefix
+		    (concat (make-string (- (current-column) 2) ?\ )
+			    "//"
+			    (make-string (- endcol (current-column)) ?\ ))))
+	    (save-restriction
+	      ;; Narrow down to just the lines of this comment.
+	      (narrow-to-region (point)
+				(save-excursion
+				  (forward-line 1)
+				  (while (looking-at "[ \t]*//")
+				    (forward-line 1))
+				  (point)))
+	      (insert fill-prefix)
+	      (fill-paragraph arg)
+	      (delete-region (point-min)
+			     (+ (point-min) (length fill-prefix))))))
+      (if (or first-line
+	      ;; t if we enter a comment between start of function and this line.
+	      (eq (calculate-c-indent) t)
+	      ;; t if this line contains a comment starter.
+	      (setq first-line
+		    (save-excursion
+		      (beginning-of-line)
+		      (prog1
+			  (re-search-forward comment-start-skip
+					     (save-excursion (end-of-line)
+							     (point))
+					     t)
+			(setq comment-start-place (point))))))
+	  ;; Inside a comment: fill one comment paragraph.
+	  (let ((fill-prefix
+		 ;; The prefix for each line of this paragraph
+		 ;; is the appropriate part of the start of this line,
+		 ;; up to the column at which text should be indented.
+		 (save-excursion
+		   (beginning-of-line)
+		   (if (looking-at "[ \t]*/\\*.*\\*/")
+		       (progn (re-search-forward comment-start-skip)
+			      (make-string (current-column) ?\ ))
+		     (if first-line (forward-line 1))
+
+		     (let ((line-width (progn (end-of-line) (current-column))))
+		       (beginning-of-line)
+		       (prog1
+			   (buffer-substring
+			    (point)
+
+			    ;; How shall we decide where the end of the
+			    ;; fill-prefix is?
+			    ;; calculate-c-indent-within-comment bases its value
+			    ;; on the indentation of previous lines; if they're
+			    ;; indented specially, it could return a column
+			    ;; that's well into the current line's text.  So
+			    ;; we'll take at most that many space, tab, or *
+			    ;; characters, and use that as our fill prefix.
+			    (let ((max-prefix-end
+				   (progn
+				     (move-to-column
+				      (calculate-c-indent-within-comment t)
+				      t)
+				     (point))))
+			      (beginning-of-line)
+			      (skip-chars-forward " \t*" max-prefix-end)
+			      (point)))
+
+			 ;; If the comment is only one line followed by a blank
+			 ;; line, calling move-to-column above may have added
+			 ;; some spaces and tabs to the end of the line; the
+			 ;; fill-paragraph function will then delete it and the
+			 ;; newline following it, so we'll lose a blank line
+			 ;; when we shouldn't.  So delete anything
+			 ;; move-to-column added to the end of the line.  We
+			 ;; record the line width instead of the position of the
+			 ;; old line end because move-to-column might break a
+			 ;; tab into spaces, and the new characters introduced
+			 ;; there shouldn't be deleted.
+
+			 ;; If you can see a better way to do this, please make
+			 ;; the change.  This seems very messy to me.
+			 (delete-region (progn (move-to-column line-width)
+					       (point))
+					(progn (end-of-line) (point))))))))
+
+		(paragraph-start
+		 ;; Lines containing just a comment start or just an end
+		 ;; should not be filled into paragraphs they are next to.
+		 (concat 
+		  paragraph-start
+		  "\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
+		(paragraph-separate
+		 (concat
+		  paragraph-separate
+		  "\\|^[ \t]*/\\*[ \t]*$\\|^[ \t]*\\*/[ \t]*$\\|^[ \t/*]*$"))
+		(chars-to-delete 0))
+	    (save-restriction
+	      ;; Don't fill the comment together with the code following it.
+	      ;; So temporarily exclude everything before the comment start,
+	      ;; and everything after the line where the comment ends.
+	      ;; If comment-start-place is non-nil, the comment starter is there.
+	      ;; Otherwise, point is inside the comment.
+	      (narrow-to-region (save-excursion
+				  (if comment-start-place
+				      (goto-char comment-start-place)
+				    (search-backward "/*"))
+				  ;; Protect text before the comment start 
+				  ;; by excluding it.  Add spaces to bring back 
+				  ;; proper indentation of that point.
+				  (let ((column (current-column)))
+				    (prog1 (point)
+				      (setq chars-to-delete column)
+				      (insert-char ?\  column))))
+				(save-excursion
+				  (if comment-start-place
+				      (goto-char (+ comment-start-place 2)))
+				  (search-forward "*/" nil 'move)
+				  (forward-line 1)
+				  (point)))
+	      (fill-paragraph arg)
+	      (save-excursion
+		;; Delete the chars we inserted to avoid clobbering
+		;; the stuff before the comment start.
+		(goto-char (point-min))
+		(if (> chars-to-delete 0)
+		    (delete-region (point) (+ (point) chars-to-delete)))
+		;; Find the comment ender (should be on last line of buffer,
+		;; given the narrowing) and don't leave it on its own line.
+		;; Do this with a fill command, so as to preserve sentence
+		;; boundaries.
+		(goto-char (point-max))
+		(forward-line -1)
+		(search-forward "*/" nil 'move)
+		(beginning-of-line)
+		(if (looking-at "[ \t]*\\*/")
+		    (let ((fill-column (+ fill-column 9999)))
+		      (forward-line -1)
+		      (fill-region-as-paragraph (point) (point-max)))))))
+	;; Outside of comments: do ordinary filling.
+	(fill-paragraph arg)))))
 
 (defun electric-c-brace (arg)
   "Insert character and correct line's indentation."
@@ -686,23 +766,28 @@ Returns nil if line starts inside a string, t if in a comment."
 	       (beginning-of-line)
 	       (c-backward-to-noncomment containing-sexp))
 	     ;; Check for a preprocessor statement or its continuation lines.
-	     ;; Move back to end of previous non-preprocessor line.
+	     ;; Move back to end of previous non-preprocessor line,
+	     ;; or possibly beginning of buffer.
 	     (let ((found (point)) stop)
 	       (while (not stop)
-		 (cond ((save-excursion (end-of-line 0)
+		 (beginning-of-line)
+		 (cond ((bobp)
+			(setq found (point)
+			      stop t))
+		       ((save-excursion (forward-char -1)
 					(= (preceding-char) ?\\))
-			(end-of-line 0))
+			(forward-char -1))
 		       ;; This line is not preceded by a backslash.
 		       ;; So either it starts a preprocessor command
 		       ;; or any following continuation lines
 		       ;; should not be skipped.
-		       ((progn (beginning-of-line) (= (following-char) ?#))
-			(end-of-line 0)
+		       ((= (following-char) ?#)
+			(forward-char -1)
 			(setq found (point)))
 		       (t (setq stop t))))
 	       (goto-char found))
 	     ;; Now we get the answer.
-	     (if (and (not (memq (preceding-char) '(nil ?\, ?\; ?\} ?\{)))
+	     (if (and (not (memq (preceding-char) '(0 ?\, ?\; ?\} ?\{)))
 		      ;; But don't treat a line with a close-brace
 		      ;; as a continuation.  It is probably the
 		      ;; end of an enum type declaration.
@@ -1094,27 +1179,29 @@ If within a string or comment, move by sentences instead of statements."
 		    (setq at-else (looking-at "else\\W"))
 		    (setq at-brace (= (following-char) ?{))
 		    (setq at-while (looking-at "while\\b"))
-		    (c-backward-to-noncomment opoint)
-		    (if (not (memq (preceding-char) '(nil ?\, ?\; ?} ?: ?{)))
-			;; Preceding line did not end in comma or semi;
-			;; indent this line  c-continued-statement-offset
-			;; more than previous.
-			(progn
-			  (c-backward-to-start-of-continued-exp (car contain-stack))
-			  (setq this-indent
-				(+ c-continued-statement-offset (current-column)
-				   (if at-brace c-continued-brace-offset 0))))
-		      ;; Preceding line ended in comma or semi;
-		      ;; use the standard indent for this level.
-		      (cond (at-else (progn (c-backward-to-start-of-if opoint)
-					    (setq this-indent
-						  (current-indentation))))
-			    ((and at-while (c-backward-to-start-of-do opoint))
-			     (setq this-indent (current-indentation)))
-			    ((eq (preceding-char) ?\,)
-			     (goto-char this-point)
-			     (setq this-indent (calculate-c-indent)))
-			    (t (setq this-indent (car indent-stack)))))))
+		    (if (= (following-char) ?})
+			(setq this-indent (car indent-stack))
+		      (c-backward-to-noncomment opoint)
+		      (if (not (memq (preceding-char) '(0 ?\, ?\; ?} ?: ?{)))
+			  ;; Preceding line did not end in comma or semi;
+			  ;; indent this line  c-continued-statement-offset
+			  ;; more than previous.
+			  (progn
+			    (c-backward-to-start-of-continued-exp (car contain-stack))
+			    (setq this-indent
+				  (+ c-continued-statement-offset (current-column)
+				     (if at-brace c-continued-brace-offset 0))))
+			;; Preceding line ended in comma or semi;
+			;; use the standard indent for this level.
+			(cond (at-else (progn (c-backward-to-start-of-if opoint)
+					      (setq this-indent
+						    (current-indentation))))
+			      ((and at-while (c-backward-to-start-of-do opoint))
+			       (setq this-indent (current-indentation)))
+			      ((eq (preceding-char) ?\,)
+			       (goto-char this-point)
+			       (setq this-indent (calculate-c-indent)))
+			      (t (setq this-indent (car indent-stack))))))))
 	      ;; Just started a new nesting level.
 	      ;; Compute the standard indent for this level.
 	      (let ((val (calculate-c-indent
@@ -1196,41 +1283,43 @@ If within a string or comment, move by sentences instead of statements."
     (beginning-of-line)
     (let ((endmark (copy-marker end))
 	  (c-tab-always-indent t))
-      (while (and (bolp) (not (eolp)))
+      (while (and (bolp) (not (eobp)) (< (point) endmark))
 	;; Indent one line as with TAB.
 	(let ((shift-amt (c-indent-line))
 	      nextline sexpbeg sexpend)
-	  (save-excursion
-	    ;; Find beginning of following line.
+	  (if (save-excursion (beginning-of-line) (looking-at "[ \t]*#"))
+	      (forward-line 1)
 	    (save-excursion
-	      (forward-line 1) (setq nextline (point)))
-	    ;; Find first beginning-of-sexp for sexp extending past this line.
-	    (beginning-of-line)
-	    (while (< (point) nextline)
-	      (condition-case nil
+	      ;; Find beginning of following line.
+	      (save-excursion
+		(forward-line 1) (setq nextline (point)))
+	      ;; Find first beginning-of-sexp for sexp extending past this line.
+	      (beginning-of-line)
+	      (while (< (point) nextline)
+		(condition-case nil
+		    (progn
+		      (forward-sexp 1)
+		      (setq sexpend (point-marker)))
+		  (error (setq sexpend nil)
+			 (goto-char nextline)))
+		(skip-chars-forward " \t\n"))
+	      (if sexpend
 		  (progn
-		    (forward-sexp 1)
-		    (setq sexpend (point-marker)))
-		(error (setq sexpend nil)
-		       (goto-char nextline)))
-	      (skip-chars-forward " \t\n"))
-	    (if sexpend
+		    ;; Make sure the sexp we found really starts on the
+		    ;; current line and extends past it.
+		    (goto-char sexpend)
+		    (backward-sexp 1)
+		    (setq sexpbeg (point)))))
+	    ;; If that sexp ends within the region,
+	    ;; indent it all at once, fast.
+	    (if (and sexpend (> sexpend nextline) (<= sexpend endmark)
+		     (< sexpbeg nextline))
 		(progn
-		  ;; Make sure the sexp we found really starts on the
-		  ;; current line and extends past it.
-		  (goto-char sexpend)
-		  (backward-sexp 1)
-		  (setq sexpbeg (point)))))
-	  ;; If that sexp ends within the region,
-	  ;; indent it all at once, fast.
-	  (if (and sexpend (> sexpend nextline) (<= sexpend endmark)
-		   (< sexpbeg nextline))
-	      (progn
-		(indent-c-exp)
-		(goto-char sexpend)))
-	  ;; Move to following line and try again.
-	  (and sexpend (set-marker sexpend nil))
-	  (forward-line 1)))
+		  (indent-c-exp)
+		  (goto-char sexpend)))
+	    ;; Move to following line and try again.
+	    (and sexpend (set-marker sexpend nil))
+	    (forward-line 1))))
       (set-marker endmark nil))))
 
 (defun set-c-style (style &optional global)
@@ -1314,10 +1403,12 @@ definition and conveniently use this command."
 
 (defun c-delete-backslash ()
   (end-of-line)
-  (forward-char -1)
-  (if (looking-at "\\\\")
-      (delete-region (1+ (point))
-		     (progn (skip-chars-backward " \t") (point)))))
+  (or (bolp)
+      (progn
+	(forward-char -1)
+	(if (looking-at "\\\\")
+	    (delete-region (1+ (point))
+			   (progn (skip-chars-backward " \t") (point)))))))
 
 (defun c-up-conditional (count)
   "Move back to the containing preprocessor conditional, leaving mark behind.

@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Entering Emacs, Exiting, Text Characters, Top
 @chapter Entering and Exiting Emacs
@@ -92,6 +92,13 @@ Emacs waits until you exit the subshell.  (The way to do that is
 probably with @kbd{C-d} or @samp{exit}, but it depends on which shell
 you use.)  The only way on these systems to get back to the shell from
 which Emacs was run (to log out, for example) is to kill Emacs.
+
+  Suspending also fails if you run Emacs under a shell that doesn't
+support suspending programs, even if the system itself does support it.
+In such a case, you can set the variable @code{cannot-suspend} to a
+non-@code{nil} value to force @kbd{C-z} to run an inferior shell.  (One
+might also describe Emacs's parent shell as ``inferior'' for failing to
+support job control properly, but that is a matter of taste.)
 
 @findex iconify-frame
   When Emacs communicates directly with an X server and creates its own

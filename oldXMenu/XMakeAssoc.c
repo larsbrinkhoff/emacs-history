@@ -24,8 +24,6 @@ without express or implied warranty.
 
 extern int errno;
 
-extern int (*_XIOErrorFunction)();	/* X system error reporting routine. */
-
 void emacs_insque();
 struct qelem {
 	struct    qelem *q_forw;
@@ -92,12 +90,7 @@ XMakeAssoc(dpy, table, x_id, data)
 	/* If we are here then the new entry should be inserted just */
 	/* before the current value of "Entry". */
 	/* Create a new XAssoc and load it with new provided data. */
-	new_entry = (XAssoc *) malloc(sizeof(XAssoc));
-	if (new_entry == NULL) {
-		/* Malloc failed! */
-		errno = ENOMEM;
-		(*_XIOErrorFunction)(dpy);
-	}
+	new_entry = (XAssoc *) xmalloc(sizeof(XAssoc));
 	new_entry->display = dpy;
 	new_entry->x_id = x_id;
 	new_entry->data = data;

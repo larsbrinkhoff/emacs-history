@@ -1,6 +1,6 @@
 ;;; bytecomp.el --- compilation of Lisp code into byte code.
 
-;;; Copyright (C) 1985, 1986, 1987, 1992 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1986, 1987, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Author: Jamie Zawinski <jwz@lucid.com>
 ;;	Hallvard Furuseth <hbf@ulrik.uio.no>
@@ -97,8 +97,6 @@
 ;;;				'redefine  (function cell redefined from
 ;;;					    a macro to a lambda or vice versa,
 ;;;					    or redefined to take other args)
-;;;				This defaults to nil in -batch mode, which is
-;;;				slightly faster.
 ;;; byte-compile-compatibility	Whether the compiler should
 ;;;				generate .elc files which can be loaded into
 ;;;				generic emacs 18.
@@ -206,7 +204,7 @@ You may want to redefine `byte-compile-dest-file' if you change this.")
 	     (concat (substring filename 0 (string-match ";" filename)) "c"))
 	    ((string-match emacs-lisp-file-regexp filename)
 	     (concat (substring filename 0 (match-beginning 0)) ".elc"))
-	    (t (concat filename "c")))))
+	    (t (concat filename ".elc")))))
 
 ;; This can be the 'byte-compile property of any symbol.
 (autoload 'byte-compile-inline-expand "byte-opt")
@@ -1083,7 +1081,8 @@ A nonzero prefix argument also means ask about each subdirectory."
 	 (while files
 	   (setq source (expand-file-name (car files) directory))
 	   (if (and (not (member (car files) '("." ".." "RCS" "CVS")))
-		    (file-directory-p source))
+		    (file-directory-p source)
+		    (not (file-symlink-p source)))
 	       (if (or (null arg)
 		       (eq 0 arg)
 		       (y-or-n-p (concat "Check " source "? ")))
@@ -1146,7 +1145,7 @@ With prefix arg (noninteractively: 2nd arg), load the file after compiling."
 
   (if byte-compile-verbose
       (message "Compiling %s..." filename))
-  (let ((byte-compile-current-file (file-name-nondirectory filename))
+  (let ((byte-compile-current-file filename)
 	target-file input-buffer output-buffer)
     (save-excursion
       (setq input-buffer (get-buffer-create " *Compiler Input*"))
@@ -1162,7 +1161,7 @@ With prefix arg (noninteractively: 2nd arg), load the file after compiling."
     ;; It is important that input-buffer not be current at this call,
     ;; so that the value of point set in input-buffer
     ;; within byte-compile-from-buffer lingers in that buffer.
-    (setq output-buffer (byte-compile-from-buffer input-buffer))
+    (setq output-buffer (byte-compile-from-buffer input-buffer filename))
     (if byte-compiler-error-flag
 	nil
       (kill-buffer input-buffer)
@@ -1178,6 +1177,8 @@ With prefix arg (noninteractively: 2nd arg), load the file after compiling."
 ;;;		    (error nil)))
 	  (if (file-writable-p target-file)
 	      (let ((kanji-flag nil))	; for nemacs, from Nakagawa Takayuki
+		(if (eq system-type 'ms-dos)
+		    (setq buffer-file-type t))
 		(write-region 1 (point-max) target-file))
 	    ;; This is just to give a better error message than
 	    ;; write-region
@@ -1199,8 +1200,8 @@ With prefix arg (noninteractively: 2nd arg), load the file after compiling."
 	  (save-excursion
 	    (display-call-tree filename)))
       (if load
-	  (load target-file))))
-  t)
+	  (load target-file))
+      t)))
 
 ;;(defun byte-compile-and-load-file (&optional filename)
 ;;  "Compile a file of Lisp code named FILENAME into a file of byte code,
@@ -1220,7 +1221,7 @@ With prefix arg (noninteractively: 2nd arg), load the file after compiling."
 ;;  (let* ((filename (or (buffer-file-name buffer)
 ;;		       (concat "#<buffer " (buffer-name buffer) ">")))
 ;;	 (byte-compile-current-file buffer))
-;;    (byte-compile-from-buffer buffer t))
+;;    (byte-compile-from-buffer buffer nil))
 ;;  (message "Compiling %s...done" (buffer-name buffer))
 ;;  t)
 
@@ -1245,72 +1246,103 @@ With argument, insert value in current buffer after the form."
 	    ((message "%s" (prin1-to-string value)))))))
 
 
-(defun byte-compile-from-buffer (inbuffer &optional eval)
-  ;; buffer --> output-buffer, or buffer --> eval form, return nil
-  (let (outbuffer)
-    (let (;; Prevent truncation of flonums and lists as we read and print them
-	  (float-output-format nil)
-	  (case-fold-search nil)
-	  (print-length nil)
-	  ;; Simulate entry to byte-compile-top-level
-	  (byte-compile-constants nil)
-	  (byte-compile-variables nil)
-	  (byte-compile-tag-number 0)
-	  (byte-compile-depth 0)
-	  (byte-compile-maxdepth 0)
-	  (byte-compile-output nil)
-;;	  #### This is bound in b-c-close-variables.
-;;	  (byte-compile-warnings (if (eq byte-compile-warnings t)
-;;				     byte-compile-warning-types
-;;				   byte-compile-warnings))
-	  )
-      (byte-compile-close-variables
-       (save-excursion
-	 (setq outbuffer
-	       (set-buffer (get-buffer-create " *Compiler Output*")))
-	 (erase-buffer)
-	 ;;	 (emacs-lisp-mode)
-	 (setq case-fold-search nil)
+(defmacro byte-compile-protect-from-advice (&rest body)
+  ;; Temporarily deactivates advice of `defun/defmacro' while BODY is run.
+  ;; After completion of BODY the initial advice state is reinstated.
+  ;; If `defun/defmacro' are actively advised during compilation then the
+  ;; compilation of nested `defun/defmacro's produces incorrect code which
+  ;; is the motivation for this macro. It calls the functions `ad-is-active',
+  ;; `ad-activate' and `ad-deactivate' which will be reported as undefined
+  ;; functions during the compilation of the compiler.
+  (` (let (;; make sure no `require' activates them by
+	   ;; accident via a call to `ad-start-advice':
+	   (ad-advised-definers '(fset defalias define-function))
+	   defun-active-p defmacro-active-p)
+       (cond (;; check whether Advice is loaded:
+	      (fboundp 'ad-scan-byte-code-for-fsets)
+	      ;; save activation state of `defun/defmacro' and
+	      ;; deactivate them if their advice is active:
+	      (if (setq defun-active-p (ad-is-active 'defun))
+		  (ad-deactivate 'defun))
+	      (if (setq defmacro-active-p (ad-is-active 'defmacro))
+		  (ad-deactivate 'defmacro))))
+       (unwind-protect
+	   (progn
+	     (,@ body))
+	 ;; reactivate what was active before:
+	 (if defun-active-p
+	     (ad-activate 'defun))
+	 (if defmacro-active-p
+	     (ad-activate 'defmacro))))))
 
-	 ;; This is a kludge.  Some operating systems (OS/2, DOS) need to
-	 ;; write files containing binary information specially.
-	 ;; Under most circumstances, such files will be in binary
-	 ;; overwrite mode, so those OS's use that flag to guess how
-	 ;; they should write their data.  Advise them that .elc files
-	 ;; need to be written carefully.
-	 (setq overwrite-mode 'overwrite-mode-binary))
-       (displaying-byte-compile-warnings
+(defun byte-compile-from-buffer (inbuffer &optional filename)
+  ;; Filename is used for the loading-into-Emacs-18 error message.
+  (byte-compile-protect-from-advice
+   (let (outbuffer)
+     (let (;; Prevent truncation of flonums and lists as we read and print them
+	   (float-output-format nil)
+	   (case-fold-search nil)
+	   (print-length nil)
+	   ;; Simulate entry to byte-compile-top-level
+	   (byte-compile-constants nil)
+	   (byte-compile-variables nil)
+	   (byte-compile-tag-number 0)
+	   (byte-compile-depth 0)
+	   (byte-compile-maxdepth 0)
+	   (byte-compile-output nil)
+	   ;;	  #### This is bound in b-c-close-variables.
+	   ;;	  (byte-compile-warnings (if (eq byte-compile-warnings t)
+	   ;;				     byte-compile-warning-types
+	   ;;				   byte-compile-warnings))
+	   )
+       (byte-compile-close-variables
 	(save-excursion
-	  (set-buffer inbuffer)
-	  (goto-char 1)
-	  (while (progn
-		   (while (progn (skip-chars-forward " \t\n\^l")
-				 (looking-at ";"))
-		     (forward-line 1))
-		   (not (eobp)))
-	    (byte-compile-file-form (read inbuffer)))
-	  ;; Compile pending forms at end of file.
-	  (byte-compile-flush-pending)
-	  (and (not eval) (byte-compile-insert-header))
-	  (byte-compile-warn-about-unresolved-functions)
-	  ;; always do this?  When calling multiple files, it
-	  ;; would be useful to delay this warning until all have
-	  ;; been compiled.
-	  (setq byte-compile-unresolved-functions nil)))
-       (save-excursion
-	 (set-buffer outbuffer)
-	 (goto-char (point-min)))))
-    (if (not eval)
-	outbuffer
-      (while (condition-case nil
-		 (progn (setq form (read outbuffer))
-			t)
-	       (end-of-file nil))
-	(eval form))
-      (kill-buffer outbuffer)
-      nil)))
+	  (setq outbuffer
+		(set-buffer (get-buffer-create " *Compiler Output*")))
+	  (erase-buffer)
+	  ;;	 (emacs-lisp-mode)
+	  (setq case-fold-search nil)
 
-(defun byte-compile-insert-header ()
+	  ;; This is a kludge.  Some operating systems (OS/2, DOS) need to
+	  ;; write files containing binary information specially.
+	  ;; Under most circumstances, such files will be in binary
+	  ;; overwrite mode, so those OS's use that flag to guess how
+	  ;; they should write their data.  Advise them that .elc files
+	  ;; need to be written carefully.
+	  (setq overwrite-mode 'overwrite-mode-binary))
+	(displaying-byte-compile-warnings
+	 (save-excursion
+	   (set-buffer inbuffer)
+	   (goto-char 1)
+	   (while (progn
+		    (while (progn (skip-chars-forward " \t\n\^l")
+				  (looking-at ";"))
+		      (forward-line 1))
+		    (not (eobp)))
+	     (byte-compile-file-form (read inbuffer)))
+	   ;; Compile pending forms at end of file.
+	   (byte-compile-flush-pending)
+	   (and filename (byte-compile-insert-header filename))
+	   (byte-compile-warn-about-unresolved-functions)
+	   ;; always do this?  When calling multiple files, it
+	   ;; would be useful to delay this warning until all have
+	   ;; been compiled.
+	   (setq byte-compile-unresolved-functions nil)))
+	(save-excursion
+	  (set-buffer outbuffer)
+	  (goto-char (point-min)))))
+     outbuffer)))
+;;;     (if (not eval)
+;;;         outbuffer
+;;;       (while (condition-case nil
+;;;		  (progn (setq form (read outbuffer))
+;;;			 t)
+;;;		(end-of-file nil))
+;;;	 (eval form))
+;;;       (kill-buffer outbuffer)
+;;;       nil))))
+
+(defun byte-compile-insert-header (filename)
   (save-excursion
     (set-buffer outbuffer)
     (goto-char 1)
@@ -1349,7 +1381,7 @@ With argument, insert value in current buffer after the form."
 	       "\n(if (and (boundp 'emacs-version)\n"
 	       "\t (or (and (boundp 'epoch::version) epoch::version)\n"
 	       "\t     (string-lessp emacs-version \"19\")))\n"
-	       "    (error \"This file was compiled for Emacs 19\"))\n"
+	       "    (error \"`" filename "' was compiled for Emacs 19\"))\n"
 	       ))
    ))
 
@@ -1785,23 +1817,24 @@ If FORM is a lambda or a macro, byte-compile it as a function."
   ;;	'progn or t	-> a list of forms,
   ;;	'lambda		-> body of a lambda,
   ;;	'file		-> used at file-level.
-  (let ((byte-compile-constants nil)
-	(byte-compile-variables nil)
-	(byte-compile-tag-number 0)
-	(byte-compile-depth 0)
-	(byte-compile-maxdepth 0)
-	(byte-compile-output nil))
-    (if (memq byte-optimize '(t source))
-	(setq form (byte-optimize-form form for-effect)))
-    (while (and (eq (car-safe form) 'progn) (null (cdr (cdr form))))
-      (setq form (nth 1 form)))
-    (if (and (eq 'byte-code (car-safe form))
-	     (not (memq byte-optimize '(t byte)))
-	     (stringp (nth 1 form)) (vectorp (nth 2 form))
-	     (natnump (nth 3 form)))
-	form
-      (byte-compile-form form for-effect)
-      (byte-compile-out-toplevel for-effect output-type))))
+  (byte-compile-protect-from-advice
+   (let ((byte-compile-constants nil)
+	 (byte-compile-variables nil)
+	 (byte-compile-tag-number 0)
+	 (byte-compile-depth 0)
+	 (byte-compile-maxdepth 0)
+	 (byte-compile-output nil))
+     (if (memq byte-optimize '(t source))
+	 (setq form (byte-optimize-form form for-effect)))
+     (while (and (eq (car-safe form) 'progn) (null (cdr (cdr form))))
+       (setq form (nth 1 form)))
+     (if (and (eq 'byte-code (car-safe form))
+	      (not (memq byte-optimize '(t byte)))
+	      (stringp (nth 1 form)) (vectorp (nth 2 form))
+	      (natnump (nth 3 form)))
+	 form
+       (byte-compile-form form for-effect)
+       (byte-compile-out-toplevel for-effect output-type)))))
 
 (defun byte-compile-out-toplevel (&optional for-effect output-type)
   (if for-effect
@@ -2661,8 +2694,8 @@ If FORM is a lambda or a macro, byte-compile it as a function."
     'funcall
     (list 'quote
 	  (list 'lambda nil
-		(list 'track-mouse
-		      (byte-compile-top-level (nth 1 form))))))))
+		(cons 'track-mouse
+		      (byte-compile-top-level-body (cdr form))))))))
 
 (defun byte-compile-condition-case (form)
   (let* ((var (nth 1 form))
@@ -2680,16 +2713,24 @@ If FORM is a lambda or a macro, byte-compile it as a function."
       (while clauses
 	(let* ((clause (car clauses))
                (condition (car clause)))
-          (cond ((not (symbolp condition))
+          (cond ((not (or (symbolp condition)
+			  (and (listp condition)
+			       (let ((syms condition) (ok t))
+				 (while syms
+				   (if (not (symbolp (car syms)))
+				       (setq ok nil))
+				   (setq syms (cdr syms)))
+				 ok))))
                  (byte-compile-warn
-                   "%s is not a symbol naming a condition (in condition-case)"
+                   "%s is not a condition name or list of such (in condition-case)"
                    (prin1-to-string condition)))
-                ((not (or (eq condition 't)
-			  (and (stringp (get condition 'error-message))
-			       (consp (get condition 'error-conditions)))))
-                 (byte-compile-warn
-                   "%s is not a known condition name (in condition-case)" 
-                   condition)))
+;;                ((not (or (eq condition 't)
+;;			  (and (stringp (get condition 'error-message))
+;;			       (consp (get condition 'error-conditions)))))
+;;                 (byte-compile-warn
+;;                   "%s is not a known condition name (in condition-case)" 
+;;                   condition))
+		)
 	  (setq compiled-clauses
 		(cons (cons condition
 			    (byte-compile-top-level-body
@@ -3032,6 +3073,7 @@ For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\""
 	      (prin1-to-string (cdr err)))
      nil)))
 
+;;;###autoload
 (defun batch-byte-recompile-directory ()
   "Runs `byte-recompile-directory' on the dirs remaining on the command line.
 Must be used only with `-batch', and kills Emacs on completion.
@@ -3072,6 +3114,7 @@ For example, invoke `emacs -batch -f batch-byte-recompile-directory .'."
 (make-obsolete-variable 'meta-flag "Use the set-input-mode function instead.")
 
 (provide 'byte-compile)
+(provide 'bytecomp)
 
 
 ;;; report metering (see the hacks in bytecode.c)

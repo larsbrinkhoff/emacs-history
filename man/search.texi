@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Search, Fixit, Display, Top
 @chapter Searching and Replacement
@@ -18,14 +18,14 @@ replacement command called @code{query-replace} which asks interactively
 which occurrences to replace.
 
 @menu
-* Incremental Search::      Search happens as you type the string.
-* Nonincremental Search::   Specify entire string and then search.
-* Word Search::             Search for sequence of words.
-* Regexp Search::           Search for match for a regexp.
-* Regexps::                 Syntax of regular expressions.
-* Search Case::             To ignore case while searching, or not.
-* Replace::                 Search, and replace some or all matches.
-* Other Repeating Search::  Operating on all matches for some regexp.
+* Incremental Search::	   Search happens as you type the string.
+* Nonincremental Search::  Specify entire string and then search.
+* Word Search::		   Search for sequence of words.
+* Regexp Search::	   Search for match for a regexp.
+* Regexps::		   Syntax of regular expressions.
+* Search Case::		   To ignore case while searching, or not.
+* Replace::		   Search, and replace some or all matches.
+* Other Repeating Search:: Operating on all matches for some regexp.
 @end menu
 
 @node Incremental Search, Nonincremental Search, Search, Search
@@ -599,23 +599,25 @@ single slashes as themselves, instead of doubling them for Lisp syntax.
 @section Searching and Case
 
 @vindex case-fold-search
-  All sorts of searches in Emacs normally ignore the case of the text
+  Incremental searches in Emacs normally ignore the case of the text
 they are searching through, if you specify the text in lower case.
 Thus, if you specify searching for @samp{foo}, then @samp{Foo} and
 @samp{foo} are also considered a match.  Regexps, and in particular
 character sets, are included: @samp{[ab]} would match @samp{a} or
 @samp{A} or @samp{b} or @samp{B}.@refill
 
-  An upper-case letter in the search string makes the search
+  An upper-case letter in the incremental search string makes the search
 case-sensitive.  Thus, searching for @samp{Foo} does not find @samp{foo}
-or @samp{FOO}.  This applies to regular expression search also.  If you
-delete the upper-case character from the search string, it ceases to
-have this effect.
+or @samp{FOO}.  This applies to regular expression search as well as to
+string search.  If you delete the upper-case character from the search
+string, it ceases to have this effect.
 
   If you set the variable @code{case-fold-search} to @code{nil}, then
 all letters must match exactly, including case.  This is a per-buffer
 variable; altering the variable affects only the current buffer, but
 there is a default value which you can change as well.  @xref{Locals}.
+This variable applies to nonincremental searches also, including those
+performed by the replace commands (@pxref{Replace}).
 
 @node Replace, Other Repeating Search, Search Case, Search
 @section Replacement Commands
@@ -753,7 +755,7 @@ as it normally is.
   Aside from querying, @code{query-replace} works just like
 @code{replace-string}, and @code{query-replace-regexp} works just like
 @code{replace-regexp}.  The shortest way to type this command name is
-@kbd{M-x qu @key{SPC} @key{SPC} @key{SPC} @key{RET}}.
+@kbd{M-x que @key{SPC} @key{SPC} @key{SPC} @key{RET}}.
 
   The things you can type when you are shown an occurrence of @var{string}
 or a match for @var{regexp} are:
@@ -762,7 +764,6 @@ or a match for @var{regexp} are:
 @kindex SPC (query-replace)
 @kindex DEL (query-replace)
 @kindex , (query-replace)
-@kindex ESC (query-replace)
 @kindex RET (query-replace)
 @kindex . (query-replace)
 @kindex ! (query-replace)
@@ -787,10 +788,9 @@ already been made, @key{DEL} and @key{SPC} are equivalent.  You could
 type @kbd{C-r} at this point (see below) to alter the replaced text.  You
 could also type @kbd{C-x u} to undo the replacement; this exits the
 @code{query-replace}, so if you want to do further replacement you must use
-@kbd{C-x @key{ESC} @key{RET}} to restart (@pxref{Repetition}).
+@kbd{C-x @key{ESC} @key{ESC} @key{RET}} to restart (@pxref{Repetition}).
 
 @item @key{RET}
-@itemx @key{ESC}
 to exit without doing any more replacements.
 
 @item .@: @r{(Period)}
@@ -829,7 +829,7 @@ another character to specify what to do with this occurrence.
 
   Some other characters are aliases for the ones listed above: @kbd{y},
 @kbd{n} and @kbd{q} are equivalent to @key{SPC}, @key{DEL} and
-@key{ESC}.
+@key{RET}.
 
   Aside from this, any other character exits the @code{query-replace},
 and is then reread as part of a key sequence.  Thus, if you type
@@ -837,8 +837,9 @@ and is then reread as part of a key sequence.  Thus, if you type
 line.
 
   To restart a @code{query-replace} once it is exited, use @kbd{C-x
-@key{ESC}}, which repeats the @code{query-replace} because it used the
-minibuffer to read its arguments.  @xref{Repetition, C-x ESC}.
+@key{ESC} @key{ESC}}, which repeats the @code{query-replace} because it
+used the minibuffer to read its arguments.  @xref{Repetition, C-x ESC
+ESC}.
 
   See also @ref{Transforming File Names}, for Dired commands to rename,
 copy, or link files by replacing regexp matches in file names.

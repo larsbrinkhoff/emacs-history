@@ -1,5 +1,5 @@
 /* Definitions needed by most editing commands.
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -46,11 +46,21 @@ extern Lisp_Object last_command_char;
 extern Lisp_Object last_nonmenu_event;
 
 /* List of command events to be re-read, or Qnil.  */
-extern Lisp_Object unread_command_events;
+extern Lisp_Object Vunread_command_events;
+
+/* Last command executed by the editor command loop, not counting
+   commands that set the prefix argument.  */
+
+extern Lisp_Object last_command;
+
+/* The command being executed by the command loop.
+   Commands may set this, and the value set will be copied into last_command
+   instead of the actual command.  */
+extern Lisp_Object this_command;
 
 /* If not Qnil, this is a switch-frame event which we decided to put
    off until the end of a key sequence.  This should be read as the
-   next command input, after any unread_command_events.
+   next command input, after any Vunread_command_events.
 
    read_key_sequence uses this to delay switch-frame events until the
    end of the key sequence; Fread_char uses it to put off switch-frame
@@ -59,6 +69,12 @@ extern Lisp_Object unread_switch_frame;
 
 /* Previous command symbol found here for comparison */
 extern Lisp_Object last_command;
+
+/* The value of point when the last command was executed.  */
+extern int last_point_position;
+
+/* The buffer that was current when the last command was started.  */
+extern Lisp_Object last_point_position_buffer;
 
 /* Nonzero means ^G can quit instantly */
 extern int immediate_quit;

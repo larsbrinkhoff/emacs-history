@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Text, Programs, Indentation, Top
 @chapter Commands for Human Languages
@@ -154,12 +154,13 @@ Kill back to the beginning of the sentence (@code{backward-kill-sentence}).
 sentence, respectively.  They were chosen to resemble @kbd{C-a} and
 @kbd{C-e}, which move to the beginning and end of a line.  Unlike them,
 @kbd{M-a} and @kbd{M-e} if repeated or given numeric arguments move over
-successive sentences.  Emacs assumes that the typist's convention is
-followed, and thus considers a sentence to end wherever there is a
-@samp{.}, @samp{?} or @samp{!} followed by the end of a line or two spaces,
-with any number of @samp{)}, @samp{]}, @samp{'}, or @samp{"} characters
-allowed in between.  A sentence also begins or ends wherever a paragraph
-begins or ends.@refill
+successive sentences.  Emacs assumes that you have followed the typist's
+convention of putting two spaces at the end of a sentence; it considers
+a sentence to end wherever there is a @samp{.}, @samp{?} or @samp{!}
+followed by the end of a line or two spaces, with any number of
+@samp{)}, @samp{]}, @samp{'}, or @samp{"} characters allowed in between.
+A sentence also begins or ends wherever a paragraph begins or
+ends.@refill
 
   Neither @kbd{M-a} nor @kbd{M-e} moves past the newline or spaces beyond
 the sentence edge at which it is stopping.
@@ -191,6 +192,18 @@ normal value is
 
 @noindent
 This example is explained in the section on regexps.  @xref{Regexps}.
+
+  If you want to use just one space between sentences, you should
+set @code{sentence-end} to this value:
+
+@example
+"[.?!][]\"')]*\\($\\|\t\\| \\)[ \t\n]*"
+@end example
+
+@noindent
+You should also set the variable @code{sentence-end-double-space} to
+@code{nil} so that the fill commands expect and leave just one space at
+the end of a sentence.
 
 @node Paragraphs
 @section Paragraphs
@@ -334,9 +347,9 @@ text it may no longer be properly filled; then you can use the explicit
 fill commands to fill the paragraph again.
 
 @menu
-* Auto Fill::	   Auto Fill mode breaks long lines automatically.
-* Fill Commands::  Commands to refill paragraphs and center lines.
-* Fill Prefix::    Filling when every line is indented or in a comment, etc.
+* Auto Fill::	  Auto Fill mode breaks long lines automatically.
+* Fill Commands:: Commands to refill paragraphs and center lines.
+* Fill Prefix::	  Filling when every line is indented or in a comment, etc.
 @end menu
 
 @node Auto Fill
@@ -415,6 +428,12 @@ inside, or the one after point if point is between paragraphs.
 Refilling works by removing all the line-breaks, then inserting new ones
 where necessary.
 
+  Emacs commands consider a period followed by two spaces or by a
+newline as the end of a sentence; a period followed by just one space
+indicates an abbreviation and not the end of a sentence.  To preserve
+the distinction between these two ways of using a period, the fill
+commands do not break a line after a period followed by just one space.
+
 @kindex M-s @r{(Text mode)}
 @cindex centering
 @findex center-line
@@ -464,6 +483,13 @@ initially 70.  @xref{Locals}.
 f} (@code{set-fill-column}).  With no argument, it sets @code{fill-column}
 to the current horizontal position of point.  With a numeric argument, it
 uses that as the new fill column.
+
+@vindex sentence-end-double-space
+  If the variable @code{sentence-end-double-space} is @code{nil}, the
+fill commands expect and leave just one space at the end of a sentence.
+Ordinarily this variable is @code{t}, and the fill commands insist on
+two spaces for the end of a sentence; they are also careful not to turn
+a single space into two spaces.
 
 @node Fill Prefix
 @subsection The Fill Prefix
@@ -666,8 +692,8 @@ which of these modes is actually being entered.  @xref{Hooks}.
   Emacs provides two other modes for editing text that is to be passed
 through a text formatter to produce fancy formatted printed output.
 
-* Nroff Mode::  The major mode for editing input to the formatter nroff.
-* TeX Mode::    The major modes for editing input to the formatter TeX.
+* Nroff Mode::	  The major mode for editing input to the formatter nroff.
+* TeX Mode::	  The major modes for editing input to the formatter TeX.
 
   Another mode is used for editing outlines.  It allows you to view the
 text at various levels of detail.  You can view either the outline
@@ -675,7 +701,7 @@ headings alone or both headings and text; you can also hide some of the
 headings at lower levels from view to make the high level structure more
 visible.
 
-* Outline Mode::The major mode for editing outlines.
+* Outline Mode::  The major mode for editing outlines.
 @end menu
 
 @node Outline Mode
@@ -687,14 +713,17 @@ visible.
 
 @findex outline-mode
 @findex outline-minor-mode
+@vindex outline-minor-mode-prefix
   Outline mode is a major mode much like Text mode but intended for
 editing outlines.  It allows you to make parts of the text temporarily
-invisible so that you can see just the overall structure of the
-outline.  Type @kbd{M-x outline-mode} to switch to Outline mode as the
-major mode of the current buffer.  Type @kbd{M-x outline-minor-mode}
-to enable Outline mode as a minor mode in the current buffer.
-When Outline minor mode is enabled, the @kbd{C-c} commands of Outline
-mode replace those of the major mode.
+invisible so that you can see just the overall structure of the outline.
+Type @kbd{M-x outline-mode} to switch to Outline mode as the major mode
+of the current buffer.  Type @kbd{M-x outline-minor-mode} to enable
+Outline mode as a minor mode in the current buffer.  When Outline minor
+mode is enabled, the @kbd{C-c} commands of Outline mode are found
+instead under the prefix @kbd{C-c C-o}; this is to reduce the conflicts
+with the special commands of your chosen major mode.  (The variable
+@code{outline-minor-mode-prefix} controls the prefix used.)
 
   When a line is invisible in outline mode, it does not appear on the
 screen.  The screen appears exactly as if the invisible line
@@ -777,6 +806,14 @@ that the length of the text matched on a chapter heading is shorter,
 so that Outline mode will know that sections are contained in chapters.
 This works as long as no other command starts with @samp{@@chap}.
 
+@vindex outline-level
+  It is possible to change the way the level of a heading line is
+calculated by setting the variable @code{outline-level}.  The value of
+@code{outline-level} should be a function that takes no arguments and
+returns the level of the current heading.  Some major modes such as C,
+Nroff, and Emacs Lisp mode set this variable in order to work with
+Outline minor mode.
+
   Outline mode makes a line invisible by changing the newline before it
 into an ASCII control-M (code 015).  Most editing commands that work on
 lines treat an invisible line as part of the previous line because,
@@ -844,43 +881,53 @@ you can undo right past them.  Making lines visible or invisible is simply
 not recorded by the undo mechanism.
 
 @table @kbd
-@item M-x hide-body
-Make all body lines in the buffer invisible.
-@item M-x show-all
-Make all lines in the buffer visible.
-@item C-c C-h
+@item C-c C-t
+Make all body lines in the buffer invisible (@code{hide-body}).
+@item C-c C-a
+Make all lines in the buffer visible (@code{show-all}).
+@item C-c C-d
 Make everything under this heading invisible, not including this
 heading itself@* (@code{hide-subtree}).
 @item C-c C-s
 Make everything under this heading visible, including body,
 subheadings, and their bodies (@code{show-subtree}).
-@item M-x hide-leaves
+@item C-c C-l
 Make the body of this heading line, and of all its subheadings,
-invisible.
-@item M-x show-branches
-Make all subheadings of this heading line, at all levels, visible.
+invisible (@code{hide-leaves}).
+@item C-c C-k
+Make all subheadings of this heading line, at all levels, visible
+(@code{show-branches}). 
 @item C-c C-i
 Make immediate subheadings (one level down) of this heading line
 visible (@code{show-children}).
-@item M-x hide-entry
-Make this heading line's body invisible.
-@item M-x show-entry
-Make this heading line's body visible.
+@item C-c C-c
+Make this heading line's body invisible (@code{hide-entry}).
+@item C-c C-e
+Make this heading line's body visible (@code{show-entry}).
+@item C-c C-q
+Hide everything except the top @var{n} levels of heading lines
+(@code{hide-sublevels}).
+@item C-c C-o
+Hide everything except for the heading or body that point is in, plus
+the headings leading up from there to the top level of the outline
+(@code{hide-other}).
 @end table
 
 @findex hide-entry
 @findex show-entry
-  Two commands that are exact opposites are @kbd{M-x hide-entry} and
-@kbd{M-x show-entry}.  They are used with point on a heading line, and
-apply only to the body lines of that heading.  The subtopics and their
-bodies are not affected.
+@kindex C-c C-c @r{(Outline mode)}
+@kindex C-c C-e @r{(Outline mode)}
+  Two commands that are exact opposites are @kbd{C-c C-c}
+(@code{hide-entry}) and @kbd{C-c C-e} (@code{show-entry}).  They are
+used with point on a heading line, and apply only to the body lines of
+that heading.  The subtopics and their bodies are not affected.
 
 @findex hide-subtree
 @findex show-subtree
 @kindex C-c C-s @r{(Outline mode)}
-@kindex C-c C-h @r{(Outline mode)}
+@kindex C-c C-d @r{(Outline mode)}
 @cindex subtree (Outline mode)
-  Two more powerful opposites are @kbd{C-c C-h} (@code{hide-subtree}) and
+  Two more powerful opposites are @kbd{C-c C-d} (@code{hide-subtree}) and
 @kbd{C-c C-s} (@code{show-subtree}).  Both expect to be used when point is
 on a heading line, and both apply to all the lines of that heading's
 @dfn{subtree}: its body, all its subheadings, both direct and indirect, and
@@ -890,11 +937,13 @@ the same or higher rank.@refill
 
 @findex hide-leaves
 @findex show-branches
+@kindex C-c C-l @r{(Outline mode)}
+@kindex C-c C-k @r{(Outline mode)}
   Intermediate between a visible subtree and an invisible one is having
-all the subheadings visible but none of the body.  There are two commands
-for doing this, depending on whether you want to hide the bodies or
-make the subheadings visible.  They are @kbd{M-x hide-leaves} and
-@kbd{M-x show-branches}.
+all the subheadings visible but none of the body.  There are two
+commands for doing this, depending on whether you want to hide the
+bodies or make the subheadings visible.  They are @kbd{C-c C-l}
+(@code{hide-leaves}) and @kbd{C-c C-k} (@code{show-branches}).
 
 @kindex C-c C-i @r{(Outline mode)}
 @findex show-children
@@ -905,11 +954,25 @@ they were invisible.@refill
 
 @findex hide-body
 @findex show-all
-  Two commands have a blanket effect on the whole file.  @kbd{M-x hide-body}
-makes all body lines invisible, so that you see just the outline structure.
-@kbd{M-x show-all} makes all lines visible.  These commands can be thought
-of as a pair of opposites even though @kbd{M-x show-all} applies to more
-than just body lines.
+@kindex C-c C-t @r{(Outline mode)}
+@kindex C-c C-a @r{(Outline mode)}
+  Two commands have a blanket effect on the whole file.  @kbd{C-c C-t}
+(@code{hide-body}) makes all body lines invisible, so that you see just
+the outline structure.  @kbd{C-c C-a} (@code{show-all}) makes all lines
+visible.  These commands can be thought of as a pair of opposites even
+though @kbd{C-c C-a} applies to more than just body lines.
+
+@findex hide-sublevels
+@kindex C-c C-q @r{(Outline mode)}
+  The command @kbd{C-c C-q} (@code{hide-sublevels}) hides all but the
+top level headings.  With a prefix argument @var{n}, it hides everything
+except the top @var{n} levels of heading lines.
+
+@findex hide-other
+@kindex C-c C-o @r{(Outline mode)}
+  The command @kbd{C-c C-o} (@code{hide-other}) hides everything except
+the heading or body text that point is in, plus its parents (the headers
+leading up from there to top level in the outline).
 
   You can turn off the use of ellipses at the ends of visible lines by
 setting @code{selective-display-ellipses} to @code{nil}.  Then there is
@@ -1317,6 +1380,10 @@ grouping is automatically inserted on the following line.  For example,
 if you are at the beginning of a line and type @kbd{.@: ( b @key{RET}},
 this inserts the matching command @samp{.)b} on a new line following
 point.
+
+  If you use Outline minor mode with Nroff mode (@pxref{Outline Mode}),
+heading lines are lines of the form @samp{.H} followed by a number (the
+header level).
 
 @vindex nroff-mode-hook
   Entering Nroff mode runs the hook @code{text-mode-hook}, followed by

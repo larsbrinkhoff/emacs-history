@@ -1,6 +1,6 @@
 ;;; version.el --- record version number of Emacs.
 
-;;; Copyright (C) 1985, 1992 Free Software Foundation, Inc.
+;;; Copyright (C) 1985, 1992, 1994 Free Software Foundation, Inc.
 
 ;; Maintainer: FSF
 ;; Keywords: internal
@@ -23,10 +23,22 @@
 
 ;;; Code:
 
-;; The following line is modified automatically
-;; by loading inc-version.el, each time a new Emacs is dumped.
-(defconst emacs-version "19.22.0" "\
+(defconst emacs-version "19.23" "\
 Version numbers of this version of Emacs.")
+
+(defconst emacs-major-version
+  (progn (string-match "^[0-9]+" emacs-version)
+	 (string-to-int (substring emacs-version
+				   (match-beginning 0) (match-end 0))))
+  "Major version number of this version of Emacs.
+This variable first existed in version 19.23.")
+
+(defconst emacs-minor-version
+  (progn (string-match "^[0-9]+\\.\\([0-9]+\\)" emacs-version)
+	 (string-to-int (substring emacs-version
+				   (match-beginning 1) (match-end 1))))
+  "Minor version number of this version of Emacs.
+This variable first existed in version 19.23.")
 
 (defconst emacs-build-time (current-time-string) "\
 Time at which Emacs was dumped out.")
@@ -35,7 +47,9 @@ Time at which Emacs was dumped out.")
 
 (defun emacs-version  (&optional here) "\
 Return string describing the version of Emacs that is running.
-If optional argument HERE is non-nil, insert string at point."
+If optional argument HERE is non-nil, insert string at point.
+Don't use this function in programs to choose actions according
+to the system configuration; look at `system-configuration' instead."
   (interactive "P")
   (let ((version-string 
          (format "GNU Emacs %s of %s %s on %s (%s)"
@@ -44,7 +58,7 @@ If optional argument HERE is non-nil, insert string at point."
                             (string-match " *[0-9]*:" emacs-build-time))
                  (substring emacs-build-time 
                             (string-match "[0-9]*$" emacs-build-time))
-                 emacs-build-system system-type)))
+                 emacs-build-system system-configuration)))
     (if here 
         (insert version-string)
       (if (interactive-p)

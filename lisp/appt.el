@@ -1,9 +1,9 @@
 ;;; appt.el --- appointment notification functions.
 
-;; Copyright (C) 1989, 1990 Free Software Foundation, Inc.
+;; Copyright (C) 1989, 1990, 1994 Free Software Foundation, Inc.
 
 ;; Author: Neil Mager <neilm@juliet.ll.mit.edu>
-;; Version: 2.1
+;; Maintainer: FSF
 ;; Keywords: calendar
 
 ;; This file is part of GNU Emacs.
@@ -66,8 +66,7 @@
 ;;;   The following three lines are required:
 ;;; (display-time)
 ;;; (autoload 'appt-make-list "appt.el" nil t)
-;;; (setq diary-display-hook 
-;;;     (list 'appt-make-list 'prepare-fancy-diary-buffer))
+;;; (add-hook 'diary-hook 'appt-make-list)
 ;;;
 ;;; 
 ;;;  This is an example of what can be in your diary file:
@@ -104,6 +103,17 @@
 ;;; reads. This is all done automatically.
 ;;; It is invoked from the function list-diary-entries.
 ;;;
+;;; You can change the way the appointment window is created/deleted by
+;;; setting  the variables
+;;;
+;;;	     appt-disp-window-function
+;;; and
+;;; 	     appt-delete-window-function
+;;;
+;;; For instance, these variables can be set to functions that display
+;;; appointments in pop-up frames, which are lowered or iconified after
+;;; appt-display-interval seconds.
+;;;
 
 ;;; Code:
 
@@ -114,7 +124,7 @@ To be detected, the diary entry must have the time
 as the first thing on a line.")
 
 ;;;###autoload
-(defvar appt-message-warning-time 10
+(defvar appt-message-warning-time 12
   "*Time in minutes before an appointment that the warning begins.")
 
 ;;;###autoload
@@ -134,7 +144,7 @@ as the first thing on a line.")
   "*Non-nil means display appointment message in another window.")
 
 ;;;###autoload
-(defvar appt-display-duration 5
+(defvar appt-display-duration 10
   "*The number of seconds an appointment message is displayed.")
 
 ;;;###autoload
@@ -151,8 +161,17 @@ The number before each time/message is the time in minutes from midnight.")
 (defconst max-time 1439
   "11:59pm in minutes - number of minutes in a day minus 1.")
 
-(defvar appt-display-interval 1
+(defvar appt-display-interval 3
   "*Number of minutes to wait between checking the appointment list.")
+  
+(defvar appt-buffer-name " *appt-buf*"
+  "Name of the appointments buffer.")
+  
+(defvar appt-disp-window-function 'appt-disp-window
+  "Function called to display appointment window.")
+  
+(defvar appt-delete-window-function 'appt-delete-window
+  "Function called to remove appointment window and buffer.")
 
 (defun appt-check ()
   "Check for an appointment and update the mode line.
@@ -197,6 +216,16 @@ appt-display-duration
 appt-display-interval
 	The number of minutes to wait between checking the appointments
 	list.
+
+appt-disp-window-function 
+    	Function called to display appointment window. You can customize
+	appt.el by setting this variable to a function different from the
+	one provided with this package.
+  
+appt-delete-window-function 
+    	Function called to remove appointment window and buffer.  You can
+	customize appt.el by setting this variable to a function different
+	from the one provided with this package.
 
 This function is run from the loadst process for display time.
 Therefore, you need to have `(display-time)' in your .emacs file."
@@ -274,8 +303,15 @@ Therefore, you need to have `(display-time)' in your .emacs file."
 			      (setq new-time (substring display-time-string 
 							(match-beginning 0)
 							(match-end 0)))
-			      (appt-disp-window min-to-app new-time
-						(car (cdr (car appt-time-msg-list)))))
+			      (funcall
+			       appt-disp-window-function
+			       min-to-app new-time
+			       (car (cdr (car appt-time-msg-list))))
+			      
+			      (run-at-time
+			       (format "%d sec" appt-display-duration)
+			       nil
+			       appt-delete-window-function))
 			  ;;; else
 
 			  (if appt-visible
@@ -312,32 +348,41 @@ Therefore, you need to have `(display-time)' in your .emacs file."
 ;; Display appointment message in a separate buffer.
 (defun appt-disp-window (min-to-app new-time appt-msg)
   (require 'electric)
-  (save-window-excursion
 
-    ;; Make sure we're not in the minibuffer
-    ;; before splitting the window.
+  ;; Make sure we're not in the minibuffer
+  ;; before splitting the window.
 
-    (if (= (frame-height)
-           (nth 3 (window-edges (selected-window))))
-        nil
-      (appt-select-lowest-window)
-      (split-window))
+  (if (equal (selected-window) (minibuffer-window))
+      (if (other-window 1) 
+	  (select-window (other-window 1))
+	(if window-system
+	    (select-frame (other-frame 1)))))
+      
+  (let* ((this-buffer (current-buffer))
+	 (this-window (selected-window))
+	 (appt-disp-buf (set-buffer (get-buffer-create appt-buffer-name))))
 
-    (let* ((this-buffer (current-buffer))
-           (appt-disp-buf (set-buffer (get-buffer-create "appt-buf"))))
-      (setq mode-line-format 
-            (concat "-------------------- Appointment in "
-                    min-to-app " minutes. " new-time " %-"))
-      (pop-to-buffer appt-disp-buf)
-      (insert-string appt-msg)
-      (shrink-window-if-larger-than-buffer (get-buffer-window appt-disp-buf))
-      (set-buffer-modified-p nil)
-      (if appt-audible
-          (beep 1))
-      (sit-for appt-display-duration)
-      (if appt-audible
-          (beep 1))
-      (kill-buffer appt-disp-buf))))
+    (appt-select-lowest-window)
+    (split-window)
+      
+    (pop-to-buffer appt-disp-buf)
+    (setq mode-line-format 
+	  (concat "-------------------- Appointment in "
+		  min-to-app " minutes. " new-time " %-"))
+    (insert-string appt-msg)
+    (shrink-window-if-larger-than-buffer (get-buffer-window appt-disp-buf))
+    (set-buffer-modified-p nil)
+    (select-window this-window)
+    (if appt-audible
+	(beep 1))))
+      
+(defun appt-delete-window ()
+  "Function called to undisplay appointment messages.
+Usually just deletes the appointment buffer."
+  (delete-window (get-buffer-window appt-buffer-name))
+  (kill-buffer appt-buffer-name)
+  (if appt-audible
+      (beep 1)))
 
 ;; Select the lowest window on the frame.
 (defun appt-select-lowest-window ()
@@ -448,25 +493,25 @@ The time should be in either 24 hour format or am/pm format."
                     (setq appt-time-msg-list (append appt-time-msg-list
                                                      (list time-msg)))))))
             (setq entry-list (cdr entry-list)))))
-  (setq appt-time-msg-list (appt-sort-list appt-time-msg-list))
+    (setq appt-time-msg-list (appt-sort-list appt-time-msg-list))
 
-  ;; Get the current time and convert it to minutes
-  ;; from midnight. ie. 12:01am = 1, midnight = 0,
-  ;; so that the elements in the list
-  ;; that are earlier than the present time can
-  ;; be removed.
+    ;; Get the current time and convert it to minutes
+    ;; from midnight. ie. 12:01am = 1, midnight = 0,
+    ;; so that the elements in the list
+    ;; that are earlier than the present time can
+    ;; be removed.
   
-  (let* ((cur-hour(string-to-int 
-                   (substring (current-time-string) 11 13)))
-         (cur-min (string-to-int 
-                   (substring (current-time-string) 14 16)))
-         (cur-comp-time (+ (* cur-hour 60) cur-min))
-         (appt-comp-time (car (car (car appt-time-msg-list)))))
+    (let* ((cur-hour(string-to-int 
+		     (substring (current-time-string) 11 13)))
+	   (cur-min (string-to-int 
+		     (substring (current-time-string) 14 16)))
+	   (cur-comp-time (+ (* cur-hour 60) cur-min))
+	   (appt-comp-time (car (car (car appt-time-msg-list)))))
 
-    (while (and appt-time-msg-list (< appt-comp-time cur-comp-time))
-      (setq appt-time-msg-list (cdr appt-time-msg-list)) 
-      (if appt-time-msg-list
-          (setq appt-comp-time (car (car (car appt-time-msg-list)))))))))
+      (while (and appt-time-msg-list (< appt-comp-time cur-comp-time))
+	(setq appt-time-msg-list (cdr appt-time-msg-list)) 
+	(if appt-time-msg-list
+	    (setq appt-comp-time (car (car (car appt-time-msg-list)))))))))
   
 
 ;;Simple sort to put the appointments list in order.
@@ -522,6 +567,7 @@ The time should be in either 24 hour format or am/pm format."
     (setq conv-time (+ (* hr 60) min))
     conv-time))
 
-(setq display-time-hook 'appt-check)
+(add-hook 'display-time-hook 'appt-check)
 
 ;;; appt.el ends here
+

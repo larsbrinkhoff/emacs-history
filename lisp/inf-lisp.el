@@ -1,5 +1,5 @@
 ;;; inf-lisp.el --- an inferior-lisp mode
-;;; Copyright (C) 1988, 1993 Free Software Foundation, Inc.
+;;; Copyright (C) 1988, 1993, 1994 Free Software Foundation, Inc.
 
 ;; Author: Olin Shivers <shivers@cs.cmu.edu>
 ;; Keywords: processes, lisp
@@ -74,7 +74,7 @@ mode.  Default is whitespace followed by 0 or 1 single-letter colon-keyword
 (defvar inferior-lisp-mode-map nil)
 (cond ((not inferior-lisp-mode-map)
        (setq inferior-lisp-mode-map
-	     (full-copy-sparse-keymap comint-mode-map))
+	     (copy-keymap comint-mode-map))
        (setq inferior-lisp-mode-map
 	     (nconc inferior-lisp-mode-map shared-lisp-mode-map))
        (define-key inferior-lisp-mode-map "\C-x\C-e" 'lisp-eval-last-sexp)
@@ -149,9 +149,9 @@ produces cosmetically superior output for this application,
 but it works only in Common Lisp.")
 
 ;;;###autoload
-(defvar inferior-lisp-prompt "^[^> ]*>+:? *"
+(defvar inferior-lisp-prompt "^[^> \n]*>+:? *"
   "Regexp to recognise prompts in the Inferior Lisp mode.
-Defaults to \"^[^> ]*>+:? *\", which works pretty good for Lucid, kcl,
+Defaults to \"^[^> \\n]*>+:? *\", which works pretty good for Lucid, kcl,
 and franz.  This variable is used to initialize `comint-prompt-regexp' in the 
 Inferior Lisp buffer.
 
@@ -246,7 +246,7 @@ to continue it."
   (setq comint-prompt-regexp inferior-lisp-prompt)
   (setq major-mode 'inferior-lisp-mode)
   (setq mode-name "Inferior Lisp")
-  (setq mode-line-process '(": %s"))
+  (setq mode-line-process '(":%s"))
   (lisp-mode-variables t)
   (use-local-map inferior-lisp-mode-map)    ;c-c c-k for "kompile" file
   (setq comint-get-old-input (function lisp-get-old-input))

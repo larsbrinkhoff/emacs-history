@@ -1,5 +1,5 @@
 /* Header file for the buffer manipulation primitives.
-   Copyright (C) 1985, 1986, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -172,6 +172,9 @@ struct buffer
     int modtime;
     /* the value of text.modiff at the last auto-save. */
     int auto_save_modified;
+    /* The time at which we detected a failure to auto-save,
+       Or -1 if we didn't have a failure.  */
+    int auto_save_failure_time;
     /* Position in buffer at which display started
        the last time this buffer was displayed */
     int last_window_start;
@@ -201,7 +204,7 @@ struct buffer
     Lisp_Object filename;
     /* Dir for expanding relative pathnames */
     Lisp_Object directory;
-    /* true iff this buffer has been been backed
+    /* true iff this buffer has been backed
        up (if you write to its associated file
        and it hasn't been backed up, then a
        backup will be made) */
@@ -244,6 +247,10 @@ struct buffer
     Lisp_Object left_margin;
     /* Function to call when insert space past fill column */
     Lisp_Object auto_fill_function;
+#ifdef MSDOS
+    /* nil: text, t: binary.  */
+    Lisp_Object buffer_file_type;
+#endif
 
     /* String of length 256 mapping each char to its lower-case version.  */
     Lisp_Object downcase_table;
@@ -358,6 +365,8 @@ extern Lisp_Object Fget_file_buffer ();
 /* Functions to call before and after each text change. */
 extern Lisp_Object Vbefore_change_function;
 extern Lisp_Object Vafter_change_function;
+extern Lisp_Object Vbefore_change_functions;
+extern Lisp_Object Vafter_change_functions;
 extern Lisp_Object Vfirst_change_hook;
 extern Lisp_Object Qfirst_change_hook;
 
@@ -366,10 +375,7 @@ extern Lisp_Object Vtransient_mark_mode;
 
 /* Overlays */
 
-/* Overlays are ordinary Lisp objects, and users can alter their contents.
-   Therefore, we cannot assume that they remain valid--we must check.  */
-
-/* 1 if the OV is a cons cell whose car is a cons cell.  */
+/* 1 if the OV is an overlay object.  */
 #define OVERLAY_VALID(OV) (OVERLAYP (OV))
 
 /* Return the marker that stands for where OV starts in the buffer.  */
@@ -378,13 +384,11 @@ extern Lisp_Object Vtransient_mark_mode;
 /* Return the marker that stands for where OV ends in the buffer.  */
 #define OVERLAY_END(OV) (XCONS (XCONS ((OV))->car)->cdr)
 
-/* Return the actual buffer position for the marker P,
-   if it is a marker and points into the current buffer.
-   Otherwise, zero.  */
+/* Return the actual buffer position for the marker P.
+   We assume you know which buffer it's pointing into.  */
 
 #define OVERLAY_POSITION(P)					\
- ((MARKERP ((P)) && XMARKER ((P))->buffer == current_buffer)	\
-  ? marker_position ((P)) : 0)
+ (XGCTYPE ((P)) == Lisp_Marker ? marker_position ((P)) : (abort (), 0))
 
 /* Allocation of buffer text.  */
 

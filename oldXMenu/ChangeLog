@@ -1,3 +1,16 @@
+Mon May 16 03:25:22 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.23 released.
+
+Tue Apr 12 11:57:11 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Create.c (XMenuCreate): Declare `data' as unsigned char*.
+
+Mon Jan  3 02:17:53 1994  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* XMakeAssoc.c (XMakeAssoc): Use xmalloc.
+	(_XIOErrorFunction): Decl deleted.
+
 Sat Nov 27 04:42:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.22 released.

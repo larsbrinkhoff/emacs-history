@@ -150,7 +150,8 @@ case-convert it and go on typing.  @xref{Case}.@refill
 @cindex correcting spelling
 
   This section describes the commands to check the spelling of a single
-word or of a portion of a buffer.
+word or of a portion of a buffer.  These commands work with the spelling
+checker program Ispell, which is not part of Emacs.
 
 @table @kbd
 @item M-$
@@ -228,12 +229,11 @@ currently loaded dictionaries.  @xref{Text Mode}.
 @findex reload-ispell
   The first time you use any of the spell checking commands, it starts
 an Ispell subprocess.  The first thing the subprocess does is read your
-private dictionary, which is the file @file{~/ispell.words}.  Words that
-you ``insert'' with the @kbd{i} command are added to that file, but not
-right away---only at the end of the interactive replacement procedure.
-Use the @kbd{M-x reload-ispell} command to reload your private
-dictionary from @file{~/ispell.words} if you edit the file outside of
-Ispell.
+private dictionary, which defaults to the file @file{~/ispell.words}.
+Words that you ``insert'' with the @kbd{i} command are added to that
+file, but not right away---only at the end of the interactive
+replacement procedure.  Use the @kbd{M-x reload-ispell} command to
+reload your private dictionary if you edit the file outside of Ispell.
 
 @cindex @code{ispell} program
 @findex kill-ispell

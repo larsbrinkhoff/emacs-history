@@ -1,9 +1,9 @@
 ;;; cmuscheme.el --- Scheme process in a buffer. Adapted from tea.el.
 
-
-;; Copyright (C) 1988 Free Software Foundation, Inc.
+;; Copyright (C) 1988, 1994 Free Software Foundation, Inc.
 
 ;; Author: Olin Shivers <olin.shivers@cs.cmu.edu>
+;; Maintainer: FSF
 ;; Keywords: processes, lisp
 
 ;; This file is part of GNU Emacs.
@@ -117,7 +117,7 @@
 
 (cond ((not inferior-scheme-mode-map)
        (setq inferior-scheme-mode-map
-	     (full-copy-sparse-keymap comint-mode-map))
+	     (copy-keymap comint-mode-map))
        (define-key inferior-scheme-mode-map "\M-\C-x" ;gnu convention
 	           'scheme-send-definition)
        (define-key inferior-scheme-mode-map "\C-x\C-e" 'scheme-send-last-sexp)
@@ -180,14 +180,13 @@ to continue it."
   (interactive)
   (comint-mode)
   ;; Customise in inferior-scheme-mode-hook
-  (setq comint-prompt-regexp "^[^>]*>+ *") ; OK for cscheme, oaklisp, T,...
+  (setq comint-prompt-regexp "^[^>\n]*>+ *") ; OK for cscheme, oaklisp, T,...
   (scheme-mode-variables)
   (setq major-mode 'inferior-scheme-mode)
   (setq mode-name "Inferior Scheme")
-  (setq mode-line-process '(": %s"))
+  (setq mode-line-process '(":%s"))
   (use-local-map inferior-scheme-mode-map)
   (setq comint-input-filter (function scheme-input-filter))
-  (setq comint-input-sentinel (function ignore))
   (setq comint-get-old-input (function scheme-get-old-input))
   (run-hooks 'inferior-scheme-mode-hook))
 

@@ -1,5 +1,5 @@
 /* Simple built-in editing commands.
-   Copyright (C) 1985, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -105,7 +105,7 @@ With positive ARG, a non-empty line at the end counts as one line\n\
     }
 
   negp = count <= 0;
-  pos = scan_buffer ('\n', pos2, count - negp, &shortage);
+  pos = scan_buffer ('\n', pos2, count - negp, &shortage, 1);
   if (shortage > 0
       && (negp
 	  || (ZV > BEGV
@@ -295,9 +295,11 @@ internal_self_insert (c1, noautofill)
   Lisp_Object tem;
   register enum syntaxcode synt;
   register int c = c1;
-  Lisp_Object overwrite = current_buffer->overwrite_mode;
+  Lisp_Object overwrite;
 
-  if (!NILP (Vbefore_change_function) || !NILP (Vafter_change_function))
+  overwrite = current_buffer->overwrite_mode;
+  if (!NILP (Vbefore_change_function) || !NILP (Vafter_change_function)
+      || !NILP (Vbefore_change_functions) || !NILP (Vafter_change_functions))
     hairy = 1;
 
   if (!NILP (overwrite)
@@ -389,6 +391,10 @@ keys_of_cmds ()
   initial_define_key (global_map, Ctl('I'), "self-insert-command");
   for (n = 040; n < 0177; n++)
     initial_define_key (global_map, n, "self-insert-command");
+#ifdef MSDOS
+  for (n = 0200; n < 0240; n++)
+    initial_define_key (global_map, n, "self-insert-command");
+#endif
   for (n = 0240; n < 0400; n++)
     initial_define_key (global_map, n, "self-insert-command");
 

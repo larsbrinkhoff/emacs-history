@@ -1,5 +1,5 @@
 /* GNU Emacs site configuration template file.  -*- C -*-
-   Copyright (C) 1988, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1988, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -47,6 +47,9 @@ and this notice must be preserved on all copies.  */
    Otherwise, Emacs expects to use version 10.  */
 #undef HAVE_X11
 
+/* Define if using an X toolkit.  */
+#undef USE_X_TOOLKIT
+
 /* Define this if you're using XFree386.  */
 #undef HAVE_XFREE386
 
@@ -54,6 +57,9 @@ and this notice must be preserved on all copies.  */
    This appears to work on some machines that support X
    and not on others.  */
 #undef HAVE_X_MENU
+
+/* Define if we have the X11R6 or newer version of Xt.  */
+#undef HAVE_X11XTR6
 
 /* If we're using any sort of window system, define MULTI_FRAME.  */
 #ifdef HAVE_X_WINDOWS
@@ -88,6 +94,7 @@ and this notice must be preserved on all copies.  */
 #undef TIME_WITH_SYS_TIME
 
 #undef HAVE_LIBDNET
+#undef HAVE_LIBRESOLV
 
 #undef HAVE_ALLOCA_H
 
@@ -114,17 +121,27 @@ and this notice must be preserved on all copies.  */
 #undef HAVE_XRMSETDATABASE
 #undef HAVE_XSCREENRESOURCESTRING
 #undef HAVE_XSCREENNUMBEROFSCREEN
+#undef HAVE_XSETWMPROTOCOLS
 
 #undef HAVE_MKDIR
 #undef HAVE_RMDIR
 #undef HAVE_RANDOM
 #undef HAVE_BCOPY
+#undef HAVE_BCMP
 #undef HAVE_LOGB
 #undef HAVE_FREXP
+#undef HAVE_FMOD
 #undef HAVE_FTIME
 #undef HAVE_RES_INIT /* For -lresolv on Suns.  */
+#undef HAVE_SETSID
+#undef HAVE_FPATHCONF
+
+#undef HAVE_INET_SOCKETS
 
 #undef HAVE_AIX_SMT_EXP
+
+/* Define if `sys_siglist' is declared by <signal.h>.  */
+#undef SYS_SIGLIST_DECLARED
 
 /* If using GNU, then support inline function declarations. */
 #ifdef __GNUC__
@@ -132,6 +149,8 @@ and this notice must be preserved on all copies.  */
 #else
 #define INLINE
 #endif
+
+#undef CONFIGURATION
 
 /* The configuration script defines opsysfile to be the name of the
    s/*.h file that describes the system type you are using.  The file
@@ -154,6 +173,15 @@ and this notice must be preserved on all copies.  */
    See m/template.h for documentation on writing m/*.h files.  */
 #undef config_machfile
 #include config_machfile
+
+/* These typedefs shouldn't appear when alloca.s or Makefile.in
+   includes config.h.  */
+#ifndef NOT_C_CODE
+#ifndef SPECIAL_EMACS_INT
+typedef long EMACS_INT;
+typedef unsigned long EMACS_UINT;
+#endif
+#endif
 
 /* Load in the conversion definitions if this system
    needs them and the source file being compiled has not
@@ -191,6 +219,10 @@ and this notice must be preserved on all copies.  */
    something similar.  */
 #undef LD_SWITCH_X_SITE
 
+/* Define LD_SWITCH_X_SITE_AUX with an -R option
+   in case it's needed (for Solaris, for example).  */
+#undef LD_SWITCH_X_SITE_AUX
+
 /* Define C_SWITCH_X_SITE to contain any special flags your compiler
    may need to deal with X Windows.  For instance, if you've defined
    HAVE_X_WINDOWS above and your X include files aren't in a place
@@ -208,11 +240,16 @@ and this notice must be preserved on all copies.  */
 #endif
 
 /* The rest of the code currently tests the CPP symbol BSTRING.
-   Override any claims made by the system-description files.  */
+   Override any claims made by the system-description files.
+   Note that on some SCO version it is possible to have bcopy and not bcmp.  */
 #undef BSTRING
-#ifdef HAVE_BCOPY
+#if defined (HAVE_BCOPY) && defined (HAVE_BCMP)
 #define BSTRING
 #endif
+
+/* Define if you have the ANSI `strerror' function.
+   Otherwise you must have the variable `char *sys_errlist[]'.  */
+#undef HAVE_STRERROR
 
 /* Non-ANSI C compilers usually don't have volatile.  */
 #ifndef HAVE_VOLATILE
@@ -238,7 +275,7 @@ and this notice must be preserved on all copies.  */
    programs assume that if you have a config.h file, you must declare
    the type of getenv.
 
-   This declaration shouldn't appear when alloca.s or ymakefile
+   This declaration shouldn't appear when alloca.s or Makefile.in
    includes config.h.  */
 #ifndef NOT_C_CODE
 extern char *getenv ();

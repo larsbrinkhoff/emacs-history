@@ -32,7 +32,9 @@
 #      Still more severe - delete backup and autosave files, too.
 
 SHELL = /bin/sh
-MAKE = make  # BSD doesn't have it as a default.
+
+# If Make doesn't predefine MAKE, set it here.
+@SET_MAKE@
 
 # ==================== Things `configure' Might Edit ====================
 
@@ -88,7 +90,7 @@ statedir=@statedir@
 # Where to install and expect executable files to be run by Emacs
 # rather than directly by users, and other architecture-dependent
 # data.	 ${archlibdir} is a subdirectory of this.
-libdir=${exec_prefix}/lib
+libdir=@libdir@
 
 # Where to install Emacs's man pages, and what extension they should have.
 mandir=@mandir@
@@ -162,6 +164,9 @@ lockdir=@lockdir@
 # once.
 archlibdir=@archlibdir@
 
+# Where to put the docstring file.
+docdir=@docdir@
+
 # ==================== Utility Programs for the Build ====================
 
 # Allow the user to specify the install program.
@@ -171,13 +176,16 @@ INSTALL_DATA = @INSTALL_DATA@
 
 # ============================= Targets ==============================
 
+# What emacs should be called when installed.
+EMACS = emacs
+
 # Subdirectories to make recursively.  `lisp' is not included
 # because the compiled lisp files are part of the distribution
 # and you cannot remake them without installing Emacs first.
 SUBDIR = lib-src src
 
 # The makefiles of the directories in $SUBDIR.
-SUBDIR_MAKEFILES = lib-src/Makefile src/Makefile oldXMenu/Makefile
+SUBDIR_MAKEFILES = lib-src/Makefile src/Makefile oldXMenu/Makefile lwlib/Makefile
 
 # Subdirectories to install, and where they'll go.
 # lib-src's makefile knows how to install it, so we don't do that here.
@@ -187,7 +195,7 @@ SUBDIR_MAKEFILES = lib-src/Makefile src/Makefile oldXMenu/Makefile
 COPYDIR = ${srcdir}/etc ${srcdir}/lisp
 COPYDESTS = ${etcdir} ${lispdir}
 
-all:	src/paths.h ${SUBDIR}
+all:	src/paths.h ${SUBDIR} blessmail
 
 removenullpaths=sed -e 's/^://' -e 's/:$$//' -e 's/::/:/'
 
@@ -207,17 +215,23 @@ src/paths.h: Makefile ${srcdir}/src/paths.h.in FRC.src.paths.h
 	  -e 's;\(#.*PATH_EXEC\).*$$;\1 "${archlibdir}";'		\
 	  -e 's;\(#.*PATH_INFO\).*$$;\1 "${infodir}";'			\
 	  -e 's;\(#.*PATH_DATA\).*$$;\1 "${etcdir}";'			\
+	  -e 's;\(#.*PATH_DOC\).*$$;\1 "${docdir}";'			\
 	  -e 's;\(#.*PATH_LOCK\).*$$;\1 "${lockdir}/";')
 	@${srcdir}/move-if-change src/paths.h.tmp src/paths.h
 
 src:	lib-src FRC.src
-lib-src: FRC.lib-src
+
+lib-src: FRC.lib-src src/paths.h
 
 .RECURSIVE: ${SUBDIR}
 
 ${SUBDIR}: ${SUBDIR_MAKEFILES} FRC
 	cd $@; $(MAKE) all $(MFLAGS) \
-		CC='${CC}' CFLAGS='${CFLAGS}' MAKE='${MAKE}'
+	  CC='${CC}' CFLAGS='${CFLAGS}' CPPFLAGS='${CPPFLAGS}' \
+	  LDFLAGS='${LDFLAGS}' MAKE='${MAKE}'
+
+blessmail: ${SUBDIR_MAKEFILES} FRC
+	cd lib-src; $(MAKE) maybe-blessmail $(MFLAGS) MAKE='${MAKE}'
 
 Makefile: Makefile.in config.status
 	./config.status
@@ -231,6 +245,9 @@ lib-src/Makefile: lib-src/Makefile.in config.status
 oldXMenu/Makefile: oldXMenu/Makefile.in config.status
 	./config.status
 
+lwlib/Makefile: lwlib/Makefile.in config.status
+	./config.status
+
 # ==================== Installation ====================
 
 ## If we let lib-src do its own installation, that means we
@@ -240,20 +257,32 @@ oldXMenu/Makefile: oldXMenu/Makefile.in config.status
 ## On AIX, use tar xBf.
 ## On Xenix, use tar xpf.
 
+.PHONY: install mkdir
+
 ## We delete each directory in ${COPYDESTS} before we copy into it;
 ## that way, we can reinstall over directories that have been put in
 ## place with their files read-only (perhaps because they are checked
 ## into RCS).  In order to make this safe, we make sure that the
 ## source exists and is distinct from the destination.
-install: all do-install
+## We don't depend on `all', but rather on ${SUBDIR}, so that we won't
+## ever modify src/paths.h.
+install: ${SUBDIR} install-arch-dep install-arch-indep blessmail;
 
 ### Note that we copy the DOC-* files from the build etc directory
 ### as well as lots of things from ${srcdir}/etc.
-do-install: mkdir
+install-arch-dep: mkdir
 	(cd lib-src; \
 	  $(MAKE) install $(MFLAGS) prefix=${prefix} \
 	    exec_prefix=${exec_prefix} bindir=${bindir} libdir=${libdir} \
 	    archlibdir=${archlibdir})
+	${INSTALL_PROGRAM} src/emacs ${bindir}/emacs-${version}
+	-chmod 1755  ${bindir}/emacs-${version}
+	rm -f ${bindir}/$(EMACS)
+	-ln ${bindir}/emacs-${version} ${bindir}/$(EMACS)
+
+### Note that we copy the DOC-* files from the build etc directory
+### as well as lots of things from ${srcdir}/etc.
+install-arch-indep: mkdir
 	-set ${COPYDESTS} ; \
 	 for dir in ${COPYDIR} ; do \
 	   if [ `(cd $$1 && pwd)` != `(cd $${dir} && pwd)` ] ; then \
@@ -276,27 +305,25 @@ do-install: mkdir
 		 rm -f  $${subdir}/*~ ; \
 	       done) ; \
 	 done
-	if [ `(cd ./etc; /bin/pwd)` != `(cd ${srcdir}/etc; /bin/pwd)` ]; \
+	if [ `(cd ./etc; /bin/pwd)` != `(cd ${docdir}; /bin/pwd)` ]; \
 	then \
 	   echo "Copying etc/DOC* ..." ; \
-	   (cd etc; tar -cf - DOC*)|(cd ${etcdir}; umask 0; tar -xvf - ); \
+	   (cd etc; tar -cf - DOC*)|(cd ${docdir}; umask 0; tar -xvf - ); \
 	else true; fi
+	thisdir=`pwd`; \
 	if [ `(cd ${srcdir}/info && /bin/pwd)` != `(cd ${infodir} && /bin/pwd)` ]; \
-	then (cd ${srcdir}/info ; \
-	     if [ ! -f ${infodir}/dir ] && [ -f dir ]; then \
-	       ${INSTALL_DATA} dir ${infodir}/dir ; \
-	     fi ; \
-	     for f in cl* emacs* forms* gnus* info* sc* vip* ; do \
-	       ${INSTALL_DATA} $$f ${infodir}/$$f ; \
-	     done); \
+	then \
+	  (cd ${srcdir}/info ; \
+	   if [ ! -f ${infodir}/dir ] && [ -f dir ]; then \
+	     (cd $${thisdir}; ${INSTALL_DATA} ${srcdir}/info/dir ${infodir}/dir); \
+	   fi ; \
+	   for f in cl* dired-x* emacs* forms* gnus* info* sc* vip* ; do \
+	     (cd $${thisdir}; ${INSTALL_DATA} ${srcdir}/info/$$f ${infodir}/$$f); \
+	   done); \
 	else true; fi
-	cd ${srcdir}/etc; for page in emacs etags ctags ; do \
-	  ${INSTALL_DATA} $${page}.1 ${mandir}/$${page}${manext} ; \
+	thisdir=`pwd`; cd ${srcdir}/etc; for page in emacs etags ctags ; do \
+	  (cd $${thisdir}; ${INSTALL_DATA} ${srcdir}/etc/$${page}.1 ${mandir}/$${page}${manext}); \
 	done
-	${INSTALL_PROGRAM} src/emacs ${bindir}/emacs-${version}
-	-chmod 1755  ${bindir}/emacs-${version}
-	rm -f ${bindir}/emacs
-	-ln ${bindir}/emacs-${version} ${bindir}/emacs
 
 ### Build all the directories we're going to install Emacs in.	Since
 ### we may be creating several layers of directories (for example,
@@ -304,9 +331,9 @@ do-install: mkdir
 ### instead of mkdir.  Not all systems' mkdirs have the `-p' flag.
 mkdir: FRC.mkdir
 	./lib-src/make-path ${COPYDESTS} ${lockdir} ${infodir} ${mandir} \
-	  ${bindir} ${datadir} ${libdir} \
+	  ${bindir} ${datadir} ${docdir} ${libdir} \
 	  `echo ${locallisppath} | sed 's/:/ /'`
-	-chmod 777 ${COPYDESTS} ${lockdir}
+	-chmod 777 ${lockdir}
 
 ### Delete all the installed files that the `install' target would
 ### create (but not the noninstalled files such as `make all' would
@@ -319,15 +346,17 @@ uninstall:
 	    prefix=${prefix} exec_prefix=${exec_prefix}	\
 	    bindir=${bindir} libdir=${libdir} archlibdir=${archlibdir})
 	for dir in ${lispdir} ${etcdir} ; do 		\
-	  case `(cd $${dir} ; pwd)` in			\
-	    `(cd ${srcdir} ; pwd)`* ) ;;		\
-	    * ) rm -rf $${dir} ;;			\
-	  esac ;					\
-	  case $${dir} in				\
-	    ${datadir}/emacs/${version}/* )		\
-	      rm -rf ${datadir}/emacs/${version}	\
-	    ;;						\
-	  esac ;					\
+	  if [ -d $${dir} ]; then			\
+	    case `(cd $${dir} ; pwd)` in		\
+	      `(cd ${srcdir} ; pwd)`* ) ;;		\
+	      * ) rm -rf $${dir} ;;			\
+	    esac ;					\
+	    case $${dir} in				\
+	      ${datadir}/emacs/${version}/* )		\
+	        rm -rf ${datadir}/emacs/${version}	\
+	      ;;					\
+	    esac ;					\
+	  fi ;						\
 	done
 	(cd ${infodir}; rm -f cl* emacs* forms* info* vip*)
 	(cd ${mandir};  rm -f emacs.1 etags.1 ctags.1)
@@ -341,6 +370,8 @@ FRC.mostlyclean FRC.clean FRC.distclean FRC.realclean:
 
 # ==================== Cleaning up and miscellanea ====================
 
+.PHONY: mostlyclean clean distclean realclean extraclean
+
 ### `mostlyclean'
 ###      Like `clean', but may refrain from deleting a few files that people
 ###      normally don't want to recompile.  For example, the `mostlyclean'
@@ -349,6 +380,7 @@ FRC.mostlyclean FRC.clean FRC.distclean FRC.realclean:
 mostlyclean: FRC.mostlyclean
 	(cd src;      $(MAKE) $(MFLAGS) mostlyclean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) mostlyclean)
+	(cd lwlib;    $(MAKE) $(MFLAGS) mostlyclean)
 	(cd lib-src;  $(MAKE) $(MFLAGS) mostlyclean)
 	-(cd man;     $(MAKE) $(MFLAGS) mostlyclean)
 
@@ -363,6 +395,7 @@ mostlyclean: FRC.mostlyclean
 clean: FRC.clean
 	(cd src;      $(MAKE) $(MFLAGS) clean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) clean)
+	(cd lwlib;    $(MAKE) $(MFLAGS) clean)
 	(cd lib-src;  $(MAKE) $(MFLAGS) clean)
 	-(cd man;     $(MAKE) $(MFLAGS) clean)
 
@@ -379,6 +412,7 @@ top_distclean=\
 distclean: FRC.distclean
 	(cd src;      $(MAKE) $(MFLAGS) distclean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) distclean)
+	(cd lwlib;    $(MAKE) $(MFLAGS) distclean)
 	(cd lib-src;  $(MAKE) $(MFLAGS) distclean)
 	(cd man;      $(MAKE) $(MFLAGS) distclean)
 	${top_distclean}
@@ -398,6 +432,7 @@ distclean: FRC.distclean
 realclean: FRC.realclean
 	(cd src;      $(MAKE) $(MFLAGS) realclean)
 	(cd oldXMenu; $(MAKE) $(MFLAGS) realclean)
+	(cd lwlib;    $(MAKE) $(MFLAGS) realclean)
 	(cd lib-src;  $(MAKE) $(MFLAGS) realclean)
 	-(cd man;     $(MAKE) $(MFLAGS) realclean)
 	${top_distclean}
@@ -425,6 +460,8 @@ extraclean:
 SOURCES = ChangeLog GETTING.GNU.SOFTWARE INSTALL Makefile.in PROBLEMS \
 	README build-install.in configure make-dist move-if-change
 
+.PHONY: unlock relock
+
 unlock:
 	chmod u+w $(SOURCES) cpp/*
 	-(cd elisp; chmod u+w Makefile README *.texi)
@@ -434,6 +471,7 @@ unlock:
 	(cd lisp/term; chmod u+w README *.el)
 	(cd man; chmod u+w *texi* ChangeLog split-man)
 	(cd oldXMenu; chmod u+w *.[ch] Makefile README)
+	(cd lwlib; chmod u+w *.[ch] Makefile README)
 	(cd src; $(MAKE) $(MFLAGS) unlock)
 
 relock:
@@ -445,11 +483,11 @@ relock:
 	(cd lisp/term; chmod u+w README *.el)
 	(cd man; chmod u+w *texi* ChangeLog split-man)
 	(cd oldXMenu; chmod u+w *.[ch] Makefile README)
+	(cd lwlib; chmod u+w *.[ch] Makefile README)
 	(cd src; $(MAKE) $(MFLAGS) relock)
 
 TAGS tags:	lib-src
-	(cd ${srcdir}/src; \
-	 ../lib-src/etags *.[ch] ../lisp/*.el ../lisp/term/*.el)
+	cd ${srcdir}/src; $(MAKE) tags
 
 check:
 	@echo "We don't have any tests for GNU Emacs yet."
@@ -457,7 +495,9 @@ check:
 dist:
 	cd ${srcdir}; make-dist
 
-info:
+.PHONY: info dvi dist check
+force-info:
+info: force-info
 	(cd ${srcdir}/man; $(MAKE) $(MFLAGS) info)
 dvi:
 	(cd ${srcdir}/man; $(MAKE) $(MFLAGS) dvi)

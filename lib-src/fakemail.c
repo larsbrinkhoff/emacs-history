@@ -1,11 +1,11 @@
 /* sendmail-like interface to /bin/mail for system V,
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -27,6 +27,11 @@ main ()
 {
 }
 #else /* not BSD 4.2 (or newer) */
+#ifdef MSDOS
+main ()
+{
+}
+#else /* not MSDOS */
 /* This conditional contains all the rest of the file.  */
 
 /* These are defined in config in some versions. */
@@ -211,8 +216,8 @@ readline (linebuffer, stream)
 	{
 	  linebuffer->size *= 2;
 	  buffer = ((char *) xrealloc (buffer, linebuffer->size));
-	  p += buffer - linebuffer->buffer;
-	  end += buffer - linebuffer->buffer;
+	  p = buffer + (p - linebuffer->buffer);
+	  end = buffer + linebuffer->size;
 	  linebuffer->buffer = buffer;
 	}
       if (c < 0 || c == '\n')
@@ -416,7 +421,7 @@ put_line (string)
 	{
 	  char *breakpos;
 
-	  /* Find the last char that fits. */
+	  /* Find the last char that fits.  */
 	  for (breakpos = s; *breakpos && column < 78; ++breakpos)
 	    {
 	      if (*breakpos == '\t')
@@ -424,15 +429,20 @@ put_line (string)
 	      else
 		column++;
 	    }
-	  /* Back up to just after the last comma that fits.  */
-	  while (breakpos != s && breakpos[-1] != ',') --breakpos;
-	  if (breakpos == s)
+	  /* If we didn't reach end of line, break the line.  */
+	  if (*breakpos)
 	    {
-	      /* If no comma fits, move past the first address anyway.  */
-	      while (*breakpos != 0 && *breakpos != ',') ++breakpos;
-	      if (*breakpos != 0)
-		/* Include the comma after it.  */
-		++breakpos;
+	      /* Back up to just after the last comma that fits.  */
+	      while (breakpos != s && breakpos[-1] != ',') --breakpos;
+
+	      if (breakpos == s)
+		{
+		  /* If no comma fits, move past the first address anyway.  */
+		  while (*breakpos != 0 && *breakpos != ',') ++breakpos;
+		  if (*breakpos != 0)
+		    /* Include the comma after it.  */
+		    ++breakpos;
+		}
 	    }
 	  /* Output that much, then break the line.  */
 	  fwrite (s, 1, breakpos - s, rem->handle);
@@ -658,4 +668,5 @@ main (argc, argv)
   exit (close_the_streams ());
 }
 
+#endif /* not MSDOS */
 #endif /* not BSD 4.2 (or newer) */

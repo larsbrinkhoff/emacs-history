@@ -1,5 +1,5 @@
 @c This is part of the Emacs manual.
-@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 @c See file emacs.texi for copying conditions.
 @node Sending Mail, Rmail, Picture, Top
 @chapter Sending Mail
@@ -56,11 +56,11 @@ to make a new @samp{*mail} buffer.  Once you've done that, you can work
 with each mail buffer independently.
 
 @menu
-* Format: Mail Format.     Format of the mail being composed.
-* Headers: Mail Headers.   Details of permitted mail header fields.
-* Aliases: Mail Aliases.   Abbreviating and grouping mail addresses.
-* Mode: Mail Mode.         Special commands for editing mail being composed.
-* Spook: Distracting NSA.  How to distract the NSA's attention.
+* Format: Mail Format.	     Format of the mail being composed.
+* Headers: Mail Headers.     Details of permitted mail header fields.
+* Aliases: Mail Aliases.     Abbreviating and grouping mail addresses.
+* Mode: Mail Mode.	     Special commands for editing mail being composed.
+* Spook: Distracting NSA.    How to distract the NSA's attention.
 @end menu
 
 @node Mail Format
@@ -200,7 +200,7 @@ message will be written into that file when it is sent.
 @cindex mailrc file
 
   You can define @dfn{mail aliases} in a file named @file{~/.mailrc}.
-These are short mnemonic names stand for mail addresses or groups of
+These are short mnemonic names which stand for mail addresses or groups of
 mail addresses.  Like many other mail programs, Emacs expands aliases
 when they occur in the @samp{To}, @samp{CC}, and @samp{BCC} fields.
 
@@ -212,7 +212,7 @@ alias @var{shortaddress} @var{fulladdress}
 @end example
 
 @noindent
-For instance, if you send want to use @code{maingnu} as a short form of the
+For instance, if you want to use @code{maingnu} as a short form of the
 address @code{gnu@@prep.ai.mit.edu}, put in the line:@refill
 
 @example
@@ -236,7 +236,7 @@ file, like this:
 
 @vindex mail-aliases
   @code{define-mail-alias} records aliases by adding them to a
-variable named @code{mail-aliases}.  If your are comfortable with
+variable named @code{mail-aliases}.  If you are comfortable with
 manipulating Lisp lists, you can set @code{mail-aliases} directly.  The
 initial value of @code{mail-aliases} is @code{t}, which means that
 Emacs should read @file{.mailrc} to get the proper value.

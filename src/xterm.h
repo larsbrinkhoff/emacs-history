@@ -1,5 +1,5 @@
 /* Definitions and headers for communication with X protocol.
-   Copyright (C) 1989, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1989, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -27,6 +27,15 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #else
 #include <X/Xlib.h>
 #endif /* HAVE_X11 */
+
+#ifdef USE_X_TOOLKIT
+#include <X11/StringDefs.h>
+#include <X11/IntrinsicP.h>	/* CoreP.h needs this */
+#include <X11/CoreP.h>		/* foul, but we need this to use our own
+				   window inside a widget instead of one 
+				   that Xt creates... */
+#include <X11/StringDefs.h>
+#endif
 
 /* Define a queue for X-events.  One such queue is used for mouse clicks.
    Another is used for expose events.  */
@@ -66,8 +75,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifdef PBaseSize
 /* AIX 3.1's X is somewhere between X11R3 and X11R4.  It has
    PBaseSize, but not XWithdrawWindow, XSetWMName, XSetWMNormalHints,
-   XSetWMIconName.  */
-#ifndef AIX
+   XSetWMIconName.  
+   AIX 3.2 is at least X11R4.  */
+#if (!defined AIX) || (defined AIX3_2)
 #define HAVE_X11R4
 #endif
 #endif
@@ -75,6 +85,9 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #ifdef XlibSpecificationRelease
 #if XlibSpecificationRelease >= 5
 #define HAVE_X11R5
+/* In case someone has X11R5 on AIX 3.1,
+   make sure HAVE_X11R4 is defined as well as HAVE_X11R5.  */
+#define HAVE_X11R4
 #endif
 #endif
 
@@ -93,8 +106,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #define Color XColor
 
 #define XExposeRegionEvent XExposeEvent
-#define Bitmap Pixmap			/* In X11, Bitmaps are are kind of
-					   Pixmap. */
+#define Bitmap Pixmap			/* In X11, Bitmaps are a kind of
+					   Pixmap.  */
 #define WINDOWINFO_TYPE XWindowAttributes
 #define XGetWindowInfo(w, i) XGetWindowAttributes (x_current_display, \
 						   (w), (i))
@@ -180,7 +193,15 @@ extern struct event_queue x_mouse_queue;
 
 extern Display *x_current_display;
 
+/* This checks to make sure we have a display.  */
+extern void check_x ();
+
 extern struct frame *x_window_to_frame ();
+
+#ifdef USE_X_TOOLKIT
+extern struct frame *x_any_window_to_frame ();
+extern struct frame *x_top_window_to_frame ();
+#endif
 
 /* The frame (if any) which has the X window that has keyboard focus.
    Zero if none.  This is examined by Ffocus_frame in xfns.c */
@@ -188,40 +209,43 @@ extern struct frame *x_window_to_frame ();
 extern struct frame *x_focus_frame;
 
 #ifdef HAVE_X11
-/* Variables associated with the X display screen this emacs is using. */
+/* Variables associated with the X display screen this emacs is using.  */
 
-/* How many screens this X display has. */
+/* How many screens this X display has.  */
 extern int x_screen_count;
 
-/* The vendor supporting this X server. */
+/* The vendor supporting this X server.  */
 extern Lisp_Object Vx_vendor;
 
-/* The vendor's release number for this X server. */
+/* The vendor's release number for this X server.  */
 extern int x_release;
 
-/* Height of this X screen in pixels. */
+/* Height of this X screen in pixels.  */
 extern int x_screen_height;
 
-/* Height of this X screen in millimeters. */
+/* Height of this X screen in millimeters.  */
 extern int x_screen_height_mm;
 
-/* Width of this X screen in pixels. */
+/* Width of this X screen in pixels.  */
 extern int x_screen_width;
 
-/* Width of this X screen in millimeters. */
+/* Width of this X screen in millimeters.  */
 extern int x_screen_width_mm;
 
-/* Does this X screen do backing store? */
+/* Does this X screen do backing store?  */
 extern Lisp_Object Vx_backing_store;
 
-/* Does this X screen do save-unders? */
+/* Does this X screen do save-unders?  */
 extern int x_save_under;
 
-/* Number of planes for this screen. */
+/* Number of planes for this screen.  */
 extern int x_screen_planes;
 
-/* X Visual type of this screen. */
+/* X Visual type of this screen.  */
 extern Lisp_Object Vx_screen_visual;
+
+/* Mask of which mouse buttons are currently held down.  */
+extern unsigned int x_mouse_grabbed;
 
 #endif /* HAVE_X11 */
 
@@ -242,14 +266,17 @@ struct x_display
   /* Border width of the X window as known by the X window system.  */
   int border_width;
 
-  /* Size of the X window in pixels. */
+  /* Size of the X window in pixels.  */
   int pixel_height, pixel_width;
 
+  /* Height of a line, in pixels.  */
+  int line_height;
+
 #ifdef HAVE_X11
-  /* The tiled border used when the mouse is out of the frame. */
+  /* The tiled border used when the mouse is out of the frame.  */
   Pixmap border_tile;
 
-  /* Here are the Graphics Contexts for the default font. */
+  /* Here are the Graphics Contexts for the default font.  */
   GC normal_gc;				/* Normal video */
   GC reverse_gc;			/* Reverse video */
   GC cursor_gc;				/* cursor drawing */
@@ -273,6 +300,18 @@ struct x_display
      Usually but not always RootWindow.  */
   Window parent_desc;
 
+#ifdef USE_X_TOOLKIT
+  /* The widget of this screen.  This is the window of a "shell" widget.  */
+  Widget widget;
+  /* The XmPanedWindows...  */
+  Widget column_widget;
+  /* The widget of the edit portion of this screen; the window in
+     "window_desc" is inside of this.  */
+  Widget edit_widget;
+
+  Widget menubar_widget;
+#endif
+
   /* 1 for bitmap icon, 0 for text icon.  */
   int icon_bitmap_flag;
 
@@ -292,6 +331,7 @@ struct x_display
   Cursor text_cursor;
   Cursor nontext_cursor;
   Cursor modeline_cursor;
+  Cursor cross_cursor;
 #else
   Cursor cursor;
 #endif
@@ -301,7 +341,7 @@ struct x_display
      buffer in the currently selected window in the frame */
   char *icon_label;
 
-  /* Flag to set when the X window needs to be completely repainted. */
+  /* Flag to set when the X window needs to be completely repainted.  */
   int needs_exposure;
 
   /* What kind of text cursor is drawn in this window right now?
@@ -343,6 +383,12 @@ struct x_display
   struct face **computed_faces;
   int n_computed_faces;		/* How many are valid */
   int size_computed_faces;	/* How many are allocated */
+
+  /* This is the gravity value for the specified window position.  */
+  int win_gravity;
+
+  /* The geometry flags for this window.  */
+  int size_hint_flags;
 };
 
 /* Get at the computed faces of an X window frame.  */
@@ -375,7 +421,7 @@ struct x_display
    For highlighting, the two colors are exchanged.
    Face number 0 is unused.  The low order byte of a glyph gives
    the character within the font.  All fonts are assumed to be
-   fixed width, and to have the same height and width. */
+   fixed width, and to have the same height and width.  */
 
 #ifdef HAVE_X11
 
@@ -385,9 +431,9 @@ struct x_display
 
 struct face
 {
-  FONT_TYPE *font;	/* Font info for specified font. */
-  int  fg;		/* Unhighlighted foreground. */
-  int  bg;		/* Unhighlighted background. */
+  FONT_TYPE *font;	/* Font info for specified font.  */
+  int  fg;		/* Unhighlighted foreground.  */
+  int  bg;		/* Unhighlighted background.  */
 };
 #endif	/* X10 */
 
@@ -478,7 +524,7 @@ struct scroll_bar {
 /* Return the outside pixel height for a vertical scroll bar HEIGHT
    rows high on frame F.  */
 #define VERTICAL_SCROLL_BAR_PIXEL_HEIGHT(f, height) \
-  ((height) * FONT_HEIGHT ((f)->display.x->font))
+  ((height) * (f)->display.x->line_height)
 
 /* Return the inside width of a vertical scroll bar, given the outside
    width.  */
@@ -513,7 +559,7 @@ struct scroll_bar {
    from the edges of the scroll bar.  These are widths by which we
    inset the handle boundaries from the scroll bar edges.  */
 #define VERTICAL_SCROLL_BAR_LEFT_BORDER (2)
-#define VERTICAL_SCROLL_BAR_RIGHT_BORDER (3)
+#define VERTICAL_SCROLL_BAR_RIGHT_BORDER (2)
 #define VERTICAL_SCROLL_BAR_TOP_BORDER (2)
 #define VERTICAL_SCROLL_BAR_BOTTOM_BORDER (2)
 
@@ -529,7 +575,7 @@ struct scroll_bar {
    at ROW/COL.  */
 #define CHAR_TO_PIXEL_ROW(f, row) \
   ((f)->display.x->internal_border_width \
-   + (row) * FONT_HEIGHT ((f)->display.x->font))
+   + (row) * (f)->display.x->line_height)
 #define CHAR_TO_PIXEL_COL(f, col) \
   ((f)->display.x->internal_border_width \
    + (col) * FONT_WIDTH ((f)->display.x->font))
@@ -549,7 +595,7 @@ struct scroll_bar {
    the pixel on FRAME at ROW/COL.  */
 #define PIXEL_TO_CHAR_ROW(f, row) \
   (((row) - (f)->display.x->internal_border_width) \
-   / FONT_HEIGHT ((f)->display.x->font))
+   / (f)->display.x->line_height)
 #define PIXEL_TO_CHAR_COL(f, col) \
   (((col) - (f)->display.x->internal_border_width) \
    / FONT_WIDTH ((f)->display.x->font))

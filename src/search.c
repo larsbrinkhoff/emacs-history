@@ -1,5 +1,5 @@
 /* String search routines for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1993, 1994 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -68,6 +68,8 @@ static Lisp_Object last_thing_searched;
 /* error condition signalled when regexp compile_pattern fails */
 
 Lisp_Object Qinvalid_regexp;
+
+static void set_search_regs ();
 
 static void
 matcher_overflow ()
@@ -261,11 +263,15 @@ fast_string_match (regexp, string)
    If we don't find COUNT instances before reaching the end of the
    buffer (or the beginning, if scanning backwards), set *SHORTAGE to
    the number of TARGETs left unfound, and return the end of the
-   buffer we bumped up against.  */
+   buffer we bumped up against.
 
-scan_buffer (target, start, count, shortage)
+   If ALLOW_QUIT is non-zero, set immediate_quit.  That's good to do
+   except when inside redisplay.  */
+
+scan_buffer (target, start, count, shortage, allow_quit)
      int *shortage, start;
      register int count, target;
+     int allow_quit;
 {
   int limit = ((count > 0) ? ZV - 1 : BEGV);
   int direction = ((count > 0) ? 1 : -1);
@@ -279,7 +285,7 @@ scan_buffer (target, start, count, shortage)
   if (shortage != 0)
     *shortage = 0;
 
-  immediate_quit = 1;
+  immediate_quit = allow_quit;
 
   if (count > 0)
     while (start != limit + 1)
@@ -346,7 +352,7 @@ int
 find_next_newline (from, cnt)
      register int from, cnt;
 {
-  return (scan_buffer ('\n', from, cnt, (int *) 0));
+  return scan_buffer ('\n', from, cnt, (int *) 0, 1);
 }
 
 Lisp_Object skip_chars ();
@@ -466,6 +472,9 @@ skip_chars (forwardp, syntaxp, string, lim)
 	}
     }
 
+  if (syntaxp && fastmap['-'] != 0)
+    fastmap[' '] = 1;
+
   /* If ^ was the first character, complement the fastmap. */
 
   if (negate)
@@ -576,7 +585,7 @@ search_command (string, bound, noerror, count, direction, RE)
   return make_number (np);
 }
 
-/* search for the n'th occurrence of STRING in the current buffer,
+/* Search for the n'th occurrence of STRING in the current buffer,
    starting at position POS and stopping at position LIM,
    treating PAT as a literal string if RE is false or as
    a regular expression if RE is true.
@@ -611,7 +620,10 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt)
 
   /* Null string is found at starting position.  */
   if (len == 0)
-    return pos;
+    {
+      set_search_regs (pos, 0);
+      return pos;
+    }
 
   /* Searching 0 times means don't move.  */
   if (n == 0)
@@ -810,7 +822,10 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt)
 	 of pattern would align in a possible match.  */
       while (n != 0)
 	{
-	  if ((lim - pos - (direction > 0)) * direction < 0)
+	  /* It's been reported that some (broken) compiler thinks that
+	     Boolean expressions in an arithmetic context are unsigned.
+	     Using an explicit ?1:0 prevents this.  */
+	  if ((lim - pos - ((direction > 0) ? 1 : 0)) * direction < 0)
 	    return (n * (0 - direction));
 	  /* First we do the part we can by pointers (maybe nothing) */
 	  QUIT;
@@ -883,28 +898,10 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt)
 		    {
 		      cursor -= direction;
 
-		      /* Make sure we have registers in which to store
-			 the match position.  */
-		      if (search_regs.num_regs == 0)
-			{
-			  regoff_t *starts, *ends;
+		      set_search_regs (pos + cursor - p2 + ((direction > 0)
+							    ? 1 - len : 0),
+				       len);
 
-			  starts =
-			    (regoff_t *) xmalloc (2 * sizeof (regoff_t));
-			  ends =
-			    (regoff_t *) xmalloc (2 * sizeof (regoff_t));
-			  BLOCK_INPUT;
-			  re_set_registers (&searchbuf,
-					    &search_regs,
-					    2, starts, ends);
-			  UNBLOCK_INPUT;
-			}
-
-		      search_regs.start[0]
-			= pos + cursor - p2 + ((direction > 0)
-					       ? 1 - len : 0);
-		      search_regs.end[0] = len + search_regs.start[0];
-		      XSET (last_thing_searched, Lisp_Buffer, current_buffer);
 		      if ((n -= direction) != 0)
 			cursor += dirlen; /* to resume search */
 		      else
@@ -960,27 +957,9 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt)
 		    {
 		      pos -= direction;
 
-		      /* Make sure we have registers in which to store
-			 the match position.  */
-		      if (search_regs.num_regs == 0)
-			{
-			  regoff_t *starts, *ends;
+		      set_search_regs (pos + ((direction > 0) ? 1 - len : 0),
+				       len);
 
-			  starts =
-			    (regoff_t *) xmalloc (2 * sizeof (regoff_t));
-			  ends =
-			    (regoff_t *) xmalloc (2 * sizeof (regoff_t));
-			  BLOCK_INPUT;
-			  re_set_registers (&searchbuf,
-					    &search_regs,
-					    2, starts, ends);
-			  UNBLOCK_INPUT;
-			}
-
-		      search_regs.start[0]
-			= pos + ((direction > 0) ? 1 - len : 0);
-		      search_regs.end[0] = len + search_regs.start[0];
-		      XSET (last_thing_searched, Lisp_Buffer, current_buffer);
 		      if ((n -= direction) != 0)
 			pos += dirlen; /* to resume search */
 		      else
@@ -997,6 +976,33 @@ search_buffer (string, pos, lim, n, RE, trt, inverse_trt)
 	}
       return pos;
     }
+}
+
+/* Record beginning BEG and end BEG + LEN
+   for a match just found in the current buffer.  */
+
+static void
+set_search_regs (beg, len)
+     int beg, len;
+{
+  /* Make sure we have registers in which to store
+     the match position.  */
+  if (search_regs.num_regs == 0)
+    {
+      regoff_t *starts, *ends;
+
+      starts = (regoff_t *) xmalloc (2 * sizeof (regoff_t));
+      ends = (regoff_t *) xmalloc (2 * sizeof (regoff_t));
+      BLOCK_INPUT;
+      re_set_registers (&searchbuf,
+			&search_regs,
+			2, starts, ends);
+      UNBLOCK_INPUT;
+    }
+
+  search_regs.start[0] = beg;
+  search_regs.end[0] = beg + len;
+  XSET (last_thing_searched, Lisp_Buffer, current_buffer);
 }
 
 /* Given a string of words separated by word delimiters,
@@ -1115,17 +1121,17 @@ DEFUN ("re-search-backward", Fre_search_backward, Sre_search_backward, 1, 4,
   "Search backward from point for match for regular expression REGEXP.\n\
 Set point to the beginning of the match, and return point.\n\
 The match found is the one starting last in the buffer\n\
-and yet ending before the place the origin of the search.\n\
+and yet ending before the origin of the search.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
 The match found must start at or after that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
 Optional fourth argument is repeat count--search for successive occurrences.\n\
 See also the functions `match-beginning', `match-end' and `replace-match'.")
-  (string, bound, noerror, count)
-     Lisp_Object string, bound, noerror, count;
+  (regexp, bound, noerror, count)
+     Lisp_Object regexp, bound, noerror, count;
 {
-  return search_command (string, bound, noerror, count, -1, 1);
+  return search_command (regexp, bound, noerror, count, -1, 1);
 }
 
 DEFUN ("re-search-forward", Fre_search_forward, Sre_search_forward, 1, 4,
@@ -1138,16 +1144,21 @@ Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
 Optional fourth argument is repeat count--search for successive occurrences.\n\
 See also the functions `match-beginning', `match-end' and `replace-match'.")
-  (string, bound, noerror, count)
-     Lisp_Object string, bound, noerror, count;
+  (regexp, bound, noerror, count)
+     Lisp_Object regexp, bound, noerror, count;
 {
-  return search_command (string, bound, noerror, count, 1, 1);
+  return search_command (regexp, bound, noerror, count, 1, 1);
 }
 
 DEFUN ("replace-match", Freplace_match, Sreplace_match, 1, 3, 0,
   "Replace text matched by last search with NEWTEXT.\n\
 If second arg FIXEDCASE is non-nil, do not alter case of replacement text.\n\
-Otherwise convert to all caps or cap initials, like replaced text.\n\
+Otherwise maybe capitalize the whole text, or maybe just word initials,\n\
+based on the replaced text.\n\
+If the replaced text has only capital letters\n\
+and has at least one multiletter word, convert NEWTEXT to all caps.\n\
+If the replaced text has at least one word starting with a capital letter,\n\
+then capitalize each word in NEWTEXT.\n\n\
 If third arg LITERAL is non-nil, insert NEWTEXT literally.\n\
 Otherwise treat `\\' as special:\n\
   `\\&' in NEWTEXT means substitute original matched text.\n\
@@ -1163,7 +1174,7 @@ Leaves point at end of replacement text.")
   register int pos, last;
   int some_multiletter_word;
   int some_lowercase;
-  int some_uppercase_initial;
+  int some_lowercase_initial;
   register int c, prevc;
   int inslen;
 
@@ -1193,7 +1204,7 @@ Leaves point at end of replacement text.")
 	 is more than one letter long. */
       some_multiletter_word = 0;
       some_lowercase = 0;
-      some_uppercase_initial = 0;
+      some_lowercase_initial = 0;
 
       for (pos = search_regs.start[0]; pos < last; pos++)
 	{
@@ -1204,14 +1215,14 @@ Leaves point at end of replacement text.")
 
 	      some_lowercase = 1;
 	      if (SYNTAX (prevc) != Sword)
-		;
+		some_lowercase_initial = 1;
 	      else
 		some_multiletter_word = 1;
 	    }
 	  else if (!NOCASEP (c))
 	    {
 	      if (SYNTAX (prevc) != Sword)
-		some_uppercase_initial = 1;
+		;
 	      else
 		some_multiletter_word = 1;
 	    }
@@ -1223,8 +1234,8 @@ Leaves point at end of replacement text.")
 	 and has at least one multiletter word.  */
       if (! some_lowercase && some_multiletter_word)
 	case_action = all_caps;
-      /* Capitalize each word, if the old text has a capitalized word.  */
-      else if (some_uppercase_initial)
+      /* Capitalize each word, if the old text has all capitalized words.  */
+      else if (!some_lowercase_initial && some_multiletter_word)
 	case_action = cap_initial;
       else
 	case_action = nochange;

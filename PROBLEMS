@@ -1,18 +1,107 @@
 This file describes various problems that have been encountered
 in compiling, installing and running GNU Emacs.
 
-* You configure Emacs to use a directory such as /usr/local/sun3.lib/emacs
-and the directory name gets mangled in the process of building Emacs.
+* Slow startup on X11R6 with X windows.
 
-This is because building Emacs involves passing a makefile through the
-C preprocessor.  The directory names that you specified go through
-that process, and if they happen to use any predefined macro names,
-those macro names get substituted.  For example, if you are on a Sun
-3, the name `sun3' is a predefined macro.
+If Emacs takes two minutes to start up on X11R6, see if your X
+resources specify any Adobe fonts.  That causes the type-1 font
+renderer to start up, even if the font you asked for is not a type-1
+font.
 
-This is an Emacs bug, and will be fixed; but it was too risky to fix
-for 19.21.  For now, you must use different names for those
-directories (perhaps via symbolic links).
+One way to avoid this problem is to eliminate the type-1 fonts from
+your font path, like this:
+
+	xset -fp /usr/X11R6/lib/X11/fonts/Type1/
+
+* Pull-down menus appear in the wrong place, in the toolkit version of Emacs.
+
+An X resource of this form can cause the problem:
+
+   Emacs*geometry:	80x55+0+0
+
+This resource is supposed to apply, and does apply, to the menus
+individually as well as to Emacs frames.  If that is not what you
+want, rewrite the resource.
+
+* --with-x-toolkit version crashes when used with shared libraries.
+
+On some systems, including Sunos 4 and DGUX 5.4.2 and perhaps others,
+unexec doesn't work properly with the shared library for the X
+toolkit.  You might be able to work around this by using a nonshared
+libXt.a library.  The real fix is to upgrade the various versions of
+unexec.  We hope volunteers will do this.
+
+* `make install' fails on install-doc with `Error 141'.
+
+This happens on Ultrix 4.2 due to failure of a pipeline of tar
+commands.  We don't know why they fail, but the bug seems not to be in
+Emacs.  The workaround is to run the shell command in install-doc by
+hand.
+
+* --with-x-toolkit option configures wrong on BSD/386.
+
+This problem is due to bugs in the shell in version 1.0 of BSD/386.
+The workaround is to edit the configure file to use some other shell,
+such as bash.
+
+* Subprocesses remain, hanging but not zombies, on Sunos 5.3.
+
+A bug in Sunos 5.3 causes Emacs subprocesses to remain after Emacs
+exits.  Sun patch # 101415-02 is part of the fix for this, but it only
+applies to ptys, and doesn't fix the problem with subprocesses
+communicating through pipes.
+
+* Mail is lost when sent to local aliases.
+
+Many emacs mail user agents (VM and rmail, for instance) use the
+sendmail.el library.  This library can arrange for mail to be
+delivered by passing messages to the /usr/lib/sendmail (usually)
+program .  In doing so, it passes the '-t' flag to sendmail, which
+means that the name of the recipient of the message is not on the
+command line and, therefore, that sendmail must parse the message to
+obtain the destination address.
+
+There is a bug in the SunOS4.1.1 and SunOS4.1.3 versions of sendmail.
+In short, when given the -t flag, the SunOS sendmail won't recognize
+non-local (i.e. NIS) aliases.  It has been reported that the Solaris
+2.x versions of sendmail do not have this bug.  For those using SunOS
+4.1, the best fix is to install sendmail V8 or IDA sendmail (which
+have other advantages over the regular sendmail as well).  At the time
+of this writing, these official versions are available:
+
+ Sendmail V8 on ftp.cs.berkeley.edu in /ucb/sendmail:
+   sendmail.8.6.9.base.tar.Z (the base system source & documentation)
+   sendmail.8.6.9.cf.tar.Z   (configuration files)
+   sendmail.8.6.9.misc.tar.Z (miscellaneous support programs)
+   sendmail.8.6.9.xdoc.tar.Z (extended documentation, with postscript)
+
+ IDA sendmail on vixen.cso.uiuc.edu in /pub:
+   sendmail-5.67b+IDA-1.5.tar.gz
+
+* On AIX, you get this message when running Emacs:
+
+    Could not load program emacs
+    Symbol smtcheckinit in csh is undefined
+    Error was: Exec format error
+
+or this one:
+
+    Could not load program .emacs
+    Symbol _system_con in csh is undefined
+    Symbol _fp_trapsta in csh is undefined
+    Error was: Exec format error
+
+These can happen when you try to run on AIX 3.2.5 a program that was
+compiled with 3.2.4.  The fix is to recompile.
+
+* On AIX, you get this compiler error message:
+
+    Processing include file ./XMenuInt.h
+        1501-106: (S) Include file X11/Xlib.h not found.
+
+This means your system was installed with only the X11 runtime i.d
+libraries.  You have to find your sipo (bootable tape) and install
+X11Dev... with smit.
 
 * You "lose characters" after typing Compose Character key.
 
@@ -28,6 +117,12 @@ For example, here's one way to turn it into a Meta key:
 If all users at your site of a particular keyboard prefer Meta to
 Compose, you can make the remapping happen automatically by adding the
 xmodmap command to the xdm setup script for that display.
+
+* C-z just refreshes the screen instead of suspending Emacs.
+
+You are probably using a shell that doesn't support job control, even
+though the system itself is capable of it.  Either use a different shell,
+or set the variable `cannot-suspend' to a non-nil value.
 
 * Watch out for .emacs files and EMACSLOADPATH environment vars
 
@@ -437,16 +532,36 @@ you may need to make `movemail' setgid to a suitable group such as
 	chgrp mail movemail
 	chmod 2755 movemail
 
+If your system uses the lock file protocol, and fascist restrictions
+prevent ordinary users from writing the lock files in /usr/spool/mail,
+you may need to make `movemail' setgid to a suitable group such as
+`mail'.  To do this,  use the following commands (as root) after doing the
+make install.
+
+	chgrp mail movemail
+	chmod 2755 movemail
+
+Installation normally copies movemail from the build directory to an
+installation directory which is usually under /usr/local/lib.  The
+installed copy of movemail is usually in the directory
+/usr/local/lib/emacs/VERSION/TARGET.  You must change the group and
+mode of the installed copy; changing the group and mode of the build
+directory copy is ineffective.
+
+(Exception: if you configure with --run-in-place, then the build
+directory is also the installation directory; there is only one
+copy of movemail, and that is the one to change.)
+
 * Emacs spontaneously displays "I-search: " at the bottom of the screen.
 
-This means that Control-S/Control-Q "flow control" is being used.
-C-s/C-q flow control is bad for Emacs editors because it takes away
-C-s and C-q as user commands.  Since editors do not output long streams
-of text without user commands, there is no need for a user-issuable
-"stop output" command in an editor; therefore, a properly designed
-flow control mechanism would transmit all possible input characters
-without interference.  Designing such a mechanism is easy, for a person
-with at least half a brain.
+This means that Control-S/Control-Q (XON/XOFF) "flow control" is being
+used.  C-s/C-q flow control is bad for Emacs editors because it takes
+away C-s and C-q as user commands.  Since editors do not output long
+streams of text without user commands, there is no need for a
+user-issuable "stop output" command in an editor; therefore, a
+properly designed flow control mechanism would transmit all possible
+input characters without interference.  Designing such a mechanism is
+easy, for a person with at least half a brain.
 
 There are three possible reasons why flow control could be taking place:
 
@@ -454,12 +569,12 @@ There are three possible reasons why flow control could be taking place:
   2) Insufficient padding for the terminal in use
   3) Some sort of terminal concentrator or line switch is responsible
 
-First of all, many terminals have a set-up mode which controls
-whether they generate flow control characters.  This must be
-set to "no flow control" in order for Emacs to work.  Sometimes
-there is an escape sequence that the computer can send to turn
-flow control off and on.  If so, perhaps the termcap `ti' string
-should turn flow control off, and the `te' string should turn it on.
+First of all, many terminals have a set-up mode which controls whether
+they generate XON/XOFF flow control characters.  This must be set to
+"no XON/XOFF" in order for Emacs to work.  Sometimes there is an
+escape sequence that the computer can send to turn flow control off
+and on.  If so, perhaps the termcap `ti' string should turn flow
+control off, and the `te' string should turn it on.
 
 Once the terminal has been told "no flow control", you may find it
 needs more padding.  The amount of padding Emacs sends is controlled
@@ -476,51 +591,50 @@ giving lots of padding will prevent actual generation of flow control
 codes.  You might as well try it.
 
 If you are really unlucky, your terminal is connected to the computer
-through a concentrator which sends flow control to the computer, or it
-insists on sending flow control itself no matter how much padding you
-give it.  You are screwed!  You should replace the terminal or
-concentrator with a properly designed one.  In the mean time,
-some drastic measures can make Emacs semi-work.
+through a concentrator which sends XON/XOFF flow control to the
+computer, or it insists on sending flow control itself no matter how
+much padding you give it.  Unless you can figure out how to turn flow
+control off on this concentrator (again, refer to your local wizard),
+you are screwed!  You should have the terminal or concentrator
+replaced with a properly designed one.  In the mean time, some drastic
+measures can make Emacs semi-work.
 
-One drastic measure to ignore C-s and C-q, while sending enough
-padding that the terminal will not really lose any output.  To make
-such an adjustment, you need only invoke the function
-enable-flow-control-on with a list of terminal types in your own
-.emacs file.  As arguments, give it the names of one or more terminal
-types you use which require flow control adjustments.
-Here's an example:
+You can make Emacs ignore C-s and C-q and let the operating system
+handle them.  To do this on a per-session basis, just type M-x
+enable-flow-control RET.  You will see a message that C-\ and C-^ are
+now translated to C-s and C-q.  (Use the same command M-x
+enable-flow-control to turn *off* this special mode.  It toggles flow
+control handling.)
+
+If C-\ and C-^ are inconvenient for you (for example, if one of them
+is the escape character of your terminal concentrator), you can choose
+other characters by setting the variables flow-control-c-s-replacement
+and flow-control-c-q-replacement.  But choose carefully, since all
+other control characters are already used by emacs.
+
+IMPORTANT: if you type C-s by accident while flow control is enabled,
+Emacs output will freeze, and you will have to remember to type C-q in
+order to continue.
+
+If you work in an environment where a majority of terminals of a
+certain type are flow control hobbled, you can use the function
+`enable-flow-control-on' to turn on this flow control avoidance scheme
+automatically.  Here is an example:
 
 (enable-flow-control-on "vt200" "vt300" "vt101" "vt131")
 
-If the situation is only temporary and you don't expect it to
-be the case the next time you use emacs (e.g. you're visiting
-someplace where C-s and C-q have taken over, but expect to
-be back to a safe part of the world in a few hours), you can
-just type M-x enable-flow-control at the beginning of your
-emacs session.
+If this isn't quite correct (e.g. you have a mixture of flow-control hobbled
+and good vt200 terminals), you can still run enable-flow-control
+manually.
 
-An even more drastic measure is to make Emacs use flow control.  To do
-this, evaluate the Lisp expression (set-input-mode nil t META).  (The
-argument META should be t if you have a meta key, and nil otherwise.)
-
-Emacs will then interpret C-s and C-q as flow control commands.  (More
-precisely, it will allow the kernel to do so as it usually does.)  You
-will lose the ability to use them for Emacs commands.  Also, as a
-consequence of using CBREAK mode, the terminal's Meta-key, if any,
-will not work, and C-g will be liable to cause a loss of output which
-will produce garbage on the screen.  (These problems apply to 4.2BSD;
-they may not happen in 4.3 or VMS, and I don't know what would happen
-in sysV.)  You can use keyboard-translate-table, as shown above,
-to map two other input characters (such as C-^ and C-\) into C-s and
-C-q, so that you can still search and quote.
-
-I have no intention of ever redesigning the Emacs command set for
-the assumption that terminals use C-s/C-q flow control.  This
-flow control technique is a bad design, and terminals that need
-it are bad merchandise and should not be purchased.  If you can
-get some use out of GNU Emacs on inferior terminals, I am glad,
-but I will not make Emacs worse for properly designed systems
-for the sake of inferior systems.
+I have no intention of ever redesigning the Emacs command set for the
+assumption that terminals use C-s/C-q flow control.  XON/XOFF flow
+control technique is a bad design, and terminals that need it are bad
+merchandise and should not be purchased.  Now that X is becoming
+widespread, XON/XOFF seems to be on the way out.  If you can get some
+use out of GNU Emacs on inferior terminals, more power to you, but I
+will not make Emacs worse for properly designed systems for the sake
+of inferior systems.
 
 * Control-S and Control-Q commands are ignored completely.
 
