@@ -3097,7 +3097,7 @@ menu_bar_items ()
 #ifdef USE_TEXT_PROPERTIES
     maps[nmaps-2] = get_local_map (PT, current_buffer);
 #else
-    maps[nmaps-2] = current_buffer->local_map;
+    maps[nmaps-2] = current_buffer->keymap;
 #endif
     maps[nmaps-1] = global_map;
   }
@@ -3665,7 +3665,7 @@ read_key_sequence (keybuf, bufsize, prompt)
 #ifdef USE_TEXT_PROPERTIES
     submaps[nmaps-2] = get_local_map (PT, current_buffer);
 #else
-    submaps[nmaps-2] = current_buffer->local_map;
+    submaps[nmaps-2] = current_buffer->keymap;
 #endif
     submaps[nmaps-1] = global_map;
   }

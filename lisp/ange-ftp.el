@@ -1,7 +1,6 @@
 ;;; ange-ftp.el --- transparent FTP support for GNU Emacs
 
 ;;; Copyright (C) 1989, 1990, 1991, 1992, 1993  Free Software Foundation, Inc.
-;;; ??? Waiting for papers from several people.
 ;;;
 ;; Author: Andy Norman (ange@hplb.hpl.hp.com)
 ;; Keywords: comm
@@ -781,9 +780,7 @@ Some AT&T folks claim to use something called `pftp' here.")
   "*If non-NIL then a string naming nslookup program." )
 
 (defvar ange-ftp-make-backup-files ()
-  "*A list of operating systems for which ange-ftp will make Emacs backup
-files files on the remote host. For example, '\(unix\) makes sense, but
-'\(unix vms\) or '\(vms\) would be silly, since vms makes its own backups.")
+  "*Non-nil means make backup files for \"magic\" remote files.")
 
 (defvar ange-ftp-retry-time 5
   "*Number of seconds to wait before retrying if a file or listing
@@ -859,7 +856,7 @@ SIZE, if supplied, should be a prime number."
 ;;;; Internal variables.
 ;;;; ------------------------------------------------------------
 
-(defconst ange-ftp-version "$Revision: 1.19 $")
+(defconst ange-ftp-version "$Revision: 1.21 $")
 
 (defvar ange-ftp-data-buffer-name " *ftp data*"
   "Buffer name to hold directory listing data received from ftp process.")

@@ -1,4 +1,67 @@
+Tue Jun  1 16:09:26 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.12 released.
+
+	* reporter.el: New file.
+
+	* mouse.el (mouse-buffer-menu): Don't select the event's window,
+	if event has frame instead.
+
+	* tar-mode.el: Typo in autoload cookie.
+
+	* shell.el (shell-prompt-pattern): Use defvar.
+
+	* ange-ftp.el (ange-ftp-make-backup-files): Doc fix.
+
+	* sendmail.el (mail-signature): Do not insert a line with `--'.
+
+	* menu-bar.el (mouse-menu-bar-buffers): Renamed from mouse-buffer-menu.
+
+	* subr.el (posn-timestamp): Doc fix.
+
+	* sort.el (sort-fold-case): New variable.
+	(sort-subr): Bind case-fold-search from sort-fold-case.
+
+	* simple.el (undo):
+	Pass proper arg to delete-auto-save-file-if-necessary.
+
+	* desktop.el: New file.
+
+	* c++-mode-1.el: New file.
+
+Tue Jun  1 16:03:30 1993  Ken  Manheimer  (klm@coil.nist.gov)
+
+	* allout.el (move-to-column): Pass zero instead of negative arg.
+	Added some free variables defvars, so byte-comple doesn't complain.
+	Included some stub code, eventually will be proper use of Emacs 19
+	minor-mode-sensitive keymaps.
+
+Tue Jun  1 14:01:25 1993  Stephen A. Wood  (saw@cebaf.gov)
+
+	* fortran.el (fortran-mode): Replace comment-indent-hook with
+	comment-indent-function.
+
+	* fortran.el (fortran-is-in-string-p): Replaced with new version
+	that uses the syntax table.
+
+	* fortran.el (calculate-fortran-indent): Lines that have a # after
+	whitespace are interpreted as cpp directives and outdented back to
+	column zero.
+
 Tue Jun  1 00:27:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* lucid.el (map-keymap): Doc fix.
+
+	* dired-aux.el (dired-compress-file): Use gzip when proper/possible.
+
+	* sc.el: Fix installation instructions.
+	(sc-cite-original): Add autoload cookie.
+
+	* sendmail.el (mail-yank-hooks): New hook variable.
+	(mail-yank-original): Run the hook.
+	(mail-indent-citation): New function.
+
+	* cl.el (cl-mod): Renamed from mod.
 
 	* Version 19.11 released.
 

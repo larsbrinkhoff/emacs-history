@@ -1,3 +1,9 @@
+Wed Jun  2 02:50:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.12 released.
+
+	* Makefile.in (all): Exclude INSTALLABLE_SCRIPTS and SCRIPTS from deps.
+
 Tue Jun  1 04:07:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* Version 19.11 released.

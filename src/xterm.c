@@ -3916,25 +3916,26 @@ x_new_font (f, fontname)
   font_names = (char **) XListFontsWithInfo (x_current_display, fontname,
 					     1024, &n_matching_fonts,
 					     &font_info);
-  /* Don't just give up if n_matching_fonts is 0.
-     Apparently there's a bug on Suns: XListFontsWithInfo can
-     fail to find a font, but XLoadQueryFont may still find it.  */
+
+  /* If the server couldn't find any fonts whose named matched fontname,
+     return an error code.  */
+  if (n_matching_fonts == 0)
+    return Qnil;
 
   /* See if we've already loaded a matching font. */
-  if (n_matching_fonts != 0)
-    {
-      int i, j;
+  {
+    int i, j;
 
-      already_loaded = 0;
-      for (i = 0; i < n_fonts; i++)
-	for (j = 0; j < n_matching_fonts; j++)
-	  if (x_font_table[i]->fid == font_info[j].fid)
-	    {
-	      already_loaded = i;
-	      fontname = font_names[j];
-	      goto found_font;
-	    }
-    }
+    already_loaded = 0;
+    for (i = 0; i < n_fonts; i++)
+      for (j = 0; j < n_matching_fonts; j++)
+	if (x_font_table[i]->fid == font_info[j].fid)
+	  {
+	    already_loaded = i;
+	    fontname = font_names[j];
+	    goto found_font;
+	  }
+  }
  found_font:
   
   /* If we have, just return it from the table.  */
@@ -3957,18 +3958,14 @@ x_new_font (f, fontname)
       i = 0;
 #endif
 
-      /* See comment above.  */
-      if (n_matching_fonts == 0)
+      if (i >= n_matching_fonts)
+	return Qt;
+      else
 	fontname = font_names[i];
 
       font = (XFontStruct *) XLoadQueryFont (x_current_display, fontname);
       if (! font)
-	{
-	  /* Free the information from XListFontsWithInfo.  */
-	  if (n_matching_fonts)
-	    XFreeFontInfo (font_names, font_info, n_matching_fonts);
-	  return Qnil;
-	}
+	return Qnil;
 
       /* Do we need to create the table?  */
       if (x_font_table_size == 0)
@@ -4096,10 +4093,10 @@ x_set_window_size (f, cols, rows)
   BLOCK_INPUT;
 
   check_frame_size (f, &rows, &cols);
-  f->display.x->vertical_scroll_bar_extra
-    = (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
-       ? VERTICAL_SCROLL_BAR_PIXEL_WIDTH (f)
-       : 0);
+  f->display.x->vertical_scroll_bar_extra =
+    (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
+     ? VERTICAL_SCROLL_BAR_PIXEL_WIDTH (f)
+     : 0);
   pixelwidth = CHAR_TO_PIXEL_WIDTH (f, cols);
   pixelheight = CHAR_TO_PIXEL_HEIGHT (f, rows);
 

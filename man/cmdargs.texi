@@ -66,7 +66,7 @@ Load a file @var{file} of Lisp code with the function @code{load}.
 @itemx -funcall @var{function}
 Call Lisp function @var{function} with no arguments.
 
-@itemx -insert @var{file}
+@item -insert @var{file}
 Insert the contents of @var{file} into the current buffer.
 This is like what @kbd{M-x insert-buffer} does; @xref{Misc File Ops}.
 

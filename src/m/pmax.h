@@ -49,3 +49,12 @@ NOTE-END  */
 #undef C_ALLOCA
 #define HAVE_ALLOCA
 #endif
+
+/* mcc@timessqr.gc.cuny.edu says this makes Emacs work with DECnet.
+   If you don't have DECnet and this causes trouble,
+   just delete the definition.  */
+#define LIBS_MACHINE -ldnet
+
+/* mcc@timessqr.gc.cuny.edu says it is /vmunix on Ultrix 4.2a.  */
+#undef KERNEL_FILE
+#define KERNEL_FILE "/vmunix"

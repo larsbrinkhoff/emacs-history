@@ -1,4 +1,56 @@
+Wed Jun  2 02:06:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.12 released.
+
+	* term.c (term_get_fkeys): Use correct names for F10 and up.
+	Use the key sequence, not the termcap cap name, in Fdefine_key.
+
+	* intervals.c (copy_intervals): Don't adjust total_length at the end.
+	Set lengths of subintervals properly.
+	(balance_intervals): Balance left as well as right.
+
+Tue Jun  1 22:07:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keymap.c (syms_of_keymap): Add missing 2nd arg to Fcons.
+
 Tue Jun  1 00:27:03 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x/esix5-4.h: Redone by Joe Kelsey.
+
+	* xterm.c (x_new_font): Take out last change.
+
+	* s/386bsd.h (BSD4_2): Defined.
+
+	* fileio.c (Fwrite_region): Don't fsync if autosaving.
+
+	* s/irix4-0.h (GETPGRP_NO_ARG): Defined.
+	* emacs.c (shut_down_emacs): Handle GETPGRP_NO_ARG.
+	* sysdep.c (sys_suspend): Handle GETPGRP_NO_ARG.
+
+	* fileio.c [HPUX9]: Don't include errnet.h.
+
+	* hftctl.c (hft_alrm): Don't return a value.
+	Always declare to return void.
+
+	* floatfns.c [!FLOAT_CHECK_ERRNO] (IN_FLOAT): New definition.
+	(Flog): Fix argument of `log'.
+
+	* m/pmax.h (KERNEL_FILE): New override definition.
+
+	* keyboard.c (read_key_sequence) [!USE_TEXT_PROPERTIES]: Fix typo.
+	(menu_bar_items) [!USE_TEXT_PROPERTIES]: Likewise.
+
+	* s/isc3-0.h: #undef C_SWITCH_SYSTEM.
+
+	* xselect.c (Fx_store_cut_buffer_internal): Handle empty string right.
+
+	* xfaces.c (init_frame_faces): Don't look at selected_frame
+	unless it is an X frame.
+
+	* xfns.c (x_window): Use Vxrdb_name for res_name field.
+	Delete the shortname stuff.
+
+	* m/pmax.h (LIBS_MACHINE): Defined.
 
 	* Version 19.11 released.
 

@@ -1,5 +1,11 @@
 Tue Jun  1 00:08:05 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
+	* Version 19.12 released.
+
+	* Makefile.in (do-install): Correct previous etc-copying change.
+	Partially rewrite using `if'.
+	(src/Makefile): Insert --x-libraries option into LD_SWITCH_X_SITE.
+
 	* Version 19.11 released.
 
 	* configure.in: Handle 386bsd.
@@ -1362,12 +1368,3 @@ Mon May 16 02:08:08 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
 
 	* Makefile: Changed LIBDIR and BINDIR back to /usr/local/{emacs,bin}
 	to match build-install and paths.h.
-
-
-Local Variables:
-mode: indented-text
-left-margin: 8
-fill-column: 74
-fill-prefix: "\t"
-version-control: never
-End:

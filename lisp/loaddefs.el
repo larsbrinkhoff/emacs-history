@@ -4475,6 +4475,26 @@ The variable `tab-width' controls the spacing of tab stops." t nil)
 
 ;;;***
 
+;;;### (autoloads (tar-mode) "tar-mode" "/home/fsf/rms/e19/lisp/tar-mode.el" (11275 52507))
+;;; Generated autoloads from /home/fsf/rms/e19/lisp/tar-mode.el
+
+(autoload (quote tar-mode) "tar-mode" "\
+Major mode for viewing a tar file as a dired-like listing of its contents.
+You can move around using the usual cursor motion commands. 
+Letters no longer insert themselves.
+Type 'e' to pull a file out of the tar file and into its own buffer.
+Type 'c' to copy an entry from the tar file into another file on disk.
+
+If you edit a sub-file of this archive (as with the 'e' command) and 
+save it with Control-X Control-S, the contents of that buffer will be 
+saved back into the tar-file buffer; in this way you can edit a file 
+inside of a tar archive without extracting it and re-archiving it.
+
+See also: variables tar-update-datestamp and tar-anal-blocksize.
+\\{tar-mode-map}" nil nil)
+
+;;;***
+
 ;;;### (autoloads (rsh telnet) "telnet" "telnet.el" (11223 20968))
 ;;; Generated autoloads from telnet.el
 

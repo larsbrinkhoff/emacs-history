@@ -344,12 +344,15 @@ IBM RS/6000 (rs6000-ibm-aix)
   corrupted; if you have a fix, please send it to us.
 
   Reports are that the IBM supplied X libraries don't work with Emacs, 
-  but the IBM X libraries and include files do work.
+  but the MIT X libraries and include files do work.
 
   Compiling with -O using the IBM compiler has been known
   to make Emacs work incorrectly.
 
-  GCC 2.3.3 and 2.4.1 have a bug that miscompiles Emacs.
+  As of 19.11, if you strip the Emacs executable, it ceases to work.
+
+  If anyone can fix the above problems, or confirm that they don't happen
+  with certain versions of various programs, we would appreciate it.
 
 IBM RT/PC (romp-ibm-bsd or romp-ibm-aix)
 
@@ -559,7 +562,8 @@ NeXT (m68k-next-bsd, m68k-next-mach2)
 
   Emacs 19 has not been tested extensively yet, but it seems to work
   in a NeXTStep 3.0 terminal window with the almost unchanged system
-  dependent code from version 18. 
+  dependent code from version 18.  You may need to specify -traditional
+  when src/Makefile builds xmakefile.
 
   Multiple frames (new with Emacs 19) might work with X, but this has
   not not been tested yet.  A NeXTStep implementation of multiple
@@ -650,7 +654,7 @@ Stride (m68k-stride-sysv)
   It may be possible to run on their V.1 system but changes
   in the s- file would be needed.
 
-Sun 1, 2 and 3 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
+Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
 
   Emacs runs on Sparcs and Sun 3's, as of version 19.7.
 
@@ -662,6 +666,14 @@ Sun 1, 2 and 3 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos)
 
   Use `m68k' for the 68000-based Sun boxes, `sparc' for Sparcstations,
   and `i386' for Sun Roadrunners.
+
+  On Solaris 2, you need to install patch 100947-02 to fix a system bug.
+  Presumably this patch comes from Sun.  You must alter the definition of
+  LD_SWITCH_SYSTEM if your X11 libraries are not in /usr/openwin/lib.
+
+  On Solaris 2, Emacs 19.12 currently expects certain optional packages
+  to be installed.  You need libucb; you need termcap (which may be
+  part of libucb).  This may be changed in the future.
 
   There are three machine files for the different versions of SunOS
   that run on the Motorola 68000 processors.  All are derived from
@@ -875,6 +887,9 @@ System V rel 4.0.3 and 4.0.4 (usg5.4)
   think that POSIX requires this feature to fail.  This is untrue;
   ptys are an extension, and POSIX says that extensions *when used*
   may change the action of standard facilities in any fashion.
+
+  If you get compilation errors about wrong number of
+  arguments to getpgrp, define GETPGRP_NO_ARG.
 
   The standard C preprocessor may generate xmakefile incorrectly.  However,
   /lib/cpp will work, so use `make CPP=/lib/cpp'.  Standard cpp

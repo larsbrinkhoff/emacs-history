@@ -11,7 +11,7 @@
 ;;;_  - Author: Ken Manheimer <klm@nist.gov>
 ;;;_  - Maintainer: Ken Manheimer <klm@nist.gov>
 ;;;_  - Created: Dec 1991 - first release to usenet
-;;;_  - Version: $Id: allout.el,v 3.4 1993/05/27 19:24:19 klm Exp $||
+;;;_  - Version: $Id: allout.el,v 3.5 1993/06/01 19:55:25 klm Exp $||
 ;;;_  - Keywords: outline mode
 
 ;;;_  - LCD Archive Entry
@@ -333,6 +333,53 @@ up major and minor-mode keybindings.")
 
 ;;;_   : Key bindings
 ;;;_    = Generic minor keybindings control
+;;;_     ; Stallmans suggestion
+(defvar outline-mode-map nil "")
+ 
+(if outline-mode-map
+    nil
+  (setq outline-mode-map (nconc (make-sparse-keymap) text-mode-map))
+  (define-key outline-mode-map "\C-c\C-n" 'outline-next-visible-heading)
+  (define-key outline-mode-map "\C-c\C-p" 'outline-previous-visible-heading)
+  (define-key outline-mode-map "\C-c\C-i" 'show-children)
+  (define-key outline-mode-map "\C-c\C-s" 'show-subtree)
+  (define-key outline-mode-map "\C-c\C-h" 'hide-subtree)
+  (define-key outline-mode-map "\C-c\C-u" 'outline-up-heading)
+  (define-key outline-mode-map "\C-c\C-f" 'outline-forward-same-level)
+  (define-key outline-mode-map "\C-c\C-b" 'outline-backward-same-level))
+ 
+(defvar outline-minor-mode nil
+  "Non-nil if using Outline mode as a minor mode of some other mode.")
+(make-variable-buffer-local 'outline-minor-mode)
+(put 'outline-minor-mode 'permanent-local t)
+(setq minor-mode-alist (append minor-mode-alist
+                               (list '(outline-minor-mode " Outl"))))
+ 
+(defvar outline-minor-mode-map nil)
+(if outline-minor-mode-map
+    nil
+  (setq outline-minor-mode-map (make-sparse-keymap))
+  (define-key outline-minor-mode-map "\C-c"
+    (lookup-key outline-mode-map "\C-c")))
+ 
+(or (assq 'outline-minor-mode minor-mode-map-alist)
+    (setq minor-mode-map-alist
+          (cons (cons 'outline-minor-mode outline-minor-mode-map)
+                minor-mode-map-alist)))
+ 
+(defun outline-minor-mode (&optional arg)
+  "Toggle Outline minor mode.
+With arg, turn Outline minor mode on if arg is positive, off otherwise.
+See the command `outline-mode' for more information on this mode."
+  (interactive "P")
+  (setq outline-minor-mode
+        (if (null arg) (not outline-minor-mode)
+          (> (prefix-numeric-value arg) 0)))
+  (if outline-minor-mode
+      (progn
+        (setq selective-display t)
+        (run-hooks 'outline-minor-mode-hook))
+    (setq selective-display nil)))
 ;;;_     ; minor-bind-keys (keys-assoc)
 (defun minor-bind-keys (keys-assoc)
   "   Establish BINDINGS assoc list in current buffer, returning a list
@@ -413,7 +460,7 @@ up major and minor-mode keybindings.")
   (minor-relinquish-keys outline-minor-prior-keys)
 )
 
-;;;_   : Variables
+;;;_   : Mode-Specific Variables Maintenance
 ;;;_    = outline-mode-prior-settings
 (defvar outline-mode-prior-settings nil
   "For internal use by outline mode, registers settings to be resumed
@@ -678,7 +725,7 @@ Effective line: The regular ascii text in which form outlines are
   ) ; defun
     
 
-;;;_  #2 Internal State-Tracking Variables
+;;;_  #2 Internal Position State-Tracking Variables
 ;;; All basic outline functions which directly do string matches to
 ;;; evaluate heading prefix location set the variables
 ;;; outline-recent-prefix-beginning and outline-recent-prefix-end when
@@ -1334,6 +1381,12 @@ of the parent topic."
 match was concealed outside of search.  The value is the location of the
 match, if it was concealed, regular if the entire topic was concealed, in
 a list if the entry was concealed.")
+;;;_    = outline-search-quitting
+(defconst outline-search-quitting nil
+  "Variable used by isearch-terminate/outline-provisions and
+isearch-done/outline-provisions to distinguish between a conclusion
+and cancellation of a search.")
+
 ;;;_    > outline-enwrap-isearch ()
 (defun outline-enwrap-isearch ()
   "   Impose isearch-mode wrappers so isearch progressively exposes and
@@ -1885,6 +1938,10 @@ a list if the entry was concealed.")
                   )
   )
 ;;;_     > outline-rebullet-heading (&optional solicit ...)
+(defvar current-bullet nil
+  "Variable local to outline-rebullet-heading,but referenced by
+outline-make-topic-prefix, also.  Should be resolved with explicitly
+parameterized communication between the two, if suitable.")
 (defun outline-rebullet-heading (&optional solicit
                                            new-depth
                                            number-control
@@ -1995,7 +2052,7 @@ a list if the entry was concealed.")
           (error "Attempt to shift topic below level 1"))
       (outline-rebullet-topic-grunt arg)
       (if (not (zerop arg)) (message "Shifting... done.")))
-    (move-to-column (+ start-col arg)))
+    (move-to-column (max 0 (+ start-col arg))))
   )
 ;;;_      > outline-rebullet-topic-grunt (&optional relative-depth ...)
 (defun outline-rebullet-topic-grunt (&optional relative-depth
@@ -2369,11 +2426,12 @@ a list if the entry was concealed.")
       )
     )
   )
-;;;_     ; Bizarreness - ignore this!
+;;;_     > outline-to-entry-end - Unmaintained compatability - ignore this!
 ;-------------------------------------------------------------------
 ; Something added solely for use by a "smart menu" package someone got
 ; off the net.  I have no idea whether this is appropriate code.
 
+(defvar next-entry-exists nil "Used by outline-to-entry-end, dunno why.")
 (defun outline-to-entry-end (&optional include-sub-entries curr-entry-level)
   "   Go to end of whole entry if optional INCLUDE-SUB-ENTRIES is non-nil.
    CURR-ENTRY-LEVEL is an integer representing the length of the current level

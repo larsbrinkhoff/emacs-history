@@ -142,15 +142,14 @@ ftp.cs.widener.edu, itstd.sri.com, a.cs.uiuc.edu, uxc.cso.uiuc.edu,
 scam.berkeley.edu, jaguar.utah.edu, gatekeeper.dec.com:/pub/gnu,
 archive.cis.ohio-state.edu, and ftp.uu.net:/archive/systems/gnu).  And
 these foreign sites: archie.oz.au:/gnu (Australia (archie.oz or
-archie.oz.au for ACSnet)),
-ftp-admin@ftp.technion.al.il:/pub/unsupported/gnu (Israel, automatic
-update daily), ftp.informatik.tu-muenchen.de or
-ftp.informatik.rwth-aachen.de (Germany), isy.liu.se,
-ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu (Sweden),
-hp4nl.nluug.nl (Netherlands), ftp.win.tue.nl (Netherlands Internet
-Address 131.155.70.100), funic.funet.fi:/pub/gnu (Finland
-128.214.6.100), ftp.denet.dk (Denmark), ugle.unit.no (Norway
-129.241.1.97), ftp.eunet.ch or nic.switch.ch:/mirror/gnu
+archie.oz.au for ACSnet)), ftp.technion.al.il:/pub/unsupported/gnu
+(Israel, automatic update daily, ran by ftp-admin),
+ftp.informatik.tu-muenchen.de or ftp.informatik.rwth-aachen.de
+(Germany), isy.liu.se, ftp.stacken.kth.se or ftp.luth.se:/pub/unix/gnu
+(Sweden), hp4nl.nluug.nl (Netherlands), ftp.win.tue.nl (Netherlands,
+Internet Address 131.155.70.100), nic.funet.fi:/pub/gnu (Finland
+128.214.6.100, ran by gnu-adm), ftp.denet.dk (Denmark), ugle.unit.no
+(Norway 129.241.1.97), ftp.eunet.ch or nic.switch.ch:/mirror/gnu
 (Switzerland), irisa.irisa.fr:/pub/gnu or grasp1.univ-lyon1.fr:pub/gnu
 (France), archive.eu.net (Europe, 192.16.202.1),
 cair.kaist.ac.kr:/pub/gnu (Korea 143.248.11.170),

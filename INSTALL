@@ -217,7 +217,11 @@ information on this.
 /usr/local/info) to make sure that it has a menu entry for the Emacs
 info files.
 
-9) You are done!
+9) If your system uses lock files to interlock access to mailer inbox files,
+then you might need to make the program arch-lib/movemail setuid or setgid
+to enable it to write the lock files.  We believe this is safe.
+
+10) You are done!
 
 
 MAKE VARIABLES

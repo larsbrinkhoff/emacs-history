@@ -680,7 +680,11 @@ shut_down_emacs (sig, no_x)
   {
     int tpgrp;
     if (EMACS_GET_TTY_PGRP (0, &tpgrp) != -1
+#ifdef GETPGRP_NO_ARG
+	&& tpgrp == getpgrp ())
+#else
 	&& tpgrp == getpgrp (0))
+#endif
       {
 	fflush (stdout);
 	reset_sys_modes ();
