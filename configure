@@ -254,6 +254,11 @@ Set it to either \`yes' or \`no'."
 	  exec_prefix="${val}"
         ;;
 
+	## Verbose flag, tested by autoconf macros.
+	"verbose" )
+	  verbose=yes
+	;;
+
 	## Has the user asked for some help?
 	"usage" | "help" )
 	  echo "${short_usage}" | more
@@ -908,7 +913,10 @@ opsysfile="s/${opsys}.h"
 trap 'rm -f conftest* core; exit 1' 1 3 15
 
 # NLS nuisances.
-LANG=C; LC_ALL=C; export LANG; export LC_ALL;
+# These must not be set unconditionally because not all systems understand
+# e.g. LANG=C (notably SCO).
+if test "${LC_ALL+set}" = 'set' ; then LC_ALL=C; export LC_ALL; fi
+if test "${LANG+set}"   = 'set' ; then LANG=C;   export LANG;   fi
 
 rm -f conftest*
 compile='${CC-cc} $CFLAGS $DEFS conftest.c -o conftest $LIBS >/dev/null 2>&1'
@@ -1605,7 +1613,7 @@ char **p;
    It does not let you subtract one const X* pointer from another in an arm
    of an if-expression whose if-part is not a constant expression */
 const char *g = "string";
-p = &g + (g ? g-g : 0);
+ccp = &g + (g ? g-g : 0);
 /* HPUX 7.0 cc rejects these. */
 ++ccp;
 p = (char**) ccp;
@@ -1667,7 +1675,7 @@ for dir in . /tmp /usr/tmp $prefix $exec_prefix ; do
   (echo 2 > $dir/conftest9012346) 2>/dev/null
   val=`cat $dir/conftest9012345 2>/dev/null`
   test -f $dir/conftest9012345 && test "$val" = 1 || lost=true
-  rm -f $dir/conftest9012345 $dir/conftest9012346
+  rm -f $dir/conftest9012345 $dir/conftest9012346 2> /dev/null
 done
 $lost || {
 test -n "$verbose" && \

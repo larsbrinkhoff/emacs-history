@@ -126,7 +126,10 @@ in that frame; otherwise change each frame."
 
 ;;;; Associating face names (symbols) with their face vectors.
 
-(defvar global-face-data nil "do not use this")
+(defvar global-face-data nil
+  "Internal data for face support functions.  Not for external use.
+This is an alist associating face names with the default values for
+their parameters.  Newly created frames get their data from here.")
 
 (defun face-list ()
   "Returns a list of all defined face names."
@@ -495,7 +498,7 @@ If NOERROR is non-nil, return nil on failure."
     (if (null frame)
 	(let ((frames (frame-list)))
 	  (while frames
-	    (make-face-bold face (car frames))
+	    (make-face-bold face (car frames) noerror)
 	    (setq frames (cdr frames))))
       (setq face (internal-get-face face frame))
       (setq font (or (face-font face frame)
@@ -519,7 +522,7 @@ If NOERROR is non-nil, return nil on failure."
     (if (null frame)
 	(let ((frames (frame-list)))
 	  (while frames
-	    (make-face-italic face (car frames))
+	    (make-face-italic face (car frames) noerror)
 	    (setq frames (cdr frames))))
       (setq face (internal-get-face face frame))
       (setq font (or (face-font face frame)
@@ -543,7 +546,7 @@ If NOERROR is non-nil, return nil on failure."
     (if (null frame)
 	(let ((frames (frame-list)))
 	  (while frames
-	    (make-face-bold-italic face (car frames))
+	    (make-face-bold-italic face (car frames) noerror)
 	    (setq frames (cdr frames))))
       (setq face (internal-get-face face frame))
       (setq font (or (face-font face frame)
@@ -583,7 +586,7 @@ If NOERROR is non-nil, return nil on failure."
     (if (null frame)
 	(let ((frames (frame-list)))
 	  (while frames
-	    (make-face-unbold face (car frames))
+	    (make-face-unbold face (car frames) noerror)
 	    (setq frames (cdr frames))))
       (setq face (internal-get-face face frame))
       (setq font1 (or (face-font face frame)
@@ -605,7 +608,7 @@ If NOERROR is non-nil, return nil on failure."
     (if (null frame)
 	(let ((frames (frame-list)))
 	  (while frames
-	    (make-face-unitalic face (car frames))
+	    (make-face-unitalic face (car frames) noerror)
 	    (setq frames (cdr frames))))
       (setq face (internal-get-face face frame))
       (setq font1 (or (face-font face frame)
@@ -618,9 +621,9 @@ If NOERROR is non-nil, return nil on failure."
 	(and (not noerror)
 	     (error "No unitalic version of %S" font1)))))
 
-;;; Make the builtin faces; the C code knows these as faces 0, 1, and 2,
-;;; respectively, so they must be the first three faces made.
-
+;;; Make the default and modeline faces; the C code knows these as
+;;; faces 0 and 1, respectively, so they must be the first two faces
+;;; made.
 (defun face-initialize ()
   (make-face 'default)
   (make-face 'modeline)
@@ -634,6 +637,7 @@ If NOERROR is non-nil, return nil on failure."
   (make-face 'bold-italic)
   (make-face 'region)
   (make-face 'secondary-selection)
+  (make-face 'underline)
 
   (setq region-face (face-id 'region))
 
@@ -697,31 +701,42 @@ If NOERROR is non-nil, return nil on failure."
       )
 
   (or (face-differs-from-default-p 'highlight frame)
-      (condition-case ()
-	  (condition-case ()
-	      (set-face-background 'highlight "darkseagreen2" frame)
-	    (error (set-face-background 'highlight "green" frame)))
+      (if (or (not (x-display-color-p))
+	      (= (x-display-planes) 1))
+	  (invert-face 'highlight frame)
+	(condition-case ()
+	    (condition-case ()
+		(set-face-background 'highlight "darkseagreen2" frame)
+	      (error (set-face-background 'highlight "green" frame)))
 ;;;	    (set-face-background-pixmap 'highlight "gray1" frame)
-	(error (invert-face 'highlight frame))))
+	  (error (invert-face 'highlight frame)))))
 
   (or (face-differs-from-default-p 'region frame)
-      (condition-case ()
-	  (set-face-background 'region "gray" frame)
-	(error (invert-face 'region frame))))
+      (if (= (x-display-planes) 1)
+	  (invert-face 'region frame)
+	(condition-case ()
+	    (set-face-background 'region "gray" frame)
+	  (error (invert-face 'region frame)))))
 
   (or (face-differs-from-default-p 'modeline frame)
       (invert-face 'modeline frame))
 
+  (or (face-differs-from-default-p 'underline frame)
+      (set-face-underline-p 'underline t frame))
+
   (or (face-differs-from-default-p 'secondary-selection frame)
-      (condition-case ()
-	  (condition-case ()
-	      ;; some older X servers don't have this one.
-	      (set-face-background 'secondary-selection "paleturquoise"
-				   frame)
-	    (error
-	     (set-face-background 'secondary-selection "green" frame)))
+      (if (or (not (x-display-color-p))
+	      (= (x-display-planes) 1))
+	  (invert-face 'secondary-selection frame)
+	(condition-case ()
+	    (condition-case ()
+		;; some older X servers don't have this one.
+		(set-face-background 'secondary-selection "paleturquoise"
+				     frame)
+	      (error
+	       (set-face-background 'secondary-selection "green" frame)))
 ;;;	    (set-face-background-pixmap 'secondary-selection "gray1" frame)
-	(error (invert-face 'secondary-selection frame))))
+	  (error (invert-face 'secondary-selection frame)))))
   )
 
 (defun internal-x-complain-about-font (face frame)

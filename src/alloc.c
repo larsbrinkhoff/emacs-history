@@ -1358,7 +1358,7 @@ Garbage collection happens automatically if you cons more than\n\
   if (gc_cons_threshold < 10000)
     gc_cons_threshold = 10000;
 
-  if (omessage)
+  if (omessage || minibuf_level > 0)
     message1 (omessage);
   else if (!noninteractive)
     message1 ("Garbage collecting...done");
@@ -1587,10 +1587,18 @@ mark_object (objptr)
 	if (XMARKBIT (ptr->plist)) break;
 	XMARK (ptr->plist);
 	mark_object ((Lisp_Object *) &ptr->value);
+	if ((unsigned int) ptr <= 4)
+	  abort ();
 	mark_object (&ptr->function);
+	if ((unsigned int) ptr <= 4)
+	  abort ();
 	mark_object (&ptr->plist);
+	if ((unsigned int) ptr <= 4)
+	  abort ();
 	XSETTYPE (*(Lisp_Object *) &ptr->name, Lisp_String);
 	mark_object (&ptr->name);
+	if ((unsigned int) ptr <= 4)
+	  abort ();
 	ptr = ptr->next;
 	if (ptr)
 	  {

@@ -4754,33 +4754,6 @@ subshell is initiated, the value of tex-shell-hook is called." t nil)
 
 ;;;***
 
-;;;### (autoloads (batch-texinfo-format texinfo-format-region texinfo-format-buffer) "texinfmt" "texinfmt.el" (11285 51547))
-;;; Generated autoloads from texinfmt.el
-
-(autoload (quote texinfo-format-buffer) "texinfmt" "\
-Process the current buffer as texinfo code, into an Info file.
-The Info file output is generated in a buffer visiting the Info file
-names specified in the @setfilename command.
-
-Non-nil argument (prefix, if interactive) means don't make tag table
-and don't split the file if large.  You can use Info-tagify and
-Info-split to do these manually." t nil)
-
-(autoload (quote texinfo-format-region) "texinfmt" "\
-Convert the current region of the Texinfo file to Info format.
-This lets you see what that part of the file will look like in Info.
-The command is bound to \\[texinfo-format-region].  The text that is
-converted to Info is stored in a temporary buffer." t nil)
-
-(autoload (quote batch-texinfo-format) "texinfmt" "\
-Runs `texinfo-format-buffer' on the files remaining on the command line.
-Must be used only with -batch, and kills emacs on completion.
-Each file will be processed even if an error occurred previously.
-For example, invoke
-  \"emacs -batch -funcall batch-texinfo-format $docs/ ~/*.texinfo\"." nil nil)
-
-;;;***
-
 ;;;### (autoloads (texinfo-mode) "texinfo" "texinfo.el" (11283 53395))
 ;;; Generated autoloads from texinfo.el
 

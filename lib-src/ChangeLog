@@ -1,3 +1,25 @@
+Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Version 19.16 released.
+
+	* b2m.c: #include <sys/types.h>.
+	(ltoday): Declare this to be time_t.
+
+Wed Jun 30 18:54:08 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vcdiff: Add -q option.
+
+Tue Jun 29 18:47:53 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* etags.c: #include "config.h" and the alloca CPP tangle before
+	#including the system headers and getopt.h.  AIX requires the
+	#pragma to come before any actual C code.
+
+Mon Jun 21 23:57:37 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Makefile.in (ctags): Depend on etags, so that parallel makes
+	don't write etags.o files on top of each other.
+
 Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* version 19.15 released.

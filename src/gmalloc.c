@@ -45,9 +45,6 @@ Cambridge, MA 02139, USA.
 #ifndef memcpy
 #define	memcpy(d, s, n)		bcopy ((s), (d), (n))
 #endif
-#ifndef memmove
-#define	memmove(d, s, n)	bcopy ((s), (d), (n))
-#endif
 #endif
 
 #if	defined(__GNU_LIBRARY__) || defined(__STDC__)
@@ -583,6 +580,35 @@ malloc (size)
 
   return result;
 }
+
+#ifndef _LIBC
+
+/* On some ANSI C systems, some libc functions call _malloc, _free
+   and _realloc.  Make them use the GNU functions.  */
+
+__ptr_t
+_malloc (size)
+     size_t size;
+{
+  return malloc (size);
+}
+
+void
+_free (ptr)
+     __ptr_t ptr;
+{
+  free (ptr);
+}
+
+__ptr_t
+_realloc (ptr, size)
+     __ptr_t ptr;
+     size_t size;
+{
+  return realloc (ptr, size);
+}
+
+#endif
 /* Free a block of memory allocated by `malloc'.
    Copyright 1990, 1991, 1992 Free Software Foundation
 		  Written May 1989 by Mike Haertel.
@@ -862,6 +888,71 @@ Cambridge, MA 02139, USA.
 #define _MALLOC_INTERNAL
 #include <malloc.h>
 #endif
+
+#if	!defined(_LIBC) && !defined(STDC_HEADERS) && !defined(USG)
+
+/* Snarfed directly from Emacs src/dispnew.c:
+   XXX Should use system bcopy if it handles overlap.  */
+
+/* Like bcopy except never gets confused by overlap.  */
+
+static void
+safe_bcopy (from, to, size)
+     char *from, *to;
+     int size;
+{
+  if (size <= 0 || from == to)
+    return;
+
+  /* If the source and destination don't overlap, then bcopy can
+     handle it.  If they do overlap, but the destination is lower in
+     memory than the source, we'll assume bcopy can handle that.  */
+  if (to < from || from + size <= to)
+    bcopy (from, to, size);
+
+  /* Otherwise, we'll copy from the end.  */
+  else
+    {
+      register char *endf = from + size;
+      register char *endt = to + size;
+
+      /* If TO - FROM is large, then we should break the copy into
+	 nonoverlapping chunks of TO - FROM bytes each.  However, if
+	 TO - FROM is small, then the bcopy function call overhead
+	 makes this not worth it.  The crossover point could be about
+	 anywhere.  Since I don't think the obvious copy loop is too
+	 bad, I'm trying to err in its favor.  */
+      if (to - from < 64)
+	{
+	  do
+	    *--endt = *--endf;
+	  while (endf != from);
+	}
+      else
+	{
+	  for (;;)
+	    {
+	      endt -= (to - from);
+	      endf -= (to - from);
+
+	      if (endt < to)
+		break;
+
+	      bcopy (endf, endt, to - from);
+	    }
+
+	  /* If SIZE wasn't a multiple of TO - FROM, there will be a
+	     little left over.  The amount left over is
+	     (endt + (to - from)) - to, which is endt - from.  */
+	  bcopy (from, to, endt - from);
+	}
+    }
+}     
+
+#define memmove(to, from, size) safe_bcopy ((from), (to), (size))
+
+#endif
+
 
 #define min(A, B) ((A) < (B) ? (A) : (B))
 

@@ -687,9 +687,10 @@ Sun 3, Sun 4 (sparc), Sun 386 (m68k-sun-sunos, sparc-sun-sunos, i386-sun-sunos,
   that run on the Motorola 68000 processors.  All are derived from
   Berkeley 4.2.  Emacs 17 has run on all of them.
 
-  If you have trouble using open-network-stream, get the
-  distribution of `bind' (the BSD name-server), build libresolv.a,
-  and link Emacs with -lresolv.  This problem is due to obsolete
+  If you have trouble using open-network-stream, get the distribution
+  of `bind' (the BSD name-server), build libresolv.a, and link Emacs
+  with -lresolv, by copying the #definition of LIBS_SYSTEM in
+  src/s/sunos4-1.h to src/config.h.  This problem is due to obsolete
   software in the nonshared standard library.
 
   If you want to use SunWindows, define HAVE_SUN_WINDOWS

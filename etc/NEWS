@@ -6,6 +6,133 @@ Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
 
+Changes in version 19.16.
+
+* When dragging the mouse to select a region, Emacs now highlights the
+region as you drag.  If you continue the drag beyond the boundaries of
+the window, Emacs scrolls its text until you return the mouse to the
+window, or release the button.
+
+* RET now exits `query-replace' and `query-replace-regexp'; this makes it
+more consistent with the incremental search facility, which uses RET
+to end the search.
+
+* In C mode, C-c C-u now runs c-up-conditional.
+C-c C-n and C-c C-p now run new commands that move forward
+and back over balanced sets of C conditionals (c-forward-conditional
+and c-backward-conditional).
+
+* The Edit entry in the menu bar has a new alternative:
+"Choose Next Paste".  It gives you a menu showing the various
+strings in the kill ring; click on one to select it as the text 
+to be yanked ("pasted") the next time you yank.
+
+* If you enable Transient Mark mode and set mark-even-if-inactive to
+non-nil, then the region is highlighted in a transient fashion just as
+normally in Transient Mark mode, but the mark really remains active
+all the time; commands that use the region can be used even if the
+region highlighting turns off.
+
+* If you type C-h after a prefix key, it displays the bindings
+that start with that prefix.
+
+* The VC package now searches for version control commands in the
+directories named by the variable `vc-path'; its value should be a
+list of strings.
+
+* VC now displays in the mode line the head version number of the file
+you are visiting.  This follows the string `RCS' or `SCCS'.
+If that version is locked, the name of the person who has locked it
+appears before the version number, with a colon between them.
+If other versions are locked, name/version pairs for those versions
+follow the head version number.
+
+* When using X, if you load the `paren' library, Emacs automatically
+underlines or highlights the matching paren whenever point is
+next to the outside of a paren.  When point is before an open-paren,
+this shows the matching close; when point is after a close-paren,
+this shows the matching open.
+
+* The new function `define-key-after' is like `define-key',
+but takes an extra argument AFTER.  It places the newly defined
+binding after the binding for the event AFTER.
+
+* `accessible-keymaps' now takes an optional second argument, PREFIX.
+If PREFIX is non-nil, it means the value should include only maps for
+keys that start with PREFIX.
+
+`describe-bindings' also accepts an optional argument PREFIX which
+means to describe only the keys that start with PREFIX.
+
+* The variable `prefix-help-command' hold a command to run to display help
+whenever the character `help-char' follows a prefix key and does not have
+a key binding in that context.
+
+* Emacs now detects double- and triple-mouse clicks.  A single mouse
+click produces a pair events of the form:
+	(down-mouse-N POSITION)
+	(mouse-N POSITION)
+Clicking the same mouse button again, soon thereafter and at the same
+location, produces another pair of events of the form:
+	(down-mouse-N POSITION)
+	(double-mouse-N POSITION 2)
+Another click will produce an event pair of the form:
+	(down-mouse-N POSITION)
+	(triple-mouse-N POSITION 3)
+All the POSITIONs in such a sequence would be identical, except for
+their timestamps.
+
+To count as double- and triple-clicks, mouse clicks must be at the
+same location as the first click, and the number of milliseconds
+between the first release and the second must be less than the value
+of the lisp variable `double-click-time'.  Setting `double-click-time'
+to nil disables multi-click detection.  Setting it to t removes the
+time limit; Emacs then detects multi-clicks by position only.
+
+If `read-key-sequence' finds no binding for a double-click event, but
+the corresponding single-click event would be bound,
+`read-key-sequence' demotes it to a single-click.  Similarly, it
+demotes unbound triple-clicks to double- or single-clicks.  This means
+you don't have to distinguish between single- and multi-clicks if you
+don't want to.
+
+Emacs reports all clicks after the third as `triple-mouse-N' clicks,
+but increments the click count after POSITION.  For example, a fourth
+click, soon after the third and at the same location, produces a pair
+of events of the form:
+	(down-mouse-N POSITION)
+	(triple-mouse-N POSITION 4)
+
+* The way Emacs reports positions of mouse events has changed
+slightly.  If a mouse event includes a position list of the form:
+	(WINDOW (PLACE-SYMBOL) (COLUMN . ROW) TIMESTAMP)
+this denotes exactly the same position as the list:
+	(WINDOW  PLACE-SYMBOL  (COLUMN . ROW) TIMESTAMP)
+That is, the event occurred over a non-textual area of the frame,
+specified by PLACE-SYMBOL, a symbol like `mode-line' or
+`vertical-scroll-bar'.
+
+Enclosing PLACE-SYMBOL in a singleton list does not change the
+position denoted, but the `read-key-sequence' function uses the
+presence or absence of the singleton list to tell whether or not it
+should prefix the event with its place symbol.
+
+Normally, `read-key-sequence' prefixes mouse events occuring over
+non-textual areas with their PLACE-SYMBOLs, to select the sub-keymap
+appropriate for the event; for example, clicking on the mode line
+produces a sequence like
+	[mode-line (mouse-1 POSN)]
+However, if lisp code elects to unread the resulting key sequence by
+placing it in the `unread-command-events' variable, it is important
+that `read-key-sequence' not insert the prefix symbol again; that
+would produce a malformed key sequence like
+	[mode-line mode-line (mouse-1 POSN)]
+For this reason, `read-key-sequence' encloses the event's PLACE-SYMBOL
+in a singleton list when it first inserts the prefix, but doesn't
+insert the prefix when processing events whose PLACE-SYMBOLs are
+already thus enclosed.
+
+
 Changes in version 19.15.
 
 * `make-frame-visible', which uniconified frames, is now a command,
@@ -20,8 +147,8 @@ again at the same place kills that text.
 
 M-Mouse-2 kills the secondary selection.
 
-Setting the secondary seletion does not move point or the mark.  It is
-possible to make a secondary selection that does not all fit on the
+Setting the secondary selection does not move point or the mark.  It
+is possible to make a secondary selection that does not all fit on the
 screen, by using M-Mouse-1 at one end, scrolling, then using M-Mouse-3
 at the other end.
 

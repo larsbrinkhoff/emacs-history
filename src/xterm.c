@@ -93,6 +93,27 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 /*#include <X/Xproto.h>	*/
 #endif /* ! defined (HAVE_X11) */
 
+#ifdef FD_SET
+/* We could get this from param.h, but better not to depend on finding that.
+   And better not to risk that it might define other symbols used in this
+   file.  */
+#ifdef FD_SETSIZE
+#define MAXDESC FD_SETSIZE
+#else
+#define MAXDESC 64
+#endif
+#define SELECT_TYPE fd_set
+#else /* no FD_SET */
+#define MAXDESC 32
+#define SELECT_TYPE int
+
+/* Define the macros to access a single-int bitmap of descriptors.  */
+#define FD_SET(n, p) (*(p) |= (1 << (n)))
+#define FD_CLR(n, p) (*(p) &= ~(1 << (n)))
+#define FD_ISSET(n, p) (*(p) & (1 << (n)))
+#define FD_ZERO(p) (*(p) = 0)
+#endif /* no FD_SET */
+
 /* For sending Meta-characters.  Do we need this? */
 #define METABIT 0200
 
@@ -389,8 +410,8 @@ XTcursor_to (row, col)
    Since the display generation code is responsible for calling
    compute_char_face and compute_glyph_face on everything it puts in
    the display structure, we can assume that the face code on each
-   glyph is a valid index into FRAME_FACES (f), and the one to which
-   we can actually apply intern_face.  */
+   glyph is a valid index into FRAME_COMPUTED_FACES (f), and the one
+   to which we can actually apply intern_face.  */
 
 #if 1
 /* This is the multi-face code.  */
@@ -451,13 +472,14 @@ dumpglyphs (f, left, top, gp, n, hl)
 	  {
 	    /* The face codes on the glyphs must be valid indices into the
 	       frame's face table.  */
-	    if (cf < 0 || cf >= FRAME_N_FACES (f))
+	    if (cf < 0 || cf >= FRAME_N_COMPUTED_FACES (f)
+		|| FRAME_COMPUTED_FACES (f) [cf] == 0)
 	      abort ();
 
 	    if (cf == 1)
 	      face = FRAME_MODE_LINE_FACE (f);
 	    else
-	      face = intern_face (f, FRAME_FACES (f) [cf]);
+	      face = intern_face (f, FRAME_COMPUTED_FACES (f) [cf]);
 	    font = FACE_FONT (face);
 	    gc = FACE_GC (face);
 	    defaulted = 0;
@@ -1223,9 +1245,14 @@ static void
 frame_highlight (frame)
      struct frame *frame;
 {
-  if (! EQ (Vx_no_window_manager, Qnil))
-    XSetWindowBorder (x_current_display, FRAME_X_WINDOW (frame),
-		      frame->display.x->border_pixel);
+  /* We used to only do this if Vx_no_window_manager was non-nil, but
+     the ICCCM (section 4.1.6) says that the window's border pixmap
+     and border pixel are window attributes which are "private to the
+     client", so we can always change it to whatever we want.  */
+  BLOCK_INPUT;
+  XSetWindowBorder (x_current_display, FRAME_X_WINDOW (frame),
+		    frame->display.x->border_pixel);
+  UNBLOCK_INPUT;
   x_display_cursor (frame, 1);
 }
 
@@ -1233,9 +1260,14 @@ static void
 frame_unhighlight (frame)
      struct frame *frame;
 {
-  if (! EQ (Vx_no_window_manager, Qnil))
-    XSetWindowBorderPixmap (x_current_display, FRAME_X_WINDOW (frame),
-			    frame->display.x->border_tile);
+  /* We used to only do this if Vx_no_window_manager was non-nil, but
+     the ICCCM (section 4.1.6) says that the window's border pixmap
+     and border pixel are window attributes which are "private to the
+     client", so we can always change it to whatever we want.  */
+  BLOCK_INPUT;
+  XSetWindowBorderPixmap (x_current_display, FRAME_X_WINDOW (frame),
+			  frame->display.x->border_tile);
+  UNBLOCK_INPUT;
   x_display_cursor (frame, 1);
 }
 #else /* ! defined (HAVE_X11) */
@@ -2553,7 +2585,7 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
   int items_pending;		/* How many items are in the X queue. */
   XEvent event;
   struct frame *f;
-  int event_found;
+  int event_found = 0;
   int prefix;
   Lisp_Object part;
 
@@ -3139,17 +3171,20 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		  Window win, child;
 		  int win_x, win_y;
 
-		  /* Coords are relative to the parent.
-		     Convert them to root-relative.  */
+		  /* Find the position of the outside upper-left corner of
+		     the window, in the root coordinate system.  Don't
+		     refer to the parent window here; we may be processing
+		     this event after the window manager has changed our
+		     parent, but before we have reached the ReparentNotify.  */
 		  XTranslateCoordinates (x_current_display,
 			       
 					 /* From-window, to-window.  */
-					 f->display.x->parent_desc,
+					 f->display.x->window_desc,
 					 ROOT_WINDOW,
 
 					 /* From-position, to-position.  */
-					 event.xconfigure.x,
-					 event.xconfigure.y,
+					 -event.xconfigure.border_width,
+					 -event.xconfigure.border_width,
 					 &win_x, &win_y,
 
 					 /* Child of win.  */
@@ -3267,24 +3302,23 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 	}
     }
 
-#if 0
 #ifdef HAVE_SELECT
   if (expected && ! event_found)
     {
       /* AOJ 880406: if select returns true but XPending doesn't, it means that
 	 there is an EOF condition; in other words, that X has died.
 	 Act as if there had been a hangup. */
-
       int fd = ConnectionNumber (x_current_display);
-      int mask = 1 << fd;
+      SELECT_TYPE mask;
+      EMACS_TIME timeout;
 
-      if (0 != select (fd + 1, &mask, (long *) 0, (long *) 0,
-		       (EMACS_TIME) 0)
+      FD_SET(fd, &mask);
+      EMACS_SET_SECS_USECS (timeout, 0, 0);
+      if (0 != select (fd + 1, &mask, (long *) 0, (long *) 0, &timeout)
 	  && !XStuffPending ())
 	kill (getpid (), SIGHUP);
     }
 #endif /* ! defined (HAVE_SELECT) */
-#endif /* ! 0 */
 
 #ifndef HAVE_X11
   if (updating_frame == 0)
@@ -4082,12 +4116,16 @@ x_calc_absolute_position (f)
 {
 #ifdef HAVE_X11
   if (f->display.x->left_pos < 0)
-    f->display.x->left_pos
-      = x_screen_width - PIXEL_WIDTH (f) + f->display.x->left_pos;
+    f->display.x->left_pos = (x_screen_width 
+			      - 2 * f->display.x->border_width
+			      - PIXEL_WIDTH (f)
+			      + f->display.x->left_pos);
 
   if (f->display.x->top_pos < 0)
-    f->display.x->top_pos
-      = x_screen_height - PIXEL_HEIGHT (f) + f->display.x->top_pos;
+    f->display.x->top_pos = (x_screen_height
+			     - 2 * f->display.x->border_width
+			     - PIXEL_HEIGHT (f)
+			     + f->display.x->top_pos);
 #else /* ! defined (HAVE_X11) */
   WINDOWINFO_TYPE parentinfo;
 

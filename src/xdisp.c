@@ -435,8 +435,9 @@ redisplay ()
   if (((!NILP (Vtransient_mark_mode)
 	&& !NILP (XBUFFER (w->buffer)->mark_active))
        != !NILP (w->region_showing))
-      || !EQ (w->region_showing,
-	      Fmarker_position (XBUFFER (w->buffer)->mark)))
+      || (!NILP (w->region_showing)
+	  && !EQ (w->region_showing,
+		  Fmarker_position (XBUFFER (w->buffer)->mark))))
     this_line_bufpos = -1;
 
   tlbufpos = this_line_bufpos;
@@ -1079,7 +1080,7 @@ done:
 	  start = startp - BEGV;
 	  /* I don't think this is guaranteed to be right.  For the
 	     moment, we'll pretend it is.  */
-	  end = (Z - XINT (w->window_end_pos));
+	  end = (Z - XINT (w->window_end_pos)) - BEGV;
 
 	  if (end < start) end = start;
 	  if (whole < (end - start)) whole = end - start;

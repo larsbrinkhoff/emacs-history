@@ -181,6 +181,38 @@ in KEYMAP as NEWDEF those chars which are defined as OLDDEF in OLDMAP."
 		(setq i (1+ i))))))
       (setq scan (cdr scan)))))
 
+(defun define-key-after (keymap key definition after)
+  "Add binding in KEYMAP for KEY => DEFINITION, right after AFTER's binding.
+This is like `define-key' except that the binding for KEY is placed
+just after the binding for the event AFTER, instead of at the beginning
+of the map.
+The order matters when the keymap is used as a menu."
+  (or (keymapp keymap)
+      (signal 'wrong-type-argument (list 'keymapp keymap)))
+  (let ((tail keymap) done inserted
+	(first (aref key 0)))
+    (while (and (not done) tail)
+      ;; Delete any earlier bindings for the same key.
+      (if (eq (car-safe (car (cdr tail))) first)
+	  (setcdr tail (cdr (cdr tail))))
+      ;; When we reach AFTER's binding, insert the new binding after.
+      ;; If we reach an inherited keymap, insert just before that.
+      ;; If we reach the end of this keymap, insert at the end.
+      (if (or (eq (car-safe (car tail)) after)
+	      (eq (car (cdr tail)) 'keymap)
+	      (null (cdr tail)))
+	  (progn
+	    ;; Stop the scan only if we find a parent keymap.
+	    ;; Keep going past the inserted element
+	    ;; so we can delete any duplications that come later.
+	    (if (eq (car (cdr tail)) 'keymap)
+		(setq done t))
+	    ;; Don't insert more than once.
+	    (or inserted
+		(setcdr tail (cons (cons (aref key 0) definition) (cdr tail))))
+	    (setq inserted t)))
+      (setq tail (cdr tail)))))
+
 (defun keyboard-translate (from to)
   "Translate character FROM to TO at a low level.
 This function creates a `keyboard-translate-table' if necessary
@@ -313,7 +345,7 @@ If EVENT is a click event, this function is the same as `event-start'.
 The return value is of the form
    (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
 The `posn-' functions access elements of such lists."
-  (nth (1- (length event)) event))
+  (nth (if (consp (nth 2 event)) 2 1) event))
 
 (defsubst posn-window (position)
   "Return the window in POSITION.
@@ -327,7 +359,9 @@ as returned by the `event-start' and `event-end' functions."
 POSITION should be a list of the form
    (WINDOW BUFFER-POSITION (COL . ROW) TIMESTAMP)
 as returned by the `event-start' and `event-end' functions."
-  (nth 1 position))
+  (if (consp (nth 1 position))
+      (car (nth 1 position))
+    (nth 1 position)))
 
 (defsubst posn-col-row (position)
   "Return the row and column in POSITION.

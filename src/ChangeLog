@@ -1,3 +1,340 @@
+Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Version 19.16 released.
+
+	* ymakefile [not ORDINARY_LINK && __GNUC__ && __GNUC__ > 1 && not
+	LIB_GCC] (LIB_GCC): Use "$(CC)" instead of "gcc".
+
+Tue Jul  6 01:58:20 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+        * textprop.c (copy_text_properties): Pass a copy of POS to
+	validate_interval_range; that function increments its arguments,
+	which isn't what we want.
+
+	* fns.c (Fsubstring, concat): Pass all six arguments to
+	copy_text_properties.
+
+	* intervals.c (find_interval): Doc fixes, computation of
+	tree->position rearranged for clarity.
+
+	* intervals.c (find_interval): Consistently treat POSITION as an
+	actual buffer position, i.e. origin 1.  The old code seemed
+	undecided on this point.  Treat the end of the buffer as being
+	part of the rightmost interval.
+	(adjust_intervals_for_insertion): Consistently treat POSITION as
+	origin 1.
+	(interval_deletion_adjustment): The exception: FROM should be
+	origin zero here.  Consistently treat it as such.  Simplify code
+	which shrinks and possibly deletes intervals.
+	(adjust_intervals_for_deletion): Treat start as origin 1; our
+	caller does.
+	(set_point): Use buffer positions throughout, not a mix of buffer
+	posns and origin zero posns.
+	(get_local_map): Remove special case for POSITION at end of buffer;
+	find_interval handles that case correctly.
+	(verify_interval_modification): Remove special case for START at
+	end of buffer.
+	* textprop.c (validate_interval_range): End-of-buffer/string
+	positions no longer need special handling.
+
+	* intervals.c (make_new_interval): #if 0 this out.  Nobody calls it.
+
+	* textprop.c (copy_text_properties): New function, from David
+	Gillespie.
+	* intervals.h: Declare copy_text_properties.
+	* fns.c: #include "intervals.h".
+	(Fsubstring): Copy text properties to result string.
+	(concat): Copy text properties to result string.
+	* ymakefile (fns.o): Note that this depends on INTERVAL_SRC.
+
+	* print.c: Get rid of extra space at the end of print syntax for
+	strings with intervals.
+	[USE_TEXT_PROPERTIES] (print): Don't print a space before the
+	interval property lists.
+	[USE_TEXT_PROPERTIES] (print_interval): Print a space before this
+	internal's properties, not after.
+
+	* m/pmax.h (C_SWITCH_X_MACHINE): Set this to
+	"-DNeedFunctionPrototypes=0", to avoid lossage in DEC X11 header
+	files.
+	* ymakefile (really-oldXMenu): Pass C_SWITCH_X_MACHINE to the
+	oldXMenu make.
+
+	* doc.c (Fsubstitute_command_keys): Pass all five arguments to
+	describe_map_tree.
+
+Mon Jul  5 03:15:17 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	Compare the values of text properties using EQ, not Fequal.
+	* intervals.c (intervals_equal): Call EQ, not Fequal.
+	* textprop.c (interval_has_all_properties, add_properties): Same.
+
+	* textprop.c (validate_interval_range): Don't increment both
+	*begin and *end if they point to the same thing.
+	(validate_plist): Call QUIT while scanning LIST.
+
+	* intervals.c (intervals_equal): Test the return value of Fequal
+	against Qnil, not 0.
+
+	* keyboard.c (Vdouble_click_time): Renamed from double_click_time,
+	and made a Lisp_Object instead of an int.  
+	(make_lispy_event): If Vdouble_click_time is t, impose no time
+	limit on double-clicks.
+	(syms_of_keyboard): DEFVAR_LISP (not DEFVAR_INT)
+	Vdouble_click_time (not double_click_time), and adjust doc string
+	to say that `nil' means no double clicks, and `t' means no time
+	limit.
+
+Sun Jul  4 16:00:40 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* keyboard.h (EVENT_CLICK_COUNT, POSN_SCROLLBAR_PART): New
+	accessors.
+
+	* s/sunos4-1.h (LIBS_SYSTEM): Don't link against -lresolv; that's
+	only needed for misconfigured systems.
+
+Sun Jul  4 00:51:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keymap.c (describe_map_tree): When inserting TITLE, mention PREFIX.
+	Insert newline at end, if inserted anything else.
+	(describe_buffer_bindings): Corresponding changes.
+	For minor mode maps, build up a title string,
+	then let describe_map_tree insert it.
+
+	* eval.c (Fsignal): Clarify error message.
+
+Sat Jul  3 22:19:19 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_char): After Fgarbage_collect, call redisplay.
+
+Sat Jul  3 17:11:19 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* frame.c (Fredirect_frame_focus): Allow redirection of focus of
+	dead frames.
+
+	* s/sunos4-1.h (LIBS_SYSTEM): Make this be -lresolv, so we get the
+	versions of gethostbyname and such that use the DNS.
+
+Sat Jul  3 02:58:05 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* fileio.c (Frename_file):
+	After prompting for ok-if-already-exists, pass only nil or
+	t to copy-file, never an integer.
+
+Fri Jul  2 23:57:42 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keymap.c (Faccessible_keymaps): Doc fix.
+
+Fri Jul  2 18:48:58 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* textprop.c (set_properties): Don't try to make undo records if
+	OBJECT is a string.
+
+Fri Jul  2 01:42:41 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_key_sequence): When inserting `menu-bar' prefix,
+	modify the position field to prevent doing so twice.
+	Do all these forms of event expansion after replayed events also.
+	Set last_real_key_start before each key.
+	Use last_real_key_start in criterion for being the first event.
+
+	* process.c (wait_reading_process_input): Do include the keyboard
+	in the select, if read_kbd was a cons cell.
+
+Thu Jul  1 22:25:05 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* xterm.c (XTread_socket): When handing non-synthetic
+	ConfigureNotify events, don't refer to the parent window
+	descriptor.
+
+	* textprop.c (set_properties): Add undo records to remove entirely
+	new properties.  Only record old property values for those
+	properties whose values have changed.
+
+Thu Jul  1 19:56:28 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* callint.c (Vmark_even_if_inactive): New var, with Lisp variable.
+	(check_mark): Use it.
+
+Thu Jul  1 00:03:50 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xfaces.c [XOS_NEEDS_TIME_H]: #undef USG while #including
+	<X11/Xos.h>, so that file doesn't try to define struct timeval and
+	struct timezone.
+
+	* xterm.c (frame_highlight, frame_unhighlight): Don't test
+	Vx_no_window_manager.  BLOCK_INPUT around the border manipulation
+	calls.
+
+Wed Jun 30 16:12:09 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xterm.c (XTread_socket): Initialize event_found to zero, and
+	pass a zeroed timeout to select, not a null pointer; the latter
+	means "wait forever".
+
+	* s/hpux8.h (random, srandom): No need to define these to be
+	foo_random and foo_srandom; autoconf should autodetect when the
+	real random functions are available.
+
+	* xdisp.c (redisplay): If we're not already showing the region,
+	then don't disable the single-line optimizations just because the
+	mark isn't where we last displayed it.
+
+Wed Jun 30 13:50:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (syms_of_keyboard): Doc fix.
+	(Vhelp_char): Renamed from help_char.
+	(Vprefix_help_command): New Lisp variable.
+	(read_key_sequence): Use that, for help char after prefix key.
+
+	* keyboard.c (kbd_buffer_get_event):
+	Clear f before calling mouse_position_hook.
+
+	* emacs.c, callproc.c (PRIO_PROCESS): Definition deleted.
+
+	* vm-limit.c (check_memory_limits): Make data_size and five_percent
+	unsigned long.
+
+Wed Jun 30 00:55:41 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* keyboard.c (kbd_buffer_get_event): Correctly generate
+	switch-frame events when reading mouse motion events.
+
+Tue Jun 29 19:05:54 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xterm.c: Add CPP tangle from process.c to get definitions for
+	FD_SET, etcetera.
+	(XTread_socket): Use those macros when testing for dropped connection.
+
+Tue Jun 29 01:27:22 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* alloc.c (mark_object): Add aborts in Lisp_Symbol case.
+
+	* keymap.c (describe_map_tree): Insert key_heading here.
+	New arg TITLE.
+	(describe_buffer_bindings): Corresponding changes.
+
+	* process.c (wait_reading_process_input): Use SIGIO only if defined.
+
+	* keymap.c (shadow_lookup): New function.
+	(describe_map_2): Call it.  SHADOW is now a list of maps.
+	(describe_vector): Likewise.
+	(describe_map): SHADOW is now a list of maps.
+	(describe_map_tree): Likewise.
+	(describe_buffer_bindings): Build suitable list to pass as SHADOW.
+	(Faccessible_keymaps): New arg PREFIX.  Callers changed.
+	(describe_map_tree): New arg PREFIX.
+	(Fdescribe_bindings): New arg PREFIX.
+	Pass to describe_buffer_bindings along with buffer.
+	(describe_buffer_bindings): Extract PREFIX and pass along.
+
+Mon Jun 28 15:18:53 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keymap.c (describe_map_2): Cleanups.
+	Check there's no previous definition in same keymap. 
+
+Thu Jun 24 00:15:54 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* keyboard.c (read_char): Don't do idle autosaves if we're not
+	interactive.
+
+Wed Jun 23 21:32:25 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xfns.c (Fx_create_frame): Check for internalBorder resource, as
+	well as internalBorderWidth.
+
+	* xterm.c (XTread_socket): Remove #if 0''s around code which tests
+	for dropped connection (i.e. sigio but no events).
+
+Tue Jun 22 02:58:40 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* keyboard.c (menu_bar_items, read_key_sequence): Use
+	current_global_map, not global_map; the latter is only meant to be
+	used for initial_define_key.
+	* commands.h: Doc fix.
+
+	* commands.h (Vglobal_mouse_map): Removed; unused.
+	* xfns.c (Vglobal_mouse_map): Same.
+
+	* buffer.c (list_buffers_1): Make desired_point a lisp object; set
+	it to nil, unless we find the current buffer.
+	(Flist_buffers): Don't try to set point in the buffer list unless
+	list_buffers_1 actually returns an integer.  Don't use a full
+	save_excursion; just save and restore the buffer.
+
+	Separate parameter faces (those created and modified by the user)
+	from the computed faces (the combinations created by
+	compute_char_face), so that we don't waste global face id's.
+	* xterm.h (struct x_display): Replace the fields faces and n_faces
+	with fields param_faces, n_param_faces, computed_faces,
+	n_computed_faces, and size_computed_faces.
+	(FRAME_FACES, FRAME_N_FACES): Replaced by...
+	(FRAME_COMPUTED_FACES, FRAME_N_COMPUTED_FACES, FRAME_PARAM_FACES,
+	FRAME_N_PARAM_FACES): New macros.
+	* xfaces.c: Doc fixes.
+	(init_frame_faces): Call new_computed_face to create entries for
+	the default and mode line faces.  Use the FRAME...PARAM_FACES
+	macros.
+	(free_frame_faces): Use the FRAME...PARAM_FACES and
+	FRAME...COMPUTED_FACES macros.  Don't use the copy flag; all
+	parameter faces have real X resources, and all computed faces just
+	have copies.  Free both the parameter and computed face arrays.
+	(new_computed_face): New function.
+	(intern_computed_face): Renamed from intern_frame_face; callers
+	changed.  Call new_computed_face.
+	(ensure_face_ready, compute_char_face, compute_glyph_face): Use the
+	FRAME...PARAM_FACES macros.
+	(recompute_basic_faces): Use the FRAME...PARAM_FACES and
+	FRAME...COMPUTED_FACES macros.  Produce the computed faces by
+	starting with the base faces and merging in the parameter faces.
+	(Fset_face_attribute_internal): Use the FRAME...PARAM_FACES
+	macros.  Just call recompute_basic_faces if the default or mode
+	line faces have changed.
+	* xfns.c (Fx_list_fonts): Use the FRAME...PARAM_FACES macros.
+	* xterm.c (dumpglyphs): Use the FRAME...COMPUTED_FACES macros.
+	* dispextern.h (struct face): Remove the copy member.  This is no
+	longer necessary; all computed faces are copies, and no parameter
+	faces are.
+
+	* xfaces.c (face_vector, nfaces, nfaces_allocated): Make these
+	static.
+
+	* xdisp.c (redisplay_window): Remember to compute end relative to
+	the start of the visible region, too.
+
+Mon Jun 21 22:02:48 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xrdb.c (get_user_db): Remember to free the screen-local resource
+	string after we've merged its data into db.
+
+	* keyboard.c (make_lispy_event): Added detection of double-click
+	and triple-click events.
+	(parse_modifiers_uncached, apply_modifiers_uncached): Same.
+	(read_key_sequence): Coerce double-clicks to clicks, and triple-clicks
+	to double-clicks or clicks, by analogy with drag events.
+	(double_click_time): Added variable.
+	* termhooks.h: Added multi-click event modifier bits.
+
+Mon Jun 21 15:37:06 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* textprop.c (Fremove_text_properties, Fadd_text_properties):
+	Really do next_interval when skipping the first interval.
+
+Sun Jun 20 16:01:51 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* xfns.c (Fx_open_connection): Remember to block input while
+	calling x_load_resources.
+	* xrdb.c: Undo change of June 19th; it was a BLOCK_INPUT problem,
+	not a server-specific bug.
+
+	* alloc.c (Fgarbage_collect): If the minibuffer is active, don't
+	display the "...done" message; allow the minibuffer to show again.
+
+	* config.h.in (HAVE_LONG_FILE_NAMES): Add an #undef, for autoconf
+	to chew on.  Re-arrange macros to reflect the ordering of the
+	corresponding macros in configure.in, to facilitate this kind of
+	checking.
+
 Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* version 19.15 released.
@@ -687,7 +1024,7 @@ Wed Jun  2 16:12:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 	* sysdep.c (init_sys_modes): Disable VLNEXT char.
 	Also VWERASE, VREPRINT, VDISCARD.
 
-	* xfaces.c: Test XOS_NEEDS_TIME_H, not HPUX, for including time.hj.
+	* xfaces.c: Test XOS_NEEDS_TIME_H, not HPUX, for including time.h.
 	* s/sol2.h, s/hpux.h (XOS_NEEDS_TIME_H): Defined.
 
 Wed Jun 2 20:11:29 1993  Francesco Potorti`  (pot@cnuce.cnr.it)

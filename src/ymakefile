@@ -287,7 +287,7 @@ LIBX= $(LIBXMENU) LD_SWITCH_X_SITE -lX10 LIBX10_MACHINE LIBX10_SYSTEM
 
 #ifndef LIB_GCC
 /* Ask GCC where to find libgcc.a.  */
-#define LIB_GCC `gcc -print-libgcc-file-name`
+#define LIB_GCC `$(CC) -print-libgcc-file-name`
 #endif /* LIB_GCC */
 
 GNULIB_VAR = LIB_GCC
@@ -581,11 +581,13 @@ C_SWITCH_MACHINE_1 = C_SWITCH_MACHINE
 C_SWITCH_SYSTEM_1 = C_SWITCH_SYSTEM
 C_SWITCH_SITE_1 = C_SWITCH_SITE
 C_SWITCH_X_SITE_1 = C_SWITCH_X_SITE
+C_SWITCH_X_MACHINE_1 = C_SWITCH_X_MACHINE
 really-oldXMenu:
 	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS \
     CC='${CC}' CFLAGS='${CFLAGS}' MAKE='${MAKE}' \
     "C_SWITCH_SITE=$(C_SWITCH_SITE_1)" \
     "C_SWITCH_X_SITE=$(C_SWITCH_X_SITE_1)" \
+    "C_SWITCH_X_MACHINE=$(C_SWITCH_X_MACHINE_1)" \
     "C_SWITCH_MACHINE=$(C_SWITCH_MACHINE_1)" \
     "C_SWITCH_SYSTEM=$(C_SWITCH_SYSTEM_1)"
 	@true  /* make -t should not create really-oldXMenu.  */
@@ -725,9 +727,10 @@ bytecode.o : bytecode.c buffer.h $(config_h)
 data.o : data.c buffer.h puresize.h syssignal.h $(config_h)
 eval.o : eval.c commands.h keyboard.h blockinput.h $(config_h)
 floatfns.o : floatfns.c $(config_h)
-fns.o : fns.c commands.h $(config_h) frame.h buffer.h keyboard.h
+fns.o : fns.c commands.h $(config_h) frame.h buffer.h keyboard.h INTERVAL_SRC
 print.o : print.c process.h frame.h window.h buffer.h $(config_h) 
-lread.o : lread.c commands.h keyboard.h buffer.h paths.h $(config_h) termhooks.h
+lread.o : lread.c commands.h keyboard.h buffer.h paths.h $(config_h) \
+ termhooks.h
 
 /* Text properties support */
 textprop.o : textprop.c buffer.h intervals.h $(config_h)

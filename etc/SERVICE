@@ -233,6 +233,29 @@ Rates are DM 150,-- plus tax per hour, educational sites get rebates.
 
 Entered: 10 Jul 92
 
+Stuart Cracraft		<cracraft@ai.mit.edu>
+The MSM Company
+Unix & PC Consulting Services
+25682 Cresta Loma
+Laguna Niguel, Ca.
+92677
+GNUline: 714-347-8106
+GNUbeeper: 714-509-3133  (leave number for callback)
+
+Rate: based on your ability to afford.
+
+Programs supported: all GNU programs.
+
+Method: telephone line support, call-in via modem to your site,
+or direct visit.
+
+Experience: supporting GNU since the mid-1980's, coordinator
+of GNU Chess (original author), GNU Shogi, GNU Go. Ported GNU Emacs
+to Solaris (System V Release 4). Expertise in C, Emacs Lisp, and Perl.
+Customized programming also available.
+
+Entered: 1 Jul 93
+
 Cygnus Support			<info@cygnus.com>
 1937 Landings Drive		...uunet!cygint!info
 Mountain View, CA 94043 USA
@@ -264,20 +287,6 @@ Annual Support starts at $3,000.
 
 Updated: 16 Feb 93
 
-Bradley N. Davis	<b-davis@jaguar.utah.edu>
-3242 South 540 West
-Bountiful, UT  84010
-(801) 298-6345
-
-Will work on most GNU software.	 Especially GNU Emacs, GCC and a
-little X11 and G++.  Experienced with PCs and 386s.
-
-Services offered: Installation, porting, customizing, troubleshooting.
-
-Fee: $20 to $50 / hour depending on job
-
-Updated: 6/11/91
-
 DePalma SoftCraft		Contact: Mauro DePalma
 2923 Cohansey Drive		Voice:	(408) 259-4789
 San Jose, CA 95132-1619		Fax:	(408) 259-6935
@@ -302,7 +311,7 @@ email:    <misch@eurom.rhein-main.de>
 
 We distribute, install and/or port, teach, support free software and
 offer regular consulting.  We accept software development contracts for
-any (unix) software as long as you will release it into free software. 
+any (unix) software as long as you will release it into free software.
 
 Rates are DM 200,-- plus VAT per hour. 25 % will be donated to the
 Free Software Foundation.  For worthy organizations, we may
@@ -708,7 +717,7 @@ Services offered:
  - Installation and customizing GNU and other free software.  We will
    make free software as easy to install and use as shrink wrapped
    programs.
- - Warranty protection. 
+ - Warranty protection.
  - Customization and porting.
  - Subscriptions to new versions which we will send monthly or with
    any other interval.
@@ -805,6 +814,15 @@ August 1989).  Primary maintainer of GDB and the GNU loader for that
 period.	 Resume available on request.
 
 Entered: 10 Feb 92
+
+Julian Stacey	<stacey@guug.de>
+Holz Strasse 27d, 80469, Munich, Germany
++49 89 268616
+
+GCC for Symmetric Computer Systems SCS/375 (NSC32016, BSD4.2)
+Binary & Source Free of Charge (native compiler hopelessly broken)
+
+Entered: 18 May 93
 
 Richard M. Stallman	<rms@prep.ai.mit.edu>
 UUCP:  {mit-eddie,ucbvax,uunet,harvard,uw-beaver}!ai.mit.edu!rms
@@ -1028,4 +1046,7 @@ Fees: $50/hour, discounts for educational institutions and non-profits
 
 Updated: 7/11/92
 
+For a current copy of this directory, or to have yourself listed, ask:
+	gnu@prep.ai.mit.edu
+
 ** Please keep this file alphabetical **

@@ -89,7 +89,7 @@
 		("-reverse" .	x-handle-switch)
 		("-fn" .	x-handle-switch)
 		("-font" .	x-handle-switch)
-		("-ib" .	x-handle-switch)
+		("-ib" .	x-handle-numeric-switch)
 		("-g" .		x-handle-geometry)
 		("-geometry" .	x-handle-geometry)
 		("-fg" .	x-handle-switch)
@@ -528,6 +528,13 @@ This returns ARGS with the arguments that have been processed removed."
   (if res-geometry
       (setq initial-frame-alist (append initial-frame-alist
 					(x-parse-geometry res-geometry)))))
+
+;; Check the reverseVideo resource.
+(if (assoc
+     (x-get-resource "reverseVideo"
+		     "ReverseVideo")
+     '("True" "true" "Yes" "yes"))
+    (setq default-frame-alist (cons '(reverse . t) default-frame-alist)))
 
 ;; Set x-selection-timeout, measured in milliseconds.
 (let ((res-selection-timeout

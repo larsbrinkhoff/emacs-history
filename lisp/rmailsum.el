@@ -586,7 +586,116 @@ Instead, all of the Rmail Mode commands are available, plus:
   (define-key rmail-summary-mode-map " "      'rmail-summary-scroll-msg-up)
   (define-key rmail-summary-mode-map "\177"   'rmail-summary-scroll-msg-down)
   (define-key rmail-summary-mode-map "?"      'describe-mode)
+  (define-key rmail-summary-mode-map "\C-c\C-s\C-d"
+    'rmail-summary-sort-by-date)
+  (define-key rmail-summary-mode-map "\C-c\C-s\C-s"
+    'rmail-summary-sort-by-subject)
+  (define-key rmail-summary-mode-map "\C-c\C-s\C-a"
+    'rmail-summary-sort-by-author)
+  (define-key rmail-summary-mode-map "\C-c\C-s\C-r"
+    'rmail-summary-sort-by-recipient)
+  (define-key rmail-summary-mode-map "\C-c\C-s\C-c"
+    'rmail-summary-sort-by-correspondent)
+  (define-key rmail-summary-mode-map "\C-c\C-s\C-l"
+    'rmail-summary-sort-by-lines)
   )
+
+;;; Menu bar bindings.
+
+(define-key rmail-summary-mode-map [menu-bar] (make-sparse-keymap))
+
+(define-key rmail-summary-mode-map [menu-bar classify]
+  (cons "Classify" (make-sparse-keymap "Classify")))
+
+(define-key rmail-summary-mode-map [menu-bar classify output-inbox]
+  '("Output (inbox)" . rmail-summary-output))
+
+(define-key rmail-summary-mode-map [menu-bar classify output]
+  '("Output (Rmail)" . rmail-summary-output-to-rmail-file))
+
+(define-key rmail-summary-mode-map [menu-bar classify kill-label]
+  '("Kill Label" . rmail-summary-kill-label))
+
+(define-key rmail-summary-mode-map [menu-bar classify add-label]
+  '("Add Label" . rmail-summary-add-label))
+
+(define-key rmail-summary-mode-map [menu-bar summary]
+  (cons "Summary" (make-sparse-keymap "Summary")))
+
+(define-key rmail-summary-mode-map [menu-bar summary labels]
+  '("By Labels" . rmail-summary-by-labels))
+
+(define-key rmail-summary-mode-map [menu-bar summary recipients]
+  '("By Recipients" . rmail-summary-by-recipients))
+
+(define-key rmail-summary-mode-map [menu-bar summary topic]
+  '("By Topic" . rmail-summary-by-topic))
+
+(define-key rmail-summary-mode-map [menu-bar summary regexp]
+  '("By Regexp" . rmail-summary-by-regexp))
+
+(define-key rmail-summary-mode-map [menu-bar summary all]
+  '("All" . rmail-summary))
+
+(define-key rmail-summary-mode-map [menu-bar mail]
+  (cons "Mail" (make-sparse-keymap "Mail")))
+
+(define-key rmail-summary-mode-map [menu-bar mail continue]
+  '("Continue" . rmail-summary-continue))
+
+(define-key rmail-summary-mode-map [menu-bar mail forward]
+  '("Forward" . rmail-summary-forward))
+
+(define-key rmail-summary-mode-map [menu-bar mail retry]
+  '("Retry" . rmail-summary-retry-failure))
+
+(define-key rmail-summary-mode-map [menu-bar mail reply]
+  '("Reply" . rmail-summary-reply))
+
+(define-key rmail-summary-mode-map [menu-bar mail mail]
+  '("Mail" . rmail-summary-mail))
+
+(define-key rmail-summary-mode-map [menu-bar delete]
+  (cons "Delete" (make-sparse-keymap "Delete")))
+
+(define-key rmail-summary-mode-map [menu-bar delete expunge/save]
+  '("Expunge/Save" . rmail-summary-expunge-and-save))
+
+(define-key rmail-summary-mode-map [menu-bar delete expunge]
+  '("Expunge" . rmail-summary-expunge))
+
+(define-key rmail-summary-mode-map [menu-bar delete undelete]
+  '("Undelete" . rmail-summary-undelete))
+
+(define-key rmail-summary-mode-map [menu-bar delete delete]
+  '("Delete" . rmail-summary-delete-forward))
+
+(define-key rmail-summary-mode-map [menu-bar move]
+  (cons "Move" (make-sparse-keymap "Move")))
+
+(define-key rmail-summary-mode-map [menu-bar move search-back]
+  '("Search Back" . rmail-summary-search-backward))
+
+(define-key rmail-summary-mode-map [menu-bar move search]
+  '("Search" . rmail-summary-search))
+
+(define-key rmail-summary-mode-map [menu-bar move previous]
+  '("Previous Nondeleted" . rmail-summary-previous-msg))
+
+(define-key rmail-summary-mode-map [menu-bar move next]
+  '("Next Nondeleted" . rmail-summary-next-msg))
+
+(define-key rmail-summary-mode-map [menu-bar move last]
+  '("Last" . rmail-summary-last-message))
+
+(define-key rmail-summary-mode-map [menu-bar move first]
+  '("First" . rmail-summary-first-message))
+
+(define-key rmail-summary-mode-map [menu-bar move previous]
+  '("Previous" . rmail-summary-previous-all))
+
+(define-key rmail-summary-mode-map [menu-bar move next]
+  '("Next" . rmail-summary-next-all))
 
 (defun rmail-summary-goto-msg (&optional n nowarn skip-rmail)
   (interactive "P")
@@ -742,6 +851,37 @@ Go back to summary buffer."
   (rmail-abort-edit)
   (pop-to-buffer rmail-summary-buffer))
 
+(defun rmail-summary-search-backward (regexp &optional n)
+  "Show message containing next match for REGEXP.
+Prefix argument gives repeat count; negative argument means search
+backwards (through earlier messages).
+Interactively, empty argument means use same regexp used last time."
+  (interactive
+    (let* ((reversep (>= (prefix-numeric-value current-prefix-arg) 0))
+	   (prompt
+	    (concat (if reversep "Reverse " "") "Rmail search (regexp): "))
+	   regexp)
+      (if rmail-search-last-regexp
+	  (setq prompt (concat prompt
+			       "(default "
+			       rmail-search-last-regexp
+			       ") ")))
+      (setq regexp (read-string prompt))
+      (cond ((not (equal regexp ""))
+	     (setq rmail-search-last-regexp regexp))
+	    ((not rmail-search-last-regexp)
+	     (error "No previous Rmail search string")))
+      (list rmail-search-last-regexp
+	    (prefix-numeric-value current-prefix-arg))))
+  ;; Don't use save-excursion because that prevents point from moving
+  ;; properly in the summary buffer.
+  (let ((buffer (current-buffer)))
+    (unwind-protect
+	(progn
+	  (set-buffer rmail-buffer)
+	  (rmail-search regexp (- n)))
+      (set-buffer buffer))))
+
 (defun rmail-summary-search (regexp &optional n)
   "Show message containing next match for REGEXP.
 Prefix argument gives repeat count; negative argument means search
@@ -764,9 +904,14 @@ Interactively, empty argument means use same regexp used last time."
 	     (error "No previous Rmail search string")))
       (list rmail-search-last-regexp
 	    (prefix-numeric-value current-prefix-arg))))
-  (save-excursion
-    (set-buffer rmail-buffer)
-    (rmail-search regexp n)))
+  ;; Don't use save-excursion because that prevents point from moving
+  ;; properly in the summary buffer.
+  (let ((buffer (current-buffer)))
+    (unwind-protect
+	(progn
+	  (set-buffer rmail-buffer)
+	  (rmail-search regexp n))
+      (set-buffer buffer))))
 
 (defun rmail-summary-toggle-header ()
   "Show original message header if pruned header currently shown, or vice versa."
@@ -877,5 +1022,50 @@ buffer visiting that file."
   (save-excursion
     (set-buffer rmail-buffer)
     (call-interactively 'rmail-output)))
+
+;; Sorting messages in Rmail Summary buffer.
+
+(defun rmail-summary-sort-by-date (reverse)
+  "Sort messages of current Rmail summary by date.
+If prefix argument REVERSE is non-nil, sort them in reverse order."
+  (interactive "P")
+  (rmail-sort-from-summary (function rmail-sort-by-date) reverse))
+
+(defun rmail-summary-sort-by-subject (reverse)
+  "Sort messages of current Rmail summary by subject.
+If prefix argument REVERSE is non-nil, sort them in reverse order."
+  (interactive "P")
+  (rmail-sort-from-summary (function rmail-sort-by-subject) reverse))
+
+(defun rmail-summary-sort-by-author (reverse)
+  "Sort messages of current Rmail summary by author.
+If prefix argument REVERSE is non-nil, sort them in reverse order."
+  (interactive "P")
+  (rmail-sort-from-summary (function rmail-sort-by-author) reverse))
+
+(defun rmail-summary-sort-by-recipient (reverse)
+  "Sort messages of current Rmail summary by recipient.
+If prefix argument REVERSE is non-nil, sort them in reverse order."
+  (interactive "P")
+  (rmail-sort-from-summary (function rmail-sort-by-recipient) reverse))
+
+(defun rmail-summary-sort-by-correspondent (reverse)
+  "Sort messages of current Rmail summary by other correspondent.
+If prefix argument REVERSE is non-nil, sort them in reverse order."
+  (interactive "P")
+  (rmail-sort-from-summary (function rmail-sort-by-correspondent) reverse))
+
+(defun rmail-summary-sort-by-lines (reverse)
+  "Sort messages of current Rmail summary by lines of the message.
+If prefix argument REVERSE is non-nil, sort them in reverse order."
+  (interactive "P")
+  (rmail-sort-from-summary (function rmail-sort-by-lines) reverse))
+
+(defun rmail-sort-from-summary (sortfun reverse)
+  "Sort Rmail messages from Summary buffer and update it after sorting."
+  (require 'rmailsort)
+  (pop-to-buffer rmail-buffer)
+  (funcall sortfun reverse)
+  (rmail-summary))
 
 ;;; rmailsum.el ends here

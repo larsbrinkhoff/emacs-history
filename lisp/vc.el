@@ -83,6 +83,10 @@ The value is only computed when needed to avoid an expensive search.")
   "*Don't assume that permissions and ownership track version-control status.")
 (defvar vc-checkin-switches nil
   "*Extra switches passed to the checkin program by \\[vc-checkin].")
+(defvar vc-path
+  (if (file-exists-p "/usr/sccs")
+      '("/usr/sccs") nil)
+  "*List of extra directories to search for version control commands.")
 
 (defconst vc-maximum-comment-ring-size 32
   "Maximum number of saved comments in the comment ring.")
@@ -150,13 +154,6 @@ is sensitive to blank lines.")
 
 ;; Random helper functions
 
-(defun vc-name (file)
-  "Return the master name of a file, nil if it is not registered."
-  (or (vc-file-getprop file 'vc-name)
-      (vc-file-setprop file 'vc-name
-		       (let ((name-and-type (vc-registered file)))
-			 (and name-and-type (car name-and-type))))))
-
 (defun vc-registration-error (file)
   (if file
       (error "File %s is not under version control" file)
@@ -206,7 +203,8 @@ the master name of FILE; this is appended to an optional list of FLAGS."
      flags)
     (if vc-file
 	(setq squeezed (append squeezed (list vc-file))))
-    (let ((default-directory (file-name-directory (or file "./"))))
+    (let ((default-directory (file-name-directory (or file "./")))
+	  (exec-path (if vc-path (append exec-path vc-path) exec-path)))
       (setq status (apply 'call-process command nil t nil squeezed)))
     (goto-char (point-max))
     (previous-line 1)
@@ -515,7 +513,7 @@ lock steals will raise an error."
     (set (make-local-variable 'vc-parent-buffer) parent)
     (set (make-local-variable 'vc-parent-buffer-name)
 	 (concat " from " (buffer-name vc-parent-buffer)))
-    (vc-mode-line (if file (file-name-nondirectory file) " (no file)"))
+    (vc-mode-line (or file " (no file)"))
     (vc-log-mode)
     (setq vc-log-operation action)
     (setq vc-log-file file)
@@ -726,8 +724,14 @@ and two version designators specifying which versions to compare."
 	;; visited.  This plays hell with numerous assumptions in
 	;; the diff.el and compile.el machinery.
 	(pop-to-buffer "*vc*")
-	(vc-shrink-to-fit)
-	(goto-char (point-min))
+	(pop-to-buffer "*vc*")
+	(if (= 0 (buffer-size))
+	    (progn
+	      (setq unchanged t)
+	      (message "No changes to %s since latest version." file))
+	  (vc-shrink-to-fit)
+	  (goto-char (point-min)))
+
 	)
       (not unchanged)
       )
@@ -1109,6 +1113,7 @@ A prefix argument means do not revert the buffer afterwards."
 The mark is left at the end of the text prepended to the change log.
 With prefix arg of C-u, only find log entries for the current buffer's file.
 With any numeric prefix arg, find log entries for all files currently visited.
+Otherwise, find log entries for all registered files in the default directory.
 From a program, any arguments are passed to the `rcs2log' script."
   (interactive
    (cond ((consp current-prefix-arg)	;C-u
@@ -1120,19 +1125,37 @@ From a program, any arguments are passed to the `rcs2log' script."
 	    (while buffers
 	      (setq file (buffer-file-name (car buffers)))
 	      (and file (vc-backend-deduce file)
-		   (setq files (cons (file-relative-name file) files)))
+		   (setq files (cons file files)))
 	      (setq buffers (cdr buffers)))
-	    files))))
-  (find-file-other-window (find-change-log))
-  (barf-if-buffer-read-only)
-  (vc-buffer-sync)
-  (undo-boundary)
-  (goto-char (point-min))
-  (push-mark)
-  (message "Computing change log entries...")
-  (message "Computing change log entries... %s"
-           (if (eq 0 (apply 'call-process "rcs2log" nil t nil args))
-	       "done" "failed")))
+	    files))
+	 (t
+	  (let ((RCS (concat default-directory "RCS")))
+	    (and (file-directory-p RCS)
+		 (mapcar (function
+			  (lambda (f)
+			    (if (string-match "\\(.*\\),v$" f)
+				(substring f 0 (match-end 1))
+			      f)))
+			 (directory-files RCS nil "...\\|^[^.]\\|^.[^.]")))))))
+  (let ((odefault default-directory))
+    (find-file-other-window (find-change-log))
+    (barf-if-buffer-read-only)
+    (vc-buffer-sync)
+    (undo-boundary)
+    (goto-char (point-min))
+    (push-mark)
+    (message "Computing change log entries...")
+    (message "Computing change log entries... %s"
+	     (if (or (null args)
+		     (eq 0 (apply 'call-process "rcs2log" nil t nil
+				  (mapcar (function
+					   (lambda (f)
+					     (file-relative-name
+					      (if (file-name-absolute-p f)
+						  f
+						(concat odefault f)))))
+					  args))))
+		 "done" "failed"))))
 
 ;; Functions for querying the master and lock files.
 

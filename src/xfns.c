@@ -196,9 +196,6 @@ extern Lisp_Object Qunsplittable, Qmenu_bar_lines;
 
 extern Lisp_Object Vwindow_system_version;
 
-/* Mouse map for clicks in windows.  */
-extern Lisp_Object Vglobal_mouse_map;
-
 
 /* Error if we are not connected to X.  */
 static void
@@ -1745,7 +1742,19 @@ be shared by the new frame.")
 		       "font", "Font", string);
   x_default_parameter (f, parms, Qborder_width, make_number (2),
 		       "borderwidth", "BorderWidth", number);
-  /* This defaults to 2 in order to match xterm.  */
+  /* This defaults to 2 in order to match xterm.  We recognize either
+     internalBorderWidth or internalBorder (which is what xterm calls
+     it).  */
+  if (NILP (Fassq (Qinternal_border_width, parms)))
+    {
+      Lisp_Object value;
+
+      value = x_get_arg (parms, Qinternal_border_width,
+			 "internalBorder", "BorderWidth", number);
+      if (! EQ (value, Qunbound))
+	parms = Fcons (Fcons (Qinternal_border_width, value),
+		       parms);
+    }
   x_default_parameter (f, parms, Qinternal_border_width, make_number (2),
 		       "internalBorderWidth", "BorderWidth", number);
   x_default_parameter (f, parms, Qvertical_scroll_bars, Qt,
@@ -2208,12 +2217,12 @@ fonts), even if they match PATTERN and FACE.")
       FRAME_PTR f = NILP (frame) ? selected_frame : XFRAME (frame);
       int face_id = face_name_id_number (f, face);
 
-      if (face_id < 0 || face_id >= FRAME_N_FACES (f)
-	  || FRAME_FACES (f) [face_id] == 0)
+      if (face_id < 0 || face_id >= FRAME_N_PARAM_FACES (f)
+	  || FRAME_PARAM_FACES (f) [face_id] == 0)
 	size_ref = f->display.x->font;
       else
 	{
-	  size_ref = FRAME_FACES (f) [face_id]->font;
+	  size_ref = FRAME_PARAM_FACES (f) [face_id]->font;
 	  if (size_ref == (XFontStruct *) (~0))
 	    size_ref = f->display.x->font;
 	}
@@ -3483,7 +3492,9 @@ arg XRM_STRING is a string of resources in xrdb format.")
     }
   else
     xrm_option = (unsigned char *) 0;
+  BLOCK_INPUT;
   xrdb = x_load_resources (x_current_display, xrm_option, EMACS_CLASS);
+  UNBLOCK_INPUT;
 #if defined (HAVE_X11R5) || defined (HAVE_XRMSETDATABASE)
   XrmSetDatabase (x_current_display, xrdb);
 #else

@@ -1,3 +1,420 @@
+Tue Jul  6 11:05:14 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Version 19.16 released.
+
+Tue Jul  6 01:21:37 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* vc.el (vc-start-entry): Don't call file-name-nondirectory on
+	FILE before passing it to vc-mode-line.  Everyplace else passes
+	vc-mode-line full filenames, and vc-mode-line now needs the real
+	file name to decide which version-control system the file is under.
+
+	* man.el (Man-build-man-command): Don't leave a pipe symbol at the
+	end of the command list if Man-filter-list is nil.
+	(Man-default-man-args): Don't write out assq and mapconcat.
+	(Man-default-man-entry): Don't default to section 2 for C-mode.
+	Call Man-default-man-args, and let people use
+	Man-auto-section-alist if this is what they want.
+	(manual-entry): Call Man-translate-references, instead of writing
+	it out.
+	(Man-getpage-in-background): Don't apply Man-default-man-args
+	here; manual-entry has already run it, and
+	Man-follow-manual-reference provides the sections itself.
+
+Mon Jul  5 00:43:20 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* map-ynp.el (map-y-or-n-p): If we get a switch-frame-event,
+	save it until we're done asking questions, and then unread it.
+
+Mon Jul  5 03:20:12 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-name): Move to vc-hooks.el.
+	* vc-hooks.el (vc-name): Moved from vc.el; vc-rcs-status now uses it.
+	(vc-name, vc-backend-deduce): Set both vc-name and vc-backend
+	properties, to avoid calling vc-registered unnecessarily when
+	the other property is needed.
+	(vc-rcs-status): Yield only status of locks; do not try to yield " REV"
+	if there are no locks, since this cannot be done easily if there are
+	branches.  Use vc-name instead of duplicating its function incorrectly.
+	Fix off-by-one bug when inserting master header pieces.  Read headers
+	8192 bytes at a time instead of 100.  Don't bother to expand-file-name.
+	(vc-rcs-glean-field): Removed.
+
+Sun Jul  4 17:29:43 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* outline.el (outline-mode-map): Add menu bar items.
+	(outline-minor-mode-map): Copy menu bar submap from outline-mode-map.
+
+	* help.el (describe-key-briefly): Don't set `foo'.
+
+Sun Jul  4 17:01:01 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* subr.el (posn-point): Properly extract the BUFFER-POSITION field
+	of an event when read-key-sequence has placed it in a singleton
+	list.
+
+	* comint.el (comint-prompt-regexp): Double the backslashes in the
+	sample prompt regexps, so that they print properly when unquoted.
+
+Sun Jul  4 18:54:59 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-backend-diff): Undo "-q" change.  This was fixed
+	instead by adding -q support to vcdiff.
+
+Sun Jul  4 13:55:13 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* help.el (describe-prefix-bindings): New command.
+	(prefix-help-command): Set it.
+
+	* hexl.el: Added a keyword.
+
+Sun Jul  4 12:46:27 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el (forms-new-record-filter): Correct default value.
+	(forms-modified-record-filter): Correct default value.
+
+Sun Jul  4 00:53:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* paren.el (show-paren-command-hook): Add message for paren mismatch.
+
+	* vc-hooks.el (vc-mode-line): Put `RCS' or `SCCS' before version num.
+
+Sat Jul  3 21:44:54 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* faces.el (make-face-bold, make-face-italic,
+	make-face-bold-italic, make-face-unbold, make-face-unitalic):
+	Properly pass noerror argument to recursive calls.
+
+	* frame.el (frame-remove-geometry-params): New function.
+	(frame-initialize): Call it, instead of writing it out.
+
+Sat Jul  3 15:03:44 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (kill-region): Cope with change hooks that change props.
+
+Sat Jul  3 06:15:43 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+        * term/x-win.el: Check the reverseVideo/ReverseVideo resource,
+	correctly distinguish between "on" and "off" values, and put a
+	parameter in default-frame-alist.
+	* frame.el (frame-initialize): Don't call x-get-resource here.
+
+Sat Jul  3 03:22:04 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* autoload.el (update-file-autoloads):
+	Do nothing when there are no cookies.
+
+Fri Jul  2 18:55:23 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* mouse.el (mouse-drag-region): Correctly handle drags which enter
+	other frames.
+
+Fri Jul  2 17:28:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* vc.el (vc-path): New variable.
+	(vc-do-command): Use vc-path.
+
+	* menu-bar.el (menu-bar-edit-menu): Rename menu item to
+	Choose Next Paste.  Create this item along with all the others.
+
+	* isearch.el (isearch-other-meta-char): Handle sequences
+	containing mouse clicks in scroll-bar that used another buffer's map.
+
+Fri Jul  2 16:06:38 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* vc.el (vc-backend-diff): Pass the "-q" flag only if we're using
+	rcsdiff.
+
+Fri Jul  2 14:31:59 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* menu-bar.el: Put mouse-menu-choose-yank binding after
+	paste=>yank binding in menu-bar-edit-menu.
+
+Fri Jul  2 13:32:10 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* bytecomp.el (byte-compile-keep-pending): Handle fset like defalias.
+	(byte-compile-file-form-defmumble): Fix backward if in prev change.
+
+Thu Jul  1 20:14:44 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* dired-aux.el (dired-diff): Work even when the mark is inactive.
+
+Thu Jul  1 18:10:45 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sendmail.el (mail-send): Don't test buffer-modified-p
+	if buffer is visiting a file.
+
+	* bytecomp.el (byte-compile-file-form-defmumble):
+	If byte-compile-compatibility, use fset, not defalias.
+
+Thu Jul  1 16:33:01 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* simple.el: Add bindings to function-key-map so that the keypad
+	keys act like ordinary self-insertion keys, unless explicitly bound.
+
+Thu Jul  1 14:39:35 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mailabbrev.el (build-mail-abbrevs): Do substitute-in-file-name
+	on the abbrev, for `source'.
+
+	* files.el (set-visited-file-name): Rename the old auto save file.
+
+Thu Jun 30 23:31:58 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* menu-bar.el (mouse-menu-choose-yank):
+	Just return when x-popup-menu returns nil.
+	Add menu-enable property to this function.
+
+Wed Jun 30 17:50:25 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* compile.el (compile-abbreviate-directory): New function.
+	(compilation-parse-errors): Use that, to visit files with a dirname
+	more like the one the user specified.
+
+Wed Jun 30 15:38:53 1993  Johan Vromans  (jv@mh.nl)
+
+	* forms.el: Add e-mail address and version info.
+	Adjust commentary and doc strings.
+	(forms-mode): Add ###autoload.
+	(forms-find-file): Add ###autoload.
+	(forms-find-file-other-window):	Add ###autoload.
+
+Wed Jun 30 21:35:59 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* vc.el (vc-update-change-log): Ensure that file names inserted
+	into a ChangeLog are relative to that ChangeLog.
+
+Wed Jun 30 12:43:18 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* simple.el (mark-even-if-inactive): New variable.
+	(mark): Test it.
+
+	* rmail.el: Doc fixes.
+
+Wed Jun 30 00:29:08 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* gud.el: Add history lists to the debugging commands, so we don't
+	have to retype the filename every invocation.
+	(gud-gdb-history, gud-sdb-history, gud-dbx-history,
+	gud-xdb-history): New variables.
+	(gdb, sdb, dbx, xdb): Use them when reading the argument string.
+
+	* mouse.el (mouse-drag-region-1): Commented out.
+	(mouse-drag-region): Commented out, and replaced with new version,
+	which highlights the region as we drag.
+	(mouse-scroll-delay, mouse-drag-overlay): New variables.
+	(mouse-scroll-subr): New function.
+
+	* sun-fns.el, sun-curs.el: Move these to lisp/term, to be with
+	sun-mouse.el.
+
+Tue Jun 29 19:00:38 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* faces.el (global-face-data): Doc fix.
+
+	* gnus.el (gnus-newsrc-to-gnus-format): Correct regexp which
+	matches .newsrc lines not to match more than one line.
+
+Tue Jun 29 13:05:15 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* ls-lisp.el (insert-directory): Doc fix.
+	(ls-lisp-format): Provide user name when known.
+	On ms-dos, provide a name for the group, to be prettier.
+
+Mon Jun 28 00:47:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* subr.el (define-key-after): Delete duplicate bindings that come
+	after the new one.  Do insert when we reach the end, if haven't before.
+
+	* paren.el: New file.
+
+	* faces.el (face-initialize): Create `underline' face.
+	(x-initialize-frame-faces): Set up `underline' face.
+
+	* faces.el (x-initialize-frame-faces): Check x-display-color-p
+	and x-display-planes to decide whether to try using colors or gray.
+
+	* man.el (Man-auto-section-alist): Default value nil.
+	(Man-getpage-in-background): Call Man-default-man-args.
+	(Man-filter-list): Don't discard overstrike here.
+	(Man-set-fonts): New function.
+	(Man-bgproc-sentinel): Call Man-set-fonts.
+	(Man-version-number): Var deleted.
+	(Man-version): Command and binding deleted.
+	(Man-mode): Use Manual, not Man, as official mode name.
+
+	* solar.el: Doc fixes.
+
+	* c-mode.el (c-forward-conditional): New function.
+	(c-up-conditional): Use c-forward-conditional.
+	(c-backward-conditional): New function.
+	(c-mode-map): Make bindings for them.
+
+Sun Jun 27 20:56:11 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* vc.el (vc-update-change-log): Restore previous default-directory
+	for running rcs2log.
+
+Sat Jun 26 00:18:21 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* subr.el (define-key-after): New function.
+
+Fri Jun 25 13:58:52 1993  Barry A. Warsaw  (warsaw@anthem.nlm.nih.gov)
+
+	* reporter.el (reporter-submit-bug-report): Rename local var curbuf
+	to reporter-eval-buffer.
+	(reporter-dump-variable): Eval varsym in reporter-eval-buffer.
+
+	* c++-mode.el (c++-fast-backward-syntactic-ws-2)
+	(c++-fast-backward-syntactic-ws-1): Change the proper syntax table
+	depending on whether we are editing C or C++ code.
+
+	* c++-mode.el (c++-indent-exp): When computing offset for open-brace
+	line, check not at class top level before adding c-indent-level.
+	Fix bug handling member init lists.
+	Fix case where comments follow a continued statement.
+	Fix handling of c-brace-offset < 0.
+
+	* c++-mode.el (c++-calculate-indent):
+	Fixed indentation when base class declaration is on a separate line
+	then the derived class intro header.
+	Don't skip up past compound statement if we're in a member init list.
+
+	* c++-mode.el (c++-indent-line): Clean up adjustment
+	of block closing braces.  Handle a list as value of
+	c++-block-close-brace-offset.
+
+	* c++-mode.el (c++-indent-exp): Use c-continued-statement-offset
+	instead of c-indent-level to indent comma separated arg decl lists.
+
+	* c++-mode.el (c++-fast-backward-syntactic-ws-2): Simplify for
+	new forward-comment semantics.
+
+	* c++-mode.el (c++-calculate-indent): Change if's to cond in CASE3.
+	Require colon when looking for `case' or `default'.
+	Use c++-compound-offset.
+	(c++-compound-offset): New function.
+	Distinguish statement continuation from enum and initializer lists.
+
+Fri Jun 25 18:30:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* vc-hooks.el (vc-rcs-status): New variable.
+	(vc-mode-line): Display the lock status and head version.
+	(vc-rcs-status, vc-rcs-glean-field): New function.
+
+	* menu-bar.el (mouse-menu-bar-buffers): Include % and * in each item.
+	Calculate amount of space needed for longest buffer name.
+	* mouse.el (mouse-buffer-menu): Likewise.
+
+Fri Jun 25 18:01:47 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* add-log.el (find-change-log): Try get-file-buffer before
+	file-exists-p.
+
+Fri Jun 25 17:30:19 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* vc.el (vc-diff): If `diff' gives empty output, return nil.
+
+Wed Jun 23 21:45:19 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* ange-ftp.el: Loosen file-name-handler-alist regexp so we can do
+	host name completion.
+
+	* hexl.el (hexl-in-save-buffer): New flag.
+	(hexl-save-buffer): Prevent infinite recursion.
+
+Tue Jun 22 04:11:33 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* term/x-win.el (command-switch-alist): "-ib" takes a numeric
+	argument; use x-handle-numeric-switch for it.
+
+	* replace.el (query-replace-map): Fix typo in binding for [return].
+
+Tue Jun 22 00:23:04 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmailsort.el: Don't touch rmail-summary-mode-map.
+	Don't touch rmail-mode-map.  Don't require rmail or sort.
+	(rmail-summary-sort-...): Moved to rmailsum.el.
+	(rmail-sort-from-summary): Likewise.
+
+	* rmail.el: Add autoloads for rmailsort commands.
+	(rmail-mode-map): Add bindings for those commands.
+
+	* rmailsum.el (rmail-summary-mode-map): Bind summary sort commands.
+	(rmail-summary-sort-...): Moved from rmailsort.el.
+	(rmail-sort-from-summary): Likewise.  Require rmailsort.
+
+Mon Jun 21 22:01:23 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* compile.el (compile-file-of-error): Remember that
+	compilation-error-list stores file names as strings, not as (DIR .
+	FILE) pairs.
+
+	* diff.el (diff-parse-differences): Preserve the match data
+	across the call to find-file-noselect.
+
+	* subr.el (event-end): Modified to account for multi-click events.
+
+Mon Jun 21 01:53:46 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* rmail.el (rmail-mode-map): Add local menu bar bindings.
+	(rmail-search-backward): New command.
+	(rmail-mode): Move to the last message.
+
+	* rmailsum.el (rmail-summary-mode-map): Add local menu bar bindings.
+	(rmail-summary-search-backward): New command.
+	(rmail-summary-search): Don't use save-excursion.
+
+	* sendmail.el (mail-mode-map): Add local menu bar bindings.
+
+	* texinfo.el: Set up autoloads for files `makeinfo' and `texnfo-upd'.
+	(texinfo-delete-from-print-queue-command): New var.
+	(texinfo-tex-trailer): New var.
+	(texinfo-tex-region): Use that.
+	(texinfo-tex-buffer): Rewritten; use the actual source file.
+	Binding is now C-c C-t C-b.
+	(texinfo-texindex): Turned back on.
+	(texinfo-quit-job): New command, with binding.
+	(texinfo-delete-from-print-queue): Likewise.
+	(texinfo-show-structure): Indent each line according to depth.
+	Require texnfo-upd.
+	(texinfo-section-types-regexp): Var deleted.
+	(texinfo-insert-@-with-arg): New function.
+	(texinfo-insert-@var, etc.): Use that.
+	(texinfo-insert-@end): New command, now on C-c C-c e.
+	(texinfo-insert-@end-example): Deleted.
+	(texinfo-insert-@table): New command, on C-c C-c t.
+	(texinfo-start-menu-description): New command, on C-c C-c C-d.
+	(texinfo-mode): No longer set tex-trailer.
+	Make the @node for the top node start a page.
+	Use shorter values for tex-end-of-header and tex-start-of-header.
+	(texinfo-mode-map): Add bindings for makeinfo-buffer, etc.
+	Delete bindings for texinfo-format-buffer/region.
+	(texinfo-define-common-keys): New function.
+
+	* texinfmt.el: File deleted.
+
+	* makeinfo.el: New file.
+
+	* metamail.el: New file.
+
+	* time-stamp.el: New file.
+
+Sun Jun 20 20:44:36 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* add-log.el (add-log-current-defun): To find the name of the
+	function being defined in emacs-lisp-mode, lisp-mode, and
+	scheme-mode, skip an opening paren and an s-expression, instead of
+	just one word.  This allows us to properly recognize things like
+	define-key and define-macro.
+
+	* replace.el (query-replace-map): Make RET exit query-replace,
+	just like ESC.
+
+Sun Jun 20 18:44:30 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mh-e.el (mh-yank-cur-msg): Test mark-active.
+
 Sat Jun 19 17:14:27 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
 	* version 19.15 released.
@@ -48,6 +465,107 @@ Fri Jun 18 13:55:31 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 Fri Jun 18 13:49:53 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* dired.el (dired-summary): dired-do-rename is on "R", not "r".
+
+Fri Jun 18 10:14:45 1993  Edward M. Reingold  (reingold@emr.cs.uiuc.edu)
+
+        * calendar.el (calendar-version): Update to 5.1.  Fixed a variety
+        of spelling error in comments and doc strings.
+        (calendar-sexp-debug): New variable to turn off error catching.
+	(calendar-absolute-from-gregorian): Removed unused vars month, day.
+        (view-calendar-holidays-initially, all-hebrew-calendar-holidays,
+        all-christian-calendar-holidays, all-christian-islamic-holidays,
+        diary-nonmarking-symbol, hebrew-diary-entry-symbol,
+        islamic-diary-entry-symbol, diary-include-string,
+        abbreviated-calendar-year, european-calendar-style,
+        european-calendar-display-form, american-calendar-display-form,
+        calendar-date-display-form, print-diary-entries-hook,
+        list-diary-entries-hook, nongregorian-diary-listing-hook,
+        nongregorian-diary-marking-hook, diary-list-include-blanks,
+        holidays-in-diary-buffer, general-holidays,
+        increment-calendar-month, calendar-sum, calendar-string-spread,
+        calendar-absolute-from-iso, calendar-print-iso-date,
+        hebrew-calendar-elapsed-days, list-yahrzeit-dates,
+        calendar-print-astro-day-number): Fix doc strings.
+        (calendar-nth-named-day): Rewritten to include optional day of month.
+        (general-holidays, calendar-holidays, hebrew-holidays,
+        christian-holidays, islamic-holidays,
+        solar-holidays): Rewritten to include require of cal-dst.el and to
+        show the time of the change to/from daylight savings time.
+        (calendar-current-time-zone, calendar-time-zone,
+        calendar-daylight-time-offset, calendar-standard-time-zone-name,
+        calendar-daylight-time-zone-name, calendar-daylight-savings-starts,
+        calendar-daylight-savings-ends,
+        calendar-daylight-savings-switchover-time): Moved to cal-dst.el.
+        (calendar-location-name, calendar-time-display-form, calendar-latitude,
+        calendar-longitude): Moved to solar.el.
+        (calendar-holidays): Unquote it!
+
+        * solar.el (calendar-holiday-solar-equinoxes-solstices): Renamed
+        solar-equinoxes-solstices.
+        (calendar-time-display-form, calendar-latitude,
+        calendar-longitude): Moved from calendar.el.
+        (calendar-time-zone, calendar-standard-time-zone-name,
+        calendar-daylight-time-zone-name,
+        calendar-daylight-savings-starts, calendar-daylight-savings-ends):
+        Take default values from calendar-current-time-zone, instead of
+        being overwritten in open code if they were set to nil.
+        (solar-time-string): Subtract calendar-daylight-time-offset when
+        computing dst-ends.  Avoid rounding errors when rounding time to
+        the nearest minute.
+
+        * diary.el (list-sexp-diary-entries,
+        hebrew-calendar-year-Saturday-incomplete-Sunday,
+        hebrew-calendar-year-Monday-incomplete-Tuesday,
+        hebrew-calendar-year-Tuesday-regular-Thursday,
+        hebrew-calendar-year-Thursday-complete-Sunday,
+        hebrew-calendar-year-Saturday-complete-Thursday,
+        hebrew-calendar-year-Monday-complete-Saturday,
+        hebrew-calendar-year-Thursday-incomplete-Sunday): Fix doc strings.
+        (diary-sexp-entry): Use calendar-sexp-debug to turn off error catching.
+        
+        * diary-ins.el (insert-cyclic-diary-entry): Fix date form.
+
+        * cal-mayan.el (calendar-mayan-days-before-absolute-zero,
+        calendar-mayan-haab-difference, calendar-mayan-tzolkin-difference,
+        calendar-mayan-tzolkin-haab-on-or-before,
+        calendar-previous-calendar-round-date,
+        calendar-absolute-from-mayan-long-count,
+        calendar-print-mayan-date): Fix doc strings.
+
+        * holidays.el (calendar-holiday-function-fixed,
+        calendar-holiday-function-float, calendar-holiday-function-julian,
+        calendar-holiday-function-islamic,
+        calendar-holiday-function-hebrew, calendar-holiday-function-sexp,
+        calendar-holiday-function-advent,
+        calendar-holiday-function-easter-etc,
+        calendar-holiday-function-greek-orthodox-easter,
+        calendar-holiday-function-rosh-hashanah-etc,
+        calendar-holiday-function-hanukkah,
+        calendar-holiday-function-passover-etc,
+        calendar-holiday-function-tisha-b-av-etc): Renamed without words
+        "calendar" and "function"; changed argument from a list of values to
+        individual values.  Fixed doc strings.
+        (calendar-holiday-function-if): Removed.
+        (calendar-holiday-solar-equinoxes-solstices): Renamed
+        solar-equinoxes-solstices.
+        (calendar-holiday-list): Rewrote to accomodate the name changes
+        above and the unquoting of calendar-holidays.
+        (calendar-cursor-holidays):  Change screen-width to frame-width.
+        (holiday-sexp): Rewritten.
+
+        * lunar.el (lunar-phase): Use time conversion from solar.el
+
+        * cal-dst.el: New file.
+        (calendar-/, calendar-%, calendar-absolute-from-time,
+        calendar-time-from-absolute, calendar-next-time-zone-transition,
+        calendar-time-zone-daylight-rules): New functions.
+        (calendar-current-time-zone): Moved from calendar.el and rewritten.
+        (calendar-current-time-zone-cache): New variable.
+        (calendar-current-time-zone, calendar-time-zone,
+        calendar-daylight-time-offset, calendar-standard-time-zone-name,
+        calendar-daylight-time-zone-name,
+        calendar-daylight-savings-starts, calendar-daylight-savings-ends,
+        calendar-daylight-savings-switchover-time): Moved from calendar.el.
 
 Thu Jun 17 19:29:56 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 
@@ -343,7 +861,7 @@ Thu Jun 10 06:39:46 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
 	instead of the variable.
 
 	* gnus.el (gnus-start-news-server): If no server has been
-	specificed, but gnus-nntp-service is nil, don't ask for a server
+	specified, but gnus-nntp-service is nil, don't ask for a server
 	name; use the local host.
 
 	* ange-ftp.el (ange-ftp-make-directory): Take second optional
@@ -983,7 +1501,21 @@ Wed May 26 16:26:16 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* hexl.el (hexlify-command, dehexlify-command): Use exec-directory.
 
-	* rmailsort.el: New version from Umeda.  Needs detailed entry.
+	* rmailsort.el: New version from Umeda.
+	(timezone-make-date-sortable): Make autoload for this.
+	(rmail-sort-by-recipient): Downcase the strings for sorting.
+	(rmail-sort-by-recipient): Likewise.
+	(rmail-sort-by-lines): Renamed from rmail-sort-by-size-lines.
+	Use numbers to sort by.
+	(rmail-summary-...): New functions.  Bind in rmail-summary-mode-map.
+	(rmail-sort-from-summary): New function.
+	(rmail-sort-messages): Don't bother checking major mode.
+	Put message bounds in sort list, not its text.
+	Choose string< or < as predicate.
+	Reorder messages by exchanging them, with inhibit-quit bound.
+	(rmail-fetch-field): Start by widening.
+	(rmail-sortable-date-strng): Deleted.
+	(rmail-make-date-sortable): New function, used instead.
 
 	* paths.el (gnus-local-organization): Renamed from ...-your-...
 	(gnus-local-domain): Likewise.

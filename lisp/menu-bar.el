@@ -47,6 +47,8 @@
 
 (define-key menu-bar-edit-menu [fill] '("Fill" . fill-region))
 (define-key menu-bar-edit-menu [clear] '("Clear" . delete-region))
+(define-key menu-bar-edit-menu [choose-selection]
+  '("Choose Next Paste" . mouse-menu-choose-yank))
 (define-key menu-bar-edit-menu [paste] '("Paste" . yank))
 (define-key menu-bar-edit-menu [copy] '("Copy" . kill-ring-save))
 (define-key menu-bar-edit-menu [cut] '("Cut" . kill-region))
@@ -121,16 +123,20 @@ A subsequent \\[yank] yanks the choice just selected."
 						     0 yank-menu-length)))
 			 (prog1 (cons string count)
 			   (setq count (1+ count))))
-		       kill-ring)))
-    (rotate-yank-pointer (x-popup-menu event 
-				       (list "Yank Menu"
-					     (cons "Pick Selection" menu))))
-    (if (interactive-p)
-	(message "The next yank will insert the selected text.")
-      (current-kill 0))))
-
-(define-key menu-bar-edit-menu [choose-selection]
-  '("Choose Pasting Selection" . mouse-menu-choose-yank))
+		       kill-ring))
+	 (arg (x-popup-menu event 
+			    (list "Yank Menu"
+				  (cons "Pick Selection" menu)))))
+    ;; A mouse click outside the menu returns nil.
+    ;; Avoid a confusing error from passing nil to rotate-yank-pointer.
+    ;; XXX should this perhaps do something other than simply return? -rm
+    (if arg
+	(progn
+	  (rotate-yank-pointer arg)
+	  (if (interactive-p)
+	      (message "The next yank will insert the selected text.")
+	    (current-kill 0))))))
+(put 'mouse-menu-choose-yank 'menu-enable 'kill-ring)
 
 (define-key global-map [menu-bar buffer] '("Buffers" . mouse-menu-bar-buffers))
 
@@ -160,8 +166,16 @@ and selects that window."
 	  (list "Buffer Menu"
 		(cons "Select Buffer"
 		      (let ((tail buffers)
+			    (maxbuf 0)
 			    (maxlen 0)
 			    head)
+			(while tail
+			  (or (eq ?\ (aref (buffer-name (car tail)) 0))
+			      (setq maxbuf
+				    (max maxbuf
+					 (length (buffer-name (car tail))))))
+			  (setq tail (cdr tail)))
+			(setq tail buffers)
 			(while tail
 			  (let ((elt (car tail)))
 			    (if (not (string-match "^ "
@@ -169,8 +183,13 @@ and selects that window."
 				(setq head (cons
 					    (cons
 					     (format
-					      "%14s   %s"
+					      (format "%%%ds  %%s%%s  %%s"
+						      maxbuf)
 					      (buffer-name elt)
+					      (if (buffer-modified-p elt) "*" " ")
+					      (save-excursion
+						(set-buffer elt)
+						(if buffer-read-only "%" " "))
 					      (or (buffer-file-name elt) ""))
 					     elt)
 					    head)))

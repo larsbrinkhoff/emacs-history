@@ -13,3 +13,10 @@
 
 /* Cause the compilation of oldxmenu to use the right -I option.  */
 #define OLDXMENU_OPTIONS CFLAGS=C_SWITCH_SYSTEM
+
+/* Some systems do not run the Network Information Service, but have
+   modified the shared C library to include resolver support without
+   also changing the C archive library (/usr/lib/libc.a).  To deal
+   with this, you may need to link with the resolver library; to do
+   that, copy the following definition to config.h.  */
+/* #define LIBS_SYSTEM -lresolv */

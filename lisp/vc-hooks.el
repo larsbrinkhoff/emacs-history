@@ -38,6 +38,10 @@ when creating new masters.")
   "*If non-nil, backups of registered files are made according to
 the make-backup-files variable.  Otherwise, prevents backups being made.")
 
+(defvar vc-rcs-status t
+  "*If non-nil, revision and locks on RCS working file displayed in modeline.
+Otherwise, not displayed.")
+
 ;; Tell Emacs about this new kind of minor mode
 (if (not (assoc 'vc-mode minor-mode-alist))
     (setq minor-mode-alist (cons '(vc-mode vc-mode)
@@ -102,11 +106,24 @@ the make-backup-files variable.  Otherwise, prevents backups being made.")
 	   vc-master-templates)
 	  nil)))))
 
+(defun vc-name (file)
+  "Return the master name of a file, nil if it is not registered."
+  (or (vc-file-getprop file 'vc-name)
+      (let ((name-and-type (vc-registered file)))
+	(if name-and-type
+	    (progn
+	      (vc-file-setprop file 'vc-backend (cdr name-and-type))
+	      (vc-file-setprop file 'vc-name (car name-and-type)))))))
+
 (defun vc-backend-deduce (file)
-  "Return the version-control type of a file, nil if it is not registered"
+  "Return the version-control type of a file, nil if it is not registered."
   (and file
        (or (vc-file-getprop file 'vc-backend)
-	   (vc-file-setprop file 'vc-backend (cdr (vc-registered file))))))
+	   (let ((name-and-type (vc-registered file)))
+	     (if name-and-type
+		 (progn
+		   (vc-file-setprop file 'vc-name (car name-and-type))
+		   (vc-file-setprop file 'vc-backend (cdr name-and-type))))))))
 
 (defun vc-toggle-read-only ()
   "Change read-only status of current buffer, perhaps via version control.
@@ -126,12 +143,81 @@ visiting FILE."
   (interactive (list buffer-file-name nil))
   (let ((vc-type (vc-backend-deduce file)))
     (if vc-type
-	(progn
-	  (setq vc-mode
-		(concat " " (or label (symbol-name vc-type))))))
+        (setq vc-mode
+              (concat " " (or label (symbol-name vc-type))
+		      (if (and vc-rcs-status (eq vc-type 'RCS))
+                          (vc-rcs-status file)))))
     ;; force update of mode line
     (set-buffer-modified-p (buffer-modified-p))
     vc-type))
+
+(defun vc-rcs-status (file)
+  ;; Return string " [LOCKER:REV]" if FILE under RCS control, otherwise nil,
+  ;; for placement in modeline by `vc-mode-line'.
+
+  ;; If FILE is not locked then return just "".  If the FILE is locked
+  ;; then return *all* the locks currently set, in a single string of the
+  ;; form " LOCKER1:REV1 LOCKER2:REV2 ...".
+
+  ;; Algorithm: 
+
+  ;; 1. Check for master file corresponding to FILE being visited.
+  ;; 
+  ;; 2. Insert the first few characters of the master file into a work
+  ;; buffer.
+  ;;  
+  ;; 3. Search work buffer for line starting with "date" indicating enough
+  ;; of header was included; if not found, then keep inserting characters
+  ;; until "date" is located.
+  ;; 
+  ;; 4. Search work buffer for line starting with "locks", extract
+  ;; all the locks currently enabled, and remove control characters
+  ;; separating them, like newlines; the string " user1:revision1
+  ;; user2:revision2 ..." is returned.
+
+  ;; Limitations:
+
+  ;; The output doesn't show which version you are actually looking at.
+  ;; The modeline can get quite cluttered when there are multiple locks.
+
+  (let ((master (vc-name file))
+	found status)
+
+    ;; If master file exists, then parse its contents, otherwise we return the 
+    ;; nil value of this if form.
+    (if master
+        (save-excursion
+
+          ;; Create work buffer.
+          (set-buffer (get-buffer-create "*vc-rcs-status*"))
+          (setq buffer-read-only nil
+                default-directory (file-name-directory master))
+          (erase-buffer)
+
+          ;; Check if we have enough of the header.
+	  ;; If not, then keep including more.
+          (while
+	      (not (or found
+		       (let ((s (buffer-size)))
+			 (goto-char (1+ s))
+			 (zerop (car (cdr (insert-file-contents
+					   master nil s (+ s 8192))))))))
+	    (beginning-of-line)
+	    (setq found (re-search-forward "^locks\\([^;]*\\);" nil t)))
+
+          (if found
+	      ;; Clean control characters from text.
+	      (let ((status
+		     (save-restriction
+		       (narrow-to-region (match-beginning 1) (match-end 1))
+		       (goto-char (point-min))
+		       (while (re-search-forward "[ \b\t\n\v\f\r]+" nil t)
+			 (replace-match " " t t))
+		       (buffer-string))))
+		;; Clean work buffer.
+		(erase-buffer)
+		(set-buffer-modified-p nil)
+		status))))))
 
 ;;; install a call to the above as a find-file hook
 (defun vc-find-file-hook ()

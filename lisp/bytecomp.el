@@ -1396,7 +1396,8 @@ With argument, insert value in current buffer after the form."
       (let ((for-effect t))
 	;; To avoid consing up monstrously large forms at load time, we split
 	;; the output regularly.
-	(and (eq (car-safe form) 'defalias) (nthcdr 300 byte-compile-output)
+	(and (memq (car-safe form) '(fset defalias))
+	     (nthcdr 300 byte-compile-output)
 	     (byte-compile-flush-pending))
 	(funcall handler form)
 	(if for-effect
@@ -1579,7 +1580,9 @@ With argument, insert value in current buffer after the form."
 	(if (not (stringp (nth 3 form)))
 	    ;; No doc string to make-docfile; insert form in normal code.
 	    (byte-compile-keep-pending
-	     (list 'defalias (list 'quote name)
+	     (list (if (byte-compile-version-cond byte-compile-compatibility)
+		       'fset 'defalias)
+		   (list 'quote name)
 		   (cond ((not macrop)
 			  code)
 			 ((eq 'make-byte-code (car-safe code))
@@ -1590,7 +1593,9 @@ With argument, insert value in current buffer after the form."
 	  ;; Output the form by hand, that's much simpler than having
 	  ;; b-c-output-file-form analyze the defalias.
 	  (byte-compile-flush-pending)
-	  (princ "\n(defalias '" outbuffer)
+	  (princ (if (byte-compile-version-cond byte-compile-compatibility)
+		     "\n(fset '" "\n(defalias '")
+		 outbuffer)
 	  (prin1 name outbuffer)
 	  (byte-compile-output-docform
 	   (cond ((atom code)

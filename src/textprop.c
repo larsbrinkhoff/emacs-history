@@ -50,6 +50,12 @@ Lisp_Object Qlocal_map;
 /* Visual properties text (including strings) may have. */
 Lisp_Object Qforeground, Qbackground, Qfont, Qunderline, Qstipple;
 Lisp_Object Qinvisible, Qread_only;
+
+/* If o1 is a cons whose cdr is a cons, return non-zero and set o2 to
+   the o1's cdr.  Otherwise, return zero.  This is handy for
+   traversing plists.  */
+#define PLIST_ELT_P(o1, o2) (CONSP (o1) && CONSP ((o2) = XCONS (o1)->cdr))
+
 
 /* Extract the interval at the position pointed to by BEGIN from
    OBJECT, a string or buffer.  Additionally, check that the positions
@@ -116,14 +122,6 @@ validate_interval_range (object, begin, end, force)
 	return NULL_INTERVAL;
 
       searchpos = XINT (*begin);
-      if (searchpos == BUF_Z (b))
-	searchpos--;
-#if 0
-      /* Special case for point-max:  return the interval for the
-         last character. */
-      if (*begin == *end && *begin == BUF_Z (b))
-	*begin -= 1;
-#endif
     }
   else
     {
@@ -135,15 +133,14 @@ validate_interval_range (object, begin, end, force)
       /* User-level Positions in strings start with 0,
 	 but the interval code always wants positions starting with 1.  */
       XFASTINT (*begin) += 1;
-      XFASTINT (*end) += 1;
+      if (begin != end)
+	XFASTINT (*end) += 1;
       i = s->intervals;
 
       if (s->size == 0)
 	return NULL_INTERVAL;
 
       searchpos = XINT (*begin);
-      if (searchpos > s->size)
-	searchpos--;
     }
 
   if (NULL_INTERVAL_P (i))
@@ -167,7 +164,10 @@ validate_plist (list)
       register int i;
       register Lisp_Object tail;
       for (i = 0, tail = list; !NILP (tail); i++)
-	tail = Fcdr (tail);
+	{
+	  tail = Fcdr (tail);
+	  QUIT;
+	}
       if (i & 1)
 	error ("Odd length text property list");
       return list;
@@ -199,8 +199,7 @@ interval_has_all_properties (plist, i)
 	  {
 	    /* Found the same property on both lists.  If the
 	       values are unequal, return zero. */
-	    if (! EQ (Fequal (Fcar (Fcdr (tail1)), Fcar (Fcdr (tail2))),
-		      Qt))
+	    if (! EQ (Fcar (Fcdr (tail1)), Fcar (Fcdr (tail2))))
 	      return 0;
 
 	    /* Property has same value on both lists;  go to next one. */
@@ -239,6 +238,24 @@ interval_has_some_properties (plist, i)
   return 0;
 }
 
+/* Changing the plists of individual intervals.  */
+
+/* Return the value of PROP in property-list PLIST, or Qunbound if it
+   has none.  */
+static int
+property_value (plist, prop)
+{
+  Lisp_Object value;
+
+  while (PLIST_ELT_P (plist, value))
+    if (EQ (XCONS (plist)->car, prop))
+      return XCONS (value)->car;
+    else
+      plist = XCONS (value)->cdr;
+
+  return Qunbound;
+}
+
 /* Set the properties of INTERVAL to PROPERTIES,
    and record undo info for the previous values.
    OBJECT is the string or buffer that INTERVAL belongs to.  */
@@ -248,19 +265,30 @@ set_properties (properties, interval, object)
      Lisp_Object properties, object;
      INTERVAL interval;
 {
-  Lisp_Object oldprops;
-  oldprops = interval->plist;
+  Lisp_Object sym, value;
 
-  /* Record undo for old properties.  */
-  while (XTYPE (oldprops) == Lisp_Cons)
+  if (BUFFERP (object))
     {
-      Lisp_Object sym;
-      sym = Fcar (oldprops);
-      record_property_change (interval->position, LENGTH (interval),
-			      sym, Fcar_safe (Fcdr (oldprops)),
-			      object);
-      
-      oldprops = Fcdr_safe (Fcdr (oldprops));
+      /* For each property in the old plist which is missing from PROPERTIES,
+	 or has a different value in PROPERTIES, make an undo record.  */
+      for (sym = interval->plist;
+	   PLIST_ELT_P (sym, value);
+	   sym = XCONS (value)->cdr)
+	if (! EQ (property_value (properties, XCONS (sym)->car),
+		  XCONS (value)->car))
+	  record_property_change (interval->position, LENGTH (interval),
+				  XCONS (sym)->car, XCONS (value)->car,
+				  object);
+
+      /* For each new property that has no value at all in the old plist,
+	 make an undo record binding it to nil, so it will be removed.  */
+      for (sym = properties;
+	   PLIST_ELT_P (sym, value);
+	   sym = XCONS (value)->cdr)
+	if (EQ (property_value (interval->plist, XCONS (sym)->car), Qunbound))
+	  record_property_change (interval->position, LENGTH (interval),
+				  XCONS (sym)->car, Qnil,
+				  object);
     }
 
   /* Store new properties.  */
@@ -304,7 +332,7 @@ add_properties (plist, i, object)
 
 	    /* The properties have the same value on both lists.
 	       Continue to the next property. */
-	    if (!NILP (Fequal (val1, Fcar (this_cdr))))
+	    if (EQ (val1, Fcar (this_cdr)))
 	      break;
 
 	    /* Record this change in the buffer, for undo purposes.  */
@@ -643,6 +671,7 @@ Return t if any property value actually changed, nil otherwise.")
 	  if (got >= len)
 	    return Qnil;
 	  len -= got;
+	  i = next_interval (i);
 	}
       else
 	{
@@ -815,6 +844,7 @@ Return t if any property was actually removed, nil otherwise.")
 	  if (got >= len)
 	    return Qnil;
 	  len -= got;
+	  i = next_interval (i);
 	}
       /* Split away the beginning of this interval; what we don't
 	 want to modify.  */
@@ -965,6 +995,102 @@ is the string or buffer containing the text.")
 }
 #endif /* 0 */
 
+/* I don't think this is the right interface to export; how often do you
+   want to do something like this, other than when you're copying objects
+   around?
+
+   I think it would be better to have a pair of functions, one which
+   returns the text properties of a region as a list of ranges and
+   plists, and another which applies such a list to another object.  */
+
+/* DEFUN ("copy-text-properties", Fcopy_text_properties,
+       Scopy_text_properties, 5, 6, 0,
+  "Add properties from SRC-START to SRC-END of SRC at DEST-POS of DEST.\n\
+SRC and DEST may each refer to strings or buffers.\n\
+Optional sixth argument PROP causes only that property to be copied.\n\
+Properties are copied to DEST as if by `add-text-properties'.\n\
+Return t if any property value actually changed, nil otherwise.") */
+
+Lisp_Object
+copy_text_properties (start, end, src, pos, dest, prop)
+       Lisp_Object start, end, src, pos, dest, prop;
+{
+  INTERVAL i;
+  Lisp_Object res;
+  Lisp_Object stuff;
+  Lisp_Object plist;
+  int s, e, e2, p, len, modified = 0;
+
+  i = validate_interval_range (src, &start, &end, soft);
+  if (NULL_INTERVAL_P (i))
+    return Qnil;
+
+  CHECK_NUMBER_COERCE_MARKER (pos, 0);
+  {
+    Lisp_Object dest_start, dest_end;
+
+    dest_start = pos;
+    XFASTINT (dest_end) = XINT (dest_start) + (XINT (end) - XINT (start));
+    /* Apply this to a copy of pos; it will try to increment its arguments,
+       which we don't want.  */
+    validate_interval_range (dest, &dest_start, &dest_end, soft);
+  }
+
+  s = XINT (start);
+  e = XINT (end);
+  p = XINT (pos);
+
+  stuff = Qnil;
+
+  while (s < e)
+    {
+      e2 = i->position + LENGTH (i);
+      if (e2 > e)
+	e2 = e;
+      len = e2 - s;
+
+      plist = i->plist;
+      if (! NILP (prop))
+	while (! NILP (plist))
+	  {
+	    if (EQ (Fcar (plist), prop))
+	      {
+		plist = Fcons (prop, Fcons (Fcar (Fcdr (plist)), Qnil));
+		break;
+	      }
+	    plist = Fcdr (Fcdr (plist));
+	  }
+      if (! NILP (plist))
+	{
+	  /* Must defer modifications to the interval tree in case src
+	     and dest refer to the same string or buffer. */
+	  stuff = Fcons (Fcons (make_number (p),
+				Fcons (make_number (p + len),
+				       Fcons (plist, Qnil))),
+			stuff);
+	}
+
+      i = next_interval (i);
+      if (NULL_INTERVAL_P (i))
+	break;
+
+      p += len;
+      s = i->position;
+    }
+
+  while (! NILP (stuff))
+    {
+      res = Fcar (stuff);
+      res = Fadd_text_properties (Fcar (res), Fcar (Fcdr (res)),
+				  Fcar (Fcdr (Fcdr (res))), dest);
+      if (! NILP (res))
+	modified++;
+      stuff = Fcdr (stuff);
+    }
+
+  return modified ? Qt : Qnil;
+}
+
 void
 syms_of_textprop ()
 {
@@ -1018,6 +1144,7 @@ percentage by which the left interval tree should not differ from the right.");
   defsubr (&Sset_text_properties);
   defsubr (&Sremove_text_properties);
 /*  defsubr (&Serase_text_properties); */
+/*  defsubr (&Scopy_text_properties); */
 }
 
 #else

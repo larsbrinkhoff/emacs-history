@@ -108,7 +108,7 @@
     (if (listp type) (setq type (car type)))
     (and (symbolp type)
 	 (memq 'down (event-modifiers type))
-	 (setq foo (read-event))))
+	 (read-event)))
   (let ((defn (key-binding key)))
     (if (or (null defn) (integerp defn))
         (message "%s is undefined" (key-description key))
@@ -159,7 +159,7 @@ If FUNCTION is nil, applies `message' to it, thus printing it."
 If optional MINOR is non-nil (or prefix argument is given if interactive),
 display documentation of active minor modes as well.
 For this to work correctly for a minor mode, the mode's indicator variable
-(listed in `minor-mode-alist') must also be a function whose documentation
+\(listed in `minor-mode-alist') must also be a function whose documentation
 describes the minor mode."
   (interactive)
   (with-output-to-temp-buffer "*Help*"
@@ -208,6 +208,23 @@ describes the minor mode."
   (let (case-fold-search)
     (search-forward "NO WARRANTY")
     (recenter 0)))
+
+(defun describe-prefix-bindings ()
+  "Describe the bindings of the prefix used to reach this command.
+The prefix described consists of all but the last event
+of the key sequence that ran this command."
+  (interactive)
+  (let* ((key (this-command-keys))
+	 (prefix (make-vector (1- (length key)) nil))
+	 i)
+    (setq i 0)
+    (while (< i (length prefix))
+      (aset prefix i (aref key i))
+      (setq i (1+ i)))
+    (describe-bindings prefix)))
+;; Make C-h after a prefix, when not specifically bound, 
+;; run describe-prefix-bindings.
+(setq prefix-help-command 'describe-prefix-bindings)
 
 (defun view-emacs-news ()
   "Display info on recent changes to Emacs."

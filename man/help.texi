@@ -247,6 +247,8 @@ Support for Emacs documentation.
 Emulations of other editors.
 @item extensions
 Emacs Lisp language extensions.
+@item faces
+Support for using faces (fonts and colors; @pxref{Faces}).
 @item games
 Games, jokes and amusements.
 @item hardware
@@ -269,6 +271,8 @@ Maintenance aids for the Emacs development group.
 Modes for electronic-mail handling.
 @item news
 Support for netnews reading and posting.
+@item non-text
+Support for editing files that are not ordinary text.
 @item processes
 Process, subshell, compilation, and job control support.
 @item terminals

@@ -152,6 +152,7 @@ if ($?prompt) set prompt = ...
 @cindex GDB
 @cindex DBX
 @cindex SDB
+@cindex XDB
 
 @c Do you believe in GUD?
 The GUD (Grand Unified Debugger) library provides an interface to various
@@ -193,6 +194,10 @@ If you have not visited a tags table or the tags table doesn't list one
 of the functions, you get a message saying @samp{The sdb support
 requires a valid tags table to work}.  If this happens, generate a valid
 tags table in the working directory and try again.
+
+@item M-x xdb
+@findex xdb
+Similar, but run XDB instead of GDB.
 @end table
 
   You can only run one debugger process at a time.
@@ -339,11 +344,12 @@ makes sense.
 @vindex gdb-mode-hook
 @vindex dbx-mode-hook
 @vindex sdb-mode-hook
-  On startup, GUD runs one of the following hooks:
-@code{gdb-mode-hook}, if you are using GDB; @code{dbx-mode-hook}, if you
-are using DBX; and @code{sdb-mode-hook}, if you are using SDB.  You can
-use these hooks to define custom keybindings for the debugger
-interaction buffer.  @xref{Hooks}.
+@vindex xdb-mode-hook
+  On startup, GUD runs one of the following hooks: @code{gdb-mode-hook},
+if you are using GDB; @code{dbx-mode-hook}, if you are using DBX;
+@code{sdb-mode-hook}, if you are using SDB; and @code{xdb-mode-hook}, if
+you are using XDB.  You can use these hooks to define custom keybindings
+for the debugger interaction buffer.  @xref{Hooks}.
 
   Here is a convenient way to define a command that sends a particular
 command string to the debugger, and set up a key binding for it in the

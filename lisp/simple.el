@@ -1040,11 +1040,18 @@ to make one entry in the kill ring."
 	     (eq last-command 'kill-region)
 	     (eq beg end)))
     ;; Don't let the undo list be truncated before we can even access it.
-    (let ((undo-strong-limit (+ (- (max beg end) (min beg end)) 100)))
+    (let ((undo-strong-limit (+ (- (max beg end) (min beg end)) 100))
+	  (old-list buffer-undo-list)
+	  tail)
       (delete-region beg end)
+      ;; Search back in buffer-undo-list for this string,
+      ;; in case a change hook made property changes.
+      (setq tail buffer-undo-list)
+      (while (not (stringp (car (car tail))))
+	(setq tail (cdr tail)))
       ;; Take the same string recorded for undo
       ;; and put it in the kill-ring.
-      (kill-new (car (car buffer-undo-list)))
+      (kill-new (car (car tail)))
       (setq this-command 'kill-region)))
 
    (t
@@ -1230,6 +1237,13 @@ START and END specify the portion of the current buffer to be copied."
       (save-excursion
 	(insert-buffer-substring oldbuf start end)))))
 
+(defvar mark-even-if-inactive nil
+  "*Non-nil means you can use the mark even when inactive.
+This option makes a difference in Transient Mark mode.
+When the option is non-nil, deactivation of the mark
+turns off region highlighting, but commands that use the mark
+behave as if the mark were still active.")
+
 (defun mark (&optional force)
   "Return this buffer's mark value as integer; error if mark inactive.
 If optional argument FORCE is non-nil, access the mark value
@@ -1238,7 +1252,7 @@ if there is no mark at all.
 
 If you are using this in an editing command, you are most likely making
 a mistake; see the documentation of `set-mark'."
-  (if (or force mark-active)
+  (if (or force mark-active mark-even-if-inactive)
       (marker-position (mark-marker))
     (error "The mark is not currently active")))
 
@@ -2174,5 +2188,31 @@ it were the arg to `interactive' (which see) to interactively read the value."
 					   'arg))
 	       (eval-minibuffer (format "Set %s to value: " var)))))))
   (set var val))
+
+
+;;;; Keypad support.
+
+;;; Make the keypad keys act like ordinary typing keys.  If people add
+;;; bindings for the function key symbols, then those bindings will
+;;; override these, so this shouldn't interfere with any existing
+;;; bindings.
+
+(mapcar
+ (lambda (keypad-normal)
+   (let ((keypad (nth 0 keypad-normal))
+	 (normal (nth 1 keypad-normal)))
+     (define-key function-key-map (vector keypad) (vector normal))))
+ '((kp-0 ?0) (kp-1 ?1) (kp-2 ?2) (kp-3 ?3) (kp-4 ?4)
+   (kp-5 ?5) (kp-6 ?6) (kp-7 ?7) (kp-8 ?8) (kp-9 ?9)
+   (kp-space ?\ )
+   (kp-tab ?\t)
+   (kp-enter ?\r)
+   (kp-multiply ?*)
+   (kp-add ?+)
+   (kp-separator ?,)
+   (kp-subtract ?-)
+   (kp-decimal ?.)
+   (kp-divide ?/)
+   (kp-equal ?=)))
 
 ;;; simple.el ends here

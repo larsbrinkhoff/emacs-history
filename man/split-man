@@ -10,5 +10,13 @@ dviselect -i emacs.dvi -o emacs161.dvi 161-180
 dviselect -i emacs.dvi -o emacs181.dvi 181-200
 dviselect -i emacs.dvi -o emacs201.dvi 201-220
 dviselect -i emacs.dvi -o emacs221.dvi 221-240
-dviselect -i emacs.dvi -o emacs241.dvi 241-
+dviselect -i emacs.dvi -o emacs241.dvi 241-260
+dviselect -i emacs.dvi -o emacs241.dvi 261-280
+dviselect -i emacs.dvi -o emacs241.dvi 281-300
+dviselect -i emacs.dvi -o emacs241.dvi 301-320
+dviselect -i emacs.dvi -o emacs241.dvi 321-340
+dviselect -i emacs.dvi -o emacs241.dvi 341-360
+dviselect -i emacs.dvi -o emacs241.dvi 361-380
+dviselect -i emacs.dvi -o emacs241.dvi 381-400
+dviselect -i emacs.dvi -o emacs241.dvi 401-
 dviselect -i emacs.dvi -o emacs0.dvi _20-0
