@@ -1,5 +1,6 @@
 ;; chistory -- List command history
-;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman
+;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Principal author K. Shane Hartman
 
 ;; This file is part of GNU Emacs.
 

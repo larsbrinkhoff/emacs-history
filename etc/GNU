@@ -11,13 +11,16 @@ away free to everyone who can use it.  Several other volunteers are helping
 me.  Contributions of time, money, programs and equipment are greatly
 needed.
 
-So far we have a portable C and Pascal compiler which compiles for Vax and
-68000 (though needing much rewriting), an Emacs-like text editor with Lisp
-for writing editor commands, a yacc-compatible parser generator, a linker,
-and around 35 utilities.  A shell (command interpreter) is nearly
-completed.  When the kernel and a debugger are written, it will be possible
-to distribute a GNU system suitable for program development.  After this we
-will add a text formatter, an Empire game, a spreadsheet, and hundreds of
+So far we have an Emacs text editor with Lisp for writing editor commands,
+a source level debugger, a yacc-compatible parser generator, a linker, and
+around 35 utilities.  A shell (command interpreter) is nearly completed.  A
+new portable optimizing C compiler has compiled itself and may be released
+this year.  An initial kernel exists but many more features are needed to
+emulate Unix.  When the kernel and compiler are finished, it will be
+possible to distribute a GNU system suitable for program development.  We
+will use @TeX{} as our text formatter, but an nroff is being worked on.  We
+will use the free, portable X window system as well.  After this we will
+add a portable Common Lisp, an Empire game, a spreadsheet, and hundreds of
 other things, plus on-line documentation.  We hope to supply, eventually,
 everything useful that normally comes with a Unix system, and more.
 
@@ -25,13 +28,13 @@ GNU will be able to run Unix programs, but will not be identical to Unix.
 We will make all improvements that are convenient, based on our experience
 with other operating systems.  In particular, we plan to have longer
 filenames, file version numbers, a crashproof file system, filename
-completion perhaps, terminal-independent display support, and eventually a
-Lisp-based window system through which several Lisp programs and ordinary
-Unix programs can share a screen.  Both C and Lisp will be available as
-system programming languages.  We will try to support UUCP, MIT Chaosnet,
-and Internet protocols for communication.
+completion perhaps, terminal-independent display support, and perhaps
+eventually a Lisp-based window system through which several Lisp programs
+and ordinary Unix programs can share a screen.  Both C and Lisp will be
+available as system programming languages.  We will try to support UUCP,
+MIT Chaosnet, and Internet protocols for communication.
 
-GNU is aimed initially at machines in the 68000/16000 class, with virtual
+GNU is aimed initially at machines in the 68000/16000 class with virtual
 memory, because they are the easiest machines to make it run on.  The extra
 effort to make it run on smaller machines will be left to someone who wants
 to use it on them.
@@ -49,7 +52,9 @@ Incompatible Timesharing System and the Lisp Machine operating system.  I
 pioneered terminal-independent display support in ITS.  Since then I have
 implemented one crashproof file system and two window systems for Lisp
 machines, and designed a third window system now being implemented; this
-one will be ported to many systems including use in GNU.
+one will be ported to many systems including use in GNU.  [Historical note:
+The window system project was not completed; GNU now plans to use the
+X window system.]
 
 
 Why I Must Write GNU

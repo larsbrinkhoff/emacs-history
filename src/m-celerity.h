@@ -1,5 +1,5 @@
 /* m- file for Celerity.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -57,3 +57,11 @@ and this notice must be preserved on all copies.  */
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 
 #define LOAD_AVE_CVT(x) ((int) ((x) * 100.0))
+
+/* A machine-specific loader switch is needed.  */
+
+#define LD_SWITCH_MACHINE -k100000
+
+/* alloca is provided by the system.  */
+
+#define HAVE_ALLOCA

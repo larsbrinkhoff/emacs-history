@@ -1,5 +1,6 @@
 ;; Scheme mode, and its idiosyncratic commands.
-;; Copyright (C) 1985 Bill Rozas & Richard M. Stallman
+;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Adapted from Lisp mode by Bill Rozas, jinx@prep.
 
 ;; This file is part of GNU Emacs.
 
@@ -25,44 +26,45 @@
 
 (provide 'scheme)
 
-(defvar scheme-mode-syntax-table nil "")
 (defvar scheme-mode-abbrev-table nil "")
-
-(if (not scheme-mode-syntax-table)
-    (let ((i 0))
-      (setq scheme-mode-syntax-table (make-syntax-table))
-      (set-syntax-table scheme-mode-syntax-table)
-      (while (< i ?0)
-	(modify-syntax-entry i "_   ")
-	(setq i (1+ i)))
-      (setq i (1+ ?9))
-      (while (< i ?A)
-	(modify-syntax-entry i "_   ")
-	(setq i (1+ i)))
-      (setq i (1+ ?Z))
-      (while (< i ?a)
-	(modify-syntax-entry i "_   ")
-	(setq i (1+ i)))
-      (setq i (1+ ?z))
-      (while (< i 128)
-	(modify-syntax-entry i "_   ")
-	(setq i (1+ i)))
-      (modify-syntax-entry ?  "    ")
-      (modify-syntax-entry ?\t "    ")
-      (modify-syntax-entry ?\n ">   ")
-      (modify-syntax-entry ?\f ">   ")
-      (modify-syntax-entry ?\; "<   ")
-      (modify-syntax-entry ?` "'   ")
-      (modify-syntax-entry ?' "'   ")
-      (modify-syntax-entry ?, "'   ")
-      (modify-syntax-entry ?. "'   ")
-      (modify-syntax-entry ?# "'   ")
-      (modify-syntax-entry ?\" "\"    ")
-      (modify-syntax-entry ?\\ "\\   ")
-      (modify-syntax-entry ?\( "()  ")
-      (modify-syntax-entry ?\) ")(  ")))
-
 (define-abbrev-table 'scheme-mode-abbrev-table ())
+
+(defvar scheme-mode-syntax-table nil "")
+
+(if scheme-mode-syntax-table
+    ()
+  (let ((i 0))
+    (setq scheme-mode-syntax-table (make-syntax-table))
+    (set-syntax-table scheme-mode-syntax-table)
+    (while (< i ?0)
+      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
+      (setq i (1+ i)))
+    (setq i (1+ ?9))
+    (while (< i ?A)
+      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
+      (setq i (1+ i)))
+    (setq i (1+ ?Z))
+    (while (< i ?a)
+      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
+      (setq i (1+ i)))
+    (setq i (1+ ?z))
+    (while (< i 128)
+      (modify-syntax-entry i "_   " scheme-mode-syntax-table)
+      (setq i (1+ i)))
+    (modify-syntax-entry ?  "    " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\t "    " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\n ">   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\f ">   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\; "<   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?` "'   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?' "'   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?, "'   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?. "'   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?# "'   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\" "\"    " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\\ "\\   " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\( "()  " scheme-mode-syntax-table)
+    (modify-syntax-entry ?\) ")(  " scheme-mode-syntax-table)))
 
 (defun scheme-mode-variables ()
   (set-syntax-table scheme-mode-syntax-table)
@@ -92,9 +94,12 @@
   (define-key map "\e\C-y" 'scheme-zap-define-and-resume)
   (define-key map "\e\C-z" 'resume-scheme))
 
-(defvar scheme-mode-map (make-sparse-keymap))
-;; (define-key scheme-mode-map "\e\C-x" 'scheme-send-definition)
-(scheme-mode-commands scheme-mode-map)
+(defvar scheme-mode-map ())
+(if scheme-mode-map
+    ()
+  (setq scheme-mode-map (make-sparse-keymap))
+  ;; (define-key scheme-mode-map "\e\C-x" 'scheme-send-definition)
+  (scheme-mode-commands scheme-mode-map))
 
 (defun scheme-mode ()
   "Major mode for editing Scheme code.
@@ -340,7 +345,7 @@ of the start of the containing expression."
 ;;; Let is different in Scheme
 
 (defun would-be-symbol (string)
-  (not (string-equal (substring string 0 1) "(")))
+  (not (char-equal (aref string 0) ?\()))
 
 (defun next-sexp-as-string ()
   ;; Assumes that protected by a save-excursion

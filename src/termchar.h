@@ -1,5 +1,5 @@
 /* Flags and parameters describing terminal's characteristics.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -36,6 +36,11 @@ extern int fast_clear_end_of_line; /* Terminal has a `ce' string */
 
 extern int dont_calculate_costs; /* Nonzero means don't bother computing */
 				/* various cost tables; we won't use them.  */
+
+/* Nonzero means no need to redraw the entire screen on resuming
+   a suspended Emacs.  This is useful on terminals with multiple pages,
+   where one page is used for Emacs and another for all else. */
+extern int no_redraw_on_reenter;
 
 /* DCICcost[n] is cost of inserting N characters.
    DCICcost[-n] is cost of deleting N characters. */

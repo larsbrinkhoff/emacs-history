@@ -1,5 +1,5 @@
 /* Definitions of objects used by the GNU Emacs undo facility.
-   Copyright (C) 1985 Fen Labalme and Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -33,10 +33,16 @@ enum Ukinds {			/* The events that can exist in the undo
 
 struct UndoRec {		/* A record of a single undo action */
     enum Ukinds kind;		/* the kind of action to be undone */
-    int pos;			/* Where dot is */
-    int len;			/* The extent of the undo (characters
-				   inserted or deleted) */
+    int pos;			/* Where change starts or ends.  */
+    int len;			/* Number of characters to insert, delete or
+				   replace.  Negative means they stretch
+				   back from `pos'.  */
 };
+
+/* Note: in a record of type Uunmod, the `len' field is really
+   the buffer->modtime associated with the state at that time.
+   The buffer is marked as unmodified by undoing the Uunmod
+   only if the modtime field matches.  */
 
 /* The undo history consists of two circular queues, one of characters and
    one of UndoRecs.  When Uinsert recs are added to UndoRQ characters get

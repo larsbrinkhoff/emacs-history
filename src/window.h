@@ -1,5 +1,5 @@
 /* Window definitions for GNU Emacs.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -129,11 +129,19 @@ struct window
     /* Number of characters in buffer past bottom of window,
        as of last redisplay that finished. */
     Lisp_Object window_end_pos;
+    /* t if window_end_pos is truly valid.
+       This is nil if nontrivial redisplay is preempted
+       since in that case the screen image that window_end_pos
+       did not get onto the screen.  */
+    Lisp_Object window_end_valid;
     /* Vertical position (relative to window top) of that buffer position
        of the first of those characters */
     Lisp_Object window_end_vpos;
     /* Non-nil means must regenerate mode line of this window */
     Lisp_Object redo_mode_line;
+    /* Non-nil means current value of `start'
+       was the beginning of a line when it was chosen.  */
+    Lisp_Object start_at_line_beg;
   };
 
 /* This is the window which displays the minibuffer.
@@ -148,12 +156,14 @@ extern Lisp_Object minibuf_window;
 
 extern Lisp_Object selected_window;
 
-#define new_windows 1
+/* Non-nil => window to for C-M-v to scroll
+   when the minibuffer is selected.  */
+extern Lisp_Object Vminibuf_scroll_window;
 
-Lisp_Object Fnext_window ();
-Lisp_Object Fselect_window ();
-Lisp_Object Fdisplay_buffer ();
-Lisp_Object Fshow_buffer ();
+extern Lisp_Object Fnext_window ();
+extern Lisp_Object Fselect_window ();
+extern Lisp_Object Fdisplay_buffer ();
+extern Lisp_Object Fset_window_buffer ();
 
 extern char *minibuf_prompt;	/* Prompt to display in front of the minibuffer contents */
 
@@ -191,3 +201,7 @@ extern int clip_changed;
 /* Nonzero if window sizes or contents have changed
  since last redisplay that finished */
 extern int windows_or_buffers_changed;
+
+/* Number of windows displaying the selected buffer.
+   Normally this is 1, but it can be more.  */
+extern int buffer_shared;

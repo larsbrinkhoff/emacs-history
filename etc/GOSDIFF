@@ -56,6 +56,12 @@ The commands in GNU Emacs are nearly the same as in the
 original Emacs and the other Emacses which imitated it.
 (A few have been changed to fit the Unix environment better.)
 
+* Support for Gosling's Emacs commands.
+
+M-x set-gosmacs-bindings rebinds many editing commands for
+compatibility with Gosling's Emacs.
+M-x set-gnu-bindings reverses the change.
+
 * Side-by-side windows.
 
 You can split a GNU Emacs window either horizontally or

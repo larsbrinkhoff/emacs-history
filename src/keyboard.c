@@ -1,5 +1,5 @@
 /* Keyboard input; editor command loop.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -41,6 +41,18 @@ and this notice must be preserved on all copies.  */
 #else /* not USG */
 #include <sys/ioctl.h>
 #endif /* not USG */
+
+#ifdef HPUX /* ioctl (0, FIONREAD, addr) always seems to return -1
+	       with errno 22 EINVAL.  I don't know what's wrong */
+#undef FIONREAD
+#endif HPUX
+
+/* Make all keyboard buffers much bigger when using X windows.  */
+#ifdef HAVE_X_WINDOWS
+#define BUFFER_SIZE_FACTOR 16
+#else
+#define BUFFER_SIZE_FACTOR 1
+#endif
 
 /* Following definition copied from eval.c */
 
@@ -133,7 +145,7 @@ int input_pending;
 int MetaFlag;
 
 /* Buffer for pre-read keyboard input */
-unsigned char kbd_buffer [256];
+unsigned char kbd_buffer [256 * BUFFER_SIZE_FACTOR];
 
 /* Number of characters available in kbd_buffer.  */
 int kbd_count;
@@ -149,6 +161,10 @@ long *input_available_clear_word;
    Default is 1 if INTERRUPT_INPUT is defined.  */
 
 int interrupt_input;
+
+/* Nonzero while interrupts are temporarily deferred during redisplay.  */
+
+int interrupts_deferred;
 
 /* nonzero means use ^S/^Q for flow control.  */
 
@@ -169,10 +185,18 @@ int flow_control;
 #define sigunblockx(sig) sigrelse (sig)
 #define sigpausex(sig) sigpause (sig)
 #endif /* BSD4_1 */
+
+/* We are unable to use interrupts if FIONREAD is not available,
+   so flush SIGIO so we won't try. */
+#ifndef FIONREAD
+#ifdef SIGIO
+#undef SIGIO
+#endif
+#endif
 
-static char KeyBuf[10];		/* Buffer for keys from get_char () */
+static char KeyBuf[40];		/* Buffer for keys from get_char () */
 static NextK;			/* Next index into KeyBuf */
-static echo_keystrokes;		/* True iff we are to echo keystrokes */
+static echo_keystrokes;		/* > 0 if we are to echo keystrokes */
 static Echo1;			/* Stuff for final echo */
 unsigned char *keys_prompt;	/* String to display in front of echoed keystrokes, or 0 */
 
@@ -188,8 +212,7 @@ EchoThem (notfinal)
 
   extern char *push_key_description ();
 
-  if (!(keys_prompt || (echo_keystrokes && NextK)))
-    /* (!(echo_keystrokes && (NextK || keys_prompt)) */
+  if (!(keys_prompt || (echo_keystrokes > 0 && NextK)))
     return;
 
   echoing = 1;
@@ -227,8 +250,6 @@ EchoThem (notfinal)
 }
 
 Lisp_Object recursive_edit_unwind (), command_loop ();
-Lisp_Object cmd_error ();
-Lisp_Object top_level_1 ();
 
 DEFUN ("recursive-edit", Frecursive_edit, Srecursive_edit, 0, 0, "",
   "Invoke the editor command loop recursively.\n\
@@ -244,25 +265,21 @@ to begin editing.")
   RecurseDepth++;
   RedoModes++;
 
+  if (RecurseDepth)
+    {
+      specbind (Qstandard_output, Qt);
+      specbind (Qstandard_input, Qt);
+    }
+
   record_unwind_protect (recursive_edit_unwind,
 			 (RecurseDepth &&
 			  bf_cur != XBUFFER (XWINDOW (selected_window)->buffer))
 			 ? Fcurrent_buffer ()
 			 : Qnil);
 
-  if (!RecurseDepth)
-    internal_condition_case (top_level_1, Qerror, cmd_error);
-
-  while (1)
-    {
-      val = internal_condition_case (command_loop, Qerror, cmd_error);
-      /* Value is number if returned due to cmd_error.
-	 In that case, just loop around.  */
-      if (NULL (val))
-	break;
-      if (EQ (val, Qt))
-	Fsignal (Qquit, Qnil);
-    }
+  val = command_loop ();
+  if (EQ (val, Qt))
+    Fsignal (Qquit, Qnil);
 
   unbind_to (count);
   return Qnil;
@@ -288,8 +305,8 @@ cmd_error (data)
 
   Vquit_flag = Qnil;
   Vinhibit_quit = Qt;
-  Vstandard_input = Qt;
   Vstandard_output = Qt;
+  Vstandard_input = Qt;
   Vexecuting_macro = Qnil;
   minibuf_message = 0;
 
@@ -301,7 +318,7 @@ cmd_error (data)
   if (EQ (errname, Qerror))
     {
       data = Fcdr (data);
-      if (!LISTP (data)) data = Qnil;
+      if (!CONSP (data)) data = Qnil;
       errmsg = Fcar (data);
       file_error = Qnil;
     }
@@ -316,7 +333,7 @@ cmd_error (data)
      This is done by printing it into a scratch buffer
      and then making a copy of the text in the buffer. */
   
-  if (!LISTP (data)) data = Qnil;
+  if (!CONSP (data)) data = Qnil;
   tail = Fcdr (data);
 
   /* For file-error, make error message by concatenating
@@ -329,7 +346,7 @@ cmd_error (data)
   else
     write_string_1 ("peculiar error", -1, Qt);
 
-  for (i = 0; LISTP (tail); tail = Fcdr (tail), i++)
+  for (i = 0; CONSP (tail); tail = Fcdr (tail), i++)
     {
       write_string_1 (i ? ", " : ": ", 2, Qt);
       if (!NULL (file_error))
@@ -338,29 +355,24 @@ cmd_error (data)
 	Fprin1 (Fcar (tail), Qt);
     }
 
-  /* In -batch mode, force out the error message and newlines after it */
+  /* In -batch mode, force out the error message and newlines after it
+     and then die.  */
   if (noninteractive)
-    message ("");
+    {
+      message ("");
+      Fkill_emacs (make_number (-1));
+    }
 
   Vquit_flag = Qnil;
 
   Vinhibit_quit = Qnil;
   return make_number (0);
 }
-
-void
-debugger (sig, data)
-     Lisp_Object sig, data;
-{
-  Fterpri (Qnil);
-  Fprinc (Fget (sig, Qerror_message), Qnil);
-  putchar (' ');
-  Fprin1 (data, Qnil);
-  Fterpri (Qnil);
-  abort ();
-}
 
 Lisp_Object command_loop_1 ();
+Lisp_Object command_loop_2 ();
+Lisp_Object cmd_error ();
+Lisp_Object top_level_1 ();
 
 /* Entry to editor-command-loop.
    This level has the catches for exiting/returning to editor command loop.
@@ -371,16 +383,36 @@ command_loop ()
 {
   if (RecurseDepth)
     {
-      return internal_catch (Qexit, command_loop_1, Qnil);
+      return internal_catch (Qexit, command_loop_2, Qnil);
     }
   else
-    {
-      while (1)
-	{
-	  internal_catch (Qtop_level, command_loop_1, Qnil);
-	  top_level_1 ();
-	}
-    }
+    while (1)
+      {
+	internal_catch (Qtop_level, top_level_1, Qnil);
+	internal_catch (Qtop_level, command_loop_2, Qnil);
+      }
+}
+
+/* Here we catch errors in execution of commands within the
+   editing loop, and reenter the editing loop.
+   When there is an error, cmd_error runs and returns a non-nil
+   value to us.  A value of nil means that cmd_loop_1 itself
+   returned due to end of file (or end of kbd macro).  */
+
+Lisp_Object
+command_loop_2 ()
+{
+  register Lisp_Object val;
+  do
+    val = internal_condition_case (command_loop_1, Qerror, cmd_error);
+  while (!NULL (val));
+  return Qnil;
+}
+
+Lisp_Object
+top_level_2 ()
+{
+  return Feval (Vtop_level);
 }
 
 Lisp_Object
@@ -388,7 +420,7 @@ top_level_1 ()
 {
   /* On entry to the outer level, run the startup file */
   if (!NULL (Vtop_level))
-    Feval (Vtop_level);
+    internal_condition_case (top_level_2, Qerror, cmd_error);
   else if (!NULL (Vpurify_flag))
     message ("Bare impure Emacs (standard Lisp code not loaded)");
   else
@@ -434,25 +466,19 @@ command_loop_1 ()
   int nonundocount;
   char keybuf[30];
   int i;
+  int no_redisplay;
 
   Vprefix_arg = Qnil;
   waiting_for_input = 0;
   Echo1 = 0;
   NextK = 0;
-  Vstandard_input = Qt;
-  Vstandard_output = Qt;
   last_command = Qt;
   nonundocount = 0;
+  no_redisplay = 0;
   
   while (1)
     {
-#ifdef C_ALLOCA
-      alloca (0);		/* Cause a garbage collection now */
-				/* Since we can free the most stuff here.  */
-#endif /* C_ALLOCA */
-
       /* Install chars successfully executed in kbd macro */
-
       if (defining_kbd_macro)
 	finalize_kbd_macro_chars ();
 
@@ -466,7 +492,7 @@ command_loop_1 ()
 
       if (MinibufDepth && minibuf_message)
 	{
-	  Fsit_for (make_number (2));
+	  Fsit_for (make_number (2), Qnil);
 	  minibuf_message = 0;
 	  if (!NULL (Vquit_flag))
 	    {
@@ -475,10 +501,32 @@ command_loop_1 ()
 	    }
 	}
 
-      /* Read next key sequence; i gets its length.  */
+      i = 0;
+#if 0
+      /* If prev. command was directly displayed, we don't need
+	 redisplay.  Try shortcut for reading single-char key sequence.  */
+      if (no_redisplay)
+	i = fast_read_one_key (keybuf);
+#endif /* 0 */
+      /* Shortcut not applicable or found a prefix key.
+	 Take full precautions and read key sequence the hard way.  */
+      if (i == 0)
+	{
+#ifdef C_ALLOCA
+	  alloca (0);		/* Cause a garbage collection now */
+				/* Since we can free the most stuff here.  */
+#endif /* C_ALLOCA */
 
-      i = read_key_sequence (keybuf, sizeof keybuf, 0);
-      if (!i)			/* End of file -- happens only in */
+	  /* Read next key sequence; i gets its length.  */
+
+	  i = read_key_sequence (keybuf, sizeof keybuf, 0,
+				 no_redisplay && buffer_shared <= 1);
+	}
+
+      /* Now we have read a key sequence of length I,
+	 or else I is 0 and we found end of file.  */
+
+      if (i == 0)		/* End of file -- happens only in */
 	return Qnil;		/* a kbd macro, at the end */
 
       last_command_char = keybuf[i - 1];
@@ -494,8 +542,15 @@ command_loop_1 ()
 	    }
 	}
 
+      /* Do redisplay processing after this command except in special
+	 cases identified below that set no_redisplay to 1.  */
+      no_redisplay = 0;
+
+      /* Execute the command.  */
+
       if (NULL (cmd))
 	{
+	  /* nil means key is undefined.  */
 	  Ding ();
 	  defining_kbd_macro = 0;
 	  RedoModes++;
@@ -518,7 +573,7 @@ command_loop_1 ()
 		      && !windows_or_buffers_changed
 		      && !detect_input_pending ()
 		      && NULL (Vexecuting_macro))
-		    direct_output_forward_char (1);
+		    no_redisplay = direct_output_forward_char (1);
 		  goto directly_done;
 		}
 	      else if (EQ (cmd, Qbackward_char) && point > FirstCharacter)
@@ -533,7 +588,7 @@ command_loop_1 ()
 		      && !windows_or_buffers_changed
 		      && !detect_input_pending ()
 		      && NULL (Vexecuting_macro))
-		    direct_output_forward_char (-1);
+		    no_redisplay = direct_output_forward_char (-1);
 		  goto directly_done;
 		}
 	      else if (EQ (cmd, Qself_insert_command))
@@ -565,7 +620,8 @@ command_loop_1 ()
 		      && (point == NumCharacters + 1 || CharAt (point) == '\n')
 		      && last_command_char >= ' '
 		      && last_command_char < 0177)
-		    direct_output_for_insert (last_command_char);
+		    no_redisplay
+		      = direct_output_for_insert (last_command_char);
 		  goto directly_done;
 		}
 	    }
@@ -602,7 +658,8 @@ request_echo ()
 {
   /* Note: no need to reestablish handler on USG systems
      because it is established, if approriate, each time an alarm is requested.  */
-#if defined(BSD4_1) && defined(subprocesses)
+#ifdef subprocesses
+#ifdef BSD4_1
   extern int select_alarmed;
   if (select_alarmed == 0)
     {
@@ -611,6 +668,8 @@ request_echo ()
       return;
     }
 #endif
+#endif
+
 #ifdef BSD4_1
   sigisheld (SIGALRM);
 #endif
@@ -626,12 +685,15 @@ request_echo ()
 }
 
 /* read a character from the keyboard; call the redisplay if needed */
-/* commandflag nonzero means auto-saving may be considered */
+/* commandflag 0 means do not do auto-saving, but do do redisplay.
+   -1 means do not do redisplay, but do do autosaving.
+   1 means do both.  */
+
 get_char (commandflag)
      int commandflag;
 {
   register int c;
-  register alarmtime = echo_keystrokes;
+  int alarmtime;
   int count;
   Lisp_Object tem;
   extern request_echo ();
@@ -652,16 +714,17 @@ get_char (commandflag)
       goto from_macro;
     }
 
-  if (!input_pending && !detect_input_pending ())
+  if (commandflag >= 0 && !input_pending && !detect_input_pending ())
+    DoDsp (0);
+
+  if (commandflag != 0
+      && auto_save_interval > 0
+      && Keystrokes > auto_save_interval
+      && Keystrokes > 20
+      && !input_pending && !detect_input_pending ())
     {
-      DoDsp (0);
-      if (auto_save_interval > 0 && commandflag
-	  && Keystrokes > auto_save_interval
-	  && Keystrokes > 20)
-	{
-	  Fdo_auto_save (Qnil);
-	  Keystrokes = 0;
-	}
+      Fdo_auto_save (Qnil);
+      Keystrokes = 0;
     }
 
   Keystrokes++;
@@ -675,27 +738,26 @@ get_char (commandflag)
       goto non_reread;
     }
 
-  /* If echoing already, we will echo without delay, so need no interrupt */
-  /* If no keys accumulated yet, need no interrupt. */
-  /* If minibuffer active, do not echo keystrokes. */
-  if (Echo1 || !NextK || MinibufDepth)
-    alarmtime = 0;
-    /* Message turns off echoing unless more keystrokes turn it on again. */
-  if (minibuf_message && minibuf_message != echobuf)
-    alarmtime = 0, Echo1 = 0, NextK = 0;
+  /* Message turns off echoing unless more keystrokes turn it on again. */
+  if (minibuf_message && *minibuf_message && minibuf_message != echobuf)
+    Echo1 = 0, NextK = 0;
 
-  if (Echo1)		/* If already echoing, put a dash at the end now */
+  /* If already echoing, continue.  */
+  else if (Echo1 != 0 /*|| cursor_in_echo_area*/ )
     EchoThem (1);
 
-  /* Else start echoing if user waits more than `alarmtime' seconds. */
-  if (alarmtime > 0)
+  /* If in middle of key sequence and minibuffer not active,
+     start echoing if enough time elapses.  */
+  else if (MinibufDepth == 0 && NextK != 0 && echo_keystrokes > 0)
     {
+      /* Else start echoing if user waits more than `alarmtime' seconds. */
       /* This interrupt either calls EchoThem right away
 	 or sets echo_flag, which causes EchoThem to be called
 	 by set_waiting_for_input's next invocation.  */
       signal (SIGALRM, request_echo);
       echo_flag = 0;
       echo_now = 0;
+      alarmtime = echo_keystrokes;
       alarm ((unsigned) alarmtime);
     }
 
@@ -745,7 +807,7 @@ get_char (commandflag)
     KeyBuf[NextK++] = c;
 
   /* If already echoing, echo right away. */
-  if (Echo1)
+  if (Echo1 /*|| cursor_in_echo_area*/ )
     EchoThem (0);
 
  reread:
@@ -765,7 +827,8 @@ get_char (commandflag)
     {
       count = specpdl_ptr - specpdl;
 
-      record_unwind_protect (save_window_restore, save_window_save ());
+      record_unwind_protect (Fset_window_configuration,
+			     Fcurrent_window_configuration ());
 
       tem = Feval (Vhelp_form);
       if (XTYPE (tem) == Lisp_String)
@@ -798,10 +861,43 @@ print_help (object)
  Read characters into kbd_buffer
  from which they are obtained by kbd_buffer_get_char.  */
 
+/* Set this for debugging, to have a way to get out */
+int stop_character;
+
+/* Store a character obtained at interrupt level into kbd_buffer, fifo */
+kbd_buffer_store_char (c)
+     register int c;
+{
+  c &= 0377;
+
+  if (c == Ctl ('g')
+      || ((c == (0200 | Ctl ('g'))) && !MetaFlag))
+    {
+      interrupt_signal ();
+      return;
+    }
+
+  if (c && c == stop_character)
+    {
+      sys_suspend ();
+      return;
+    }
+
+  if (kbd_ptr != kbd_buffer)
+    {
+      bcopy (kbd_ptr, kbd_buffer, kbd_count);
+      kbd_ptr = kbd_buffer;
+    }
+
+  if (kbd_count < sizeof kbd_buffer)
+    {
+      kbd_buffer[kbd_count++] = c;
+    }
+}
+
 kbd_buffer_get_char ()
 {
   register int c;
-  int nread;
 
   if (noninteractive)
     {
@@ -817,6 +913,12 @@ kbd_buffer_get_char ()
       if (!NULL (Vquit_flag))
 	quit_throw_to_get_char ();
 
+#ifdef VMS
+      set_waiting_for_input (0);
+      wait_for_kbd_input ();
+      clear_waiting_for_input (0);
+#else
+/* Note SIGIO has been undef'd if FIONREAD is missing.  */
 #ifdef SIGIO
       gobble_input ();
 #endif /* SIGIO */
@@ -825,6 +927,7 @@ kbd_buffer_get_char ()
 #ifdef subprocesses
 	  wait_reading_process_input (0, -1, 1);
 #else
+/* Note SIGIO has been undef'd if FIONREAD is missing.  */
 #ifdef SIGIO
 	  if (interrupt_input)
 	    {
@@ -845,12 +948,13 @@ kbd_buffer_get_char ()
 	      read_avail_input ();
 	    }
 	}
+#endif /* not VMS */
     }
 
   input_pending = --kbd_count > 0;
   c = *kbd_ptr;			/* *kbd_ptr++ would have a timing error. */
   kbd_ptr++;			/* See kbd_buffer_store_char. */
-  return c & 0377;		/* Clean up if sign was extended. */
+  return (c & (MetaFlag ? 0377 : 0177)); /* Clean up if sign was extended. */
 }
 
 /* Store into *addr the number of terminal input chars available.
@@ -860,27 +964,43 @@ kbd_buffer_get_char ()
 get_input_pending (addr)
      int *addr;
 {
+#ifdef VMS
+  /* On VMS, we always have something in the buffer
+     if any input is available.  */
+  *addr = kbd_count | !NULL (Vquit_flag);
+#else
 #ifdef FIONREAD
-  if (ioctl (0, FIONREAD, addr) < 0)
+  if (interrupt_input && ! interrupts_deferred)
+    *addr = kbd_count;
+  else if (ioctl (0, FIONREAD, addr) < 0)
     *addr = 0;
 #else /* no FIONREAD */
   read_avail_input ();
   *addr = kbd_count;
 #endif /* no FIONREAD */
+#endif
 }
 
 /* Read any terminal input already buffered up by the system
-   into the kbd_buffer, assuming the buffer is currently empty.  */
+   into the kbd_buffer, assuming the buffer is currently empty.
+   Never waits.
+
+   Input gets into the kbd_buffer either through this function
+   (at main program level) or at interrupt level if input
+   is interrupt-driven.  */
 
 read_avail_input ()
 {
+/* There is no need to do anything on VMS, since input will
+   automatically come in asynchronously.  */
+#ifndef VMS
 #ifdef FIONREAD
   int nread;
   get_input_pending (&nread);
   if (nread > sizeof kbd_buffer)
     nread = sizeof kbd_buffer;
   if (!nread)
-    nread = 1;
+    return;
   set_waiting_for_input (0);
   kbd_count = read (0, kbd_buffer, nread);
   clear_waiting_for_input ();
@@ -900,16 +1020,23 @@ read_avail_input ()
   you lose
 #endif /* not USG */
 #endif /* no FIONREAD */
+#endif /* not VMS */
 }
 
 #ifdef SIGIO   /* for entire page */
+/* Note SIGIO has been undef'd if FIONREAD is missing.  */
 
 gobble_input ()
 {
   int nread;
   if (interrupt_input)
     {
-      get_input_pending (&nread);
+#ifdef FIONREAD
+      if (ioctl (0, FIONREAD, &nread) < 0)
+	nread = 0;
+#else /* no FIONREAD */
+      lossage
+#endif /* no FIONREAD */
       if (nread)
 	{
 	  sigholdx (SIGIO);
@@ -919,56 +1046,16 @@ gobble_input ()
     }
 }
 
-/* Set this for debugging, to have a way to get out */
-int stop_character;
-
-/* Store a character obtained at interrupt level into kbd_buffer, fifo */
-kbd_buffer_store_char (c)
-     int c;
-{
-  if (!MetaFlag)
-    c &= 0177;
-  else
-    c &= 0377;
-
-  if (c == 07)
-    {
-      interrupt_signal ();
-      return;
-    }
-
-  if (c && c == stop_character)
-    {
-#ifdef SIGTSTP			/* Support possible in later USG versions */
-      kill (getpid (), SIGTSTP);
-#else
-      fake_suspend ();
-#endif /* not SIGTSTP */
-      return;
-    }
-
-  if (kbd_ptr != kbd_buffer)
-    {
-      bcopy (kbd_ptr, kbd_buffer, kbd_count);
-      kbd_ptr = kbd_buffer;
-    }
-
-  if (kbd_count < sizeof kbd_buffer)
-    {
-      kbd_buffer[kbd_count++] = c;
-    }
-}
-
 input_available_signal (signo)
      int signo;
 {
-  unsigned char buf[64];
+  unsigned char buf[64 * BUFFER_SIZE_FACTOR];
   int nread;
   register int i;
 #ifdef BSD4_1
   extern int select_alarmed;
 #endif
-  
+
 #ifdef USG
   /* USG systems forget handlers when they are used;
      must reestablish each time */
@@ -984,7 +1071,12 @@ input_available_signal (signo)
 
   while (1)
     {
-      get_input_pending (&nread);
+#ifdef FIONREAD
+      if (ioctl (0, FIONREAD, &nread) < 0)
+	nread = 0;
+#else /* no FIONREAD */
+      lossage
+#endif /* no FIONREAD */
       if (nread <= 0)
 	break;
 #ifdef BSD4_1
@@ -1018,16 +1110,85 @@ input_available_signal (signo)
 }
 #endif /* SIGIO */
 
-/* Read a sequence of keys that ends with a non prefix character,
- and store them in keybuf, a buffer of size bufsize.
- Prompt with `prompt'.  Echo starting immediately unless `prompt' is 0.
- Return the length of the key sequence stored.
-*/
+#if 0
+/* This is turned off because it didn't produce much speedup.  */
+
+/* Read a single-char key sequence.  Do not redisplay.
+   Return 1 if successful, or 0 if what follows is not
+   a single-char key.  (In that case, a char has been unread.)
+   This is used instead of read_key_sequence as an optimization
+   just after a direct-updating command is done, since at such
+   times we know that no redisplay is required.  */
 
 int
-read_key_sequence (keybuf, bufsize, prompt)
+fast_read_one_key (keybuf)
      char *keybuf;
+{
+  register Lisp_Object map;
+  register int c;
+  register Lisp_Object tem;
+
+  keys_prompt = 0;
+  /* Read a character, and do not redisplay.  */
+  c = get_char (-1);
+  Vquit_flag = Qnil;
+
+  /* Assume until further notice that we are unlucky
+     and will return zero, so this char will be
+     reread by read_key_sequence.  */
+
+  unread_command_char = c;
+
+  if (c < 0 || c >= 0200)
+    return 0;
+
+  map = bf_cur->keymap;
+  if (!EQ (map, Qnil))
+    {
+      tem = get_keyelt (access_keymap (map, c));
+      if (!EQ (tem, Qnil))
+	return 0;
+    }
+
+  XSET (map, Lisp_Vector, CurrentGlobalMap);
+  tem = !NULL (map)
+    ? get_keyelt (access_keymap (map, c))
+      : Qnil;
+
+  read_key_sequence_cmd = tem;
+
+  /* trace symbols to their function definitions */
+
+  while (XTYPE (tem) == Lisp_Symbol && !NULL (tem)
+	 && !EQ (tem, Qunbound))
+    tem = XSYMBOL (tem)->function;
+
+  /* Is the definition a prefix character?  */
+
+  if (XTYPE (tem) == Lisp_Vector ||
+      (CONSP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
+    return 0;
+
+  unread_command_char = -1;
+  keybuf[0] = c;
+  return 1;
+}
+
+#endif /* 0 */
+
+/* Read a sequence of keys that ends with a non prefix character,
+ and store them in KEYBUF, a buffer of size BUFSIZE.
+ Prompt with PROMPT.  Echo starting immediately unless `prompt' is 0.
+ Return the length of the key sequence stored.
+ NODISPLAY nonzero means don't do redisplay before the first character
+ (just for speedup).  */
+
+int
+read_key_sequence (keybuf, bufsize, prompt, nodisplay)
+     char *keybuf;
+     int bufsize;
      unsigned char *prompt;
+     int nodisplay;
 {
   register int i;
   Lisp_Object nextlocal, nextglobal;
@@ -1038,14 +1199,14 @@ read_key_sequence (keybuf, bufsize, prompt)
 
   if (prompt)
     NextK = 0;
-  if (prompt && INTERACTIVE)
+  if ((prompt || cursor_in_echo_area) && INTERACTIVE)
     EchoThem (1);
 
+  nextc = get_char (nodisplay ? -1 : !prompt);
   nextlocal = bf_cur->keymap;
   XSET (nextglobal, Lisp_Vector, CurrentGlobalMap);
 
   i = 0;
-  nextc = -1;
   while (!NULL (nextlocal) || !NULL (nextglobal))
     {
       if (i == bufsize)
@@ -1059,6 +1220,7 @@ read_key_sequence (keybuf, bufsize, prompt)
       else
 	c = get_char (!prompt);
       Vquit_flag = Qnil;
+      nodisplay = 0;
 
       if (c < 0)
 	return 0;
@@ -1068,7 +1230,7 @@ read_key_sequence (keybuf, bufsize, prompt)
 	  c = meta_prefix_char;
 	}
 
-      keybuf[i++] = c;
+      keybuf[i] = c;
 
       global = !NULL (nextglobal)
 	? get_keyelt (access_keymap (nextglobal, c))
@@ -1077,6 +1239,30 @@ read_key_sequence (keybuf, bufsize, prompt)
       local = !NULL (nextlocal)
 	? get_keyelt (access_keymap (nextlocal, c))
 	  : Qnil;
+
+      /* If C is not defined in either keymap
+	 and it is an uppercase letter, try corresponding lowercase.  */
+
+      if (NULL (global) && NULL (local) && UPPERCASEP (c))
+	{
+	  global = !NULL (nextglobal)
+	    ? get_keyelt (access_keymap (nextglobal, DOWNCASE (c)))
+	      : Qnil;
+
+	  local = !NULL (nextlocal)
+	    ? get_keyelt (access_keymap (nextlocal, DOWNCASE (c)))
+	      : Qnil;
+
+	  /* If that has worked better that the original char,
+	     downcase it permanently.  */
+
+	  if (!NULL (global) || !NULL (local))
+	    {
+	      keybuf[i] = c = DOWNCASE (c);
+	    }
+	}
+
+      i++;
 
       nextlocal = Qnil;
       nextglobal = Qnil;
@@ -1095,7 +1281,7 @@ read_key_sequence (keybuf, bufsize, prompt)
       /* Are the definitions prefix characters? */
 
       if (XTYPE (local) == Lisp_Vector ||
-	  (LISTP (local) && EQ (XCONS (local)->car, Qkeymap))
+	  (CONSP (local) && EQ (XCONS (local)->car, Qkeymap))
 	  ||
 	  /* If nextc is set, we are processing a prefix char
 	     that represents a meta-bit.
@@ -1104,16 +1290,16 @@ read_key_sequence (keybuf, bufsize, prompt)
 	     A real Escape gets completion, but Meta bits get ESC-prefix.  */
 	  ((NULL (local) || nextc >= 0)
 	   && (XTYPE (global) == Lisp_Vector ||
-	       (LISTP (global) && EQ (XCONS (global)->car, Qkeymap)))))
+	       (CONSP (global) && EQ (XCONS (global)->car, Qkeymap)))))
 	{
 	  if (XTYPE (local) == Lisp_Vector ||
-	      (LISTP (local) && EQ (XCONS (local)->car, Qkeymap)))
+	      (CONSP (local) && EQ (XCONS (local)->car, Qkeymap)))
 	    nextlocal = local;
 	  else
 	    nextlocal = Qnil;
 
 	  if (XTYPE (global) == Lisp_Vector ||
-	      (LISTP (global) && EQ (XCONS (global)->car, Qkeymap)))
+	      (CONSP (global) && EQ (XCONS (global)->car, Qkeymap)))
 	    nextglobal = global;
 	  else
 	    nextglobal = Qnil;
@@ -1141,30 +1327,35 @@ One arg, PROMPT, a prompt string or  nil, meaning do not prompt specially.")
     CHECK_STRING (prompt, 0);
   QUIT;
   i = read_key_sequence (keybuf, sizeof keybuf,
-			 (NULL (prompt)) ? 0 : XSTRING (prompt)->data);
+			 (NULL (prompt)) ? 0 : XSTRING (prompt)->data,
+			 0);
   return make_string (keybuf, i);
 }
 
 DEFUN ("command-execute", Fcommand_execute, Scommand_execute, 1, 2, 0,
  "Execute CMD as an editor command.\n\
-CMD must be a symbol with a function definition;\n\
-also, it must satisfy the commandp predicate.")
+CMD must be a symbol that satisfies the `commandp' predicate.\n\
+Optional second arg RECORD-FLAG non-nil\n\
+means unconditionally put this command in the command-history.\n\
+Otherwise, this is done only if an arg is read using the minibuffer.")
      (cmd, record)
      Lisp_Object cmd, record;
 {
-  Lisp_Object final;
-  Lisp_Object tem;
+  register Lisp_Object final;
+  register Lisp_Object tem;
   Lisp_Object prefixarg;
   struct backtrace backtrace;
+  extern int debug_on_next_call;
 
   prefixarg = Vprefix_arg, Vprefix_arg = Qnil;
   Vcurrent_prefix_arg = prefixarg;
+  debug_on_next_call = 0;
 
   if (XTYPE (cmd) == Lisp_Symbol)
     {
       tem = Fget (cmd, Qdisabled);
       if (!NULL (tem))
-	return Fapply (Vdisabled_command_hook, Qnil);
+	return call0 (Vdisabled_command_hook);
     }
 
   while (1)
@@ -1177,13 +1368,13 @@ also, it must satisfy the commandp predicate.")
 	  final = XSYMBOL (final)->function;
 	}
 
-      if (LISTP (final) && (tem = Fcar (final), EQ (tem, Qautoload)))
+      if (CONSP (final) && (tem = Fcar (final), EQ (tem, Qautoload)))
 	do_autoload (final, cmd);
       else
 	break;
     }
 
-  if (LISTP (final) || XTYPE (final) == Lisp_Subr)
+  if (CONSP (final) || XTYPE (final) == Lisp_Subr)
     {
       backtrace.next = backtrace_list;
       backtrace_list = &backtrace;
@@ -1204,6 +1395,56 @@ also, it must satisfy the commandp predicate.")
   return Qnil;
 }
 
+DEFUN ("execute-extended-command", Fexecute_extended_command, Sexecute_extended_command,
+  1, 1, "P",
+  "Read function name, then read its arguments and call it.")
+  (prefixarg)
+     Lisp_Object prefixarg;
+{
+  Lisp_Object function;
+  char buf[40];
+  char saved_keys[40];
+  int saved_keys_len = min (NextK, sizeof (saved_keys));
+
+  bcopy (KeyBuf, saved_keys, saved_keys_len);
+
+  buf[0] = 0;
+
+  if (EQ (prefixarg, Qminus))
+    strcpy (buf, "- ");
+  else if (CONSP (prefixarg) && XINT (XCONS (prefixarg)->car) == 4)
+    strcpy (buf, "C-u ");
+  else if (CONSP (prefixarg) && XTYPE (XCONS (prefixarg)->car) == Lisp_Int)
+    sprintf (buf, "%d ", XINT (XCONS (prefixarg)->car));
+  else if (XTYPE (prefixarg) == Lisp_Int)
+    sprintf (buf, "%d ", XINT (prefixarg));
+
+  /* This isn't strictly correct if execute-extended-command
+     is bound to anything else */
+  strcat (buf, "M-x ");
+
+  function = Fcompleting_read (build_string (buf), Vobarray, Qcommandp, Qt, Qnil);
+
+  saved_keys_len = min (saved_keys_len, sizeof (KeyBuf));
+  bcopy (saved_keys, KeyBuf, saved_keys_len);
+  if (saved_keys_len >= sizeof (KeyBuf))
+    NextK = sizeof (KeyBuf);
+  else
+    {
+      int l = XSTRING (function)->size;
+      l = min (sizeof (KeyBuf) - saved_keys_len, l);
+      bcopy (XSTRING (function)->data, KeyBuf + saved_keys_len, l);
+      NextK = saved_keys_len + l;
+    }
+
+  function = Fintern (function, Vobarray);
+  Vprefix_arg = prefixarg;
+  this_command = function;
+
+  return Fcommand_execute (function, Qt);
+}
+
+
 detect_input_pending ()
 {
   if (!input_pending)
@@ -1286,74 +1527,42 @@ Also flush any kbd macro definition in progress.")
 DEFUN ("suspend-emacs", Fsuspend_emacs, Ssuspend_emacs, 0, 1, "",
   "Stop Emacs and return to superior process.  You can resume.\n\
 If optional arg STUFFSTRING is non-nil, its characters are stuffed\n\
-to be read as terminal input by Emacs's superior shell.")
+to be read as terminal input by Emacs's superior shell.\n\
+Before suspending, if `suspend-hook' is bound and value is non-nil\n\
+call the value as a function of no args.  Don't suspend if it returns non-nil.\n\
+Otherwise, suspend normally and after resumption call\n\
+`suspend-resume-hook' if that is bound and non-nil.")
   (stuffstring)
      Lisp_Object stuffstring;
 {
-#ifdef SIGTSTP			/* Support possible in later USG versions */
+  register Lisp_Object tem;
+
   if (!NULL (stuffstring))
     CHECK_STRING (stuffstring, 0);
 
+  /* Call value of suspend-hook
+     if it is bound and value is non-nil.  */
+  tem = intern ("suspend-hook");
+  tem = XSYMBOL (tem)->value;
+  if (! EQ (tem, Qunbound) && ! EQ (tem, Qnil))
+    {
+      tem = call0 (tem);
+      if (!EQ (tem, Qnil)) return Qnil;
+    }
+
   reset_sys_modes ();
   stuff_buffered_input (stuffstring);
-  kill (0, SIGTSTP);
+  sys_suspend ();
   init_sys_modes ();
-#else
-  fake_suspend ();
-#endif
+
+  /* Call value of suspend-resume-hook
+     if it is bound and value is non-nil.  */
+  tem = intern ("suspend-resume-hook");
+  tem = XSYMBOL (tem)->value;
+  if (! EQ (tem, Qunbound) && ! EQ (tem, Qnil))
+    call0 (tem);
   return Qnil;
 }
-
-#ifndef SIGTSTP
-/* On a system where suspending is not implemented,
-   instead fork a subshell and let it talk directly to the terminal
-   while we wait.  */
-
-fake_suspend ()
-{
-  int pid = fork ();
-  int spid;
-  int status;
-  char *sh;
-  int (*interrupt) ();
-  int (*quit) ();
-  int (*term) ();
-  unsigned char *temp;
-  int i;
-
-  if (pid == -1)
-    error ("Can't spawn subshell");
-  if (pid == 0)
-    {
-      sh = (char *) getenv ("SHELL");
-      if (sh == 0)
-	sh = "sh";
-      /* Use our buffer's default directory for the subshell.  */
-      if (XTYPE (bf_cur->directory) == Lisp_String)
-	{
-	  temp = (unsigned char *) alloca (XSTRING (bf_cur->directory)->size + 2);
-	  bcopy (XSTRING (bf_cur->directory)->data, temp,
-		 XSTRING (bf_cur->directory)->size);
-	  i = XSTRING (bf_cur->directory)->size;
-	  if (temp[i - 1] != '/') temp[i++] = '/';
-	  temp[i] = 0;
-	  chdir (temp);
-	}
-      execlp (sh, sh, 0);
-      write (1, "Can't execute subshell", 22);
-      _exit (1);
-    }
-  interrupt = signal (SIGINT, SIG_IGN);
-  quit = signal (SIGQUIT, SIG_IGN);
-  term = signal (SIGTERM, SIG_IGN);
-  reset_sys_modes ();
-  wait_for_termination (pid);
-  init_sys_modes ();
-  signal (SIGINT, interrupt);
-  signal (SIGQUIT, quit);
-  signal (SIGTERM, term);
-}
-#endif /* no SIGTSTP */
 
 /* If STUFFSTRING is a string, stuff its contents as pending terminal input.
    Then in any case stuff anthing Emacs has read ahead and not used.  */
@@ -1365,7 +1574,8 @@ stuff_buffered_input (stuffstring)
   register int count;
 
 /* stuff_char works only in BSD, versions 4.2 and up.  */
-#if defined (BSD) && ~defined (BSD4_1)
+#ifdef BSD
+#ifndef BSD4_1
   if (XTYPE (stuffstring) == Lisp_String)
     {
       p = XSTRING (stuffstring)->data;
@@ -1381,6 +1591,7 @@ stuff_buffered_input (stuffstring)
       kbd_count--;
     }
   input_pending = 0;
+#endif
 #endif /* BSD and not BSD4_1 */
 }
 
@@ -1431,6 +1642,9 @@ clear_waiting_for_input ()
 interrupt_signal ()
 {
   char c;
+#ifdef HAVE_X_WINDOWS
+  extern Lisp_Object Vxterm;
+#endif /* HAVE_X_WINDOWS */  
 
 #ifdef USG
   /* USG systems forget handlers when they are used;
@@ -1441,7 +1655,11 @@ interrupt_signal ()
 
   Echo1 = 0;
 
-  if (!NULL (Vquit_flag))
+  if (!NULL (Vquit_flag)
+#ifdef HAVE_X_WINDOWS
+      && NULL (Vxterm)
+#endif /* HAVE_X_WINDOWS */
+      )
     {
       fflush (stdout);
       reset_sys_modes ();
@@ -1454,20 +1672,32 @@ interrupt_signal ()
  * the user elects to return to emacs, at which point he can save the current
  * job and either dump core or continue.
  */
-      kill (0, SIGTSTP);
+      sys_suspend ();
 #else
+#ifdef VMS
+      if (sys_suspend () == -1)
+	{
+	  printf ("Not running as a subprocess;\n");
+	  printf ("you can continue or abort.\n");
+	}
+#else /* not VMS */
       /* Perhaps should really fork an inferior shell?
 	 But that would not provide any way to get back
 	 to the original shell, ever.  */
-      printf ("No support for stopping a process in this Unix version;\n");
+      printf ("No support for stopping a process on this operating system;\n");
       printf ("you can continue or abort.\n");
+#endif /* not VMS */
 #endif /* not SIGTSTP */
       printf ("Auto-save? (y or n) ");
       fflush (stdout);
       if (((c = getchar ()) & ~040) == 'Y')
 	Fdo_auto_save (Qnil);
       while (c != '\n') c = getchar ();
+#ifdef VMS
+      printf ("Abort (and enter debugger)? (y or n) ");
+#else /* not VMS */
       printf ("Abort (and dump core)? (y or n) ");
+#endif /* not VMS */
       fflush (stdout);
       if (((c = getchar ()) & ~040) == 'Y')
 	abort ();
@@ -1500,6 +1730,7 @@ interrupt_signal ()
 
 quit_throw_to_get_char ()
 {
+  quit_error_check ();
   sigfree ();
   /* Prevent another signal from doing this before we finish.  */
   waiting_for_input = 0;
@@ -1511,13 +1742,14 @@ quit_throw_to_get_char ()
 DEFUN ("set-input-mode", Fset_input_mode, Sset_input_mode, 2, 2, 0,
   "Set mode of reading keyboard input.\n\
 First arg non-nil means use input interrupts; nil means use CBREAK mode.\n\
-Second arg non-nil means use ^S/^Q flow control\n\
+Second arg non-nil means use ^S/^Q flow control for output to terminal\n\
  (no effect except in CBREAK mode).")
   (interrupt, flow)
      Lisp_Object interrupt, flow;
 {
   reset_sys_modes ();
 #ifdef SIGIO
+/* Note SIGIO has been undef'd if FIONREAD is missing.  */
   interrupt_input = !NULL (interrupt);
 #else /* not SIGIO */
   interrupt_input = 0;
@@ -1546,10 +1778,11 @@ init_keyboard ()
 	 and we can't tell which one it will give us.  */
       signal (SIGQUIT, interrupt_signal);
 #endif /* USG */
-    }
+/* Note SIGIO has been undef'd if FIONREAD is missing.  */
 #ifdef SIGIO
-  signal (SIGIO, input_available_signal);
+      signal (SIGIO, input_available_signal);
 #endif SIGIO
+    }
 
 /* Use interrupt input by default, if it works and noninterrupt input
    has deficiencies.  */
@@ -1595,65 +1828,67 @@ syms_of_keyboard ()
   defsubr (&Sdiscard_input);
   defsubr (&Sopen_dribble_file);
   defsubr (&Sset_input_mode);
+  defsubr (&Sexecute_extended_command);
 
-  DefLispVar ("disabled-command-hook", &Vdisabled_command_hook,
+  DEFVAR_LISP ("disabled-command-hook", &Vdisabled_command_hook,
     "Value is called instead of any command that is disabled\n\
 \(has a non-nil  disabled  property).");
 
-  DefBoolVar ("meta-flag", &MetaFlag,
+  DEFVAR_BOOL ("meta-flag", &MetaFlag,
     "*Non-nil means treat 0200 bit in terminal input as Meta bit.");
 
-  DefIntVar ("last-command-char", &last_command_char,
+  DEFVAR_INT ("last-command-char", &last_command_char,
     "Last terminal input character that was part of a command, as an integer.");
 
-  DefIntVar ("last-input-char", &last_input_char,
+  DEFVAR_INT ("last-input-char", &last_input_char,
     "Last terminal input character, as an integer.");
 
-  DefIntVar ("unread-command-char", &unread_command_char,
+  DEFVAR_INT ("unread-command-char", &unread_command_char,
     "Character to be read as next input from command input stream, or -1 if none.");
 
-  DefIntVar ("meta-prefix-char", &meta_prefix_char,
+  DEFVAR_INT ("meta-prefix-char", &meta_prefix_char,
     "Meta-prefix character code.  Meta-foo as command input\n\
 turns into this character followed by foo.");
   meta_prefix_char = 033;
 
-  DefLispVar ("last-command", &last_command,
+  DEFVAR_LISP ("last-command", &last_command,
     "The last command executed.  Normally a symbol with a function definition,\n\
-but can be whatever was found in the keymap, or whatever that command left in this-command.");
+but can be whatever was found in the keymap, or whatever the variable\n\
+`this-command' was set to by that command.");
   last_command = Qnil;
 
-  DefLispVar ("this-command", &this_command,
+  DEFVAR_LISP ("this-command", &this_command,
     "The command now being executed.\n\
 The command can set this variable; whatever is put here\n\
 will be in  last-command  during the following command.");
   this_command = Qnil;
 
-  DefIntVar ("auto-save-interval", &auto_save_interval,
+  DEFVAR_INT ("auto-save-interval", &auto_save_interval,
     "*Number of keyboard input characters between auto-saves.");
   auto_save_interval = 300;
 
-  DefIntVar ("echo-keystrokes", &echo_keystrokes,
+  DEFVAR_INT ("echo-keystrokes", &echo_keystrokes,
     "*Nonzero means echo unfinished commands after this many seconds of pause.");
   echo_keystrokes = 1;
 
-  DefIntVar ("help-char", &help_char,
+  DEFVAR_INT ("help-char", &help_char,
     "Character to recognize as meaning Help.\n\
 When it is read, do (eval help-form), and display result if it's a string.\n\
 If help-form's value is nil, this char can be read normally.");
   help_char = Ctl ('H');
 
-  DefLispVar ("help-form", &Vhelp_form,
+  DEFVAR_LISP ("help-form", &Vhelp_form,
     "Form to execute when character help-char is read.\n\
 If the form returns a string, that string is displayed.\n\
 If help-form is nil, the help char is not recognized.");
   Vhelp_form = Qnil;
   
-  DefLispVar ("top-level", &Vtop_level,
+  DEFVAR_LISP ("top-level", &Vtop_level,
     "Form to evaluate when Emacs starts up.\n\
 Useful to set before you dump a modified Emacs.");
   Vtop_level = Qnil;
 
-  DefLispVar ("keyboard-translate-table", &Vkeyboard_translate_table,
+  DEFVAR_LISP ("keyboard-translate-table", &Vkeyboard_translate_table,
     "String used as translate table for keyboard input, or nil.\n\
 Each character is looked up in this string and the contents used instead.\n\
 If string is of length N, character codes N and up are untranslated."); 
@@ -1666,4 +1901,5 @@ keys_of_keyboard ()
   defkey (CtlXmap, Ctl ('Z'), "suspend-emacs");
   defkey (ESCmap, Ctl ('C'), "exit-recursive-edit");
   defkey (GlobalMap, Ctl (']'), "abort-recursive-edit");
+  ndefkey (ESCmap, 'x', "execute-extended-command");
 }

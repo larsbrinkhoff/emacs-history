@@ -1,6 +1,5 @@
 ;; Utility functions used both by rmail and rnews
-
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -22,6 +21,12 @@
 
 (provide 'mail-utils)
 		     
+;; should be in loaddefs
+(defvar mail-use-rfc822 nil
+  "*If non-nil, use a full, hairy RFC822 parser on mail addresses.
+Otherwise, (the default) use a smaller, somewhat faster and
+often-correct parser.")
+
 (defun mail-string-delete (string start end)
   "Returns a string containing all of STRING except the part
 from START (inclusive) to END (exclusive)."
@@ -33,48 +38,52 @@ from START (inclusive) to END (exclusive)."
   "Delete comments and quoted strings in an address list ADDRESS.
 Also delete leading/trailing whitespace and replace FOO <BAR> with just BAR.
 Return a modified address list."
-  (let (pos)
-    (string-match "\\`[ \t\n]*" address)
-    ;; strip surrounding whitespace
-    (setq address (substring address
-			     (match-end 0)
-			     (string-match "[ \t\n]*\\'" address
-					   (match-end 0))))
-    ;; strip rfc822 comments
-    (while (setq pos (string-match 
-		       ;; This doesn't hack rfc822 nested comments
-		       ;;  `(xyzzy (foo) whinge)' properly.  Big deal.
-		       "[ \t]*(\\([^)\"\\]\\|\\\\.\\|\\\\\n\\)*)"
-		       address))
-      (setq address
-	    (mail-string-delete address
-				pos (match-end 0))))
-    ;; strip `quoted' names (This is supposed to hack `"Foo Bar" <bar@host>')
-    (setq pos 0)
-    (while (setq pos (string-match
-		       "[ \t]*\"\\([^\"\\]\\|\\\\.\\|\\\\\n\\)*\"[ \t]*"
-		       address pos))
-      ;; If the next thing is "@", we have "foo bar"@host.  Leave it.
-      (if (and (> (length address) (match-end 0))
-	       (= (aref address (match-end 0)) ?@))
-	  (setq pos (match-end 0))
-	(setq address
-	      (mail-string-delete address
-				  pos (match-end 0)))))
-    ;; Retain only part of address in <> delims, if there is such a thing.
-    (while (setq pos (string-match "\\(,\\|^\\)[^,\n]*<\\([^>,\n]*>\\)" address))
-      (let ((junk-beg (match-end 1))
-	    (junk-end (match-beginning 2))
-	    (close (match-end 0)))
-	(setq address (mail-string-delete address (1- close) close))
-	(setq address (mail-string-delete address junk-beg junk-end))))
-    address))
+  (if mail-use-rfc822
+      (progn (require 'rfc822)
+	     (mapconcat 'identity (rfc822-addresses address) ", "))
+    (let (pos)
+     (string-match "\\`[ \t\n]*" address)
+     ;; strip surrounding whitespace
+     (setq address (substring address
+			      (match-end 0)
+			      (string-match "[ \t\n]*\\'" address
+					    (match-end 0))))
+     ;; strip rfc822 comments
+     (while (setq pos (string-match 
+			;; This doesn't hack rfc822 nested comments
+			;;  `(xyzzy (foo) whinge)' properly.  Big deal.
+			"[ \t]*(\\([^)\"\\]\\|\\\\.\\|\\\\\n\\)*)"
+			address))
+       (setq address
+	     (mail-string-delete address
+				 pos (match-end 0))))
+     ;; strip `quoted' names (This is supposed to hack `"Foo Bar" <bar@host>')
+     (setq pos 0)
+     (while (setq pos (string-match
+			"[ \t]*\"\\([^\"\\]\\|\\\\.\\|\\\\\n\\)*\"[ \t\n]*"
+			address pos))
+       ;; If the next thing is "@", we have "foo bar"@host.  Leave it.
+       (if (and (> (length address) (match-end 0))
+		(= (aref address (match-end 0)) ?@))
+	   (setq pos (match-end 0))
+	 (setq address
+	       (mail-string-delete address
+				   pos (match-end 0)))))
+     ;; Retain only part of address in <> delims, if there is such a thing.
+     (while (setq pos (string-match "\\(,\\|\\`\\)[^,]*<\\([^>,]*>\\)"
+				    address))
+       (let ((junk-beg (match-end 1))
+	     (junk-end (match-beginning 2))
+	     (close (match-end 0)))
+	 (setq address (mail-string-delete address (1- close) close))
+	 (setq address (mail-string-delete address junk-beg junk-end))))
+     address)))
   
 ; rmail-dont-reply-to-names is defined in loaddefs
 (defun rmail-dont-reply-to (userids)
   "Returns string of mail addresses USERIDS sans any recipients
-that are elements of  rmail-dont-reply-to-names.
-Usenet paths ending in an element of that list are removed also."
+that start with matches for  rmail-dont-reply-to-names.
+Usenet paths ending in an element that matches are removed also."
   (if (null rmail-dont-reply-to-names)
       (setq rmail-dont-reply-to-names
 	    (concat "info-\\|"
@@ -102,7 +111,7 @@ Usenet paths ending in an element of that list are removed also."
     (if (string-match "\\s *" userids)
 	(substring userids (match-end 0))
       userids)))
-
+
 (defun mail-fetch-field (field-name &optional last all)
   "Return the value of the header field FIELD.
 The buffer is expected to be narrowed to just the headers of the message.

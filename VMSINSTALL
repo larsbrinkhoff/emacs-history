@@ -1,0 +1,90 @@
+* Installing GNU Emacs from a VMS Distribution Tape
+
+If you receive a VMS distribution tape in VMS BACKUP interchange
+format, 1600bpi, you can restore Emacs and run it immediately.
+
+Choose a directory to restore to, say dev:[lib].  Do:
+
+	$ mount/foreign mta0:
+	$ backup/log mta0: dev:[lib...]
+
+Now, edit dev:[lib.emacs]emacs.com.  Replace the definition of
+emacs_library with the appropriate form.  The current line is:
+
+	$ define /translation=concealed emacs_library	sys$device:[emacs.]
+
+You would replace this with:
+
+	$ define /translation=concealed emacs_library	dev:[lib.emacs.]
+
+Now execute the command file emacs_library:emacs.com.  This defines
+a command `emacs' that runs a suspendable permanent Emacs.  To
+fully install Emacs, you must arrange for users to run this file
+on login, or arrange for this file to be run when the system boots.
+
+The distribution contains an Emacs executable in
+dev:[lib.emacs]emacs.exe.  It uses dev:[lib.emacs]emacs.dump every time
+it runs.  The emacs.exe has been linked with the non-shareable C
+library, so it should run on any VMS V4.2+ system, whether or not the
+C compiler exists.  The .OBJ files are all there, so you can relink
+with /debug if you want to have fun.
+
+* Moving a Unix distribution to VMS
+
+Moving a Unix distribution to VMS is mostly a matter of transferring
+the files to the VMS system, but it is a little more complicated
+because some of the file names used on Unix are not supported by VMS.
+Every `-' in a Unix file name must be changed to a `_' on VMS.
+(In VMS versions 4.4 and up, this is not necessary, since `-' is allowed
+in file names.)
+
+Copy the file [src]vmspaths.h to [src]paths.h, replacing any existing
+file paths.h in that directory.
+
+Delete any file `[.src]config.h' and replace it with a copy of `config.h-dist'.
+Then edit this file so it specifies `m_vax.h' as the second include file
+and for the first include file one of `s_vms4_0.h', `s_vms4_2.h' or
+`s_vms4_4.h'.  (Use the highest version not greater than the VMS version
+you are running.)
+
+You can now compile, link, build and install Emacs as described in
+[emacs.src]VMSBUILD.
+
+* Moving a VMS distribution to Unix.
+
+Delete all .OBJ files, and `paths.h' and `config.h'.  Then copy the
+remaining files, changing each `_' in a file name to `-`.  Unix will
+allow filenames with `_' but Emacs will not work with them!
+
+* Specifying terminal type.
+
+To specify a terminal type for Emacs that is not known to VMS,
+define the logical name EMACS_TERM with the terminal type as value.
+Terminal types are looked up in the termcap data base, which is
+found as the file `[etc]termcap.dat' in the Emacs distribution.
+
+* Specifying file names.
+
+GNU Emacs accepts both Unix and VMS file name syntax.  Most Lisp
+code that runs in Emacs uses Unix syntax so it can run everywhere.
+Users on VMS will generally type file names with VMS syntax.
+
+The EMACSLOADPATH logical name, if you use it, should contain
+directory names in Unix syntax, separated by commas.
+
+find-file prompts with the current directory.  You can then type a
+relative directory spec to get somewhere else in the hirearchy.  For
+instance:
+
+Find File: emacs_library:[emacs.src][-.lisp]startup.el
+
+is converted to emacs_library:[emacs.lisp]startup.el by
+expand-file-name.  The basic rule is:  
+][- is treated like /.. (dir:[file.sub][-.other] ==> dir:[file.other],
+                         dir:[file.sub][-] ==> dir:[file])
+][. elides the ][ (dir:[file][.sub] ==> dir:[file.sub])
+][alpha backs up to the previous [ (dir:[file][other] ==> dir:[other])
+a colon appearing after a ] forces a new "root" disk.
+	(dev:[file]dev2:[other] ==> dev2:[other])
+expand-file-name also tries to be smart about decnet node names,
+but this is not yet known to work.

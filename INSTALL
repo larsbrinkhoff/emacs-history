@@ -30,11 +30,15 @@ PREPARATION
  subdirectories named src, lisp, etc, etc.  Call this name
  $EMACS.  Let $BUILD stand for the name the directory has now.
 
-2) Copy $BUILD/src/config.h.dist to config.h, and edit it to
+2) Copy $BUILD/src/config.h-dist to config.h, and edit it to
  set the right options for your system.  The file
  $BUILD/etc/MACHINES may help you decide what to put there.
+ If you need to override any of the definitions in the s- and m-
+ files for your system and machine, do so by editing config.h,
+ not by changing the s- and m- files.  Occasionally you may
+ need to redefine parameters used in etc/movemail.c.
 
-3) Copy $BUILD/src/paths.h.dist to paths.h, and edit it to
+3) Copy $BUILD/src/paths.h-dist to paths.h, and edit it to
  contain the correct directory names: $EMACS/lisp for the
  directory for Lisp libraries, and $EMACS/etc for the
  directory for executables and text files.
@@ -437,6 +441,65 @@ you can redefine Backspace in your .emacs file:
   (global-set-key "\b" 'delete-backward-char)
 You may then wish to put the function  help-command  on some
 other key.  I leave to you the task of deciding which key.
+
+* Editing files through RFS gives spurious "file has changed" warnings.
+It is possible that a change in Emacs 18.37 gets around this problem,
+but in case not, here is a description of how to fix the RFS bug that
+causes it.
+
+Date: Wed, 28 Jan 87 15:18:40 EST
+From: Bill Sommerfeld <wesommer@athena.mit.edu>
+Sender: wesommer@athena.mit.edu
+To: toddb%crl.tek.csnet@relay.cs.net
+Cc: bug-rfs, bug-gnu-emacs@prep.ai.mit.edu
+Subject: Bug in RFS server (fsync())
+
+There was a serious pair of bugs in the handling of the fsync() system
+call in the RFS server.
+
+The first is that the fsync() call is handled as another name for the
+close() system call (!!).  It appears that fsync() is not used by very
+many programs; Emacs version 18 does an fsync() before closing files
+to make sure that the bits are on the disk.
+
+This is fixed by the enclosed patch to the RFS server.
+
+The second, more serious problem, is that fsync() is treated as a
+non-blocking system call (i.e., it's implemented as a message that
+gets sent to the remote system without waiting for a reply).  Fsync is
+a useful tool for building atomic file transactions.  Implementing it
+as a non-blocking RPC call (when the local call blocks until the sync
+is done) is a bad idea; unfortunately, changing it will break the RFS
+protocol.  Any suggestions?
+
+					Bill Sommerfeld
+					MIT Project Athena
+
+(as always, your line numbers may vary)
+
+% rcsdiff -c -r1.2 serversyscall.c
+RCS file: RCS/serversyscall.c,v
+retrieving revision 1.2
+diff -c -r1.2 serversyscall.c
+*** /tmp/,RCSt1003677   Wed Jan 28 15:15:02 1987
+--- serversyscall.c     Wed Jan 28 15:14:48 1987
+***************
+*** 163,169 ****
+        /*
+         * No return sent for close or fsync!
+         */
+!       if (syscall == RSYS_close || syscall == RSYS_fsync)
+                proc->p_returnval = deallocate_fd(proc, msg->m_args[0]);
+        else
+        {
+--- 166,172 ----
+        /*
+         * No return sent for close or fsync!
+         */
+!       if (syscall == RSYS_close)
+                proc->p_returnval = deallocate_fd(proc, msg->m_args[0]);
+        else
+        {
 
 * ld complains because `alloca' is not defined on your system.
 

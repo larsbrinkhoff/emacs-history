@@ -1,5 +1,5 @@
 /* m- file for SEQUENT BALANCE machines
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -66,6 +66,14 @@ and this notice must be preserved on all copies.  */
 
 #define NO_UNION_TYPE
 
+/* crt0.c should use the vax-bsd style of entry, with these dummy args.  */
+
+#define CRT0_DUMMIES bogus_fp,
+
+/* crt0.c should define a symbol `start' and do .globl with a dot.  */
+
+#define DOT_GLOBAL_START
+
 /* Define EXPLICIT_SIGN_EXTEND if XINT must explicitly sign-extend
    the 24-bit bit field into an int.  In other words, if bit fields
    are always unsigned.
@@ -111,8 +119,16 @@ and this notice must be preserved on all copies.  */
 /* Name of file the to look in
    for the kernel symbol table (for load average) */
 
+#undef KERNEL_FILE
 #define KERNEL_FILE "/dynix"
 
 /* Avoids a compiler bug */
 
 #define TAHOE_REGISTER_BUG
+
+/* Say that the text segment of a.out includes the header;
+   the header actually occupies the first few bytes of the text segment
+   and is counted in hdr.a_text.  Furthermore, the value written
+   in the a_text in the file must have N_ADDRADJ added to it.  */
+
+#define A_TEXT_OFFSET(HDR) (sizeof (HDR) + N_ADDRADJ (HDR))

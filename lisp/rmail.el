@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,7 +19,7 @@
 ;; and this notice must be preserved on all copies.
 
 
-;; Souped up by shane@mit-ajax based on ideas of rlk@mit-clio
+;; Souped up by shane@mit-ajax based on ideas of rlk@athena.mit.edu
 ;;   New features include attribute and keyword support, message
 ;;   selection by dispatch table, summary by attributes and keywords,
 ;;   expunging by dispatch table, sticky options for file commands.
@@ -82,8 +82,8 @@ Called with region narrowed to unformatted header.")
 (defvar rmail-last-label nil)
 ;; Last set of labels specified to C-M-n or C-M-p or C-M-l.
 (defvar rmail-last-multi-labels nil)
-(defvar rmail-last-file (expand-file-name "~/XMAIL"))
-(defvar rmail-last-rmail-file (expand-file-name "~/XMAIL"))
+(defvar rmail-last-file nil)
+(defvar rmail-last-rmail-file nil)
 
 ;;;; *** Rmail Mode ***
 
@@ -96,7 +96,12 @@ Type \\[describe-mode] once editing that file, for a list of RMAIL commands.
 May be called with filename as argument;
 then performs rmail editing on that file,
 but does not copy any new mail into the file."
-  (interactive)
+  (interactive (if current-prefix-arg
+		   (list (read-file-name "Run rmail on RMAIL file: "
+					 nil nil t))))
+  (or rmail-last-file
+      (setq rmail-last-file (expand-file-name "~/XMAIL")
+	    rmail-last-rmail-file rmail-last-file))
   (let* ((file-name (expand-file-name (or file-name-arg rmail-file-name)))
 	 (existed (get-file-buffer file-name))
 	 (convert))
@@ -137,8 +142,8 @@ but does not copy any new mail into the file."
       (if (null rmail-inbox-list)
 	  (progn
 	    (rmail-set-message-counters)
-	    (rmail-show-message))
-	(rmail-get-new-mail)))))
+	    (rmail-show-message))))
+    (rmail-get-new-mail)))
 
 (defun rmail-insert-rmail-file-header ()
   (let ((buffer-read-only nil))
@@ -167,7 +172,8 @@ Note:    it means the file has no messages in it.\n\^_")))
   (define-key rmail-mode-map "d" 'rmail-delete-forward)
   (define-key rmail-mode-map "u" 'rmail-undelete-previous-message)
   (define-key rmail-mode-map "e" 'rmail-expunge)
-  (define-key rmail-mode-map "s" 'rmail-save)
+  (define-key rmail-mode-map "x" 'rmail-expunge)
+  (define-key rmail-mode-map "s" 'rmail-expunge-and-save)
   (define-key rmail-mode-map "g" 'rmail-get-new-mail)
   (define-key rmail-mode-map "h" 'rmail-summary)
   (define-key rmail-mode-map "\e\C-h" 'rmail-summary)
@@ -187,8 +193,11 @@ Note:    it means the file has no messages in it.\n\^_")))
   (define-key rmail-mode-map "q" 'rmail-quit)
   (define-key rmail-mode-map ">" 'rmail-last-message)
   (define-key rmail-mode-map "?" 'describe-mode)
-  (define-key rmail-mode-map "\C-r" 'rmail-edit-current-message)
+  (define-key rmail-mode-map "w" 'rmail-edit-current-message)
   (define-key rmail-mode-map "\C-d" 'rmail-delete-backward))
+
+;; Rmail mode is suitable only for specially formatted data.
+(put 'rmail-mode 'mode-class 'special)
 
 (defun rmail-mode ()
   "Rmail Mode is used by \\[rmail] for editing Rmail files.
@@ -232,7 +241,7 @@ C-M-h	Show headers buffer, with a one line summary of each message.
 C-M-l	Like h only just messages with particular label(s) are summarized.
 C-M-r   Like h only just messages with particular recipient(s) are summarized.
 t	Toggle header, show Rmail header if unformatted or vice versa.
-C-r	Edit the current message.  C-c C-c to return to Rmail."
+w	Edit the current message.  C-c C-c to return to Rmail."
   (interactive)
   (kill-all-local-variables)
   (rmail-mode-1)
@@ -245,7 +254,10 @@ C-r	Edit the current message.  C-c C-c to return to Rmail."
   (setq buffer-read-only t)
   ;; No need to auto save RMAIL files.
   (setq buffer-auto-save-file-name nil)
-  (setq mode-line-format "--- Emacs: %b  %M  %[(%m)%] ----%3p-%-")
+  (if (boundp 'mode-line-modified)
+      (setq mode-line-modified "--- ")
+    (setq mode-line-format
+	  (cons "--- " (cdr (default-value 'mode-line-format)))))
   (use-local-map rmail-mode-map)
   (set-syntax-table text-mode-syntax-table)
   (setq local-abbrev-table text-mode-abbrev-table))
@@ -262,10 +274,15 @@ C-r	Edit the current message.  C-c C-c to return to Rmail."
   (setq require-final-newline nil)
   (make-local-variable 'version-control)
   (setq version-control 'never)
+  (make-local-variable 'file-precious-flag)
+  (setq file-precious-flag t)
   (make-local-variable 'rmail-message-vector)
   (make-local-variable 'rmail-last-file)
   (make-local-variable 'rmail-inbox-list)
-  (setq rmail-inbox-list (rmail-parse-file-inboxes)))
+  (setq rmail-inbox-list (rmail-parse-file-inboxes))
+  (make-local-variable 'rmail-keywords)
+  ;; this gets generated as needed
+  (setq rmail-keywords nil))
 
 ;; Return a list of files from this buffer's Mail: option.
 ;; Does not assume that messages have been parsed.
@@ -285,7 +302,7 @@ C-r	Edit the current message.  C-c C-c to return to Rmail."
 		   (goto-char (point-min))
 		   (mail-parse-comma-list))))))))
 
-(defun rmail-save ()
+(defun rmail-expunge-and-save ()
   "Expunge and save RMAIL file."
   (interactive)
   (rmail-expunge)
@@ -294,7 +311,7 @@ C-r	Edit the current message.  C-c C-c to return to Rmail."
 (defun rmail-quit ()
   "Quit out of RMAIL."
   (interactive)
-  (rmail-save)
+  (rmail-expunge-and-save)
   ;; Don't switch to the summary buffer even if it was recently visible.
   (if rmail-summary-buffer
       (bury-buffer rmail-summary-buffer))
@@ -329,10 +346,15 @@ and use that file as the inbox."
    (list (if current-prefix-arg
 	     (read-file-name "Get new mail from file: "))))
   (rmail-maybe-set-message-counters)
+  (or (verify-visited-file-modtime (current-buffer))
+      (find-file (buffer-file-name)))
   (widen)
   (let ((opoint (point))
 	(new-messages 0)
 	(delete-files ())
+	;; If buffer has not changed yet, and has not been saved yet,
+	;; don't replace the old backup file now.
+	(make-backup-files (and make-backup-files (buffer-modified-p)))
 	(buffer-read-only nil))
     (goto-char (point-max))
     (skip-chars-backward " \t\n")	; just in case of brain damage
@@ -374,7 +396,7 @@ and use that file as the inbox."
 (defun rmail-insert-inbox-text (files renamep)
   (let (file tofile delete-files movemail)
     (while files
-      (setq file (substitute-in-file-name (car files))
+      (setq file (expand-file-name (substitute-in-file-name (car files)))
 	    tofile (concat file "~"))
       ;; If getting from mail spool directory,
       ;; use movemail to move rather than renaming.
@@ -453,7 +475,7 @@ and use that file as the inbox."
 	       (if (re-search-forward
 		    (concat "^[\^_]?\\("
 			    "From [^ \n]*\\(\\|\".*\"[^ \n]*\\)  ?[^ \n]* [^ \n]* *"
-			    "[0-9]* [0-9:]* \\(..T \\|\\)" ; EDT
+			    "[0-9]* [0-9:]* \\([A-Z]?[A-Z][A-Z]T \\|[-+][0-9][0-9][0-9][0-9] \\|\\)" ; EDT, -0500
 			    "19[0-9]*$\\|"
 			    mmdf-delim1 "\\|"
 			    "^Babyl Options:\\|"
@@ -480,34 +502,39 @@ and use that file as the inbox."
   (save-excursion
     (save-restriction
       (let ((start (point))
-  	    (end (condition-case ()
-		     (progn (search-forward "\n\n") (point))
-		   (error (message "Can't find EOH") nil)))
-	    has-from has-date
-	    (case-fold-search t))
-	(if (not end)
-	    nil
-	  (narrow-to-region start end)
+  	    (end (progn
+		   (condition-case ()
+		       (search-forward "\n\n")
+		     (error
+		      (goto-char (point-max))
+		      (insert "\n\n")))
+		   (point)))
+	    has-from has-date)
+	(narrow-to-region start end)
+	(let ((case-fold-search t))
 	  (goto-char start)
 	  (setq has-from (search-forward "\nFrom:" nil t))
 	  (goto-char start)
 	  (setq has-date (and (search-forward "\nDate:" nil t) (point)))
-	  (goto-char start)
-	  (setq case-fold-search nil)
+	  (goto-char start))
+	(let ((case-fold-search nil))
 	  (if (re-search-forward
-	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( ..T\\|\\) 19\\([0-9]*\\)\n" nil t)
+	       "^From \\([^ ]*\\(\\|\".*\"[^ ]*\\)\\)  ?\\([^ ]*\\) \\([^ ]*\\) *\\([0-9]*\\) \\([0-9:]*\\)\\( [A-Z]?[A-Z][A-Z]T\\|[-+][0-9][0-9][0-9][0-9]\\|\\) 19\\([0-9]*\\)\n" nil t)
 	      (replace-match
-	       (concat
-		;; Keep and reformat the date if we don't have a Date: field.
-		(if has-date
-		    ""
-		  ;; If no time zone specified, assume est.
-		  (if (= (match-beginning 7) (match-end 7))
-		      "Date: \\3, \\5 \\4 \\8 \\6 est\n"
-		    "Date: \\3, \\5 \\4 \\8 \\6\\7\n"))
-		;; Keep and reformat the sender if we don't have a From: field.
-		(if has-from ""
-		  "From: \\1\n")))))))))
+		(concat
+		  ;; Keep and reformat the date if we don't
+		  ;;  have a Date: field.
+		  (if has-date
+		      ""
+		    ;; If no time zone specified, assume est.
+		    (if (= (match-beginning 7) (match-end 7))
+			"Date: \\3, \\5 \\4 \\8 \\6 EST\n"
+			"Date: \\3, \\5 \\4 \\8 \\6\\7\n"))
+		  ;; Keep and reformat the sender if we don't
+		  ;; have a From: field.
+		  (if has-from
+		      ""
+		    "From: \\1\n")))))))))
 
 ;;;; *** Rmail Message Formatting and Header Manipulation ***
 
@@ -600,10 +627,9 @@ and use that file as the inbox."
 				      ";"
 				      (buffer-substring (+ (point) 2)
 							(1- (point-max))))))))))))
-    (setq minor-modes
-	  (list (cons 'foo
-		      (concat rmail-current-message "/" rmail-total-messages
-			      blurb))))))
+    (setq mode-line-process
+	  (concat " " rmail-current-message "/" rmail-total-messages
+		  blurb))))
 
 ;; Turn an attribute of the current message on or off according to STATE.
 ;; ATTR is the name of the attribute, as a string.
@@ -679,12 +705,12 @@ Assumes that the visible text of the message is not changed by FUNCTION."
 		rmail-total-messages))
       (rmail-set-message-counters)))
 
-(defun rmail-count-new-messages ()
-  (message "Counting new messages...")
+(defun rmail-count-new-messages (&optional nomsg)
   (let* ((case-fold-search nil)
 	 (total-messages 0)
 	 (messages-head nil)
 	 (deleted-head nil))
+    (or nomsg (message "Counting new messages..."))
     (goto-char (point-max))
     ;; Put at the end of messages-head
     ;; the entry for message N+1, which marks
@@ -704,11 +730,10 @@ Assumes that the visible text of the message is not changed by FUNCTION."
     (setq rmail-summary-vector
 	  (vconcat rmail-summary-vector (make-vector total-messages nil)))
     (goto-char (point-min))
-    (message "Counting new messages...done (%d)" total-messages)))
+    (or nomsg (message "Counting new messages...done (%d)" total-messages))))
 
 (defun rmail-set-message-counters ()
   (rmail-forget-messages)
-  (message "Counting messages...")
   (save-excursion
     (save-restriction
       (widen)
@@ -718,6 +743,7 @@ Assumes that the visible text of the message is not changed by FUNCTION."
 	     (case-fold-search nil)
 	     (messages-head nil)
 	     (deleted-head nil))
+	(message "Counting messages...")
 	(goto-char (point-max))
 	;; Put at the end of messages-head
 	;; the entry for message N+1, which marks
@@ -729,12 +755,13 @@ Assumes that the visible text of the message is not changed by FUNCTION."
 	(rmail-set-message-counters-counter)
 	(setq rmail-total-messages total-messages)
 	(setq rmail-current-message
-	      (max 1 (- total-messages messages-after-point)))
+	      (min total-messages
+		   (max 1 (- total-messages messages-after-point))))
 	(setq rmail-message-vector
 	      (apply 'vector (cons (point-min-marker) messages-head))
 	      rmail-deleted-vector (concat "D" deleted-head)
-	      rmail-summary-vector (make-vector rmail-total-messages nil)))))
-  (message "Counting messages...done"))
+	      rmail-summary-vector (make-vector rmail-total-messages nil))
+	(message "Counting messages...done")))))
 	
 (defun rmail-set-message-counters-counter (&optional stop)
   (while (search-backward "\^_\^L\n" stop t)
@@ -761,9 +788,9 @@ Assumes that the visible text of the message is not changed by FUNCTION."
   (rmail-maybe-set-message-counters)
   (widen)
   (if (zerop rmail-total-messages)
-      (progn (ding)
-	     (narrow-to-region (point-min) (1- (point-max)))
-	     (setq minor-modes nil))
+      (progn (narrow-to-region (point-min) (1- (point-max)))
+	     (goto-char (point-min))
+	     (setq mode-line-process nil))
     (let (blurb)
       (if (not n)
 	  (setq n rmail-current-message)
@@ -884,20 +911,27 @@ and reverse search is specified by a negative numeric arg."
 	win
 	(msg rmail-current-message))
     (unwind-protect
-	(if (funcall (if reversep 're-search-backward 're-search-backward)
-		     regexp nil t)
-	    (setq win t)
+	(progn
 	  (widen)
+	  ;; Check messages one by one, advancing message number up or down
+	  ;; but searching forward through each message.
 	  (if reversep
 	      (while (and (null win) (> msg 1))
-		(goto-char (rmail-msgend (setq msg (1- msg))))
-		(setq win (re-search-backward
-			   regexp (rmail-msgbeg msg) t)))
-	      (while (and (null win) (< msg rmail-total-messages))
-		(goto-char (rmail-msgbeg (setq msg (1+ msg))))
-		(setq win (re-search-forward regexp (rmail-msgend msg) t)))))
+		(goto-char (rmail-msgbeg (setq msg (1- msg))))
+		(setq win (re-search-forward
+			   regexp (rmail-msgend msg) t)))
+	    (while (and (null win) (< msg rmail-total-messages))
+	      (goto-char (rmail-msgbeg (setq msg (1+ msg))))
+	      (setq win (re-search-forward regexp (rmail-msgend msg) t)))))
       (if win
 	  (progn
+	    ;; If this is a reverse search and we found a message,
+	    ;; search backward thru this message to position point.
+	    (if reversep
+		(progn
+		  (goto-char (rmail-msgend msg))
+		  (re-search-backward
+		   regexp (rmail-msgbeg msg) t)))
 	    (setq win (point))
 	    (rmail-show-message msg)
 	    (message "%sRmail search for %s...done"
@@ -955,6 +989,9 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
   (rmail-maybe-set-message-counters)
   (let* ((omax (- (buffer-size) (point-max)))
 	 (omin (- (buffer-size) (point-min)))
+	 (opoint (if (and (> rmail-current-message 0)
+			  (= ?D (aref rmail-deleted-vector rmail-current-message)))
+		     0 (- (point) (point-min))))
 	 (messages-head (cons (aref rmail-message-vector 0) nil))
 	 (messages-tail messages-head)
 	 (win))
@@ -1007,7 +1044,8 @@ Deleted messages stay in the file until the \\[rmail-expunge] command is given."
       (if (not win)
 	  (narrow-to-region (- (buffer-size) omin) (- (buffer-size) omax)))
       (rmail-show-message
-       (if (zerop rmail-current-message) 1 nil)))))
+       (if (zerop rmail-current-message) 1 nil))
+      (forward-char opoint))))
 
 ;;;; *** Rmail Mailing Commands ***
 
@@ -1033,7 +1071,7 @@ original message into it."
   ;;>> this gets set even if we abort. Can't do anything about it, though.
   (rmail-set-attribute "answered" t)
   (rmail-display-labels)
-  (let (from reply-to cc subject date to)
+  (let (from reply-to cc subject date to message-id resent-reply-to)
     (save-excursion
       (save-restriction
 	(widen)
@@ -1049,25 +1087,35 @@ original message into it."
 	  (narrow-to-region (point)
 			    (progn (search-forward "\n*** EOOH ***\n")
 				   (beginning-of-line) (point))))
-	(setq from (mail-fetch-field "from")
-	      reply-to (or (mail-fetch-field "resent-reply-to" t)
+	(setq resent-reply-to (mail-fetch-field "resent-reply-to" t)
+	      from (mail-fetch-field "from")
+	      reply-to (or resent-reply-to
 			   (mail-fetch-field "reply-to" nil t)
 			   from)
-	      cc (if (not just-sender) (mail-fetch-field "cc" nil t))
-	      subject (mail-fetch-field "subject")
-	      date (mail-fetch-field "date")
-	      to (or (mail-fetch-field "to" nil t)
-		     ; (mail-fetch-field "apparently-to") ack gag barf
-		     ""))))
+	      cc (cond (just-sender nil)
+		       (resent-reply-to (mail-fetch-field "resent-cc" t))
+		       (t (mail-fetch-field "cc" nil t)))
+	      subject (or (and resent-reply-to
+			       (mail-fetch-field "resent-subject" t))
+			  (mail-fetch-field "subject"))
+	      date (cond (resent-reply-to
+			  (mail-fetch-field "resent-date" t))
+			 ((mail-fetch-field "date")))
+	      to (cond (resent-reply-to
+			(mail-fetch-field "resent-to" t))
+		       ((mail-fetch-field "to" nil t))
+		       ;((mail-fetch-field "apparently-to")) ack gag barf
+		       (t ""))
+	      message-id (cond (resent-reply-to
+				(mail-fetch-field "resent-message-id" t))
+			       ((mail-fetch-field "message-id"))))))
     (and subject
-	 (string-match "^Re: " subject)
+	 (string-match "\\`Re: " subject)
 	 (setq subject (substring subject 4)))
     (mail-other-window nil
       (mail-strip-quoted-names reply-to)
       subject
-      (let ((stop-pos (string-match "  *at \\|  *@ \\| *(\\| *<" from)))
-	(concat (if stop-pos (substring from 0 stop-pos) from)
-		"'s message of " date))
+      (rmail-make-in-reply-to-field from date message-id)
       (if just-sender
 	  nil
 	(let* ((cc-list (rmail-dont-reply-to
@@ -1075,6 +1123,45 @@ original message into it."
 			    (if (null cc) to (concat to ", " cc))))))
 	  (if (string= cc-list "") nil cc-list)))
       (current-buffer))))
+
+(defun rmail-make-in-reply-to-field (from date message-id)
+  (if mail-use-rfc822 (require 'rfc822))
+  (let (field)
+    (if (and mail-use-rfc822 from)
+	(let ((tem (car (rfc822-addresses from))))
+	  (and message-id
+	       (setq field (if (string-match
+				 (regexp-quote
+				   (if (string-match "@[^@]*\\'" tem)
+				       (substring tem
+						  0 (match-beginning 0))
+				       tem))
+				 message-id)
+			       message-id
+			       (concat message-id " (" tem ")"))
+		     message-id nil date nil))
+	  (or field
+	      (setq field (prin1-to-string tem))))
+;	(if message-id
+;	    (setq field message-id message-id nil date nil)
+;	    (setq field (car (rfc882-addresses from))))
+	)
+    (or field
+	(not from)
+	;; Compute the sender for the in-reply-to; prefer full name.
+	(let* ((stop-pos (string-match "  *at \\|  *@ \\|  *<" from))
+	       (start-pos (if stop-pos 0
+			    ;;>> this loses on nested ()'s
+			    (let ((pos (string-match " *(" from)))
+			      (if (not pos) nil
+				(setq stop-pos (string-match ")" from pos))
+				(if (zerop pos) 0 (+ 2 pos)))))))
+	  (setq field (if stop-pos
+			  (substring from start-pos stop-pos)
+			  from))))
+    (if date (setq field (concat field "'s message of " date)))
+    (if message-id (setq field (concat field " " message-id)))
+    field))
 
 (defun rmail-forward ()
   "Forward the current message to another user."
@@ -1085,11 +1172,23 @@ original message into it."
 	(subject (concat "["
 			 (mail-strip-quoted-names (mail-fetch-field "From"))
 			 ": " (or (mail-fetch-field "Subject") "") "]")))
-    (if (mail-other-window nil nil subject)
+    ;; If only one window, use it for the mail buffer.
+    ;; Otherwise, use another window for the mail buffer
+    ;; so that the Rmail buffer remains visible
+    ;; and sending the mail will get back to it.
+    (if (if (one-window-p t)
+	    (mail nil nil subject)
+	  (mail-other-window nil nil subject))
 	(save-excursion
 	  (goto-char (point-max))
 	  (forward-line 1)
 	  (insert-buffer forward-buffer)))))
+
+;; Avoid error in Emacs versions before 18.37.
+(defun one-window-p (&optional nomini)
+  (eq (selected-window)
+      (if (and nomini (zerop (minibuffer-depth)))
+	  (next-window) (next-window (next-window)))))
 
 
 ;;;; *** Rmail Specify Inbox Files ***

@@ -1,47 +1,81 @@
 /* Tags file maker to go with GNUmacs
-   Copyright (C) 1984 Richard M. Stallman and Ken Arnold
+   Copyright (C) 1984, 1987 Free Software Foundation, Inc. and Ken Arnold
 
-This program is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+			   NO WARRANTY
 
-   Permission is granted to anyone to distribute verbatim copies
-   of this program's source code as received, in any medium, provided that
-   the copyright notice, the nonwarraty notice above
-   and this permission notice are preserved,
-   and that the distributor grants the recipient all rights
-   for further redistribution as permitted by this notice,
-   and informs him of these rights.
+  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
 
-   Permission is granted to distribute modified versions of this
-   program's source code, or of portions of it, under the above
-   conditions, plus the conditions that all changed files carry
-   prominent notices stating who last changed them and that the
-   derived material, including anything packaged together with it and
-   conceptually functioning as a modification of it rather than an
-   application of it, is in its entirety subject to a permission
-   notice identical to this one.
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
+OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
+DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
+A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
+PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
 
-   Permission is granted to distribute this program (verbatim or
-   as modified) in compiled or executable form, provided verbatim
-   redistribution is permitted as stated above for source code, and
-    A.  it is accompanied by the corresponding machine-readable
-      source code, under the above conditions, or
-    B.  it is accompanied by a written offer, with no time limit,
-      to distribute the corresponding machine-readable source code,
-      under the above conditions, to any one, in return for reimbursement
-      of the cost of distribution.   Verbatim redistribution of the
-      written offer must be permitted.  Or,
-    C.  it is distributed by someone who received only the
-      compiled or executable form, and is accompanied by a copy of the
-      written offer of source code which he received along with it.
+		GENERAL PUBLIC LICENSE TO COPY
 
-   Permission is granted to distribute this program (verbatim or as modified)
-   in executable form as part of a larger system provided that the source
-   code for this program, including any modifications used,
-   is also distributed or offered as stated in the preceding paragraph.
+  1. You may copy and distribute verbatim copies of this source file
+as you receive it, in any medium, provided that you conspicuously
+and appropriately publish on each copy a valid copyright notice
+"Copyright (C) 1986 Free Software Foundation"; and include
+following the copyright notice a verbatim copy of the above disclaimer
+of warranty and of this License.
+
+  2. You may modify your copy or copies of this source file or
+any portion of it, and copy and distribute such modifications under
+the terms of Paragraph 1 above, provided that you also do the following:
+
+    a) cause the modified files to carry prominent notices stating
+    that you changed the files and the date of any change; and
+
+    b) cause the whole of any work that you distribute or publish,
+    that in whole or in part contains or is a derivative of this
+    program or any part thereof, to be freely distributed
+    and licensed to all third parties on terms identical to those
+    contained in this License Agreement (except that you may choose
+    to grant more extensive warranty protection to third parties,
+    at your option).
+
+  3. You may copy and distribute this program or any portion of it in
+compiled, executable or object code form under the terms of Paragraphs
+1 and 2 above provided that you do the following:
+
+    a) cause each such copy to be accompanied by the
+    corresponding machine-readable source code, which must
+    be distributed under the terms of Paragraphs 1 and 2 above; or,
+
+    b) cause each such copy to be accompanied by a
+    written offer, with no time limit, to give any third party
+    free (except for a nominal shipping charge) a machine readable
+    copy of the corresponding source code, to be distributed
+    under the terms of Paragraphs 1 and 2 above; or,
+
+    c) in the case of a recipient of this program in compiled, executable
+    or object code form (without the corresponding source code) you
+    shall cause copies you distribute to be accompanied by a copy
+    of the written offer of source code which you received along
+    with the copy you received.
+
+  4. You may not copy, sublicense, distribute or transfer this program
+except as expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer this program is void and
+your rights to use the program under this License agreement shall be
+automatically terminated.  However, parties who have received computer
+software programs from you with this License Agreement will not have
+their licenses terminated so long as such parties remain in full compliance.
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -56,7 +90,9 @@ what you give them.   Help stamp out software-hoarding!  */
  Default is ETAGS.  */
 
 #ifndef CTAGS
+#ifndef ETAGS
 #define ETAGS 1
+#endif
 #endif
 
 #define	reg	register
@@ -74,7 +110,7 @@ what you give them.   Help stamp out software-hoarding!  */
 #define	max(I1,I2)	(I1 > I2 ? I1 : I2)
 
 struct	nd_st {			/* sorting structure			*/
-	char	*entry;			/* function or type name	*/
+	char	*name;			/* function or type name	*/
 	char	*file;			/* file name			*/
 	logical f;			/* use pattern or line no	*/
 	int	lno;			/* line number tag is on	*/
@@ -130,8 +166,10 @@ FILE	*inf,			/* ioptr for current input file		*/
 
 NODE	*head;			/* the head of the sorted binary tree	*/
 
-char	*savestr();
-char	*rindex();
+char *savestr();
+char *savenstr ();
+char *rindex();
+char *index();
 char *concat ();
 void initbuffer ();
 long readline ();
@@ -148,6 +186,24 @@ struct linebuffer
 
 struct linebuffer lb, lb1;
 
+#ifdef VMS
+
+#include descrip
+
+void
+system (buf)
+     char *buf;
+{
+  struct dsc$descriptor_s command =
+    {
+      strlen(buf), DSC$K_DTYPE_T, DSC$K_CLASS_S, buf
+    };
+
+  LIB$SPAWN(&command);
+}
+#endif /* VMS */
+
+
 main(ac,av)
      int	ac;
      char	*av[];
@@ -331,11 +387,37 @@ find_entries (file)
     }
   curfile = savestr(file);
   cp = rindex(file, '.');
-  /* .l or .el or .lisp implies lisp source code */
-  if (cp && (!strcmp (cp + 1, "l") || !strcmp (cp + 1, "el")
-	     || !strcmp (cp + 1, "lisp")))
+  /* .tex, .aux or .bbl implies LaTeX source code */
+  if (cp && (!strcmp (cp + 1, "tex") || !strcmp (cp + 1, "aux")
+	     || !strcmp (cp + 1, "bbl")))
+    {
+      TEX_funcs(inf);
+      fclose(inf);
+      return;
+    }
+  /* .l or .el or .lisp (or .cl or .clisp or ...) implies lisp source code */
+  if (cp && (!strcmp (cp + 1, "l") ||
+	     !strcmp (cp + 1, "el") ||
+	     !strcmp (cp + 1, "lsp") ||
+	     !strcmp (cp + 1, "lisp") ||
+	     !strcmp (cp + 1, "cl") ||
+	     !strcmp (cp + 1, "clisp")))
     {
       L_funcs(inf);
+      fclose(inf);
+      return;
+    }
+  /* .scm or .sm or .scheme implies scheme source code */
+  if (cp && (!strcmp (cp + 1, "sm") ||
+	     !strcmp (cp + 1, "scm") ||
+	     !strcmp (cp + 1, "scheme") ||
+	     !strcmp (cp + 1, "SM") ||
+	     !strcmp (cp + 1, "SCM") ||
+             /* The `SCM' or `scm' prefix with a version number */
+             (cp[-1] == 'm' && cp[-2] == 'c' && cp[-3] == 's') ||
+             (cp[-1] == 'M' && cp[-2] == 'C' && cp[-3] == 'S')))
+    {
+      Scheme_funcs(inf);
       fclose(inf);
       return;
     }
@@ -371,7 +453,7 @@ pfnote (name, f, linestart, linelen, lno, cno)
   char *altname;
   char tem[51];
 
-  if ((np = (NODE *) malloc(sizeof (NODE))) == NULL)
+  if ((np = (NODE *) malloc (sizeof (NODE))) == NULL)
     {
       fprintf(stderr, "ctags: too many entries to sort\n");
       put_entries(head);
@@ -393,7 +475,7 @@ pfnote (name, f, linestart, linelen, lno, cno)
 	*fp = 0;
       name = altname;
     }
-  np->entry = savestr(name);
+  np->name = savestr(name);
   np->file = curfile;
   np->f = f;
   np->lno = lno;
@@ -431,7 +513,7 @@ add_node(node, cur_node)
 {
   register int dif;
 
-  dif = strcmp(node->entry, cur_node->entry);
+  dif = strcmp(node->name, cur_node->name);
 
   /* If this tag name matches an existing one, then
      unless -e was given, do not add the node, but maybe print a warning */
@@ -442,7 +524,7 @@ add_node(node, cur_node)
 	  if (!wflag)
 	    {
 	      fprintf(stderr,"Duplicate entry in file %s, line %d: %s\n",
-		      node->file,lineno,node->entry);
+		      node->file,lineno,node->name);
 	      fprintf(stderr,"Second entry ignored\n");
 	    }
 	  return;
@@ -450,7 +532,7 @@ add_node(node, cur_node)
       if (!cur_node->been_warned)
 	if (!wflag)
 	  fprintf(stderr,"Duplicate entry in files %s and %s: %s (Warning only)\n",
-		  node->file, cur_node->file, node->entry);
+		  node->file, cur_node->file, node->name);
       cur_node->been_warned = TRUE;
       return;
     } 
@@ -491,7 +573,7 @@ put_entries(node)
   else if (!xflag)
     {
       fprintf (outf, "%s\t%s\t",
-	       node->entry, node->file);
+	       node->name, node->file);
 
       if (node->f)
 	{		/* a function */
@@ -514,10 +596,10 @@ put_entries(node)
     }
   else if (vflag)
     fprintf (stdout, "%s %s %d\n",
-	     node->entry, node->file, (node->lno+63)/64);
+	     node->name, node->file, (node->lno+63)/64);
   else
     fprintf (stdout, "%-16s%4d %-16s %s\n",
-	     node->entry, node->lno, node->file, node->pat);
+	     node->name, node->lno, node->file, node->pat);
 
   /* Output subentries that follow this one */
   put_entries (node->right);
@@ -829,8 +911,12 @@ consider_token (lpp, token, f)
     }
   while (iswhite (c = *lp++))
     {
-      if (!c)
-	CNL;
+      if (c == 0)
+	{
+	  if (feof (inf))
+	    break;
+	  CNL;
+	}
     }
   win = isgood (c);
 ret:
@@ -1031,6 +1117,274 @@ L_getit()
   pfcnt++;
 }
 
+/*
+ * Scheme tag functions
+ * look for (def... xyzzy
+ * look for (def... (xyzzy
+ * look for (def ... ((...(xyzzy ....
+ * look for (set! xyzzy
+ */
+
+Scheme_funcs (fi)
+     FILE *fi;
+{
+  lineno = 0;
+  charno = 0;
+  pfcnt = 0;
+
+  while (!feof (fi))
+    {
+      lineno++;
+      linecharno = charno;
+      charno += readline (&lb, fi) + 1;
+      dbp = lb.buffer;
+      if (dbp[0] == '(' && 
+	  (dbp[1] == 'D' || dbp[1] == 'd') &&
+	    (dbp[2] == 'E' || dbp[2] == 'e') &&
+	      (dbp[3] == 'F' || dbp[3] == 'f'))
+	{
+	  while (!isspace(*dbp)) dbp++;
+          /* Skip over open parens and white space */
+          while (*dbp && (isspace(*dbp) || *dbp == '(')) dbp++;
+	  Scheme_getit();
+	}
+      if (dbp[0] == '(' && 
+	  (dbp[1] == 'S' || dbp[1] == 's') &&
+	    (dbp[2] == 'E' || dbp[2] == 'e') &&
+	      (dbp[3] == 'T' || dbp[3] == 't') &&
+                (dbp[4] == '!' || dbp[4] == '!') &&
+                  (isspace(dbp[5])))
+	{
+	  while (!isspace(*dbp)) dbp++;
+          /* Skip over white space */
+          while (isspace(*dbp)) dbp++;
+	  Scheme_getit();
+	}
+    }
+}
+Scheme_getit()
+{
+  register char *cp;
+  char c;
+  char nambuf[BUFSIZ];
+
+  if (*dbp == 0) return;
+  /* Go till you get to white space or a syntactic break */
+  for (cp = dbp+1; *cp && *cp != '(' && *cp != ')' && !isspace(*cp); cp++)
+    continue;
+  /* Null terminate the string there. */
+  c = cp[0];
+  cp[0] = 0;
+  /* Copy the string */
+  strcpy(nambuf, dbp);
+  /* Unterminate the string */
+  cp[0] = c;
+  /* Announce the change */
+  pfnote(nambuf, TRUE, lb.buffer, cp - lb.buffer + 1, lineno, linecharno);
+  pfcnt++;
+}
+
+/* Find tags in TeX and LaTeX input files.  */
+
+/* TEX_toktab is a table of TeX control sequences that define tags.
+   Each TEX_tabent records one such control sequence.  */
+
+struct TEX_tabent
+{
+  char *name;
+  int len;
+};
+
+struct TEX_tabent *TEX_toktab = NULL; /* Table with tag tokens */
+
+/* Default set of control sequences to put into TEX_toktab.
+   The value of environment var TEXTAGS is prepended to this.  */
+
+static char *TEX_defenv =
+  ":chapter:section:subsection:subsubsection:eqno:label:ref:cite:bibitem:typeout";
+
+struct TEX_tabent *TEX_decode_env (); 
+
+static char TEX_esc = '\\';
+static char TEX_opgrp = '\{';
+static char TEX_clgrp = '\}';
+
+/*
+ * TeX/LaTeX scanning loop.
+ */
+
+TEX_funcs (fi)
+    FILE *fi;
+{
+  char *lasthit;
+
+  lineno = 0;
+  charno = 0;
+  pfcnt = 0;
+
+  /* Select either \ or ! as escape character.  */
+  TEX_mode (fi);
+
+  /* Initialize token table once from environment. */
+  if (!TEX_toktab)
+    TEX_toktab = TEX_decode_env ("TEXTAGS", TEX_defenv);
+
+  while (!feof (fi))
+    {
+      lineno++;
+      linecharno = charno;
+      charno += readline (&lb, fi) + 1;
+      dbp = lb.buffer;
+      lasthit = dbp;
+
+      while (!feof (fi))
+	{	/* Scan each line in file */
+	  lineno++;
+	  linecharno = charno;
+	  charno += readline (&lb, fi) + 1;
+	  dbp = lb.buffer;
+	  lasthit = dbp;
+	  while (dbp = index (dbp, TEX_esc)) /* Look at each escape in line */
+	    {
+	      register int i;
+
+	      if (! *(++dbp))
+		break;
+	      linecharno += dbp - lasthit;
+	      lasthit = dbp;
+	      i = TEX_Token (lasthit);
+	      if (0 <= i)
+		{
+		  TEX_getit (lasthit, TEX_toktab[i].len);
+		  break;		/* We only save a line once */
+		}
+	    }
+	}
+    }
+}
+
+#define TEX_LESC '\\'
+#define TEX_SESC '\!'
+
+/* Figure out whether TeX's escapechar is '\\' or '!' and set grouping */
+/* chars accordingly. */
+
+TEX_mode (f)
+     FILE *f;
+{
+  int c;
+
+  while ((c = getc (f)) != EOF)
+    if (c == TEX_LESC || c == TEX_SESC)
+      break;
+
+  if (c == TEX_LESC)
+    {
+      TEX_esc = TEX_LESC;
+      TEX_opgrp = '\{';
+      TEX_clgrp = '\}';
+    } 
+  else
+    {
+      TEX_esc = TEX_SESC;
+      TEX_opgrp = '\<';
+      TEX_clgrp = '\>';
+    }
+  rewind (f);
+}
+
+/* Read environment and prepend it to the default string. */
+/* Build token table. */
+
+struct TEX_tabent *
+TEX_decode_env (evarname, defenv)
+     char *evarname;
+     char *defenv;
+{
+  register char *env, *p;
+  extern char *savenstr (), *index ();
+
+  struct TEX_tabent *tab;
+  int size, i;
+
+  /* Append deafult string to environment. */
+  env = (char *) getenv (evarname);
+  if (!env)
+    env = defenv;
+  else
+    env = concat (env, defenv, "");
+
+  /* Allocate a token table */
+  for (size = 1, p=env; p;)
+    if ((p = index (p, ':')) && *(++p))
+      size++;
+  tab = (struct TEX_tabent *) xmalloc (size * sizeof (struct TEX_tabent));
+
+  /* Unpack environment string into token table. Be careful about */
+  /* zero-length strings (leading ':', "::" and trailing ':') */
+  for (i = 0; *env;)
+    {
+      p = index (env, ':');
+      if (!p)			/* End of environment string. */
+	p = env + strlen (env);
+      if (p - env > 0)
+	{	/* Only non-zero strings. */
+	  tab[i].name = savenstr (env, p - env);
+	  tab[i].len = strlen (tab[i].name);
+	  i++;
+	}
+      if (*p)
+	env = p + 1;
+      else
+	{
+	  tab[i].name = NULL;	/* Mark end of table. */
+	  tab[i].len = 0;
+	  break;
+	}
+    }
+  return tab;
+}
+
+/* Record a tag defined by a TeX command of length LEN and starting at NAME.
+   The name being defined actually starts at (NAME + LEN + 1).
+   But we seem to include the TeX command in the tag name.  */
+
+TEX_getit (name, len)
+    char *name;
+    int len;
+{
+  char *p = name + len;
+  char nambuf[BUFSIZ];
+
+  if (*name == 0) return;
+
+  /* Let tag name extend to next group close (or end of line) */
+  while (*p && *p != TEX_clgrp)
+    p++;
+  strncpy (nambuf, name, p - name);
+  nambuf[p - name] = 0;
+
+  pfnote (nambuf, TRUE, lb.buffer, strlen (lb.buffer), lineno, linecharno);
+  pfcnt++;
+}
+
+/* If the text at CP matches one of the tag-defining TeX command names,
+   return the index of that command in TEX_toktab.
+   Otherwise return -1.  */
+
+/* Keep the capital `T' in `Token' for dumb truncating compilers
+   (this distinguishes it from `TEX_toktab' */
+TEX_Token (cp)
+    char *cp;
+{
+  int i;
+
+  for (i = 0; TEX_toktab[i].len > 0; i++)
+    if (strncmp (TEX_toktab[i].name, cp, TEX_toktab[i].len) == 0)
+      return i;
+  return -1;
+}
+
 /* Initialize a linebuffer for use */
 
 void
@@ -1060,7 +1414,7 @@ readline (linebuffer, stream)
 	{
 	  buffer = (char *) xrealloc (buffer, linebuffer->size *= 2);
 	  p += buffer - linebuffer->buffer;
-	  pend += buffer - linebuffer->buffer;
+	  pend = buffer + linebuffer->size;
 	  linebuffer->buffer = buffer;
 	}
       if (c < 0 || c == '\n')
@@ -1078,13 +1432,20 @@ char *
 savestr(cp)
      char *cp;
 {
-  register int len;
+  return savenstr (cp, strlen (cp));
+}
+
+char *
+savenstr(cp, len)
+    char *cp;
+    int len;
+{
   register char *dp;
 
-  len = strlen(cp);
-  dp = (char *)xmalloc(len+1);
-  strcpy(dp, cp);
-  return (dp);
+  dp = (char *) xmalloc (len + 1);
+  strncpy (dp, cp, len);
+  dp[len] = '\0';
+  return dp;
 }
 
 /*
@@ -1107,6 +1468,25 @@ rindex(sp, c)
 	r = sp;
     } while (*sp++);
   return(r);
+}
+
+/*
+ * Return the ptr in sp at which the character c first
+ * appears; NULL if not found
+ *
+ * Identical to v7 index, included for portability.
+ */
+
+char *
+index(sp, c)
+     register char *sp, c;
+{
+  do
+    {
+      if (*sp == c)
+	return (sp);
+    } while (*sp++);
+  return (NULL);
 }
 
 /* Print error message and exit.  */

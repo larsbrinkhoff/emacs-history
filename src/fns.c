@@ -1,5 +1,5 @@
 /* Random utility Lisp functions.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -21,44 +21,40 @@ and this notice must be preserved on all copies.  */
 
 #include "config.h"
 
-/* Define two macros KERNEL_FILE (file to find kernel symtab in)
-   and LDAV_SYMBOL (symbol name to look for), based on system type.
-   Also define NLIST_STRUCT if the type `nlist' is a structure we
-   can get from nlist.h; otherwise must use a.out.h and initialize
-   with strcpy.  Note that config.h may define NLIST_STRUCT
-   for more modrern USG systems.  */
-
-#ifdef USG
-#ifdef HPUX
-#define LDAV_SYMBOL "_avenrun"
-#define KERNEL_FILE "/hp-ux"
-#define NLIST_STRUCT
-#else /* not HPUX */
-#define LDAV_SYMBOL "avenrun"
-#define KERNEL_FILE "/unix"
-#endif /* not HPUX */
-#else /* not USG */
-#define LDAV_SYMBOL "_avenrun"
-#define NLIST_STRUCT
-#ifndef KERNEL_FILE
-#define KERNEL_FILE "/vmunix"
-#endif /* no KERNEL_FILE yet */
-#endif /* not USG */
-
 #ifdef LOAD_AVE_TYPE
 #ifdef BSD
+/* It appears param.h defines BSD and BSD4_3 in 4.3
+   and is not considerate enough to avoid bombing out
+   if they are already defined.  */
+#undef BSD
+#ifdef BSD4_3
+#undef BSD4_3
+#define XBSD4_3 /* XBSD4_3 says BSD4_3 is supposed to be defined.  */
+#endif
 #include <sys/param.h>
+/* Now if BSD or BSD4_3 was defined and is no longer,
+   define it again.  */
+#ifndef BSD
+#define BSD
+#endif
+#ifdef XBSD4_3
+#ifndef BSD4_3
+#define BSD4_3
+#endif
+#endif /* XBSD4_3 */
 #endif /* BSD */
-#ifndef eunice
+#ifndef VMS
 #ifndef NLIST_STRUCT
 #include <a.out.h> 
 #else /* NLIST_STRUCT */
 #include <nlist.h>
 #endif /* NLIST_STRUCT */
-#endif /* not eunice */
+#endif /* not VMS */
 #endif /* LOAD_AVE_TYPE */
 
+#ifdef NULL
 #undef NULL
+#endif
 #include "lisp.h"
 #include "commands.h"
 
@@ -107,7 +103,7 @@ DEFUN ("length", Flength, Slength, 1, 1, 0,
  retry:
   if (XTYPE (obj) == Lisp_Vector || XTYPE (obj) == Lisp_String)
     return Farray_length (obj);
-  else if (LISTP(obj))
+  else if (CONSP (obj))
     {
       for (i = 0, tail = obj; !NULL(tail); i++)
 	{
@@ -211,8 +207,7 @@ Each argument may be a list, vector or string.")
 DEFUN ("concat", Fconcat, Sconcat, 0, MANY, 0,
   "Concatenate arguments and make the result a string.\n\
 The result is a string whose elements are the elements of all the arguments.\n\
-Each argument may be a list, vector or string; but all elements\n\
-of a list or vector must be numbers, or an error is signaled.")
+Each argument may be a string, a list of numbers, or a vector of numbers.")
   (nargs, args)
      int nargs;
      Lisp_Object *args;
@@ -237,9 +232,9 @@ DEFUN ("copy-sequence", Fcopy_sequence, Scopy_sequence, 1, 1, 0,
      Lisp_Object arg;
 {
   if (NULL (arg)) return arg;
-  if (!LISTP (arg) && XTYPE (arg) != Lisp_Vector && XTYPE (arg) != Lisp_String)
+  if (!CONSP (arg) && XTYPE (arg) != Lisp_Vector && XTYPE (arg) != Lisp_String)
     arg = wrong_type_argument (Qsequencep, arg);
-  return concat (1, &arg, LISTP (arg) ? Lisp_Cons : XTYPE (arg), 0);
+  return concat (1, &arg, CONSP (arg) ? Lisp_Cons : XTYPE (arg), 0);
 }
 
 static Lisp_Object
@@ -271,7 +266,7 @@ concat (nargs, args, target_type, last_special)
   for (argnum = 0; argnum < nargs; argnum++)
     {
       this = args[argnum];
-      if (!(LISTP (this) || NULL (this)
+      if (!(CONSP (this) || NULL (this)
           || XTYPE (this) == Lisp_Vector || XTYPE (this) == Lisp_String))
 	{
 	  if (XTYPE (this) == Lisp_Int)
@@ -301,7 +296,7 @@ concat (nargs, args, target_type, last_special)
   if (target_type == Lisp_Cons && EQ (val, Qnil))
     return last_tail;
 
-  if (LISTP (val))
+  if (CONSP (val))
     tail = val, toindex = -1;		/* -1 in toindex is flag we are making a list */
   else
     toindex = 0;
@@ -315,7 +310,7 @@ concat (nargs, args, target_type, last_special)
       register int thisindex = 0;
 
       this = args[argnum];
-      if (!LISTP (this))
+      if (!CONSP (this))
 	thislen = Flength (this), thisleni = XINT (thislen);
 
       while (1)
@@ -324,7 +319,7 @@ concat (nargs, args, target_type, last_special)
 
 	  /* Fetch next element of `this' arg into `elt', or break if `this' is exhausted. */
 	  if (NULL (this)) break;
-	  if (LISTP (this))
+	  if (CONSP (this))
 	    elt = Fcar (this), this = Fcdr (this);
 	  else
 	    {
@@ -346,10 +341,18 @@ concat (nargs, args, target_type, last_special)
 	    XVECTOR (val)->contents[toindex++] = elt;
 	  else
 	    {
-	      if (XTYPE (elt) != Lisp_Int)
+	      while (XTYPE (elt) != Lisp_Int)
 		elt = wrong_type_argument (Qintegerp, elt);
-	      else
-	        XSTRING (val)->data[toindex++] = XINT (elt);
+	      {
+#ifdef MASSC_REGISTER_BUG
+		/* Even removing all "register"s doesn't disable this bug!
+		   Nothing simpler than this seems to work. */
+		unsigned char *p = & XSTRING (val)->data[toindex++];
+		*p = XINT (elt);
+#else
+		XSTRING (val)->data[toindex++] = XINT (elt);
+#endif
+	      }
 	    }
 	}
     }
@@ -358,9 +361,35 @@ concat (nargs, args, target_type, last_special)
 
   return val;  
 }
+
+DEFUN ("copy-alist", Fcopy_alist, Scopy_alist, 1, 1, 0,
+  "Return a copy of ALIST.\n\
+This is a new alist which represents the same mapping\n\
+from objects to objects, but does not share the alist structure with ALIST.\n\
+The objects mapped (cars and cdrs of elements of the alist)\n\
+are shared, however.")
+  (alist)
+     Lisp_Object alist;
+{
+  register Lisp_Object tem;
+
+  CHECK_LIST (alist, 0);
+  if (NULL (alist))
+    return alist;
+  alist = concat (1, &alist, Lisp_Cons, 0);
+  for (tem = alist; CONSP (tem); tem = XCONS (tem)->cdr)
+    {
+      register Lisp_Object car;
+      car = XCONS (tem)->car;
+
+      if (CONSP (car))
+	XCONS (tem)->car = Fcons (XCONS (car)->car, XCONS (car)->cdr);
+    }
+  return alist;
+}
 
 DEFUN ("substring", Fsubstring, Ssubstring, 2, 3, 0,
-  "Return a substring of STRING, starting at index FROM and reaching until TO.\n\
+  "Return a substring of STRING, starting at index FROM and ending before TO.\n\
 TO may be nil or omitted; then the substring runs to the end of STRING.\n\
 If FROM or TO is negative, it counts from the end.")
   (string, from, to)
@@ -415,9 +444,6 @@ N counts from zero.  If LIST is not that long, nil is returned.")
   (n, list)
      Lisp_Object n, list;
 {
-  CHECK_NUMBER (n, 0);
-  if (!(XTYPE (list) == Lisp_Cons || NULL (list)))
-    list = wrong_type_argument (Qlistp, list);
   return Fcar (Fnthcdr (n, list));
 }
 
@@ -469,10 +495,30 @@ The value is actually the element of LIST whose car is ELT.")
     {
       register Lisp_Object elt, tem;
       elt = Fcar (tail);
-      if (!LISTP (elt)) continue;
+      if (!CONSP (elt)) continue;
       tem = Fcar (elt);
       if (EQ (key, tem)) return elt;
       QUIT;
+    }
+  return Qnil;
+}
+
+/* Like Fassq but never report an error and do not allow quits.
+   Use only on lists known never to be circular.  */
+
+Lisp_Object
+assq_no_quit (key, list)
+     register Lisp_Object key;
+     Lisp_Object list;
+{
+  register Lisp_Object tail;
+  for (tail = list; CONSP (tail); tail = Fcdr (tail))
+    {
+      register Lisp_Object elt, tem;
+      elt = Fcar (tail);
+      if (!CONSP (elt)) continue;
+      tem = Fcar (elt);
+      if (EQ (key, tem)) return elt;
     }
   return Qnil;
 }
@@ -489,7 +535,7 @@ The value is actually the element of LIST whose car is ELT.")
     {
       register Lisp_Object elt, tem;
       elt = Fcar (tail);
-      if (!LISTP (elt)) continue;
+      if (!CONSP (elt)) continue;
       tem = Fequal (Fcar (elt), key);
       if (!NULL (tem)) return elt;
       QUIT;
@@ -509,7 +555,7 @@ The value is actually the element of LIST whose cdr is ELT.")
     {
       register Lisp_Object elt, tem;
       elt = Fcar (tail);
-      if (!LISTP (elt)) continue;
+      if (!CONSP (elt)) continue;
       tem = Fcdr (elt);
       if (EQ (key, tem)) return elt;
       QUIT;
@@ -571,7 +617,8 @@ DEFUN ("nreverse", Fnreverse, Snreverse, 1, 1, 0,
 }
 
 DEFUN ("reverse", Freverse, Sreverse, 1, 1, 0,
-  "Reverses LIST, copying.  Returns the beginning of the reversed list.")
+  "Reverses LIST, copying.  Returns the beginning of the reversed list.\n\
+See also the function  nreverse, which is used more often.")
   (list)
      Lisp_Object list;
 {
@@ -660,8 +707,8 @@ merge (org_l1, org_l2, pred)
 	  Fsetcdr (tail, l1);
 	  return value;
 	}
-      tem = call2 (pred, Fcar (l1), Fcar (l2));
-      if (!NULL (tem))
+      tem = call2 (pred, Fcar (l2), Fcar (l1));
+      if (NULL (tem))
 	{
 	  tem = l1;
 	  l1 = Fcdr (l1);
@@ -843,15 +890,15 @@ Only the last argument is not altered, and need not be a list.")
       tem = args[argnum];
       if (NULL (tem)) continue;
 
-      if (!LISTP (tem))
-	tem = wrong_type_argument (Qlistp, tem);
-
       if (NULL (val))
 	val = tem;
 
       if (argnum + 1 == nargs) break;
 
-      while (LISTP (tem))
+      if (!CONSP (tem))
+	tem = wrong_type_argument (Qlistp, tem);
+
+      while (CONSP (tem))
 	{
 	  tail = tem;
 	  tem = Fcdr (tail);
@@ -982,28 +1029,41 @@ Also accepts Space to mean yes, or Delete to mean no.")
   register int ans;
   register Lisp_Object xprompt;
   Lisp_Object args[2];
+  int ocech = cursor_in_echo_area;
 
   CHECK_STRING (prompt, 0);
   xprompt = prompt;
   while (1)
     {
       message ("%s(y or n) ", XSTRING (xprompt)->data);
+      cursor_in_echo_area = 1;
       ans = get_char (0);
+      cursor_in_echo_area = ocech;
       message ("%s(y or n) %c", XSTRING (xprompt)->data, ans);
       QUIT;
-      if (ans >= 'A' && ans <= 'Z') ans += 'a' - 'A';
+      ans = DOWNCASE (ans);
       if (ans == 'y' || ans == ' ')
-	return Qt;
+	{ ans = 'y'; break; }
       if (ans == 'n' || ans == 127)
-	return Qnil;
+	break;
+
+      Fding (Qnil);
+      Fdiscard_input ();
       if (EQ (xprompt, prompt))
 	{
-	  Fdiscard_input ();
 	  args[0] = build_string ("Please answer y or n.  ");
 	  args[1] = prompt;
 	  xprompt = Fconcat (2, args);
 	}
     }
+  if (!noninteractive)
+    {
+      extern int cursX; /* defined in dispnew.c */
+      /* Move cursor to start of line to indicate that we have proceeded */
+      cursX = 0;
+      update_screen (1, 1);
+    }
+  return (ans == 'y' ? Qt : Qnil);
 }
 
 DEFUN ("yes-or-no-p", Fyes_or_no_p, Syes_or_no_p, 1, 1, 0,
@@ -1021,14 +1081,14 @@ The user must confirm the answer with a newline, and can rub it out if not confi
   prompt = Fconcat (2, args);
   while (1)
     {
-      ans = Fdowncase (read_minibuf_string (Vminibuffer_local_map,
-					    Qnil,
-					    prompt));
+      ans = Fdowncase (read_minibuf (Vminibuffer_local_map,
+				     Qnil, prompt, 0));
       if (XSTRING (ans)->size == 3 && !strcmp (XSTRING (ans)->data, "yes"))
 	return Qt;
       if (XSTRING (ans)->size == 2 && !strcmp (XSTRING (ans)->data, "no"))
 	return Qnil;
 
+      Fding (Qnil);
       Fdiscard_input ();
       message ("Please answer yes or no.");
       Fsleep_for (make_number (2));
@@ -1039,7 +1099,9 @@ The user must confirm the answer with a newline, and can rub it out if not confi
 static int ldav_initialized;
 static int ldav_channel;
 #ifdef LOAD_AVE_TYPE
+#ifndef VMS
 static struct nlist ldav_nl[2];
+#endif /* VMS */
 #endif /* LOAD_AVE_TYPE */
 
 #define channel ldav_channel
@@ -1052,16 +1114,29 @@ in a list (all floating point load average values are multiplied by 100\n\
 and then turned into integers).")
   ()
 {
-#ifdef	eunice
+#ifndef LOAD_AVE_TYPE
+  error ("load-average not implemented for this operating system");
+
+#else /* LOAD_AVE_TYPE defined */
+
+  LOAD_AVE_TYPE load_ave[3];
+#ifdef VMS
+#ifndef eunice
+#include <iodef.h>
+#include <descrip.h>
+#else
 #include <vms/iodef.h>
-  /*
-   *	VMS/Eunice specific code -- read from the Load Ave driver
-   */
-  float load_ave[3];
-  struct {int size; char *ptr;} descriptor;
+  struct {int dsc$w_length; char *dsc$a_pointer;} descriptor;
+#endif /* eunice */
+#endif /* VMS */
 
   /* If this fails for any reason, we can return (0 0 0) */
   load_ave[0] = 0.0; load_ave[1] = 0.0; load_ave[2] = 0.0;
+
+#ifdef VMS
+  /*
+   *	VMS specific code -- read from the Load Ave driver
+   */
 
   /*
    *	Ensure that there is a channel open to the load ave device
@@ -1069,8 +1144,12 @@ and then turned into integers).")
   if (initialized == 0)
     {
       /* Attempt to open the channel */
+#ifdef eunice
       descriptor.size = 18;
       descriptor.ptr  = "$$VMS_LOAD_AVERAGE";
+#else
+      $DESCRIPTOR(descriptor, "LAV0:");
+#endif
       if (sys$assign (&descriptor, &channel, 0, 0) & 1)
 	initialized = 1;
     }
@@ -1087,20 +1166,10 @@ and then turned into integers).")
 	  initialized = 0;
 	}
     }
-#else  /* not eunice */
-
-#ifndef LOAD_AVE_TYPE
-  error ("load-average not implemented for this operating system");
-#define LOAD_AVE_CVT(x) 0
-#else /* LOAD_AVE_TYPE defined */
+#else  /* not VMS */
   /*
    *	4.2BSD UNIX-specific code -- read _avenrun from /dev/kmem
    */
-
-  LOAD_AVE_TYPE load_ave[3];
-
-  /* If this fails for any reason, we can return (0 0 0) */
-  load_ave[0] = 0.0; load_ave[1] = 0.0; load_ave[2] = 0.0;
 
   /*
    *	Make sure we have the address of _avenrun
@@ -1152,8 +1221,7 @@ and then turned into integers).")
 	  initialized = 0;
 	}
     }
-#endif /* LOAD_AVE_TYPE */
-#endif /* not eunice */
+#endif /* not VMS */
 
   /*
    *	Return the list of load average values
@@ -1162,6 +1230,7 @@ and then turned into integers).")
 		Fcons (make_number (LOAD_AVE_CVT (load_ave[1])),
 		       Fcons (make_number (LOAD_AVE_CVT (load_ave[2])),
 			      Qnil)));
+#endif /* LOAD_AVE_TYPE */
 }
 
 #undef channel
@@ -1212,7 +1281,7 @@ load FILENAME.  FILENAME is optional and defaults to FEATURE.")
   if (NULL (tem))
     {
       Fload (NULL (file_name) ? Fsymbol_name (feature) : file_name,
-	     Qnil, Qt);
+	     Qnil, Qt, Qnil);
       tem = Fmemq (feature, Vfeatures);
       if (NULL (tem))
 	error ("Required feature %s was not provided",
@@ -1226,7 +1295,7 @@ syms_of_fns ()
   Qstring_lessp = intern ("string-lessp");
   staticpro (&Qstring_lessp);
 
-  DefLispVar ("features", &Vfeatures,
+  DEFVAR_LISP ("features", &Vfeatures,
     "A list of symbols which are the features of the executing emacs.\n\
 Used by  featurep  and  require, and altered by  provide.");
   Vfeatures = Qnil;
@@ -1236,12 +1305,11 @@ Used by  featurep  and  require, and altered by  provide.");
   defsubr (&Slength);
   defsubr (&Sstring_equal);
   defsubr (&Sstring_lessp);
-  defalias (&Sstring_equal, "string=");
-  defalias (&Sstring_lessp, "string<");
   defsubr (&Sappend);
   defsubr (&Sconcat);
   defsubr (&Svconcat);
   defsubr (&Scopy_sequence);
+  defsubr (&Scopy_alist);
   defsubr (&Ssubstring);
   defsubr (&Snthcdr);
   defsubr (&Snth);

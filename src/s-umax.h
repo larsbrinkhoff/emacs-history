@@ -1,5 +1,5 @@
 /* Definitions file for GNU Emacs running on UMAX 4.2
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -90,6 +90,10 @@ and this notice must be preserved on all copies.  */
 
 #define HAVE_PTYS
 
+/* Define HAVE_SOCKETS if system supports 4.2-compatible sockets.  */
+
+#define HAVE_SOCKETS
+
 /*
  *	Define NONSYSTEM_DIR_LIBRARY to make Emacs emulate
  *      The 4.2 opendir, etc., library functions.
@@ -127,9 +131,35 @@ and this notice must be preserved on all copies.  */
 
 #define CLASH_DETECTION
 
+/* We use the Berkeley (and usg5.2.2) interface to nlist.  */
+
+#define NLIST_STRUCT
+
+/* The file containing the kernel's symbol table is called /vmunix.  */
+
+#define KERNEL_FILE "/vmunix"
+
+/* The symbol in the kernel where the load average is found
+   is named _avenrun.  */
+
+#define LDAV_SYMBOL "_avenrun"
+
 /* Here, on a separate page, add any special hacks needed
    to make Emacs work on this system.  For example,
    you might define certain system call names that don't
    exist on your system, or that do different things on
    your system and must be used only through an encapsulation
    (Which you should place, by convention, in sysdep.c).  */
+
+/* Specify alignment requirement for start of text and data sections
+   in the executable file.  */
+
+#define SECTION_ALIGNMENT pagemask
+
+
+#define SEGMENT_MASK	(64 * 1024 - 1)
+
+
+/* crt0.c needs this for compilation because it uses asm.  */  
+
+#define C_SWITCH_ASM -q nodirect_code

@@ -1,5 +1,5 @@
 ;; GNU Emacs window commands aside from those written in C.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 

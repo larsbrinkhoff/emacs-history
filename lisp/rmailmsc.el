@@ -1,4 +1,4 @@
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -22,7 +22,7 @@
   "Set the inbox list of the current RMAIL file to FILE-NAME.  This may be
 a list of file names separated by commas.  If FILE-NAME is empty, remove
 any inbox list."
-  (interactive "sSet mailbox list to:  ")
+  (interactive "sSet mailbox list to (comma-separated list of filenames): ")
   (save-excursion
     (let ((names (rmail-parse-file-inboxes))
 	  (standard-output nil))

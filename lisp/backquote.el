@@ -1,4 +1,4 @@
-;; Copyright (C) 1985 Free Software Foundation
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 ;; Written by Dick King (king@kestrel).
 
 ;; This file is part of GNU Emacs.

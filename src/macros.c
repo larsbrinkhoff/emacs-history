@@ -1,5 +1,5 @@
 /* Keyboard macros.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -206,27 +206,6 @@ COUNT is a repeat count, or nil for once, or 0 for infinite loop.")
   return Qnil;
 }
 
-DEFUN ("name-last-kbd-macro", Fname_last_kbd_macro, Sname_last_kbd_macro, 1, 1, "SName last kbd macro: ",
-  "Assign a name to the last keyboard macro defined.\n\
-One arg, a symbol, which is the name to define.\n\
-The symbol's function definition becomes the keyboard macro string.\n\
-Such a \"function\" cannot be called from Lisp, but it is a valid command\n\
-definition for the editor command loop.")
-  (sym)
-     Lisp_Object sym;
-{
-  CHECK_SYMBOL (sym, 0);
-
-  if (defining_kbd_macro)
-    error ("Not allowed to name a keyboard macro while defining one");
-
-  if (NULL (Vlast_kbd_macro))
-    error ("No keyboard macro defined");
-
-  Ffset (sym, Vlast_kbd_macro);
-  return sym;
-}
-
 init_macros ()
 {
   Vlast_kbd_macro = Qnil;
@@ -244,18 +223,17 @@ syms_of_macros ()
   defsubr (&Send_kbd_macro);
   defsubr (&Scall_last_kbd_macro);
   defsubr (&Sexecute_kbd_macro);
-  defsubr (&Sname_last_kbd_macro);
 
-  DefBoolVar ("defining-kbd-macro", &defining_kbd_macro,
+  DEFVAR_BOOL ("defining-kbd-macro", &defining_kbd_macro,
     "Non-nil means store keyboard input into kbd macro being defined.");
 
-  DefLispVar ("executing-macro", &Vexecuting_macro,
+  DEFVAR_LISP ("executing-macro", &Vexecuting_macro,
     "Currently executing keyboard macro (a string); nil if none executing.");
 
-  DefLispVar ("executing-kbd-macro", &Vexecuting_macro,
+  DEFVAR_LISP ("executing-kbd-macro", &Vexecuting_macro,
     "Currently executing keyboard macro (a string); nil if none executing.");
 
-  DefLispVar ("last-kbd-macro", &Vlast_kbd_macro,
+  DEFVAR_LISP ("last-kbd-macro", &Vlast_kbd_macro,
     "Last kbd macro defined, as a string; nil if none defined.");
 }
 

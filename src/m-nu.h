@@ -1,7 +1,5 @@
 /* m- file for TI Nu machines using system V.
-   Note that Emacs does not really work on the Nu yet
-   as the kernel can't even load and start it.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -56,6 +54,10 @@ and this notice must be preserved on all copies.  */
 #define m68000
 #endif
 
+#ifndef NU
+#define NU
+#endif
+
 /* Data type of load average, as read out of kmem.  */
 /* These are commented out since it does not really work in uniplus */
   
@@ -72,3 +74,8 @@ and this notice must be preserved on all copies.  */
 /* The NU machine has a compiler that can handle long names.  */
 
 #undef SHORTNAMES
+
+/* Specify alignment requirement for start of text and data sections
+   in the executable file.  */
+
+#define SECTION_ALIGNMENT pagemask

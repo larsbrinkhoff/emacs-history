@@ -1,5 +1,5 @@
 ;; Indentation commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -127,8 +127,11 @@ the column point starts at,  tab-to-tab-stop  is done instead."
     (save-excursion
       (beginning-of-line)
       (if (re-search-backward "^[^\n]" nil t)
-	  (let ((end (scan-buffer (point) 1 ?\n)))
+	  (let ((end (save-excursion (forward-line 1) (point))))
 	    (move-to-column start-column)
+	    ;; Is start-column inside a tab on this line?
+	    (if (> (current-column) start-column)
+		(backward-char 1))
 	    (or (looking-at "[ \t]")
 		unindented-ok
 		(skip-chars-forward "^ \t" end))
@@ -145,7 +148,7 @@ the column point starts at,  tab-to-tab-stop  is done instead."
 
 (defvar tab-stop-list
   '(8 16 24 32 40 48 56 64 72 80 88 96 104 112 120)
-  "List of tab stop positions used by tab-to-tab-stops.")
+  "*List of tab stop positions used by tab-to-tab-stops.")
 
 (defvar edit-tab-stops-map nil "Keymap used in edit-tab-stops.")
 (if edit-tab-stops-map
@@ -162,7 +165,7 @@ the variable tab-stop-list is local in that buffer.")
   "Edit the tab stops used by tab-to-tab-stop.
 Creates a buffer *Tab Stops* containing text describing the tab stops.
 A colon indicates a column where there is a tab stop.
-You can add or remove colons and then do C-x C-s to make changes take effect."
+You can add or remove colons and then do C-c C-c to make changes take effect."
   (interactive)
   (setq edit-tab-stops-buffer (current-buffer))
   (switch-to-buffer (get-buffer-create "*Tab Stops*"))
@@ -187,7 +190,7 @@ You can add or remove colons and then do C-x C-s to make changes take effect."
     (while (> count 0)
       (insert "0123456789")
       (setq count (1- count))))
-  (insert "\nTo install changes, type C-x C-s")
+  (insert "\nTo install changes, type C-c C-c")
   (goto-char (point-min)))
 
 (defun edit-tab-stops-note-changes ()

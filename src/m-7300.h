@@ -1,5 +1,5 @@
 /* m- file for AT&T UNIX PC model 7300
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1986 Free Software Foundation, Inc.
    Modified for this machine by mtxinu!rtech!gonzo!daveb
 
 This file is part of GNU Emacs.

@@ -1,6 +1,6 @@
 /* Template for s- header files.
    This file describes the parameters that s- files should define or not.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -140,4 +140,4 @@ and this notice must be preserved on all copies.  */
    On these systems, you must #define static as nothing to foil this.
    Note that emacs carefully avoids static vars inside functions.  */
 
-#define static
+/* #define static */

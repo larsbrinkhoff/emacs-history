@@ -1,5 +1,5 @@
 /* Generate doc-string file for GNU Emacs from source files.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -22,14 +22,18 @@ copyright notice and this notice must be preserved on all copies.  */
  A .o file can also be specified; the .c file it was made from is used.
  This helps the makefile pass the correct list of files.
 
- The results, printed on standard output, are entries containing
- function names and their documentation.
+ The results, which go to standard output or to a file
+ specified with -a or -o (-a to append, -o to start from nothing),
+ are entries containing function or variable names and their documentation.
  Each entry starts with a ^_ character.
- Then comes the function name, terminated with a newline.
- Then comes the documentation for that function.
+ Then comes F for a function or V for a variable.
+ Then comes the function or variable name, terminated with a newline.
+ Then comes the documentation for that function or variable.
  */
 
 #include <stdio.h>
+
+FILE *outfile;
 
 main (argc, argv)
      int argc;
@@ -38,9 +42,26 @@ main (argc, argv)
   int i;
   int err_count = 0;
 
-  for (i = 1; i < argc; i++)
+  outfile = stdout;
+
+  /* If first two args are -o FILE, output to FILE.  */
+  i = 1;
+  if (argc > i + 1 && !strcmp (argv[i], "-o"))
+    {
+      outfile = fopen (argv[i + 1], "w");
+      i += 2;
+    }
+  if (argc > i + 1 && !strcmp (argv[i], "-a"))
+    {
+      outfile = fopen (argv[i + 1], "a");
+      i += 2;
+    }
+
+  for (; i < argc; i++)
     err_count += scan_file (argv[i]);	/* err_count seems to be {mis,un}used */
+#ifndef VMS
   exit (err_count);			/* see below - shane */
+#endif VMS
 }
 
 /* Read file FILENAME and output its doc strings to stdout.  */
@@ -75,9 +96,9 @@ read_c_string (infile, printflag)
   char *p = buf;
 
   c = getc (infile);
-  while (1)
+  while (c != EOF)
     {
-      while (c != '"')
+      while (c != '"' && c != EOF)
 	{
 	  if (c == '\\')
 	    {
@@ -93,7 +114,7 @@ read_c_string (infile, printflag)
 		c = '\t';
 	    }
 	  if (printflag > 0)
-	    putchar (c);
+	    putc (c, outfile);
 	  else if (printflag < 0)
 	    *p++ = c;
 	  c = getc (infile);
@@ -102,7 +123,7 @@ read_c_string (infile, printflag)
       if (c != '"')
 	break;
       if (printflag > 0)
-	putchar (c);
+	putc (c, outfile);
       else if (printflag < 0)
 	*p++ = c;
       c = getc (infile);
@@ -126,6 +147,7 @@ scan_c_file (filename)
   register int c;
   register int commas;
   register int defunflag;
+  register int defvarflag;
   
   if (filename[strlen (filename) - 1] == 'o')
     filename[strlen (filename) - 1] = 'c';
@@ -148,19 +170,45 @@ scan_c_file (filename)
 	  continue;
 	}
       c = getc (infile);
-      if (c != 'D')
-	continue;
-      c = getc (infile);
-      if (c != 'E')
-	continue;
-      c = getc (infile);
-      if (c != 'F')
-	continue;
-      c = getc (infile);
-      defunflag = c == 'U';
+      if (c == ' ')
+	{
+	  while (c == ' ')
+	    c = getc (infile);
+	  if (c != 'D')
+	    continue;
+	  c = getc (infile);
+	  if (c != 'E')
+	    continue;
+	  c = getc (infile);
+	  if (c != 'F')
+	    continue;
+	  c = getc (infile);
+	  if (c != 'V')
+	    continue;
+	  defvarflag = 1;
+	  defunflag = 0;
+	  c = getc (infile);
+	}
+      else if (c == 'D')
+	{
+	  c = getc (infile);
+	  if (c != 'E')
+	    continue;
+	  c = getc (infile);
+	  if (c != 'F')
+	    continue;
+	  c = getc (infile);
+	  defunflag = c == 'U';
+	  defvarflag = 0;
+	}
+      else continue;
 
       while (c != '(')
-	c = getc (infile);
+	{
+	  if (c < 0)
+	    return 0;
+	  c = getc (infile);
+	}
 
       c = getc (infile);
       if (c != '"')
@@ -169,12 +217,16 @@ scan_c_file (filename)
 
       if (defunflag)
 	commas = 5;
-      else
+      else if (defvarflag)
+	commas = 1;
+      else  /* For DEFSIMPLE and DEFPRED */
 	commas = 2;
 
       while (commas)
 	{
 	  if (c == ',') commas --;
+	  if (c < 0)
+	    return 0;
 	  c = getc (infile);
 	}
       while (c == ' ' || c == '\n' || c == '\t')
@@ -189,23 +241,35 @@ scan_c_file (filename)
 
       if (c == '"')
 	{
-	  putchar (037);
-	  puts (buf);
+	  putc (037, outfile);
+	  putc (defvarflag ? 'V' : 'F', outfile);
+	  fprintf (outfile, "%s\n", buf);
 	  read_c_string (infile, 1, 0);
 	}
     }
   fclose (infile);
-/* return 1; /* - This says there was an error to caller - breaks make - shane */
-  return 0;  /* - So I changed it to this instead. */
+  return 0;
 }
 
 /* Read a file of Lisp code, compiled or interpreted.
  Looks for
-  (defun NAME ARGS DOCSTRING ...)  or
+  (defun NAME ARGS DOCSTRING ...)
   (autoload 'NAME FILE DOCSTRING ...)
- either one starting in column zero.
- ARGS or FILE is ignored;
- the NAME and DOCSTRING are output.
+  (defvar NAME VALUE DOCSTRING)
+  (defconst NAME VALUE DOCSTRING)
+ starting in column zero.
+ ARGS, FILE or VALUE is ignored.  We do not know how to parse Lisp code
+ so we use a kludge to skip them:
+  In a function definition, the form of ARGS of FILE is known, and we
+  can skip it.
+  In a variable definition, we use a formatting convention:
+  the DOCSTRING, if present, must be followed by a closeparen and a newline,
+  and no newline must appear between the defvar or defconst and the docstring,
+  The only source file that must follow this convention is loaddefs.el;
+  aside from that, it is always the .elc file that we look at, and
+  they are no problem because byte-compiler output follows this convention.
+ The NAME and DOCSTRING are output.
+ NAME is preceded by `F' for a function or `V' for a variable.
  An entry is output only if DOCSTRING has \ newline just after the opening "
  */
 
@@ -216,11 +280,12 @@ scan_lisp_file (filename)
   register int c;
   register int commas;
   register char *p;
-  
+  int defvarflag;
+
   infile = fopen (filename, "r");
   if (infile == NULL)
     {
-      perror (infile);
+      perror (filename);
       return 0;				/* No error */
     }
 
@@ -260,20 +325,58 @@ scan_lisp_file (filename)
 	  if (c != 'd')
 	    continue;
 
-	  while (c != '\'')
-	    c = getc (infile);
 	  c = getc (infile);
+	  while (c == ' ')
+	    c = getc (infile);
+
+	  if (c == '\'')
+	    {
+	      c = getc (infile);
+	    }
+	  else
+	    {
+	      if (c != '(')
+		continue;
+	      c = getc (infile);
+	      if (c != 'q')
+		continue;
+	      c = getc (infile);
+	      if (c != 'u')
+		continue;
+	      c = getc (infile);
+	      if (c != 'o')
+		continue;
+	      c = getc (infile);
+	      if (c != 't')
+		continue;
+	      c = getc (infile);
+	      if (c != 'e')
+		continue;
+	      c = getc (infile);
+	      if (c != ' ')
+		continue;
+	      while (c == ' ')
+		c = getc (infile);
+	    }
 
 	  p = buf;
-	  while (c != ' ')
+	  while (c != ' ' && c != ')')
 	    {
+	      if (c == EOF)
+		return 1;
+	      if (c == '\\')
+		c = getc (infile);
 	      *p++ = c;
 	      c = getc (infile);
 	    }
 	  *p = 0;
 
 	  while (c != '"')
-	    c = getc (infile);
+	    {
+	      if (c == EOF)
+		return 1;
+	      c = getc (infile);
+	    }
 	  c = read_c_string (infile, 0, 0);
 	}
       else if (c == 'd')
@@ -285,23 +388,57 @@ scan_lisp_file (filename)
 	  if (c != 'f')
 	    continue;
 	  c = getc (infile);
-	  if (c != 'u')
-	    continue;
-	  c = getc (infile);
-	  if (c != 'n')
+	  if (c == 'u')
+	    {
+	      c = getc (infile);
+	      if (c != 'n')
+		continue;
+	      defvarflag = 0;
+	    }
+	  else if (c == 'v')
+	    {
+	      c = getc (infile);
+	      if (c != 'a')
+		continue;
+	      c = getc (infile);
+	      if (c != 'r')
+		continue;
+	      defvarflag = 1;
+	    }
+	  else if (c == 'c')
+	    {
+	      c = getc (infile);
+	      if (c != 'o')
+		continue;
+	      c = getc (infile);
+	      if (c != 'n')
+		continue;
+	      c = getc (infile);
+	      if (c != 's')
+		continue;
+	      c = getc (infile);
+	      if (c != 't')
+		continue;
+	      defvarflag = 1;
+	    }
+	  else
 	    continue;
 
-	  /* Recognize anything that starts with "defun" */
+	  /* Now we have seen "defun" or "defvar" or "defconst".  */
+
 	  while (c != ' ' && c != '\n' && c != '\t')
 	    c = getc (infile);
 
 	  while (c == ' ' || c == '\n' || c == '\t')
 	    c = getc (infile);
 
-	  /* Store name of function being defined. */
+	  /* Read and store name of function or variable being defined
+	     Discard backslashes that are for quoting.  */
 	  p = buf;
 	  while (c != ' ' && c != '\n' && c != '\t')
 	    {
+	      if (c == '\\')
+		c = getc (infile);
 	      *p++ = c;
 	      c = getc (infile);
 	    }
@@ -310,23 +447,58 @@ scan_lisp_file (filename)
 	  while (c == ' ' || c == '\n' || c == '\t')
 	    c = getc (infile);
 
-	  /* Skip the arguments: either "nil" or a list in parens */
-	  if (c == 'n')
+	  if (! defvarflag)
 	    {
-	      while (c != ' ' && c != '\n' && c != '\t')
-		c = getc (infile);
+	      /* A function: */
+	      /* Skip the arguments: either "nil" or a list in parens */
+	      if (c == 'n')
+		{
+		  while (c != ' ' && c != '\n' && c != '\t')
+		    c = getc (infile);
+		}
+	      else
+		{
+		  while (c != '(')
+		    c = getc (infile);
+		  while (c != ')')
+		    c = getc (infile);
+		}
+	      c = getc (infile);
 	    }
 	  else
 	    {
-	      while (c != '(')
-		c = getc (infile);
-	      while (c != ')')
-		c = getc (infile);
+	      /* A variable:  */
+
+	      /* Skip until the first newline; remember
+		 the two previous characters.  */
+	      char c1 = 0, c2 = 0;
+
+	      while (c != '\n' && c >= 0)
+		{
+		  c2 = c1;
+		  c1 = c;
+		  c = getc (infile);
+		}
+
+	      /* If two previous characters were " and \,
+		 this is a doc string.  Otherwise, there is none.  */
+	      if (c2 == '"' && c1 == '\\')
+		{
+		  putc (037, outfile);
+		  putc ('V', outfile);
+		  fprintf (outfile, "%s\n", buf);
+		  read_c_string (infile, 1, 0);
+		}
+	      continue;
 	    }
-	  c = getc (infile);
 	}
       else
 	continue;
+
+      /* Here for a function definition.
+	 We have skipped the file name or arguments
+	 and arrived at where the doc string is,
+	 if there is a doc string.  */
 
       /* Skip whitespace */
 
@@ -343,11 +515,11 @@ scan_lisp_file (filename)
       if (c != '\n')
 	continue;
 
-      putchar (037);
-      puts (buf);
+      putc (037, outfile);
+      putc ('F', outfile);
+      fprintf (outfile, "%s\n", buf);
       read_c_string (infile, 1, 0);
     }
   fclose (infile);
-/* return 1; /* - This says there was an error to caller - breaks make - shane */
-  return 0;  /* - So I changed it to this instead. */
+  return 0;
 }

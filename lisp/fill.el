@@ -1,5 +1,5 @@
 ;; Fill commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -43,6 +43,7 @@ From program, pass args FROM, TO and JUSTIFY-FLAG."
     (goto-char (point-min))
     (skip-chars-forward "\n")
     (narrow-to-region (point) (point-max))
+    (setq from (point))
     (let ((fpre (and fill-prefix (not (equal fill-prefix ""))
 		     (regexp-quote fill-prefix))))
       ;; Delete the fill prefix from every line except the first.
@@ -54,17 +55,21 @@ From program, pass args FROM, TO and JUSTIFY-FLAG."
 	     (while (not (eobp))
 	       (if (looking-at fpre)
 		   (delete-region (point) (match-end 0)))
-	       (forward-line 1))))
-      (goto-char (point-min))
-      (and fpre (looking-at fpre) (forward-char (length fill-prefix))))
+	       (forward-line 1))
+	     (goto-char (point-min))
+	     (and (looking-at fpre) (forward-char (length fill-prefix)))
+	     (setq from (point)))))
+    ;; from is now before the text to fill,
+    ;; but after any fill prefix on the first line.
+
     ;; Make sure sentences ending at end of line get an extra space.
-    (goto-char (point-min))
+    (goto-char from)
     (while (re-search-forward "[.?!][])""']*$" nil t)
       (insert ? ))
     ;; The change all newlines to spaces.
-    (subst-char-in-region (point-min) (point-max) ?\n ?\ )
+    (subst-char-in-region from (point-max) ?\n ?\ )
     ;; Flush excess spaces, except in the paragraph indentation.
-    (goto-char (point-min))
+    (goto-char from)
     (skip-chars-forward " \t")
     (while (re-search-forward "   *" nil t)
       (delete-region
@@ -78,19 +83,21 @@ From program, pass args FROM, TO and JUSTIFY-FLAG."
     (delete-horizontal-space)
     (insert "  ")
     (goto-char (point-min))
-    (let ((fplen (length (or fill-prefix ""))))
+    (let ((prefixcol 0))
       (while (not (eobp))
 	(move-to-column (1+ fill-column))
 	(if (eobp)
 	    nil
 	  (skip-chars-backward "^ \n")
-	  (if (bolp)
+	  (if (if (zerop prefixcol) (bolp) (>= prefixcol (current-column)))
 	      (skip-chars-forward "^ \n")
 	    (forward-char -1)))
 	(delete-horizontal-space)
 	(insert ?\n)
 	(and (not (eobp)) fill-prefix (not (equal fill-prefix ""))
-	     (insert fill-prefix))
+	     (progn
+	       (insert fill-prefix)
+	       (setq prefixcol (current-column))))
 	(and justify-flag (not (eobp))
 	     (progn
 	       (forward-line -1)
@@ -151,7 +158,7 @@ means justify as well."
 	(insert ? ))
       (goto-char (point-max))
       (setq ncols (- fill-column (current-column)))
-      (if (scan-buffer (point-min) 1 ? )
+      (if (search-backward " " nil t)
 	  (while (> ncols 0)
 	    (let ((nmove (+ 3 (% (random) 3))))
 	      (while (> nmove 0)

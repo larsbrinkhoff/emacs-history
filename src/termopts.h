@@ -1,5 +1,5 @@
 /* Flags and paramaters describing user options for handling the terminal.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -33,6 +33,10 @@ extern int flow_control;
 /* Nonzero means use interrupt-driven input.  */
 
 extern int interrupt_input;
+
+/* Nonzero while interrupts are temporarily deferred during redisplay.  */
+
+extern int interrupts_deferred;
 
 extern int MetaFlag;		/* Terminal has meta key */
 

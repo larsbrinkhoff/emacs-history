@@ -1,5 +1,5 @@
 /* m- file for the Plexus running System V.2.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -112,9 +112,9 @@ and this notice must be preserved on all copies.  */
 
 #define LIB_STANDARD -lPW -lc
 
-/* Use the BOGUS mechanism in crt0.c. */
+/* crt0.c should use the vax-bsd style of entry, with no dummy args.  */
 
-#define BOGUS zero1, zero2,
+#define CRT0_DUMMIES zero1, zero2,
 
 /* This triggers some stuff to avoid a compiler bug */
 

@@ -21,7 +21,10 @@ main (argc, argv)
   char file[BUFSIZ];
   void yow();
 
-  sprintf(file, "%s/%s", PATH_EXEC, YOW_FILE);
+  if (argc > 2 && !strcmp (argv[1], "-f"))
+    strcpy (file, argv[2]);
+  else
+    sprintf (file, "%s/%s", PATH_EXEC, YOW_FILE);
 
   if ((fp = fopen(file, "r")) == NULL) {
     perror(file);
@@ -36,7 +39,8 @@ main (argc, argv)
   exit(0);
 }
 
-void yow (fp)
+void
+yow (fp)
      FILE *fp;
 {
   static long len = -1;

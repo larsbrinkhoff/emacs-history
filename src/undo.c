@@ -1,5 +1,5 @@
 /* Support routines for the undo facility.
-   Copyright (C) 1985 Fen Labalme and Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -70,7 +70,7 @@ free_undo_records (b)
 }
 
 struct UndoRec *
-NewUndo (kind, pos, len)
+record_undo (kind, pos, len)
      enum Ukinds kind;
 {
   register struct UndoData *u = bf_cur->undodata;
@@ -104,7 +104,7 @@ NewUndo (kind, pos, len)
   return p;
 }
 
-RecordInsert (pos, n)
+record_insert (pos, n)
 {
   register struct UndoRec *p = LastUndoRec;
   if (!bf_cur->undodata)
@@ -116,15 +116,15 @@ RecordInsert (pos, n)
     }
 
   if (bf_modified <= bf_cur->save_modified)
-    NewUndo (Uunmod, pos, 0);
+    record_undo (Uunmod, pos, bf_cur->modtime);
 
   if (p && p -> kind == Udelete && p -> pos + p -> len == pos)
     p -> len += n;
   else
-    NewUndo (Udelete, pos, n);
+    record_undo (Udelete, pos, n);
 }
 
-RecordDelete (pos, n)
+record_delete (pos, n)
      int pos, n;
 {
   register struct UndoRec *p = LastUndoRec;
@@ -138,12 +138,14 @@ RecordDelete (pos, n)
     }
 
   if (bf_modified <= bf_cur->save_modified)
-    NewUndo (Uunmod, pos, 0);
+    record_undo (Uunmod, pos, bf_cur->modtime);
 
-  if (p && p->kind == Uinsert && p->pos == pos)
+  if (p && p->kind == Uinsert && p->pos == pos && p->len > 0)
     p->len += n;
+  else if (point == pos + n)
+    record_undo (Uinsert, pos + n, - n);
   else
-    NewUndo (Uinsert, pos, n);
+    record_undo (Uinsert, pos, n);
 
   record_chars (pos, n);
 }
@@ -180,10 +182,12 @@ record_block (p, n)
 	{
 	  bcopy (p, cp, i);
 	  p += i;
-	  cp += i;
 	  FillCQ += i;
 	  n -= i;
 	}
+
+      if (n == 0)
+	break;
 
       if (FillCQ >= NUndoC)
 	{
@@ -201,7 +205,7 @@ record_block (p, n)
     }
 }
 
-RecordChange (pos, n)
+record_change (pos, n)
      int pos, n;
 {
   register struct UndoRec *p = LastUndoRec;
@@ -214,17 +218,19 @@ RecordChange (pos, n)
     }
 
   if (bf_modified <= bf_cur->save_modified)
-    NewUndo (Uunmod, pos, 0);
+    record_undo (Uunmod, pos, bf_cur->modtime);
 
-  if (p && p -> kind == Uchange && p -> pos + p -> len == pos)
-    p -> len += n;
+  if (p && p->kind == Uchange && p->len > 0 && p->pos + p->len == pos)
+    p->len += n;
+  else if (point == pos + n)
+    record_undo (Uchange, pos + n, -n);
   else
-    NewUndo (Uchange, pos, n);
+    record_undo (Uchange, pos, n);
 
   record_chars (pos, n);
 }
 
-RecordChange1 (pos, bufp, n)
+record_change1 (pos, bufp, n)
      int pos;
      char *bufp;
      int n;
@@ -237,10 +243,10 @@ RecordChange1 (pos, bufp, n)
       Fundo_boundary ();
       p = 0;
     }
-  if (p && p -> kind == Uchange && p -> pos + p -> len == pos)
+  if (p && p->kind == Uchange && p->len > 0 && p->pos + p->len == pos)
     p -> len += n;
   else
-    NewUndo (Uchange, pos, n);
+    record_undo (Uchange, pos, n);
 
   record_block (bufp, n);
 }
@@ -255,7 +261,7 @@ DoneIsDone ()
 
   p = &UndoRQ[(FillRQ + u->num_undorecs - 1) % u->num_undorecs];
   if (p->kind != Unundoable)
-    NewUndo (Unundoable, point, 0);
+    record_undo (Unundoable, point, 0);
   return 0;
 }
 
@@ -273,7 +279,7 @@ but another undo command will undo to the previous boundary.")
 
   p = &UndoRQ[(FillRQ + u->num_undorecs - 1) % u->num_undorecs];
   if (p->kind != Uboundary)
-    NewUndo (Uboundary, point, 0);
+    record_undo (Uboundary, point, 0);
   return Qnil;
 }
 
@@ -303,8 +309,10 @@ then call undo-more one or more times to undo them.")
     {
       while (UndoRQ[i = (!i ? u->num_undorecs-1 : i-1)].kind != Uboundary)
 	{
+	  len = UndoRQ[i].len;
+	  if (len < 0) len = - len;
 	  if (((UndoRQ[i].kind == Uinsert || UndoRQ[i].kind == Uchange)
-	       && (NCharsLeft -= UndoRQ[i].len) < 0)
+	       && (NCharsLeft -= len) < 0)
 	      || UndoRQ[i].kind == Unundoable || NUndone >= u->num_undorecs)
 	    error ("No further undo information available");
 	  NUndone++;
@@ -326,6 +334,33 @@ then call undo-more one or more times to undo them.")
 
       len = UndoRQ[i].len;
       pos = UndoRQ[i].pos;
+
+      if (UndoRQ[i].kind == Uchange || UndoRQ[i].kind == Uinsert)
+	if (len < 0)
+	  {
+	    pos += len;
+	    len = - len;
+	  }
+
+#ifdef SWITCH_ENUM_BUG
+      switch ((int) UndoRQ[i].kind)
+#else
+      switch (UndoRQ[i].kind)
+#endif
+	{
+	case Uchange:
+	case Udelete:
+	  if (pos < FirstCharacter || pos + len > NumCharacters + 1)
+	    error ("Changes to be undone are outside visible portion of buffer");
+	  SetPoint (pos);
+	  break;
+
+	case Uinsert:
+	  if (pos < FirstCharacter || pos > NumCharacters + 1)
+	    error ("Changes to be undone are outside visible portion of buffer");
+	  SetPoint (pos);
+	}
+
 #ifdef SWITCH_ENUM_BUG
       switch ((int) UndoRQ[i].kind)
 #else
@@ -336,18 +371,10 @@ then call undo-more one or more times to undo them.")
 	  break;
 
 	case Udelete: 
-	  if (pos < FirstCharacter
-	      || pos + len > NumCharacters + 1)
-	    error ("Changes to be undone are outside visible portion of buffer");
-	  SetPoint (pos);
 	  del_range (point, point + len);
 	  break;
 
 	case Uchange:
-	  if (pos < FirstCharacter
-	      || pos + len > NumCharacters + 1)
-	    error ("Changes to be undone are outside visible portion of buffer");
-	  SetPoint (pos);
 	  if (len > NUndoC)
 	    /* Should have already said "No more undo info available" */
 	    abort ();
@@ -361,14 +388,11 @@ then call undo-more one or more times to undo them.")
 	    }
 	  else
 	    replace_chars (point, len, UndoCQ + chars);
-	  RecordChange1 (point, tembuf, len);
+	  record_change1 (point, tembuf, len);
+	  SetPoint (UndoRQ[i].pos);
 	  break;
 
 	case Uinsert:
-	  if (pos < FirstCharacter
-	      || pos > NumCharacters + 1)
-	    error ("Changes to be undone are outside visible portion of buffer");
-	  SetPoint (pos);
 	  chars -= len;
 	  if (chars < 0)
 	    {
@@ -378,10 +402,15 @@ then call undo-more one or more times to undo them.")
 	    }
 	  else
 	    InsCStr (UndoCQ + chars, len);
-	  SetPoint (pos);
+	  SetPoint (UndoRQ[i].pos);
 	  break;
 
 	case Uunmod:
+	  /* If this Uunmod records an obsolete save
+	     (not matching the actual disk file)
+	     then don't mark unmodified.  */
+	  if (len != bf_cur->modtime)
+	    break;
 #ifdef CLASH_DETECTION
 	  Funlock_buffer ();
 #endif /* CLASH_DETECTION */

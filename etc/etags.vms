@@ -1,0 +1,50 @@
+VMS-ed version of etags
+-----------------------
+
+1. The version of etags supplied with this has been changed
+   to work reasonably conveniently under VMS. No functional
+   changes or bug fixes have been made or intended.
+
+2. The changes made allow the program to compile correctly,
+   to give error messages more meaningful to VMS, to accept
+   lowercase flags for -B and -F, to allow '$' in identifier
+   tokens in C programs, and to expand wild-cards in the
+   input filespecs.
+
+   Because of the restrictions in VMS on the operation of
+   the ftell() and fseek() functions on record files, the
+   program only works correctly if its input file is a
+   stream file: if it isn't, the program runs to completion
+   and without error message, but what it has done is mostly
+   junk. This is not considered too serious, as it looks
+   like GNU emacs running under VMS 4.4 really has to be
+   changed to produce stream files as output.
+
+3. To minimise the differences from the original version,
+   the VMS filename expansion converts filenames to lower
+   case, and strips version numbers. This does indeed mean
+   that some input specs (containing version wildcards) will
+   cause curious effects, it is reasonably consistent with
+   Emacs (GNU Emacs 17.VMS-4) which ignores file versions.
+
+4. I have used the program happily on C and Emacs-lisp
+   files, and did a trivial check on Latex input.
+   If you find any bugs in a reasonable
+   amount of time (up to the end of this month, say), please
+   let me know and I'll do my best to fix them, and will
+   send out updated versions of the program. If you find any
+   after that, do still let me know, but I don't promise
+   anything about fixing them. In other words, I'm not
+   offering ANY FORM OF SUPPORT AT ALL, but would like what
+   I send you to work.
+
+5. The files sent to you are:-
+	etags.intro	- this file
+	etags.mk	- (pseudo) makefile to build the program
+	etags.manpage	- you have to
+   			  guess what this is
+	etags.c		- most of the program, almost as the original
+	gfnames.c	- entirely new stuff for VMS
+
+Niall
+

@@ -12,3 +12,7 @@ typedef struct
 XREPBUFFER;
 
 extern int x_edges_specified;
+
+#ifndef sigmask
+#define sigmask(no) (1L << ((no) - 1))
+#endif

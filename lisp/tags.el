@@ -1,5 +1,5 @@
 ;; Tags facility for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -48,12 +48,12 @@ This is a file whose name is in the variable tags-file-name."
 		  (progn
 		    (setq tag-table-files nil)
 		    (find-file-noselect tags-file-name))))
-  (or (= (char-after 1) ?\^L)
-      (error "File %s not a valid tag table" tags-file-name))
   (or (verify-visited-file-modtime (get-file-buffer tags-file-name))
       (cond ((yes-or-no-p "Tags file has changed, read new contents? ")
-	     (revert-buffer t)
-	     (setq tag-table-files nil)))))
+	     (revert-buffer t t)
+	     (setq tag-table-files nil))))
+  (or (eq (char-after 1) ?\^L)
+      (error "File %s not a valid tag table" tags-file-name)))
 
 (defun file-of-tag ()
   "Return the file name of the file whose tags point is within.
@@ -102,6 +102,16 @@ File names returned are absolute."
 	  (forward-char size))
 	(setq tag-table-files (nreverse files))))))
 
+(defun find-tag-tag (tagname &optional interactive)
+  (if interactive (setq tagname (read-string interactive)))
+  (if (equal tagname "")
+      (setq tagname (save-excursion
+		      (buffer-substring
+		        (progn (backward-sexp 1) (point))
+			(progn (forward-sexp 1) (point))))))
+  (if interactive (list tagname) tagname))
+
+
 (defun find-tag (tagname &optional next other-window)
   "Find tag (in current tag table) whose name contains TAGNAME.
  Selects the buffer that the tag is contained in
@@ -115,12 +125,8 @@ that matches the tagname used in the previous find-tag.
 See documentation of variable tags-file-name."
   (interactive (if current-prefix-arg
 		   '(nil t)
-		 (list (read-string "Find tag: "))))
-  (if (equal tagname "")
-      (setq tagname (save-excursion
-		     (buffer-substring
-		      (progn (backward-sexp 1) (point))
-		      (progn (forward-sexp 1) (point))))))
+		   (find-tag-tag nil "Find tag: ")))
+  (setq tagname (find-tag-tag tagname))
   (let (buffer file linebeg startpos)
     (save-excursion
      (visit-tags-table-buffer)
@@ -164,7 +170,7 @@ See documentation of variable tags-file-name."
 
 (defun find-tag-other-window (tagname &optional next)
   "Find tag (in current tag table) whose name contains TAGNAME.
- Selects the buffer that the tag is contained in
+ Selects the buffer that the tag is contained in in another window
 and puts point at its definition.
  If TAGNAME is a null string, the expression in the buffer
 around or before point is used as the tag name.
@@ -173,7 +179,9 @@ searches for the next tag in the tag table
 that matches the tagname used in the previous find-tag.
 
 See documentation of variable tags-file-name."
-  (interactive "sFind tag other window: \nP")
+  (interactive (if current-prefix-arg
+		   '(nil t)
+		   (find-tag-tag nil "Find tag other window: ")))
   (find-tag tagname next t))
 
 (defvar next-file-list nil
@@ -187,7 +195,7 @@ initializes to the beginning of the list of files in the tag table."
   (if initialize
       (setq next-file-list (tag-table-files)))
   (or next-file-list
-      (error "No more files."))
+      (error "All files processed."))
   (find-file (car next-file-list))
   (setq next-file-list (cdr next-file-list)))
 
@@ -205,6 +213,7 @@ to begin such a command.  See variable tags-loop-form."
 	     (goto-char (point-min))))
   (while (not (eval tags-loop-form))
     (next-file)
+    (message "Scanning file %s..." buffer-file-name)
     (goto-char (point-min))))
 
 (defun tags-search (regexp)
@@ -213,14 +222,16 @@ Stops when a match is found.
 To continue searching for next match, use command \\[tags-loop-continue].
 
 See documentation of variable tags-file-name."
-
   (interactive "sTags search (regexp): ")
-  (setq tags-loop-form
-	(list 're-search-forward regexp nil t))
-  (tags-loop-continue t))
+  (if (and (equal regexp "")
+	   (eq (car tags-loop-form) 're-search-forward))
+      (tags-loop-continue nil)
+    (setq tags-loop-form
+	  (list 're-search-forward regexp nil t))
+    (tags-loop-continue t)))
 
 (defun tags-query-replace (from to)
-  "Query-replace FROM with TO through all files listed in tag table.
+  "Query-replace-regexp FROM with TO through all files listed in tag table.
 If you exit (C-G or ESC), you can resume the query-replace
 with the command \\[tags-loop-continue].
 
@@ -229,7 +240,7 @@ See documentation of variable tags-file-name."
   (setq tags-loop-form
 	(list 'and (list 'save-excursion
 			 (list 're-search-forward from nil t))
-	      (list 'not (list 'query-replace-regexp from to))))
+	      (list 'not (list 'perform-replace from to t t nil))))
   (tags-loop-continue t))
 
 (defun list-tags (string)
@@ -237,7 +248,7 @@ See documentation of variable tags-file-name."
 FILE should not contain a directory spec
 unless it has one in the tag table."
   (interactive "sList tags (in file): ")
-  (with-output-to-temp-buffer "*Help*"
+  (with-output-to-temp-buffer "*Tags List*"
     (princ "Tags in file ")
     (princ string)
     (terpri)
@@ -256,7 +267,7 @@ unless it has one in the tag table."
 (defun tags-apropos (string)
   "Display list of all tags in tag table REGEXP matches."
   (interactive "sTag apropos (regexp): ")
-  (with-output-to-temp-buffer "*Help*"
+  (with-output-to-temp-buffer "*Tags List*"
     (princ "Tags matching regexp ")
     (prin1 string)
     (terpri)

@@ -51,15 +51,17 @@
 
 (if telnet-mode-map
     nil
-  (setq telnet-mode-map (make-keymap))
+  (setq telnet-mode-map (make-sparse-keymap))
   (define-key telnet-mode-map "\C-m" 'telnet-send-input)
-  (define-key telnet-mode-map "\C-d" 'shell-send-eof)
-  (define-key telnet-mode-map "\C-q" 'send-process-next-char)
-  (define-key telnet-mode-map "\C-u" 'kill-shell-input)
-  (define-key telnet-mode-map "\C-w" 'backward-kill-word)
-  (define-key telnet-mode-map "\C-c" 'telnet-interrupt-subjob) 
-  (define-key telnet-mode-map "\C-z"  'telnet-c-z)
-  )
+  (define-key telnet-mode-map "\C-c\C-d" 'shell-send-eof)
+  (define-key telnet-mode-map "\C-c\C-q" 'send-process-next-char)
+  (define-key telnet-mode-map "\C-c\C-c" 'telnet-interrupt-subjob) 
+  (define-key telnet-mode-map "\C-c\C-z"  'telnet-c-z)
+  (define-key telnet-mode-map "\C-c\C-u" 'kill-shell-input)
+  (define-key telnet-mode-map "\C-c\C-w" 'backward-kill-word)
+  (define-key telnet-mode-map "\C-c\C-o" 'kill-output-from-shell)
+  (define-key telnet-mode-map "\C-c\C-r" 'show-output-from-shell)
+  (define-key telnet-mode-map "\C-c\C-y" 'copy-last-shell-input))
 
 ;;maybe should have a flag for when have found type
 (defun telnet-check-software-type-initialize (string)
@@ -77,7 +79,10 @@
 
 (defun telnet-initial-filter (proc string)
   ;For reading up to and including password; also will get machine type.
-  (cond ((string-match "passw" string)
+  (cond ((string-match "No such host" string)
+	 (kill-buffer (process-buffer proc))
+	 (error "No such host."))
+	((string-match "passw" string)
 	 (telnet-filter proc string)
 	 (setq password (read-password))
 	 (setq telnet-count 0)
@@ -175,15 +180,9 @@ to alter a previous line.  Of course you should not use this
 mode of telnet if you want to run emacs like programs on the
 remote host (at least not yet!).
 
- \\[telnet-send-input] Causes the last string of input to be sent to remote host
- \\[delete-char-or-send-eof] Will delete a character (or send eof if it is the last character.
- \\[kill-shell-input]  Kills the last shell-input
- \\[backward-kill-word] runs backward-kill-word.
- \\[send-process-next-char] sends the next keystroke directly without
-interpretation eg. useful for sending c-q or ` ' to continue typeout
-with more processing.
- \\[telnet-interrupt-subjob] interrupts the current program running on the remote host.
- \\[telnet-c-z] Sends a c-z to the remote host
+The following commands imitate the usual Unix interrupt and
+editing control characters:
+\\{telnet-mode-map}
 
 Bugs:
 --Replace  by a space, really should remove.
@@ -191,9 +190,8 @@ Bugs:
   (interactive)
   (kill-all-local-variables)
   (setq major-mode 'telnet-mode)
-  (setq mode-name "telnet")
-  (setq mode-line-format 
-	"--%1*%1*-Emacs: %17b   %M   %[(%m: %s)%]----%3p--%-")
+  (setq mode-name "Telnet")
+  (setq mode-line-process '(": %s"))
   (make-local-variable 'last-input-start)
   (use-local-map telnet-mode-map)
   (let ((tem telnet-prompt-pattern))

@@ -1,5 +1,5 @@
 /* X Communication module for terminals which understand the X protocol.
-   Copyright (C) 1985 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -18,32 +18,48 @@ can know your rights and responsibilities.  It should be in a
 file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  */
 
-/* Written by Yakim Martillo.  */
+/* Written by Yakim Martillo, mods and things by Robert Krawitz  */
 
 /*
- *	$Source: /u1/third_party/gnuemacs.v17/src/RCS/xterm.c,v $
+ *	$Source: /u2/third_party/gnuemacs.chow/src/RCS/xterm.c,v $
  *	$Author: rlk $
  *	$Locker:  $
- *	$Header: xterm.c,v 1.13 86/02/17 12:24:48 rlk Exp $
+ *	$Header: xterm.c,v 1.28 86/08/27 13:30:57 rlk Exp $
  */
 
 #ifndef lint
-static char *rcsid_TrmXTERM_c = "$Header: xterm.c,v 1.13 86/02/17 12:24:48 rlk Exp $";
+static char *rcsid_TrmXTERM_c = "$Header: xterm.c,v 1.28 86/08/27 13:30:57 rlk Exp $";
 #endif	lint
 
 #include "config.h"
 
-/* This includes sys/types.h, and that somehow loses
+#ifdef HAVE_X_WINDOWS
+
+#include "lisp.h"
+#undef NULL
+
+/* On 4.3 this loses if it comes after xterm.h.  */
+#include <signal.h>
+
+/* This may include sys/types.h, and that somehow loses
    if this is not done before the other system files.  */
 #include "xterm.h"
 
+/* Load sys/types.h if not already loaded.
+   In some systems loading it twice is suicidal.  */
+#ifndef makedev
+#include <sys/types.h>
+#endif
+
 #include <sys/time.h>
 #include <sys/ioctl.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
-#include <signal.h>
+#ifdef BSD
 #include <strings.h>
+#endif
 #include <sys/stat.h>
 
 #include "dispextern.h"
@@ -52,9 +68,11 @@ static char *rcsid_TrmXTERM_c = "$Header: xterm.c,v 1.13 86/02/17 12:24:48 rlk E
 #include "termchar.h"
 #include "sink.h"
 #include "sinkmask.h"
+#include <X/Xkeyboard.h>
 /*#include <X/Xproto.h>	*/
 
 #define min(a,b) ((a)<(b) ? (a) : (b))
+#define max(a,b) ((a)>(b) ? (a) : (b))
 #define sigunblockx(sig) sigblock (0)
 #define sigblockx(sig) sigblock (1 << ((sig) - 1))
 XREPBUFFER Xxrepbuffer;
@@ -74,6 +92,9 @@ char *default_window;
 int informflag;
 extern struct display_line *DesiredScreen[], *PhysScreen[];
 extern int initialized;
+
+extern char *alternate_display;
+
 int XXdebug;
 int XXpid;
 extern int screen_garbaged;
@@ -97,13 +118,18 @@ static int InUpdate;		/* many of functions here may be invoked */
 				/* even if no update in progress, when */
 				/* no update is in progress the action */
 				/* can be slightly different */
-char MouseCursor[33] ="\000\000\002\000\006\000\016\000\036\000\076\000\
-\176\000\376\000\376\001\076\000\066\000\142\000\140\000\300\000\300\000\000\
-\000";
 
-char MouseMask[33] = "\003\000\007\000\017\000\037\000\077\000\177\000\
-\377\000\377\001\377\003\377\003\177\000\367\000\363\000\340\001\340\001\
-\300\000";
+short MouseCursor[] = {
+  0x0000, 0x0008, 0x0018, 0x0038,
+  0x0078, 0x00f8, 0x01f8, 0x03f8,
+  0x07f8, 0x00f8, 0x00d8, 0x0188,
+  0x0180, 0x0300, 0x0300, 0x0000};
+
+short MouseMask[] = {
+  0x000c, 0x001c, 0x003c, 0x007c,
+  0x00fc, 0x01fc, 0x03fc, 0x07fc,
+  0x0ffc, 0x0ffc, 0x01fc, 0x03dc,
+  0x03cc, 0x0780, 0x0780, 0x0300};
 
 Display *XXdisplay;
 FontInfo *fontinfo;
@@ -122,12 +148,14 @@ int brdr;
 int curs;
 int mous;
 
+int (*handler)();
+
 static WindowInfo windowinfo;
 WindowInfo rootwindowinfo;
 
 
 
-static XEvent XXEvent;    	/* as X messages are read in they are */
+static XKeyPressedEvent XXEvent; /* as X messages are read in they are */
                                 /* stored here */
 static XREPBUFFER XXqueue;/* Used for storing up ExposeRegion */
 				/* replies, so that the SIGIO inter- */
@@ -137,6 +165,7 @@ static XREPBUFFER XXqueue;/* Used for storing up ExposeRegion */
 				/* being used for bold font right now*/
 
 int XXborder;
+int XXInternalBorder;
 
 
 extern Display *XOpenDisplay ();
@@ -145,6 +174,8 @@ extern Cursor XDefineCursor ();
 extern Cursor XCreateCursor ();
 extern FontInfo *XOpenFont ();
 
+static int flashback ();
+
 
 /* HLmode -- Changes the GX function for output strings.  Could be used to
  * change font.  Check an XText library function call. 
@@ -205,9 +236,11 @@ XTset_terminal_modes ()
       VisibleY = 0;
     }
   XTclear_screen ();
+#ifdef FIONREAD
   ioctl (0, FIONREAD, &stuffpending);
   if (stuffpending)
     kill (XXpid, SIGIO);
+#endif
 }
 
 /* XTtopos moves the cursor to the correct location and checks whether an update
@@ -218,6 +251,7 @@ static
 XTtopos (row, col)
      register int row, col;
 {
+  int mask = sigblock (sigmask (SIGIO));
 #ifdef XDEBUG
   fprintf (stderr, "XTtopos\n");
 #endif
@@ -229,6 +263,7 @@ XTtopos (row, col)
 	{
 	  CursorToggle ();
 	}
+      sigsetmask (mask);
       return;		/* Generally, XTtopos will be invoked */
       /* when InUpdate with !CursorExists */
       /* so that wasteful XFlush is not called */
@@ -240,6 +275,7 @@ XTtopos (row, col)
 	  CursorToggle ();
 	}
       XFlush ();
+      sigsetmask (mask);
       return;
     }
   if (CursorExists) CursorToggle ();
@@ -247,6 +283,7 @@ XTtopos (row, col)
   VisibleY = row;
   if (!CursorExists) CursorToggle ();
   XFlush ();
+  sigsetmask (mask);
 }
 
 /* Used to get the terminal back to a known state after resets.  Usually
@@ -273,24 +310,31 @@ XTclear_end_of_line (first_blank)
 
 #endif
   if (cursY < 0 || cursY >= screen_height)
-    return;
+    {
+      return;
+    }
   if (first_blank >= screen_width)
-    return;
-
+    {
+      return;
+    }
   if (first_blank < 0)
     first_blank = 0;
   numcols = screen_width - first_blank;
-  if (cursY == VisibleY && VisibleX >= first_blank)
-    {
-      if (CursorExists) CursorToggle ();
-    }
-  XPixSet (XXwindow, 
-	   first_blank * fontinfo->width, 
-	   cursY * fontinfo->height, 
-	   fontinfo->width * numcols,
-	   fontinfo->height,
-	   back);
-  XTtopos (cursY, first_blank);
+  {
+    int mask = sigblock (sigmask (SIGIO));
+    if (cursY == VisibleY && VisibleX >= first_blank)
+      {
+	if (CursorExists) CursorToggle ();
+      }
+    XPixSet (XXwindow, 
+	     first_blank * fontinfo->width + XXInternalBorder, 
+	     cursY * fontinfo->height+XXInternalBorder, 
+	     fontinfo->width * numcols,
+	     fontinfo->height,
+	     back);	
+    XTtopos (cursY, first_blank);
+    sigsetmask (mask);
+  }
 }
 
 static
@@ -317,10 +361,14 @@ XTclear_screen ()
   SavedY = 0;
   VisibleX = 0;
   VisibleY = 0;
-  XClear (XXwindow);
-  CursorToggle ();
-  if (!InUpdate)
-    XFlush ();
+  {
+    int mask = sigblock (sigmask (SIGIO));
+    XClear (XXwindow);
+    CursorToggle ();
+    if (!InUpdate)
+      XFlush ();
+    sigsetmask (mask);
+  }
 }
 
 /* used by dumprectangle which is usually invoked upon ExposeRegion
@@ -344,8 +392,8 @@ dumpchars (ActiveScreen, numcols, tempX, tempY, tempHL)
       return;
     }
   XText (XXwindow,
-	 (tempX * fontinfo->width),
-	 (tempY * fontinfo->height),
+	 (tempX * fontinfo->width+XXInternalBorder),
+	 (tempY * fontinfo->height+XXInternalBorder),
 	 &ActiveScreen[tempY + 1]->body[tempX],
 	 numcols,
 	 fontinfo->id,
@@ -366,9 +414,11 @@ writechars (start, end)
      register char *start, *end;
 {
   register int temp_length;
+  int mask = sigblock (sigmask (SIGIO));
 
   if ((cursY < 0) || (cursY >= screen_height))
     {
+      sigsetmask (mask);
       return;
     }
   if (CursorExists)
@@ -386,8 +436,8 @@ writechars (start, end)
       if (temp_length > 0)
 	{
 	  XText (XXwindow,
-		 0,
-		 (cursY * fontinfo->height),
+		 XXInternalBorder,
+		 (cursY * fontinfo->height+XXInternalBorder),
 		 &DesiredScreen[cursY + 1]->body[0],
 		 temp_length,
 		 fontinfo->id,
@@ -409,21 +459,23 @@ writechars (start, end)
     {
       if ((VisibleX < 0) || (VisibleX >= screen_width))
 	{
+	  sigsetmask (mask);
 	  return;
 	}
       if ((VisibleY < 0) || (VisibleY >= screen_height))
 	{
+	  sigsetmask (mask);
 	  return;
 	}
       if (((end - start) + VisibleX) >= screen_width)
 	{
 	  end = start + (screen_width - (VisibleX + 1));
 	}
-      if(end >= start)
+      if (end >= start)
 	{
 	   XText (XXwindow,
-		 (VisibleX * fontinfo->width),
-		 (VisibleY * fontinfo->height),
+		 (VisibleX * fontinfo->width+XXInternalBorder),
+		 (VisibleY * fontinfo->height+XXInternalBorder),
 		 start,
 		 ((end - start) + 1),
 		 fontinfo->id,
@@ -433,6 +485,7 @@ writechars (start, end)
 	}
       if (!CursorExists) CursorToggle ();
     }
+  sigsetmask (mask);
 }
 
 
@@ -457,7 +510,6 @@ static
 XTflash ()
 {
   struct itimerval itimer;
-  extern int flashback ();
 
 #ifdef XDEBUG
   fprintf (stderr, "XTflash\n");
@@ -470,22 +522,27 @@ XTflash ()
   itimer.it_interval.tv_usec = 0;
   flashedback = 0;
   setitimer (ITIMER_REAL, &itimer, 0);
-  XPixFill (XXwindow, 0, 0, screen_width * fontinfo->width,
-	    screen_height * fontinfo->height, WhitePixel, ClipModeClipped,
-	    GXinvert, AllPlanes);
-  XFlush ();
+  {
+    int mask = sigblock (sigmask (SIGIO));
+    XPixFill (XXwindow, 0, 0, screen_width*fontinfo->width+2*XXInternalBorder,
+	      screen_height * fontinfo->height+2*XXInternalBorder, WhitePixel,
+	      ClipModeClipped, GXinvert, AllPlanes);
+    XFlush ();
+    sigsetmask (mask);
+  }
   while (!flashedback) pause ();
 }
 
 static
 flashback ()
 {
-  signal (SIGALRM, SIG_IGN);
-  XPixFill (XXwindow, 0, 0, screen_width * fontinfo->width,
-	    screen_height * fontinfo->height, WhitePixel, ClipModeClipped,
-	    GXinvert, AllPlanes);
+  int mask = sigblock (sigmask (SIGIO) | sigmask (SIGALRM));
+  XPixFill (XXwindow, 0, 0, screen_width * fontinfo->width+2*XXInternalBorder,
+	    screen_height * fontinfo->height+2*XXInternalBorder, WhitePixel,
+	    ClipModeClipped, GXinvert, AllPlanes);
   XFlush ();
   flashedback = 1;
+  sigsetmask (mask);
 }	
 
 /* A kludge to get a bell */
@@ -493,10 +550,12 @@ flashback ()
 static
 XTfeep ()
 {
+  int mask = sigblock (sigmask (SIGIO));
 #ifdef XDEBUG
   fprintf (stderr, "XTfeep\n");
 #endif
   XFeep (0);
+  sigsetmask (mask);
 }
 
 /* Artificially creating a cursor is hard, the actual position on the
@@ -521,11 +580,12 @@ CursorToggle ()
       /* Not much can be done */
       XFlush ();
       CursorExists = 0;
-      return 0;	/* Currently the return values are not */
+      return 0;
+      /* Currently the return values are not */
       /* used, but I could anticipate using */
       /* them in the future. */
     }
-  /*  if(InUpdate && DesiredScreen)
+  /*  if (InUpdate && DesiredScreen)
       ActiveScreen = DesiredScreen;
       else*/
   ActiveScreen = PhysScreen;
@@ -535,8 +595,8 @@ CursorToggle ()
       if (CursorExists)
 	{
 	  XText (XXwindow,
-		 VisibleX * fontinfo->width,
-		 VisibleY * fontinfo->height,
+		 VisibleX * fontinfo->width+XXInternalBorder,
+		 VisibleY * fontinfo->height+XXInternalBorder,
 		 &ActiveScreen[VisibleY + 1]->body[VisibleX], 1, 
 		 fontinfo->id,
 		 fore, back);
@@ -544,8 +604,8 @@ CursorToggle ()
       else
 	{
 	    XText (XXwindow,
-		   VisibleX * fontinfo->width,
-		   VisibleY * fontinfo->height,
+		   VisibleX * fontinfo->width+XXInternalBorder,
+		   VisibleY * fontinfo->height+XXInternalBorder,
 		   &ActiveScreen[VisibleY + 1]->body[VisibleX], 1, 
 		   fontinfo->id,
 		   back, curs);
@@ -554,19 +614,20 @@ CursorToggle ()
   else if (CursorExists)
     {
       XPixSet (XXwindow,
-	       VisibleX * fontinfo->width,
-	       VisibleY * fontinfo->height,
+	       VisibleX * fontinfo->width+XXInternalBorder,
+	       VisibleY * fontinfo->height+XXInternalBorder,
 	       fontinfo->width, fontinfo->height, back);
     }
   else
     {
     XPixSet (XXwindow,
-	     VisibleX * fontinfo->width,
-	     VisibleY * fontinfo->height,
+	     VisibleX * fontinfo->width+XXInternalBorder,
+	     VisibleY * fontinfo->height+XXInternalBorder,
 	     fontinfo->width, fontinfo->height, curs);
     }
-  CursorExists = !CursorExists;/* Cursor has either been blinked in */
-     /* or out */
+  CursorExists = !CursorExists;
+  /* Cursor has either been blinked in */
+  /* or out */
   if (!InUpdate)
     {
       XFlush ();
@@ -582,9 +643,11 @@ CursorToggle ()
 static 
 ClearCursor ()
 {
+  int mask = sigblock (sigmask (SIGIO));
   if (!WindowMapped)
     {
       CursorExists = 0;
+      sigsetmask (mask);
       return;
     }
   if ((VisibleX < 0) || (VisibleX >= screen_width)
@@ -592,19 +655,22 @@ ClearCursor ()
     {			/* Current Cursor position trash */
       /* Not much can be done */
       CursorExists = 0;
+      sigsetmask (mask);
       return;
     }
   XPixSet (XXwindow,
-	  VisibleX * fontinfo->width,
-	  VisibleY * fontinfo->height,
+	  VisibleX * fontinfo->width+XXInternalBorder,
+	  VisibleY * fontinfo->height+XXInternalBorder,
 	  fontinfo->width, fontinfo->height,
 	  back);
   CursorExists = 0;
+  sigsetmask (mask);
 }
 
 static
 XTupdate_begin ()
 {	
+  int mask = sigblock (sigmask (SIGIO));
 #ifdef XDEBUG
   fprintf (stderr, "XTupdate_begin\n");
 #endif
@@ -619,13 +685,15 @@ XTupdate_begin ()
   /*  expects the cursor to be at the end of*/
   /* the update */
   SavedY = cursY;
-  dumpqueue();
+  dumpqueue ();
+  sigsetmask (mask);
 }
 
 
 static
 XTupdate_end ()
 {	
+  int mask = sigblock (sigmask (SIGIO));
 #ifdef XDEBUG
   fprintf (stderr, "XTupdate_end\n");
 #endif
@@ -634,6 +702,7 @@ XTupdate_end ()
   InUpdate = 0;
   dumpqueue ();
   XTtopos (SavedY, SavedX);	/* XTtopos invokes cursor toggle */
+  sigsetmask (mask);
 }
 
 /* Used for expose region and expose copy events.  Have to get the text
@@ -646,15 +715,18 @@ dumprectangle (top, left, rows, cols)
   register struct display_line **ActiveScreen;
   register int index;
   int localX, localY, localHL;
+  int mask;
   rows += top;
   cols += left;
-  top /= fontinfo->height;	/* Get row and col containing up and */
+  top /= fontinfo->height;
+  /* Get row and col containing up and */
   /* left borders of exposed region -- */
   /* round down here*/
   left /= fontinfo->width;
   rows += (fontinfo->height - 1);
   cols += (fontinfo->width - 1);
-  rows /= fontinfo->height;/* Get row and col containing bottom and */
+  rows /= fontinfo->height;
+  /* Get row and col containing bottom and */
   /* right borders -- round up here */
   rows -= top;
   cols /= fontinfo->width;
@@ -671,7 +743,7 @@ dumprectangle (top, left, rows, cols)
   if (InUpdate && DesiredScreen)
     ActiveScreen = PhysScreen;
   else if (PhysScreen)
-    ActiveScreen = PhysScreen;/* When cue is dumped in update this */
+    ActiveScreen = PhysScreen;/* When queue is dumped in update this */
   else
     return;
   /* should perhaps be DesiredScreen */
@@ -760,7 +832,7 @@ stufflines (n)
      register int n;
 {
   register int topregion, bottomregion;
-  register int length, newtop;
+  register int length, newtop, mask;
 
   if (cursY >= flexlines)
     return;
@@ -770,31 +842,33 @@ stufflines (n)
       bitblt = 0;
       return;
     }
+  mask = sigblock (sigmask (SIGIO));
   if (CursorExists) CursorToggle ();
   dumpqueue ();
+  sigsetmask (mask);
   topregion = cursY;
   bottomregion = flexlines - (n + 1);
   newtop = cursY + n;
   length = (bottomregion - topregion) + 1;
   if ((length > 0) && (newtop <= flexlines))
     {
+      mask = sigblock (sigmask (SIGIO));
       /* Should already have cleared */
       /* queue of events associated */
       /* with old bitblts */
-      XMoveArea (XXwindow, 0,
-		 topregion * fontinfo->height,
-		 0, newtop * fontinfo->height,
+      XMoveArea (XXwindow, XXInternalBorder,
+		 topregion * fontinfo->height+XXInternalBorder,
+		 XXInternalBorder, newtop * fontinfo->height+XXInternalBorder,
 		 screen_width * fontinfo->width,
 		 length * fontinfo->height);
       if (WindowMapped)
 	bitblt = 1;
-      request_sigio ();
       XFlush ();
+      sigsetmask (mask);
       while (bitblt) 
 	{
 	  kill (XXpid, SIGIO);
 	}
-      unrequest_sigio ();
       XFlush ();
     }
   newtop = min (newtop, (flexlines - 1));
@@ -802,8 +876,8 @@ stufflines (n)
   if (length > 0)
     {
       XPixSet (XXwindow,
-	       0,
-	       topregion * fontinfo->height,
+	       XXInternalBorder,
+	       topregion * fontinfo->height+XXInternalBorder,
 	       screen_width * fontinfo->width,
 	       n * fontinfo->height,
 	       back);
@@ -815,14 +889,16 @@ static
 scraplines (n)
      register int n;
 {
+  int mask;
   if (!WindowMapped)
     {
       bitblt = 0;
       return;
     }
-
+  
   if (cursY >= flexlines)
     return;
+  mask = sigblock (sigmask (SIGIO));
   if (CursorExists) CursorToggle ();
   dumpqueue ();
   if ((cursY + n) >= flexlines)
@@ -830,32 +906,36 @@ scraplines (n)
       if (flexlines >= (cursY + 1))
 	{
 	  XPixSet (XXwindow,
-		   0, cursY * fontinfo->height,
+		   XXInternalBorder, cursY * fontinfo->height+XXInternalBorder,
 		   screen_width * fontinfo->width,
 		   (flexlines - cursY) * fontinfo->height,
 		   back);
 	}
+      sigsetmask (mask);
     }
   else
     {
       XMoveArea (XXwindow,
-		 0, (cursY + n) * fontinfo->height,
-		 0, cursY * fontinfo->height,
+		 XXInternalBorder,
+		 (cursY + n) * fontinfo->height+XXInternalBorder,
+		 XXInternalBorder, cursY * fontinfo->height+XXInternalBorder,
 		 screen_width * fontinfo->width,
 		 (flexlines - (cursY + n)) * fontinfo->height);
       if (WindowMapped)
 	bitblt = 1;
-      request_sigio ();
       XFlush ();
+      sigsetmask (mask);
       while (bitblt)
 	{
 	  kill (XXpid, SIGIO);
 	}
-      unrequest_sigio ();
+      mask = sigblock (sigmask (SIGIO));
       XFlush ();
-      XPixSet (XXwindow, 0, (flexlines - n) * fontinfo->height,
+      XPixSet (XXwindow, XXInternalBorder,
+	       (flexlines - n) * fontinfo->height+XXInternalBorder,
 	       screen_width * fontinfo->width,
 	       n * fontinfo->height, back);
+      sigsetmask (mask);
     }
   /* if (!InUpdate) CursorToggle (); */
 }
@@ -869,13 +949,17 @@ XTread_socket (sd, bufp, numchars)
      register char *bufp;
      register int numchars;
 {
-
+  
   int count;
+  char *where_mapping;
+  int nbytes;
   int stuffpending;
   int temp_width, temp_height;
-/*  typedef struct reply {XEvent event; struct reply *next} Reply;
-    Reply *replies = NULL;*/
-
+  int mask = sigblock (sigmask (SIGIO));
+  /* XKeyPressedEvent event; */
+  /*  typedef struct reply {XEvent event; struct reply *next} Reply;
+      Reply *replies = NULL;*/
+	
   count = 0;
   if (numchars <= 0)
     {	/* To keep from overflowing read buffer */
@@ -890,7 +974,7 @@ XTread_socket (sd, bufp, numchars)
 	{
 /*	case X_Reply:
 	{
-	extern char *malloc();
+	extern char *malloc ();
 	Reply *reply = (Reply *) malloc (sizeof (Reply));
 	reply->next = replies;
 	reply->event = XXEvent;
@@ -939,14 +1023,46 @@ XTread_socket (sd, bufp, numchars)
 	  if (WindowMapped) bitblt = 0;
 	  break;
 	case KeyPressed:
-	  if (Input (((XKeyPressedEvent *) &XXEvent)->detail, bufp))
+	  /* bcopy (XXEvent, event, sizeof (XKeyPressedEvent)); */
+	  where_mapping = XLookupMapping (&XXEvent, &nbytes);
+	  /* Nasty fix for arrow keys */
+	  if (!nbytes && IsCursorKey (XXEvent.detail & 0xff))
 	    {
-	      ++bufp;
-	      ++count;
-	      --numchars;
+	      switch (XXEvent.detail & 0xff)
+		{
+		case KC_CURSOR_LEFT:
+		  where_mapping = "\002";
+		  break;
+		case KC_CURSOR_RIGHT:
+		  where_mapping = "\006";
+		  break;
+		case KC_CURSOR_UP:
+		  where_mapping = "\020";
+		  break;
+		case KC_CURSOR_DOWN:
+		  where_mapping = "\016";
+		  break;
+		}
+	      nbytes = 1;
 	    }
+	  if (numchars - nbytes > 0)
+	    {
+	      bcopy (where_mapping, bufp, nbytes);
+	      bufp += nbytes;
+	      count += nbytes;
+	      numchars -= nbytes;
+	    }
+/*	  else
+	    {
+	      bcopy (where_mapping, bufp, numchars);
+	      bufp += numchars;
+	      count += numchars;
+	      numchars = 0;
+	      *(bufp-1) = *(where_mapping + nbytes - 1);
+	    }*/
 	  break;
 	case ButtonPressed:
+	case ButtonReleased:
 	  switch (spacecheck (Xxrepbuffer.mindex, 
 			      Xxrepbuffer.rindex,
 			      Xxrepbuffer.windex, 0))
@@ -954,12 +1070,12 @@ XTread_socket (sd, bufp, numchars)
 	    case 0:
 	      loadxrepbuffer (&XXEvent,
 			      &Xxrepbuffer);
-	      if (informflag)
+	      if (informflag && (numchars > 1))
 		{
-		  *bufp++ = (char) 003; /* C-c */
+		  *bufp++ = (char) 'X' & 037; /* C-x */
 		  ++count;
 		  --numchars;
-		  *bufp++ = (char) '\r';  /* C-m */
+		  *bufp++ = (char) 0;  /* C-@ */
 		  ++count;
 		  --numchars;
 		}
@@ -984,37 +1100,44 @@ XTread_socket (sd, bufp, numchars)
     count = 0;
   if (CursorExists)
     xfixscreen ();
+  sigsetmask (mask);
   return count;
 }
 
 /* refresh bitmap kitchen sink icon */
 refreshicon ()
 {
+  int mask = sigblock (sigmask (SIGIO));
   if (XXIconWindow) 
     XBitmapBitsPut (XXIconWindow, 0,  0, sink_width, sink_height,
 		    sink_bits, BlackPixel, WhitePixel, 
 		    XXIconMask, GXcopy, AllPlanes);
   XFlush ();
+  sigsetmask (mask);
 }
 
 XBitmapIcon () 
 {
-    if (!IconWindow)
-      {
-	  XSetIconWindow (XXwindow,XXIconWindow);
-	  XSelectInput (XXIconWindow, ExposeWindow);
-	  IconWindow = !IconWindow;
-      }
+  int mask = sigblock (sigmask (SIGIO));
+  if (!IconWindow)
+    {
+      XSetIconWindow (XXwindow,XXIconWindow);
+      XSelectInput (XXIconWindow, ExposeWindow);
+      IconWindow = !IconWindow;
+    }
+  sigsetmask (mask);
 }
 
 XTextIcon () 
 {
-    if (IconWindow)
-      {
-	  XClearIconWindow (XXwindow);
-	  XSelectInput (XXIconWindow, NoEvent);
-	  IconWindow = !IconWindow;
-      }
+  int mask = sigblock (sigmask (SIGIO));
+  if (IconWindow)
+    {
+      XClearIconWindow (XXwindow);
+      XSelectInput (XXIconWindow, NoEvent);
+      IconWindow = !IconWindow;
+    }
+  sigsetmask (mask);
 }
 
 /* Interpreting incoming keycodes. Should have table modifiable as needed
@@ -1026,25 +1149,23 @@ XTextIcon ()
 
 XExitGracefully ()
 {
-  XAutoSave();
-  exit(70);
+  XCleanUp ();
+  exit (70);
 }
 
 xfixscreen ()
 {
   register int temp_width, temp_height;
-  register int (*func) ();
-  register int temp_x, temp_y;
+  int mask = sigblock (sigmask (SIGIO));
+  /* register int temp_x, temp_y; */
   dumpqueue ();
-  func = signal (SIGIO, SIG_IGN);
   /* Check that the connection is in fact open.  This works by doing a nop */
   /* (well, almost) write operation.  If there is an XIOerror or a */
   /* SIGPIPE, exit gracefully.  This fixes the loop-on-logout bug.*/
-  XIOErrorHandler (XExitGracefully);
-  CursorToggle();
-  CursorToggle();
+  /* XIOErrorHandler (XExitGracefully); */
+  XPixFill (XXwindow, 0, 0, 1, 1, back, ClipModeClipped, GXnoop, AllPlanes);
   XFlush ();
-  XIOErrorHandler (0);
+  /* XIOErrorHandler (0); */
   if (PendingIconExposure)
     {
       refreshicon ();
@@ -1063,141 +1184,51 @@ xfixscreen ()
       /* gnu emacs display */
       /* routines to query */
       /* when screen garbaged */
-      temp_width = (windowinfo.width / fontinfo->width);
-      temp_height = (windowinfo.height / fontinfo->height);
+      temp_width = (windowinfo.width - 2 * XXInternalBorder) / fontinfo->width;
+      temp_height = (windowinfo.height- 2*XXInternalBorder) / fontinfo->height;
       if (temp_width != screen_width || temp_height != screen_height)
-	change_screen_size (temp_height, temp_width);
-      temp_x = windowinfo.x;
-      temp_y = windowinfo.y;
-      if (temp_x != XXxoffset || temp_y != XXyoffset)
-	XSetOffset (temp_x, temp_y);
-      dumprectangle (0, 0, screen_height * fontinfo->height,
-		     screen_width * fontinfo->width);
+	change_screen_size (max (5, temp_height), max (10, temp_width));
+      XXxoffset= windowinfo.x;
+      XXyoffset = windowinfo.y;
+      /*if (temp_x != XXxoffset || temp_y != XXyoffset)
+	XSetOffset (temp_x, temp_y);*/
+      dumprectangle (0, 0,
+		     screen_height * fontinfo->height + 2 * XXInternalBorder,
+		     screen_width * fontinfo->width + 2 * XXInternalBorder);
     }
   if (!InUpdate)
     if (!CursorExists)
       CursorToggle ();
-  (void) signal (SIGIO, func);
-kill (XXpid, SIGIO);
+  sigsetmask (mask);
+  kill (XXpid, SIGIO);
 }
-
-
-static
-Input (keycode, buffer)
-     register int keycode;
-     register char *buffer;
-{
-  register short c;
-  register int offset;
-  extern KeyMapEntry StdMap[];
-  offset = KeyState (keycode);	/* set SHIFT, CONTROL, META */
-  c = StdMap [keycode & ValueMask] [offset];
-  if ((keycode & ShiftLockMask) && (c >= 'a') && (c <= 'z'))
-    {
-      c += 'A' - 'a';
-    }
-  keycode &= ValueMask;	/* no longer need shift bits for anything */
-  if (! (c & ~377))
-    {
-      *buffer = c;
-      return 1;
-    }
-  switch (c)
-    {
-/*    case '\007':
-      kill(XXpid, SIGINT);
-      break;*/
-    case KEYPAD:	
-    case CURSOR:
-      switch (keycode & ValueMask) 
-	{
-	case 0247:	/* left-arrow maps to C-B */
-	  c = 002 | ((keycode & MetaMask) ? METABIT : 0);
-	  *buffer = c;
-	  return(1);
-	case 0250:	/* right-arrow maps to C-F */
-	  c = 006 | ((keycode & MetaMask) ? METABIT : 0);
-	  *buffer = c;
-	  return(1);
-	case 0252:	/* up-arrow maps to C-P */
-	  c = 020 | ((keycode & MetaMask) ? METABIT : 0);
-	  *buffer = c;
-	  return(1);
-	case 0251:	/* down-arrow maps to C-N */
-	  c = 016 | ((keycode & MetaMask) ? METABIT : 0);
-	  *buffer = c;
-	  return(1);
-	default:
-	  return(0);
-	}
-    case PFX:
-    case (short) -1:
-    case SHFT:
-    case CNTL:
-    case SYMBOL:
-    case LOCK:
-    case FUNC1:
-    case FUNC2:
-    case FUNC3:
-    case FUNC4:
-    case FUNC5:
-    case FUNC6:
-    case FUNC7:
-    case FUNC8:
-    case FUNC9:
-    case FUNC10:
-    case FUNC11:
-    case FUNC12:
-    case FUNC13:
-    case FUNC14:
-    case FUNC15:
-    case FUNC16:
-    case FUNC17:
-    case FUNC18:
-    case FUNC19:
-    case FUNC20:
-    case E1:
-    case E2:
-    case E3:
-    case E4:
-    case E5:
-    case E6:
-      return 0;	
-    default:
-      *buffer = c;
-      return 1;
-    }
-}
-
 
 x_term_init ()
 {
-  register char *vardisplay;
-  register char *colonpointer;
-  register int status;
-  extern char *getenv ();
-  register int scratchindex;
+  char *vardisplay;
+  char *temp_font;
+  register char *option;
   extern XTinterrupt_signal ();
-  extern char *malloc ();
+  int reversevideo;
+  Color cdef;
+  char *progname;
+  extern Lisp_Object Vxterm, Vxterm1, Qt;
 
-  vardisplay = getenv ("DISPLAY");
-  if (!vardisplay)
+  vardisplay = (alternate_display ? alternate_display
+		: (char *) egetenv ("DISPLAY"));
+  if (!vardisplay || *vardisplay == '\0')
     {
       fprintf (stderr, "DISPLAY environment variable must be set\n");
       exit (-200);
     }
+
   XXdisplay = XOpenDisplay (vardisplay);
   if (XXdisplay == (Display *) 0)
     {
-      fprintf (stderr, "No X.\n");
-      exit (-99);	
+      fprintf (stderr, "X server not responding.  Check your DISPLAY environment variable.\n");
+      exit (-200);
     }
-  dup2 (dpyno (), 0);
-  close (dpyno ());
-  dpyno () = 0;		/* Looks a little strange? */
-  /* check the def of the */
-  /* macro, it is a genuine */
-  /* lvalue */
+  x_init_1 (1);
   Xxrepbuffer.mindex = XREPBUFSIZE - 1;
   Xxrepbuffer.windex = 0;
   Xxrepbuffer.rindex = 0;
@@ -1215,7 +1246,6 @@ x_term_init ()
   inverse_video = 1;
   bitblt = 0;
   PendingExposure = 0;
-  IconWindow = 0;
 
   fix_screen_hook = xfixscreen;
   clear_screen_hook = XTclear_screen;
@@ -1243,45 +1273,192 @@ x_term_init ()
 				   off the bottom */
   dont_calculate_costs = 1;
 
-  fore = BlackPixel;
-  back = WhitePixel;
-  brdr = BlackPixel;
-  mous = BlackPixel;
-  curs = BlackPixel;
+  /* New options section */
+  IconWindow = 0;
+  XXborder = 1;
+  XXInternalBorder = 1;
+  screen_width = 80;
+  screen_height = 66;
+  reversevideo = 0;
+  XXxoffset = 0;
+  XXyoffset = 0;
+  XXdebug = 0;
 
-  fore_color = "black";
-  back_color = "white";
-  brdr_color = "black";
-  mous_color = "black";
-  curs_color = "black";
+  handler = XExitGracefully;
+  XErrorHandler (handler);
+  XIOErrorHandler (handler);
 
+  progname = "emacs";
+  if (option = XGetDefault (progname,"ReverseVideo"))
+    if (strcmp (option,"on") == 0) reversevideo = 1;
+  if (option = XGetDefault (progname, "BitmapIcon"))
+    if (strcmp (option, "on") == 0) IconWindow = 1;
+
+  if (option = XGetDefault (progname,"BorderWidth"))
+    XXborder = atoi (option);
+  if (option = XGetDefault (progname,"InternalBorder"))
+    XXInternalBorder = atoi (option);
+
+  brdr_color = XGetDefault (progname,"Border");
+  if (!brdr_color) brdr_color = XGetDefault (progname, "BorderColor");
+  back_color = XGetDefault (progname,"Background");
+  fore_color = XGetDefault (progname,"Foreground");
+  mous_color = XGetDefault (progname,"Mouse");
+  curs_color = XGetDefault (progname,"Cursor");
+
+  temp_font  = XGetDefault (progname,"BodyFont");
+  if (temp_font == 0) temp_font = "vtsingle";
+  XXcurrentfont = (char *) xmalloc (strlen (temp_font) + 1);
+  strcpy (XXcurrentfont, temp_font);
+
+  if (DisplayCells () > 2)
+    {
+
+      if (fore_color && XParseColor (fore_color, &cdef) &&
+	  XGetHardwareColor (&cdef))
+	fore = cdef.pixel;
+      else
+	{
+	  fore_color = "black";
+	  fore = BlackPixel;
+	}
+
+      if (back_color && XParseColor (back_color, &cdef) &&
+	  XGetHardwareColor (&cdef))
+	back = cdef.pixel;
+      else
+	{
+	  back_color = "white";
+	  back = WhitePixel;
+	}
+
+      if (curs_color && XParseColor (curs_color, &cdef) &&
+	  XGetHardwareColor (&cdef))
+	curs = cdef.pixel;
+      else
+	{
+	  curs_color = "black";
+	  curs = BlackPixel;
+	}
+
+      if (mous_color && XParseColor (mous_color, &cdef) &&
+	  XGetHardwareColor (&cdef))
+	mous = cdef.pixel;
+      else
+	{
+	  mous_color = "black";
+	  mous = BlackPixel;
+	}
+
+      if (brdr_color && XParseColor (brdr_color, &cdef) &&
+	  XGetHardwareColor (&cdef))
+	brdr = cdef.pixel;
+      else
+	{
+	  brdr_color = "black";
+	  brdr = BlackPixel;
+	}
+    }
+  else
+    {
+      fore_color  = curs_color = mous_color = brdr_color = "black";
+      fore = curs = mous = brdr = BlackPixel;
+      back_color = "white";
+      back = WhitePixel;
+    }
+
+  /*
+  if (fore_color && DisplayCells () > 2 &&
+      XParseColor (fore_color, &cdef) && XGetHardwareColor (&cdef))
+    fore = cdef.pixel;
+  else if (fore_color && strcmp (fore_color, "black") == 0)
+    fore = BlackPixel;
+  else if (fore_color && strcmp (fore_color, "white") == 0)
+    fore = WhitePixel;
+  else
+    {
+      fore_color = "black";
+      fore = BlackPixel;
+    }
+
+  if (back_color && DisplayCells () > 2 &&
+      XParseColor (back_color, &cdef) && XGetHardwareColor (&cdef))
+    back = cdef.pixel;
+  else if (back_color && strcmp (back_color, "white") == 0)
+    back = WhitePixel;
+  else if (back_color && strcmp (back_color, "black") == 0)
+    back = BlackPixel;
+  else
+    {
+      back_color = "white";
+      back = WhitePixel;
+    }
+
+  if (brdr_color && DisplayCells () > 2 &&
+      XParseColor (brdr_color, &cdef) && XGetHardwareColor (&cdef))
+    brdr = cdef.pixel;
+  else if (brdr_color && (!strcmp (brdr_color, "gray") ||
+			  !strcmp (brdr_color, "grey") ||
+			  !strcmp (brdr_color, "Gray") ||
+			  !strcmp (brdr_color, "Grey")))
+    brdr = BlackPixel;
+  else if (brdr_color && strcmp (brdr_color, "white") == 0)
+    brdr = WhitePixel;
+  else
+    {
+      brdr_color = "black";
+      brdr = BlackPixel;
+    }
+
+  if (curs_color && DisplayCells () > 2 &&
+      XParseColor (curs_color, &cdef) && XGetHardwareColor (&cdef))
+    curs = cdef.pixel;
+  else if (curs_color && strcmp (curs_color, "black") == 0)
+    curs = BlackPixel;
+  else if (curs_color && strcmp (curs_color, "white") == 0)
+    curs = WhitePixel;
+  else
+    {
+      curs_color = "black";
+      curs = BlackPixel;
+    }
+
+  if (mous_color && DisplayCells () > 2 &&
+      XParseColor (mous_color, &cdef) && XGetHardwareColor (&cdef))
+    mous = cdef.pixel;
+  else if (mous_color && strcmp (mous_color, "black") == 0)
+    mous = BlackPixel;
+  else if (mous_color && strcmp (mous_color, "white") == 0)
+    mous = WhitePixel;
+  else
+    {
+      mous_color = "black";
+      mous = BlackPixel;
+    }
+    */
+  
   XXpid = getpid ();
-  XXcurrentfont = malloc (sizeof ("vtsingle") + 1);
-  default_window = "=80x24+1+1";
-  signal (SIGIO, XTread_socket);
-  signal (SIGPIPE, XExitGracefully);
   if (XXcurrentfont == (char *) 0)
     {
       fprintf (stderr, "Memory allocation failure.\n");
       exit (-150);
     }
-  strcpy (&XXcurrentfont[0], "vtsingle");
+  default_window = "=80x24+0+0";
+/* RMS: XTread_socket does not have an interface suitable
+   for being a signal handler.  In any case, the SIGIO handler is
+   set up in init_keyboard and X uses the same one as usual.  */
+/*  signal (SIGIO, XTread_socket); */
+  signal (SIGPIPE, XExitGracefully);
   XQueryWindow (RootWindow, &rootwindowinfo);
   strncpy (iconidentity, ICONTAG, MAXICID);
-  XXborder = 1;
-  screen_width = 80;
-  screen_height = 66;
-  XXxoffset = 0;
-  XXyoffset = 0;
-  XXdebug = 0;
-  fontinfo = XOpenFont (&XXcurrentfont[0]);
+  fontinfo = XOpenFont (XXcurrentfont);
   if (fontinfo == (FontInfo *) 0)
     {
       fprintf (stderr, "No font\n");
       exit (-98);
     }
-  pixelwidth = screen_width * fontinfo->width + 1;
-  pixelheight = screen_height * fontinfo->height + 1;
+  pixelwidth = screen_width * fontinfo->width + 2 * XXInternalBorder;
+  pixelheight = screen_height * fontinfo->height + 2 * XXInternalBorder;
   XXwindow = XCreateWindow (RootWindow,
 			    XXxoffset /* Absolute horizontal offset */,
 			    XXyoffset /* Absolute Vertical offset */,
@@ -1303,10 +1480,11 @@ x_term_init ()
       exit (-97);
     }
   XSelectInput (XXIconWindow, NoEvent);
-  XXIconMask = XStoreBitmap(sink_mask_width, sink_mask_height, sink_mask_bits);
+  XXIconMask = XStoreBitmap (sink_mask_width, sink_mask_height, sink_mask_bits);
 
   XSelectInput (XXwindow, NoEvent);
-  XSetResizeHint (XXwindow, fontinfo->width * 10, fontinfo->height *5, 
+  XSetResizeHint (XXwindow, 2 * XXInternalBorder, 2 * XXInternalBorder,
+		  /* fontinfo->width * 1, fontinfo->height * 1, */
 		  fontinfo->width, fontinfo->height);
 
   if (gethostname (&iconidentity[sizeof (ICONTAG) - 1],
@@ -1317,17 +1495,45 @@ x_term_init ()
   XStoreName (XXwindow, &iconidentity[0]);
 
   EmacsCursor = XCreateCursor (16, 16, MouseCursor, MouseMask,
-			       0, 0, BlackPixel, WhitePixel, GXcopy);
+			       0, 0, mous, back, GXcopy);
   XDefineCursor (XXwindow, EmacsCursor);
-  /* Dirty kluge so maybe things will work right */
-  XBitmapIcon();
-  XTextIcon();
   flexlines = screen_height;
-  if (!initialized)
-    XPopUpWindow ();
-  setxterm ();
+#ifndef CANNOT_DUMP
+  if (initialized)
+#endif /* CANNOT_DUMP */
+    Vxterm = Qt, Vxterm1 = Qt;
+#if 0
+/* Do not call XPopUpWindow here!  This is too early.
+   It is supposed ot be called via the term-setup-hook
+   and not until after lisp/term/x-win.el has had a chance
+   to process the user's switches.
+   I am not sure that there are any circumstances under which
+   this should be done here  -- RMS.  */
+  XPopUpWindow ();		/* This looks at Vxterm */
+#endif /* 0 */
+  if (reversevideo) XFlipColor ();
 }
 
+x_init_1 (unrequest)
+{
+#ifdef F_SETOWN
+  extern int old_fcntl_owner;
+#endif
+  extern void init_sigio (), request_sigio (), unrequest_sigio ();
+
+  dup2 (dpyno (), 0);
+  close (dpyno ());
+  dpyno () = 0;			/* Looks a little strange?
+				   check the def of the macro;
+				   it is a genuine lvalue */
+  init_sigio ();
+  request_sigio ();
+#ifdef F_SETOWN
+  old_fcntl_owner = fcntl (0, F_GETOWN, 0);
+  fcntl (0, F_SETOWN, getpid ());
+#endif
+  if (unrequest) unrequest_sigio ();
+}
 
 /* Process all queued ExposeRegion events. */
 static
@@ -1348,11 +1554,10 @@ dumpqueue ()
 	if (CursorExists)
 	  CursorToggle ();
 	unloadxrepbuffer (&r, &XXqueue);
-	dumprectangle (r.y, r.x, r.height, r.width);
+	dumprectangle (r.y - XXInternalBorder, r.x - XXInternalBorder,
+		       r.height, r.width);
       }
 }
-
-		
 
 XSetFlash ()
 {
@@ -1364,20 +1569,18 @@ XSetFeep ()
   ring_bell_hook = XTfeep;
 }
 
-
 XNewFont (newname)
      register char *newname;
 {
   FontInfo *temp;
-  int (*func) ();
-  func = signal (SIGIO, SIG_IGN);
+  int mask = sigblock (sigmask (SIGIO));
   XFlush ();
   if (XXdebug)
     fprintf (stderr, "Request id is %d\n", XXdisplay->request);
   temp = XOpenFont (newname);
   if (temp == (FontInfo *) 0)
     {
-      (void) signal (SIGIO, func);
+      sigsetmask (mask);
       if (QLength () > 0)
 	{
 	    kill (XXpid, SIGIO);
@@ -1386,10 +1589,11 @@ XNewFont (newname)
     }
   XCloseFont (fontinfo);
   fontinfo = temp;
-  (void) signal (SIGIO, func);
-  XSetResizeHint (XXwindow, fontinfo->width * 10, fontinfo->height *5, 
+  XSetResizeHint (XXwindow, 2*XXInternalBorder, 2*XXInternalBorder,
+		  /* fontinfo->width * 1, fontinfo->height * 1, */
 		  fontinfo->width, fontinfo->height);
   XSetWindowSize (screen_height, screen_width);
+  sigsetmask (mask);
   if (QLength () > 0)
     {
 	kill (XXpid, SIGIO);
@@ -1402,17 +1606,16 @@ XFlipColor ()
   Pixmap temp;
   int tempcolor;
   char *tempname;
-  int (*func) ();
   Cursor temp_curs;
+  int mask = sigblock (sigmask (SIGIO));
   CursorToggle ();
-  func = signal (SIGIO, SIG_IGN);
-  temp = XMakeTile(fore);
+  temp = XMakeTile (fore);
   XChangeBackground (XXwindow, temp);
   XFreePixmap (temp);
   temp = XMakeTile (back);
   if (XXborder)
     XChangeBorder (XXwindow, temp);
-  XFreePixmap(temp);
+  XFreePixmap (temp);
   brdr = back;
   brdr_color = back_color;
   tempcolor = fore;
@@ -1424,9 +1627,9 @@ XFlipColor ()
 /*  XPixFill (XXwindow, 0, 0, screen_width * fontinfo->width,
 	    screen_height * fontinfo->height, back, ClipModeClipped,
 	    GXcopy, AllPlanes);
-  dumprectangle(0, 0, screen_height * fontinfo->height,
-  screen_width * fontinfo -> width);*/
-  XRedrawDisplay();
+  dumprectangle (0, 0, screen_height * fontinfo->height + 2 * XXInternalBorder,
+  screen_width * fontinfo -> width + 2 * XXInternalBorder);*/
+  XRedrawDisplay ();
   if (curs == WhitePixel)
     {
 	curs = BlackPixel;
@@ -1447,20 +1650,21 @@ XFlipColor ()
 	mous = WhitePixel;
 	mous_color = "white";
     }
-  temp_curs = XCreateCursor(16, 16, MouseCursor, MouseMask, 0, 0,
-			    mous, back, GXcopy);
+  temp_curs = XCreateCursor (16, 16, MouseCursor, MouseMask, 0, 0,
+			     mous, back, GXcopy);
   XUndefineCursor (XXwindow);
   XDefineCursor (XXwindow, temp_curs);
   XFreeCursor (EmacsCursor);
-  (void) signal (SIGIO, func);
   bcopy (&temp_curs, &EmacsCursor, sizeof (Cursor));
   CursorToggle ();
   XFlush ();
+  sigsetmask (mask);
 }
 
 XSetOffset (xoff, yoff)
      register int xoff, yoff;
 {
+  int mask = sigblock (sigmask (SIGIO));
   if (xoff < 0)
     {
       XXxoffset = rootwindowinfo.width + (++xoff) - pixelwidth - 4;
@@ -1479,16 +1683,17 @@ XSetOffset (xoff, yoff)
       XXyoffset = yoff;
     }
   XMoveWindow (XXwindow, XXxoffset, XXyoffset);
+  sigsetmask (mask);
   /* XWarpMouse (XXwindow, pixelwidth >> 1, pixelheight >> 1); */
 }
 
 XSetWindowSize (rows, cols)
      register int rows, cols;
 {
-  if (rows < 5) rows = 66;
-  if (cols < 5) cols = 80;
-  pixelwidth = cols * fontinfo->width + 1;
-  pixelheight = rows * fontinfo->height + 1;
+  /* if (rows < 3) rows = 24;
+     if (cols < 1) cols = 80; */
+  pixelwidth = cols * fontinfo->width + 2 * XXInternalBorder;
+  pixelheight = rows * fontinfo->height + 2 * XXInternalBorder;
   XChangeWindow (XXwindow, pixelwidth, pixelheight);
   XFlush ();
   change_screen_size (rows, cols);
@@ -1497,24 +1702,38 @@ XSetWindowSize (rows, cols)
 
 XPopUpWindow ()
 {
-    if (WindowMapped)
-      return;
-    if(!x_edges_specified)
-      Fx_rubber_band ();
-    bitblt = 0;
-    CursorExists = 0;
-    VisibleX = 0;
-    VisibleY = 0;
-    WindowMapped = 1;
-    XMapWindow (XXwindow);
-    dumprectangle (0, 0, screen_height * fontinfo->height,
-		   screen_width * fontinfo->width);
-    XSelectInput (XXwindow, KeyPressed | ExposeWindow |
-		  ButtonPressed | ExposeRegion | ExposeCopy);
-    /*	XWarpMouse(XXwindow, pixelwidth >> 1, pixelheight >> 1);*/
-    XTtopos (0, 0);
-/*  XRedrawDisplay();*/
-    XFlush ();
+  int mask;
+  if (WindowMapped)
+    return;
+  mask = sigblock (sigmask (SIGIO));
+  if (!x_edges_specified)
+    Fx_rubber_band ();
+  bitblt = 0;
+  CursorExists = 0;
+  VisibleX = 0;
+  VisibleY = 0;
+  WindowMapped = 1;
+  XMapWindow (XXwindow);
+  dumprectangle (0, 0,
+		 screen_height * fontinfo->height + 2 * XXInternalBorder,
+		 screen_width * fontinfo->width + 2 * XXInternalBorder);
+  XSelectInput (XXwindow, KeyPressed | ExposeWindow
+		| ButtonPressed | ButtonReleased | ExposeRegion | ExposeCopy);
+  /*	XWarpMouse (XXwindow, pixelwidth >> 1, pixelheight >> 1);*/
+  XTtopos (0, 0);
+  if (IconWindow)
+    {
+      XSetIconWindow (XXwindow,XXIconWindow);
+      XSelectInput (XXIconWindow, ExposeWindow);
+    }
+  else
+    {
+      XClearIconWindow (XXwindow);
+      XSelectInput (XXIconWindow, NoEvent);
+    }
+  /*  XRedrawDisplay ();*/
+  XFlush ();
+  sigsetmask (mask);
 }
 
 spacecheck (mindex, rindex, windex, minfreespace)
@@ -1522,9 +1741,9 @@ spacecheck (mindex, rindex, windex, minfreespace)
 {
   if ((rindex > mindex) || (windex > mindex))
     {
-      fprintf (stderr, "Fatal Mouse Buffer Error.\n");
-      fprintf (stderr, "%d = mindex, %d = rindex, %d = windex\n",
-	       mindex, rindex, windex);
+      /* fprintf (stderr, "Fatal Mouse Buffer Error.\n");
+	 fprintf (stderr, "%d = mindex, %d = rindex, %d = windex\n",
+	 mindex, rindex, windex); */
       return -2;
     }
   if (windex >= rindex)
@@ -1571,3 +1790,5 @@ fixxrepbuffer ()
   Xxrepbuffer.windex = 0;
   Xxrepbuffer.rindex = 0;
 }
+
+#endif /* HAVE_X_WINDOWS */

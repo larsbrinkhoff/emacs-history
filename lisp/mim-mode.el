@@ -1,6 +1,6 @@
 ;; Mim (MDL in MDL) mode.
-;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman.
-;; Bugs to shane@mit-xx (or bug-gnu-emacs@mit-prep)
+;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Principal author K. Shane Hartman
 
 ;; This file is part of GNU Emacs.
 
@@ -41,45 +41,43 @@ are bound.")
 
 (defvar mim-mode-syntax-table nil)
 
-(if (not mim-mode-syntax-table)
-  (let ((i -1)
-	(old-syntax-table (syntax-table)))
+(if mim-mode-syntax-table
+    ()
+  (let ((i -1))
     (setq mim-mode-syntax-table (make-syntax-table))
-    (set-syntax-table mim-mode-syntax-table)
     (while (< i ?\ )
-      (modify-syntax-entry (setq i (1+ i)) "    "))
+      (modify-syntax-entry (setq i (1+ i)) "    " mim-mode-syntax-table))
     (while (< i 127)
-      (modify-syntax-entry (setq i (1+ i)) "_   "))
+      (modify-syntax-entry (setq i (1+ i)) "_   " mim-mode-syntax-table))
     (setq i (1- ?a))
     (while (< i ?z)
-      (modify-syntax-entry (setq i (1+ i)) "w   "))
+      (modify-syntax-entry (setq i (1+ i)) "w   " mim-mode-syntax-table))
     (setq i (1- ?A))
     (while (< i ?Z)
-      (modify-syntax-entry (setq i (1+ i)) "w   "))
+      (modify-syntax-entry (setq i (1+ i)) "w   " mim-mode-syntax-table))
     (setq i (1- ?0))
     (while (< i ?9)
-      (modify-syntax-entry (setq i (1+ i)) "w   "))
-    (modify-syntax-entry ?:  "     ")       ; make : symbol delimiter
-    (modify-syntax-entry ?,  "'    ")
-    (modify-syntax-entry ?.  "'    ")
-    (modify-syntax-entry ?'  "'    ")
-    (modify-syntax-entry ?`  "'    ")
-    (modify-syntax-entry ?~  "'    ")
-    (modify-syntax-entry ?;  "'    ")       ; comments are prefixed objects
-    (modify-syntax-entry ?#  "'    ")
-    (modify-syntax-entry ?%  "'    ")
-    (modify-syntax-entry ?!  "'    ")
-    (modify-syntax-entry ?\" "\"   ")
-    (modify-syntax-entry ?\\ "\\   ")
-    (modify-syntax-entry ?\( "\()  ")
-    (modify-syntax-entry ?\< "\(>  ")
-    (modify-syntax-entry ?\{ "\(}  ")
-    (modify-syntax-entry ?\[ "\(]  ")
-    (modify-syntax-entry ?\) "\)(  ")
-    (modify-syntax-entry ?\> "\)<  ")
-    (modify-syntax-entry ?\} "\){  ")
-    (modify-syntax-entry ?\] "\)[  ")
-    (set-syntax-table old-syntax-table)))
+      (modify-syntax-entry (setq i (1+ i)) "w   " mim-mode-syntax-table))
+    (modify-syntax-entry ?:  "     " mim-mode-syntax-table) ; make : symbol delimiter
+    (modify-syntax-entry ?,  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?.  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?'  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?`  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?~  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?\; "'    " mim-mode-syntax-table) ; comments are prefixed objects
+    (modify-syntax-entry ?#  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?%  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?!  "'    " mim-mode-syntax-table)
+    (modify-syntax-entry ?\" "\"   " mim-mode-syntax-table)
+    (modify-syntax-entry ?\\ "\\   " mim-mode-syntax-table)
+    (modify-syntax-entry ?\( "\()  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\< "\(>  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\{ "\(}  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\[ "\(]  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\) "\)(  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\> "\)<  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\} "\){  " mim-mode-syntax-table)
+    (modify-syntax-entry ?\] "\)[  " mim-mode-syntax-table)))
 
 (defconst mim-whitespace "\000- ")
 

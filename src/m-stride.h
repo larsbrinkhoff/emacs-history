@@ -1,5 +1,5 @@
 /* Definitions file for GNU Emacs running on Stride Micro System-V.2.2
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -96,5 +96,28 @@ and this notice must be preserved on all copies.  */
 #define HAVE_PTYS
 #define HAVE_TIMEVAL
 #define HAVE_SELECT
+#define HAVE_GETTIMEOFDAY
 #define BSTRING
 #define SKTPAIR
+#define HAVE_SOCKETS
+
+#define MAIL_USE_FLOCK
+#undef TERMINFO
+#define EXEC_MAGIC 0413
+
+/* USG wins again: Foo! I can't get SIGIO to work properly on the Stride, because I'm
+   running a System V variant, and don't have a reliable way to block SIGIO
+   signals without losing them.  So, I've gone back to non-SIGIO mode, so
+   please append this line to the file "m-stride.h":
+ */
+#undef SIGIO
+
+/* Specify alignment requirement for start of text and data sections
+   in the executable file.  */
+
+#define SECTION_ALIGNMENT (getpagesize() - 1)
+
+/*
+ * UniStride has this in /lib/libc.a.
+ */
+#undef NONSYSTEM_DIR_LIBRARY

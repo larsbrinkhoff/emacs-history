@@ -1,5 +1,5 @@
 /* Newly written part of redisplay code.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -32,11 +32,15 @@ and this notice must be preserved on all copies.  */
 #endif
 #endif
 
-#ifdef USG
+#ifdef HAVE_TERMIO
 #include <termio.h>
-#else /* not USG */
+#ifdef TCOUTQ
+#undef TIOCOUTQ
+#define TIOCOUTQ TCOUTQ
+#endif /* TCOUTQ defined */
+#else
 #include <sys/ioctl.h>
-#endif /* not USG */
+#endif /* not HAVE_TERMIO */
 
 #undef NULL
 
@@ -76,6 +80,15 @@ int inverse_video;	/* If true and the terminal will support it
 int baud_rate;		/* Terminal speed, so we can calculate
 			   the number of characters required to
 			   make the cursor sit still for n secs. */
+
+Lisp_Object Vwindow_system;	/* nil or a symbol naming the window system
+				   under which emacs is running
+				   ('x is the only current possibility) */
+
+/* Nonzero means reading single-character input with prompt
+   so put cursor on minibuffer after the prompt.  */
+
+int cursor_in_echo_area;
 
 /* the current (physical) screen */
 struct display_line *PhysScreen[MScreenLength + 1];
@@ -438,6 +451,15 @@ cancel_my_columns (w)
     }
 }
 
+/* These functions try to perform directly and immediately on the screen
+   the necessary output for one change in the buffer.
+   They may return 0 meaning nothing was done if anything is difficult,
+   or 1 meaning the output was performed properly.
+   They assume that the screen was up to date before the buffer
+   change being displayed.  THey make various other assumptions too;
+   see command_loop_1 where these are called.  */
+
+int
 direct_output_for_insert (c)
      int c;
 {
@@ -452,25 +474,21 @@ direct_output_for_insert (c)
     int hpos = cursX;
 
   /* Give up if about to continue line */
-  if (hpos - XFASTINT (w->left) + 1 + 1 >= XFASTINT (w->width))
-    return;
+  if (hpos - XFASTINT (w->left) + 1 + 1 >= XFASTINT (w->width)
 
   /* Avoid losing if cursor is in invisible text off left margin */
-  if (XINT (w->hscroll) && hpos == XFASTINT (w->left))
-    return;
+      || XINT (w->hscroll) && hpos == XFASTINT (w->left)
     
   /* Give up if cursor outside window (in minibuf, probably) */
-  if (cursY < XFASTINT (w->top)
-      || cursY >= XFASTINT (w->top) + XFASTINT (w->height))
-    return;
+      || cursY < XFASTINT (w->top)
+      || cursY >= XFASTINT (w->top) + XFASTINT (w->height)
 
   /* Give up if cursor not really at cursX, cursY */
-  if (!display_completed)
-    return;
+      || !display_completed
 
   /* Give up if w is minibuffer and a message is being displayed there */
-  if (EQ (selected_window, minibuf_window) && minibuf_message)
-    return;
+      || EQ (selected_window, minibuf_window) && minibuf_message)
+    return 0;
 
   p->body[hpos] = c;
   unchanged_modified = bf_modified;
@@ -485,8 +503,10 @@ direct_output_for_insert (c)
   ++cursX;
   p->length = max (p->length, cursX);
   p->body[p->length] = 0;
+  return 1;
 }
 
+int
 direct_output_forward_char (n)
      int n;
 {
@@ -494,13 +514,14 @@ direct_output_forward_char (n)
 
   /* Avoid losing if cursor is in invisible text off left margin */
   if (XINT (w->hscroll) && cursX == XFASTINT (w->left))
-    return;
+    return 0;
 
   cursX += n;
   XFASTINT (w->last_point_x) = cursX;
   XFASTINT (w->last_point) = point;
   topos (cursY, cursX);
   fflush (stdout);
+  return 1;
 }
 
 /* At the time this function is called,
@@ -590,7 +611,13 @@ update_screen (force, inhibit_hairy_id)
 
     /* Now just clean up termcap drivers and set cursor, etc.  */
     if (!pause)
-      topos (cursY, max (min (cursX, screen_width - 1), 0));
+      {
+	if (cursor_in_echo_area)
+	  topos (screen_height - 1,
+		 min (screen_width - 1, PhysScreen[screen_height]->length));
+	else
+	  topos (cursY, max (min (cursX, screen_width - 1), 0));
+      }
 
     update_end ();
 
@@ -598,7 +625,9 @@ update_screen (force, inhibit_hairy_id)
       fflush (termscript);
     fflush (stdout);
 
+    /* Here if output is preempted because input is detected.  */
   do_pause:
+
     if (screen_height == 0) abort (); /* Some bug zeros some core */
     display_completed = !pause;
     /* Free any lines still in desired screen but not in phys screen */
@@ -643,6 +672,18 @@ update_screen (force, inhibit_hairy_id)
     bzero (OPhysScreen, (screen_height + 1) * sizeof OPhysScreen[0]);
     bzero (DesiredScreen, (screen_height + 1) * sizeof DesiredScreen[0]);
     return pause;
+}
+
+/* Called when about to quit, to check for doing so
+   at an improper time.  */
+
+void
+quit_error_check ()
+{
+  if (DesiredScreen[1] != 0)
+    abort ();
+  if (DesiredScreen[screen_height] != 0)
+    abort ();
 }
 
 /* Decide what insert/delete line to do, and do it */
@@ -745,9 +786,21 @@ update_line (old, new, vpos)
     {
       obody = old -> body;
       olen = old->length;
-      if (!must_write_spaces)
-	while (obody[olen - 1] == ' ')
-	  olen--;
+      if (! old->highlighted)
+	{
+	  /* Note obody[-1] is old->physical, which is always 0 or 1.  */
+	  if (!must_write_spaces)
+	    while (obody[olen - 1] == ' ')
+	      olen--;
+	}
+      else
+	{
+	  /* For an inverse-video line, remember we gave it
+	     spaces all the way to the screen edge
+	     so that the reverse video extends all the way across.  */
+	  while (olen < screen_width - 1)
+	    obody[olen++] = ' ';
+	}
     }
 
   if (!new)
@@ -759,11 +812,24 @@ update_line (old, new, vpos)
   nbody = new -> body;
   nlen = new->length;
 
+  /* Pretend trailing spaces are not there at all,
+     unless for one reason or another we must write all spaces.  */
   /* We know that the previous character is the `physical' field
      and it is zero or one.  */
-  if (!must_write_spaces)
-    while (nbody[nlen - 1] == ' ')
-      nlen--;
+  if (! new->highlighted)
+    {
+      if (!must_write_spaces)
+	while (nbody[nlen - 1] == ' ')
+	  nlen--;
+    }
+  else
+    {
+      /* For an inverse-video line, give it extra trailing spaces
+	 all the way to the screen edge
+	 so that the reverse video extends all the way across.  */
+      while (nlen < screen_width - 1)
+	nbody[nlen++] = ' ';
+    }
 
   if (!olen)
     {
@@ -792,10 +858,8 @@ update_line (old, new, vpos)
   m1 = count_match (obody + osp, nbody + nsp);
 
   /* Spaces in new match implicit space past the end of old.  */
-  /* This isn't really doing anything; osp should be osp + m1.
-     I don't dare fix it now since maybe if it does anything
-     it will do something bad.  */
-  if (!must_write_spaces && osp == olen)
+  /* A bug causing this to be a no-op was fixed in 18.29.  */
+  if (!must_write_spaces && osp + m1 == olen)
     {
       np1 = nbody + nsp;
       while (np1[m1] == ' ')
@@ -865,7 +929,6 @@ update_line (old, new, vpos)
       insert_chars ((char *)0, nsp - osp);
     }
   olen += nsp - osp;
-  osp = nsp;
 
   tem = nsp + m1 + m2;
   if (nlen != tem || olen != tem)
@@ -942,37 +1005,50 @@ count_match (str1, str2)
 
 DEFUN ("open-termscript", Fopen_termscript, Sopen_termscript,
   1, 1, "FOpen termscript file: ",
-  "Start writing all terminal output to FILE as well.")
+  "Start writing all terminal output to FILE as well as the terminal.\n\
+FILE = nil means just close any termscript file currently open.")
   (file)
      Lisp_Object file;
 {
-  file = Fexpand_file_name (file, Qnil);
-  termscript = fopen (XSTRING (file)->data, "w");
+  if (termscript != 0) fclose (termscript);
+  termscript = 0;
+
+  if (! NULL (file))
+    {
+      file = Fexpand_file_name (file, Qnil);
+      termscript = fopen (XSTRING (file)->data, "w");
+      if (termscript == 0)
+	report_file_error ("Opening termscript", Fcons (file, Qnil));
+    }
   return Qnil;
 }
 
-DEFUN ("set-screen-height", Fset_screen_height, Sset_screen_height, 1, 1, 0,
-  "Set number of lines on screen available for use in windows.")
-  (n)
-     Lisp_Object n;
+DEFUN ("set-screen-height", Fset_screen_height, Sset_screen_height, 1, 2, 0,
+  "Tell redisplay that the screen has LINES lines.\n\
+Optional second arg non-nil means that redisplay should use LINES lines\n\
+but that the idea of the actual height of the screen should not be changed.")
+  (n, pretend)
+     Lisp_Object n, pretend;
 {
   CHECK_NUMBER (n, 0);
-  change_screen_size (XINT (n), 0);
+  change_screen_size (XINT (n), 0, !NULL (pretend));
   return Qnil;
 }
 
-DEFUN ("set-screen-width", Fset_screen_width, Sset_screen_width, 1, 1, 0,
-  "Set number of columns on screen available for display.")
-  (n)
-     Lisp_Object n;
+DEFUN ("set-screen-width", Fset_screen_width, Sset_screen_width, 1, 2, 0,
+  "Tell redisplay that the screen has COLS columns.\n\
+Optional second arg non-nil means that redisplay should use COLS columns\n\
+but that the idea of the actual width of the screen should not be changed.")
+  (n, pretend)
+     Lisp_Object n, pretend;
 {
   CHECK_NUMBER (n, 0);
-  change_screen_size (0, XINT (n));
+  change_screen_size (0, XINT (n), !NULL (pretend));
   return Qnil;
 }
 
 DEFUN ("screen-height", Fscreen_height, Sscreen_height, 0, 0, 0,
-  "Return number of lines on screen available for use in windows.")
+  "Return number of lines on screen available for display.")
   ()
 {
   return make_number (screen_height);
@@ -985,10 +1061,20 @@ DEFUN ("screen-width", Fscreen_width, Sscreen_width, 0, 0, 0,
   return make_number (screen_width);
 }
 
+#ifdef SIGWINCH
+window_change_signal ()
+{
+  int width, height;
+  get_screen_size (&width, &height);
+  change_screen_size (height, width, 0);
+  signal (SIGWINCH, window_change_signal);
+}
+#endif /* SIGWINCH */
+
 /* Change the screen height and/or width.  Values may be given as zero to
    indicate no change is to take place. */
-change_screen_size (newlength, newwidth)
-     register int newlength, newwidth;
+change_screen_size (newlength, newwidth, pretend)
+     register int newlength, newwidth, pretend;
 {
   if ((newlength == 0 || newlength == screen_height)
 	  && (newwidth == 0 || newwidth == screen_width))
@@ -1001,6 +1087,8 @@ change_screen_size (newlength, newwidth)
       XFASTINT (XWINDOW (minibuf_window)->top) = newlength - 1;
       set_window_height (minibuf_window, 1, 0);
       screen_height = newlength;
+      if (!pretend)
+	ScreenRows = newlength;
       set_terminal_window (0);
     }
   if (newwidth && newwidth != screen_width)
@@ -1010,6 +1098,8 @@ change_screen_size (newlength, newwidth)
       set_window_width (XWINDOW (minibuf_window)->prev, newwidth, 0);
       set_window_width (minibuf_window, newwidth, 0);
       screen_width = newwidth;
+      if (!pretend)
+	ScreenCols = newwidth;
     }
   make_display_lines ();
   calculate_costs ();
@@ -1038,12 +1128,20 @@ Control characters in STRING will have terminal-dependent effects.")
   return Qnil;
 }
 
-DEFUN ("ding", Fding, Sding, 0, 0, 0,
+DEFUN ("ding", Fding, Sding, 0, 1, 0,
   "Beep, or flash the screen.\n\
-Terminates any keyboard macro currently executing.")
-  ()
+Terminates any keyboard macro currently executing unless an argument\n\
+is given.")
+  (arg)
+  Lisp_Object arg;
 {
-  Ding ();
+  if (!NULL (arg))
+    {
+      ring_bell ();
+      fflush (stdout);
+    }
+  else
+    Ding ();
   return Qnil;
 }
 
@@ -1081,7 +1179,14 @@ DEFUN ("sleep-for", Fsleep_for, Ssleep_for, 1, 1, 0,
   immediate_quit = 1;
   QUIT;
 
-#if defined(HAVE_SELECT) && defined(HAVE_TIMEVAL)
+#ifdef VMS
+  sys_sleep (t);
+#else /* not VMS */
+/* The reason this is done this way 
+    (rather than defined (H_S) && defined (H_T))
+   is because the VMS preprocessor doesn't grok `defined' */
+#ifdef HAVE_SELECT
+#ifdef HAVE_TIMEVAL
   gettimeofday (&end_time, &garbage1);
   end_time.tv_sec += t;
 
@@ -1098,20 +1203,28 @@ DEFUN ("sleep-for", Fsleep_for, Ssleep_for, 1, 1, 0,
       if (!select (1, 0, 0, 0, &timeout))
 	break;
     }
-#else /* not both HAVE_SELECT and HAVE_TIMEVAL */
+#else /* not HAVE_TIMEVAL */
   /* Is it safe to quit out of `sleep'?  I'm afraid to trust it.  */
   sleep (t);
-#endif /* not both HAVE_SELECT and HAVE_TIMEVAL */
-
+#endif /* HAVE_TIMEVAL */
+#else /* not HAVE_SELECT */
+  sleep (t);
+#endif /* HAVE_SELECT */
+#endif /* not VMS */
+  
   immediate_quit = 0;
 #endif /* no subprocesses */
   return Qnil;
 }
 
-DEFUN ("sit-for", Fsit_for, Ssit_for, 1, 1, 0,
-  "Perform redisplay, then wait for ARG seconds or until input is available")
-  (n)
-     Lisp_Object n;
+DEFUN ("sit-for", Fsit_for, Ssit_for, 1, 2, 0,
+  "Perform redisplay, then wait for ARG seconds or until input is available.\n\
+Optional second arg non-nil means don't redisplay.\n\
+Redisplay is preempted as always if input arrives, and does not happen\n\
+if input is available before it starts.\n\
+Value is t if waited the full time with no input arriving.")
+  (n, nodisp)
+     Lisp_Object n, nodisp;
 {
 #ifndef subprocesses
 #ifdef HAVE_TIMEVAL
@@ -1127,31 +1240,37 @@ DEFUN ("sit-for", Fsit_for, Ssit_for, 1, 1, 0,
   if (detect_input_pending ())
     return Qnil;
 
-  DoDsp (1);			/* Make the screen correct */
-  if (XINT (n) <= 0) return Qnil;
-
+  if (EQ (nodisp, Qnil))
+    DoDsp (1);			/* Make the screen correct */
+  if (XINT (n) > 0)
+    {
 #ifdef subprocesses
 #ifdef SIGIO
-  gobble_input ();
-#endif /* SIGIO */
-  wait_reading_process_input (XINT (n), 1, 1);
-#else /* no subprocesses */
-  immediate_quit = 1;
-  QUIT;
+      gobble_input ();
+#endif				/* SIGIO */
+      wait_reading_process_input (XINT (n), 1, 1);
+#else				/* no subprocesses */
+      immediate_quit = 1;
+      QUIT;
 
-  waitchannels = 1;
+      waitchannels = 1;
+#ifdef VMS
+      input_wait_timeout (XINT (n));
+#else				/* not VMS */
 #ifndef HAVE_TIMEVAL
-  timeout_sec = XINT (n);
-  select (1, &waitchannels, 0, 0, &timeout_sec);
-#else /* HAVE_TIMEVAL */
-  timeout.tv_sec = XINT (n);  
-  timeout.tv_usec = 0;
-  select (1, &waitchannels, 0, 0, &timeout);
-#endif /* HAVE_TIMEVAL */
+      timeout_sec = XINT (n);
+      select (1, &waitchannels, 0, 0, &timeout_sec);
+#else				/* HAVE_TIMEVAL */
+      timeout.tv_sec = XINT (n);  
+      timeout.tv_usec = 0;
+      select (1, &waitchannels, 0, 0, &timeout);
+#endif				/* HAVE_TIMEVAL */
+#endif				/* not VMS */
 
-  immediate_quit = 0;
-#endif /* no subprocesses */
-  return Qnil;
+      immediate_quit = 0;
+#endif				/* no subprocesses */
+    }
+  return detect_input_pending () ? Qnil : Qt;
 }
 
 char *terminal_type;
@@ -1165,26 +1284,51 @@ init_display ()
 {
   MetaFlag = 0;
   inverse_video = 0;
+  cursor_in_echo_area = 0;
+  terminal_type = (char *) 0;
 
-  /* Look at the TERM variable and set terminal_driver.  */
+  if (!inhibit_window_system)
+    {
+#ifdef HAVE_X_WINDOWS
+      extern char *alternate_display;
+      if (alternate_display || egetenv ("DISPLAY"))
+	{
+	  x_term_init ();
+	  Vwindow_system = intern ("x");
+	  goto term_init_done;
+	}
+#endif /* HAVE_X_WINDOWS */
+      ;
+    }
 
+  /* Look at the TERM variable */
   terminal_type = (char *) getenv ("TERM");
   if (!terminal_type)
     {
+#ifdef VMS
+      fprintf (stderr, "Please specify your terminal type.\n\
+For types defined in VMS, use  set term /device=TYPE.\n\
+For types not defined in VMS, use  define emacs_term \"TYPE\".\n\
+\(The quotation marks are necessary since terminal types are lower case.)\n");
+#else
       fprintf (stderr, "Please set the environment variable TERM; see tset(1).\n");
+#endif
       exit (1);
     }
-#ifdef HAVE_X_WINDOWS
-  if (!strncmp (terminal_type, "xterm", 5))
-    x_term_init ();
-  else
-#endif /* HAVE_X_WINDOWS */
-    term_init (terminal_type);
+  term_init (terminal_type);
 
+ term_init_done:
   make_display_lines ();
 
   cursX = 0;		/* X and Y coordinates of the cursor */
   cursY = 0;		/* between updates. */
+
+#ifdef SIGWINCH
+#ifndef CANNOT_DUMP
+  if (initialized)
+#endif /* CANNOT_DUMP */
+    signal (SIGWINCH, window_change_signal);
+#endif /* SIGWINCH */
 }
 
 syms_of_display ()
@@ -1200,8 +1344,17 @@ syms_of_display ()
   defsubr (&Sbaud_rate);
   defsubr (&Ssend_string_to_terminal);
 
-  DefBoolVar ("inverse-video", &inverse_video,
+  DEFVAR_BOOL ("inverse-video", &inverse_video,
     "*Non-nil means use inverse-video.");
-  DefBoolVar ("visible-bell", &visible_bell,
+  DEFVAR_BOOL ("visible-bell", &visible_bell,
     "*Non-nil means try to flash the screen to represent a bell.");
+  DEFVAR_BOOL ("no-redraw-on-reenter", &no_redraw_on_reenter,
+    "*Non-nil means no need to redraw entire screen after suspending.\n\
+It is up to you to set this variable to inform Emacs.");
+  DEFVAR_LISP ("window-system", &Vwindow_system,
+    "A symbol naming the window-system under which emacs is running,\n\
+\(such as `x') or nil if emacs is running on an ordinary terminal.");
+  Vwindow_system = Qnil;
+  DEFVAR_BOOL ("cursor-in-echo-area", &cursor_in_echo_area,
+    "Non-nil means put cursor in minibuffer after any message displayed there.");
 }

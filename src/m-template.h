@@ -1,5 +1,5 @@
 /* m- file template.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -50,8 +50,8 @@ and this notice must be preserved on all copies.  */
 
 /* Now define a symbol for the cpu type, if your compiler
    does not define it automatically:
-   vax, m68000, ns16000, pyramid, orion, tahoe and APOLLO
-   are the ones defined so far.  */
+   Ones defined so far include vax, m68000, ns16000, pyramid,
+   orion, tahoe, APOLLO and many others */
 
 /* Use type int rather than a union, to represent Lisp_Object */
 /* This is desirable for most machines.  */

@@ -1,4 +1,7 @@
-;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman.
+;; Command to report Emacs bugs to appropriate mailing list.
+;; Not fully installed because it can work only on Internet hosts.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Principal author K. Shane Hartman
 
 ;; This file is part of GNU Emacs.
 
@@ -31,7 +34,6 @@ Prompts for bug subject.  Leaves you in a mail buffer."
   (interactive "sBug Subject: ")
   (mail nil bug-gnu-emacs topic)
   (goto-char (point-max))
-  (insert "\nIn " (emacs-version)
-	  " on " (system-name) " (" (symbol-name system-type) ")\n\n")
+  (insert "\nIn " (emacs-version) "\n\n")
   (message (substitute-command-keys "Type \\[mail-send] to send bug report.")))
 

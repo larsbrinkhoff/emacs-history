@@ -8,7 +8,13 @@ set BIN=/usr/local/bin
 (cd etc; make) || exit 1
 (cd src; make) || exit 1
 
-mv `pwd` $EMACS
+if mv `pwd` $EMACS;then
+else
+ mkdir $EMACS
+ tar cf - . | (cd $EMACS; tar xfp -)
+ rm -rf *
+fi
+
 cp $EMACS/etc/{ctags,etags} $BIN
 mv $EMACS/src/xemacs $BIN/emacs
 rm $EMACS/src/temacs

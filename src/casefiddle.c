@@ -1,5 +1,5 @@
 /* GNU Emacs case conversion functions.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -25,28 +25,28 @@ and this notice must be preserved on all copies.  */
 #include "commands.h"
 #include "syntax.h"
 
-#define UPCASE 0
-#define DOWNCASE 1
-#define CAPITALIZE 2
-#define CAPITALIZE_UP 3
+enum case_action {CASE_UP, CASE_DOWN, CASE_CAPITALIZE, CASE_CAPITALIZE_UP};
 
 Lisp_Object
 casify_object (flag, obj)
-     int flag;
+     enum case_action flag;
      Lisp_Object obj;
 {
   register int i, c, len;
-  register int inword = flag == DOWNCASE;
+  register int inword = flag == CASE_DOWN;
 
   while (1)
     {
       if (XTYPE (obj) == Lisp_Int)
 	{
 	  c = XINT (obj);
-	  if (inword
-	      ? (c >= 'A' && c <= 'Z')
-	      : (c >= 'a' && c <= 'z'))
-	    XFASTINT (obj) = c ^ ('a' - 'A');
+	  if (c >= 0 && c <= 0400)
+	    {
+	      if (inword)
+		XFASTINT (obj) = DOWNCASE (c);
+	      else if (!UPPERCASEP (c))
+		XFASTINT (obj) = UPCASE1 (c);
+	    }
 	  return obj;
 	}
       if (XTYPE (obj) == Lisp_String)
@@ -56,11 +56,12 @@ casify_object (flag, obj)
 	  for (i = 0; i < len; i++)
 	    {
 	      c = XSTRING (obj)->data[i];
-	      if (inword
-		  ? (c >= 'A' && c <= 'Z')
-		  : (c >= 'a' && c <= 'z'))
-		XSTRING (obj)->data[i] = c ^ ('a' - 'A');
-	      if (flag == CAPITALIZE)
+	      if (inword)
+		c = DOWNCASE (c);
+	      else if (!UPPERCASEP (c))
+		c = UPCASE1 (c);
+	      XSTRING (obj)->data[i] = c;
+	      if (flag == CASE_CAPITALIZE)
 		inword = SYNTAX (c) == Sword;
 	    }
 	  return obj;
@@ -74,7 +75,7 @@ DEFUN ("upcase", Fupcase, Supcase, 1, 1, 0,
   (obj)
      Lisp_Object obj;
 {
-  return casify_object (UPCASE, obj);
+  return casify_object (CASE_UP, obj);
 }
 
 DEFUN ("downcase", Fdowncase, Sdowncase, 1, 1, 0,
@@ -82,7 +83,7 @@ DEFUN ("downcase", Fdowncase, Sdowncase, 1, 1, 0,
   (obj)
      Lisp_Object obj;
 {
-  return casify_object (DOWNCASE, obj);
+  return casify_object (CASE_DOWN, obj);
 }
 
 DEFUN ("capitalize", Fcapitalize, Scapitalize, 1, 1, 0,
@@ -91,33 +92,36 @@ This means that each word's first character is upper case and the rest is lower 
   (obj)
      Lisp_Object obj;
 {
-  return casify_object (CAPITALIZE, obj);
+  return casify_object (CASE_CAPITALIZE, obj);
 }
 
-/* flag is UPCASE, DOWNCASE or CAPITALIZE or CAPITALIZE_UP.
+/* flag is CASE_UP, CASE_DOWN or CASE_CAPITALIZE or CASE_CAPITALIZE_UP.
    b and e specify range of buffer to operate on. */
 
 casify_region (flag, b, e)
+     enum case_action flag;
      Lisp_Object b, e;
 {
   register int i;
   register int c;
-  register int inword = flag == DOWNCASE;
+  register int inword = flag == CASE_DOWN;
 
   validate_region (&b, &e);
   if (!NULL (bf_cur->read_only))
     Fbarf_if_buffer_read_only();
-  RecordChange (XFASTINT (b), XFASTINT (e) - XFASTINT (b));
+  record_change (XFASTINT (b), XFASTINT (e) - XFASTINT (b));
   modify_region (XFASTINT (b), XFASTINT (e));
 
   for (i = XFASTINT (b); i < XFASTINT (e); i++)
     {
       c = CharAt (i);
-      if (inword
-	  ? (c >= 'A' && c <= 'Z' && flag != CAPITALIZE_UP)
-	  : (c >= 'a' && c <= 'z'))
-	CharAt (i) = c ^ ('a' - 'A');
-      if (flag >= CAPITALIZE)
+      if (inword && flag != CASE_CAPITALIZE_UP)
+	c = DOWNCASE (c);
+      else if (!UPPERCASEP (c)
+	       && (!inword || flag != CASE_CAPITALIZE_UP))
+	c = UPCASE1 (c);
+      CharAt (i) = c;
+      if ((int) flag >= (int) CASE_CAPITALIZE)
 	inword = SYNTAX (c) == Sword;
     }
 }
@@ -130,7 +134,7 @@ point and the mark is operated on.")
   (b, e)
      Lisp_Object b, e;
 {
-  casify_region (UPCASE, b, e);
+  casify_region (CASE_UP, b, e);
   return Qnil;
 }
 
@@ -142,7 +146,7 @@ point and the mark is operated on.")
   (b, e)
      Lisp_Object b, e;
 {
-  casify_region (DOWNCASE, b, e);
+  casify_region (CASE_DOWN, b, e);
   return Qnil;
 }
 
@@ -156,7 +160,7 @@ and the rest of it is lower case.")
   (b, e)
      Lisp_Object b, e;
 {
-  casify_region (CAPITALIZE, b, e);
+  casify_region (CASE_CAPITALIZE, b, e);
   return Qnil;
 }
 
@@ -166,7 +170,7 @@ Lisp_Object
 upcase_initials_region (b, e)
      Lisp_Object b, e;
 {
-  casify_region (CAPITALIZE_UP, b, e);
+  casify_region (CASE_CAPITALIZE_UP, b, e);
   return Qnil;
 }
 
@@ -193,7 +197,7 @@ With negative argument, convert previous words but do not move.")
   (arg)
      Lisp_Object arg;
 {
-  operate_on_word (UPCASE, arg);
+  operate_on_word (CASE_UP, arg);
   return Qnil;
 }
 
@@ -203,7 +207,7 @@ With negative argument, convert previous words but do not move.")
   (arg)
      Lisp_Object arg;
 {
-  operate_on_word (DOWNCASE, arg);
+  operate_on_word (CASE_DOWN, arg);
   return Qnil;
 }
 
@@ -215,7 +219,7 @@ With negative argument, capitalize previous words but do not move.")
   (arg)
      Lisp_Object arg;
 {
-  operate_on_word (CAPITALIZE, arg);
+  operate_on_word (CASE_CAPITALIZE, arg);
   return Qnil;
 }
 

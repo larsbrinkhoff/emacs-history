@@ -1,5 +1,5 @@
 /* m- file for Apollo machine.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -68,3 +68,19 @@ and this notice must be preserved on all copies.  */
 
 #define VALBITS 26
 #define GCTYPEBITS 5
+
+/* Prevent -lg from being used for debugging.  Not implemented?  */
+
+#define LIBS_DEBUG
+
+/* Must use the system's termcap.  It does special things.  */
+
+#define LIBS_TERMCAP -ltermcap
+
+/* Must use the system's malloc and alloca.  */
+
+#define SYSTEM_MALLOC
+
+/* No crt0 is needed, but control where environ is allocated.  */
+
+#define START_FILES pre-crt0.o

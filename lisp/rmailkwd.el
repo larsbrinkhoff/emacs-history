@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -30,7 +30,7 @@
 (defconst rmail-attributes
   (cons 'rmail-keywords
 	(mapcar '(lambda (s) (intern s rmail-label-obarray))
-		'("deleted" "answered" "filed" "forwarded" "unseen"))))
+		'("deleted" "answered" "filed" "forwarded" "unseen" "edited"))))
 
 (defconst rmail-deleted-label (intern "deleted" rmail-label-obarray))
 
@@ -96,7 +96,9 @@ Completion is performed over known labels when reading."
 			(setq bound (1+ (point)))
 		      (setq start (1+ (point))))
 		    (goto-char start)
-		    (rmail-nuke-whitespace)
+		    (while (re-search-forward "[ \t]*,[ \t]*" nil t)
+		      (replace-match ","))
+		    (goto-char start)
 		    (if (re-search-forward
 			   (concat "," (rmail-quote-label-name label) ",")
 			   bound
@@ -167,16 +169,6 @@ Completion is performed over known labels when reading."
 
 (defun rmail-quote-label-name (label)
   (regexp-quote (symbol-name (rmail-make-label label t))))
-
-;; Delete all whitespace in the visible part of the buffer.
-;; The use of this function is unclean, and it should be flushed.
-(defun rmail-nuke-whitespace ()
-  (save-excursion
-    (let ((buffer-read-only nil))
-      (goto-char (point-min))
-      (while (re-search-forward "[ \t]+" nil t)
-	(replace-match "")))))
-
 
 ;; Motion on messages with keywords.
 

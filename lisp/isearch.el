@@ -1,5 +1,5 @@
 ;; Incremental search
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -23,6 +23,10 @@
 ;  "Last string search for by a search command.
 ;This does not include direct calls to the primitive search functions,
 ;and does not include searches that are aborted.")
+;(defvar search-last-regexp ""
+;  "Last string searched for by a regexp search command.
+;This does not include direct calls to the primitive search functions,
+;and does not include searches that are aborted.")
 ;
 ;(defconst search-repeat-char ?\C-s
 ;  "Character to repeat incremental search forwards.")
@@ -41,9 +45,9 @@
 ;(defconst search-exit-option t
 ;  "Non-nil means random control characters terminate incremental search.")
 ;
-;(defvar isearch-slow-window-lines 1
+;(defvar search-slow-window-lines 1
 ;  "*Number of lines in slow search display windows.")
-;(defconst isearch-slow-speed 1200
+;(defconst search-slow-speed 1200
 ;  "*Highest terminal speed at which to use \"slow\" style incremental search.
 ;This is the style where a one-line window is created to show the line
 ;that the search has reached.")
@@ -59,13 +63,16 @@
 	(search-message "")
 	(cmds nil)
 	(success t)
+	(wrapped nil)
+	(barrier (point))
+	adjusted
 	(invalid-regexp nil)
-	(slow-terminal-mode (<= (baud-rate) isearch-slow-speed))
+	(slow-terminal-mode (and (<= (baud-rate) search-slow-speed)
+				 (> (window-height)
+				    (* 4 search-slow-window-lines))))
 	(other-end nil)    ;Start of last match if fwd, end if backwd.
 	(small-window nil)		;if t, using a small window
-	(window-min-height (min window-min-height (1+ isearch-slow-window-lines)))
-					;so we can make small windows
-	(found-point nil)			;to restore point from a small window
+	(found-point nil)		;to restore point from a small window
 	;; This is the window-start value found by the search.
 	(found-start nil)
 	(opoint (point))
@@ -84,15 +91,17 @@
 		     (setq small-window t)
 		     (setq found-point (point))
 		     (move-to-window-line 0)
-		     (split-window nil (- (window-height)
-					  (1+ isearch-slow-window-lines)))
-		     (other-window 1)
+		     (let ((window-min-height 1))
+		       (split-window nil (if (< search-slow-window-lines 0)
+					     (1+ (- search-slow-window-lines))
+					   (- (window-height)
+					      (1+ search-slow-window-lines)))))
+		     (or (< search-slow-window-lines 0) (other-window 1))
 		     (goto-char found-point)))))
 	 (let ((char (if quit-flag
 			 ?\C-g
 		       (read-char))))
-	   (setq quit-flag nil
-		 invalid-regexp nil)
+	   (setq quit-flag nil adjusted nil)
 	   ;; Meta character means exit search.
 	   (cond ((and (>= char 128)
 		       search-exit-option)
@@ -116,29 +125,28 @@
 		    ;; If search is failing, rub out until it is once more
 		    ;;  successful.
 		    (while (not success) (isearch-pop))))
-		 ((eq char search-repeat-char)
-		  ;; ^S means search again, forward, for the same string.
-		  (setq forward t)
-		  (if (null (cdr cmds))
-		      ;; If the first char typed,
-		      ;; it means search for the string of the previous search
-		      (progn
-		        (setq search-string search-last-string
-			      search-message
-			        (mapconcat 'text-char-description
-					   search-string ""))))
-		  (isearch-search)
-		  (isearch-push-state))
-		 ((eq char search-reverse-char)
-		  ;; ^R is similar but it searches backward.
-		  (setq forward nil)
-		  (if (null (cdr cmds))
-		      (progn
-			(setq search-string search-last-string
-			      search-message
-			        (mapconcat 'text-char-description
-					   search-string ""))))
-		  (isearch-search)
+		 ((or (eq char search-repeat-char)
+		      (eq char search-reverse-char))
+		  (if (eq forward (eq char search-repeat-char))
+		      ;; C-s in forward or C-r in reverse.
+		      (if (equal search-string "")
+			  ;; If search string is empty, use last one.
+			  (setq search-string
+				(if regexp
+				    search-last-regexp search-last-string)
+				search-message
+				(mapconcat 'text-char-description
+					   search-string ""))
+			;; If already have what to search for, repeat it.
+			(or success
+			    (progn (goto-char (if forward (point-min) (point-max)))
+				   (setq wrapped t))))
+		    ;; C-s in reverse or C-r in forward, change direction.
+		    (setq forward (not forward)))
+		  (setq barrier (point)) ; For subsequent \| if regexp.
+		  (setq success t)
+		  (or (equal search-string "")
+		      (isearch-search))
 		  (isearch-push-state))
 		 ((= char search-delete-char)
 		  ;; Rubout means discard last input item and move point
@@ -170,7 +178,8 @@
 			 ;;  unread it and exit the search normally.
 			 ((and search-exit-option
 			       (/= char search-quote-char)
-			       (< char ? ) (/= char ?\t) (/= char ?\r))
+			       (or (= char ?\177)
+				   (and (< char ? ) (/= char ?\t) (/= char ?\r))))
 			  (setq unread-command-char char)
 			  (throw 'search-done t))
 			 (t
@@ -192,73 +201,131 @@
 			   ;;  make search-string valid
 			   (not regexp))
 		      nil
-		    (if other-end
-			(goto-char (if forward other-end
-				     (min opoint (1+ other-end)))))
-		    (isearch-search))
+		    ;; If a regexp search may have been made more
+		    ;; liberal, retreat the search start.
+		    ;; Go back to place last successful search started
+		    ;; or to the last ^S/^R (barrier), whichever is nearer.
+		    (and regexp success cmds
+			 (cond ((memq char '(?* ??))
+				(setq adjusted t)
+				(let ((cs (nth (if forward
+						   5 ; other-end
+						 3) ; saved (point)
+					       (car (cdr cmds)))))
+				  ;; (car cmds) is after last search;
+				  ;; (car (cdr cmds)) is from before it.
+				  (setq cs (or cs barrier))
+				  (goto-char
+				   (if forward
+				       (max cs barrier)
+				     (min cs barrier)))))
+			       ((eq char ?\|)
+				(setq adjusted t)
+				(goto-char barrier))))
+		    ;; In reverse regexp search, adding a character at
+		    ;; the end may cause zero or many more chars to be
+		    ;; matched, in the string following point.
+		    ;; Allow all those possibiities without moving point as
+		    ;; long as the match does not extend past search origin.
+		    (if (and regexp (not forward) (not adjusted)
+			     (condition-case ()
+				 (looking-at search-string)
+			       (error nil))
+			     (<= (match-end 0) (min opoint barrier)))
+			(setq success t invalid-regexp nil
+			      other-end (match-end 0))
+		      ;; Not regexp, not reverse, or no match at point.
+		      (if (and other-end (not adjusted))
+			  (goto-char (if forward other-end
+				       (min opoint barrier (1+ other-end)))))
+		      (isearch-search)))
 		  (isearch-push-state))))))
      (setq found-start (window-start (selected-window)))
      (setq found-point (point)))
-    (setq search-last-string search-string)
+    (if (> (length search-string) 0)
+	(if regexp
+	    (setq search-last-regexp search-string)
+	    (setq search-last-string search-string)))
     ;; If there was movement, mark the starting position.
     ;; Maybe should test difference between and set mark iff > threshold.
-    (if (/= (point) opoint) (push-mark opoint))
+    (if (/= (point) opoint)
+	(push-mark opoint)
+      (message ""))
     (if small-window
 	(goto-char found-point)
       ;; Exiting the save-window-excursion clobbers this; restore it.
-      (set-window-start (selected-window) found-start t))
-    (message "")))
+      (set-window-start (selected-window) found-start t))))
 
-(defun isearch-message (&optional c-q-hack ing)
-  (or success (setq ing nil))
-  (let ((m (concat (if success "" "Failing ")
-		   (if regexp (if success "Regexp " "regexp ") "")
+(defun isearch-message (&optional c-q-hack ellipsis)
+  ;; If about to search, and previous search regexp was invalid,
+  ;; check that it still is.  If it is valid now,
+  ;; let the message we display while searching say that it is valid.
+  (and invalid-regexp ellipsis
+       (condition-case ()
+	   (progn (re-search-forward search-string (point) t)
+		  (setq invalid-regexp nil))
+	 (error nil)))
+  ;; If currently failing, display no ellipsis.
+  (or success (setq ellipsis nil))
+  (let ((m (concat (if success "" "failing ")
+		   (if wrapped "wrapped ")
+		   (if regexp "regexp " "")
 		   "I-search"
 		   (if forward ": " " backward: ")
 		   search-message
 		   (if c-q-hack "^Q" "")
 		   (if invalid-regexp
 		       (concat " [" invalid-regexp "]")
-		     (if (and ing (not slow-terminal-mode)) " ..." "")))))
-    (if c-q-hack m (message "%s" m))))
+		     ""))))
+    (aset m 0 (upcase (aref m 0)))
+    (let ((cursor-in-echo-area ellipsis))
+      (if c-q-hack m (message "%s" m)))))
 
 (defun isearch-pop ()
   (setq cmds (cdr cmds))
   (let ((cmd (car cmds)))
     (setq search-string (car cmd)
 	  search-message (car (cdr cmd))
-	  success (car (cdr (cdr (cdr cmd))))
-	  forward (car (cdr (cdr (cdr (cdr cmd)))))
-	  other-end (car (cdr (cdr (cdr (cdr (cdr cmd))))))
-	  invalid-regexp (car (cdr (cdr (cdr (cdr (cdr (cdr cmd))))))))
+	  success (nth 3 cmd)
+	  forward (nth 4 cmd)
+	  other-end (nth 5 cmd)
+	  invalid-regexp (nth 6 cmd)
+	  wrapped (nth 7 cmd)
+	  barrier (nth 8 cmd))
     (goto-char (car (cdr (cdr cmd))))))
 
 (defun isearch-push-state ()
   (setq cmds (cons (list search-string search-message (point)
-			 success forward other-end invalid-regexp)
+			 success forward other-end invalid-regexp
+			 wrapped barrier)
 		   cmds)))
 
 (defun isearch-search ()
   (isearch-message nil t)
-  (if (setq success
-	    (condition-case lossage
-		(let ((inhibit-quit nil))
-		  (if regexp (setq invalid-regexp nil))
-		  (funcall
-		    (if regexp
-			(if forward 're-search-forward 're-search-backward)
-		        (if forward 'search-forward 'search-backward))
-		    search-string nil t))
-	      (quit (setq unread-command-char ?\C-g)
-		    nil)
-	      (invalid-regexp (setq invalid-regexp (car (cdr lossage)))
-			      nil)))
-      (setq other-end
-	    (if forward (match-beginning 0) (match-end 0)))
-    (or invalid-regexp
-	(not (car (cdr (cdr (cdr (car cmds)))))) ;unsuccusful last time
-	(ding))
-    (goto-char (car (cdr (cdr (car cmds)))))))
+  (condition-case lossage
+      (let ((inhibit-quit nil))
+	(if regexp (setq invalid-regexp nil))
+	(setq success
+	      (funcall
+	       (if regexp
+		   (if forward 're-search-forward 're-search-backward)
+		 (if forward 'search-forward 'search-backward))
+	       search-string nil t))
+	(if success
+	    (setq other-end
+		  (if forward (match-beginning 0) (match-end 0)))))
+    (quit (setq unread-command-char ?\C-g)
+	  (setq success nil))
+    (invalid-regexp (setq invalid-regexp (car (cdr lossage)))
+		    (if (string-match "\\`Premature \\|\\`Unmatched \\|\\`Invalid "
+				      invalid-regexp)
+			(setq invalid-regexp "incomplete input"))))
+  (if success
+      nil
+    ;; Ding if failed this time after succeeding last time.
+    (and (nth 3 (car cmds))
+	 (ding))
+    (goto-char (nth 2 (car cmds)))))
 
 ;; This is called from incremental-search
 ;; if the first input character is the exit character.

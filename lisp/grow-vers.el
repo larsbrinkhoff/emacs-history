@@ -1,6 +1,6 @@
 ;; Load this file to add a new level (starting at zero)
 ;; to the Emacs version number recorded in version.el.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 

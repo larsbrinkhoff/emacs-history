@@ -1,5 +1,5 @@
 /* m- file for the NCR Tower 32 running System V.2.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -109,9 +109,9 @@ and this notice must be preserved on all copies.  */
 
 #define LIB_STANDARD -lPW -lcieee
 
-/* Use the BOGUS mechanism in crt0.c. */
+/* crt0.c should use the vax-bsd style of entry, with no dummy args.  */
 
-#define BOGUS zero, bogus_fp,
+#define CRT0_DUMMIES zero, bogus_fp,
 
 /* emacs's magic number isn't temacs's;
    temacs is writeable text (the default!).  */

@@ -1,5 +1,5 @@
 /* Execution of byte code produced by bytecomp.el.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -74,7 +74,7 @@ Lisp_Object Qbytecode;
 #define Bmin 0136
 
 #define Bpoint 0140
-#define Bmark 0141
+#define Bmark 0141 /* no longer generated as of v18 */
 #define Bgoto_char 0142
 #define Binsert 0143
 #define Bpoint_max 0144
@@ -84,7 +84,7 @@ Lisp_Object Qbytecode;
 #define Bpreceding_char 0150
 #define Bcurrent_column 0151
 #define Bindent_to 0152
-#define Bscan_buffer 0153
+#define Bscan_buffer 0153 /* No longer generated as of v18 */
 #define Beolp 0154
 #define Beobp 0155
 #define Bbolp 0156
@@ -92,8 +92,8 @@ Lisp_Object Qbytecode;
 #define Bcurrent_buffer 0160
 #define Bset_buffer 0161
 #define Bread_char 0162
-#define Bset_mark 0163
-#define Binteractive_p 0164   /* Needed since interactive-p takes unevalled args */
+#define Bset_mark 0163 /* this loser is no longer generated as of v18 */
+#define Binteractive_p 0164 /* Needed since interactive-p takes unevalled args */
 
 #define Bconstant2 0201
 #define Bgoto 0202
@@ -157,7 +157,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
   register Lisp_Object *stackp;
   Lisp_Object *stacke;
   register Lisp_Object v1, v2;
-  Lisp_Object *vectorp = XVECTOR (vector)->contents;
+  register Lisp_Object *vectorp = XVECTOR (vector)->contents;
 
   CHECK_STRING (bytestr, 0);
   if (XTYPE (vector) != Lisp_Vector)
@@ -176,58 +176,79 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
   while (1)
     {
       if (stackp > stacke)
-	error ("Stack overflow in byte code (byte compiler bug!)");
+	error ("Stack overflow in byte code (byte compiler bug), pc = %d", pc);
       if (stackp < stack)
-	error ("Stack underflow in byte code (byte compiler bug!)");
+	error ("Stack underflow in byte code (byte compiler bug), pc = %d", pc);
       switch (op = FETCH)
 	{
-	case Bvarref: case Bvarref+1: case Bvarref+2: case Bvarref+3:
-	case Bvarref+4: case Bvarref+5:
-	  PUSH (Fsymbol_value (vectorp[op - Bvarref]));
-	  break;
-
 	case Bvarref+6:
-	  PUSH (Fsymbol_value (vectorp[FETCH]));
-	  break;
+	  op = FETCH;
+	  goto varref;
 
 	case Bvarref+7:
-	  PUSH (Fsymbol_value (vectorp[FETCH2]));
-	  break;
+	  op = FETCH2;
+	  goto varref;
 
-	case Bvarset: case Bvarset+1: case Bvarset+2: case Bvarset+3:
-	case Bvarset+4: case Bvarset+5:
-	  Fset (vectorp[op - Bvarset], POP);
+	case Bvarref: case Bvarref+1: case Bvarref+2: case Bvarref+3:
+	case Bvarref+4: case Bvarref+5:
+	  op = op - Bvarref;
+	varref:
+	  v1 = vectorp[op];
+	  if (XTYPE (v1) != Lisp_Symbol)
+	    v2 = Fsymbol_value (v1);
+	  else
+	    {
+	      v2 = XSYMBOL (v1)->value;
+#ifdef SWITCH_ENUM_BUG
+	      switch ((int) XTYPE (v2))
+#else
+	      switch (XTYPE (v2))
+#endif
+		{
+		case Lisp_Symbol:
+		  if (!EQ (v2, Qunbound))
+		    break;
+		case Lisp_Intfwd:
+		case Lisp_Boolfwd:
+		case Lisp_Objfwd:
+		case Lisp_Buffer_Local_Value:
+		case Lisp_Some_Buffer_Local_Value:
+		case Lisp_Buffer_Objfwd:
+		case Lisp_Void:
+		  v2 = Fsymbol_value (v1);
+		}
+	    }
+	  PUSH (v2);
 	  break;
 
 	case Bvarset+6:
-	  Fset (vectorp[FETCH], POP);
-	  break;
+	  op = FETCH;
+	  goto varset;
 
 	case Bvarset+7:
-	  Fset (vectorp[FETCH2], POP);
-	  break;
+	  op = FETCH2;
+	  goto varset;
 
-	case Bvarbind: case Bvarbind+1: case Bvarbind+2: case Bvarbind+3:
-	case Bvarbind+4: case Bvarbind+5:
-	  specbind (vectorp[op - Bvarbind], POP);
+	case Bvarset: case Bvarset+1: case Bvarset+2: case Bvarset+3:
+	case Bvarset+4: case Bvarset+5:
+	  op -= Bvarset;
+	varset:
+	  Fset (vectorp[op], POP);
 	  break;
 
 	case Bvarbind+6:
-	  specbind (vectorp[FETCH], POP);
-	  break;
+	  op = FETCH;
+	  goto varbind;
 
 	case Bvarbind+7:
-	  specbind (vectorp[FETCH2], POP);
-	  break;
+	  op = FETCH2;
+	  goto varbind;
 
-	case Bcall: case Bcall+1: case Bcall+2: case Bcall+3:
-	case Bcall+4: case Bcall+5:
-	  op -= Bcall;
-	docall:
-	  DISCARD(op);
-	  gcpro3.nvars = &TOP - stack;
-	  TOP = Ffuncall (op + 1, &TOP);
-	  gcpro3.nvars = XFASTINT (maxdepth);
+	case Bvarbind: case Bvarbind+1: case Bvarbind+2: case Bvarbind+3:
+	case Bvarbind+4: case Bvarbind+5:
+	  op -= Bvarbind;
+	varbind:
+	  specbind (vectorp[op], POP);
 	  break;
 
 	case Bcall+6:
@@ -238,17 +259,32 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  op = FETCH2;
 	  goto docall;
 
-	case Bunbind: case Bunbind+1: case Bunbind+2: case Bunbind+3:
-	case Bunbind+4: case Bunbind+5:
-	  unbind_to (specpdl_ptr - specpdl - (op - Bunbind));
+	case Bcall: case Bcall+1: case Bcall+2: case Bcall+3:
+	case Bcall+4: case Bcall+5:
+	  op -= Bcall;
+	docall:
+	  DISCARD(op);
+	  /* Remove protection from the args we are giving to Ffuncall.
+	     FFuncall will protect them, and double protection would
+	     cause disasters.  */
+	  gcpro3.nvars = &TOP - stack - 1;
+	  TOP = Ffuncall (op + 1, &TOP);
+	  gcpro3.nvars = XFASTINT (maxdepth);
 	  break;
 
 	case Bunbind+6:
-	  unbind_to (specpdl_ptr - specpdl - FETCH);
-	  break;
+	  op = FETCH;
+	  goto dounbind;
 
 	case Bunbind+7:
-	  unbind_to (specpdl_ptr - specpdl - FETCH2);
+	  op = FETCH2;
+	  goto dounbind;
+
+	case Bunbind: case Bunbind+1: case Bunbind+2: case Bunbind+3:
+	case Bunbind+4: case Bunbind+5:
+	  op -= Bunbind;
+	dounbind:
+	  unbind_to (specpdl_ptr - specpdl - op);
 	  break;
 
 	case Bgoto:
@@ -341,6 +377,8 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  v1 = POP;
 	  temp_output_buffer_show (TOP);
 	  TOP = v1;
+	  /* pop binding of standard-output */
+	  unbind_to (specpdl_ptr - specpdl - 1);
 	  break;
 
 	case Bnth:
@@ -348,16 +386,20 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  v2 = TOP;
 	  CHECK_NUMBER (v2, 0);
 	  op = XINT (v2);
+	  immediate_quit = 1;
 	  while (--op >= 0)
 	    {
-	      if (LISTP (v1))
+	      if (CONSP (v1))
 		v1 = XCONS (v1)->cdr;
 	      else if (!NULL (v1))
 		{
+		  immediate_quit = 0;
 		  v1 = wrong_type_argument (Qlistp, v1);
+		  immediate_quit = 1;
 		  op++;
 		}
 	    }
+	  immediate_quit = 0;
 	  goto docar;
 
 	case Bsymbolp:
@@ -365,7 +407,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bconsp:
-	  TOP = LISTP (TOP) ? Qt : Qnil;
+	  TOP = CONSP (TOP) ? Qt : Qnil;
 	  break;
 
 	case Bstringp:
@@ -373,7 +415,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Blistp:
-	  TOP = LISTP (TOP) || NULL (TOP) ? Qt : Qnil;
+	  TOP = CONSP (TOP) || NULL (TOP) ? Qt : Qnil;
 	  break;
 
 	case Beq:
@@ -393,14 +435,14 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	case Bcar:
 	  v1 = TOP;
 	docar:
-	  if (LISTP (v1)) TOP = XCONS (v1)->car;
+	  if (CONSP (v1)) TOP = XCONS (v1)->car;
 	  else if (NULL (v1)) TOP = Qnil;
 	  else Fcar (wrong_type_argument (Qlistp, v1));
 	  break;
 
 	case Bcdr:
 	  v1 = TOP;
-	  if (LISTP (v1)) TOP = XCONS (v1)->cdr;
+	  if (CONSP (v1)) TOP = XCONS (v1)->cdr;
 	  else if (NULL (v1)) TOP = Qnil;
 	  else Fcdr (wrong_type_argument (Qlistp, v1));
 	  break;
@@ -571,8 +613,8 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  PUSH (v1);
 	  break;
 
-	case Bmark:
-	  PUSH (Fmark ());
+	case Bmark:		/* this loser is no longer generated as of v18 */
+	  PUSH (Fmarker_position (bf_cur->mark));
 	  break;
 
 	case Bgoto_char:
@@ -617,8 +659,8 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bscan_buffer:
-	  v2 = POP; v1 = POP;
-	  TOP = Fscan_buffer (TOP, v1, v2);
+	  /* Get an appropriate error.  */
+	  Fsymbol_function (intern ("scan-buffer"));
 	  break;
 
 	case Beolp:
@@ -650,8 +692,9 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  QUIT;
 	  break;
 
-	case Bset_mark:
-	  TOP = Fset_mark (TOP);
+	case Bset_mark:		/* this loser is no longer generated as of v18 */
+	  /* TOP = Fset_mark (TOP); */
+	  TOP = Fset_marker (bf_cur->mark, TOP, Fcurrent_buffer ());
 	  break;
 
 	case Binteractive_p:
@@ -666,7 +709,9 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 
  exit:
   UNGCPRO;
-  unbind_to (count);
+  /* Binds and unbinds are supposed to be compiled balanced.  */
+  if (specpdl_ptr - specpdl != count)
+    abort ();
   return v1;
 }
 

@@ -1,5 +1,5 @@
 /* m- file for Sun 68000's version 2.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -39,13 +39,15 @@ and this notice must be preserved on all copies.  */
 
 /* Say this machine is a 68000 */
 
+#ifndef m68000
 #define m68000
+#endif
 
 /* Use type int rather than a union, to represent Lisp_Object */
 
 #define NO_UNION_TYPE
 
-/* Sun can't write competant compilers */
+/* Sun can't write competent compilers */
 #define COMPILER_REGISTER_BUG
 
 /* XINT must explicitly sign-extend */
@@ -64,3 +66,23 @@ and this notice must be preserved on all copies.  */
    the "sky" board.  */
 
 #define sun2
+
+/* Must use the system's termcap.  It does special things.  */
+
+#define LIBS_TERMCAP -ltermcap
+
+/* Mask for address bits within a memory segment */
+
+#define SEGMENT_MASK (SEGSIZ - 1)
+
+/* Arrange to link with sun windows, if requested.  */
+/* For details on emacstool and sunfns, see etc/SUN-SUPPORT */
+/* These programs require Sun UNIX 4.2 Release 3.2 or greater */
+
+#ifdef HAVE_SUN_WINDOWS
+#define OTHER_FILES  ${etcdir}emacstool
+#define LIBS_MACHINE -lsuntool -lsunwindow -lpixrect
+#define OBJECTS_MACHINE sunfns.o
+#define SYMS_MACHINE syms_of_sunfns ()
+#define PURESIZE 130000
+#endif

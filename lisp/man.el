@@ -1,5 +1,5 @@
 ;; Read in and display parts of Unix manual.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,7 +18,6 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
-
 (defun manual-entry (topic &optional section)
   "Display the Unix manual entry for TOPIC."
   (interactive "sManual entry (topic): ")
@@ -34,28 +33,29 @@
       (set-buffer standard-output)
       (message "Looking for formatted entry for %s%s..."
 	       topic (if section (concat "(" section ")") ""))
-      (let ((dirlist '("/usr/man/cat1"
-		       "/usr/man/cat2" "/usr/man/cat3" "/usr/man/cat4"
-		       "/usr/man/cat5" "/usr/man/cat6" "/usr/man/cat7"
-		       "/usr/man/cat8" "/usr/man/catl" "/usr/man/catn"))
+      (let ((dirlist manual-formatted-dirlist)
+	    (case-fold-search nil)
 	    name)
 	(if (and section (file-exists-p
-			   (setq name (concat "/usr/man/cat" (aref section 0)
+			   (setq name (concat manual-formatted-dir-prefix
+					      (substring section 0 1)
 					      "/"
 					      topic "." section))))
-	    (insert-file-contents name)
+	    (insert-man-file name)
 	  (while dirlist
 	    (let* ((dir (car dirlist))
 		   (name1 (concat dir "/"
 				  topic "." (or section (substring dir -1))))
 		   completions)
 	      (if (file-exists-p name1)
-		  (insert-file-contents name1)
+		  (insert-man-file name1)
 		(condition-case ()
 		    (progn
-		      (setq completions (file-name-all-completions topic dir))
+		      (setq completions (file-name-all-completions
+					 (concat topic "." (or section ""))
+					 dir))
 		      (while completions
-			(insert-file-contents (concat dir "/" (car completions)))
+			(insert-man-file (concat dir "/" (car completions)))
 			(setq completions (cdr completions))))
 		  (file-error nil)))
 	      (goto-char (point-max)))
@@ -66,42 +66,72 @@
 	    (message "No formatted entry, invoking man %s%s..."
 		     (if section (concat section " ") "") topic)
 	    (if section
-		(call-process "/usr/ucb/man" nil t nil section topic)
-	        (call-process "/usr/ucb/man" nil t nil topic))
+		(call-process manual-program nil t nil section topic)
+	        (call-process manual-program nil t nil topic))
 	    (if (< (buffer-size) 80)
 		(progn
 		  (goto-char (point-min))
 		  (end-of-line)
 		  (error (buffer-substring 1 (point)))))))
 
-      (let ((case-fold-search nil))
-	(message "Cleaning manual entry for %s..." topic)
+      (message "Cleaning manual entry for %s..." topic)
 
-	;; Nuke underlining
-	(goto-char (point-min))
-	(while (search-forward "_\b" nil t)
-	  (replace-match ""))
+      ;; Nuke underlining and overstriking (only by the same letter)
+      (goto-char (point-min))
+      (while (search-forward "\b" nil t)
+	(let* ((preceding (char-after (- (point) 2)))
+	       (following (following-char)))
+	  (cond ((= preceding following)
+		 ;; x\bx
+		 (delete-char -2))
+		((= preceding ?\_)
+		 ;; _\b
+		 (delete-char -2))
+		((= following ?\_)
+		 ;; \b_
+		 (delete-region (1- (point)) (1+ (point)))))))
 
-	;; Nuke headers: "MORE(1) UNIX Programmer's Manual MORE(1)"
-	(goto-char (point-min))
-	(while (re-search-forward "^[A-Za-z][A-Za-z]*([0-9]*).*)$" nil t)
-	  (replace-match ""))
+      ;; Nuke headers: "MORE(1) UNIX Programmer's Manual MORE(1)"
+      (goto-char (point-min))
+      (while (re-search-forward "^ *\\([A-Za-z][-_A-Za-z0-9]*([0-9A-Z]+)\\).*\\1$" nil t)
+	(replace-match ""))
 
-	;; Nuke footers: "Printed 12/3/85	27 April 1981	1"
-	(goto-char (point-min))
-	(while (re-search-forward "^Printed [0-9].*[0-9]$" nil t)
-	  (replace-match ""))
+      ;; Nuke footers: "Printed 12/3/85	27 April 1981	1"
+      ;;    Sun appear to be on drugz:
+      ;;     "Sun Release 3.0B  Last change: 1 February 1985     1"
+      ;;    HP are even worse!
+      ;;     "     Hewlett-Packard   -1- (printed 12/31/99)"  FMHWA12ID!!
+      ;;    System V (well WICATs anyway):
+      ;;     "Page 1			  (printed 7/24/85)"
+      ;;    Who is administering PCP to these corporate bozos?
+      (goto-char (point-min))
+      (while (re-search-forward
+	       (if (eq system-type 'hpux)
+		   "^ *Hewlett-Packard.*(printed [0-9/]*)$"
+		 (if (eq system-type 'usg-unix-v)
+		     "^ *Page [0-9]*.*(printed [0-9/]*)$"
+		   "^\\(Printed\\|Sun Release\\) [0-9].*[0-9]$"))
+	       nil t)
+	(replace-match ""))
 
-	;; Crunch blank lines
-	(goto-char (point-min))
-	(while (re-search-forward "\n\n\n\n*" nil t)
-	  (replace-match "\n\n"))
+      ;; Crunch blank lines
+      (goto-char (point-min))
+      (while (re-search-forward "\n\n\n\n*" nil t)
+	(replace-match "\n\n"))
 
-	;; Nuke blanks lines at start.
-	(goto-char (point-min))
-	(skip-chars-forward "\n")
-	(delete-region (point-min) (point))
+      ;; Nuke blanks lines at start.
+      (goto-char (point-min))
+      (skip-chars-forward "\n")
+      (delete-region (point-min) (point))
 
-	(set-buffer-modified-p nil)
-	(message "")))))
+      (set-buffer-modified-p nil)
 
+      (message ""))))
+
+(defun insert-man-file (name)
+  ;; Insert manual file (unpacked as necessary) into buffer
+  (if (equal (substring name -2) ".Z")
+      (call-process "zcat" nil t nil name)
+    (if (equal (substring name -2) ".z")
+	(call-process "pcat" nil t nil name)
+      (insert-file-contents name))))

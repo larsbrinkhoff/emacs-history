@@ -1,5 +1,5 @@
 ;; Handling of disabled commands ("novice mode") for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,7 +19,7 @@
 ;; and this notice must be preserved on all copies.
 
 
-;; This function is called (autoloaded)
+;; This function is called (by autoloading)
 ;; to handle any disabled command.
 ;; The command is found in this-command
 ;; and the keys are returned by (this-command-keys).
@@ -28,12 +28,27 @@
   (let (char)
     (save-window-excursion
      (with-output-to-temp-buffer "*Help*"
-       (princ "You have typed ")
-       (princ (key-description (this-command-keys)))
-       (princ ", invoking disabled command ")
+       (if (= (aref (this-command-keys) 0) ?\M-x)
+	   (princ "You have invoked the disabled command ")
+	 (princ "You have typed ")
+	 (princ (key-description (this-command-keys)))
+	 (princ ", invoking disabled command "))
        (princ this-command)
        (princ ":\n")
-       (princ (or (documentation this-command) "<< not documented >>"))
+       ;; Print any special message saying why the command is disabled.
+       (if (stringp (get this-command 'disabled))
+	   (princ (get this-command 'disabled)))
+       (princ (or (condition-case ()
+		      (documentation this-command)
+		    (error nil))
+		  "<< not documented >>"))
+       ;; Keep only the first paragraph of the documentation.
+       (save-excursion
+	 (set-buffer "*Help*")
+	 (goto-char (point-min))
+	 (if (search-forward "\n\n" nil t)
+	     (delete-region (1- (point)) (point-max))
+	   (goto-char (point-max))))
        (princ "\n\n")
        (princ "You can now type
 Space to try the command just this once,
@@ -41,10 +56,11 @@ Space to try the command just this once,
 Y to try it and enable it (no questions if you use it again),
 N to do nothing (command remains disabled)."))
      (message "Type y, n or Space: ")
-     (while (not (memq (setq char (downcase (read-char)))
-		       '(?  ?y ?n)))
-       (ding)
-       (message "Please type y, n or Space: ")))
+     (let ((cursor-in-echo-area t))
+       (while (not (memq (setq char (downcase (read-char)))
+			 '(?  ?y ?n)))
+	 (ding)
+	 (message "Please type y, n or Space: "))))
     (if (= char ?y)
 	(if (y-or-n-p "Enable command for future editing sessions also? ")
 	    (enable-command this-command)

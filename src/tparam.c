@@ -1,5 +1,5 @@
 /* Merge parameters into a termcap entry string.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -29,12 +29,21 @@ and this notice must be preserved on all copies.  */
    The third and following args to tparam serve as the parameter values.  */
 
 /* VARARGS 2 */
-tparam (string, outstring, arg)
+tparam (string, outstring, arg0, arg1, arg2, arg3)
      char *string;
      char *outstring;
-     int arg;
+     int arg0, arg1, arg2, arg3;
 {
-  tparam1 (string, outstring, 0, 0, &arg);
+#ifdef NO_ARG_ARRAY
+  int arg[4];
+  arg[0] = arg0;
+  arg[1] = arg1;
+  arg[2] = arg2;
+  arg[3] = arg3;
+  tparam1 (string, outstring, 0, 0, arg);
+#else
+  tparam1 (string, outstring, 0, 0, &arg0);
+#endif
 }
 
 char *BC;

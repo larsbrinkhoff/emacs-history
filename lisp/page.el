@@ -1,5 +1,5 @@
 ;; Page motion commands for emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -54,7 +54,7 @@ thus marking a page other than the one point was originally in."
     (if (< arg 0)
         (forward-page (1- arg))))
   (forward-page)
-  (set-mark (point))
+  (push-mark nil t)
   (forward-page -1))
 
 (defun narrow-to-page (&optional arg)
@@ -83,6 +83,8 @@ thus showing a page other than the one point was originally in."
 	  total before after)
       (forward-page)
       (beginning-of-line)
+      (or (looking-at page-delimiter)
+	  (end-of-line))
       (setq end (point))
       (backward-page)
       (setq beg (point))
@@ -94,13 +96,14 @@ thus showing a page other than the one point was originally in."
 (defun what-page ()
   "Print page and line number of point."
   (interactive)
-  (let ((count 1) opoint)
-    (save-restriction
-      (widen)
-      (save-excursion
-	(beginning-of-line)
-	(setq opoint (point))
+  (save-restriction
+    (widen)
+    (save-excursion
+      (let ((count 1)
+	    (opoint (point)))
 	(goto-char 1)
 	(while (re-search-forward page-delimiter opoint t)
 	  (setq count (1+ count)))
-	(message "Page %d, line %d" count (1+ (count-lines (point) opoint)))))))
+	(message "Page %d, line %d"
+		 count
+		 (1+ (count-lines (point) opoint)))))))

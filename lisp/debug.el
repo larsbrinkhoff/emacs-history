@@ -1,5 +1,5 @@
 ;; Debuggers and related commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -35,13 +35,16 @@ You may call with no args, or you may
 	(debug-on-error nil)
 	(debug-on-quit nil)
 	(debugger-buffer (generate-new-buffer "*Backtrace*"))
-	debugger-step-after-exit)
+	(debugger-old-buffer (current-buffer))
+	(debugger-step-after-exit nil)
+	(cursor-in-echo-area nil))
     (unwind-protect
 	(save-excursion
 	  (save-window-excursion
 	    (pop-to-buffer debugger-buffer)
 	    (erase-buffer)
 	    (let ((standard-output (current-buffer))
+		  (print-escape-newlines t)
 		  (print-length 50))
 	      (backtrace))
 	    (goto-char (point-min))
@@ -87,7 +90,15 @@ You may call with no args, or you may
       ;; So that users do not try to execute debugger commands
       ;;  in an invalid context
       (kill-buffer debugger-buffer)
-      (store-match-data debugger-match-data))
+      (catch 'foo
+	(let ((d debugger-match-data))
+	  (while d
+	    (and (car d)
+		 (null (marker-buffer (car d)))
+		 ;; match-data buffer is deleted.
+		 (throw 'foo nil))
+	    (setq d (cdr d)))
+	  (store-match-data debugger-match-data))))
     (setq debug-on-next-call debugger-step-after-exit)
     debugger-value))
 
@@ -173,9 +184,14 @@ Applies to the frame whose line point is on in the backtrace."
 	(insert ? )))
   (beginning-of-line))
 
-;; These two function names are equivalent except that
-;; debugger-eval-expression is not normally disabled.
-(fset 'debugger-eval-expression 'eval-expression)
+(defun debugger-eval-expression (exp)
+  (interactive "xEval: ")
+  (save-excursion
+    (if (null (buffer-name debugger-old-buffer))
+	;; old buffer deleted
+	(setq debugger-old-buffer (current-buffer)))
+    (set-buffer debugger-old-buffer)
+    (eval-expression exp)))
 
 (defvar debugger-mode-map nil)
 (if debugger-mode-map
@@ -213,7 +229,9 @@ Note lines starting with * are frames that will
   "Request FUNCTION to invoke debugger each time it is called.
 If the user continues, FUNCTION's execution proceeds.
 Works by modifying the definition of FUNCTION,
-which must be written in Lisp, not predefined."
+which must be written in Lisp, not predefined.
+Use `cancel-debug-on-entry' to cancel the effect of this command.
+Redefining FUNCTION also does that."
   (interactive "aDebug on entry (to function): ")
   (let ((defn (symbol-function function)))
     (if (eq (car defn) 'macro)

@@ -1,6 +1,6 @@
 ;Load up standardly loaded Lisp files for Emacs.
 ;; This is loaded into a bare Emacs to make a dumpable one.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -21,15 +21,18 @@
 
 
 (load "subr")
+(garbage-collect)
+(load "loaddefs.el")  ;Don't get confused if someone compiled loaddefs by mistake.
+(garbage-collect)
 (load "simple")
+(garbage-collect)
+(load "help")
 (garbage-collect)
 (load "files")
 (garbage-collect)
 (load "indent")
 (load "window")
 (load "paths.el")  ;Don't get confused if someone compiled paths by mistake.
-(garbage-collect)
-(load "loaddefs.el")  ;Don't get confused if someone compiled loaddefs by mistake.
 (garbage-collect)
 (load "startup")
 (load "lisp")
@@ -48,10 +51,27 @@
 (load "isearch")
 (garbage-collect)
 (load "replace")
+(if (eq system-type 'vax-vms)
+    (progn
+      (garbage-collect)
+      (load "vmsproc")))
 (garbage-collect)
 (load "abbrev")
 (garbage-collect)
 (load "buff-menu")
+(if (eq system-type 'vax-vms)
+    (progn
+      (garbage-collect)
+      (load "vms-patch")))
+
+;If you want additional libraries to be preloaded and their
+;doc strings kept in the DOC file rather than in core,
+;you may load them with a "site-load.el" file.
+;But you must also cause them to be scanned when the DOC file
+;is generated.  For VMS, you must edit ../etc/makedoc.com.
+;For other systems, you must edit ../src/ymakefile.
+(if (load "site-load" t)
+    (garbage-collect))
 
 (load "version.el")  ;Don't get confused if someone compiled version.el by mistake.
 
@@ -62,26 +82,42 @@
 
 (message "Finding pointers to doc strings...")
 (if (fboundp 'dump-emacs)
-    (progn
+    (let ((name emacs-version))
+      (while (string-match "[^-+_.a-zA-Z0-9]+" name)
+	(setq name (concat (downcase (substring name 0 (match-beginning 0)))
+			   "-"
+			   (substring name (match-end 0)))))
       (copy-file (expand-file-name "../etc/DOC")
-		 (concat (expand-file-name "../etc/DOC.") emacs-version)
+		 (concat (expand-file-name "../etc/DOC-") name)
 		 t)
-      (Snarf-documentation (concat "DOC." emacs-version)))
+      (Snarf-documentation (concat "DOC-" name)))
     (Snarf-documentation "DOC"))
 (message "Finding pointers to doc strings...done")
 
+;Note: You can cause additional libraries to be preloaded
+;by writing a site-init.el that loads them.
+;See also "site-load" above.
 (load "site-init" t)
 (garbage-collect)
 
 (if (or (equal (nth 3 command-line-args) "dump")
 	(equal (nth 4 command-line-args) "dump"))
-    (progn
-      (message "Dumping under names xemacs and emacs-%s" emacs-version)
+    (if (eq system-type 'vax-vms)
+	(progn 
+	  (message "Dumping data as file temacs.dump")
+	  (dump-emacs "temacs.dump" "temacs")
+	  (kill-emacs))
+      (setq name (concat "emacs-" emacs-version))
+      (while (string-match "[^-+_.a-zA-Z0-9]+" name)
+	(setq name (concat (downcase (substring name 0 (match-beginning 0)))
+			   "-"
+			   (substring name (match-end 0)))))
+      (message "Dumping under names xemacs and %s" name)
       (condition-case ()
 	  (delete-file "xemacs")
 	(file-error nil))
       (dump-emacs "xemacs" "temacs")
-      (add-name-to-file "xemacs" (concat "emacs-" emacs-version) t)
+      (add-name-to-file "xemacs" name t)
       (kill-emacs)))
 
 ;; Avoid error if user loads some more libraries now.

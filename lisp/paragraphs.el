@@ -1,5 +1,5 @@
 ;; Paragraph and sentence parsing.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -94,22 +94,22 @@ See forward-paragraph for more information."
   "Put point at beginning of this paragraph, mark at end."
   (interactive)
   (forward-paragraph 1)
-  (set-mark (point))
+  (push-mark nil t)
   (backward-paragraph 1))
 
 (defun kill-paragraph (arg)
   "Kill to end of paragraph."
-  (interactive "p")
+  (interactive "*p")
   (kill-region (point) (progn (forward-paragraph arg) (point))))
 
 (defun backward-kill-paragraph (arg)
   "Kill back to start of paragraph."
-  (interactive "p")
+  (interactive "*p")
   (kill-region (point) (progn (backward-paragraph arg) (point))))
 
 (defun transpose-paragraphs (arg)
   "Interchange this (or next) paragraph with previous one."
-  (interactive "p")
+  (interactive "*p")
   (transpose-subr 'forward-paragraph arg))
 
 (defun start-of-paragraph-text ()
@@ -164,7 +164,7 @@ See forward-sentence for more information."
 (defun kill-sentence (&optional arg)
   "Kill from point to end of sentence.
 With arg, repeat, or backward if negative arg."
-  (interactive "p")
+  (interactive "*p")
   (let ((beg (point)))
     (forward-sentence arg)
     (kill-region beg (point))))
@@ -172,7 +172,7 @@ With arg, repeat, or backward if negative arg."
 (defun backward-kill-sentence (&optional arg)
   "Kill back from point to start of sentence.
 With arg, repeat, or forward if negative arg."
-  (interactive "p")
+  (interactive "*p")
   (let ((beg (point)))
     (backward-sentence arg)
     (kill-region beg (point))))
@@ -187,5 +187,5 @@ With arg, repeat, or forward if negative arg."
 
 (defun transpose-sentences (arg)
   "Interchange this (next) and previous sentence."
-  (interactive "p")
+  (interactive "*p")
   (transpose-subr 'forward-sentence arg))

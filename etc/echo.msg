@@ -1,56 +1,9 @@
-BABYL OPTIONS:
-Version: 5
-Labels:
-Note:   This is the header of an rmail file.
-Note:   If you are seeing it in rmail,
-Note:    it means the file has no messages in it.
-
-1,,
-Received: from MC.LCS.MIT.EDU by PREP.AI.MIT.EDU; Mon, 10 Mar 86 01:48:42 est
-Message-Id: <8603100648.AA18589@prep>
-Received: from A.PSY.CMU.EDU by MC.LCS.MIT.EDU 10 Mar 86 01:49:09 EST
-Date:     Monday, 10 Mar 86 01:50:21 EST
-From: sclafani@a.psy.cmu.edu (michael sclafani)
-Subject:  GNUEcho
-To: rms@mit-mc.arpa
-
-*** EOOH ***
-Date:     Monday, 10 Mar 86 01:50:21 EST
-From: sclafani@a.psy.cmu.edu (michael sclafani)
-Subject:  GNUEcho
-To: rms@mit-mc.arpa
-
-This is the file I told you about at Boskone...
-
-^A^A
-Return-path: <@a.psy.cmu.edu,@MIT-MC.ARPA:simsong@MIT-MEDIA-LAB.ARPA>
-Received: from a.psy.cmu.edu by b.psy.cmu.edu with DECNET ; 10 Nov 85 11:14:42 EST
-Received: from MIT-MC.ARPA by A.PSY.CMU.EDU with TCPNET ; 10 Nov 85 10:59:17 EST
-Received: from MIT-CCC by MIT-MC.ARPA via Chaosnet; 10 NOV 85  10:46:16 EST
-Date: 10 Nov 1985 10:29:18-EST
-From: simsong@MEDIA-LAB.MIT.EDU@MIT-CCC
-Received: from MIT-EDDIE.ARPA by MIT-CCC via telepathy; 10 Nov 85 10:27-EST
-Received: from MEDIA-LAB (2005512) by mit-eddie (4.12/4.7)
-	id AA12966; Sun, 10 Nov 85 10:25:26 est
-Received: by MEDIA-LAB (4.12/4.8)  id AA01480; Sun, 10 Nov 85 10:29:24 est
-Date: Sun, 10 Nov 85 10:29:24 est
-From: Simson Garfinkel <simsong@MEDIA-LAB.MIT.EDU>
-Message-Id: <8511101529.AA01480@MEDIA-LAB>
-To: info-cobol@mit-ccc
-Status:   old
-
-Relay-Version: version B 2.10.3 4.3bsd-beta 6/6/85; site mit-amt.MIT.EDU
-Posting-Version: Notesfiles $Revision: 1.6.2.14 $; site umn-cs.UUCP
 Path: mit-amt!mit-eddie!think!harvard!seismo!gatech!akgua!whuxlm!whuxl!houxm!ihnp4!stolaf!umn-cs!herndon
 From: herndon@umn-cs.UUCP
 Newsgroups: net.sources
 Subject: GNU Echo, Release 1
 Message-ID: <1600001@umn-cs.UUCP>
 Date: 28 Oct 85 18:23:00 GMT
-Date-Received: 10 Nov 85 05:29:10 GMT
-Lines: 203
-Nf-ID: #N:umn-cs:1600001:000:3177
-Nf-From: umn-cs!herndon    Oct 28 12:23:00 1985
 
 
 /* Written 12:22 pm  Oct 28, 1985 by umn-cs!herndon in umn-cs:net.jokes */
@@ -252,9 +205,3 @@ AUTHOR
 
 Printed	10/28/85	 18 January 1983			3
 
-
-
-/* End of text from umn-cs:net.jokes */
-
-
-

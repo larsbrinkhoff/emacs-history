@@ -1,7 +1,9 @@
 /*
-	alloca -- (mostly) portable public-domain implementation
+	alloca -- (mostly) portable public-domain implementation -- D A Gwyn
 
-	last edit:	86/01/26	D A Gwyn
+	last edit:	86/05/30	rms
+	   include config.h, since on VMS it renames some symbols.
+	   Use xmalloc instead of malloc.
 
 	This implementation of the PWB library alloca() function,
 	which is used to allocate space off the run-time stack so
@@ -28,6 +30,21 @@
 static char	SCCSid[] = "@(#)alloca.c	1.1";	/* for the "what" utility */
 #endif
 
+#ifdef emacs
+#include "config.h"
+#ifdef static
+/* actually, only want this if static is defined as ""
+   -- this is for usg, in which emacs must undefine static
+   in order to make unexec workable
+   */
+#ifndef STACK_DIRECTION
+you
+lose
+-- must know STACK_DIRECTION at compile-time
+#endif /* STACK_DIRECTION undefined */
+#endif static
+#endif emacs
+
 #ifdef X3J11
 typedef void	*pointer;		/* generic pointer type */
 #else
@@ -37,7 +54,7 @@ typedef char	*pointer;		/* generic pointer type */
 #define	NULL	0			/* null pointer constant */
 
 extern void	free();
-extern pointer	malloc();
+extern pointer	xmalloc();
 
 /*
 	Define STACK_DIRECTION if you know the direction of stack
@@ -116,11 +133,12 @@ typedef union hdr
 	implementations of C, for example under Gould's UTX/32.
 */
 
+static header *last_alloca_header = NULL; /* -> last alloca header */
+
 pointer
-alloca (size)				/* returns pointer to storage */
+alloca (size)			/* returns pointer to storage */
      unsigned	size;		/* # bytes to allocate */
 {
-  static header	*last = NULL;	/* -> last alloca header */
   auto char	probe;		/* probes stack depth: */
   register char	*depth = &probe;
 
@@ -135,7 +153,7 @@ alloca (size)				/* returns pointer to storage */
   {
     register header	*hp;	/* traverses linked list */
 
-    for (hp = last; hp != NULL;)
+    for (hp = last_alloca_header; hp != NULL;)
       if (STACK_DIR > 0 && hp->h.deep > depth
 	  || STACK_DIR < 0 && hp->h.deep < depth)
 	{
@@ -148,7 +166,7 @@ alloca (size)				/* returns pointer to storage */
       else
 	break;			/* rest are not deeper */
 
-    last = hp;			/* -> last valid storage */
+    last_alloca_header = hp;	/* -> last valid storage */
   }
 
   if (size == 0)
@@ -160,10 +178,10 @@ alloca (size)				/* returns pointer to storage */
     register pointer	new = xmalloc (sizeof (header) + size);
     /* address of header */
 
-    ((header *)new)->h.next = last;
+    ((header *)new)->h.next = last_alloca_header;
     ((header *)new)->h.deep = depth;
 
-    last = (header *)new;
+    last_alloca_header = (header *)new;
 
     /* User storage begins just after header. */
 

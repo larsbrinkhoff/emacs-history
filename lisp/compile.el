@@ -1,5 +1,5 @@
 ;; Run compiler as inferior of Emacs, and parse its error messages.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -51,7 +51,7 @@ Runs COMMAND, a shell command, in a separate process asynchronously
 with output going to the buffer *compilation*.
 You can then use the command \\[next-error] to find the next error message
 and move to the source code that caused it."
-  (interactive (list (read-input "Compile command: " compile-command)))
+  (interactive (list (read-string "Compile command: " compile-command)))
   (setq compile-command command)
   (compile1 compile-command "No more errors"))
 
@@ -101,41 +101,53 @@ to find the text that grep hits refer to."
     (if (eq outbuf (current-buffer))
 	(goto-char (point-max)))
     (save-excursion
-     (set-buffer outbuf)
-     (buffer-flush-undo outbuf)
-     (set-window-start outwin 1)
-     (or (eq outwin (selected-window))
-	 (set-window-point outwin 1))
-     (setq default-directory thisdir)
-     (fundamental-mode)
-     (setq mode-name (or name-of-mode "Compilation"))
-     ;; Make log buffer's mode line show process state
-     (setq mode-line-format
-	   "--%1*%1*-Emacs: %17b   %   %[(%m: %s)%]----%3p--%-"))))
+      (set-buffer outbuf)
+      (buffer-flush-undo outbuf)
+      (let ((start (save-excursion (set-buffer outbuf) (point-min))))
+	(set-window-start outwin start)
+	(or (eq outwin (selected-window))
+	    (set-window-point outwin start)))
+      (setq default-directory thisdir)
+      (fundamental-mode)
+      (setq mode-name (or name-of-mode "Compilation"))
+      ;; Make log buffer's mode line show process state
+      (setq mode-line-process '(": %s")))))
 
 ;; Called when compilation process changes state.
+
 (defun compilation-sentinel (proc msg)
-  (if (memq (process-status proc) '(signal exit))
-      (let* ((obuf (current-buffer))
-	     (omax (point-max))
-	     (opoint (point)))
-	(unwind-protect
-	    (progn
-	      (set-buffer (process-buffer proc))
-	      (goto-char (point-max))
-	      (insert ?\n mode-name " " msg)
-	      (setq mode-line-format
-		    (concat
-		     "--%1*%1*-Emacs: %17b   %M   %[(%m: "
-		     (symbol-name (process-status proc))
-		     ")%]----%3p--%-"))
-	      (delete-process proc)
-	      (setq compilation-process nil)
-	      ;; Force mode line redisplay soon
-	      (set-buffer-modified-p (buffer-modified-p)))
-	 (if (< opoint omax)
-	     (goto-char opoint))
-	 (set-buffer obuf)))))
+  (cond ((null (buffer-name (process-buffer proc)))
+	 ;; buffer killed
+	 (set-process-buffer proc nil))
+	((memq (process-status proc) '(signal exit))
+	 (let* ((obuf (current-buffer))
+		(omax (point-max))
+		(opoint (point)))
+	   ;; save-excursion isn't the right thing if
+	   ;;  process-buffer is current-buffer
+	   (unwind-protect
+	       (progn
+		 ;; Write something in *compilation* and hack its mode line,
+		 (set-buffer (process-buffer proc))
+		 (goto-char (point-max))
+		 (insert ?\n mode-name " " msg)
+		 (forward-char -1)
+		 (insert " at "
+			 (substring (current-time-string) 0 -5))
+		 (forward-char 1)
+		 (setq mode-line-process
+		       (concat ": "
+			       (symbol-name (process-status proc))))
+		 ;; If buffer and mode line will show that the process
+		 ;; is dead, we can delete it now.  Otherwise it
+		 ;; will stay around until M-x list-processes.
+		 (delete-process proc))
+	     (setq compilation-process nil)
+	     ;; Force mode line redisplay soon
+	     (set-buffer-modified-p (buffer-modified-p)))
+	   (if (< opoint omax)
+	       (goto-char opoint))
+	   (set-buffer obuf)))))
 
 (defun kill-compilation ()
   "Kill the process made by the \\[compile] command."
@@ -255,16 +267,22 @@ and visits its location."
 	    nil
 	  (beginning-of-line 1)
 	  (setq error-marker (point-marker))
-	  (setq last-linenum linenum)
+	  ;; text-buffer gets the buffer containing this error's file.
 	  (if (not (equal filename last-filename))
 	      (setq text-buffer
 		    (and (file-exists-p (setq last-filename filename))
-			 (find-file-noselect filename))))
+			 (find-file-noselect filename))
+		    last-linenum 0))
 	  (if text-buffer
+	      ;; Go to that buffer and find the erring line.
 	      (save-excursion
 		(set-buffer text-buffer)
-		(goto-char 1)
-		(forward-line (1- linenum))
+		(if (zerop last-linenum)
+		    (progn
+		      (goto-char 1)
+		      (setq last-linenum 1)))
+		(forward-line (- linenum last-linenum))
+		(setq last-linenum linenum)
 		(setq text-marker (point-marker))
 		(setq compilation-error-list
 		      (cons (list error-marker text-marker)

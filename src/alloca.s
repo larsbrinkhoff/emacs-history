@@ -1,7 +1,6 @@
 /* `alloca' standard 4.2 subroutine for 68000's and 16000's and pyramids.
    Also has _setjmp and _longjmp for pyramids.
-   Also has hack_sky for sun 2.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -30,7 +29,28 @@ and this notice must be preserved on all copies.  */
 
 #ifndef HAVE_ALLOCA  /* define this to use system's alloca */
 
-#ifdef hp9000s200
+#ifndef hp9000
+#ifndef m68k
+#ifndef m68000
+#ifndef WICAT
+#ifndef ns16000
+#ifndef sequent
+#ifndef pyramid
+#ifndef ATT3B5
+you
+lose!!
+#endif /* ATT3B5 */
+#endif /* pyramid */
+#endif /* sequent */
+#endif /* ns16000 */
+#endif /* WICAT */
+#endif /* m68000 */
+#endif /* m68k */
+#endif /* hp9000 */
+
+
+#ifdef hp9000
+#ifdef OLD_HP_ASSEMBLER
 	data
 	text
 	globl	_alloca
@@ -48,7 +68,36 @@ MASK	equ	-4		; Longword alignment
 ROUND	equ	3		; ditto
 PROBE	equ	-128		; safety buffer for C compiler scratch
 	data
-
+#else /* new hp assembler syntax */
+/*
+  The new compiler does "move.m <registers> (%sp)" to save registers,
+    so we must copy the saved registers when we mung the sp.
+  The old compiler did "move.m <register> <offset>(%a6)", which
+    gave us no trouble
+ */
+	text
+	set	PROBE,-128	# safety for C frame temporaries
+	set	MAXREG,10	# d2-d7, a2-a5 may have been saved
+	global	_alloca
+_alloca:
+	mov.l	(%sp)+,%a0	# return addess
+	mov.l	(%sp)+,%d0	# number of bytes to allocate
+	mov.l	%sp,%a1		# save old sp for register copy
+	mov.l	%sp,%d1		# compute new sp
+	sub.l	%d0,%d1		# space requested
+	and.l	&-4,%d1		# round down to longword
+	sub.l	&MAXREG*4,%d1	# space for saving registers
+	mov.l	%d1,%sp		# save new value of sp
+	tst.b	PROBE(%sp)	# create pages (sigh)
+	move.w	&MAXREG-1,%d0
+copy_regs_loop:			# save caller's saved registers
+	mov.l	(%a1)+,(%sp)+
+	dbra	%d0,copy_regs_loop
+	mov.l	%sp,%d0		# return value
+	mov.l	%d1,%sp
+	add.l	&-4,%sp		# adjust tos
+	jmp	(%a0)		# rts
+#endif /* new hp assembler */
 #else
 #ifdef m68k			/* SGS assembler totally different */
 	file	"alloca.s"
@@ -72,6 +121,43 @@ alloca:
 
 #ifdef m68000
 
+#ifdef WICAT
+/*
+ * Registers are saved after the corresponding link so we have to explicitly
+ * move them to the top of the stack where they are expected to be.
+ * Since we do not know how many registers were saved in the calling function
+ * we must assume the maximum possible (d2-d7,a2-a5).  Hence, we end up
+ * wasting some space on the stack.
+ *
+ * The large probe (tst.b) attempts to make up for the fact that we have
+ * potentially used up the space that the caller probed for its own needs.
+ */
+	.procss m0
+	.config "68000 1"
+	.module	_alloca
+MAXREG:	.const	10
+	.sect	text
+	.global	_alloca
+_alloca:
+	move.l	(sp)+,a0	; pop return address
+	move.l	(sp)+,d0	; pop allocation size
+	move.l	sp,d1		; get current SP value
+	sub.l	d0,d1		; adjust to reflect required size...
+	sub.l	#MAXREG*4,d1	; ...and space needed for registers
+	and.l	#-4,d1		; backup to longword boundry
+	move.l	sp,a1		; save old SP value for register copy
+	move.l	d1,sp		; set the new SP value
+	tst.b	-4096(sp)	; grab an extra page (to cover caller)
+	move.w	#MAXREG-1,d0	; # of longwords to copy
+loop:	move.l	(a1)+,(sp)+	; copy registers...
+	dbra	d0,loop		; ...til there are no more
+	move.l	sp,d0		; end of register area is addr for new space
+	move.l	d1,sp		; reset the SP
+	subq.l	#4,sp		; adjust to account for caller argument pop
+	jmp	(a0)		; return
+	.end	_alloca
+#else
+
 /* Some systems want the _, some do not.  Win with both kinds.  */
 .globl	_alloca
 _alloca:
@@ -88,9 +174,10 @@ alloca:
 	addql	#4,d0
 	jmp	a0@
 
+#endif /* not WICAT */
 #endif /* m68000 */
 #endif /* not m68k */
-#endif /* not hp9000s200 */
+#endif /* not hp9000 */
 
 #ifdef ns16000
 
@@ -177,37 +264,5 @@ alloca:
 	jmp (%r1) /* continue... */
 
 #endif /* ATT3B5 */
-
-/*
-  A Hack to reinitialize the floating point table in C or Fortran
-  code.
-     There are no arguments to the call
- 
- 	David Robinson
- 	Jet Propulsion Laboratory
-	ia-sun2!david@cit-vax.arpa
- 
-  WARNING: Very SUN dependant Only tested under SUN 2.0
-*/
-#ifdef sun2
-.globl _hack_sky
-
-_hack_sky:
-	moveml  #0xC0C0,sp@-	|save registers <d0,d1,a0,a1>
-	clrl	__skybase	|clear out old sky status
-	jsr     __skyinit	|initialize sky board
-	tstl    d0		|check if successful
-	lea	floatflavor,a1  
-	beqs    hack1		
-	lea     a1@(0x7e),a0 	|Sky board exists
-	bras    hack2
-hack1:	lea     a1@(0x12),a0	|No Sky board
-hack2:	movw    #0x1a,d0
-	lea     fvflti,a1	|load destination
-hack3:	movl    a0@+,a1@+	|copy table
-	dbra    d0,hack3
-	moveml  sp@+,#0x0303	|restore registers
-	rts
-#endif /* sun2 */
 
 #endif /* not HAVE_ALLOCA */

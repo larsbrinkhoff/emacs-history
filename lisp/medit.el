@@ -1,6 +1,6 @@
 ;; Lisp interface between GNU Emacs and MEDIT package. Emacs under MDL.
-;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman
-;; Bugs to shane@mit-xx (or bug-gnu-emacs@mit-prep)
+;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Principal author K. Shane Hartman
 
 ;; This file is part of GNU Emacs.
 

@@ -1,5 +1,5 @@
 ;; Lisp mode, and its idiosyncratic commands.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -25,36 +25,36 @@
 (if (not lisp-mode-syntax-table)
     (let ((i 0))
       (setq lisp-mode-syntax-table (make-syntax-table))
-      (set-syntax-table lisp-mode-syntax-table)
       (while (< i ?0)
-	(modify-syntax-entry i "_   ")
+	(modify-syntax-entry i "_   " lisp-mode-syntax-table)
 	(setq i (1+ i)))
       (setq i (1+ ?9))
       (while (< i ?A)
-	(modify-syntax-entry i "_   ")
+	(modify-syntax-entry i "_   " lisp-mode-syntax-table)
 	(setq i (1+ i)))
       (setq i (1+ ?Z))
       (while (< i ?a)
-	(modify-syntax-entry i "_   ")
+	(modify-syntax-entry i "_   " lisp-mode-syntax-table)
 	(setq i (1+ i)))
       (setq i (1+ ?z))
       (while (< i 128)
-	(modify-syntax-entry i "_   ")
+	(modify-syntax-entry i "_   " lisp-mode-syntax-table)
 	(setq i (1+ i)))
-      (modify-syntax-entry ?  "    ")
-      (modify-syntax-entry ?\t "    ")
-      (modify-syntax-entry ?\n ">   ")
-      (modify-syntax-entry ?\f ">   ")
-      (modify-syntax-entry ?\; "<   ")
-      (modify-syntax-entry ?` "'   ")
-      (modify-syntax-entry ?' "'   ")
-      (modify-syntax-entry ?, "'   ")
-      (modify-syntax-entry ?. "'   ")
-      (modify-syntax-entry ?# "'   ")
-      (modify-syntax-entry ?\" "\"    ")
-      (modify-syntax-entry ?\\ "\\   ")
-      (modify-syntax-entry ?\( "()  ")
-      (modify-syntax-entry ?\) ")(  ")))
+      (modify-syntax-entry ?  "    " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\t "    " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\n ">   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\f ">   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\; "<   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?` "'   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?' "'   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?, "'   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?. "'   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?# "'   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\" "\"    " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\| "\"    " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\\ "\\   " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\( "()  " lisp-mode-syntax-table)
+      (modify-syntax-entry ?\) ")(  " lisp-mode-syntax-table)))
 
 (define-abbrev-table 'lisp-mode-abbrev-table ())
 
@@ -81,9 +81,12 @@
   (define-key map "\177" 'backward-delete-char-untabify)
   (define-key map "\t" 'lisp-indent-line))
 
-(defvar emacs-lisp-mode-map (make-sparse-keymap) "")
-(define-key emacs-lisp-mode-map "\e\C-x" 'eval-defun)
-(lisp-mode-commands emacs-lisp-mode-map)
+(defvar emacs-lisp-mode-map () "")
+(if emacs-lisp-mode-map
+    ()
+   (setq emacs-lisp-mode-map (make-sparse-keymap))
+   (define-key emacs-lisp-mode-map "\e\C-x" 'eval-defun)
+   (lisp-mode-commands emacs-lisp-mode-map))
 
 (defun emacs-lisp-mode ()
   "Major mode for editing Lisp code to run in Emacs.
@@ -101,9 +104,12 @@ if that value is non-nil."
   (lisp-mode-variables)
   (run-hooks 'emacs-lisp-mode-hook))
 
-(defvar lisp-mode-map (make-sparse-keymap))
-(define-key lisp-mode-map "\e\C-x" 'lisp-send-defun)
-(lisp-mode-commands lisp-mode-map)
+(defvar lisp-mode-map ())
+(if lisp-mode-map
+    ()
+  (setq lisp-mode-map (make-sparse-keymap))
+  (define-key lisp-mode-map "\e\C-x" 'lisp-send-defun)
+  (lisp-mode-commands lisp-mode-map))
 
 (defun lisp-mode ()
   "Major mode for editing Lisp code for Lisps other than GNU Emacs Lisp.
@@ -127,10 +133,13 @@ if that value is non-nil."
   (interactive)
   (error "Process lisp does not exist"))
 
-(defvar lisp-interaction-mode-map (make-sparse-keymap))
-(lisp-mode-commands lisp-interaction-mode-map)
-(define-key lisp-interaction-mode-map "\e\C-x" 'eval-defun)
-(define-key lisp-interaction-mode-map "\n" 'eval-print-last-sexp)
+(defvar lisp-interaction-mode-map ())
+(if lisp-interaction-mode-map
+    ()
+  (setq lisp-interaction-mode-map (make-sparse-keymap))
+  (lisp-mode-commands lisp-interaction-mode-map)
+  (define-key lisp-interaction-mode-map "\e\C-x" 'eval-defun)
+  (define-key lisp-interaction-mode-map "\n" 'eval-print-last-sexp))
 
 (defun lisp-interaction-mode ()
   "Major mode for typing and evaluating Lisp forms.

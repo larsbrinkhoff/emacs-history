@@ -1,47 +1,94 @@
 /* Extended regular expression matching and search.
-   Copyright (C) 1985 Richard M. Stallman
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
-This program is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+		       NO WARRANTY
 
-   Permission is granted to anyone to distribute verbatim copies
-   of this program's source code as received, in any medium, provided that
-   the copyright notice, the nonwarraty notice above
-   and this permission notice are preserved,
-   and that the distributor grants the recipient all rights
-   for further redistribution as permitted by this notice,
-   and informs him of these rights.
+  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
 
-   Permission is granted to distribute modified versions of this
-   program's source code, or of portions of it, under the above
-   conditions, plus the conditions that all changed files carry
-   prominent notices stating who last changed them and that the
-   derived material, including anything packaged together with it and
-   conceptually functioning as a modification of it rather than an
-   application of it, is in its entirety subject to a permission
-   notice identical to this one.
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
+OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
+DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
+A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
+PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
 
-   Permission is granted to distribute this program (verbatim or
-   as modified) in compiled or executable form, provided verbatim
-   redistribution is permitted as stated above for source code, and
-    A.  it is accompanied by the corresponding machine-readable
-      source code, under the above conditions, or
-    B.  it is accompanied by a written offer, with no time limit,
-      to distribute the corresponding machine-readable source code,
-      under the above conditions, to any one, in return for reimbursement
-      of the cost of distribution.   Verbatim redistribution of the
-      written offer must be permitted.  Or,
-    C.  it is distributed by someone who received only the
-      compiled or executable form, and is accompanied by a copy of the
-      written offer of source code which he received along with it.
+		GENERAL PUBLIC LICENSE TO COPY
 
-   Permission is granted to distribute this program (verbatim or as modified)
-   in executable form as part of a larger system provided that the source
-   code for this program, including any modifications used,
-   is also distributed or offered as stated in the preceding paragraph.
+  1. You may copy and distribute verbatim copies of this source file
+as you receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy a valid copyright notice "Copyright
+(C) 1985 Free Software Foundation, Inc."; and include following the
+copyright notice a verbatim copy of the above disclaimer of warranty
+and of this License.  You may charge a distribution fee for the
+physical act of transferring a copy.
+
+  2. You may modify your copy or copies of this source file or
+any portion of it, and copy and distribute such modifications under
+the terms of Paragraph 1 above, provided that you also do the following:
+
+    a) cause the modified files to carry prominent notices stating
+    that you changed the files and the date of any change; and
+
+    b) cause the whole of any work that you distribute or publish,
+    that in whole or in part contains or is a derivative of this
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more
+    extensive warranty protection to third parties, at your option).
+
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
+
+  3. You may copy and distribute this program or any portion of it in
+compiled, executable or object code form under the terms of Paragraphs
+1 and 2 above provided that you do the following:
+
+    a) cause each such copy to be accompanied by the
+    corresponding machine-readable source code, which must
+    be distributed under the terms of Paragraphs 1 and 2 above; or,
+
+    b) cause each such copy to be accompanied by a
+    written offer, with no time limit, to give any third party
+    free (except for a nominal shipping charge) a machine readable
+    copy of the corresponding source code, to be distributed
+    under the terms of Paragraphs 1 and 2 above; or,
+
+    c) in the case of a recipient of this program in compiled, executable
+    or object code form (without the corresponding source code) you
+    shall cause copies you distribute to be accompanied by a copy
+    of the written offer of source code which you received along
+    with the copy you received.
+
+  4. You may not copy, sublicense, distribute or transfer this program
+except as expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer this program is void and
+your rights to use the program under this License agreement shall be
+automatically terminated.  However, parties who have received computer
+software programs from you with this License Agreement will not have
+their licenses terminated so long as such parties remain in full compliance.
+
+  5. If you wish to incorporate parts of this program into other free
+programs whose distribution conditions are different, write to the Free
+Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet
+worked out a simple rule that can be stated here, but we will often permit
+this.  We will be guided by the two goals of preserving the free status of
+all derivatives our free software and of promoting the sharing and reuse of
+software.
+
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -69,12 +116,45 @@ what you give them.   Help stamp out software-hoarding!  */
 /*
  * Define the syntax stuff, so we can do the \<...\> things.
  */
+
+#ifndef Sword /* must be non-zero in some of the tests below... */
 #define Sword 1
+#endif
 
-#define SYNTAX(c) syntax_table[c]
+#define SYNTAX(c) re_syntax_table[c]
 
-static char syntax_table[256];
+#ifdef SYNTAX_TABLE
 
+char *re_syntax_table;
+
+#else
+
+static char re_syntax_table[256];
+
+static void
+init_syntax_once ()
+{
+   register int c;
+   static int done = 0;
+
+   if (done)
+     return;
+
+   bzero (re_syntax_table, sizeof re_syntax_table);
+
+   for (c = 'a'; c <= 'z'; c++)
+     re_syntax_table[c] = Sword;
+
+   for (c = 'A'; c <= 'Z'; c++)
+     re_syntax_table[c] = Sword;
+
+   for (c = '0'; c <= '9'; c++)
+     re_syntax_table[c] = Sword;
+
+   done = 1;
+}
+
+#endif /* SYNTAX_TABLE */
 #endif /* not emacs */
 
 #include "regex.h"
@@ -90,68 +170,6 @@ static char syntax_table[256];
 /* width of a byte in bits */
 
 #define BYTEWIDTH 8
-
-/* These are the command codes that appear in compiled regular expressions, one per byte.
-  Some command codes are followed by argument bytes.
-  A command code can specify any interpretation whatever for its arguments.
-  Zero-bytes may appear in the compiled regular expression. */
-
-enum regexpcode
-  {
-    unused,
-    exactn,    /* followed by one byte giving n, and then by n literal bytes */
-    begline,   /* fails unless at beginning of line */
-    endline,   /* fails unless at end of line */
-    jump,	 /* followed by two bytes giving relative address to jump to */
-    on_failure_jump,	 /* followed by two bytes giving relative address of place
-		            to resume at in case of failure. */
-    finalize_jump,	 /* Throw away latest failure point and then jump to address. */
-    maybe_finalize_jump, /* Like jump but finalize if safe to do so.
-			    This is used to jump back to the beginning
-			    of a repeat.  If the command that follows
-			    this jump is clearly incompatible with the
-			    one at the beginning of the repeat, such that
-			    we can be sure that there is no use backtracking
-			    out of repetitions already completed,
-			    then we finalize. */
-    dummy_failure_jump,  /* jump, and push a dummy failure point.
-			    This failure point will be thrown away
-			    if an attempt is made to use it for a failure.
-			    A + construct makes this before the first repeat.  */
-    anychar,	 /* matches any one character */
-    charset,     /* matches any one char belonging to specified set.
-		    First following byte is # bitmap bytes.
-		    Then come bytes for a bit-map saying which chars are in.
-		    Bits in each byte are ordered low-bit-first.
-		    A character is in the set if its bit is 1.
-		    A character too large to have a bit in the map
-		    is automatically not in the set */
-    charset_not, /* similar but match any character that is NOT one of those specified */
-    start_memory, /* starts remembering the text that is matched
-		    and stores it in a memory register.
-		    followed by one byte containing the register number.
-		    Register numbers must be in the range 0 through NREGS. */
-    stop_memory, /* stops remembering the text that is matched
-		    and stores it in a memory register.
-		    followed by one byte containing the register number.
-		    Register numbers must be in the range 0 through NREGS. */
-    duplicate,    /* match a duplicate of something remembered.
-		    Followed by one byte containing the index of the memory register. */
-    before_dot,	 /* Succeeds if before dot */
-    at_dot,	 /* Succeeds if at dot */
-    after_dot,	 /* Succeeds if after dot */
-    begbuf,      /* Succeeds if at beginning of buffer */
-    endbuf,      /* Succeeds if at end of buffer */
-    wordchar,    /* Matches any word-constituent character */
-    notwordchar, /* Matches any char that is not a word-constituent */
-    wordbeg,	 /* Succeeds if at word beginning */
-    wordend,	 /* Succeeds if at word end */
-    wordbound,   /* Succeeds if at a word boundary */
-    notwordbound, /* Succeeds if not at a word boundary */
-    syntaxspec,  /* Matches any character whose syntax is specified.
-		    followed by a byte which contains a syntax code, Sword or such like */
-    notsyntaxspec /* Matches any character whose syntax differs from the specified. */
-  };
 
 #ifndef SIGN_EXTEND_CHAR
 #define SIGN_EXTEND_CHAR(x) (x)
@@ -187,7 +205,7 @@ enum regexpcode
 #define PATUNFETCH p--
 
 #define EXTEND_BUFFER \
-  { old_buffer = bufp->buffer; \
+  { char *old_buffer = bufp->buffer; \
     if (bufp->allocated == (1<<16)) goto too_big; \
     bufp->allocated *= 2; \
     if (bufp->allocated > (1<<16)) bufp->allocated = (1<<16); \
@@ -218,10 +236,6 @@ re_compile_pattern (pattern, size, bufp)
   register unsigned c, c1;
   char *p1;
   unsigned char *translate = (unsigned char *) bufp->translate;
-
-  /* Temporary used when buffer is made bigger. */
-
-  char *old_buffer;
 
   /* address of the count-byte of the most recently inserted "exactn" command.
     This makes it possible to tell whether a new exact-match character
@@ -273,16 +287,30 @@ re_compile_pattern (pattern, size, bufp)
   bufp->fastmap_accurate = 0;
 
 #ifndef emacs
+#ifndef SYNTAX_TABLE
   /*
    * Initialize the syntax table.
    */
    init_syntax_once();
-#endif emacs
+#endif
+#endif
+
+  if (bufp->allocated == 0)
+    {
+      bufp->allocated = 28;
+      if (bufp->buffer)
+	/* EXTEND_BUFFER loses when bufp->allocated is 0 */
+	bufp->buffer = (char *) realloc (bufp->buffer, 28);
+      else
+	/* Caller did not allocate a buffer.  Do it for him */
+	bufp->buffer = (char *) malloc (28);
+      if (!bufp->buffer) goto memory_exhausted;
+      begalt = b = bufp->buffer;
+    }
 
   while (p != pend)
     {
-      if (b - bufp->buffer
-	  > bufp->allocated - 10)
+      if (b - bufp->buffer > bufp->allocated - 10)
 	/* Note that EXTEND_BUFFER clobbers c */
 	EXTEND_BUFFER;
 
@@ -520,6 +548,10 @@ re_compile_pattern (pattern, size, bufp)
 	      PATPUSH (c1);
 	      break;
 	    default:
+	      /* You might think it wuld be useful for \ to mean
+		 not to translate; but if we don't translate it
+		 it will never match anything.  */
+	      if (translate) c = translate[c];
 	      goto normal_char;
 	    }
 	  break;
@@ -570,30 +602,6 @@ re_compile_pattern (pattern, size, bufp)
   return "Memory exhausted";
 }
 
-#ifndef emacs
-init_syntax_once ()
-{
-   register int c;
-   static int done = 0;
-
-   if (done)
-     return;
-
-   bzero (syntax_table, sizeof syntax_table);
-
-   for (c = 'a'; c <= 'z'; c++)
-     syntax_table[c] = Sword;
-
-   for (c = 'A'; c <= 'Z'; c++)
-     syntax_table[c] = Sword;
-
-   for (c = '0'; c <= '9'; c++)
-     syntax_table[c] = Sword;
-
-   done = 1;
-}
-#endif not emacs
-
 /* Store where `from' points a jump operation to jump to where `to' points.
   `opcode' is the opcode to store. */
 
@@ -635,19 +643,20 @@ insert_jump (op, from, to, current_end)
  as bufp->fastmap.
  The other components of bufp describe the pattern to be used.  */
 
+void
 re_compile_fastmap (bufp)
      struct re_pattern_buffer *bufp;
 {
-  char *pattern = bufp->buffer;
+  unsigned char *pattern = (unsigned char *) bufp->buffer;
   int size = bufp->used;
   register char *fastmap = bufp->fastmap;
-  register char *p = pattern;
-  register char *pend = pattern + size;
+  register unsigned char *p = pattern;
+  register unsigned char *pend = pattern + size;
   register int j, k;
   unsigned char *translate = (unsigned char *) bufp->translate;
 
-  char *stackb[NFAILURES];
-  char **stackp = stackb;
+  unsigned char *stackb[NFAILURES];
+  unsigned char **stackp = stackb;
 
   bzero (fastmap, (1 << BYTEWIDTH));
   bufp->fastmap_accurate = 1;
@@ -690,7 +699,8 @@ re_compile_fastmap (bufp)
 	    fastmap[translate['\n']] = 1;
 	  else
 	    fastmap['\n'] = 1;
-	  bufp->can_be_null = 1;
+	  if (bufp->can_be_null != 1)
+	    bufp->can_be_null = 2;
 	  break;
 
 	case finalize_jump:
@@ -699,8 +709,8 @@ re_compile_fastmap (bufp)
 	case dummy_failure_jump:
 	  bufp->can_be_null = 1;
 	  j = *p++ & 0377;
-	  j += SIGN_EXTEND_CHAR (*p++) << 8;
-	  p += j;
+	  j += SIGN_EXTEND_CHAR (*(char *)p) << 8;
+	  p += j + 1;		/* The 1 compensates for missing ++ above */
 	  if (j > 0)
 	    continue;
 	  /* Jump backward reached implies we just went through
@@ -713,15 +723,16 @@ re_compile_fastmap (bufp)
 	    continue;
 	  p++;
 	  j = *p++ & 0377;
-	  j += SIGN_EXTEND_CHAR (*p++) << 8;
-	  p += j;
+	  j += SIGN_EXTEND_CHAR (*(char *)p) << 8;
+	  p += j + 1;		/* The 1 compensates for missing ++ above */
 	  if (stackp != stackb && *stackp == p)
 	    stackp--;
 	  continue;
 	  
 	case on_failure_jump:
 	  j = *p++ & 0377;
-	  j += SIGN_EXTEND_CHAR (*p++) << 8;
+	  j += SIGN_EXTEND_CHAR (*(char *)p) << 8;
+	  p++;
 	  *++stackp = p + j;
 	  continue;
 
@@ -732,10 +743,16 @@ re_compile_fastmap (bufp)
 
 	case duplicate:
 	  bufp->can_be_null = 1;
+	  fastmap['\n'] = 1;
 	case anychar:
 	  for (j = 0; j < (1 << BYTEWIDTH); j++)
-	    fastmap[j] = 1;
-	  return;
+	    if (j != '\n')
+	      fastmap[j] = 1;
+	  if (bufp->can_be_null)
+	    return;
+	  /* Don't return; check the alternative paths
+	     so we can set can_be_null if appropriate.  */
+	  break;
 
 	case wordchar:
 	  for (j = 0; j < (1 << BYTEWIDTH); j++)
@@ -806,6 +823,7 @@ re_compile_fastmap (bufp)
 
 /* Like re_search_2, below, but only one string is specified. */
 
+int
 re_search (pbufp, string, size, startpos, range, regs)
      struct re_pattern_buffer *pbufp;
      char *string;
@@ -852,7 +870,7 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 	 the null string, we must test it at each starting point
 	 so that we take the first null string we get.  */
 
-      if (fastmap && startpos < total && !pbufp->can_be_null)
+      if (fastmap && startpos < total && pbufp->can_be_null != 1)
 	{
 	  if (range > 0)
 	    {
@@ -887,11 +905,15 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 	}
 
       if (range >= 0 && startpos == total
-	  && fastmap && !pbufp->can_be_null)
+	  && fastmap && pbufp->can_be_null == 0)
 	return -1;
 
       if (0 <= re_match_2 (pbufp, string1, size1, string2, size2, startpos, regs, mstop))
 	return startpos;
+
+#ifdef C_ALLOCA
+      alloca (0);
+#endif /* C_ALLOCA */
 
     advance:
       if (!range) break;
@@ -901,6 +923,7 @@ re_search_2 (pbufp, string1, size1, string2, size2, startpos, range, regs, mstop
 }
 
 #ifndef emacs   /* emacs never uses this */
+int
 re_match (pbufp, string, size, pos, regs)
      struct re_pattern_buffer *pbufp;
      char *string;
@@ -1038,18 +1061,23 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	  /* If caller wants register contents data back, convert it to indices */
 	  if (regs)
 	    {
-	      bzero (regs, sizeof (*regs));
-
 	      regend[0] = d;
 	      regstart[0] = string1;
 	      for (mcnt = 0; mcnt < RE_NREGS; mcnt++)
 		{
-		  if (mcnt && regstart[mcnt] == (char *) -1) continue;
-		  if (regstart[mcnt] - string1 < 0 || regstart[mcnt] - string1 > size1)
+		  if ((mcnt != 0) && regstart[mcnt] == (char *) -1)
+		    {
+		      regs->start[mcnt] = -1;
+		      regs->end[mcnt] = -1;
+		      continue;
+		    }
+		  if (regstart[mcnt] - string1 < 0 ||
+		      regstart[mcnt] - string1 > size1)
 		    regs->start[mcnt] = regstart[mcnt] - string2 + size1;
 		  else
 		    regs->start[mcnt] = regstart[mcnt] - string1;
-		  if (regend[mcnt] - string1 < 0 || regend[mcnt] - string1 > size1)
+		  if (regend[mcnt] - string1 < 0 ||
+		      regend[mcnt] - string1 > size1)
 		    regs->end[mcnt] = regend[mcnt] - string2 + size1;
 		  else
 		    regs->end[mcnt] = regend[mcnt] - string1;
@@ -1194,7 +1222,8 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	      stackb = stackx;
 	    }
 	  mcnt = *p++ & 0377;
-	  mcnt += SIGN_EXTEND_CHAR (*p++) << 8;
+	  mcnt += SIGN_EXTEND_CHAR (*p) << 8;
+	  p++;
 	  *stackp++ = mcnt + p;
 	  *stackp++ = d;
 	  break;
@@ -1204,7 +1233,8 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 
 	case maybe_finalize_jump:
 	  mcnt = *p++ & 0377;
-	  mcnt += SIGN_EXTEND_CHAR (*p++) << 8;
+	  mcnt += SIGN_EXTEND_CHAR (*p) << 8;
+	  p++;
 	  /* Compare what follows with the begining of the repeat.
 	     If we can establish that there is nothing that they would
 	     both match, we can change to finalize_jump */
@@ -1247,8 +1277,8 @@ re_match_2 (pbufp, string1, size1, string2, size2, pos, regs, mstop)
 	case jump:
 	nofinalize:
 	  mcnt = *p++ & 0377;
-	  mcnt += SIGN_EXTEND_CHAR (*p++) << 8;
-	  p += mcnt;
+	  mcnt += SIGN_EXTEND_CHAR (*p) << 8;
+	  p += mcnt + 1;	/* The 1 compensates for missing ++ above */
 	  break;
 
 	case dummy_failure_jump:

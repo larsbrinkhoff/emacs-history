@@ -1,5 +1,5 @@
 ;; Compare text between windows for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -24,7 +24,7 @@
 Compares the text starting at point in each window,
 moving over text in each one as far as they match."
   (interactive)
-  (let (p1 p2 np1 np2 maxp1 maxp2 b1 b2 w2
+  (let (p1 p2 maxp1 maxp2 b1 b2 w2
 	   success size
 	   (opoint (point)))
     (setq p1 (point) b1 (current-buffer))
@@ -38,32 +38,21 @@ moving over text in each one as far as they match."
      (set-buffer b2)
      (setq maxp2 (point-max)))
 
-    (setq losep1 (+ 10 maxp1) losep2 (+ 10 maxp2))
-
     ;; Try advancing comparing 1000 chars at a time.
     ;; When that fails, go 500 chars at a time, and so on.
     (setq size 1000)
     (while (> size 0)
       (setq success t)
       (while success
-	(setq np2 (min (+ p2 size) maxp2))
-	(setq np1 (min (+ p1 size) maxp1))
+	(setq size (min size (- maxp1 p1) (- maxp2 p2)))
 	(save-excursion
 	 (set-buffer b2)
-	 (setq s2 (buffer-substring p2 np2)))
-	(setq s1 (buffer-substring p1 np1))
-	(setq success (and (/= np1 p1) (equal s1 s2)))
-	;; Don't bother retrying the last fraction of what already lost.
-	(and success
-	     (or (> (+ p2 size) (- losep2 3))
-		 (> (+ p1 size) (- losep1 3)))
-	     (> size 1)
-	     (setq success nil))
+	 (setq s2 (buffer-substring p2 (+ size p2))))
+	(setq s1 (buffer-substring p1 (+ size p1)))
+	(setq success (and (> size 0) (equal s1 s2)))
 	(if success
-	    (setq p1 np1 p2 np2)
-	  (setq losep1 np1 losep2 np2
-		maxp1 np1 maxp2 np2)))
-      (setq size (min (- maxp1 p1) (- maxp2 p2) (/ size 2))))
+	    (setq p1 (+ p1 size) p2 (+ p2 size))))
+      (setq size (/ size 2)))
 
     (goto-char p1)
     (set-window-point w2 p2)

@@ -1,5 +1,5 @@
 /* Fully extensible Emacs, running on Unix, intended for GNU.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -20,6 +20,7 @@ and this notice must be preserved on all copies.  */
 
 
 #include <signal.h>
+#include <errno.h>
 
 #include "config.h"
 #include <stdio.h>
@@ -29,6 +30,10 @@ and this notice must be preserved on all copies.  */
 
 #include <sys/types.h>
 #include <sys/file.h>
+
+#ifdef VMS
+#include <ssdef.h>
+#endif
 
 #ifdef USG5
 #include <fcntl.h>
@@ -54,6 +59,16 @@ int initialized;
 
 /* Variable whose value is symbol giving operating system type */
 Lisp_Object Vsystem_type;
+  
+/* If non-zero, emacs should not attempt to use an window-specific code,
+   but instead should use the virtual terminal under which it was started */
+int inhibit_window_system;
+
+#ifdef HAVE_X_WINDOWS
+/* If -d option is used, this variable points to the name of
+   the display to use.  */
+char *alternate_display;
+#endif /* HAVE_X_WINDOWS */
 
 /* Nonzero means running Emacs without interactive terminal.  */
 
@@ -96,7 +111,7 @@ fatal_error_signal (sig)
     {
       reset_sys_modes ();
       if (sig != SIGTERM)
-	fprintf (stderr, "Fatal error.");
+	fprintf (stderr, "Fatal error (%d).", sig);
     }
 
   /* Clean up */
@@ -109,8 +124,13 @@ fatal_error_signal (sig)
   unlock_all_files ();
 #endif /* CLASH_DETECTION */
 
+#ifdef VMS
+  kill_vms_processes ();
+  LIB$STOP (SS$_ABORT);
+#else
   /* Signal the same code; this time it will really be fatal.  */
   kill (getpid (), fatal_error_code);
+#endif /* not VMS */
 }
 
 /* Code for dealing with Lisp access to the Unix command line */
@@ -141,52 +161,123 @@ main (argc, argv, envp)
 {
   int skip_args = 0;
   extern int errno;
+  extern void malloc_warning ();
+
+#ifdef VMS
+#ifdef LINK_CRTL_SHARE
+#ifdef SHAREABLE_LIB_BUG
+  extern noshare char **environ;
+#endif /* SHAREABLE_LIB_BUG */
+#endif /* LINK_CRTL_SHARE */
+
+  /* If -map specified, map the data file in */
+  if (argc > 2 && ! strcmp (argv[1], "-map"))
+    {
+      skip_args = 2;
+      mapin_data (argv[2]);
+    }
+
+#ifdef LINK_CRTL_SHARE
+#ifdef SHAREABLE_LIB_BUG
+  /* Bletcherous shared libraries! */
+  if (!stdin)
+    stdin = fdopen (0, "r");
+  if (!stdout)
+    stdout = fdopen (1, "w");
+  if (!stderr)
+    stderr = fdopen (2, "w");
+  if (!environ)
+    environ = envp;
+#endif /* SHAREABLE_LIB_BUG */
+#endif /* LINK_CRTL_SHARE */
+#endif /* VMS */
+
   clearerr (stdin);
 
 #ifdef APOLLO			/* Reserve memory space for sbrk to get */
   set_sbrk_size (4000000);
-#endif /* APOLLO */
-
-  signal (SIGHUP, fatal_error_signal);
-  signal (SIGQUIT, fatal_error_signal);
-  signal (SIGILL, fatal_error_signal);
-  signal (SIGTRAP, fatal_error_signal);
-  signal (SIGIOT, fatal_error_signal);
-  signal (SIGEMT, fatal_error_signal);
-  signal (SIGFPE, fatal_error_signal);
-  signal (SIGBUS, fatal_error_signal);
-  signal (SIGSEGV, fatal_error_signal);
-  signal (SIGSYS, fatal_error_signal);
-  signal (SIGTERM, fatal_error_signal);
-#ifdef SIGXCPU
-  signal (SIGXCPU, fatal_error_signal);
-#endif
-#ifdef SIGXFSZ
-  signal (SIGXFSZ, fatal_error_signal);
-#endif SIGXFSZ
+#else /* not APOLLO */
+  /* Arrange for warnings when nearly out of space.  */
+  malloc_init (0, malloc_warning);
+#endif /* not APOLLO */
 
 #ifdef HIGHPRI
-  setpriority(PRIO_PROCESS, getpid(), HIGHPRI);
-  setuid(getuid());
+  setpriority (PRIO_PROCESS, getpid (), HIGHPRI);
+  setuid (getuid ());
 #endif HIGHPRI
 
+  inhibit_window_system = 0;
+
 /* Handle the -t switch, which specifies filename to use as terminal */
-  if (2 < argc && !strcmp (argv[1], "-t"))
+  if (skip_args + 2 < argc && !strcmp (argv[skip_args + 1], "-t"))
     {
-      skip_args = 2;
+      skip_args += 2;
       close (0);
       close (1);
-      open(argv[2], O_RDWR, 2 );
+      open (argv[skip_args], O_RDWR, 2 );
       dup (0);
-      fprintf (stderr, "Using %s\n", argv[2]);
+      fprintf (stderr, "Using %s\n", argv[skip_args]);
+#ifdef HAVE_X_WINDOWS
+      inhibit_window_system = 1;	/* -t => -nw */
+#endif
+    }
+#ifdef HAVE_X_WINDOWS
+/* Handle the -d switch, which means use a different display for X */
+  if (skip_args + 2 < argc && (!strcmp (argv[skip_args + 1], "-d") ||
+			       !strcmp (argv[skip_args + 1], "-display")))
+    {
+      skip_args += 2;
+      alternate_display = argv[skip_args];
+    } 
+  else
+    alternate_display = 0;
+#endif	/* HAVE_X_WINDOWS */
+
+  if (skip_args + 1 < argc
+      && (!strcmp (argv[skip_args + 1], "-nw")))
+    {
+      skip_args += 1;
+      inhibit_window_system = 1;
     }
 
 /* Handle the -batch switch, which means don't do interactive display.  */
   noninteractive = 0;
-  if (1 < argc && !strcmp (argv[1], "-batch"))
+  if (skip_args + 1 < argc && !strcmp (argv[skip_args + 1], "-batch"))
     {
-      skip_args = 1;
+      skip_args += 1;
       noninteractive = 1;
+    }
+
+  if (
+#ifndef CANNOT_DUMP
+      ! noninteractive || initialized
+#else
+      1
+#endif
+      )
+    {
+      /* Don't catch these signals in batch mode if not initialized.
+	 On some machines, this sets static data that would make
+	 signal fail to work right when the dumped Emacs is run.  */
+      signal (SIGHUP, fatal_error_signal);
+      signal (SIGQUIT, fatal_error_signal);
+      signal (SIGILL, fatal_error_signal);
+      signal (SIGTRAP, fatal_error_signal);
+      signal (SIGIOT, fatal_error_signal);
+#ifdef SIGEMT
+      signal (SIGEMT, fatal_error_signal);
+#endif
+      signal (SIGFPE, fatal_error_signal);
+      signal (SIGBUS, fatal_error_signal);
+      signal (SIGSEGV, fatal_error_signal);
+      signal (SIGSYS, fatal_error_signal);
+      signal (SIGTERM, fatal_error_signal);
+#ifdef SIGXCPU
+      signal (SIGXCPU, fatal_error_signal);
+#endif
+#ifdef SIGXFSZ
+      signal (SIGXFSZ, fatal_error_signal);
+#endif SIGXFSZ
     }
 
   noninteractive1 = noninteractive;
@@ -207,6 +298,9 @@ main (argc, argv, envp)
     }
 
   init_alloc ();
+#ifdef MAINTAIN_ENVIRONMENT
+  init_environ ();
+#endif
   init_eval ();
   init_data ();
   init_read ();
@@ -214,16 +308,24 @@ main (argc, argv, envp)
   init_cmdargs (argc, argv, skip_args);	/* Create list Vcommand_line_args */
   init_buffer ();	/* Init default directory of main buffer */
   if (!noninteractive)
-    init_display ();	/* Determine terminal type.  init_sys_modes uses results */
+    {
+#ifdef VMS
+      init_vms_input ();/* init_display calls get_screen_size, that needs this */
+#endif /* VMS */
+      init_display ();	/* Determine terminal type.  init_sys_modes uses results */
+    }
   init_keyboard ();	/* This too must precede init_sys_modes */
   init_sys_modes ();	/* Init system terminal modes (RAW or CBREAK, etc.) */
   init_xdisp ();
   init_macros ();
   init_editfns ();
   init_callproc ();
+#ifdef VMS
+  init_vmsfns ();
+#endif /* VMS */
 #ifdef subprocesses
   init_process ();
-#endif subprocesses
+#endif /* subprocesses */
 
 /* Intern the names of all standard functions and variables; define standard keys */
 
@@ -234,6 +336,9 @@ main (argc, argv, envp)
 	 for the sake of symbols like error-message */
       syms_of_data ();
       syms_of_alloc ();
+#ifdef MAINTAIN_ENVIRONMENT
+      syms_of_environ ();
+#endif MAINTAIN_ENVIRONMENT
       syms_of_read ();
       syms_of_print ();
       syms_of_eval ();
@@ -274,7 +379,18 @@ main (argc, argv, envp)
       syms_of_xdisp ();
 #ifdef HAVE_X_WINDOWS
       syms_of_xfns ();
+#ifdef HAVE_X_MENU
+      syms_of_xmenu ();
+#endif /* HAVE_X_MENU */
 #endif /* HAVE_X_WINDOWS */
+
+#ifdef SYMS_SYSTEM
+      SYMS_SYSTEM;
+#endif
+
+#ifdef SYMS_MACHINE
+      SYMS_MACHINE;
+#endif
 
       keys_of_casefiddle ();
       keys_of_cmds ();
@@ -342,6 +458,10 @@ return ARG as the exit program code.")
   kill_buffer_processes (Qnil);
 #endif /* subprocesses */
 
+#ifdef VMS
+  kill_vms_processes ();
+#endif /* VMS */
+
   Fdo_auto_save (Qt);
 
 #ifdef CLASH_DETECTION
@@ -350,8 +470,19 @@ return ARG as the exit program code.")
 
   fflush (stdout);
   reset_sys_modes ();
+/* Is it really necessary to do this deassign
+   when we are going to exit anyway?  */
+/* #ifdef VMS
+  stop_vms_input ();
+ #endif  */
   stuff_buffered_input (arg);
-  exit ((XTYPE (arg) == Lisp_Int) ? XINT (arg) : 0);
+  exit ((XTYPE (arg) == Lisp_Int) ? XINT (arg)
+#ifdef VMS
+	: 1
+#else
+	: 0
+#endif
+	);
   /* NOTREACHED */
 }
 
@@ -368,7 +499,7 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
   register unsigned char *a_name = 0;
   extern int my_edata;
   Lisp_Object tem;
-  extern _start ();
+  extern void malloc_warning ();
 
   CHECK_STRING (intoname, 0);
   intoname = Fexpand_file_name (intoname, Qnil);
@@ -386,8 +517,14 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
   Vpurify_flag = Qnil;
 
   fflush (stdout);
-  malloc_init (&my_edata);	/* Tell malloc where start of impure now is */
-  unexec (XSTRING (intoname)->data, a_name, &my_edata, 0, _start);
+#ifdef VMS
+  mapout_data (XSTRING (intoname)->data);
+#else
+  /* Tell malloc where start of impure now is */
+  /* Also arrange for warnings when nearly out of space.  */
+  malloc_init (&my_edata, malloc_warning);
+  unexec (XSTRING (intoname)->data, a_name, &my_edata, 0, 0);
+#endif /* not VMS */
 
   Vpurify_flag = tem;
 
@@ -396,6 +533,12 @@ Take symbols from SYMFILE (presumably the file you executed to run Emacs).")
 
 #endif /* not CANNOT_DUMP */
 
+#ifdef VMS
+#define SEPCHAR ','
+#else
+#define SEPCHAR ':'
+#endif
+
 Lisp_Object
 decode_env_path (evarname, defalt)
      char *evarname, *defalt;
@@ -405,13 +548,13 @@ decode_env_path (evarname, defalt)
 
   Lisp_Object lpath;
 
-  path = (char *) getenv (evarname);
+  path = (char *) egetenv (evarname);
   if (!path)
     path = defalt;
   lpath = Qnil;
   while (1)
     {
-      p = index (path, ':');
+      p = index (path, SEPCHAR);
       if (!p) p = path + strlen (path);
       lpath = Fcons (p - path ? make_string (path, p - path) : Qnil,
 		     lpath);
@@ -431,13 +574,13 @@ syms_of_emacs ()
 
   defsubr (&Skill_emacs);
 
-  DefLispVar ("command-line-args", &Vcommand_line_args,
+  DEFVAR_LISP ("command-line-args", &Vcommand_line_args,
     "Args passed by shell to Emacs, as a list of strings.");
 
-  DefLispVar ("system-type", &Vsystem_type,
+  DEFVAR_LISP ("system-type", &Vsystem_type,
     "Symbol indicating type of operating system you are using.");
   Vsystem_type = intern (SYSTEM_TYPE);
 
-  DefBoolVar ("noninteractive", &noninteractive1,
+  DEFVAR_BOOL ("noninteractive", &noninteractive1,
     "Non-nil means Emacs is running without interactive terminal.");
 }

@@ -1,5 +1,5 @@
 ;; Buffer menu main function and support functions.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -24,6 +24,31 @@
 
 (defvar Buffer-menu-mode-map nil "")
 
+(if Buffer-menu-mode-map
+    ()
+  (setq Buffer-menu-mode-map (make-keymap))
+  (suppress-keymap Buffer-menu-mode-map t)
+  (define-key Buffer-menu-mode-map "q" 'Buffer-menu-select)
+  (define-key Buffer-menu-mode-map "2" 'Buffer-menu-2-window)
+  (define-key Buffer-menu-mode-map "1" 'Buffer-menu-1-window)
+  (define-key Buffer-menu-mode-map "f" 'Buffer-menu-this-window)
+  (define-key Buffer-menu-mode-map "o" 'Buffer-menu-other-window)
+  (define-key Buffer-menu-mode-map "s" 'Buffer-menu-save)
+  (define-key Buffer-menu-mode-map "d" 'Buffer-menu-delete)
+  (define-key Buffer-menu-mode-map "k" 'Buffer-menu-delete)
+  (define-key Buffer-menu-mode-map "\C-d" 'Buffer-menu-delete-backwards)
+  (define-key Buffer-menu-mode-map "\C-k" 'Buffer-menu-delete)
+  (define-key Buffer-menu-mode-map "x" 'Buffer-menu-execute)
+  (define-key Buffer-menu-mode-map " " 'next-line)
+  (define-key Buffer-menu-mode-map "\177" 'Buffer-menu-backup-unmark)
+  (define-key Buffer-menu-mode-map "~" 'Buffer-menu-not-modified)
+  (define-key Buffer-menu-mode-map "?" 'describe-mode)
+  (define-key Buffer-menu-mode-map "u" 'Buffer-menu-unmark)
+  (define-key Buffer-menu-mode-map "m" 'Buffer-menu-mark))
+
+;; Buffer Menu mode is suitable only for specially formatted data.
+(put 'buffer-menu-mode 'mode-class 'special)
+
 (defun Buffer-menu-mode ()
   "Major mode for editing a list of buffers.
 Each line describes one of the buffers in Emacs.
@@ -34,12 +59,17 @@ q -- select buffer of line point is on.
 1 -- select that buffer in full-screen window.
 2 -- select that buffer in one window,
   together with buffer selected before this one in another window.
+f -- select that buffer in place of the buffer menu buffer.
+o -- select that buffer in another window,
+  so the buffer menu buffer remains visible in its window.
 ~ -- clear modified-flag on that buffer.
-s -- mark that buffer to be saved.
-d or k or C-D or C-K -- mark that buffer to be killed.
-x -- kill or save marked buffers.
+s -- mark that buffer to be saved, and move down.
+d or k -- mark that buffer to be deleted, and move down.
+C-d -- mark that buffer to be deleted, and move up.
+x -- delete or save marked buffers.
 u -- remove all kinds of marks from current line.
 Delete -- back up a line and remove marks.
+
 Precisely,\\{Buffer-menu-mode-map}"
   (kill-all-local-variables)
   (use-local-map Buffer-menu-mode-map)
@@ -48,24 +78,6 @@ Precisely,\\{Buffer-menu-mode-map}"
   (setq major-mode 'Buffer-menu-mode)
   (setq mode-name "Buffer Menu"))
 
-(save-excursion
-  (setq Buffer-menu-mode-map (make-keymap))
-  (suppress-keymap Buffer-menu-mode-map t)
-  (define-key Buffer-menu-mode-map "q" 'Buffer-menu-select)
-  (define-key Buffer-menu-mode-map "2" 'Buffer-menu-2-window)
-  (define-key Buffer-menu-mode-map "1" 'Buffer-menu-1-window)
-  (define-key Buffer-menu-mode-map "s" 'Buffer-menu-save)
-  (define-key Buffer-menu-mode-map "d" 'Buffer-menu-kill)
-  (define-key Buffer-menu-mode-map "k" 'Buffer-menu-kill)
-  (define-key Buffer-menu-mode-map "\^d" 'Buffer-menu-kill)
-  (define-key Buffer-menu-mode-map "\^k" 'Buffer-menu-kill)
-  (define-key Buffer-menu-mode-map "x" 'Buffer-menu-execute)
-  (define-key Buffer-menu-mode-map " " 'next-line)
-  (define-key Buffer-menu-mode-map "\177" 'Buffer-menu-backup-unmark)
-  (define-key Buffer-menu-mode-map "~" 'Buffer-menu-not-modified)
-  (define-key Buffer-menu-mode-map "?" 'describe-mode)
-  (define-key Buffer-menu-mode-map "u" 'Buffer-menu-unmark)
-  (define-key Buffer-menu-mode-map "m" 'Buffer-menu-mark))
 
 (defvar Buffer-menu-buffer-column nil)
 
@@ -97,12 +109,14 @@ Precisely,\\{Buffer-menu-mode-map}"
 	    nil)))))
 
 (defun buffer-menu (arg)
-  "Make a menu of buffers so you can save, kill or select them.
+  "Make a menu of buffers so you can save, delete or select them.
 With argument, show only buffers that are visiting files.
-Type ? after invocation to get help on commands available within."
+Type ? after invocation to get help on commands available.
+Type q immediately to make the buffer menu go away."
   (interactive "P")
   (list-buffers arg)
   (pop-to-buffer "*Buffer List*")
+  (forward-line 2)
   (message
    "Commands: d, s, x; 1, 2, m, u, q; delete; ~;  ? for help."))
 
@@ -138,23 +152,31 @@ Type ? after invocation to get help on commands available within."
   (Buffer-menu-unmark)
   (forward-line -1))
 
-(defun Buffer-menu-kill ()
-  "Mark buffer on this line to be killed by \\[Buffer-menu-execute] command."
+(defun Buffer-menu-delete ()
+  "Mark buffer on this line to be deleted by \\[Buffer-menu-execute] command."
   (interactive)
   (beginning-of-line)
-  (if (looking-at " [-M]")
+  (if (looking-at " [-M]")		;header lines
       (ding)
     (let ((buffer-read-only nil))
       (delete-char 1)
-      (insert ?K)
+      (insert ?D)
       (forward-line 1))))
+
+(defun Buffer-menu-delete-backwards ()
+  "Mark buffer on this line to be deleted by \\[Buffer-menu-execute] command
+and then move up one line"
+  (interactive)
+  (Buffer-menu-delete)
+  (forward-line -2)
+  (if (looking-at " [-M]") (forward-line 1)))
 
 (defun Buffer-menu-save ()
   "Mark buffer on this line to be saved by \\[Buffer-menu-execute] command."
   (interactive)
   (beginning-of-line)
   (forward-char 1)
-  (if (looking-at "[-M]")
+  (if (looking-at " [-M]")		;header lines
       (ding)
     (let ((buffer-read-only nil))
       (delete-char 1)
@@ -176,12 +198,8 @@ Type ? after invocation to get help on commands available within."
 	 (insert ? )))))
 
 (defun Buffer-menu-execute ()
-  "Save and/or kill buffers marked with \\[Buffer-menu-save] or \\[Buffer-menu-kill] commands."
+  "Save and/or delete buffers marked with \\[Buffer-menu-save] or \\[Buffer-menu-delete] commands."
   (interactive)
-  (Buffer-menu-do-saves)
-  (Buffer-menu-do-kills))
-
-(defun Buffer-menu-do-saves ()
   (save-excursion
     (goto-char (point-min))
     (forward-line 1)
@@ -193,15 +211,13 @@ Type ? after invocation to get help on commands available within."
 	  (setq modp (buffer-modified-p)))
 	(let ((buffer-read-only nil))
 	  (delete-char -1)
-	  (insert (if modp ?* ? )))))))
-
-(defun Buffer-menu-do-kills ()
+	  (insert (if modp ?* ? ))))))
   (save-excursion
     (goto-char (point-min))
     (forward-line 1)
     (let ((buff-menu-buffer (current-buffer))
 	  (buffer-read-only nil))
-      (while (search-forward "\nK" nil t)
+      (while (search-forward "\nD" nil t)
 	(forward-char -1)
 	(let ((buf (Buffer-menu-buffer nil)))
 	  (or (eq buf nil)
@@ -214,37 +230,49 @@ Type ? after invocation to get help on commands available within."
  	  (forward-char -1))))))
 
 (defun Buffer-menu-select ()
-  "Select this line's buffer; also display buffers marked with >.
+  "Select this line's buffer; also display buffers marked with \">\".
 You can mark buffers with the \\[Buffer-menu-mark] command."
   (interactive)
   (let ((buff (Buffer-menu-buffer t))
 	(menu (current-buffer))	      
-	others height)
+	(others ())
+	tem)
     (goto-char (point-min))
     (while (search-forward "\n>" nil t)
-      (setq others (cons (Buffer-menu-buffer t) others))
+      (setq tem (Buffer-menu-buffer t))
       (let ((buffer-read-only nil))
 	(delete-char -1)
-	(insert ?\ )))
+	(insert ?\ ))
+      (or (eq tem buff) (memq tem others) (setq others (cons tem others))))
     (setq others (nreverse others)
-	  height (/ (1- (screen-height)) (1+ (length others))))
+	  tem (/ (1- (screen-height)) (1+ (length others))))
     (delete-other-windows)
     (switch-to-buffer buff)
     (or (eq menu buff)
 	(bury-buffer menu))
     (while others
-      (split-window nil height)
+      (split-window nil tem)
       (other-window 1)
       (switch-to-buffer (car others))
       (setq others (cdr others)))
     (other-window 1)))			;back to the beginning!
-    
+
 (defun Buffer-menu-1-window ()
   "Select this line's buffer, alone, in full screen."
   (interactive)
   (switch-to-buffer (Buffer-menu-buffer t))
   (bury-buffer (other-buffer))
   (delete-other-windows))
+
+(defun Buffer-menu-this-window ()
+  "Select this line's buffer in this window."
+  (interactive)
+  (switch-to-buffer (Buffer-menu-buffer t)))
+
+(defun Buffer-menu-other-window ()
+  "Select this line's buffer in other window, leaving buffer menu visible."
+  (interactive)
+  (switch-to-buffer-other-window (Buffer-menu-buffer t)))
 
 (defun Buffer-menu-2-window ()
   "Select this line's buffer, with previous buffer in second window."

@@ -1,5 +1,5 @@
 /* terminal control module for terminals described by TERMCAP
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -54,6 +54,11 @@ int fast_clear_end_of_line;	/* Terminal has a `ce' string */
 
 int dont_calculate_costs;	/* Nonzero means don't bother computing */
 				/* various cost tables; we won't use them.  */
+
+/* Nonzero means no need to redraw the entire screen on resuming
+   a suspended Emacs.  This is useful on terminals with multiple pages,
+   where one page is used for Emacs and another for all else. */
+int no_redraw_on_reenter;
 
 /* DCICcost[n] is cost of inserting N characters.
    DCICcost[-n] is cost of deleting N characters. */
@@ -132,20 +137,24 @@ char *TS_visual_mode;		/* "vi" */
 char *TS_set_window;		/* "wi" (4 params, start and end of window,
 				   each as vpos and hpos) */
 
-int TF_hazeltine;		/* termcap hz flag. */
-int TF_insmode_motion;		/* termcap mi flag: can move while in insert mode. */
-int TF_standout_motion;		/* termcap mi flag: can move while in standout mode. */
-int TF_underscore;		/* termcap ul flag: _ underlines if overstruck on
-				   nonblank position.  Must clear before writing _.  */
-int TF_teleray;			/* termcap xt flag: many weird consequences.  For t1061. */
+int TF_hazeltine;	/* termcap hz flag. */
+int TF_insmode_motion;	/* termcap mi flag: can move while in insert mode. */
+int TF_standout_motion;	/* termcap mi flag: can move while in standout mode. */
+int TF_underscore;	/* termcap ul flag: _ underlines if overstruck on
+			   nonblank position.  Must clear before writing _.  */
+int TF_teleray;		/* termcap xt flag: many weird consequences.  For t1061. */
 
-int TN_standout_width;		/* termcap sg number: width occupied by standout markers */
+int TF_xs;		/* Nonzero for "xs".  If set together with
+			   TN_standout_width == 0, it means don't bother
+			   to write any end-standout cookies.  */
 
-static int RPov;		/* # chars to start a TS_repeat */
+int TN_standout_width;	/* termcap sg number: width occupied by standout markers */
 
-static int delete_in_insert_mode;		/* delete mode == insert mode */
+static int RPov;	/* # chars to start a TS_repeat */
 
-static int se_is_so;		/* 1 if same string both enters and leaves standout mode */
+static int delete_in_insert_mode;	/* delete mode == insert mode */
+
+static int se_is_so;	/* 1 if same string both enters and leaves standout mode */
 
 /* internal state */
 
@@ -345,7 +354,8 @@ highlight_if_desired ()
 write_standout_marker (flag, vpos)
      int flag, vpos;
 {
-  if (flag || (TS_end_standout_mode && !TF_teleray && !se_is_so))
+  if (flag || (TS_end_standout_mode && !TF_teleray && !se_is_so
+	       && !(TF_xs && TN_standout_width == 0)))
     {
       cmgoto (vpos, 0);
       cmplus (TN_standout_width);
@@ -562,6 +572,7 @@ write_chars (start, len)
   register int n;
   register char *buf;
   register int c;
+  char *first_check;
 
   if (write_chars_hook)
     {
@@ -579,6 +590,8 @@ write_chars (start, len)
 
   cmplus (len);
 
+  first_check = start;
+
   if (RPov > len && !TF_underscore && !TF_hazeltine)
     {
       fwrite (start, 1, len, stdout);
@@ -590,12 +603,13 @@ write_chars (start, len)
   else
     while (--len >= 0)
       {
-	if (RPov + 1 < len && *start == start[1])
+	if (RPov + 1 < len && start >= first_check && *start == start[1])
 	  {
-	    p = start + 1;
+	    p = start + 2;
 
 	    /* Now, len is number of chars left starting at p */
 	    while (*p++ == *start);
+	    --p;
 	    /* n is number of identical chars in this run */
 	    n = p - start;
 	    if (n > RPov)
@@ -607,6 +621,10 @@ write_chars (start, len)
 		len -= n - 1;
 		continue;
 	      }
+	    else
+	      /* If all N identical chars are too few,
+		 don't even consider the last N-1, the last N-2,...  */
+	      first_check = p;
 	  }
 	c = *start++;
 	if (c == '_' && TF_underscore)
@@ -851,7 +869,7 @@ calculate_ins_del_char_costs ()
   else if (TS_ins_char || TS_pad_inserted_char
 	   || (TS_insert_mode && TS_end_insert_mode))
     {
-      ins_startup_cost = 0.3 * (string_cost (TS_insert_mode) + string_cost (TS_end_insert_mode));
+      ins_startup_cost = (30 * (string_cost (TS_insert_mode) + string_cost (TS_end_insert_mode))) / 100;
       ins_cost_per_char = (string_cost_one_line (TS_ins_char)
 			   + string_cost_one_line (TS_pad_inserted_char));
     }
@@ -869,8 +887,9 @@ calculate_ins_del_char_costs ()
   else if (TS_del_char)
     {
       del_startup_cost = (string_cost (TS_delete_mode)
-			  + string_cost (TS_end_delete_mode))
-	* (delete_in_insert_mode ? 0.5 : 1.0);
+			  + string_cost (TS_end_delete_mode));
+      if (delete_in_insert_mode)
+	del_startup_cost /= 2;
       del_cost_per_char = string_cost_one_line (TS_del_char);
     }
   else
@@ -928,13 +947,17 @@ term_init (terminal_type)
   char *fill;
   char tbuf[2044];
   register char *p;
+  int status;
 
   extern char *tgetstr ();
 
   Wcm_clear ();
   dont_calculate_costs = 0;
 
-  if (tgetent (tbuf, terminal_type) <= 0)
+  status = tgetent (tbuf, terminal_type);
+  if (status < 0)
+    fatal ("Cannot open termcap database file.\n");
+  if (status == 0)
     fatal ("Terminal type %s is not defined.\n", terminal_type);
 
 #ifdef TERMINFO
@@ -948,7 +971,6 @@ term_init (terminal_type)
 
   TS_ins_line = tgetstr ("al", &fill);
   TS_ins_multi_lines = tgetstr ("AL", &fill);
-  Left = tgetstr ("bc", &fill);
   TS_bell = tgetstr ("bl", &fill);
   TS_clr_to_bottom = tgetstr ("cd", &fill);
   TS_clr_line = tgetstr ("ce", &fill);
@@ -975,14 +997,26 @@ term_init (terminal_type)
   TS_keypad_mode = tgetstr ("ks", &fill);
   LastLine = tgetstr ("ll", &fill);
   Right = tgetstr ("nd", &fill);
-  Down = tgetstr ("nl", &fill);
+  Down = tgetstr ("do", &fill);
+#ifdef VMS
+  if (Down && Down[0] == '\n' && Down[1] == '\0')
+    Down = 0;
+#endif /* VMS */
+  if (!Down)
+    Down = tgetstr ("nl", &fill); /* Obsolete name for "do" */
+  if (tgetflag ("bs"))
+    Left = "\b";		  /* can't possibly be longer! */
+  else				  /* (Actually, "bs" is obsolete...) */
+    Left = tgetstr ("le", &fill);
+  if (!Left)
+    Left = tgetstr ("bc", &fill); /* Obsolete name for "le" */
   TS_pad_char = tgetstr ("pc", &fill);
   TS_repeat = tgetstr ("rp", &fill);
   TS_end_standout_mode = tgetstr ("se", &fill);
   TS_fwd_scroll = tgetstr ("sf", &fill);
   TS_standout_mode = tgetstr ("so", &fill);
   TS_rev_scroll = tgetstr ("sr", &fill);
-  Tab = tgetstr ("ta", &fill);
+  Wcm.cm_tab = tgetstr ("ta", &fill);
   TS_end_termcap_modes = tgetstr ("te", &fill);
   TS_termcap_modes = tgetstr ("ti", &fill);
   Up = tgetstr ("up", &fill);
@@ -1000,6 +1034,7 @@ term_init (terminal_type)
   TF_standout_motion = tgetflag ("ms");
   TF_underscore = tgetflag ("ul");
   MagicWrap = tgetflag ("xn");
+  TF_xs = tgetflag ("xs");
   TF_teleray = tgetflag ("xt");
 
   /* Get screen size fro system, or else from termcap.  */
@@ -1013,13 +1048,14 @@ term_init (terminal_type)
   TN_standout_width = tgetnum ("sg");
   TabWidth = tgetnum ("tw");
 
-  if (tgetflag ("bs"))
-    Left = "\b";		/* can't possibly be longer! */
-  else if (!Left)
-    Left = tgetstr ("le", &fill);
-
-  if (!Down)
-    Down = tgetstr ("do", &fill);
+#ifdef VMS
+  /* These capabilities commonly use ^J.
+     I don't know why, but sending them on VMS does not work;
+     it causes following spaces to be lost, sometimes.
+     For now, the simplest fix is to avoid using these capabilities ever.  */
+  if (Down && Down[0] == '\n')
+    Down = 0;
+#endif /* VMS */
 
   if (!TS_bell)
     TS_bell = "\07";
@@ -1032,8 +1068,11 @@ term_init (terminal_type)
   if (TabWidth < 0)
     TabWidth = 8;
   
-  if (!Tab)
-    Tab = "\t";
+/* Turned off since /etc/termcap seems to have :ta= for most terminals
+   and newer termcap doc does not seem to say there is a default.
+  if (!Wcm.cm_tab)
+    Wcm.cm_tab = "\t";
+*/
 
   if (TS_standout_mode == 0)
     {
@@ -1044,7 +1083,7 @@ term_init (terminal_type)
 
   if (TF_teleray)
     {
-      Tab = 0;
+      Wcm.cm_tab = 0;
       /* Teleray: most programs want a space in front of TS_standout_mode,
 	   but Emacs can do without it (and give one extra column).  */
       TS_standout_mode = "\033RD";
@@ -1113,11 +1152,20 @@ term_init (terminal_type)
   specified_window = screen_height;
 
   if (Wcm_init ())	/* can't do cursor motion */
+#ifdef VMS
+    fatal ("Terminal type \"%s\" is not powerful enough to run Emacs.\n\
+It lacks the ability to position the cursor.\n\
+If that is not the actual type of terminal you have, use either the\n\
+DCL command `SET TERMINAL/DEVICE= ...' for DEC-compatible terminals,\n\
+or `define EMACS_TERM \"terminal type\"' for non-DEC terminals.\n",
+           terminal_type);
+#else
     fatal ("Terminal type \"%s\" is not powerful enough to run Emacs.\n\
 It lacks the ability to position the cursor.\n\
 If that is not the actual type of terminal you have,\n\
 use the C-shell command `setenv TERM ...' to specify the correct type.\n",
 	   terminal_type);
+#endif
 
   delete_in_insert_mode
     = TS_delete_mode && TS_insert_mode

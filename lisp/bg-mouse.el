@@ -1,5 +1,5 @@
 ;; GNU Emacs code for BBN Bitgraph mouse.
-;; Copyright (C) Free Software Foundation Oct 1985.
+;; Copyright (C) Free Software Foundation, Inc. Oct 1985.
 
 ;; This file is part of GNU Emacs.
 

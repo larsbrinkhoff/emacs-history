@@ -1,5 +1,5 @@
-/* m- file for ns16000.  Just a guess, so far.
-   Copyright (C) 1985 Richard M. Stallman.
+/* m- file for ns16000.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -39,7 +39,7 @@ and this notice must be preserved on all copies.  */
 
 /* Say this machine is a 16000 */
 
-#define ns16000
+#define ns16000 1
 
 /* Use type int rather than a union, to represent Lisp_Object */
 

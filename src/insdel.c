@@ -1,5 +1,5 @@
 /* Buffer insertion/deletion and gap motion for GNU Emacs.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -24,9 +24,10 @@ and this notice must be preserved on all copies.  */
 #include "buffer.h"
 #include "window.h"
 
-/* Move gap to position `pos'. */
+/* Move gap to position `pos'.
+   Note that this can quit!  */
 
-GapTo (pos)
+move_gap (pos)
      int pos;
 {
   if (bf_p2 != bf_gap + bf_p1)
@@ -43,6 +44,7 @@ gap_left (pos)
 {
   register unsigned char *to, *from;
   register int i;
+  int new_s1;
 
   pos--;
 
@@ -59,17 +61,42 @@ gap_left (pos)
 	beg_unchanged = pos;
     }
 
-  adjust_markers (pos + 1, bf_s1 + 1, bf_gap);
-
-  to = bf_p2;
-  from = bf_p1;
-
   i = bf_s1 + 1;
-  while (--i > pos)
-    to[i] = from[i];
+  to = &bf_p2[i];
+  from = &bf_p1[i];
+  new_s1 = bf_s1;
 
+  /* Now copy the characters.  To move the gap down,
+     copy characters up.  */
+
+  while (1)
+    {
+      /* I gets number of characters left to copy.  */
+      i = new_s1 - pos;
+      if (i == 0)
+	break;
+      /* If a quit is requested, stop copying now.
+	 Change POS to be where we have actually moved the gap to.  */
+      if (QUITP)
+	{
+	  pos = new_s1;
+	  break;
+	}
+      /* Move at most 32000 chars before checking again for a quit.  */
+      if (i > 32000)
+	i = 32000;
+      new_s1 -= i;
+      while (--i >= 0)
+	*--to = *--from;
+    }
+
+  /* Adjust markers, and buffer data structure, to put the gap at POS.
+     POS is where the loop above stopped, which may be what was specified
+     or may be where a quit was detected.  */
+  adjust_markers (pos + 1, bf_s1 + 1, bf_gap);
   bf_s2 += bf_s1 - pos;
   bf_s1 = pos;
+  QUIT;
 }
 
 gap_right (pos)
@@ -77,6 +104,7 @@ gap_right (pos)
 {
   register unsigned char *to, *from;
   register int i;
+  int new_s1;
 
   pos--;
 
@@ -93,17 +121,39 @@ gap_right (pos)
 	beg_unchanged = bf_s1;
     }
 
+  i = bf_s1 + 1;
+  from = &bf_p2[i];
+  to = &bf_p1[i];
+  new_s1 = bf_s1;
+
+  /* Now copy the characters.  To move the gap up,
+     copy characters down.  */
+
+  while (1)
+    {
+      /* I gets number of characters left to copy.  */
+      i = pos - new_s1;
+      if (i == 0)
+	break;
+      /* If a quit is requested, stop copying now.
+	 Change POS to be where we have actually moved the gap to.  */
+      if (QUITP)
+	{
+	  pos = new_s1;
+	  break;
+	}
+      /* Move at most 32000 chars before checking again for a quit.  */
+      if (i > 32000)
+	i = 32000;
+      new_s1 += i;
+      while (--i >= 0)
+	*to++ = *from++;
+    }
+
   adjust_markers (bf_s1 + bf_gap + 1, pos + bf_gap + 1, - bf_gap);
-
-  from = bf_p2;
-  to = bf_p1;
-
-  i = bf_s1;
-  while (++i <= pos)
-    to[i] = from[i];
-
   bf_s2 += bf_s1 - pos;
   bf_s1 = pos;
+  QUIT;
 }
 
 /* Add `amount' to the position of every marker in the current buffer
@@ -171,7 +221,7 @@ make_gap (k)
   p1 = p2 + k;
   lim = p2 - bf_s2;
   while (lim < p2)
-      *--p1 = *--p2;
+    *--p1 = *--p2;
 
   /* Finish updating text location data */
   bf_gap += k;
@@ -210,13 +260,14 @@ InsCStr (string, length)
     return;
 
   prepare_to_modify_buffer ();
-  RecordInsert (point, length);
-  bf_modified++;
 
   if (point != bf_s1 + 1)
-    GapTo (point);
+    move_gap (point);
   if (bf_gap < length)
     make_gap (length);
+
+  record_insert (point, length);
+  bf_modified++;
 
   bcopy (string, bf_p1 + point, length);
 
@@ -255,6 +306,17 @@ del_range (from, to)
   if ((numdel = to - from) <= 0)
     return;
 
+  /* Make sure the gap is somewhere in or next to what we are deleting */
+  if (from - 1 > bf_s1)
+    gap_right (from);
+  if (to - 1 < bf_s1)
+    gap_left (to);
+
+  prepare_to_modify_buffer ();
+  record_delete (from, numdel);
+  bf_modified++;
+
+  /* Relocate point as if it were a marker.  */
   if (from < point)
     {
       if (point < to)
@@ -263,19 +325,9 @@ del_range (from, to)
 	point -= numdel;
     }
 
-  /* Make sure the gap is somewhere in or next to what we are deleting */
-  if (from - 1 > bf_s1)
-    gap_right (from);
-  if (to - 1 < bf_s1)
-    gap_left (to);
-
-  prepare_to_modify_buffer ();
-  RecordDelete (from, numdel);
-  bf_modified++;
-
-  /* All markers pointing between from and to, inclusive,
-     should now point at from.  */
-  adjust_markers (to, to, -numdel);
+  /* Relocate all markers pointing into the new, larger gap
+     to point at the end of the text before the gap.  */
+  adjust_markers (to + bf_gap, to + bf_gap, - numdel - bf_gap);
 
   bf_gap += numdel;
   bf_p2 += numdel;

@@ -1,5 +1,6 @@
 ;;; -*-Emacs-Lisp-*- Scheme under emacs stuff.
-;; Copyright (C) 1985 Bill Rozas & Richard M. Stallman
+;; Copyright (C) 1986 Free Software Foundation, Inc.
+;; Adapted from Inferior Lisp mode by Bill Rozas, jinx@prep.
 
 ;; This file is part of GNU Emacs.
 
@@ -67,8 +68,7 @@ C-x C-v puts top of last batch of output at top of window."
   (kill-all-local-variables)
   (setq major-mode 'inferior-scheme-mode)
   (setq mode-name "Inferior Scheme")
-  (setq mode-line-format 
-	"--%1*%1*-Emacs: %17b   %M   %[(%m: %s)%]----%3p--%-")
+  (setq mode-line-process '(": %s"))
   (scheme-mode-variables)
   (use-local-map inferior-scheme-mode-map)
   (make-local-variable 'last-input-start)
@@ -89,16 +89,15 @@ C-x C-v puts top of last batch of output at top of window."
 		   nil
 		 (args-to-list (substring string pos (length string)))))))))
 
-(defconst scheme-program-name "scheme"
+(defvar scheme-program-name "scheme"
   "Program invoked by the scheme and run-scheme commands")
 
 (defun scheme (arg)
   "Run an inferior Scheme process reading a command line from the terminal."
   (interactive "sExtra arguments to scheme: ")
   (switch-to-buffer
-   (apply 'make-shell (append (list "scheme" scheme-program-name nil)
-			      (args-to-list arg)
-			      '("-emacs"))))
+    (apply 'make-shell "scheme" scheme-program-name nil
+	   (append (args-to-list arg) '("-emacs"))))
   (inferior-scheme-mode))
 
 (defun run-scheme (arg)

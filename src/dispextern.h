@@ -1,5 +1,5 @@
 /* Interface definitions for display code.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -25,7 +25,7 @@ and this notice must be preserved on all copies.  */
 extern int screen_garbaged;
 
 /* Desired terminal cursor position (to show position of dot),
- origin one */
+ origin zero.  */
 
 extern int cursX, cursY;
 

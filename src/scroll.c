@@ -1,5 +1,5 @@
 /* Calculate what ins/del line to do, and do it, for Emacs redisplay.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -335,6 +335,39 @@ scrolling_max_lines_saved (start, end, oldhash, newhash, cost)
     }
 
   return matchcount;
+}
+
+/* Return a measure of the cost of moving the lines
+   starting with vpos FROM, up to but not including vpos TO,
+   down by AMOUNT lines (AMOUNT may be negative).
+   These are the same arguments that might be given to
+   scroll_screen_lines to perform this scrolling.  */
+
+scroll_cost (from, to, amount)
+     int from, to, amount;
+{
+  /* Compute how many lines, at bottom of screen,
+     will not be involved in actual motion.  */
+  int ok_below = screen_height - to;
+  if (amount > 0) ok_below -= amount;
+  if (! scroll_region_ok) ok_below = 0;
+
+  if (amount == 0)
+    return 0;
+
+  if (amount < 0)
+    {
+      int temp = to;
+      to = from + amount;
+      from = temp + amount;
+      amount = - amount;
+    }
+
+  from += ok_below;
+  to += ok_below;
+
+  return ILcost[from] + (amount - 1) * ILncost[from]
+    + DLcost[to] + (amount - 1) * DLncost[to];
 }
 
 /* Calculate the insert and delete line costs.

@@ -1,5 +1,6 @@
-;; View: Tour files, buffers without editing.
-;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman
+;; View: Peruse file or buffer without editing.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
+;; Principal author K. Shane Hartman
 
 ;; This file is part of GNU Emacs.
 
@@ -100,8 +101,14 @@ For list of all View commands, type ? or h while viewing.
 
 Calls the value of  view-hook  if that is non-nil."
   (interactive "fView file: ")
-  (view-mode (prog1 (current-buffer)
-	       (switch-to-buffer (find-file-noselect file-name) t))))
+  (let ((had-a-buf (get-file-buffer file-name))
+	(buf-to-view nil))
+    (unwind-protect
+	(view-mode (prog1 (current-buffer)
+		     (switch-to-buffer
+		      (setq buf-to-view (find-file-noselect file-name)) t)))
+      (and (not had-a-buf) buf-to-view (not (buffer-modified-p buf-to-view))
+	   (kill-buffer buf-to-view)))))
 
 (defun view-buffer (buffer-name)
   "View BUFFER in View mode, returning to previous buffer when done.
@@ -152,14 +159,19 @@ q or C-c	exit view-mode and return to previous buffer.
 
 Entry to this mode calls the value of  view-hook  if non-nil.
 \\{view-mode-map}"
-  (interactive)
+;  Not interactive because dangerous things happen
+;  if you call it without passing a buffer as argument
+;  and they are not easy to fix.
+;  (interactive)
   (let* ((view-buffer-window (selected-window))
 	 (view-scroll-size (1- (window-height view-buffer-window))))
     (unwind-protect
 	(let ((buffer-read-only t)
-	      (mode-line-format (if (buffer-file-name)
-				    "--Viewing %f  %M  ----%p--%-"
-				  "--Viewing %b  %M  ----%p--%-"))
+	      (mode-line-buffer-identification
+	       (list
+		(if (buffer-file-name)
+		    "Viewing %f"
+		  "Viewing %b")))
 	      (mode-name "View"))
 	  (beginning-of-line)
 	  (catch 'view-mode-exit (view-mode-command-loop)))
@@ -195,8 +207,6 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 ;	(view-last-command-entry)
 ;	(view-last-command-argument)
 	(view-last-regexp)
-	(Helper-mode-name "View")
-	(Helper-major-mode 'view-mode)
 	(Helper-return-blurb
 	 (format "continue viewing %s"
 		 (if (buffer-file-name)

@@ -1,5 +1,5 @@
 ;; Record version number of Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -21,23 +21,23 @@
 
 ;; The following line is modified automatically
 ;; by loading inc-version.el, each time a new Emacs is dumped.
-(defconst emacs-version "17.62.0"
-  "Version numbers of this version of Emacs.")
+(defconst emacs-version "18.41.0" "\
+Version numbers of this version of Emacs.")
 
-(defconst emacs-build-time (current-time-string)
-  "Time at which Emacs was dumped out.")
+(defconst emacs-build-time (current-time-string) "\
+Time at which Emacs was dumped out.")
 
-(defun emacs-version ()
-  "\
+(defun emacs-version () "\
 Return string describing the version of Emacs that is running."
   (interactive)
   (if (interactive-p)
       (message "%s" (emacs-version))
-    (format "GNU Emacs %s of %s %s"
+    (format "GNU Emacs %s of %s %s on %s (%s)"
 	    emacs-version
 	    (substring emacs-build-time 0
 		       (string-match " *[0-9]*:" emacs-build-time))
-	    (substring emacs-build-time (string-match "[0-9]*$" emacs-build-time)))))
+	    (substring emacs-build-time (string-match "[0-9]*$" emacs-build-time))
+	    (system-name) system-type)))
 
 ;;Local variables:
 ;;version-control: never

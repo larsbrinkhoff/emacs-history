@@ -1,6 +1,7 @@
 		 GNU EMACS GENERAL PUBLIC LICENSE
+		    (Clarified 20 March 1987)
 
- Copyright (C) 1985 Richard M. Stallman
+ Copyright (C) 1985, 1987 Richard M. Stallman
  Everyone is permitted to copy and distribute verbatim copies
  of this license, but changing it is not allowed.
 
@@ -37,12 +38,13 @@ allowed to distribute or change GNU Emacs.
   1. You may copy and distribute verbatim copies of GNU Emacs source
 code as you receive it, in any medium, provided that you conspicuously
 and appropriately publish on each file a valid copyright notice such
-as "Copyright (C) 1985 Richard M. Stallman", containing the year of
+as "Copyright (C) 1986 Free Software Foundation", containing the year of
 last change and name of copyright holder for the file in question;
 keep intact the notices on all files that refer to this License
 Agreement and to the absence of any warranty; and give any other
 recipients of the GNU Emacs program a copy of this License Agreement
-along with the program.
+along with the program.  You may charge a distribution fee for the
+physical act of transferring a copy.
 
   2. You may modify your copy or copies of GNU Emacs source code or
 any portion of it, and copy and distribute such modifications under
@@ -53,20 +55,23 @@ the terms of Paragraph 1 above, provided that you also do the following:
 
     b) cause the whole of any work that you distribute or publish,
     that in whole or in part contains or is a derivative of GNU Emacs
-    or any part thereof, to be freely distributed
-    and licensed to all third parties on terms identical to those
-    contained in this License Agreement (except that you may choose
-    to grant more extensive warranty protection to third parties,
-    at your option).
+    or any part thereof, to be licensed at no charge to all third
+    parties on terms identical to those contained in this License
+    Agreement (except that you may choose to grant more extensive
+    warranty protection to third parties, at your option).
 
-    c) if the modified program serves as a text editor, cause it
-    when started running in the simplest and usual way, to print
-    an announcement including a valid copyright notice ("Copyright
-    (C)", the year of authorship, and all copyright owners' names),
-    saying that there is no warranty (or else, saying that you provide
-    a warranty) and that users may redistribute the program under
-    these conditions, and telling the user how to view a copy of
-    this License Agreement.
+    c) if the modified program serves as a text editor, cause it when
+    started running in the simplest and usual way, to print an
+    announcement including a valid copyright notice ("Copyright (C)",
+    the year of authorship, and all copyright owners' names), saying
+    that there is no warranty (or else, saying that you provide a
+    warranty) and that users may redistribute the program under these
+    conditions, and telling the user how to view a copy of this
+    License Agreement.
+
+    d) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
 
   3. You may copy and distribute GNU Emacs or any portion of it in
 compiled, executable or object code form under the terms of Paragraphs
@@ -93,6 +98,13 @@ your rights to use GNU Emacs under this License agreement shall be
 automatically terminated.  However, parties who have received computer
 software programs from you with this License Agreement will not have
 their licenses terminated so long as such parties remain in full compliance.
+
+  5. If you wish to incorporate parts of GNU Emacs into other free programs
+whose distribution conditions are different, write to the Free Software
+Foundation.  We have not yet worked out a simple rule that can be stated
+here, but we will often permit this.  We will be guided by the two goals of
+preserving the free status of all derivatives our free software and of
+promoting the sharing and reuse of software.
 
 Your comments and suggestions about our licensing policies and our
 software are welcome!  Please contact the Free Software Foundation, Inc.,

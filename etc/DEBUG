@@ -12,41 +12,24 @@ Copyright (c) 1985 Richard M. Stallman.
    under the above conditions, provided also that they
    carry prominent notices stating who last changed them.
 
-I have included in the distribution a version of
-dbx (for the Vax) which can debug GNU Emacs.
-The dbx that I found installed originally has
-several serious bugs that prevent it from loading
-GNU Emacs and cause GNU Emacs to malfunction.
+On 4.2 you will probably find that dbx does not work for
+debugging GNU Emacs.  For one thing, dbx does not keep the
+inferior process's terminal modes separate from its own.
+For another, dbx does not put the inferior in a separate
+process group, which makes trouble when an inferior uses
+interrupt input, which GNU Emacs must do on 4.2.
 
-This debugger is the file  tdbx  in directory ../dbx.
-It has the same commands that dbx standardly has.
-(You may have to run  make  in that directory to create tdbx.)
+dbx has also been observed to have other problems,
+such as getting incorrect values for register variables
+in stack frames other than the innermost one.
 
-The file .dbxinit in ../src defines some useful aliases;
-it also sets up signal handling in a way that permits
-GNU Emacs to work properly.
+The Emacs distribution now contains GDB, the new source-level
+debugger for the GNU system.  GDB works for debugging Emacs.
+GDB currently runs on vaxes under 4.2 and on Sun 2 and Sun 3
+systems.
 
-Some problems remain in this version of dbx.  For example, the only
-useful way to print a Lisp_Object is in hex.  The only way to do this
-is &variable/X.  The top two digits are the data type (with the mark
-bit in the sign bit during garbage collection) and the remaining six
-digits are the value or pointer.
 
-The `where' command (abbreviated `w') tends to get confused
-and print infinite garbage past the end of the real contents
-of the stack.  Be prepared to stop it with Control-c.
-
-The `stop in' command tends to get into an infinite loop.
-If this happens, just type Control-c.  You will find that
-the stop has been established properly.
-
-If you stop a looping dbx command with Control-c, it signals
-both dbx and the debugged Emacs.  As a result, the next time
-you continue or step Emacs, it will stop immediately and say
-"interrupt".  You must continue or step it again.
-I tried to fix this, by making the debugged process run in
-a different process group, but could not get it to work.
-
+** Some useful techniques
 
 `Fsignal' is a very useful place to stop in.
 All Lisp errors go through there.
@@ -67,10 +50,10 @@ to get an opportunity to do the set command.
 
 If you are using cbreak input (see the Lisp function set-input-mode),
 then typing Control-g will cause a SIGINT, which will return control
-to dbx immediately unless you have done
+to the debugger immediately unless you have done
 
-    ignore 3
-
+    ignore 3  (in dbx)
+or  handle 3 nostop noprint  (in gdb)
 
 You will note that most of GNU Emacs is written to avoid
 declaring a local variable in an inner block, even in
@@ -81,17 +64,15 @@ inner block.  A few functions in GNU Emacs do have variables
 in inner blocks, only because I wrote them before realizing
 that dbx had this problem and never rewrote them to avoid it.
 
-
-dbx has many other deficiencies.  If I find that I can really
-use it as part of GNU, I will fix them.  If I will have to
-write another debugger, fixing dbx further is useless to me.
+I believe that GDB does not have such a problem.
 
 
-** Debugging on a Sun.
+** If GDB does not run and your debuggers can't load Emacs.
 
-On Sun 68000 systems, I found that no debugger could load
-Emacs with a symbol table.  However, I was able to debug
-by doing
+On some systems, no debugger can load Emacs with a symbol table,
+perhaps because they all have fixed limits on the number of symbols
+and Emacs exceeds the limits.  Here is a method that can be used
+in such an extremity.  Do
 
     nm -n temacs > nmout
     strip temacs
@@ -105,11 +86,12 @@ by doing
 It is necessary to refer to the file `nmout' to convert
 numeric addresses into symbols and vice versa.
 
-It is useful to be running under the window system.
+It is useful to be running under a window system.
 Then, if Emacs becomes hopelessly wedged, you can create
 another window to do kill -9 in.  kill -ILL is often
 useful too, since that may make Emacs dump core or return
 to adb.
+
 
 ** Debugging incorrect screen updating.
 
@@ -128,4 +110,4 @@ with any other user.
 If you have unreproduceable display problems, put those two expressions
 in your ~/.emacs file.  When the problem happens, exit the Emacs that
 you were running, kill it, and rename the two files.  Then you can start
-another Emacs without clobbering those files, and look at them in it.
+another Emacs without clobbering those files, and use it to examine them.

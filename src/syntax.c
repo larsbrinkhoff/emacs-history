@@ -1,5 +1,5 @@
 /* GNU Emacs routines to deal with syntax tables; also word and list parsing.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -147,15 +147,43 @@ are listed in the documentation of  modify-syntax-entry.")
      Lisp_Object ch;
 {
   CHECK_NUMBER (ch, 0);
-  return make_number (syntax_code_spec[(int) SYNTAX (XINT (ch))]);
+  return make_number (syntax_code_spec[(int) SYNTAX (0xFF & XINT (ch))]);
 }
+
+/* This comment supplies the doc string for modify-syntax-entry,
+   for make-docfile to see.  We cannot put this in the real DEFUN
+   due to limits in the Unix cpp.
+
+DEFUN ("modify-syntax-entry", foo, bar, 0, 0, 0,
+  "Set syntax for character CHAR according to string S.\n\
+The syntax is changed only for table TABLE, which defaults to\n\
+ the current buffer's syntax table.\n\
+The first character of S should be one of the following:\n\
+  Space    whitespace syntax.    w   word constituent.\n\
+  _        symbol constituent.   .   punctuation.\n\
+  (        open-parenthesis.     )   close-parenthesis.\n\
+  \"        string quote.         \\   character-quote.\n\
+  $        paired delimiter.     '   expression prefix operator.\n\
+  <	   comment starter.	 >   comment ender.\n\
+Only single-character comment start and end sequences are represented thus.\n\
+Two-character sequences are represented as described below.\n\
+The second character of S is the matching parenthesis,\n\
+ used only if the first character is ( or ).\n\
+Any additional characters are flags.\n\
+Defined flags are the characters 1, 2, 3 and 4.\n\
+ 1 means C is the start of a two-char comment start sequence.\n\
+ 2 means C is the second character of such a sequence.\n\
+ 3 means C is the start of a two-char comment end sequence.\n\
+ 4 means C is the second character of such a sequence.")
+
+*/
 
 DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3, 
   /* I really don't know why this is interactive
      help-form should at least be made useful whilst reading the second arg
    */
   "cSet syntax for character: \nsSet syntax for %s to: ",
-  0 /* See auxdoc.c */)
+  0 /* See immediately above */)
   (c, newentry, syntax_table)
      Lisp_Object c, newentry, syntax_table;
 {
@@ -199,7 +227,7 @@ DEFUN ("modify-syntax-entry", Fmodify_syntax_entry, Smodify_syntax_entry, 2, 3,
 	break;
       }
 	
-  XVECTOR (syntax_table)->contents[XINT (c)] = val;
+  XVECTOR (syntax_table)->contents[0xFF & XINT (c)] = val;
 
   return Qnil;
 }
@@ -314,7 +342,7 @@ describe_syntax_1 (vector)
 {
   struct buffer *old = bf_cur;
   SetBfp (XBUFFER (Vstandard_output));
-  describe_vector (vector, Qnil, describe_syntax, 0);
+  describe_vector (vector, Qnil, describe_syntax, 0, Qnil);
   SetBfp (old);
   return Qnil;
 }
@@ -958,8 +986,35 @@ scan_sexps_forward (from, end, targetdepth, stopbefore, oldstate)
   return &val_scan_sexps_forward;
 }
 
+/* This comment supplies the doc string for parse-partial-sexp,
+   for make-docfile to see.  We cannot put this in the real DEFUN
+   due to limits in the Unix cpp.
+
+DEFUN ("parse-partial-sexp", Ffoo, Sfoo, 0, 0, 0,
+  "Parse Lisp syntax starting at FROM until TO; return status of parse at TO.\n\
+Parsing stops at TO or when certain criteria are met;\n\
+ point is set to where parsing stops.\n\
+If fifth arg STATE is omitted or nil,\n\
+ parsing assumes that FROM is the beginning of a function.\n\
+Value is a list of six elements describing final state of parsing:\n\
+ 1. depth in parens.\n\
+ 2. character address of start of innermost containing list; nil if none.\n\
+ 3. character address of start of last complete sexp terminated.\n\
+ 4. non-nil if inside a string.\n\
+    (it is the character that will terminate the string.)\n\
+ 5. t if inside a comment.\n\
+ 6. t if following a quote character.\n\
+If third arg TARGETDEPTH is non-nil, parsing stops if the depth\n\
+in parentheses becomes equal to TARGETDEPTH.\n\
+Fourth arg STOPBEFORE non-nil means stop when come to\n\
+ any character that starts a sexp.\n\
+Fifth arg STATE is a six-list like what this function returns.\n\
+It is used to initialize the state of the parse.")
+
+*/
+
 DEFUN ("parse-partial-sexp", Fparse_partial_sexp, Sparse_partial_sexp, 2, 5, 0,
-  0 /* See auxdoc.c */)
+  0 /* See immediately above */)
   (from, to, targetdepth, stopbefore, oldstate)
      Lisp_Object from, to, targetdepth, stopbefore, oldstate;
 {
@@ -1032,12 +1087,12 @@ syms_of_syntax ()
   staticpro (&Qsyntax_table_p);
 
 /* Mustn't let user clobber this!
-  DefLispVar ("standard-syntax-table", &Vstandard_syntax_table,
+  DEFVAR_LISP ("standard-syntax-table", &Vstandard_syntax_table,
     "The syntax table used by buffers that don't specify another.");
  */
   staticpro (&Vstandard_syntax_table);
 
-  DefBoolVar ("parse-sexp-ignore-comments", &parse_sexp_ignore_comments,
+  DEFVAR_BOOL ("parse-sexp-ignore-comments", &parse_sexp_ignore_comments,
     "Non-nil means forward-sexp, etc., should treat comments as whitespace.\n\
 Non-nil works only when the comment terminator is something like *\/,\n\
 and appears only when it ends a comment.\n\

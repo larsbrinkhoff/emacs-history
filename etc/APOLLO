@@ -9,23 +9,10 @@ switches may come before it.
 You must use m-apollo.h in the config.h file, together with
 s-bsd4.2.h.
 
-There is one remaining problem on the Apollo.  The system does not
-come with a C preprocessor as a separate program.
-
-The C compiler can be used in place of cpp, but you must fool it into
-thinking that ymakefile is a C program.  This requires replacing the
-rule for xmakefile in src/Makefile with the following:
-
-xmakefile: ymakefile config.h
-	rm -f xmakefile
-	cp ymakefile ymakefile.c
-	(cc -E ymakefile.c | sed -e 's/^#.*//' -e 's/^[ \f	]$$//' -e 's/^ /	/' | \
-	sed -n -e '/^..*$$/p' > xmakefile)
-	rm ymakefile.c
-
-It has also been suggested that you change etc/Makefile not to make
-loadst.c.  I think it would be better to fix loadst.c than to turn
-it off, but nobody has told me what, if any, problem it encounters.
+There is one remaining problem on the Apollo.  You must replace
+the CPP line in src/Makefile with "CPP = /usr/lib/cpp".
+The C preprocessor lives there rather than in /lib/cpp because the
+Aegis OS uses the /lib directory as the repository for shared libraries.
 
 
 Here is a design for a method of dumping and reloading the relevant

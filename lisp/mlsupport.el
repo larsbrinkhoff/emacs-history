@@ -1,5 +1,5 @@
 ;; Run-time support for mocklisp code.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -43,6 +43,8 @@
 
 (defun >> (val count) (lsh val (- count)))
 (defun novalue () nil)
+
+(defun ml-not (arg) (if (zerop arg) 1 0))
 
 (defun provide-prefix-arg (arg form)
   (funcall (car form) arg))
@@ -125,9 +127,10 @@
 (defun auto-execute (function pattern)
   (if (/= (aref pattern 0) ?*)
       (error "Only patterns starting with * supported in auto-execute"))
-  (setq auto-mode-alist
-	(cons (cons (substring pattern 1) function)
-	      auto-mode-alist)))
+  (setq auto-mode-alist (cons (cons (concat "\\." (substring pattern 1)
+					    "$")
+				    function)
+			      auto-mode-alist)))
 
 (defun move-to-comment-column ()
   (indent-to comment-column))
@@ -243,24 +246,32 @@
 (defun case-region-capitalize ()
   (capitalize-region (point) (mark)))
 
+(defvar saved-command-line-args nil)
+
 (defun argc ()
-  (setq inhibit-command-line t)
+  (or saved-command-line-args
+      (setq saved-command-line-args command-line-args
+	    command-line-args ()))
   (length command-line-args))
 
 (defun argv (i)
-  (setq inhibit-command-line t)
-  (nth i command-line-args))
+  (or saved-command-line-args
+      (setq saved-command-line-args command-line-args
+	    command-line-args ()))
+  (nth i saved-command-line-args))
 
 (defun invisible-argc ()
-  (length command-line-args))
+  (length (or saved-command-line-args
+	      command-line-args)))
 
 (defun invisible-argv (i)
-  (nth i command-line-args))
+  (nth i (or saved-command-line-args
+	     command-line-args)))
 
 (defun exit-emacs ()
   (interactive)
   (condition-case ()
-		  (exit-recursive-edit)
+      (exit-recursive-edit)
     (error (kill-emacs))))
 
 ;; Lisp function buffer-size returns total including invisible;
@@ -378,9 +389,7 @@
 	    (aset datastring 0 ?\>)
 	  (error "Two-char comment delimiter: use modify-syntax-entry directly")))
     (while (< i len)
-      (modify-syntax-entry
-       (aref string i)
-       datastring)
+      (modify-syntax-entry (aref string i) datastring)
       (setq i (1+ i))
       (if (and (< i len)
 	       (= (aref string i) ?\-))
@@ -390,3 +399,11 @@
 	      (modify-syntax-entry c datastring)
 	      (setq c (1+ c)))
 	    (setq i (+ 2 i)))))))
+
+
+
+(defun ml-substr (string from to)
+  (let ((length (length string)))
+    (if (< from 0) (setq from (+ from length)))
+    (if (< to 0) (setq to (+ to length)))
+    (substring string from (+ from to))))

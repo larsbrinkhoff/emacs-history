@@ -1,5 +1,5 @@
 ;; Mail sending commands for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,6 +18,8 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+
+(provide 'sendmail)
 
 ;(defconst mail-self-blind nil
 ;  "Non-nil means insert BCC to self in messages to be sent.
@@ -98,12 +100,13 @@ Suitable header fields are To, CC and BCC."
 (defun mail-mode ()
   "Major mode for editing mail to be sent.
 Like Text Mode but with these additional commands:
-C-c C-s mail-send (send the message)    C-c C-c  mail-send-and-exit
-C-c t  mail-to  (move to To: field)	C-c s  mail-subject (move to Subj:)
-C-c b  mail-bcc (move to BCC: field)    C-c c  mail-cc  (move to CC: field)
-C-c w  mail-signature (insert ~/.signature at end).
-C-c y  mail-yank-original (insert current message, in Rmail).
-C-c q  mail-fill-yanked-message (fill what was yanked)."
+C-c C-s  mail-send (send the message)    C-c C-c  mail-send-and-exit
+C-c C-f  move to a header field (and create it if there isn't):
+	 C-c C-f C-t  move to To:	C-c C-f C-s  move to Subj:
+	 C-c C-f C-b  move to BCC:	C-c C-f C-c  move to CC:
+C-c C-w  mail-signature (insert ~/.signature at end).
+C-c C-y  mail-yank-original (insert current message, in Rmail).
+C-c C-q  mail-fill-yanked-message (fill what was yanked)."
   (interactive)
   (kill-all-local-variables)
   (make-local-variable 'mail-reply-buffer)
@@ -113,6 +116,7 @@ C-c q  mail-fill-yanked-message (fill what was yanked)."
   (setq local-abbrev-table text-mode-abbrev-table)
   (setq major-mode 'mail-mode)
   (setq mode-name "Mail")
+  (setq buffer-offer-save t)
   (make-local-variable 'paragraph-separate)
   (make-local-variable 'paragraph-start)
   (setq paragraph-start (concat "^" mail-header-separator
@@ -127,24 +131,30 @@ C-c q  mail-fill-yanked-message (fill what was yanked)."
     nil
   (setq mail-mode-map (make-sparse-keymap))
   (define-key mail-mode-map "\C-c?" 'describe-mode)
-  (define-key mail-mode-map "\C-ct" 'mail-to)
-  (define-key mail-mode-map "\C-cb" 'mail-bcc)
-  (define-key mail-mode-map "\C-cc" 'mail-cc)
-  (define-key mail-mode-map "\C-cs" 'mail-subject)
-  (define-key mail-mode-map "\C-cw" 'mail-signature)		; who
-  (define-key mail-mode-map "\C-cy" 'mail-yank-original)
-  (define-key mail-mode-map "\C-cq" 'mail-fill-yanked-message)
+  (define-key mail-mode-map "\C-c\C-f\C-t" 'mail-to)
+  (define-key mail-mode-map "\C-c\C-f\C-b" 'mail-bcc)
+  (define-key mail-mode-map "\C-c\C-f\C-c" 'mail-cc)
+  (define-key mail-mode-map "\C-c\C-f\C-s" 'mail-subject)
+  (define-key mail-mode-map "\C-c\C-w" 'mail-signature)		; who
+  (define-key mail-mode-map "\C-c\C-y" 'mail-yank-original)
+  (define-key mail-mode-map "\C-c\C-q" 'mail-fill-yanked-message)
   (define-key mail-mode-map "\C-c\C-c" 'mail-send-and-exit)
   (define-key mail-mode-map "\C-c\C-s" 'mail-send))
 
-(defun mail-send-and-exit ()
+(defun mail-send-and-exit (arg)
   "Send message like mail-send, then, if no errors, exit from mail buffer."
-  (interactive)
+  (interactive "P")
   (mail-send)
   (bury-buffer (current-buffer))
-  (if (eq (next-window (selected-window)) (selected-window))
+  (if (or arg (one-window-p t))
       (switch-to-buffer (other-buffer (current-buffer)))
     (delete-window)))
+
+;; Avoid error in Emacs versions before 18.37.
+(defun one-window-p (&optional nomini)
+  (eq (selected-window)
+      (if (and nomini (zerop (minibuffer-depth)))
+	  (next-window) (next-window (next-window)))))
 
 (defun mail-send ()
   "Send the message in the current buffer.
@@ -164,7 +174,6 @@ the user from the mailer."
 		    (generate-new-buffer " sendmail errors")
 		  0))
 	(tembuf (generate-new-buffer " sendmail temp"))
-	;; This gets set back to t midway through.
 	(case-fold-search nil)
 	delimline
 	(mailbuf (current-buffer)))
@@ -179,8 +188,9 @@ the user from the mailer."
 	      (insert ?\n))
 	  ;; Change header-delimiter to be what sendmail expects.
 	  (goto-char (point-min))
-	  (search-forward (concat "\n" mail-header-separator "\n"))
-	  (replace-match "\n\n")
+	  (re-search-forward
+	    (concat "^" (regexp-quote mail-header-separator) "\n"))
+	  (replace-match "\n")
 	  (backward-char 1)
 	  (setq delimline (point-marker))
 	  (if mail-aliases
@@ -190,27 +200,28 @@ the user from the mailer."
 	  (while (and (re-search-forward "\n\n\n*" delimline t)
 		      (< (point) delimline))
 	    (replace-match "\n"))
-	  ;; Find and handle any FCC fields.
-	  (goto-char (point-min))
-	  (setq case-fold-search t)
-	  (if (re-search-forward "^FCC:" delimline t)
-	      (mail-do-fcc delimline))
-	  ;; If there is a From and no Sender, put it a Sender.
-	  (goto-char (point-min))
-	  (and (re-search-forward "^From:"  delimline t)
-	       (not (save-excursion (goto-char (dot-min))
-				    (re-search-forward "^Sender:" delimline t)))
-	       (progn
-		 (forward-line 1)
-		 (insert "Sender: " (user-login-name) "\n")))
-	  ;; don't send out a blank subject line
-	  (goto-char (point-min))
-	  (if (re-search-forward "^Subject:[ \t]*\n" delimline t)
-	      (replace-match ""))
-	  (if mail-interactive
-	      (save-excursion
-		(set-buffer errbuf)
-		(erase-buffer)))
+	  (let ((case-fold-search t))
+	    ;; Find and handle any FCC fields.
+	    (goto-char (point-min))
+	    (if (re-search-forward "^FCC:" delimline t)
+		(mail-do-fcc delimline))
+	    ;; If there is a From and no Sender, put it a Sender.
+	    (goto-char (point-min))
+	    (and (re-search-forward "^From:"  delimline t)
+		 (not (save-excursion
+			(goto-char (point-min))
+			(re-search-forward "^Sender:" delimline t)))
+		 (progn
+		   (forward-line 1)
+		   (insert "Sender: " (user-login-name) "\n")))
+	    ;; don't send out a blank subject line
+	    (goto-char (point-min))
+	    (if (re-search-forward "^Subject:[ \t]*\n" delimline t)
+		(replace-match ""))
+	    (if mail-interactive
+		(save-excursion
+		  (set-buffer errbuf)
+		  (erase-buffer))))
 	  (apply 'call-process-region
 		 (append (list (point-min) (point-max)
 			       (if (boundp 'sendmail-program)
@@ -251,7 +262,8 @@ the user from the mailer."
 						 (skip-chars-backward " \t")
 						 (point)))
 			     fcc-list))
-	(delete-region (match-beginning 0) (1+ (point))))
+	(delete-region (match-beginning 0)
+		       (progn (forward-line 1) (point))))
       (set-buffer tembuf)
       (erase-buffer)
       (insert "\nFrom " (user-login-name) " "
@@ -264,10 +276,10 @@ the user from the mailer."
       ;; ``Quote'' "^From " as ">From "
       ;;  (note that this isn't really quoting, as there is no requirement
       ;;   that "^[>]+From " be quoted in the same transparent way.)
-      (setq case-fold-search nil)
-      (while (search-forward "\nFrom " nil t)
-	(forward-char -5)
-	(insert ?>))
+      (let ((case-fold-search nil))
+	(while (search-forward "\nFrom " nil t)
+	  (forward-char -5)
+	  (insert ?>)))
       (while fcc-list
 	(write-region (point-min) (point-max) (car fcc-list) t)
 	(setq fcc-list (cdr fcc-list))))
@@ -277,7 +289,7 @@ the user from the mailer."
   "Move point to end of To-field."
   (interactive)
   (expand-abbrev)
-  (mail-position-on-field "to"))
+  (mail-position-on-field "To"))
 
 (defun mail-subject ()
   "Move point to end of Subject-field."
@@ -302,7 +314,8 @@ the user from the mailer."
 	     (insert "\nBCC: "))))
 
 (defun mail-position-on-field (field &optional soft)
-  (let (end (case-fold-search t))
+  (let (end
+	(case-fold-search t))
     (goto-char (point-min))
     (search-forward (concat "\n" mail-header-separator "\n"))
     (setq end (match-beginning 0))
@@ -313,10 +326,11 @@ the user from the mailer."
 	  (beginning-of-line)
 	  (skip-chars-backward "\n")
 	  t)
-      (and (not soft)
-	   (progn (goto-char end)
-		  (skip-chars-backward "\n")
-		  (insert "\n" field ": "))))))
+      (or soft
+	  (progn (goto-char end)
+		 (skip-chars-backward "\n")
+		 (insert "\n" field ": ")))
+      nil)))
 
 (defun mail-signature ()
   "Sign letter with contents of ~/.signature file."
@@ -409,14 +423,6 @@ The sixth argument REPLYBUFFER is a buffer whose contents
   (interactive "P")
   (let ((pop-up-windows t))
     (pop-to-buffer "*mail*"))
-  (setq default-directory (expand-file-name "~/"))
-  (auto-save-mode auto-save-default)
-  (mail-mode)
-  (and (not noerase)
-       (or (not (buffer-modified-p))
-	   (y-or-n-p "Unsent message being composed; erase it? "))
-       (progn (erase-buffer)
-	      (mail-setup to subject in-reply-to cc replybuffer)
-	      t)))
+  (mail noerase to subject in-reply-to cc replybuffer))
 
 ;;; Do not add anything but external entries on this page.

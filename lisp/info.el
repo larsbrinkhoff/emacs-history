@@ -1,5 +1,5 @@
 ;; Info package for Emacs  -- could use a "create node" feature.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,6 +18,7 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+(provide 'info)
 
 (defvar Info-history nil
   "List of info nodes user has visited.
@@ -35,6 +36,10 @@ The Lisp code is executed when the node is selected.")
 
 (defvar Info-current-file nil
   "Info file that Info is now looking at, or nil.")
+
+(defvar Info-current-subfile nil
+  "Info subfile that is actually in the *info* buffer now,
+or nil if current info file is not split into subfiles.")
 
 (defvar Info-current-node nil
   "Name of node that Info is now looking at, or nil.")
@@ -74,38 +79,72 @@ Marker points nowhere if file has no tag table.")
 		  Info-history)))
   ;; Go into info buffer.
   (switch-to-buffer "*info*")
-  (Info-mode)
+  (or (eq major-mode 'Info-mode)
+      (Info-mode))
   (widen)
-  (setq Info-current-file nil Info-current-node nil)
+  (setq Info-current-node nil)
   (unwind-protect
       (progn
 	;; Switch files if necessary
 	(or (null filename)
-	    (equal buffer-file-name filename)
+	    (equal Info-current-file filename)
 	    (let ((buffer-read-only nil))
+	      (setq Info-current-file nil
+		    Info-current-subfile nil)
 	      (erase-buffer)
 	      (insert-file-contents filename t)
+	      (set-buffer-modified-p nil)
+	      (setq default-directory (file-name-directory filename))
 	      ;; See whether file has a tag table.  Record the location if yes.
-	      (move-marker Info-tag-table-marker nil)
+	      (set-marker Info-tag-table-marker nil)
 	      (goto-char (point-max))
 	      (forward-line -8)
-	      (if (search-forward "\^_\nEnd tag table\n" nil t)
-		  (progn
-		   (search-backward "\nTag table:\n")
-		   (move-marker Info-tag-table-marker (match-end 0))))))
+	      (or (equal nodename "*")
+		  (not (search-forward "\^_\nEnd tag table\n" nil t))
+		  (let (pos)
+		    ;; We have a tag table.  Find its beginning.
+		    ;; Is this an indirect file?
+		    (search-backward "\nTag table:\n")
+		    (setq pos (point))
+		    (if (save-excursion
+			  (forward-line 2)
+			  (looking-at "(Indirect)\n"))
+			;; It is indirect.  Copy it to another buffer
+			;; and record that the tag table is in that buffer.
+			(save-excursion
+			  (let ((buf (current-buffer)))
+			    (set-buffer (get-buffer-create " *info tag table*"))
+			    (erase-buffer)
+			    (insert-buffer-substring buf)
+			    (set-marker Info-tag-table-marker
+					(match-end 0))))
+		     (set-marker Info-tag-table-marker pos))))
+	      (setq Info-current-file buffer-file-name)))
 	(if (equal nodename "*")
-	    (progn (setq Info-current-file buffer-file-name
-			 Info-current-node nodename)
+	    (progn (setq Info-current-node nodename)
 		   (Info-set-mode-line))
 	  ;; Search file for a suitable node.
 	  ;; First get advice from tag table if file has one.
-	  (if (marker-position Info-tag-table-marker)
-	      (progn
-		(goto-char Info-tag-table-marker)
-		(if (search-forward (concat "Node: " nodename "\177") nil t)
-		    (goto-char (max (point-min) (- (read (current-buffer)) 1000)))
-		  (error "No such node: %s" nodename)))
-	    (goto-char (point-min)))
+	  ;; Also, if this is an indirect info file,
+	  ;; read the proper subfile into this buffer.
+	  (let ((guesspos (point-min)))
+	    (if (marker-position Info-tag-table-marker)
+		(save-excursion
+		  (set-buffer (marker-buffer Info-tag-table-marker))
+		  (goto-char Info-tag-table-marker)
+		  (if (search-forward (concat "Node: " nodename "\177") nil t)
+		      (progn
+			(setq guesspos (read (current-buffer)))
+			;; If this is an indirect file,
+			;; determine which file really holds this node
+			;; and read it in.
+			(if (not (eq (current-buffer) (get-buffer "*info*")))
+			    (setq guesspos
+				  (Info-read-subfile guesspos))))
+		    (error "No such node: \"%s\"" nodename))))
+	    (goto-char (max (point-min) (- guesspos 1000))))
+	  ;; Now search from our advised position (or from beg of buffer)
+	  ;; to find the actual node.
 	  (let ((regexp (concat "Node: *" (regexp-quote nodename) " *[,\t\n]")))
 	    (catch 'foo
 	      (while (search-forward "\n\^_" nil t)
@@ -125,6 +164,36 @@ Marker points nowhere if file has no tag table.")
 	  (goto-char (nth 2 hist)))))
   (goto-char (point-min)))
 
+(defun Info-read-subfile (nodepos)
+  (set-buffer (marker-buffer Info-tag-table-marker))
+  (goto-char (point-min))
+  (search-forward "\n\^_")
+  (let (lastfilepos
+	lastfilename
+	(header-length (point)))
+    (forward-line 2)
+    (catch 'foo
+      (while (not (looking-at "\^_"))
+	(let ((beg (point))
+	      thisfilepos thisfilename)
+	  (search-forward ": ")
+	  (setq thisfilename  (buffer-substring beg (- (point) 2)))
+	  (setq thisfilepos (read (current-buffer)))
+	  (if (> thisfilepos nodepos)
+	      (throw 'foo t))
+	  (setq lastfilename thisfilename)
+	  (setq lastfilepos thisfilepos))))
+    (set-buffer (get-buffer "*info*"))
+    (or (equal Info-current-subfile lastfilename)
+	(let ((buffer-read-only nil))
+	  (setq buffer-file-name nil)
+	  (widen)
+	  (erase-buffer)
+	  (insert-file-contents lastfilename)
+	  (set-buffer-modified-p nil)
+	  (setq Info-current-subfile lastfilename)))
+    (+ (- nodepos lastfilepos) header-length)))
+
 ;; Select the info node that point is in.
 (defun Info-select-node ()
   (save-excursion
@@ -138,7 +207,6 @@ Marker points nowhere if file has no tag table.")
 			   (progn
 			    (skip-chars-forward "^,\t\n")
 			    (point))))
-   (setq Info-current-file buffer-file-name)
    (Info-set-mode-line)
    ;; Find the end of it, and narrow.
    (beginning-of-line)
@@ -156,15 +224,14 @@ Marker points nowhere if file has no tag table.")
      (if Info-enable-active-nodes (eval active-expression)))))
 
 (defun Info-set-mode-line ()
-  (setq mode-line-format
+  (setq mode-line-buffer-identification
 	(concat 
-	 "--%1*%1*-Info:  ("
-	 (if buffer-file-name
-	     (file-name-nondirectory buffer-file-name)
+	 "Info:  ("
+	 (if Info-current-file
+	     (file-name-nondirectory Info-current-file)
 	   "")
 	 ")"
-	 (or Info-current-node "")
-	 "   %M   %[(%m)%]----%3p-%-")))
+	 (or Info-current-node ""))))
 
 ;; Go to an info node specified with a filename-and-nodename string
 ;; of the sort that is found in pointers in nodes.
@@ -175,7 +242,9 @@ Marker points nowhere if file has no tag table.")
   (let (filename)
     (string-match "\\s *\\((\\s *\\([^\t)]*\\)\\s *)\\s *\\|\\)\\(.*\\)"
 		  nodename)
-    (setq filename (substring nodename (match-beginning 2) (match-end 2))
+    (setq filename (if (= (match-beginning 1) (match-end 1))
+		       ""
+		     (substring nodename (match-beginning 2) (match-end 2)))
 	  nodename (substring nodename (match-beginning 3) (match-end 3)))
     (let ((trim (string-match "\\s *\\'" filename)))
       (if trim (setq filename (substring filename 0 trim))))
@@ -183,237 +252,6 @@ Marker points nowhere if file has no tag table.")
       (if trim (setq nodename (substring nodename 0 trim))))
     (Info-find-node (if (equal filename "") nil filename)
 		    (if (equal nodename "") "Top" nodename))))
-
-(defun Info-tagify ()
-  "Create or update tag table of current info file."
-  (interactive)
-  ;; Save and restore point and restrictions.
-  ;; save-restrictions would not work
-  ;; because it records the old max relative to the end.
-  ;; We record it relative to the beginning.
-  (let ((omin (point-min))
-	(omax (point-max))
-	(opoint (point)))
-    (unwind-protect
-	(progn
-	  (widen)
-	  (goto-char (point-min))
-	  (let ((regexp "Node:[ \t]*\\([^,\n\t]\\)*[,\t\n]")
-		(case-fold-search t)
-		list)
-	    (while (search-forward "\n\^_" nil t)
-	      (forward-line 1)
-	      (let ((beg (point)))
-		(forward-line 1)
-		(if (re-search-backward regexp beg t)
-		    (setq list
-			  (cons (list (buffer-substring
-				        (match-beginning 1)
-					(match-end 1))
-				      beg)
-				list)))))
-	    (goto-char (point-max))
-	    (forward-line -8)
-	    (let ((buffer-read-only nil))
-	      (if (search-forward "\^_\nEnd tag table\n" nil t)
-		  (let ((end (point)))
-		    (search-backward "\nTag table:\n")
-		    (beginning-of-line)
-		    (delete-region (point) end)))
-	      (goto-char (point-max))
-	      (insert "\^_\f\nTag table:\n")
-	      (move-marker Info-tag-table-marker (point))
-	      (setq list (nreverse list))
-	      (while list
-		(insert "Node: " (car (car list)) ?\177)
-		(princ (car (cdr (car list))) (current-buffer))
-		(insert ?\n)
-		(setq list (cdr list)))
-	      (insert "\^_\nEnd tag table\n"))))
-      (goto-char opoint)
-      (narrow-to-region omin (min omax (point-max))))))
-
-(defun Info-validate ()
-  "Check that every node pointer points to an existing node."
-  (interactive)
-  (save-excursion
-    (save-restriction
-      (widen)
-      (goto-char (point-min))
-      (let ((allnodes '(("*")))
-	    (regexp "Node:[ \t]*\\([^,\n\t]*\\)[,\t\n]")
-	    (case-fold-search t)
-	    (tags-losing nil)
-	    (lossages ()))
-	(while (search-forward "\n\^_" nil t)
-	  (forward-line 1)
-	  (let ((beg (point)))
-	    (forward-line 1)
-	    (if (re-search-backward regexp beg t)
-		(setq allnodes
-		      (cons (list (downcase
-				    (buffer-substring
-				      (match-beginning 1)
-				      (progn
-					(goto-char (match-end 1))
-					(skip-chars-backward " \t")
-					(point))))
-				  (progn
-				    (end-of-line)
-				    (and (re-search-backward "prev[ious]*:"
-							     beg t)
-					 (progn
-					   (goto-char (match-end 0))
-					   (downcase
-					     (Info-following-node-name)))))
-				  (point))
-			    allnodes)))))
-	(goto-char (point-min))
-	(while (search-forward "\n\^_" nil t)
-	  (forward-line 1)
-	  (let ((beg (point))
-		thisnode next)
-	    (forward-line 1)
-	    (if (re-search-backward regexp beg t)
-		(save-restriction
-		  (search-forward "\n\^_" nil 'move)
-		  (narrow-to-region beg (point))
-		  (setq thisnode (downcase
-				   (buffer-substring
-				     (match-beginning 1)
-				     (progn
-				       (goto-char (match-end 1))
-				       (skip-chars-backward " \t")
-				       (point)))))
-		  (end-of-line)
-		  (and (search-backward "next:" nil t)
-		       (setq next (Info-validate-node-name "Next"))
-		       (if (equal (car (cdr (assoc next allnodes)))
-				  thisnode)
-			   ;; allow multiple `next' pointers to one node
-			   (let ((tem lossages))
-			     (while tem
-			       (if (and (equal (car (cdr (car tem)))
-					       "Previous-pointer in Next")
-					(equal (car (cdr (cdr (car tem))))
-					       next))
-				   (setq lossages (delq (car tem) lossages)))
-			       (setq tem (cdr tem))))
-			 (setq lossages
-			       (cons (list thisnode
-					   "Previous-pointer in Next"
-					   next)
-				     lossages))))
-		  (end-of-line)
-		  (if (search-backward "prev[ious]*:" nil t)
-		      (Info-validate-node-name "Previous"))
-		  (end-of-line)
-		  (if (search-backward "up:" nil t)
-		      (Info-validate-node-name "Up"))
-		  (if (search-forward "\n* Menu:" nil t)
-		      (while (search-forward "\n* " nil t)
-			(Info-validate-node-name
-			 (concat "menu item "
-				 (buffer-substring (point)
-						   (save-excursion
-						     (skip-chars-forward "^:")
-						     (point))))
-			 (Info-extract-menu-node-name))))
-		  (goto-char (point-min))
-		  (while (re-search-forward "\\*note[ \n]*[^:\t]*:" nil t)
-		    (goto-char (+ (match-beginning 0) 5))
-		    (skip-chars-forward " \n")
-		    (Info-validate-node-name
-		     (concat "reference "
-			     (buffer-substring (point)
-					       (save-excursion
-						 (skip-chars-forward "^:")
-						 (point))))
-		     (Info-extract-menu-node-name "Bad format cross-reference")))))))
-	(setq tags-losing (not (Info-validate-tags-table)))
-	(if (or lossages tags-losing)
-	    (with-output-to-temp-buffer " *problems in info file*"
-	      (while lossages
-		(princ "In node \"")
-		(princ (car (car lossages)))
-		(princ "\", invalid ")
-		(let ((tem (nth 1 (car lossages))))
-		  (cond ((string-match "\n" tem)
-			 (princ (substring tem 0 (match-beginning 0)))
-			 (princ "..."))
-			(t
-			 (princ tem))))
-		(princ ": ")
-		(let ((tem (nth 2 (car lossages))))
-		  (cond ((string-match "\n" tem)
-			 (princ (substring tem 0 (match-beginning 0)))
-			 (princ "..."))
-			(t
-			 (princ tem))))
-		(terpri)
-		(setq lossages (cdr lossages)))
-	      (if tags-losing (princ "\nTags table must be recomputed\n")))
-	  (message "File appears valid"))))))
-
-(defun Info-validate-node-name (kind &optional name)
-  (if name
-      nil
-    (goto-char (match-end 0))
-    (skip-chars-forward " \t")
-    (if (= (following-char) ?\()
-	nil
-      (setq name
-	    (buffer-substring
-	     (point)
-	     (progn
-	      (skip-chars-forward "^,\t\n")
-	      (skip-chars-backward " ")
-	      (point))))))
-  (if (null name)
-      nil
-    (setq name (downcase name))
-    (or (and (> (length name) 0) (= (aref name 0) ?\())
-	(assoc name allnodes)
-	(setq lossages
-	      (cons (list thisnode kind name) lossages))))
-  name)
-
-(defun Info-validate-tags-table ()
-  (goto-char (point-min))
-  (if (not (search-forward "\^_\nEnd tag table\n" nil t))
-      t
-    (not (catch 'losing
-	   (let* ((end (match-beginning 0))
-		  (start (progn (search-backward "\nTag table:\n")
-				(1- (match-end 0))))
-		  tem)
-	     (setq tem allnodes)
-	     (while tem
-	       (goto-char start)
-	       (or (equal (car (car tem)) "*")
-		   (search-forward (concat "Node: "
-					   (car (car tem))
-					   "\177")
-				   end t)
-		   (throw 'losing 'x))
-	       (setq tem (cdr tem)))
-	     (goto-char (1+ start))
-	     (while (looking-at ".*Node: \\(.*\\)\177\\([0-9]+\\)$")
-	       (setq tem (assoc (buffer-substring
-				  (match-beginning 1)
-				  (match-end 1))
-				allnodes))
-	       (if (or (not tem)
-		       (< 1000 (progn
-				 (goto-char (match-beginning 2))
-				 (setq tem (- (car (cdr (cdr tem)))
-					      (read (current-buffer))))
-				 (if (> tem 0) tem (- tem)))))
-		   (throw 'losing 'y)))
-	     (forward-line 1))
-	   (or (looking-at "End tag table\n")
-	       (throw 'losing 'z))
-	   nil))))
 
 (defvar Info-last-search nil
   "Default regexp for Info S command to search for.")
@@ -424,17 +262,62 @@ Marker points nowhere if file has no tag table.")
   (if (equal regexp "")
       (setq regexp Info-last-search)
     (setq Info-last-search regexp))
-  (let (found)
+  (let ((found ()) current
+	(onode Info-current-node)
+	(ofile Info-current-file)
+	(opoint (point)))
     (save-excursion
-     (save-restriction
-      (widen)
-      (re-search-forward regexp)
-      (setq found (point))))
-    (if found
-	(progn
-	 (widen)
-	 (goto-char found)
-	 (Info-select-node)))))
+      (save-restriction
+	(widen)
+	(if (null Info-current-subfile)
+	    (progn (re-search-forward regexp) (setq found (point)))
+	  (condition-case err
+	      (progn (re-search-forward regexp) (setq found (point)))
+	    (search-failed nil)))))
+    (if (not found) ;can only happen in subfile case -- else would have erred
+	(unwind-protect
+	    (let ((list ()))
+	      (set-buffer (marker-buffer Info-tag-table-marker))
+	      (goto-char (point-min))
+	      (search-forward "\n\^_\nIndirect:")
+	      (save-restriction
+		(narrow-to-region (point)
+				  (progn (search-forward "\n\^_")
+					 (1- (point))))
+		(goto-char (point-min))
+		(search-forward (concat "\n" Info-current-subfile ": "))
+		(beginning-of-line)
+		(while (not (eobp))
+		  (re-search-forward "\\(^.*\\): [0-9]+$")
+		  (goto-char (+ (match-end 1) 2))
+		  (setq list (cons (cons (read (current-buffer))
+					 (buffer-substring (match-beginning 1)
+							   (match-end 1)))
+				   list))
+		  (goto-char (1+ (match-end 0))))
+		(setq list (nreverse list)
+		      current (car (car list))
+		      list (cdr list)))
+	      (while list
+		(message "Searching subfile %s..." (cdr (car list)))
+		(Info-read-subfile (car (car list)))
+		(setq list (cdr list))
+		(goto-char (point-min))
+		(if (re-search-forward regexp nil t)
+		    (setq found (point) list ())))
+	      (if found
+		  (message "")
+		(signal 'search-failed (list regexp))))
+	  (if (not found)
+	      (progn (Info-read-subfile current)
+		     (goto-char opoint)))))
+    (widen)
+    (goto-char found)
+    (Info-select-node)
+    (or (and (equal onode Info-current-node)
+	     (equal ofile Info-current-file))
+	(setq Info-history (cons (list ofile onode opoint)
+				 Info-history)))))
 
 (defun Info-extract-pointer (name &optional errorname)
   (save-excursion
@@ -504,6 +387,9 @@ NAME may be an abbreviation of the reference name."
 	 (setq i 0)
 	 (while (setq i (string-match "\n" str i))
 	   (aset str i ?\ ))
+	 (while (setq i (string-match "  +" str i))
+	   (setq str (concat (substring str 0 (1+ i))
+			     (substring str (match-end 0)))))
 	 (setq completions
 	       (cons (cons str nil)
 		     completions))))
@@ -715,13 +601,18 @@ s	Search through this Info file for specified regexp,
   (setq local-abbrev-table text-mode-abbrev-table)
   (setq case-fold-search t)
   (setq buffer-read-only t)
+  (make-local-variable 'Info-current-file)
+  (make-local-variable 'Info-current-subfile)
+  (make-local-variable 'Info-current-node)
+  (make-local-variable 'Info-tag-table-marker)
+  (make-local-variable 'Info-history)
   (Info-set-mode-line))
 
 (defvar Info-edit-map nil
   "Local keymap used within `e' command of Info.")
 (if Info-edit-map
     nil
-  (setq Info-edit-map (copy-alist text-mode-map))
+  (setq Info-edit-map (copy-keymap text-mode-map))
   (define-key Info-edit-map "\C-c\C-c" 'Info-cease-edit))
 
 (defun Info-edit-mode ()
@@ -740,7 +631,7 @@ Allowed only if variable Info-enable-edit is non-nil."
   (use-local-map Info-edit-map)
   (setq major-mode 'Info-edit-mode)
   (setq mode-name "Info Edit")
-  (setq mode-line-format default-mode-line-format)
+  (kill-local-variable 'mode-line-buffer-identification)
   (setq buffer-read-only nil)
   ;; Make mode line update.
   (set-buffer-modified-p (buffer-modified-p))

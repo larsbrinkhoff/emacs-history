@@ -1,5 +1,5 @@
 ;; Lisp editing commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -96,7 +96,7 @@ With argument, kill that many expressions after (or before) the cursor."
 With argument, kill that many expressions before (or after) the cursor."
   (interactive "p")
   (kill-sexp (- arg)))
-
+
 (defun beginning-of-defun (&optional arg)
   "Move backward to next beginning-of-defun.
 With argument, do this that many times.
@@ -136,14 +136,14 @@ An end of a defun is found by moving forward from the beginning of one."
       (let ((pos (point)))
 	(beginning-of-defun 1)
 	(forward-sexp 1)
-	(goto-char (scan-buffer (point) 1 ?\n))
+	(forward-line 1)
 	(if (>= (point) pos)
 	    (if (beginning-of-defun 2)
 		(progn
-		 (forward-list 1)
-		 (skip-chars-forward " \t")
-		 (if (looking-at "[;\n]")
-		     (forward-line 1)))
+		  (forward-list 1)
+		  (skip-chars-forward " \t")
+		  (if (looking-at "[;\n]")
+		      (forward-line 1)))
 	      (goto-char (point-min)))))
       (setq arg (1+ arg)))))
 
@@ -178,3 +178,45 @@ No argument is equivalent to zero: just insert () and leave point between."
     (delete-indentation))
   (forward-char 1)
   (newline-and-indent))
+
+(defun lisp-complete-symbol ()
+  "Perform completion on Lisp symbol preceding point.
+That symbol is compared against the symbols that exist
+and any additional characters determined by what is there
+are inserted.
+If the symbol starts just after an open-parenthesis,
+only symbols with function definitions are considered.
+Otherwise, all symbols with function definitions, values
+or properties are considered."
+  (interactive)
+  (let* ((end (point))
+	 (beg (save-excursion (backward-sexp 1) (point)))
+	 (pattern (buffer-substring beg end))
+	 (predicate
+	  (if (eq (char-after (1- beg)) ?\()
+	      'fboundp
+	    (function (lambda (sym)
+			(or (boundp sym) (fboundp sym)
+			    (symbol-plist sym))))))
+	 (completion (try-completion pattern obarray predicate)))
+    (cond ((eq completion t))
+	  ((null completion)
+	   (ding))
+	  ((not (string= pattern completion))
+	   (delete-region beg end)
+	   (insert completion))
+	  (t
+	   (message "Making completion list...%s" "")
+	   (let ((list (all-completions pattern obarray predicate)))
+	     (or (eq predicate 'fboundp)
+		 (let (new)
+		   (while list
+		     (setq new (cons (if (fboundp (intern (car list)))
+					 (list (car list) " <f>")
+				       (car list))
+				     new))
+		     (setq list (cdr list)))
+		   (setq list (nreverse new))))
+	     (with-output-to-temp-buffer "*Help*"
+	       (display-completion-list list)))
+	   (message "Making completion list...%s" "done")))))

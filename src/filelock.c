@@ -1,4 +1,4 @@
-/* Copyright (C) 1985 Richard M. Stallman and Dick King
+/* Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -33,6 +33,19 @@ and this notice must be preserved on all copies.  */
 
 #ifdef CLASH_DETECTION
 
+static Lisp_Object
+lock_file_owner_name (lfname)
+{
+  struct stat s;
+  struct passwd *the_pw;
+  extern struct passwd *getpwuid ();
+
+  if (lstat (lfname, &s) == 0)
+    the_pw = getpwuid (s.st_uid);
+  return (the_pw == 0 ? Qnil : build_string (the_pw->pw_name));
+}
+
+
 /* lock_file locks file fn,
    meaning it serves notice on the world that you intend to edit that file.
    This should be done only when about to modify a file-visiting
@@ -58,16 +71,21 @@ void
 lock_file (fn)
      register Lisp_Object fn;
 {
-  register int fd;
   register Lisp_Object attack;
   register char *lfname;
-  struct stat s;
-  struct passwd *the_pw;
-  extern struct passwd *getpwuid ();
 
   /* Create the name of the lock-file for file fn */
   lfname = (char *) alloca (XSTRING (fn)->size + strlen (PATH_LOCK) + 1);
   fill_in_lock_file_name (lfname, fn);
+
+  /* See if this file is visited and has changed on disk since it was visited.  */
+  {
+    register Lisp_Object subject_buf = Fget_file_buffer (fn);
+    if (!NULL (subject_buf)
+	&& NULL (Fverify_visited_file_modtime (subject_buf))
+	&& !NULL (Ffile_exists_p (fn)))
+      call1 (intern ("ask-user-about-supersession-threat"), fn);
+  }
 
   /* Try to lock the lock. */
   if (lock_if_free (lfname) <= 0)
@@ -75,11 +93,8 @@ lock_file (fn)
     return;
 
   /* Else consider breaking the lock */
-  the_pw = 0;
-  if (lstat (lfname, &s) == 0)
-    the_pw = getpwuid (s.st_uid);
   attack = call2 (intern ("ask-user-about-lock"), fn,
-		  the_pw == 0 ? Qnil : build_string (the_pw->pw_name));
+		  lock_file_owner_name (lfname));
   if (!NULL (attack))
     /* User says take the lock */
     {
@@ -136,7 +151,7 @@ lock_file_1 (lfname, mode)
 
 /* Lock the lock named LFNAME if possible.
    Return 0 in that case.
-   Return 1 if lock is really locked by someone else.
+   Return positive if lock is really locked by someone else.
    Return -1 if cannot lock for any other reason.  */
 
 int
@@ -151,35 +166,51 @@ lock_if_free (lfname)
       if (errno != EEXIST)
 	return -1;
       clasher = current_lock_owner (lfname);
-      if (clasher == 0 || (kill (clasher, 0) < 0 && errno == ESRCH))
-	{
-	  if (unlink (lfname) < 0)
-	    return -1;
-	  /* If we delete the lock successfully, try again to lock.  */
-	}
-      else
-	return (clasher != getpid ());
-     }
+      if (clasher != 0)
+	if (clasher != getpid ())
+	  return (clasher);
+	else return (0);
+      /* Try again to lock it */
+    }
   return 0;
 }
+
+/* Return the pid of the process that claims to own the lock file LFNAME,
+   or 0 if nobody does or the lock is obsolete,
+   or -1 if something is wrong with the locking mechanism.  */
 
 int
 current_lock_owner (lfname)
      char *lfname;
 {
+  int owner = current_lock_owner_1 (lfname);
+  if (owner == 0 && errno == ENOENT)
+    return (0);
+  /* Is it locked by a process that exists?  */
+  if (owner != 0 && (kill (owner, 0) >= 0 || errno == EPERM))
+    return (owner);
+  if (unlink (lfname) < 0)
+    return (-1);
+  return (0);
+}
+
+int
+current_lock_owner_1 (lfname)
+     char *lfname;
+{
   register int fd;
   char buf[20];
+  int tem;
 
   fd = open (lfname, O_RDONLY, 0666);
   if (fd < 0)
     return 0;
-
-  if (read (fd, buf, sizeof buf) <= 0)
-    return 0;
+  tem = read (fd, buf, sizeof buf);
   close (fd);
-  return atoi (buf);
+  return (tem <= 0 ? 0 : atoi (buf));
 }
 
+
 void
 unlock_file (fn)
      register Lisp_Object fn;
@@ -191,7 +222,7 @@ unlock_file (fn)
 
   lock_superlock (lfname);
 
-  if (current_lock_owner (lfname) == getpid ())
+  if (current_lock_owner_1 (lfname) == getpid ())
     unlink (lfname);
 
   unlink (PATH_SUPERLOCK);
@@ -229,12 +260,13 @@ unlock_all_files ()
        tail = XCONS (tail)->cdr)
     {
       b = XBUFFER (XCONS (XCONS (tail)->car)->cdr);
-      if (!NULL (b->filename)
-	  && b->save_modified < b->text.modified)
+      if (XTYPE (b->filename) == Lisp_String &&
+	  b->save_modified < b->text.modified)
 	unlock_file (b->filename);
     }
 }
 
+
 DEFUN ("lock-buffer", Flock_buffer, Slock_buffer,
   0, 1, 0,
   "Locks FILE, if current buffer is modified.\n\
@@ -259,27 +291,53 @@ DEFUN ("unlock-buffer", Funlock_buffer, Sunlock_buffer,
 if it should normally be locked.")
   ()
 {
-  if (bf_cur->save_modified < bf_modified
-      && !NULL (bf_cur->filename))
+  if (bf_cur->save_modified < bf_modified &&
+      XTYPE (bf_cur->filename) == Lisp_String)
     unlock_file (bf_cur->filename);
   return Qnil;
 }
 
+
 /* Unlock the file visited in buffer BUFFER.  */
 
 unlock_buffer (buffer)
      struct buffer *buffer;
 {
   bf_cur->text.modified = bf_modified;
-  if (buffer->save_modified < buffer->text.modified
-      && !NULL (buffer->filename))
+  if (buffer->save_modified < buffer->text.modified &&
+      XTYPE (buffer->filename) == Lisp_String)
     unlock_file (buffer->filename);
+}
+
+DEFUN ("file-locked-p", Ffile_locked_p, Sfile_locked_p, 0, 1, 0,
+  "Returns nil if the FILENAME is not locked,\n\
+t if it is locked by you, else a string of the name of the locker.")
+  (fn)
+  Lisp_Object fn;
+{
+  register char *lfname;
+  int owner;
+
+  fn = Fexpand_file_name (fn, Qnil);
+
+  /* Create the name of the lock-file for file filename */
+  lfname = (char *) alloca (XSTRING (fn)->size + strlen (PATH_LOCK) + 1);
+  fill_in_lock_file_name (lfname, fn);
+
+  owner = current_lock_owner (lfname);
+  if (owner <= 0)
+    return (Qnil);
+  else if (owner == getpid ())
+    return (Qt);
+  
+  return (lock_file_owner_name (lfname));
 }
 
 syms_of_filelock ()
 {
   defsubr (&Sunlock_buffer);
   defsubr (&Slock_buffer);
+  defsubr (&Sfile_locked_p);
 }
 
 #endif /* CLASH_DETECTION */

@@ -1,5 +1,5 @@
 ;; Edit Options command for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,11 +28,8 @@
   (with-output-to-temp-buffer "*List Options*"
     (let (vars)
       (mapatoms (function (lambda (sym)
-			    (let ((vdoc (get sym 'variable-documentation)))
-			      (and vdoc
-				   (> (length vdoc) 0)
-				   (= (aref vdoc 0) ?*)
-				   (setq vars (cons sym vars)))))))
+			    (if (user-variable-p sym)
+				(setq vars (cons sym vars))))))
       (setq vars (sort vars 'string-lessp))
       (while vars
 	(let ((sym (car vars)))
@@ -41,7 +38,8 @@
 	  (princ ":\n\t")
 	  (prin1 (symbol-value sym))
 	  (terpri)
-	  (princ (substitute-command-keys (get sym 'variable-documentation)))
+	  (princ (substitute-command-keys 
+		  (documentation-property sym 'variable-documentation)))
 	  (princ "\n;;\n"))
 	(setq vars (cdr vars))))))
 
@@ -65,6 +63,9 @@ Type \\[describe-mode] in that buffer for a list of commands."
     (define-key map "n" 'forward-paragraph)
     map)
   "")
+
+;; Edit Options mode is suitable only for specially formatted data.
+(put 'Edit-options-mode 'mode-class 'special)
 
 (defun Edit-options-mode ()
   "Major mode for editing Emacs user option settings.

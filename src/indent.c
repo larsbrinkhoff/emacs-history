@@ -1,5 +1,5 @@
 /* Indentation functions.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -29,15 +29,16 @@ and this notice must be preserved on all copies.  */
 
 #define CR '\015'
 
+/* Indentation can insert tabs if this is non-zero;
+   otherwise always uses spaces */
 int indent_tabs_mode;
 
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
 /* These three values memoize the current column to avoid recalculation */
-/* Some things in buflow.c set last_known_column_point to -1
+/* Some things in set last_known_column_point to -1
   to mark the memoized value as invalid */
-
 /* Last value returned by current_column */
 int last_known_column;
 /* Value of point when current_column was called */
@@ -48,10 +49,16 @@ int last_known_column_modified;
 extern int minibuf_prompt_width;
 
 DEFSIMPLE ("current-column", Fcurrent_column, Scurrent_column,
-  "Return the horizontal position of point.  The left margin is column 0.\n\
-Ignores finite width of screen,",
+  "Return the horizontal position of point.  Beginning of line is column 0.\n\
+This is calculated by adding together the widths of all the displayed\n\
+representations of the character between the start of the previous line\n\
+and point.  (eg control characters will have a width of 2 or 4, tabs\n\
+will have a variable width)\n\
+Ignores finite width of screen, which means that this function may return\n\
+values greater than (screen-width)",
   Lisp_Int, XSETINT, current_column ())
 
+int
 current_column ()
 {
   register int col;
@@ -67,7 +74,7 @@ current_column ()
 
   ptr = &CharAt (point - 1) + 1;
   stop = point <= bf_s1 + 1 ? bf_p1 + 1 : bf_p2 + bf_s1 + 1;
-  if (tab_width <= 0) tab_width = 1;
+  if (tab_width <= 0 || tab_width > 20) tab_width = 8;
 
   col = 0, tab_seen = 0, post_tab = 0;
 
@@ -125,7 +132,7 @@ ToCol (col)
   if (fromcol > col)
     return;
 
-  if (tab_width <= 0) tab_width = 1;
+  if (tab_width <= 0 || tab_width > 20) tab_width = 8;
 
   if (indent_tabs_mode)
     {
@@ -182,7 +189,7 @@ following any initial whitespace.")
 {
   Lisp_Object val;
 
-  XFASTINT (val) = position_indentation (ScanBf ('\n', point, -1));
+  XFASTINT (val) = position_indentation (find_next_newline (point, -1));
   return val;
 }
 
@@ -194,7 +201,7 @@ position_indentation (pos)
   register int end = NumCharacters + 1;
   register int tab_width = XINT (bf_cur->tab_width);
 
-  if (tab_width <= 0) tab_width = 1;
+  if (tab_width <= 0 || tab_width > 20) tab_width = 8;
 
   while (pos < end &&
 	 (c = CharAt (pos),
@@ -207,8 +214,12 @@ position_indentation (pos)
 
 DEFUN ("move-to-column", Fmove_to_column, Smove_to_column, 1, 1, 0,
   "Move point to column COLUMN in the current line.\n\
-Does not change the text, only point.\n\
-Ignores finite width of screen.")
+COLUMN is calculated by adding together the widths of all the displayed\n\
+representations of the character between the start of the previous line\n\
+and point.  (eg control characters will have a width of 2 or 4, tabs\n\
+will have a variable width)\n\
+Ignores finite width of screen, which means that this function may be\n\
+passed values greater than (screen-width)")
   (column)
      Lisp_Object column;
 {
@@ -221,18 +232,18 @@ Ignores finite width of screen.")
 
   Lisp_Object val;
 
-  if (tab_width <= 0) tab_width = 1;
+  if (tab_width <= 0 || tab_width > 20) tab_width = 8;
   CHECK_NUMBER (column, 0);
   goal = XINT (column);
   if (col > goal)
     {
-      pos = ScanBf ('\n', pos, -1);
+      pos = find_next_newline (pos, -1);
       col = 0;
     }
 
   while (col < goal && pos <= end)
     {
-      char c = CharAt (pos);
+      int c = CharAt (pos);
       if (c == '\n')
 	break;
       pos++;
@@ -273,7 +284,17 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 /* On the Celerity, the usual definition fails to work.
    This definition (which ought to be equivalent) does work.  */
 #define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff))
-#else
+#endif
+#ifdef ATT3B
+/* 3b machines have the same problem.  */
+#define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff))
+#endif
+#ifdef ibmrt
+/* RT has the same problem.  */
+#define HPOS(VAR) (((VAR) & 0x8000 ? 0xffff0000 : 0) | ((VAR) & 0xffff))
+#endif
+
+#ifndef HPOS
 #define HPOS(VAR) (short) (VAR)
 #endif
 
@@ -293,9 +314,8 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
       ? XINT (bf_cur->selective_display)
 	: !NULL (bf_cur->selective_display) ? -1 : 0;
   int prevpos;
-  struct position val;
 
-  if (tab_width <= 0) tab_width = 1;
+  if (tab_width <= 0 || tab_width > 20) tab_width = 8;
   for (pos = from; pos < to && cpos < target; pos++)
     {
       prevpos = cpos;
@@ -324,9 +344,12 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 	      while (selective > 0 && position_indentation (pos + 1) >= selective);
 	      pos--;
 	      /* Allow for the " ..." that is displayed for them. */
-	      cpos += 4;
-	      if (HPOS (cpos) >= width)
-		cpos -= HPOS (cpos) - width;
+	      if (!NULL (bf_cur->selective_display_ellipses))
+		{
+		  cpos += 4;
+		  if (HPOS (cpos) >= width)
+		    cpos -= HPOS (cpos) - width;
+		}
 	    }
 	  else
 	    cpos += (1 << SHORTBITS) - HPOS (cpos);
@@ -340,6 +363,13 @@ compute_motion (from, fromvpos, fromhpos, to, tovpos, tohpos, width, hscroll, ta
 	     everything from a ^M to the end of the line is invisible */
 	  while (pos < to && CharAt(pos) != '\n') pos++;
 	  pos--;
+	  /* Allow for the " ..." that is displayed for them. */
+	  if (!NULL (bf_cur->selective_display_ellipses))
+	    {
+	      cpos += 4;
+	      if (HPOS (cpos) >= width)
+		cpos -= HPOS (cpos) - width;
+	    }
 	}
       else
 	cpos += (ctl_arrow && c < 0200) ? 2 : 4;
@@ -428,11 +458,11 @@ vmotion (from, vtarget, width, hscroll, window)
 	 to determine hpos of starting point */
       if (from > FirstCharacter && CharAt (from - 1) != '\n')
 	{
-	  prevline = ScanBf ('\n', from, -1);
+	  prevline = find_next_newline (from, -1);
 	  while (selective > 0
 		 && prevline > FirstCharacter
 		 && position_indentation (prevline) >= selective)
-	    prevline = ScanBf ('\n', prevline - 1, -1);
+	    prevline = find_next_newline (prevline - 1, -1);
 	  pos = *compute_motion (prevline, 0,
 				 lmargin + (prevline == 1 ? start_hpos : 0),
 				 from, 10000, 10000,
@@ -458,7 +488,7 @@ vmotion (from, vtarget, width, hscroll, window)
       prevline = from;
       while (1)
 	{
-	  prevline = ScanBf ('\n', prevline - 1, -1);
+	  prevline = find_next_newline (prevline - 1, -1);
 	  if (prevline == FirstCharacter
 	      || selective <= 0
 	      || position_indentation (prevline) < selective)
@@ -496,7 +526,7 @@ If LINES is negative, this is moving up.\n\
 Sets point to position found; this may be start of line\n\
  or just the start of a continuation line.\n\
 Returns number of lines moved; may be closer to zero than LINES\n\
- if end of buffer was reached.")
+ if beginning or end of buffer was reached.")
   (lines)
      Lisp_Object lines;
 {
@@ -518,8 +548,9 @@ Returns number of lines moved; may be closer to zero than LINES\n\
 
 syms_of_indent ()
 {
-  DefBoolVar ("indent-tabs-mode", &indent_tabs_mode,
-    "*Indentation can insert tabs if this is non-nil.");
+  DEFVAR_BOOL ("indent-tabs-mode", &indent_tabs_mode,
+    "*Indentation can insert tabs if this is non-nil.\n\
+Setting this variable automatically makes it local to the current buffer.");
   indent_tabs_mode = 1;
 
   defsubr (&Scurrent_indentation);

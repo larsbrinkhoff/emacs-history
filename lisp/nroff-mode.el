@@ -1,4 +1,5 @@
-;; Copyright (C) 1985 N. Ziring and Richard M. Stallman.
+;; GNU Emacs major mode for editing nroff source
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,7 +19,6 @@
 ;; and this notice must be preserved on all copies.
 
 
-;; GNU Emacs major mode for editing nroff source
 
 (defvar nroff-mode-abbrev-table nil
   "Abbrev table used while in nroff mode.")
@@ -56,7 +56,39 @@ closing requests for requests that are used in matched pairs."
   (setq paragraph-start (concat "^\\.\\|" paragraph-start))
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate (concat "^\\.\\|" paragraph-separate))
+  ;; comment syntax added by mit-erl!gildea 18 Apr 86
+  (make-local-variable 'comment-start)
+  (setq comment-start "\\\" ")
+  (make-local-variable 'comment-start-skip)
+  (setq comment-start-skip "\\\\\"[ \t]*")
+  (make-local-variable 'comment-column)
+  (setq comment-column 24)
+  (make-local-variable 'comment-indent-hook)
+  (setq comment-indent-hook 'nroff-comment-indent)
   (run-hooks 'text-mode-hook 'nroff-mode-hook))
+
+;;; Compute how much to indent a comment in nroff/troff source.
+;;; By mit-erl!gildea April 86
+(defun nroff-comment-indent ()
+  "Compute indent for an nroff/troff comment.
+Puts a full-stop before comments on a line by themselves."
+  (let ((pt (point)))
+    (unwind-protect
+	(progn
+	  (skip-chars-backward " \t")
+	  (if (bolp)
+	      (progn
+		(setq pt (1+ pt))
+		(insert ?.)
+		1)
+	    (if (save-excursion
+		  (backward-char 1)
+		  (looking-at "^\\."))
+		1
+	      (max comment-column
+		   (* 8 (/ (+ (current-column)
+			      9) 8)))))) ; add 9 to ensure at least two blanks
+      (goto-char pt))))
 
 (defun count-text-lines (start end &optional print)
   "Count lines in region, except for nroff request lines.
@@ -105,8 +137,21 @@ An argument is a repeat count; negative means move forward."
     (".(z" . ".)z")
     (".(d" . ".)d")
     (".(f" . ".)f")
+    (".LG" . ".NL")
+    (".SM" . ".NL")
+    (".LD" . ".DE")
+    (".CD" . ".DE")
+    (".BD" . ".DE")
     (".DS" . ".DE")
+    (".FS" . ".FE")
     (".KS" . ".KE")
+    (".KF" . ".KE")
+    (".RS" . ".RE")
+    (".TS" . ".TE")
+    (".EQ" . ".EN")
+    (".PS" . ".PE")
+    (".na" . ".ad b")
+    (".nf" . ".fi")
     (".de" . "..")))
 
 (defun electric-nroff-newline (arg)
@@ -124,7 +169,9 @@ automatically inserts the matching closing request after point."
 				       nroff-brace-table))))))
     (if (null completion)
 	(newline (prefix-numeric-value arg))
-      (insert "\n" completion "\n"))))
+      (save-excursion
+	(insert "\n\n" completion "\n"))
+      (forward-char 1))))
 
 (defun electric-nroff-mode (arg)
   "Toggle nroff-electric-newline minor mode
@@ -133,10 +180,13 @@ request at the beginning of the line, and insert the
 matching closing request if necessary.  
 This command toggles that mode (off->on, on->off), 
 with an argument, turns it on iff arg is positive, otherwise off."
-     (interactive "P")
-     (setq nroff-electric-mode
-	   (cond
-	    ((null arg) (null nroff-electric-mode))
-	    (t (> (prefix-numeric-value arg) 0))))
-     (set-minor-mode 'electric-nroff-mode "electric" nroff-electric-mode))
+  (interactive "P")
+  (or (eq major-mode 'nroff-mode) (error "Must be in nroff mode"))
+  (or (assq 'nroff-electric-mode minor-mode-alist)
+      (setq minor-mode-alist (append minor-mode-alist
+				     (list '(nroff-electric-mode
+					     " Electric")))))
+  (setq nroff-electric-mode
+	(cond ((null arg) (null nroff-electric-mode))
+	      (t (> (prefix-numeric-value arg) 0)))))
 

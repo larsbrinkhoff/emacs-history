@@ -1,5 +1,5 @@
 ;; Text mode, and its ideosyncratic commands.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -26,27 +26,28 @@
   "Abbrev table used while in text mode.")
 (define-abbrev-table 'text-mode-abbrev-table ())
 
-(if (null text-mode-syntax-table)
-    (let ((st (syntax-table)))
-      (unwind-protect
-       (progn
-	(setq text-mode-syntax-table (make-syntax-table))
-	(set-syntax-table text-mode-syntax-table)
-	(modify-syntax-entry ?\" ".   ")
-	(modify-syntax-entry ?\\ ".   ")
-	(modify-syntax-entry ?' "w   "))
-       (set-syntax-table st))))
+(if text-mode-syntax-table
+    ()
+  (setq text-mode-syntax-table (make-syntax-table))
+  (set-syntax-table text-mode-syntax-table)
+  (modify-syntax-entry ?\" ".   " text-mode-syntax-table)
+  (modify-syntax-entry ?\\ ".   " text-mode-syntax-table)
+  (modify-syntax-entry ?' "w   " text-mode-syntax-table))
 
-(defvar text-mode-map (make-sparse-keymap))
-(define-key text-mode-map "\t" 'tab-to-tab-stop)
-(define-key text-mode-map "\es" 'center-line)
-(define-key text-mode-map "\eS" 'center-paragraph)
+(defvar text-mode-map nil "")
+(if text-mode-map
+    ()
+  (setq text-mode-map (make-sparse-keymap))
+  (define-key text-mode-map "\t" 'tab-to-tab-stop)
+  (define-key text-mode-map "\es" 'center-line)
+  (define-key text-mode-map "\eS" 'center-paragraph))
 
-(defun non-saved-text-mode ()
-  "Like text-mode, but delete auto save file when file is saved for real."
-  (text-mode)
-  (make-local-variable 'delete-auto-save-files)
-  (setq delete-auto-save-files t))
+
+;(defun non-saved-text-mode ()
+;  "Like text-mode, but delete auto save file when file is saved for real."
+;  (text-mode)
+;  (make-local-variable 'delete-auto-save-files)
+;  (setq delete-auto-save-files t))
 
 (defun text-mode ()
   "Major mode for editing text intended for humans to read.  Special commands:\\{text-mode-map}
@@ -61,10 +62,13 @@ if that value is non-nil."
   (set-syntax-table text-mode-syntax-table)
   (run-hooks 'text-mode-hook))
 
-(defvar indented-text-mode-map (make-sparse-keymap))
-(define-key indented-text-mode-map "\t" 'indent-relative)
-(define-key indented-text-mode-map "\es" 'center-line)
-(define-key indented-text-mode-map "\eS" 'center-paragraph)
+(defvar indented-text-mode-map ())
+(if indented-text-mode-map
+    ()
+  (setq indented-text-mode-map (make-sparse-keymap))
+  (define-key indented-text-mode-map "\t" 'indent-relative)
+  (define-key indented-text-mode-map "\es" 'center-line)
+  (define-key indented-text-mode-map "\eS" 'center-paragraph))
 
 (defun indented-text-mode ()
   "Major mode for editing indented text intended for humans to read.\\{indented-text-mode-map}

@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs: output message to a file.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,14 +28,12 @@
 If the file does not exist, ask if it should be created.
 If file is being visited, the message is appended to the Emacs
 buffer visiting that file."
-  (interactive
-   (list
-    (read-file-name
-     (concat "Output message to Rmail file: (default "
-	     (file-name-nondirectory rmail-last-rmail-file)
-	     ") ")
-     (file-name-directory rmail-last-rmail-file)
-     rmail-last-rmail-file)))
+  (interactive (list (read-file-name
+		      (concat "Output message to Rmail file: (default "
+			      (file-name-nondirectory rmail-last-rmail-file)
+			      ") ")
+		      (file-name-directory rmail-last-rmail-file)
+		      rmail-last-rmail-file)))
   (setq file-name (expand-file-name file-name))
   (setq rmail-last-rmail-file file-name)
   (rmail-maybe-set-message-counters)
@@ -64,7 +62,8 @@ buffer visiting that file."
 	  ;; File has been visited, in buffer BUF.
 	  (set-buffer buf)
 	  (let ((buffer-read-only nil)
-		(msg rmail-current-message))
+		(msg (and (boundp 'rmail-current-message)
+			  rmail-current-message)))
 	    ;; If MSG is non-nil, buffer is in RMAIL mode.
 	    (if msg
 		(progn (widen)
@@ -77,7 +76,7 @@ buffer visiting that file."
 		  (search-backward "\^_")
 		  (narrow-to-region (point) (point-max))
 		  (goto-char (1+ (point-min)))
-		  (rmail-count-new-messages)
+		  (rmail-count-new-messages t)
 		  (rmail-show-message msg))))))))
   (rmail-set-attribute "filed" t)
   (and rmail-delete-after-output (rmail-delete-forward)))
@@ -114,5 +113,7 @@ buffer visiting that file."
 	(insert ?>))
       (append-to-file (point-min) (point-max) file-name))
     (kill-buffer tembuf))
-  (rmail-set-attribute "filed" t)
-  (and rmail-delete-after-output (rmail-delete-forward)))
+  (if (equal major-mode 'rmail-mode)
+      (progn
+	(rmail-set-attribute "filed" t)
+	(and rmail-delete-after-output (rmail-delete-forward)))))

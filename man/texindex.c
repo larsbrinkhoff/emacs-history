@@ -1,5 +1,5 @@
 /* Prepare Tex index dribble output into an actual index.
-   Copyright (C) Richard M. Stallman 1984
+   Copyright (C) Richard M. Stallman 1984, 1987
 
    Permission is granted to anyone to make or distribute
    verbatim copies of this program
@@ -28,11 +28,23 @@
  what you give them.   Help stamp out software-hoarding!  */
 
 #include <stdio.h>
+#include <ctype.h>
 #include <sys/file.h>
 
 #ifndef L_XTND
 #define L_XTND 2
 #endif
+
+#ifdef VMS
+#define EXIT_SUCCESS ((1 << 28) | 1)
+#define EXIT_FATAL ((1 << 28) | 4)
+#define unlink delete
+#define tell(fd) lseek(fd, 0L, 1)
+#else
+#define EXIT_SUCCESS 0
+#define EXIT_FATAL 1
+#endif
+
 
 /* When sorting in core, this structure describes one line
  and the position and length of its first keyfield.  */
@@ -92,11 +104,11 @@ char **linearray;
 
 long lines;
 
-/* Directory to use for temporary files */
+/* Directory to use for temporary files.  On Unix, it ends with a slash.  */
 
 char *tempdir;
 
-/* Start of filename to use for temporary files.  It starts with a slash.  */
+/* Start of filename to use for temporary files.  */
 
 char *tempbase;
 
@@ -126,6 +138,7 @@ void sort_offline ();
 char **parsefile ();
 char *find_field ();
 char *find_pos ();
+long find_value ();
 char *find_braced_pos ();
 char *find_braced_end ();
 void writelines ();
@@ -171,7 +184,7 @@ main (argc, argv)
 
   decode_command (argc, argv);
 
-  tempbase = mktemp (concat ("/txiXXXXXX", "", ""));
+  tempbase = mktemp (concat ("txiXXXXXX", "", ""));
 
   /* Process input files completely, one by one.  */
 
@@ -202,7 +215,7 @@ main (argc, argv)
     }
 
   flush_tempfiles (tempcount);
-  exit (0);
+  exit (EXIT_SUCCESS);
 }
 
 /* This page decodes the command line arguments to set the parameter variables
@@ -219,7 +232,12 @@ decode_command (argc, argv)
 
   /* Store default values into parameter variables */
 
-  tempdir = "/tmp";
+#ifdef VMS
+  tempdir = "sys$scratch:";
+#else
+  tempdir = "/tmp/";
+#endif
+
   keep_tempfiles = 0;
 
   /* Allocate argc input files, which must be enough.  */
@@ -324,7 +342,11 @@ tempcopy (idesc)
   int odesc;
   char buffer[BUFSIZE];
 
+#ifdef VMS
+  odesc = open (outfile, O_WRONLY | O_CREAT, 0666, "rfm=var", "rat=cr");
+#else
   odesc = open (outfile, O_WRONLY | O_CREAT, 0666);
+#endif
 
   if (odesc < 0) pfatal_with_name (outfile);
 
@@ -394,7 +416,7 @@ compare_prepared (line1, line2)
   else if (keyfields->numeric)
     tem = line1->key.number - line2->key.number;
   else
-    tem = compare_field (keyfields, line1->key.text, line1->keylen, 0, line2->key, line2->keylen, 0);
+    tem = compare_field (keyfields, line1->key.text, line1->keylen, 0, line2->key.text, line2->keylen, 0);
   if (tem)
     {
       if (keyfields->reverse)
@@ -599,6 +621,20 @@ find_braced_end (str)
   return p - 1;
 }
 
+long
+find_value (start, length)
+     char *start;
+     long length;
+{
+  while (length != 0L) {
+    if (isdigit(*start))
+      return atol(start);
+    length--;
+    start++;
+  }
+  return 0l;
+}
+
 /* Compare two fields (each specified as a start pointer and a character count)
  according to `keyfield'.  The sign of the value reports the relation between the fields */
 
@@ -621,7 +657,7 @@ compare_field (keyfield, start1, length1, pos1, start2, length2, pos2)
     }
   if (keyfield->numeric)
     {
-      long value = atol (start1) - atol (start2);
+	long value = find_value (start1, length1) - find_value (start2, length2);
       if (value > 0) return 1;
       if (value < 0) return -1;
       return 0;
@@ -654,6 +690,9 @@ compare_field (keyfield, start1, length1, pos1, start2, length2, pos2)
 
 	  /* Actually compare */
 
+	  /* Anything but a letter or digit is less than any letter or digit */
+	  if (isalnum (c1) != isalnum (c2))
+	    return (isalnum (c1)) ? 1 : -1;
 	  if (c1 != c2) return c1 - c2;
 	  if (!c1) break;
 	}
@@ -741,7 +780,11 @@ sort_offline (infile, nfiles, total, outfile)
   for (i = 0; i < ntemps; i++)
     {
       char *outname = maketempname (++tempcount);
+#ifdef VMS
+      FILE *ostream = fopen (outname, "w", "rfm=var", "rat=cr");
+#else
       FILE *ostream = fopen (outname, "w");
+#endif
       long tempsize = 0;
 
       if (!ostream) pfatal_with_name (outname);
@@ -812,7 +855,12 @@ sort_in_core (infile, total, outfile)
 
   if (desc < 0)
     fatal ("failure reopening %s", infile);
-  file_size = read (desc, data, total);
+  for (file_size = 0; ; )
+    {
+      if ((i = read (desc, data + file_size, total - file_size)) <= 0)
+	break;
+      file_size += i;
+    }
   file_data = data;
   data[file_size] = 0;
 
@@ -855,7 +903,7 @@ sort_in_core (infile, total, outfile)
 	  lp->text = *p;
 	  lp->key.text = find_field (keyfields, *p, &lp->keylen);
 	  if (keyfields->numeric)
-	    lp->key.number = atol (lp->key.text);
+	    lp->key.number = find_value (lp->key.text, lp->keylen);
 	}
 
       qsort (lineinfo, nextline - linearray, sizeof (struct lineinfo), compare_prepared);
@@ -872,7 +920,11 @@ sort_in_core (infile, total, outfile)
 
   if (outfile)
     {
+#ifdef VMS
+      ostream = fopen (outfile, "w", "rfm=var", "rat=cr");
+#else
       ostream = fopen (outfile, "w");
+#endif
       if (!ostream)
 	pfatal_with_name (outfile);
     }
@@ -1253,7 +1305,13 @@ merge_direct (infiles, nfiles, outfile)
   FILE *ostream = stdout;
 
   if (outfile)
-    ostream = fopen (outfile, "w");
+    {
+#ifdef VMS
+      ostream = fopen (outfile, "w", "rfm=var", "rat=cr");
+#else
+      ostream = fopen (outfile, "w");
+#endif
+    }
   if (!ostream) pfatal_with_name (outfile);
 
   init_index ();
@@ -1385,7 +1443,7 @@ fatal (s1, s2)
      char *s1, *s2;
 {
   error (s1, s2);
-  exit (1);
+  exit (EXIT_FATAL);
 }
 
 /* Print error message.  `s1' is printf control string, `s2' is arg for it. */
@@ -1401,8 +1459,14 @@ error (s1, s2)
 perror_with_name (name)
      char *name;
 {
+#ifdef VMS
+#include <errno.h>
+  extern noshare int sys_nerr;
+  extern noshare char *sys_errlist[];
+#else
   extern int errno, sys_nerr;
   extern char *sys_errlist[];
+#endif
   char *s;
 
   if (errno < sys_nerr)

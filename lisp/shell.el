@@ -1,5 +1,5 @@
 ;; Run subshell under Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -20,6 +20,12 @@
 
 
 (provide 'shell)
+
+;; For old Emacs versions.
+(or (fboundp 'process-send-string)
+    (progn
+      (fset 'process-send-string 'send-string)
+      (fset 'process-send-region 'send-region)))
 
 (defvar last-input-start nil
   "In a shell-mode buffer, marker for start of last unit of input.")
@@ -70,13 +76,13 @@ Variables shell-cd-regexp, shell-pushd-regexp and shell-popd-regexp
 are used to match these command names.
 
 You can send text to the shell (or its subjobs) from other buffers
-using the commands send-region, send-string and lisp-send-defun."
+using the commands process-send-region, process-send-string
+and lisp-send-defun."
   (interactive)
   (kill-all-local-variables)
   (setq major-mode 'shell-mode)
   (setq mode-name "Shell")
-  (setq mode-line-format 
-	"--%1*%1*-Emacs: %17b   %M   %[(%m: %s)%]----%3p--%-")
+  (setq mode-line-process '(": %s"))
   (use-local-map shell-mode-map)
   (make-local-variable 'shell-directory-stack)
   (setq shell-directory-stack nil)
@@ -100,6 +106,15 @@ using the commands send-region, send-string and lisp-send-defun."
   (define-key shell-mode-map "\C-c\C-r" 'show-output-from-shell)
   (define-key shell-mode-map "\C-c\C-y" 'copy-last-shell-input))
 
+(defvar explicit-csh-args
+  (if (eq system-type 'hpux)
+      ;; -T persuades HP's csh not to think it is smarter
+      ;; than us about what terminal modes to use.
+      '("-i" "-T")
+    '("-i"))
+  "Args passed to inferior shell by M-x shell, if the shell is csh.
+Value is a list of strings, which may be nil.")
+
 (defun shell ()
   "Run an inferior shell, with I/O through buffer *shell*.
 If buffer exists but shell process is not running, make new shell.
@@ -113,37 +128,46 @@ The buffer is put in shell-mode, giving commands for sending input
 and controlling the subjobs of the shell.  See shell-mode.
 See also variable shell-prompt-pattern.
 
+The shell file name (sans directories) is used to make a symbol name
+such as `explicit-csh-arguments'.  If that symbol is a variable,
+its value is used as a list of arguments when invoking the shell.
+Otherwise, one argument `-i' is passed to the shell.
+
 Note that many people's .cshrc files unconditionally clear the prompt.
 If yours does, you will probably want to change it."
   (interactive)
   (let* ((prog (or explicit-shell-file-name
 		   (getenv "ESHELL")
-		   (if (eq system-type 'hpux) "sh"
-		     ;; On hpux people normally use csh,
-		     ;; but the csh in hpux has stty sanity checking
-		     ;; so it does not work under emacs.
-		     (getenv "SHELL"))
+		   (getenv "SHELL")
 		   "/bin/sh"))		     
 	 (name (file-name-nondirectory prog)))
     (switch-to-buffer
-     (make-shell "shell" prog
-		 (if (file-exists-p (concat "~/.emacs_" name))
-		     (concat "~/.emacs_" name))
-		 "-i"))))
+     (apply 'make-shell "shell" prog
+	    (if (file-exists-p (concat "~/.emacs_" name))
+		(concat "~/.emacs_" name))
+	    (let ((symbol (intern-soft (concat "explicit-" name "-args"))))
+	      (if (and symbol (boundp symbol))
+		  (symbol-value symbol)
+		'("-i")))))))
 
 (defun make-shell (name program &optional startfile &rest switches)
   (let ((buffer (get-buffer-create (concat "*" name "*")))
 	proc status size)
     (setq proc (get-buffer-process buffer))
-    (if proc
-	(setq status (process-status proc)))
+    (if proc (setq status (process-status proc)))
     (save-excursion
       (set-buffer buffer)
       ;;    (setq size (buffer-size))
       (if (memq status '(run stop))
 	  nil
 	(if proc (delete-process proc))
-	(setq proc (apply 'start-process (append (list name buffer program) switches)))
+	(setq proc (apply 'start-process name buffer
+			  (concat exec-directory "env")
+			  (format "TERMCAP=emacs:co#%d:tc=unknown:"
+				  (screen-width))
+			  "TERM=emacs"
+			  "EMACS=t"
+			  "-" program switches))
 	(cond (startfile
 	       ;;This is guaranteed to wait long enough
 	       ;;but has bad results if the shell does not prompt at all
@@ -155,13 +179,18 @@ If yours does, you will probably want to change it."
 	       (insert-file-contents startfile)
 	       (setq startfile (buffer-substring (point) (point-max)))
 	       (delete-region (point) (point-max))
-	       (send-string proc startfile)))
+	       (process-send-string proc startfile)))
 	(setq name (process-name proc)))
       (goto-char (point-max))
       (set-marker (process-mark proc) (point))
       (shell-mode))
     buffer))
 
+(defvar shell-set-directory-error-hook 'ignore
+  "Function called with no arguments when shell-send-input
+recognizes a change-directory command but gets an error
+trying to change Emacs's default directory.")
+
 (defun shell-send-input ()
   "Send input to subshell.
 At end of buffer, sends all text after last output
@@ -191,58 +220,67 @@ This regexp should start with \"^\"."
     (condition-case ()
 	(save-excursion
 	  (goto-char last-input-start)
-	  (cond ((and (looking-at shell-popd-regexp)
-		      (memq (char-after (match-end 0)) '(?\; ?\n)))
-		 (if shell-directory-stack
-		     (progn
-		       (cd (car shell-directory-stack))
-		       (setq shell-directory-stack (cdr shell-directory-stack)))))
-		((looking-at shell-pushd-regexp)
-		 (cond ((memq (char-after (match-end 0)) '(?\; ?\n))
-			(if shell-directory-stack
-			    (let ((old default-directory))
-			      (cd (car shell-directory-stack))
-			      (setq shell-directory-stack
-				    (cons old (cdr shell-directory-stack))))))
-		       ((memq (char-after (match-end 0)) '(?\  ?\t))
-			(let (dir)
-			  (skip-chars-forward "^ ")
-			  (skip-chars-forward " \t")
-			  (if (file-directory-p
-				(setq dir
-				      (expand-file-name
-					(substitute-in-file-name
-					 (buffer-substring
-					  (point)
-					  (progn
-					    (skip-chars-forward "^\n \t;")
-					    (point)))))))
-			      (progn
-				(setq shell-directory-stack
-				      (cons default-directory shell-directory-stack))
-				(cd dir)))))))
-		((looking-at shell-cd-regexp)
-		 (cond ((memq (char-after (match-end 0)) '(?\; ?\n))
-			(cd (getenv "HOME")))
-		       ((memq (char-after (match-end 0)) '(?\  ?\t))
-			(let (dir)
-			  (forward-char 3)
-			  (skip-chars-forward " \t")
-			  (if (file-directory-p
-				(setq dir 
-				      (expand-file-name
-					(substitute-in-file-name
-					 (buffer-substring
-					  (point)
-					  (progn
-					    (skip-chars-forward "^\n \t;")
-					    (point)))))))
-			      (cd dir))))))))
-      (error nil))
+	  (shell-set-directory))
+      (error (funcall shell-set-directory-error-hook)))
   (let ((process (get-buffer-process (current-buffer))))
-    (send-region process last-input-start last-input-end)
+    (process-send-region process last-input-start last-input-end)
     (set-marker (process-mark process) (point))))
 
+;;;  If this code changes (shell-send-input and shell-set-directory),
+;;;  the customization tutorial in
+;;;  info/customizing-tutorial must also change, since it explains this
+;;;  code.  Please let marick@gswd-vms.arpa know of any changes you
+;;;  make. 
+
+(defun shell-set-directory ()
+  (cond ((and (looking-at shell-popd-regexp)
+	      (memq (char-after (match-end 0)) '(?\; ?\n)))
+	 (if shell-directory-stack
+	     (progn
+	       (cd (car shell-directory-stack))
+	       (setq shell-directory-stack (cdr shell-directory-stack)))))
+	((looking-at shell-pushd-regexp)
+	 (cond ((memq (char-after (match-end 0)) '(?\; ?\n))
+		(if shell-directory-stack
+		    (let ((old default-directory))
+		      (cd (car shell-directory-stack))
+		      (setq shell-directory-stack
+			    (cons old (cdr shell-directory-stack))))))
+	       ((memq (char-after (match-end 0)) '(?\  ?\t))
+		(let (dir)
+		  (skip-chars-forward "^ ")
+		  (skip-chars-forward " \t")
+		  (if (file-directory-p
+			(setq dir
+			      (expand-file-name
+				(substitute-in-file-name
+				  (buffer-substring
+				    (point)
+				    (progn
+				      (skip-chars-forward "^\n \t;")
+				      (point)))))))
+		      (progn
+			(setq shell-directory-stack
+			      (cons default-directory shell-directory-stack))
+			(cd dir)))))))
+	((looking-at shell-cd-regexp)
+	 (cond ((memq (char-after (match-end 0)) '(?\; ?\n))
+		(cd (getenv "HOME")))
+	       ((memq (char-after (match-end 0)) '(?\  ?\t))
+		(let (dir)
+		  (forward-char 3)
+		  (skip-chars-forward " \t")
+		  (if (file-directory-p
+			(setq dir
+			      (expand-file-name
+				(substitute-in-file-name
+				  (buffer-substring
+				    (point)
+				    (progn
+				      (skip-chars-forward "^\n \t;")
+				      (point)))))))
+		      (cd dir))))))))
+  
 (defun shell-send-eof ()
   "Send eof to subshell (or to the program running under it)."
   (interactive)
@@ -301,6 +339,22 @@ Also put cursor there."
   (lisp-mode-commands inferior-lisp-mode-map)
   (define-key inferior-lisp-mode-map "\e\C-x" 'lisp-send-defun))
 
+(defvar inferior-lisp-program "lisp"
+  "*Program name for invoking an inferior Lisp with `run-lisp'.")
+
+(defvar inferior-lisp-load-command "(load \"%s\")\n"
+  "*Format-string for building a Lisp expression to load a file.
+This format string should use %s to substitute a file name
+and should result in a Lisp expression that will command the inferior Lisp
+to load that file.  The default works acceptably on most Lisps.
+The string \"(progn (load \\\"%s\\\" :verbose nil :print t) (values))\\\n\"
+produces cosmetically superior output for this application,
+but it works only in Common Lisp.")
+
+(defvar inferior-lisp-prompt "^.*>:? *$"
+  "*Regexp to recognize prompts from the inferior Lisp.
+Default is right for Franz Lisp and kcl.")
+
 (defun inferior-lisp-mode ()
   "Major mode for interacting with an inferior Lisp process.
 
@@ -312,7 +366,8 @@ if that value is non-nil.  Likewise with the value of shell-mode-hook.
 lisp-mode-hook is called after shell-mode-hook.
 
 You can send text to the inferior Lisp from other buffers
-using the commands send-region, send-string and \\[lisp-send-defun].
+using the commands process-send-region, process-send-string
+and \\[lisp-send-defun].
 
 Commands:
 Delete converts tabs to spaces as it moves back.
@@ -335,8 +390,7 @@ C-x C-v puts top of last batch of output at top of window."
   (kill-all-local-variables)
   (setq major-mode 'inferior-lisp-mode)
   (setq mode-name "Inferior Lisp")
-  (setq mode-line-format 
-	"--%1*%1*-Emacs: %17b   %M   %[(%m: %s)%]----%3p--%-")
+  (setq mode-line-process '(": %s"))
   (lisp-mode-variables)
   (use-local-map inferior-lisp-mode-map)
   (make-local-variable 'last-input-start)
@@ -348,18 +402,41 @@ C-x C-v puts top of last batch of output at top of window."
 (defun run-lisp ()
   "Run an inferior Lisp process, input and output via buffer *lisp*."
   (interactive)
-  (switch-to-buffer (make-shell "lisp" "lisp"))
+  (switch-to-buffer (make-shell "lisp" inferior-lisp-program))
   (inferior-lisp-mode))
 
-(defun lisp-send-defun ()
-  "Send the current defun to the Lisp process made by M-x run-lisp."
-  (interactive)
+(defun lisp-send-defun (display-flag)
+  "Send the current defun to the Lisp process made by M-x run-lisp.
+With argument, force redisplay and scrolling of the *lisp* buffer.
+Variable `inferior-lisp-load-command' controls formatting of
+the `load' form that is set to the Lisp process."
+  (interactive "P")
   (save-excursion
    (end-of-defun)
-   (let ((end (point)))
+   (let ((end (point))
+	 (filename (format "/tmp/emlisp%d" (process-id (get-process "lisp")))))
      (beginning-of-defun)
-     (send-region "lisp" (point) end)
-     (send-string "lisp" "\n"))))
+     (write-region (point) end filename nil 'nomessage)
+     (process-send-string "lisp" (format inferior-lisp-load-command filename)))
+   (if display-flag
+       (let* ((process (get-process "lisp"))
+	      (buffer (process-buffer process))
+	      (w (or (get-buffer-window buffer) (display-buffer buffer)))
+	      (height (window-height w))
+	      (end))
+	 (save-excursion
+	   (set-buffer buffer)
+	   (setq end (point-max))
+	   (while (progn
+		    (accept-process-output process)
+		    (goto-char (point-max))
+		    (beginning-of-line)
+		    (or (= (point-max) end)
+			(not (looking-at inferior-lisp-prompt)))))
+	   (setq end (point-max))
+	   (vertical-motion (- 4 height))
+	   (set-window-start w (point)))
+	 (set-window-point w end)))))
 
 (defun lisp-send-defun-and-go ()
   "Send the current defun to the inferior Lisp, and switch to *lisp* buffer."

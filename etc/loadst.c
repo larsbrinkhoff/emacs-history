@@ -19,23 +19,6 @@
    with strcpy.  Note that config.h may define NLIST_STRUCT
    for more modrern USG systems.  */
 
-#ifdef USG
-#ifdef HPUX
-#define LDAV_SYMBOL "_avenrun"
-#define KERNEL_FILE "/hp-ux"
-#define NLIST_STRUCT
-#else /* not HPUX */
-#define LDAV_SYMBOL "avenrun"
-#define KERNEL_FILE "/unix"
-#endif /* not HPUX */
-#else /* not USG */
-#define LDAV_SYMBOL "_avenrun"
-#define NLIST_STRUCT
-#ifndef KERNEL_FILE
-#define KERNEL_FILE "/vmunix"
-#endif /* no KERNEL_FILE yet */
-#endif /* not USG */
-
 
 #ifdef LOAD_AVE_TYPE
 #ifndef NLIST_STRUCT
@@ -52,11 +35,19 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #ifdef LOAD_AVE_TYPE
+#ifndef RTU
+#ifndef UMAX
 #include <sys/dk.h>
+#endif /* UMAX */
+#endif /* not RTU */
 #endif /* LOAD_AVE_TYPE */
 #endif /* USG */
 
 #include <sys/stat.h>
+
+#ifdef BSD
+#include <sys/ioctl.h>
+#endif /* BSD */
 
 /* We don't want Emacs's macro definitions for these USG primitives. */
 
@@ -142,13 +133,18 @@ char  **argv;
     : (char *) getenv ("USER");
 #endif
 
-  mail = (char *) malloc (strlen (user_name) + 30);
+  mail = (char *) getenv ("MAIL");
+
+  if (mail == 0)
+    {
+      mail = (char *) malloc (strlen (user_name) + 30);
 
 #ifdef USG
-  sprintf (mail, "/usr/mail/%s", user_name);
+      sprintf (mail, "/usr/mail/%s", user_name);
 #else /* not USG */
-  sprintf (mail, "/usr/spool/mail/%s", user_name);
+      sprintf (mail, "/usr/spool/mail/%s", user_name);
 #endif /* not USG */
+    }
 
   if (stat (mail, &st) >= 0
       && (st.st_mode & S_IFMT) == S_IFDIR)
@@ -222,5 +218,18 @@ char  **argv;
       if (repetition <= 0)
 	break;
       sleep (repetition);
+
+#ifdef BSD
+      /* We are about to loop back and write another unit of output.  */
+      /* If previous output has not yet been read by Emacs, flush it
+	 so the pty output buffer never gets full and Emacs
+	 can always get the latest update right away.  */
+      /* ??? Someone should write a USG version of this code!  */
+      {
+	int zero = 0;
+
+	ioctl (fileno (stdout), TIOCFLUSH, &zero);
+      }
+#endif
     }
 }

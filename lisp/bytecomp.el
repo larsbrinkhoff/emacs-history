@@ -1,5 +1,5 @@
 ;; Compilation of Lisp code into byte code.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,6 +18,7 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+(provide 'byte-compile)
 
 (defvar byte-compile-constnum -1
   "Transfer vector index of last constant allocated.")
@@ -155,7 +156,7 @@ Unbinds standard-output and makes the temp buffer visible.")
 (defconst byte-min 94)
 
 (defconst byte-point 96)
-(defconst byte-mark 97)
+;(defconst byte-mark 97) no longer generated -- lisp code shouldn't call this very frequently
 (defconst byte-goto-char 98)
 (defconst byte-insert 99)
 (defconst byte-point-max 100)
@@ -165,7 +166,7 @@ Unbinds standard-output and makes the temp buffer visible.")
 (defconst byte-preceding-char 104)
 (defconst byte-current-column 105)
 (defconst byte-indent-to 106)
-(defconst byte-scan-buffer 107)
+;(defconst byte-scan-buffer 107) no longer generated
 (defconst byte-eolp 108)
 (defconst byte-eobp 109)
 (defconst byte-bolp 110)
@@ -173,7 +174,7 @@ Unbinds standard-output and makes the temp buffer visible.")
 (defconst byte-current-buffer 112)
 (defconst byte-set-buffer 113)
 (defconst byte-read-char 114)
-(defconst byte-set-mark 115)
+;(defconst byte-set-mark 115)       ;obsolete
 (defconst byte-interactive-p 116)
 
 (defun byte-recompile-directory (directory &optional arg)
@@ -184,12 +185,11 @@ only if a prefix argument has been specified."
   (interactive "DByte recompile directory: \nP")
   (save-some-buffers)
   (setq directory (expand-file-name directory))
-  (let ((files (directory-files directory))
+  (let ((files (directory-files directory nil "\\.el\\'"))
 	(count 0)
 	source)
     (while files
-      (if (and (string-match ".el$" (car files))
-	       (not (auto-save-file-name-p (car files)))
+      (if (and (not (auto-save-file-name-p (car files)))
 	       (setq source (expand-file-name (car files) directory))
 	       (if (file-exists-p (concat source "c"))
 		   (file-newer-than-file-p source (concat source "c"))
@@ -199,14 +199,6 @@ only if a prefix argument has been specified."
       (setq files (cdr files)))
     (message "Done (Total of %d file%s compiled)"
 	     count (if (= count 1) "" "s"))))
-
-(defun file-newer-than-file-p (file1 file2)
-  "Return t if FILE1 modified more recently than FILE2."
-  (let ((mtime1 (car (nthcdr 5 (file-attributes file1))))
-	(mtime2 (car (nthcdr 5 (file-attributes file2)))))
-    (or (> (car mtime1) (car mtime2))
-	(and (= (car mtime1) (car mtime2))
-	     (> (car (cdr mtime1)) (car (cdr mtime2)))))))
 
 (defun byte-compile-file (filename)
   "Compile a file of Lisp code named FILENAME into a file of byte code.
@@ -218,8 +210,7 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
   (let ((inbuffer (get-buffer-create " *Compiler Input*"))
 	(outbuffer (get-buffer-create " *Compiler Output*"))
 	(byte-compile-macro-environment nil)
-
-	(case-fold-search nil) ;I thought this was lisp, not unix!
+	(case-fold-search nil)
 	sexp)
     (save-excursion
       (set-buffer inbuffer)
@@ -239,6 +230,8 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	(print (byte-compile-file-form sexp) outbuffer))
       (set-buffer outbuffer)
       (goto-char 1)
+      ;; In each defun or autoload, if there is a doc string,
+      ;; put a backslash-newline at the front of it.
       (while (search-forward "\n(" nil t)
 	(cond ((looking-at "defun \\|autoload ")
 	       (forward-sexp 3)
@@ -246,37 +239,62 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	       (if (looking-at "\"")
 		   (progn (forward-char 1)
 			  (insert "\\\n"))))))
-      (write-region 1 (point-max) (concat filename "c"))
+      (goto-char 1)
+      ;; In each defconst or defvar, if there is a doc string
+      ;; and it starts on the same line as the form begins
+      ;; (i.e. if there is no newline in a string in the initial value)
+      ;; then put in backslash-newline at the start of the doc string.
+      (while (search-forward "\n(" nil t)
+	(if (looking-at "defvar \\|defconst ")
+	    (let ((this-line (1- (point))))
+	      ;;Go to end of initial value expression
+	      (if (condition-case ()
+		      (progn (forward-sexp 3) t)
+		    (error nil))
+		  (progn
+		    (skip-chars-forward " ")
+		    (and (eq this-line
+			     (save-excursion (beginning-of-line) (point)))
+			 (looking-at "\"")
+			 (progn (forward-char 1)
+				(insert "\\\n"))))))))
+      (let ((vms-stmlf-recfm t))
+	(write-region 1 (point-max) (concat filename "c")))
       (kill-buffer (current-buffer))
       (kill-buffer inbuffer)))
   t)
 
 
 (defun byte-compile-file-form (form)
-  (if (memq (car-safe form) '(defun defmacro))
-      (let* ((name (car (cdr form)))
-	     (tem (assq name byte-compile-macro-environment)))
-	(if (eq (car form) 'defun)
-	    (progn
-	      (message "Compiling %s (%s)..." filename (nth 1 form))
-	      (cond (tem (setcdr tem nil))
-		    ((and (fboundp name)
-			  (eq (car-safe (symbol-function name)) 'macro))
-		     ;; shadow existing macro definition
-		     (setq byte-compile-macro-environment
-			   (cons (cons name nil)
-				 byte-compile-macro-environment))))
-	      (prog1 (cons 'defun (byte-compile-lambda (cdr form)))
-		     (if (not noninteractive)
-			 (message "Compiling %s..." filename))))
-	  ;; defmacro
-	  (if tem
-	      (setcdr tem (cons 'lambda (cdr (cdr form))))
-	    (setq byte-compile-macro-environment
-		  (cons (cons name (cons 'lambda (cdr (cdr form))))
-			byte-compile-macro-environment)))
-	  (cons 'defmacro (byte-compile-lambda (cdr form)))))
-    form))
+  (cond ((not (listp form))
+	 form)
+	((memq (car form) '(defun defmacro))
+	 (let* ((name (car (cdr form)))
+		(tem (assq name byte-compile-macro-environment)))
+	   (if (eq (car form) 'defun)
+	       (progn
+		 (message "Compiling %s (%s)..." filename (nth 1 form))
+		 (cond (tem (setcdr tem nil))
+		       ((and (fboundp name)
+			     (eq (car-safe (symbol-function name)) 'macro))
+			;; shadow existing macro definition
+			(setq byte-compile-macro-environment
+			      (cons (cons name nil)
+				    byte-compile-macro-environment))))
+		 (prog1 (cons 'defun (byte-compile-lambda (cdr form)))
+		   (if (not noninteractive)
+		       (message "Compiling %s..." filename))))
+	     ;; defmacro
+	     (if tem
+		 (setcdr tem (cons 'lambda (cdr (cdr form))))
+	       (setq byte-compile-macro-environment
+		     (cons (cons name (cons 'lambda (cdr (cdr form))))
+			   byte-compile-macro-environment)))
+	     (cons 'defmacro (byte-compile-lambda (cdr form))))))
+	((eq (car form) 'require)
+	 (eval form)
+	 form)
+	(t form)))
 
 (defun byte-compile (funname)
   "Byte-compile the definition of function FUNNAME (a symbol)."
@@ -313,8 +331,10 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	(byte-compile-output nil)
 	(byte-compile-string nil)
 	(byte-compile-vector nil))
-    (let ((vars (nreverse (byte-compile-find-vars form)))
-	  (i -1))
+    (let (vars temp (i -1))
+      (setq temp (byte-compile-find-vars form))
+      (setq form (car temp))
+      (setq vars (nreverse (cdr temp)))
       (while vars
 	(setq i (1+ i))
 	(setq byte-compile-constants (cons (cons (car vars) i)
@@ -337,48 +357,74 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
     (list 'byte-code byte-compile-string
 		     byte-compile-vector byte-compile-maxdepth)))
 
+;; Expand all macros in FORM and find all variables it uses.
+;; Return a pair (EXPANDEDFORM . VARS)
+;; VARS is ordered with the variables encountered earliest
+;; at the end.
+;; The body and cases of a condition-case, and the body of a catch,
+;; are not scanned; variables used in them are not reported,
+;; and they are not macroexpanded.  This is because they will
+;; be compiled separately when encountered during the main
+;; compilation pass.
 (defun byte-compile-find-vars (form)
   (let ((all-vars nil))
-    (byte-compile-find-vars-1 form)
-    all-vars))
+    (cons (byte-compile-find-vars-1 form)
+	  all-vars)))
 
+;; Walk FORM, making sure all variables it uses are in ALL-VARS,
+;; and also expanding macros.
+;; Return the result of expanding all macros in FORM.
+;; This is a copy; FORM itself is not altered.
 (defun byte-compile-find-vars-1 (form)
   (cond ((symbolp form)
 	 (if (not (memq form all-vars))
-	     (setq all-vars (cons form all-vars))))
+	     (setq all-vars (cons form all-vars)))
+	 form)
 	((or (not (consp form)) (eq (car form) 'quote))
-	 nil)
+	 form)
 	((memq (car form) '(let let*))
-	 (let ((binds (car (cdr form)))
-	       (body (cdr (cdr form))))
-	   (while binds
-	     (if (symbolp (car binds))
-		 (if (not (memq (car binds) all-vars))
-		     (setq all-vars (cons (car binds) all-vars)))
-	       (if (consp (car binds))
+	 (let* ((binds (copy-sequence (car (cdr form))))
+		(body (cdr (cdr form)))
+		(tail binds))
+	   (while tail
+	     (if (symbolp (car tail))
+		 (if (not (memq (car tail) all-vars))
+		     (setq all-vars (cons (car tail) all-vars)))
+	       (if (consp (car tail))
 		   (progn
-		     (if (not (memq (car (car binds)) all-vars))
-			 (setq all-vars (cons (car (car binds)) all-vars)))
-		     (byte-compile-find-vars-1 (car (cdr (car binds)))))))
-	     (setq binds (cdr binds)))
-	   (while body
-	     (byte-compile-find-vars-1 (car body))
-	     (setq body (cdr body)))))
+		     (if (not (memq (car (car tail)) all-vars))
+			 (setq all-vars (cons (car (car tail)) all-vars)))
+		     (setcar tail
+			     (list (car (car tail))
+				   (byte-compile-find-vars-1 (car (cdr (car tail)))))))))
+	     (setq tail (cdr tail)))
+	   (cons (car form)
+		 (cons binds
+		       (mapcar 'byte-compile-find-vars-1 body)))))
+	((or (eq (car form) 'function)
+	     ;; Because condition-case is compiled by breaking out
+	     ;; all its subexpressions and compiling them separately,
+	     ;; we regard it here as containing nothing but constants.
+	     (eq (car form) 'condition-case))
+	 form)
+	((eq (car form) 'catch)
+	 ;; catch is almost like condition case, but we
+	 ;; treat its first argument normally.
+	 (cons 'catch
+	       (cons (byte-compile-find-vars-1 (nth 1 form))
+		     (nthcdr 2 form))))
 	((eq (car form) 'cond)
-	 (let ((clauses (cdr form)))
-	   (while clauses
-	     (let ((body (car clauses)))
-	       (while body
-		 (byte-compile-find-vars-1 (car body))
-		 (setq body (cdr body))))
-	     (setq clauses (cdr clauses)))))
+	 (let* ((clauses (copy-sequence (cdr form)))
+		(tail clauses))
+	   (while tail
+	     (setcar tail (mapcar 'byte-compile-find-vars-1 (car tail)))
+	     (setq tail (cdr tail)))
+	   (cons 'cond clauses)))
 	((not (eq form (setq form (macroexpand form byte-compile-macro-environment))))
 	 (byte-compile-find-vars-1 form))
-	(t
-	 (let ((body (if (symbolp (car form)) (cdr form) form)))
-	   (while body
-	     (byte-compile-find-vars-1 (car body))
-	     (setq body (cdr body)))))))
+	((symbolp (car form))
+	 (cons (car form) (mapcar 'byte-compile-find-vars-1 (cdr form))))
+	(t (mapcar 'byte-compile-find-vars-1 form))))
 
 ;; This is the recursive entry point for compiling each subform of an expression.
 
@@ -389,21 +435,29 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 
 (defun byte-compile-form (form)
   (setq form (macroexpand form byte-compile-macro-environment))
-  (if (symbolp form)
-      (byte-compile-variable-ref 'byte-varref form)
-    (if (not (consp form))
-	(byte-compile-constant form)
-      (let ((handler (get (car form) 'byte-compile)))
-	(if handler
-	    (funcall handler form)
-	  (byte-compile-push-constant (car form))
-	  (let ((copy (cdr form)))
-	    (while copy (byte-compile-form (car copy)) (setq copy (cdr copy))))
-	  (byte-compile-out 'byte-call (length (cdr form)))
-	  (setq byte-compile-depth (- byte-compile-depth (length (cdr form))))))))
+  (cond ((eq form 'nil)
+	 (byte-compile-constant form))
+	((eq form 't)
+	 (byte-compile-constant form))
+	((symbolp form)
+	 (byte-compile-variable-ref 'byte-varref form))
+	((not (consp form))
+	 (byte-compile-constant form))
+	(t
+	 (let ((handler (get (car form) 'byte-compile)))
+	   (if handler
+	       (funcall handler form)
+	     (byte-compile-normal-call form)))))
   (setq byte-compile-maxdepth
 	(max byte-compile-maxdepth
 	     (setq byte-compile-depth (1+ byte-compile-depth)))))
+
+(defun byte-compile-normal-call (form)
+  (byte-compile-push-constant (car form))
+  (let ((copy (cdr form)))
+    (while copy (byte-compile-form (car copy)) (setq copy (cdr copy))))
+  (byte-compile-out 'byte-call (length (cdr form)))
+  (setq byte-compile-depth (- byte-compile-depth (length (cdr form)))))
 
 (defun byte-compile-variable-ref (base-op var)
   (let ((data (assq var byte-compile-constants)))
@@ -445,8 +499,8 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 (put 'dot 'byte-compile 'byte-compile-no-args)
 (put 'dot 'byte-opcode 'byte-point)
 
-(put 'mark 'byte-compile 'byte-compile-no-args)
-(put 'mark 'byte-opcode 'byte-mark)
+;(put 'mark 'byte-compile 'byte-compile-no-args)
+;(put 'mark 'byte-opcode 'byte-mark)
 
 (put 'point-max 'byte-compile 'byte-compile-no-args)
 (put 'point-max 'byte-opcode 'byte-point-max)
@@ -536,15 +590,15 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 (put 'set-buffer 'byte-compile 'byte-compile-one-arg)
 (put 'set-buffer 'byte-opcode 'byte-set-buffer)
 
-(put 'set-mark 'byte-compile 'byte-compile-one-arg)
-(put 'set-mark 'byte-opcode 'byte-set-mark)
-
-(put 'interactive-p 'byte-compile 'byte-compile-one-arg)
-(put 'interactive-p 'byte-opcode 'byte-interactive-p)
+;set-mark turns out to be too unimportant for its own opcode.
+;(put 'set-mark 'byte-compile 'byte-compile-one-arg)
+;(put 'set-mark 'byte-opcode 'byte-set-mark)
 
 
 (put 'eq 'byte-compile 'byte-compile-two-args)
 (put 'eq 'byte-opcode 'byte-eq)
+(put 'eql 'byte-compile 'byte-compile-two-args)
+(put 'eql 'byte-opcode 'byte-eq)
 
 (put 'memq 'byte-compile 'byte-compile-two-args)
 (put 'memq 'byte-opcode 'byte-memq)
@@ -585,33 +639,53 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 (put 'aset 'byte-compile 'byte-compile-three-args)
 (put 'aset 'byte-opcode 'byte-aset)
 
-(put 'substring 'byte-compile 'byte-compile-three-args)
-(put 'substring 'byte-opcode 'byte-substring)
-
-(put 'scan-buffer 'byte-compile 'byte-compile-three-args)
-(put 'scan-buffer 'byte-opcode 'byte-scan-buffer)
-
 (defun byte-compile-no-args (form)
-  (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0))
+  (if (/= (length form) 1)
+      ;; get run-time wrong-number-of-args error.
+      ;; Would be nice if there were some way to do
+      ;;  compile-time warnings.
+      (byte-compile-normal-call form)
+    (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0)))
 
 (defun byte-compile-one-arg (form)
-  (byte-compile-form (or (car (cdr form)) ''nil))  ;; Push the argument
-  (setq byte-compile-depth (1- byte-compile-depth))
-  (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0))
+  (if (/= (length form) 2)
+      (byte-compile-normal-call form)
+    (byte-compile-form (car (cdr form)))  ;; Push the argument
+    (setq byte-compile-depth (1- byte-compile-depth))
+    (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0)))
 
 (defun byte-compile-two-args (form)
-  (byte-compile-form (or (car (cdr form)) ''nil))  ;; Push the arguments
-  (byte-compile-form (or (nth 2 form) ''nil))
-  (setq byte-compile-depth (- byte-compile-depth 2))
-  (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0))
+  (if (/= (length form) 3)
+      (byte-compile-normal-call form)
+    (byte-compile-form (car (cdr form)))  ;; Push the arguments
+    (byte-compile-form (nth 2 form))
+    (setq byte-compile-depth (- byte-compile-depth 2))
+    (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0)))
 
 (defun byte-compile-three-args (form)
-  (byte-compile-form (or (car (cdr form)) ''nil))  ;; Push the arguments
-  (byte-compile-form (or (nth 2 form) ''nil))
-  (byte-compile-form (or (nth 3 form) ''nil))
-  (setq byte-compile-depth (- byte-compile-depth 3))
-  (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0))
+  (if (/= (length form) 4)
+      (byte-compile-normal-call form)
+    (byte-compile-form (car (cdr form)))  ;; Push the arguments
+    (byte-compile-form (nth 2 form))
+    (byte-compile-form (nth 3 form))
+    (setq byte-compile-depth (- byte-compile-depth 3))
+    (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0)))
 
+(put 'substring 'byte-compile 'byte-compile-substring)
+(defun byte-compile-substring (form)
+  (if (or (> (length form) 4)
+	  (< (length form) 2))
+      (byte-compile-normal-call form)
+    (byte-compile-form (nth 1 form))
+    (byte-compile-form (or (nth 2 form) ''nil))	;Optional arguments
+    (byte-compile-form (or (nth 3 form) ''nil))
+    (setq byte-compile-depth (- byte-compile-depth 3))
+    (byte-compile-out byte-substring 0)))
+
+(put 'interactive-p 'byte-compile 'byte-compile-interactive-p)
+(defun byte-compile-interactive-p (form)
+  (byte-compile-out byte-interactive-p 0))
+  
 (put 'list 'byte-compile 'byte-compile-list)
 (defun byte-compile-list (form)
   (let ((len (length form)))
@@ -683,16 +757,13 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	  (byte-compile-out (symbol-value (get (car form) 'byte-opcode)) 0))
       (byte-compile-normal-call form))))
 	
-(defun byte-compile-normal-call (form)
-  (byte-compile-push-constant (car form))
-  (let ((copy (cdr form)))
-    (while copy (byte-compile-form (car copy)) (setq copy (cdr copy))))
-  (byte-compile-out 'byte-call (length (cdr form)))
-  (setq byte-compile-depth (- byte-compile-depth (length (cdr form)))))
-
 (put 'function 'byte-compile 'byte-compile-function-form)
 (defun byte-compile-function-form (form)
-  (byte-compile-constant (byte-compile-lambda (car (cdr form)))))
+  (cond ((symbolp (car (cdr form)))
+	 (byte-compile-form
+	  (list 'symbol-function (list 'quote (nth 1 form)))))
+	(t
+	 (byte-compile-constant (byte-compile-lambda (car (cdr form)))))))
 
 (put 'indent-to 'byte-compile 'byte-compile-indent-to)
 (defun byte-compile-indent-to (form)
@@ -715,6 +786,11 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 	    (byte-compile-out byte-insert 0)
 	    (setq args (cdr args))))
       (byte-compile-normal-call form))))
+
+(put 'setq-default 'byte-compile 'byte-compile-setq-default)
+(defun byte-compile-setq-default (form)
+  (byte-compile-form (cons 'set-default (cons (list 'quote (nth 1 form))
+					      (nthcdr 2 form)))))
 
 (put 'quote 'byte-compile 'byte-compile-quote)
 (defun byte-compile-quote (form)
@@ -723,15 +799,18 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 (put 'setq 'byte-compile 'byte-compile-setq)
 (defun byte-compile-setq (form)
   (let ((args (cdr form)))
-    (while args
-      (byte-compile-form (car (cdr args)))
-      (if (null (cdr (cdr args)))
-	  (progn
-	    (byte-compile-out 'byte-dup 0)
-	    (setq byte-compile-maxdepth (max byte-compile-maxdepth (1+ byte-compile-depth)))))
-      (setq byte-compile-depth (1- byte-compile-depth))
-      (byte-compile-variable-ref 'byte-varset (car args))
-      (setq args (cdr (cdr args))))))
+    (if args
+	(while args
+	  (byte-compile-form (car (cdr args)))
+	  (if (null (cdr (cdr args)))
+	      (progn
+		(byte-compile-out 'byte-dup 0)
+		(setq byte-compile-maxdepth (max byte-compile-maxdepth (1+ byte-compile-depth)))))
+	  (setq byte-compile-depth (1- byte-compile-depth))
+	  (byte-compile-variable-ref 'byte-varset (car args))
+	  (setq args (cdr (cdr args))))
+      ;; (setq), with no arguments.
+      (byte-compile-constant nil))))
 
 (put 'let 'byte-compile 'byte-compile-let)
 (defun byte-compile-let (form)
@@ -834,7 +913,7 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 
 (put 'if 'byte-compile 'byte-compile-if)
 (defun byte-compile-if (form)
-  (if (null (cdr (cdr form)))
+  (if (null (nthcdr 3 form))
       ;; No else-forms
       (let ((donetag (byte-compile-make-tag)))
 	(byte-compile-form (car (cdr form)))
@@ -857,27 +936,37 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 (put 'cond 'byte-compile 'byte-compile-cond)
 (defun byte-compile-cond (form)
   (if (cdr form)
-      (byte-compile-cond-1 (cdr form))))
+      (byte-compile-cond-1 (cdr form))
+    (byte-compile-constant nil)))
 (defun byte-compile-cond-1 (clauses)
-  (if (null (cdr clauses))
-      ;; Only one clause
-      (let ((donetag (byte-compile-make-tag)))
-	(byte-compile-form (car (car clauses)))
-	(cond ((cdr (car clauses))
-	       (byte-compile-goto 'byte-goto-if-nil-else-pop donetag)
-	       (setq byte-compile-depth (1- byte-compile-depth))
-	       (byte-compile-body (cdr (car clauses)))
-	       (byte-compile-out-tag donetag))))
-    (let ((donetag (byte-compile-make-tag))
-	  (elsetag (byte-compile-make-tag)))
-      (byte-compile-form (car (car clauses)))
-      (byte-compile-goto 'byte-goto-if-nil elsetag)
-      (setq byte-compile-depth (1- byte-compile-depth))
+  (if (or (eq (car (car clauses)) t)
+	  (eq (car-safe (car (car clauses))) 'quote))
+      ;; Unconditional clause
       (byte-compile-body (cdr (car clauses)))
-      (byte-compile-goto 'byte-goto donetag)
-      (byte-compile-out-tag elsetag)
-      (byte-compile-cond-1 (cdr clauses))
-      (byte-compile-out-tag donetag))))
+    (if (null (cdr clauses))
+	;; Only one clause
+	(let ((donetag (byte-compile-make-tag)))
+	  (byte-compile-form (car (car clauses)))
+	  (cond ((cdr (car clauses))
+		 (byte-compile-goto 'byte-goto-if-nil-else-pop donetag)
+		 (setq byte-compile-depth (1- byte-compile-depth))
+		 (byte-compile-body (cdr (car clauses)))
+		 (byte-compile-out-tag donetag))))
+      (let ((donetag (byte-compile-make-tag))
+	    (elsetag (byte-compile-make-tag)))
+	(byte-compile-form (car (car clauses)))
+	(if (null (cdr (car clauses)))
+	    ;; First clause is a singleton.
+	    (progn
+	      (byte-compile-goto 'byte-goto-if-not-nil-else-pop donetag)
+	      (setq byte-compile-depth (1- byte-compile-depth)))
+	  (byte-compile-goto 'byte-goto-if-nil elsetag)
+	  (setq byte-compile-depth (1- byte-compile-depth))
+	  (byte-compile-body (cdr (car clauses)))
+	  (byte-compile-goto 'byte-goto donetag)
+	  (byte-compile-out-tag elsetag))
+	(byte-compile-cond-1 (cdr clauses))
+	(byte-compile-out-tag donetag)))))
 
 (put 'and 'byte-compile 'byte-compile-and)
 (defun byte-compile-and (form)
@@ -1020,27 +1109,27 @@ The output file's name is made by appending \"c\" to the end of FILENAME."
 Must be used only with -batch, and kills emacs on completion.
 Each file will be processed even if an error occurred previously.
 For example, invoke \"emacs -batch -f batch-byte-compile $emacs/ ~/*.el\""
-  ;; command-line-args is what is left of the command line (from startup.el)
+  ;; command-line-args-left is what is left of the command line (from startup.el)
   (if (not noninteractive)
       (error "batch-byte-compile is to be used only with -batch"))
   (let ((error nil))
-    (while command-line-args
-      (if (file-directory-p (expand-file-name (car command-line-args)))
-	  (let ((files (directory-files (car command-line-args)))
+    (while command-line-args-left
+      (if (file-directory-p (expand-file-name (car command-line-args-left)))
+	  (let ((files (directory-files (car command-line-args-left)))
 		source)
 	    (while files
 	      (if (and (string-match ".el$" (car files))
 		       (not (auto-save-file-name-p (car files)))
 		       (setq source (expand-file-name (car files)
-						      (car command-line-args)))
+						      (car command-line-args-left)))
 		       (file-exists-p (concat source "c"))
 		       (file-newer-than-file-p source (concat source "c")))
 		  (if (null (batch-byte-compile-file source))
 		      (setq error t)))
 	      (setq files (cdr files))))
-	(if (null (batch-byte-compile-file (car command-line-args)))
+	(if (null (batch-byte-compile-file (car command-line-args-left)))
 	    (setq error t)))
-      (setq command-line-args (cdr command-line-args)))
+      (setq command-line-args-left (cdr command-line-args-left)))
     (message "Done")
     (kill-emacs (if error 1 0))))
 

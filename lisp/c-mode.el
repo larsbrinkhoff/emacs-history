@@ -1,5 +1,5 @@
 ;; C code editing commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,23 +19,42 @@
 ;; and this notice must be preserved on all copies.
 
 
-(defvar c-mode-syntax-table nil
-  "Syntax table in use in C-mode buffers.")
 (defvar c-mode-abbrev-table nil
   "Abbrev table in use in C-mode buffers.")
+(define-abbrev-table 'c-mode-abbrev-table ())
 
-(defvar c-mode-map (make-sparse-keymap)
+(defvar c-mode-map ()
   "Keymap used in C mode.")
+(if c-mode-map
+    ()
+  (setq c-mode-map (make-sparse-keymap))
+  (define-key c-mode-map "{" 'electric-c-brace)
+  (define-key c-mode-map "}" 'electric-c-brace)
+  (define-key c-mode-map ";" 'electric-c-semi)
+  (define-key c-mode-map ":" 'electric-c-terminator)
+  (define-key c-mode-map "\e\C-h" 'mark-c-function)
+  (define-key c-mode-map "\e\C-q" 'indent-c-exp)
+  (define-key c-mode-map "\177" 'backward-delete-char-untabify)
+  (define-key c-mode-map "\t" 'c-indent-command))
 
-(define-key c-mode-map "\C-j" 'reindent-then-newline-and-indent)
-(define-key c-mode-map "{" 'electric-c-brace)
-(define-key c-mode-map "}" 'electric-c-brace)
-(define-key c-mode-map ";" 'electric-c-semi)
-(define-key c-mode-map ":" 'electric-c-terminator)
-(define-key c-mode-map "\e\C-h" 'mark-c-function)
-(define-key c-mode-map "\e\C-q" 'indent-c-exp)
-(define-key c-mode-map "\177" 'backward-delete-char-untabify)
-(define-key c-mode-map "\t" 'c-indent-line)
+(defvar c-mode-syntax-table nil
+  "Syntax table in use in C-mode buffers.")
+
+(if c-mode-syntax-table
+    ()
+  (setq c-mode-syntax-table (make-syntax-table))
+  (modify-syntax-entry ?\\ "\\" c-mode-syntax-table)
+  (modify-syntax-entry ?/ ". 14" c-mode-syntax-table)
+  (modify-syntax-entry ?* ". 23" c-mode-syntax-table)
+  (modify-syntax-entry ?+ "." c-mode-syntax-table)
+  (modify-syntax-entry ?- "." c-mode-syntax-table)
+  (modify-syntax-entry ?= "." c-mode-syntax-table)
+  (modify-syntax-entry ?% "." c-mode-syntax-table)
+  (modify-syntax-entry ?< "." c-mode-syntax-table)
+  (modify-syntax-entry ?> "." c-mode-syntax-table)
+  (modify-syntax-entry ?& "." c-mode-syntax-table)
+  (modify-syntax-entry ?| "." c-mode-syntax-table)
+  (modify-syntax-entry ?\' "\"" c-mode-syntax-table))
 
 (defconst c-indent-level 2
   "*Indentation of C statements with respect to containing block.")
@@ -53,6 +72,10 @@
 (defconst c-auto-newline nil
   "*Non-nil means automatically newline before and after braces,
 and after colons and semicolons, inserted in C code.")
+
+(defconst c-tab-always-indent t
+  "*Non-nil means TAB in C mode should always reindent the current line,
+regardless of where in the line point is when the TAB command is used.")
 
 (defun c-mode ()
   "Major mode for editing C code.
@@ -63,6 +86,9 @@ Paragraphs are separated by blank lines only.
 Delete converts tabs to spaces as it moves back.
 \\{c-mode-map}
 Variables controlling indentation style:
+ c-tab-always-indent
+    Non-nil means TAB in C mode should always reindent the current line,
+    regardless of where in the line point is when the TAB command is used.
  c-auto-newline
     Non-nil means automatically newline before and after braces,
     and after colons and semicolons, inserted in C code.
@@ -83,6 +109,13 @@ Variables controlling indentation style:
  c-label-offset
     Extra indentation for line that is a label, or case or default.
 
+Settings for K&R and BSD indentation styles are
+  c-indent-level                5    8
+  c-continued-statement-offset  5    8
+  c-brace-offset               -5   -8
+  c-argdecl-indent              0    8
+  c-label-offset               -5   -8
+
 Turning on C mode calls the value of the variable c-mode-hook with no args,
 if that value is non-nil."
   (interactive)
@@ -90,23 +123,8 @@ if that value is non-nil."
   (use-local-map c-mode-map)
   (setq major-mode 'c-mode)
   (setq mode-name "C")
-  (define-abbrev-table 'c-mode-abbrev-table ())
   (setq local-abbrev-table c-mode-abbrev-table)
-  (if (not c-mode-syntax-table)
-      (let ((i 0))
-	(setq c-mode-syntax-table (make-syntax-table))
-	(set-syntax-table c-mode-syntax-table)
-	(modify-syntax-entry ?\\ "\\")
-	(modify-syntax-entry ?/ ". 14")
-	(modify-syntax-entry ?* ". 23")
-	(modify-syntax-entry ?+ ".")
-	(modify-syntax-entry ?- ".")
-	(modify-syntax-entry ?= ".")
-	(modify-syntax-entry ?% ".")
-	(modify-syntax-entry ?< ".")
-	(modify-syntax-entry ?> ".")
-	(modify-syntax-entry ?\' "\""))
-    (set-syntax-table c-mode-syntax-table))
+  (set-syntax-table c-mode-syntax-table)
   (make-local-variable 'paragraph-start)
   (setq paragraph-start (concat "^$\\|" page-delimiter))
   (make-local-variable 'paragraph-separate)
@@ -152,12 +170,12 @@ if that value is non-nil."
 		 (if c-auto-newline (progn (c-indent-line) (newline) t) nil)))
 	(progn
 	  (insert last-command-char)
-	  (c-indent-line nil)
+	  (c-indent-line)
 	  (if c-auto-newline
 	      (progn
 		(setq insertpos (1- (point)))
 		(newline)
-		(c-indent-line nil)))
+		(c-indent-line)))
 	  (save-excursion
 	    (if insertpos (goto-char (1+ insertpos)))
 	    (delete-char -1))))
@@ -183,17 +201,27 @@ if that value is non-nil."
 		    (beginning-of-line)
 		    (skip-chars-forward " \t")
 		    (or (= (following-char) ?#)
-			(let ((pps (parse-partial-sexp (point) end)))
-			  (or (nth 3 pps) (nth 4 pps) (nth 5 pps)))))))
+			;; Colon is special only after a label, or case ....
+			;; So quickly rule out most other uses of colon
+			;; and do no indentation for them.
+			(and (eq last-command-char ?:)
+			     (not (looking-at "case"))
+			     (save-excursion
+			       (forward-word 2)
+			       (<= (point) end)))
+			(progn
+			  (beginning-of-defun)
+			  (let ((pps (parse-partial-sexp (point) end)))
+			    (or (nth 3 pps) (nth 4 pps) (nth 5 pps))))))))
 	(progn
 	  (insert last-command-char)
-	  (c-indent-line nil)
+	  (c-indent-line)
 	  (and c-auto-newline
 	       (not (c-inside-parens-p))
 	       (progn
 		 (setq insertpos (1- (point)))
 		 (newline)
-		 (c-indent-line nil)))
+		 (c-indent-line)))
 	  (save-excursion
 	    (if insertpos (goto-char (1+ insertpos)))
 	    (delete-char -1))))
@@ -213,13 +241,45 @@ if that value is non-nil."
 	  (= (char-after (or (scan-lists (point) -1 1) (point-min))) ?\()))
     (error nil)))
 
-(defun c-indent-line (&optional whole-exp)
-  "Indent current line as C code.
-Argument means shift any additional lines of grouping
-rigidly with thls line."
+(defun c-indent-command (&optional whole-exp)
   (interactive "P")
+  "Indent current line as C code, or in some cases insert a tab character.
+If c-tab-always-indent is non-nil (the default), always indent current line.
+Otherwise, indent the current line only if point is at the left margin
+or in the line's indentation; otherwise insert a tab.
+
+A numeric argument, regardless of its value,
+means indent rigidly all the lines of the expression starting after point
+so that this line becomes properly indented.
+The relative indentation among the lines of the expression are preserved."
+  (if whole-exp
+      ;; If arg, always indent this line as C
+      ;; and shift remaining lines of expression the same amount.
+      (let ((shift-amt (c-indent-line))
+	    beg end)
+	(save-excursion
+	  (if c-tab-always-indent
+	      (beginning-of-line))
+	  (setq beg (point))
+	  (forward-sexp 1)
+	  (setq end (point))
+	  (goto-char beg)
+	  (forward-line 1)
+	  (setq beg (point)))
+	(if (> end beg)
+	    (indent-code-rigidly beg end shift-amt "#")))
+    (if (and (not c-tab-always-indent)
+	     (save-excursion
+	       (skip-chars-backward " \t")
+	       (not (bolp))))
+	(insert-tab)
+      (c-indent-line))))
+
+(defun c-indent-line ()
+  "Indent current line as C code.
+Return the amount the indentation changed by."
   (let ((indent (calculate-c-indent nil))
-	beg end shift-amt
+	beg shift-amt
 	(case-fold-search nil)
 	(pos (- (point-max) (point))))
     (beginning-of-line)
@@ -239,7 +299,8 @@ rigidly with thls line."
 			     (forward-sexp 1)
 			     (looking-at ":"))))
 		  (setq indent (max 1 (+ indent c-label-offset))))
-		 ((looking-at "else\\b")
+		 ((and (looking-at "else\\b")
+		       (not (looking-at "else\\s_")))
 		  (setq indent (save-excursion
 				 (c-backward-to-start-of-if)
 				 (current-indentation))))
@@ -257,18 +318,8 @@ rigidly with thls line."
       ;; If initial point was within line's indentation,
       ;; position after the indentation.  Else stay at same point in text.
       (if (> (- (point-max) pos) (point))
-	  (goto-char (- (point-max) pos)))
-      ;; If desired, shift remaining lines of expression the same amount.
-      (and whole-exp
-	   (save-excursion
-	     (goto-char beg)
-	     (forward-sexp 1)
-	     (setq end (point))
-	     (goto-char beg)
-	     (forward-line 1)
-	     (setq beg (point))
-	     (> end beg))
-	   (indent-code-rigidly beg end shift-amt "#")))))
+	  (goto-char (- (point-max) pos))))
+    shift-amt))
 
 (defun calculate-c-indent (&optional parse-start)
   "Return appropriate indentation for current line as C code.
@@ -301,19 +352,48 @@ Returns nil if line starts inside a string, t if in a comment."
 	     (if (= (following-char) ?{)
 		 0   ; Unless it starts a function body
 	       (c-backward-to-noncomment (or parse-start (point-min)))
-	       (if (= (preceding-char) ?\))
-		   c-argdecl-indent
-		 (current-indentation))))
+	       ;; Look at previous line that's at column 0
+	       ;; to determine whether we are in top-level decls
+	       ;; or function's arg decls.  Set basic-indent accordinglu.
+	       (let ((basic-indent
+		      (save-excursion
+			(re-search-backward "^[^ \^L\t\n#]" nil 'move)
+			(if (and (looking-at "\\sw\\|\\s_")
+				 (looking-at ".*(")
+				 (progn
+				   (goto-char (1- (match-end 0)))
+				   (forward-sexp 1)
+				   (and (< (point) indent-point)
+					(not (memq (following-char)
+						   '(?\, ?\;))))))
+			    c-argdecl-indent 0))))
+		 ;; Now add a little if this is a continuation line.
+		 (+ basic-indent (if (or (bobp)
+					 (memq (preceding-char) '(?\) ?\; ?\})))
+				     0 c-continued-statement-offset)))))
 	    ((/= (char-after containing-sexp) ?{)
 	     ;; line is expression, not statement:
 	     ;; indent to just after the surrounding open.
 	     (goto-char (1+ containing-sexp))
 	     (current-column))
 	    (t
-	     ;; Statement.  Find previous non-comment character.
+	     ;; Statement level.  Is it a continuation or a new statement?
+	     ;; Find previous non-comment character.
 	     (goto-char indent-point)
 	     (c-backward-to-noncomment containing-sexp)
-	     (if (not (memq (preceding-char) '(nil ?\, ?\; ?} ?: ?\{)))
+	     ;; Back up over label lines, since they don't
+	     ;; affect whether our line is a continuation.
+	     (while (or (eq (preceding-char) ?\,)
+			(and (eq (preceding-char) ?:)
+			     (or (eq (char-after (- (point) 2)) ?\')
+				 (memq (char-syntax (char-after (- (point) 2)))
+				       '(?w ?_)))))
+	       (if (eq (preceding-char) ?\,)
+		   (c-backward-to-start-of-continued-exp containing-sexp))
+	       (beginning-of-line)
+	       (c-backward-to-noncomment containing-sexp))
+	     ;; Now we get the answer.
+	     (if (not (memq (preceding-char) '(nil ?\, ?\; ?\} ?\{)))
 		 ;; This line is continuation of preceding line's statement;
 		 ;; indent  c-continued-statement-offset  more than the
 		 ;; previous line of the statement.
@@ -328,18 +408,26 @@ Returns nil if line starts inside a string, t if in a comment."
 		 ;; If no, find that first statement and indent like it.
 		 (save-excursion
 		   (forward-char 1)
-		   (while (progn (skip-chars-forward " \t\n")
-				 (looking-at "#\\|/\\*\\|case[ \t\n]\\|[a-zA-Z0-9_$]*:"))
-		     ;; Skip over comments and labels following openbrace.
-		     (if (= (following-char) ?\#)
-			 (forward-line 1)
-		       (if (looking-at "/\\*")
-			   (search-forward "*/" nil 'move)
-			 (search-forward ":"))))
-		   ;; The first following code counts
-		   ;; if it is before the line we want to indent.
-		   (and (< (point) indent-point)
-			(current-column)))
+		   (let ((colon-line-end 0))
+		     (while (progn (skip-chars-forward " \t\n")
+				   (looking-at "#\\|/\\*\\|case[ \t\n].*:\\|[a-zA-Z0-9_$]*:"))
+		       ;; Skip over comments and labels following openbrace.
+		       (cond ((= (following-char) ?\#)
+			      (forward-line 1))
+			     ((= (following-char) ?\/)
+			      (forward-char 2)
+			      (search-forward "*/" nil 'move))
+			     ;; case or label:
+			     (t
+			      (save-excursion (end-of-line)
+					      (setq colon-line-end (point)))
+			      (search-forward ":"))))
+		     ;; The first following code counts
+		     ;; if it is before the line we want to indent.
+		     (and (< (point) indent-point)
+			  (if (> colon-line-end (point))
+			      (- (current-indentation) c-label-offset)
+			    (current-column)))))
 		 ;; If no previous statement,
 		 ;; indent it relative to line brace is on.
 		 ;; For open brace in column zero, don't let statement
@@ -350,10 +438,19 @@ Returns nil if line starts inside a string, t if in a comment."
 		 (+ (if (and (bolp) (zerop c-indent-level))
 			(+ c-brace-offset c-continued-statement-offset)
 		      c-indent-level)
-		    (if (save-excursion (skip-chars-backward " \t")
-					(bolp))
-			0 c-brace-imaginary-offset)
-		    (current-indentation)))))))))
+		    ;; Move back over whitespace before the openbrace.
+		    ;; If openbrace is not first nonwhite thing on the line,
+		    ;; add the c-brace-imaginary-offset.
+		    (progn (skip-chars-backward " \t")
+			   (if (bolp) 0 c-brace-imaginary-offset))
+		    ;; If the openbrace is preceded by a parenthesized exp,
+		    ;; move to the beginning of that;
+		    ;; possibly a different line
+		    (progn
+		      (if (eq (preceding-char) ?\))
+			  (forward-sexp -1))
+		      ;; Get initial indentation of the line we are on.
+		      (current-indentation))))))))))
 
 (defun calculate-c-indent-within-comment ()
   "Return the indentation amount for line, assuming that
@@ -376,7 +473,7 @@ the current line is to be regarded as part of a block comment."
 (defun c-backward-to-noncomment (lim)
   (let (opoint stop)
     (while (not stop)
-      (skip-chars-backward " \t\n" lim)
+      (skip-chars-backward " \t\n\f" lim)
       (setq opoint (point))
       (if (and (>= (point) (+ 2 lim))
 	       (save-excursion

@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -24,7 +24,7 @@
 (defun rmail-summary ()
   "Display a summary of all messages, one line per message."
   (interactive)
-  (rmail-new-summary "Full summary" nil))
+  (rmail-new-summary "All" nil))
 
 (defun rmail-summary-by-labels (labels)
   "Display a summary of all messages with one or more LABELS.
@@ -34,7 +34,7 @@ LABELS should be a string containing the desired labels, separated by commas."
       (setq labels (or rmail-last-multi-labels
 		       (error "No label specified"))))
   (setq rmail-last-multi-labels labels)
-  (rmail-new-summary (concat "Summary of " labels)
+  (rmail-new-summary (concat "labels " labels)
 		     'rmail-message-labels-p
 		     (concat ",\\(" (mail-comma-list-regexp labels) "\\),")))
 
@@ -44,9 +44,9 @@ Normally checks the To, From and Cc fields of headers;
 but if PRIMARY-ONLY is non-nil (prefix arg given),
  only look in the To and From fields.
 RECIPIENTS is a string of names separated by commas."
-  (interactive "sRecipients to summarize by:  \nP")
+  (interactive "sRecipients to summarize by: \nP")
   (rmail-new-summary
-   (concat "Summary of " recipients)
+   (concat "recipients " recipients)
    'rmail-message-recipients-p
    (mail-comma-list-regexp recipients) primary-only))
 
@@ -71,7 +71,7 @@ nil for FUNCTION means all messages."
 	   (buffer-name rmail-summary-buffer))
       (setq rmail-summary-buffer
 	    (generate-new-buffer (concat (buffer-name) "-summary"))))
-  (let (summary-msgs)
+  (let ((summary-msgs ()))
     (let ((msgnum 1)
 	  (new-summary-line-count 0)
 	  (buffer-read-only nil))
@@ -91,7 +91,7 @@ nil for FUNCTION means all messages."
 	  (total rmail-total-messages)
 	  (mesg rmail-current-message))
       (pop-to-buffer sbuf)
-      (let (buffer-read-only)
+      (let ((buffer-read-only nil))
 	(erase-buffer)
 	(cond (summary-msgs
 	       (princ (nreverse summary-msgs) sbuf)
@@ -100,7 +100,8 @@ nil for FUNCTION means all messages."
       (setq buffer-read-only t)
       (goto-char (point-min))
       (rmail-summary-mode)
-      (rmail-summary-mode-line description)
+      (make-local-variable 'minor-mode-alist)
+      (setq minor-mode-alist (list ": " description))
       (setq rmail-buffer rbuf
 	    rmail-total-messages total)
       (if (> total 0)
@@ -187,23 +188,23 @@ nil for FUNCTION means all messages."
   (concat (save-excursion
 	    (if (not (search-forward "Date:" nil t))
 		"      "
-	      (if (re-search-forward
-		   "\\([^0-9:]\\)\\([0-3]?[0-9]\\)\\([ \t-_]+\\)\\([a-z][a-z][a-z]\\)"
-		   (save-excursion (end-of-line) (point)) t)
-		  (format "%2s-%3s"
-			  (buffer-substring
-			   (match-beginning 2) (match-end 2))
-			  (buffer-substring
-			   (match-beginning 4) (match-end 4)))
-		(if (not (re-search-forward
-			  "\\([^a-z]\\)\\([a-z][a-z][a-z]\\)\\([a-z \t-_]*\\)\\([0-9][0-9]?\\)"
-			  (save-excursion (end-of-line) (point)) t))
-		    "??????"
-		  (format "%2s-%3s"
-			  (buffer-substring
-			   (match-beginning 4) (match-end 4))
-			  (buffer-substring
-			   (match-beginning 2) (match-end 2)))))))
+	      (cond ((re-search-forward "\\([^0-9:]\\)\\([0-3]?[0-9]\\)\\([- \t_]+\\)\\([adfjmnos][aceopu][bcglnprtvy]\\)"
+		      (save-excursion (end-of-line) (point)) t)
+		     (format "%2d-%3s"
+			     (string-to-int (buffer-substring
+					     (match-beginning 2)
+					     (match-end 2)))
+			     (buffer-substring
+			      (match-beginning 4) (match-end 4))))
+		    ((re-search-forward "\\([^a-z]\\)\\([adfjmnos][acepou][bcglnprtvy]\\)\\([-a-z \t_]*\\)\\([0-9][0-9]?\\)"
+		      (save-excursion (end-of-line) (point)) t)
+		     (format "%2d-%3s"
+			     (string-to-int (buffer-substring
+					     (match-beginning 4)
+					     (match-end 4)))
+			     (buffer-substring
+			      (match-beginning 2) (match-end 2))))
+		    (t "??????"))))
 	  "  "
 	  (save-excursion
 	    (if (not (search-forward "From:" nil t))
@@ -290,8 +291,11 @@ nil for FUNCTION means all messages."
 	  (t
 	   (rmail-summary-goto-msg)))))
 
+;; Rmail Summary mode is suitable only for specially formatted data.
+(put 'rmail-summary-mode 'mode-class 'special)
+
 (defun rmail-summary-mode ()
-  "RMAIL Summary Mode.
+  "Major mode in effect in Rmail summary buffer.
 A subset of the Rmail mode commands are supported in this mode. 
 As commands are issued in the summary buffer the corresponding
 mail message is displayed in the rmail buffer.
@@ -320,10 +324,6 @@ Entering this mode calls value of hook variable rmail-summary-mode-hook."
   (setq buffer-read-only t)
   (set-syntax-table text-mode-syntax-table)
   (run-hooks 'rmail-summary-mode-hook))
-
-(defun rmail-summary-mode-line (description)
-  (setq mode-line-format
-	(concat "---Emacs: %17b   %M   %[(" description ")%]----%3p-%-")))
 
 (defun rmail-summary-goto-msg (&optional n nowarn)
   (interactive "P")

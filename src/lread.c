@@ -1,5 +1,5 @@
 /* Lisp parsing and input streams.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -43,7 +43,7 @@ and this notice must be preserved on all copies.  */
 Lisp_Object Qread_char, Qget_file_char, Qstandard_input;
 Lisp_Object Qvariable_documentation, Vvalues, Vstandard_input;
 
-/* 1 iff inside of load */
+/* non-zero if inside `load' */
 int load_in_progress;
 
 /* Search path for files to be loaded. */
@@ -114,10 +114,18 @@ static int readchar (readcharfun)
     return getc (instream);
 
   if (XTYPE (readcharfun) == Lisp_String)
-    return (read_from_string_index < read_from_string_limit) ?
-      XSTRING (readcharfun)->data[read_from_string_index++] : -1;
+    {
+      register int c;
+      /* This used to be return of a conditional expression,
+	 but that truncated -1 to a char on VMS.  */
+      if (read_from_string_index < read_from_string_limit)
+	c = XSTRING (readcharfun)->data[read_from_string_index++];
+      else
+	c = -1;
+      return c;
+    }
 
-  tem = Fapply (readcharfun, Qnil);
+  tem = call0 (readcharfun);
 
   if (NULL (tem))
     return -1;
@@ -157,9 +165,9 @@ DEFUN ("get-file-char", Fget_file_char, Sget_file_char, 0, 0, 0,
 }
 
 void readevalloop ();
-Lisp_Object load_unwind ();
+static Lisp_Object load_unwind ();
 
-DEFUN ("load", Fload, Sload, 1, 3, "sLoad file: ",
+DEFUN ("load", Fload, Sload, 1, 4, 0,
   "Execute a file of Lisp code named FILE.\n\
 First tries FILE with .elc appended, then tries with .el,\n\
  then tries FILE unmodified.  Searches directories in  load-path.\n\
@@ -167,13 +175,16 @@ If optional second arg MISSING-OK is non-nil,\n\
  report no error if FILE doesn't exist.\n\
 Print messages at start and end of loading unless\n\
  optional third arg NOMESSAGE is non-nil.\n\
+If optional fourth arg NOSUFFIX is non-nil, don't try adding\n\
+ suffixes .elc or .el to the specified name FILE.\n\
 Return t if file exists.")
-  (str, missing_ok, nomessage)
-     Lisp_Object str, missing_ok, nomessage;
+  (str, missing_ok, nomessage, nosuffix)
+     Lisp_Object str, missing_ok, nomessage, nosuffix;
 {
   register FILE *stream;
   register int fd = -1;
   register Lisp_Object lispstream;
+  register FILE **ptr;
   int count = specpdl_ptr - specpdl;
   struct gcpro gcpro1;
 
@@ -184,11 +195,7 @@ Return t if file exists.")
      since it would try to load a directory as a Lisp file */
   if (XSTRING (str)->size > 0)
     {
-      fd = openp (Vload_path, str, ".elc", 0, 0);
-      if (fd < 0)
-	fd = openp (Vload_path, str, ".el", 0, 0);
-      if (fd < 0)
-	fd = openp (Vload_path, str, "", 0, 0);
+      fd = openp (Vload_path, str, !NULL (nosuffix) ? "" : ".elc:.el:", 0, 0);
     }
 
   if (fd < 0)
@@ -204,14 +211,16 @@ Return t if file exists.")
       close (fd);
       error ("Failure to create stdio stream for %s", XSTRING (str)->data);
     }
-  XSET (lispstream, Lisp_Internal_Stream, (int) stream);
 
   if (NULL (nomessage))
     message ("Loading %s...", XSTRING (str)->data);
 
   GCPRO1 (str);
+  ptr = (FILE **) xmalloc (sizeof (FILE *));
+  *ptr = stream;
+  XSET (lispstream, Lisp_Internal_Stream, (int) ptr);
   record_unwind_protect (load_unwind, lispstream);
-  load_in_progress = 1;
+  load_in_progress++;
   readevalloop (Qget_file_char, stream, Feval, 0);
   unbind_to (count);
   UNGCPRO;
@@ -221,9 +230,40 @@ Return t if file exists.")
   return Qt;
 }
 
-/* exec_only nonzero means don't open the files,
-   just look for one that is executable;
-   returns 1 on success, having stored a string into *storeptr  */
+static Lisp_Object
+load_unwind (stream)  /* used as unwind-protect function in load */
+     Lisp_Object stream;
+{
+  fclose (*(FILE **) XSTRING (stream));
+  if (--load_in_progress < 0) load_in_progress = 0;
+  return Qnil;
+}
+
+
+static int
+absolute_filename_p (pathname)
+     Lisp_Object pathname;
+{
+  register unsigned char *s = XSTRING (pathname)->data;
+  return (*s == '~' || *s == '/'
+#ifdef VMS
+	  || index (s, ':') || index (s, '[') || index (s, '<')
+#endif /* VMS */
+	  );
+}
+
+/* Search for a file whose name is STR, looking in directories
+   in the Lisp list PATH, and trying suffixes from SUFFIX.
+   SUFFIX is a string containing possible suffixes separated by colons.
+   On success, returns a file descriptor.  On failure, returns -1.
+
+   EXEC_ONLY nonzero means don't open the files,
+   just look for one that is executable.  In this case,
+   returns 1 on success.
+
+   If STOREPTR is nonzero, it points to a slot where the name of
+   the file actually found should be stored as a Lisp string.
+   Nil is stored there on failure.  */
 
 int
 openp (path, str, suffix, storeptr, exec_only)
@@ -244,39 +284,60 @@ openp (path, str, suffix, storeptr, exec_only)
   if (storeptr)
     *storeptr = Qnil;
 
-  if (*XSTRING (str)->data == '~' || *XSTRING (str)->data == '/')
+  if (absolute_filename_p (str))
     absolute = 1;
 
   for (; !NULL (path); path = Fcdr (path))
     {
+      char *nsuffix;
+
       filename = Fexpand_file_name (str, Fcar (path));
+      if (!absolute_filename_p (filename))
+	/* If there are non-absolute elts in PATH (eg ".") */
+	/* Of course, this could conceivably lose if luser sets
+	   default-directory to be something non-absolute... */
+	{
+	  filename = Fexpand_file_name (filename, bf_cur->directory);
+	  if (!absolute_filename_p (filename))
+	    /* Give up! */
+	    break;
+	}
 
       want_size = strlen (suffix) + XSTRING (filename)->size + 1;
       if (fn_size < want_size)
 	fn = (char *) alloca (fn_size = 100 + want_size);
 
-      strncpy (fn, XSTRING (filename)->data, XSTRING (filename)->size);
-      fn[XSTRING (filename)->size] = 0;
-      strcat (fn, suffix);
-      if (exec_only)
+      nsuffix = suffix;
+      while (1)
 	{
-	  if (!access (fn, X_OK) && stat (fn, &st) >= 0
-	      && (st.st_mode & S_IFMT) != S_IFDIR)
+	  char *esuffix = (char *) index (nsuffix, ':');
+	  int lsuffix = esuffix ? esuffix - nsuffix : strlen (nsuffix);
+	  strncpy (fn, XSTRING (filename)->data, XSTRING (filename)->size);
+	  fn[XSTRING (filename)->size] = 0;
+	  strncat (fn, nsuffix, lsuffix);
+	  if (exec_only)
 	    {
-	      if (storeptr)
-		*storeptr = build_string (fn);
-	      return 1;
+	      if (!access (fn, X_OK) && stat (fn, &st) >= 0
+		  && (st.st_mode & S_IFMT) != S_IFDIR)
+		{
+		  if (storeptr)
+		    *storeptr = build_string (fn);
+		  return 1;
+		}
 	    }
-	}
-      else
-	{
-	  fd = open (fn, 0, 0);
-	  if (fd >= 0)
+	  else
 	    {
-	      if (storeptr)
-		*storeptr = build_string (fn);
-	      return fd;
+	      fd = open (fn, 0, 0);
+	      if (fd >= 0)
+		{
+		  if (storeptr)
+		    *storeptr = build_string (fn);
+		  return fd;
+		}
 	    }
+	  if (esuffix == 0)
+	    break;
+	  nsuffix += lsuffix + 1;
 	}
       if (absolute) return -1;
     }
@@ -284,15 +345,7 @@ openp (path, str, suffix, storeptr, exec_only)
   return -1;
 }
 
-Lisp_Object
-load_unwind (stream)  /* used as unwind-protect function in load */
-     Lisp_Object stream;
-{
-  fclose ((FILE *) XSTRING (stream));
-  load_in_progress = 0;
-  return Qnil;
-}
-
+
 Lisp_Object
 unreadpure ()	/* Used as unwind-protect function in readevalloop */
 {
@@ -300,7 +353,7 @@ unreadpure ()	/* Used as unwind-protect function in readevalloop */
   return Qnil;
 }
 
-void
+static void
 readevalloop (readcharfun, stream, evalfun, printflag)
      Lisp_Object readcharfun;
      FILE *stream;     
@@ -628,7 +681,7 @@ read1 (readcharfun)
 	      char *new = (char *) xrealloc (read_buffer, read_buffer_size *= 2);
 	      p += new - read_buffer;
 	      read_buffer += new - read_buffer;
-	      end = read_buffer + read_buffer_size;
+/*	      end = read_buffer + read_buffer_size;  */
 	    }
 	  *p = 0;
 	  UNREAD (c);
@@ -719,7 +772,7 @@ read_list (flag, readcharfun)
 	  if (XINT (elt) == '.')
 	    {
 	      if (!NULL (tail))
-		tail = XCONS (tail)->cdr = read0 (readcharfun);
+		XCONS (tail)->cdr = read0 (readcharfun);
 	      else
 		val = read0 (readcharfun);
 	      elt = read1 (readcharfun);
@@ -825,11 +878,19 @@ read_escape (readcharfun)
 Lisp_Object Vobarray;
 Lisp_Object initial_obarray;
 
-/* CHECK_OBARRAY assumes the variable `tem' is available */
-#define CHECK_OBARRAY(obarray) \
-  if (XTYPE (obarray) != Lisp_Vector) \
-    { tem = obarray; obarray = initial_obarray; \
-      wrong_type_argument (Qvectorp, tem); }
+Lisp_Object
+check_obarray (obarray)
+     Lisp_Object obarray;
+{
+  while (XTYPE (obarray) != Lisp_Vector || XVECTOR (obarray)->size == 0)
+    {
+      /* If Vobarray is now invalid, force it to be valid.  */
+      if (EQ (Vobarray, obarray)) Vobarray = initial_obarray;
+
+      obarray = wrong_type_argument (Qvectorp, obarray);
+    }
+  return obarray;
+}
 
 static int hash_string ();
 Lisp_Object oblookup ();
@@ -840,14 +901,16 @@ intern (str)
 {
   Lisp_Object tem;
   int len = strlen (str);
-  CHECK_OBARRAY (Vobarray);
-  tem = oblookup (Vobarray, str, len);
+  Lisp_Object obarray = Vobarray;
+  if (XTYPE (obarray) != Lisp_Vector || XVECTOR (obarray)->size == 0)
+    obarray = check_obarray (obarray);
+  tem = oblookup (obarray, str, len);
   if (XTYPE (tem) == Lisp_Symbol)
     return tem;
   return Fintern ((!NULL (Vpurify_flag)
 		   ? make_pure_string (str, len)
 		   : make_string (str, len)),
-		  Vobarray);
+		  obarray);
 }
 
 DEFUN ("intern", Fintern, Sintern, 1, 2, 0,
@@ -859,13 +922,8 @@ it defaults to the value of  obarray.")
 {
   register Lisp_Object tem, sym, *ptr;
 
-  if (NULL (obarray))
-    {
-      CHECK_OBARRAY (Vobarray);
-      obarray = Vobarray;
-    }
-  else
-    CHECK_VECTOR (obarray, 1);
+  if (NULL (obarray)) obarray = Vobarray;
+  obarray = check_obarray (obarray);
 
   CHECK_STRING (str, 0);
 
@@ -895,13 +953,8 @@ it defaults to the value of  obarray.")
 {
   register Lisp_Object tem;
 
-  if (NULL (obarray))
-    {
-      CHECK_OBARRAY (Vobarray);
-      obarray = Vobarray;
-    }
-  else
-    CHECK_VECTOR (obarray, 1);
+  if (NULL (obarray)) obarray = Vobarray;
+  obarray = check_obarray (obarray);
 
   CHECK_STRING (str, 0);
 
@@ -921,17 +974,26 @@ oblookup (obarray, ptr, size)
   register Lisp_Object tail;
   Lisp_Object bucket, tem;
 
-  if (XTYPE (obarray) != Lisp_Vector || !(obsize = XVECTOR (obarray)->size))
-    error ("Invalid obarray");
+  if (XTYPE (obarray) != Lisp_Vector ||
+      (obsize = XVECTOR (obarray)->size) == 0)
+    {
+      obarray = check_obarray (obarray);
+      obsize = XVECTOR (obarray)->size;
+    }
   hash = hash_string (ptr, size) % obsize;
   bucket = XVECTOR (obarray)->contents[hash];
-  for (tail = bucket; XSYMBOL (tail); XSETSYMBOL (tail, XSYMBOL (tail)->next))
-    {
-      if (XSYMBOL (tail)->name->size != size) continue;
-      if (bcmp (XSYMBOL (tail)->name->data, ptr, size)) continue;
-      return tail;
-    }
-
+  if (XFASTINT (bucket) == 0)
+    ;
+  else if (XTYPE (bucket) != Lisp_Symbol)
+    error ("Bad data in guts of obarray"); /* Like CADR error message */
+  else for (tail = bucket; ; XSET (tail, Lisp_Symbol, XSYMBOL (tail)->next))
+      {
+	if (XSYMBOL (tail)->name->size == size &&
+	    !bcmp (XSYMBOL (tail)->name->data, ptr, size))
+	  return tail;
+	else if (XSYMBOL (tail)->next == 0)
+	  break;
+      }
   XSET (tem, Lisp_Int, hash);
   return tem;
 }
@@ -965,10 +1027,17 @@ map_obarray (obarray, fn, arg)
   register Lisp_Object tail;
   CHECK_VECTOR (obarray, 1);
   for (i = XVECTOR (obarray)->size - 1; i >= 0; i--)
-    for (tail = XVECTOR (obarray)->contents[i];
-	 XTYPE (tail) == Lisp_Symbol && XSYMBOL (tail);
-	 XSETSYMBOL (tail, XSYMBOL (tail)->next))
-      (*fn) (tail, arg);
+    {
+      tail = XVECTOR (obarray)->contents[i];
+      if (XFASTINT (tail) != 0)
+	while (1)
+	  {
+	    (*fn) (tail, arg);
+	    if (XSYMBOL (tail)->next == 0)
+	      break;
+	    XSET (tail, Lisp_Symbol, XSYMBOL (tail)->next);
+	  }
+    }
 }
 
 mapatoms_1 (sym, function)
@@ -985,13 +1054,8 @@ OBARRAY defaults to the value of  obarray.")
 {
   Lisp_Object tem;
 
-  if (NULL (obarray))
-    {
-      CHECK_OBARRAY (Vobarray);
-      obarray = Vobarray;
-    }
-  else
-    CHECK_VECTOR (obarray, 1);
+  if (NULL (obarray)) obarray = Vobarray;
+  obarray = check_obarray (obarray);
 
   map_obarray (obarray, mapatoms_1, function);
   return Qnil;
@@ -1044,6 +1108,7 @@ defsubr (sname)
   XSET (XSYMBOL (sym)->function, Lisp_Subr, sname);
 }
 
+#ifdef NOTDEF /* use fset in subr.el now */
 void
 defalias (sname, string)
      struct Lisp_Subr *sname;
@@ -1053,13 +1118,16 @@ defalias (sname, string)
   sym = intern (string);
   XSET (XSYMBOL (sym)->function, Lisp_Subr, sname);
 }
+#endif NOTDEF
 
+/* New replacement for DefIntVar; it ignores the doc string argument
+   on the assumption that make-docfile will handle that.  */
 /* Define an "integer variable"; a symbol whose value is forwarded
- to a C variable of type int.  Sample call is
-DefIntVar ("indent-tabs-mode", &indent_tabs_mode, "Documentation");  */
+ to a C variable of type int.  Sample call: */
+  /* DEFVARINT ("indent-tabs-mode", &indent_tabs_mode, "Documentation");  */
 
 void
-DefIntVar (namestring, address, doc)
+defvar_int (namestring, address, doc)
      char *namestring;
      int *address;
      char *doc;
@@ -1067,15 +1135,13 @@ DefIntVar (namestring, address, doc)
   Lisp_Object sym;
   sym = intern (namestring);
   XSET (XSYMBOL (sym)->value, Lisp_Intfwd, address);
-  Fput (sym, Qvariable_documentation,
-	make_pure_string (doc, strlen (doc)));
 }
 
 /* Similar but define a variable whose value is T if address contains 1,
  NIL if address contains 0 */
 
 void
-DefBoolVar (namestring, address, doc)
+defvar_bool (namestring, address, doc)
      char *namestring;
      int *address;
      char *doc;
@@ -1083,14 +1149,12 @@ DefBoolVar (namestring, address, doc)
   Lisp_Object sym;
   sym = intern (namestring);
   XSET (XSYMBOL (sym)->value, Lisp_Boolfwd, address);
-  Fput (sym, Qvariable_documentation,
-	make_pure_string (doc, strlen (doc)));
 }
 
 /* Similar but define a variable whose value is the Lisp Object stored at address. */
 
 void
-DefLispVar (namestring, address, doc)
+defvar_lisp (namestring, address, doc)
      char *namestring;
      Lisp_Object *address;
      char *doc;
@@ -1098,8 +1162,22 @@ DefLispVar (namestring, address, doc)
   Lisp_Object sym;
   sym = intern (namestring);
   XSET (XSYMBOL (sym)->value, Lisp_Objfwd, address);
-  Fput (sym, Qvariable_documentation,
-	make_pure_string (doc, strlen (doc)));
+  staticpro (address);
+}
+
+/* Similar but don't request gc-marking of the C variable.
+   Used when that variable will be gc-marked for some other reason,
+   since marking the same slot twice can cause trouble with strings.  */
+
+void
+defvar_lisp_nopro (namestring, address, doc)
+     char *namestring;
+     Lisp_Object *address;
+     char *doc;
+{
+  Lisp_Object sym;
+  sym = intern (namestring);
+  XSET (XSYMBOL (sym)->value, Lisp_Objfwd, address);
 }
 
 #ifndef standalone
@@ -1108,17 +1186,25 @@ DefLispVar (namestring, address, doc)
  the current buffer.  address is the address of the slot in the buffer that is current now. */
 
 void
-DefBufferLispVar (namestring, address, doc)
+defvar_per_buffer (namestring, address, doc)
      char *namestring;
      Lisp_Object *address;
      char *doc;
 {
   Lisp_Object sym;
+  int offset;
+  extern struct buffer buffer_local_symbols;
+
   sym = intern (namestring);
+  offset = (char *)address - (char *)bf_cur;
+
   XSET (XSYMBOL (sym)->value, Lisp_Buffer_Objfwd,
-	(Lisp_Object *)((char *)address - (char *)bf_cur));
-  Fput (sym, Qvariable_documentation,
-	make_pure_string (doc, strlen (doc)));
+	(Lisp_Object *) offset);
+  *(Lisp_Object *)(offset + (char *)&buffer_local_symbols) = sym;
+  if (*(int *)(offset + (char *)&buffer_local_flags) == 0)
+    /* Did a DEFVAR_PER_BUFFER without initializing the corresponding
+       slot of buffer_local_flags */
+    abort ();
 }
 
 #endif standalone
@@ -1148,27 +1234,27 @@ syms_of_read ()
   defsubr (&Sget_file_char);
   defsubr (&Smapatoms);
 
-  DefLispVar ("obarray", &Vobarray,
+  DEFVAR_LISP ("obarray", &Vobarray,
     "Symbol table for use by  intern  and  read.\n\
 It is a vector whose length ought to be prime for best results.\n\
 Each element is a list of all interned symbols whose names hash in that bucket.");
 
-  DefLispVar ("values", &Vvalues,
+  DEFVAR_LISP ("values", &Vvalues,
     "List of values of all expressions which were read, evaluated and printed.\n\
 Order is reverse chronological.");
 
-  DefLispVar ("standard-input", &Vstandard_input,
+  DEFVAR_LISP ("standard-input", &Vstandard_input,
     "Stream for read to get input from.\n\
 See documentation of read for possible values.");
   Vstandard_input = Qt;
 
-  DefLispVar ("load-path", &Vload_path,
+  DEFVAR_LISP ("load-path", &Vload_path,
     "*List of directories to search for files to load.\n\
 Each element is a string (directory name) or nil (try default directory).\n\
 Initialized based on EMACSLOADPATH environment variable, if any,\n\
 otherwise to default specified in by file paths.h when emacs was built.");
 
-  DefBoolVar ("load-in-progress", &load_in_progress,
+  DEFVAR_BOOL ("load-in-progress", &load_in_progress,
     "Non-nil iff inside of  load.");
 
   Qstandard_input = intern ("standard-input");

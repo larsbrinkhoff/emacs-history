@@ -140,7 +140,7 @@ sentence moving commands:
 	M-f	Move forward a word
 	M-b	Move backward a word
 
-	c-n	Move to next line
+	C-n	Move to next line
 	C-p	Move to previous line
 
 	C-a	Move to beginning of line
@@ -496,11 +496,11 @@ Emacs.)
 C-z is the usual way to exit Emacs, because it is always better
 not to kill the Emacs if you are going to do any more editing.
 On systems which allow it, C-z exits from Emacs to the shell but
-does not destroy the Emacs; you can resume it with the C-shell
-command "%emacs".  On systems where this is not possible, C-z creates
-a subshell running under Emacs to give you the chance to run other
-programs and return to Emacs afterward, but it does not truly
-"exit" from Emacs.  In this case, you must ask an expert on your
+does not destroy the Emacs; if you use the C shell, you can resume
+Emacs with the command.  On systems where suspending is not possible,
+C-z creates a subshell running under Emacs to give you the chance to
+run other programs and return to Emacs afterward, but it does not
+truly "exit" from Emacs.  In this case, you must ask an expert on your
 computer how to get back to Emacs from the subshell.
 
 You would use C-x C-c if you were about to log out.  You would

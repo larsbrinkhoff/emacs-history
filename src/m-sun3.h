@@ -1,8 +1,11 @@
-/*
- *	Barry Shein, Boston University 1/10/86
- *	The SUN3 (68020) so far is the same as the SUN2 except that
- *	the a.out format has changed so unexec.c needs to know which
- *	it is dealing with.
- */
-#define sun3
 #include "m-sun2.h"
+#undef sun2
+#ifndef sun3
+#define sun3
+#endif
+
+/* Say that the text segment of a.out includes the header;
+   the header actually occupies the first few bytes of the text segment
+   and is counted in hdr.a_text.  */
+
+#define A_TEXT_OFFSET(HDR) sizeof (HDR)

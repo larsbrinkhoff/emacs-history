@@ -1,5 +1,5 @@
 ;; Psychological help for frustrated users.
-;; Copyright (C) 1985 Sidney Markowitz and Richard M. Stallman
+;; Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -31,7 +31,8 @@
 
 (defun random-range (top)
   "Return a random nonnegative integer less than TOP."
-  (% (logand (random) 0777777) top))
+  (let ((tem (% (random) top)))
+    (if (< tem 0) (- tem) tem)))
 
 (defun // (x) x)
 
@@ -633,7 +634,7 @@ reads the sentence before point, and prints the Doctor's answer."
 (doctor-put-meaning acid 'drug)
 (doctor-put-meaning lsd 'drug)
 (doctor-put-meaning speed 'drug)
-(doctor-put-meaning heroine 'drug)
+(doctor-put-meaning heroin 'drug)
 (doctor-put-meaning hash 'drug)
 (doctor-put-meaning cocaine 'drug)
 (doctor-put-meaning uppers 'drug)
@@ -867,10 +868,10 @@ Otherwise call the Doctor to parse preceding sentence"
 
 (defun doctor-read-token ()
   "read one word from buffer"
-  (prog1 (intern (downcase (buffer-substring (dot)
+  (prog1 (intern (downcase (buffer-substring (point)
 					     (progn
 					       (forward-word 1)
-					       (dot)))))
+					       (point)))))
     (re-search-forward "\\Sw*")))
 
 ;; Main processing function for sentences that have been read.

@@ -1,5 +1,5 @@
-/* m- file for Gould, for GNU Emacs.  NOT KNOWN TO WORK!
-   Copyright (C) 1985 Richard M. Stallman.
+/* m- file for Gould with UTX/32 2.0.  (See MACHINES for older versions.)
+   Copyright (C) 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -36,12 +36,12 @@ and this notice must be preserved on all copies.  */
 /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
  * group of arguments and treat it as an array of the arguments.  */
 
-/*#define NO_ARG_ARRAY*/
+#define NO_ARG_ARRAY
 
 /* Define WORD_MACHINE if addresses and such have
  * to be corrected before they can be used as byte counts.  */
 
-#define WORD_MACHINE
+/* #define WORD_MACHINE */
 
 /* Define how to take a char and sign-extend into an int.
    On machines where char is signed, this is a no-op.  */
@@ -49,10 +49,10 @@ and this notice must be preserved on all copies.  */
 #define SIGN_EXTEND_CHAR(c) (c)
 
 /* Now define a symbol for the cpu type, if your compiler
-   does not define it automatically.  */
+   does not define it automatically */
 
-#ifndef gould
-#define gould
+#ifndef GOULD
+#define GOULD
 #endif
 
 /* Use type int rather than a union, to represent Lisp_Object */
@@ -70,7 +70,7 @@ and this notice must be preserved on all copies.  */
 
 /* Data type of load average, as read out of kmem.  */
 
-#define LOAD_AVE_TYPE long
+#define LOAD_AVE_TYPE double
 
 /* Convert that into an integer that is 100 for a load average of 1.0  */
 
@@ -80,7 +80,7 @@ and this notice must be preserved on all copies.  */
    Then the function dump-emacs will not be defined
    and temacs will do (load "loadup") automatically unless told otherwise.  */
 
-#define CANNOT_DUMP
+/* #define CANNOT_DUMP */
 
 /* Define VIRT_ADDR_VARIES if the virtual addresses of
    pure and impure space as loaded can vary, and even their
@@ -89,7 +89,7 @@ and this notice must be preserved on all copies.  */
    Otherwise Emacs assumes that data space precedes text space,
    numerically.  */
 
-/*#define VIRT_ADDR_VARIES*/
+#define VIRT_ADDR_VARIES
 
 /* Define C_ALLOCA if this machine does not support a true alloca
    and the one written in C should be used instead.
@@ -99,4 +99,30 @@ and this notice must be preserved on all copies.  */
    in the file alloca.s should be used.  */
 
 #define C_ALLOCA
-/*#define HAVE_ALLOCA*/
+#define	STACK_DIRECTION	-1  /* grows towards lower addresses on Gould UTX/32 */
+
+/* No need to extend the user stack. */
+
+/* #define LD_SWITCH_MACHINE */
+
+/* -g is broken on the Gould.  */
+
+#define C_DEBUG_SWITCH
+
+/* Comparing pointers as unsigned ints tickles a bug in older compilers.  */
+
+#define PNTR_COMPARISON_TYPE int
+
+/* The GOULD machine counts the a.out file header as part of the text.  */
+
+#define A_TEXT_OFFSET(HDR) sizeof (HDR)
+
+/* Machine-dependent action when about to dump an executable file.  */
+
+#define ADJUST_EXEC_HEADER   \
+  unexec_text_start = hdr.a_txbase + sizeof (hdr);
+
+/* We use the system's crt0.o.  Somehow it avoids losing
+   with `environ' the way most standard crt0.o's do.  */
+
+#define START_FILES pre-crt0.o /lib/crt0.o

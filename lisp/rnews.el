@@ -1,5 +1,5 @@
-;;; Netnews reader for gnu emacs
-;; Copyright (C) 1985 Free Software Foundation
+;;; USENET news reader for gnu emacs
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,36 +18,72 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
+;; Created Sun Mar 10,1985 at 21:35:01 ads and sundar@hernes.ai.mit.edu
+;; Should do the point pdl stuff sometime
+;; finito except pdl.... Sat Mar 16,1985 at 06:43:44
+;; lets keep the summary stuff out until we get it working ..
+;;	sundar@hermes.ai.mit.edu Wed Apr 10,1985 at 16:32:06
+;; hack slash maim. mly@prep.ai.mit.edu Thu 18 Apr, 1985 06:11:14
+;; modified to correct reentrance bug, to not bother with groups that
+;;   received no new traffic since last read completely, to find out
+;;   what traffic a group has available much more quickly when
+;;   possible, to do some completing reads for group names - should
+;;   be much faster...
+;;	KING@KESTREL.arpa, Thu Mar 13 09:03:28 1986
+;; made news-{next,previous}-group skip groups with no new messages; and
+;; added checking for unsubscribed groups to news-add-news-group
+;;	tower@prep.ai.mit.edu Jul 18 1986
+;; bound rmail-output to C-o; and changed header-field commands binding to
+;; agree with the new C-c C-f usage in sendmail
+;; 	tower@prep Sep  3 1986
+;; added news-rotate-buffer-body
+;;	tower@prep Oct 17 1986
+;; made messages more user friendly, cleanuped news-inews
+;; move posting and mail code to new file rnewpost.el
+;;	tower@prep Oct 29 1986
+;; added caesar-region, rename news-caesar-buffer-body, hacked accordingly
+;;	tower@prep Nov 21 1986
 
-;;; Created Sun Mar 10,1985 at 21:35:01 ads and sundar
-;;; Should do the point pdl stuff sometime
-;;; finito except pdl.... Sat Mar 16,1985 at 06:43:44
-;;; lets keep the summary stuff out until we get it working ..
-;;; sundar              Wed Apr 10,1985 at 16:32:06
-;;; hack slash maim. mly Thu 18 Apr, 1985 06:11:14
-;;; news-add-news-group / 'stead of . bug tower Mon Mar  3 15:39:44 EST 1986
-;;; news-mail-reply from anywhere in buffer tower Wed Mar 12 11:15:03 EST 1986
-;;; modified to correct reentrance bug, to not bother with groups that
-;;;   received no new traffic since last read completely, to find out
-;;;   what traffic a group has available much more quickly when
-;;;   possible, to do some completing reads for group names - should
-;;;   be much faster...
-;;;      KING@KESTREL, Thu Mar 13 09:03:28 1986
-;;; fixed doc error   tower Sun Mar 16 14:25:43 EST 1986
 (require 'mail-utils)
+
+(autoload 'rmail-output "rmailout"
+  "Append this message to Unix mail file named FILE-NAME."
+  t)
+
+(autoload 'news-reply "rnewspost"
+  "Compose and post a reply to the current article on USENET.
+While composing the reply, use \\[mail-yank-original] to yank the original
+message into it."
+  t)
+
+(autoload 'news-mail-other-window "rnewspost"
+  "Send mail in another window.
+While composing the message, use \\[mail-yank-original] to yank the
+original message into it."
+  t)
+
+(autoload 'news-post-news "rnewspost"
+  "Begin editing a new USENET news article to be posted."
+  t)
+
+(autoload 'news-mail-reply "rnewspost"
+  "Mail a reply to the author of the current article.
+While composing the reply, use \\[mail-yank-original] to yank the original
+message into it."
+  t)
+
+(defvar rmail-last-file (expand-file-name "~/mbox.news"))
 
 ;Now in paths.el.
 ;(defvar news-path "/usr/spool/news/"
 ;  "The root directory below which all news files are stored.")
-;(defvar news-inews-program "inews"
-;  "Function to post news.")
 
 (defvar news-startup-file "$HOME/.newsrc" "Contains ~/.newsrc")
 (defvar news-certification-file "$HOME/.news-dates" "Contains ~/.news-dates")
 
-;;; random headers that we decide to ignore.
+;; random headers that we decide to ignore.
 (defvar news-ignored-headers
-  "^Path:\\|^Posting-Version:\\|^Article-I.D.:\\|^Followup-To:\\|^Expires:\\|^Date-Received:\\|^Organization:\\|^References:\\|^Control:\\|^Xref:\\|^Lines:\\|^Posted:\\|^Relay-Version:\\|^Message-ID:\\|^Nf-ID:"
+  "^Path:\\|^Posting-Version:\\|^Article-I.D.:\\|^Expires:\\|^Date-Received:\\|^References:\\|^Control:\\|^Xref:\\|^Lines:\\|^Posted:\\|^Relay-Version:\\|^Message-ID:\\|^Nf-ID:\\|^Nf-From:\\|^Approved:\\|^Sender:"
   "All random fields within the header of a message.")
 
 (defvar news-mode-map nil)
@@ -60,10 +96,9 @@
 (defvar news-current-group-end  nil)
 (defvar news-current-certifications nil
    	"An assoc list of a group name and the time at which it is
-known that the grop had no new traffic")
+known that the group had no new traffic")
 (defvar news-current-certifiable nil
 	"The time when the directory we are now working on was written")
-
 
 (defvar news-message-filter nil
   "User specifiable filter function that will be called during
@@ -112,7 +147,7 @@ An empty file does not contribute to a gap -- it ends one.")
 	     (news-find-first-or-last prefix base 1))))
 
 (defmacro // (a1 a2)
-;;; a form of / that guarantees that (/ -1 2) = 0
+;; a form of / that guarantees that (/ -1 2) = 0
   (if (zerop (/ -1 2))
       (` (/ (, a1) (, a2)))
     (` (if (< (, a1) 0)
@@ -125,13 +160,13 @@ An empty file does not contribute to a gap -- it ends one.")
     (while (news-wins pfx (+ base dirn))
       (setq dirn (* dirn 2)))
     (setq dirn (// dirn 2))
-    ;;; Then use a binary search to find the high water mark
+    ;; Then use a binary search to find the high water mark
     (let ((offset (// dirn 2)))
       (while (/= offset 0)
 	(if (news-wins pfx (+ base dirn offset))
 	    (setq dirn (+ dirn offset)))
 	(setq offset (// offset 2))))
-    ;;; If this high-water mark is bogus, recurse.
+    ;; If this high-water mark is bogus, recurse.
     (let ((offset (* news-max-plausible-gap original-dir)))
       (while (and (/= offset 0) (not (news-wins pfx (+ base dirn offset))))
 	(setq offset (- offset original-dir)))
@@ -140,11 +175,14 @@ An empty file does not contribute to a gap -- it ends one.")
 	(news-find-first-or-last pfx (+ base dirn offset) original-dir)))))
 
 (defun rnews ()
-  "Read netnews for groups for which you are a member and add or delete groups.
+  "Read USENET news for groups for which you are a member (one can add or
+delete groups.
 You can reply to articles posted and send articles to any group.
-  Type Help m once reading news to get a list of rnews commands."
+
+Type C-h m once reading news to get a list of rnews commands."
   (interactive)
   (let ((last-buffer (buffer-name)))
+    (make-local-variable 'rmail-last-file)
     (switch-to-buffer (setq news-buffer (get-buffer-create "*news*")))
     (news-mode)
     (setq news-buffer-save last-buffer)
@@ -153,7 +191,7 @@ You can reply to articles posted and send articles to any group.
     (setq buffer-read-only t)
     (set-buffer-modified-p t)
     (sit-for 0)
-    (message "Getting new net news...")
+    (message "Getting new USENET news...")
     (news-set-mode-line)
     (news-get-certifications)
     (news-get-new-news)))
@@ -163,7 +201,7 @@ You can reply to articles posted and send articles to any group.
 
 
 (defun news-set-current-certifiable ()
-  ;;; Record the date that corresponds to the directory you are about to check
+  ;; Record the date that corresponds to the directory you are about to check
   (let ((file (concat news-path
 		      (string-subst-char ?/ ?. news-current-news-group))))
     (setq news-current-certifiable
@@ -171,7 +209,7 @@ You can reply to articles posted and send articles to any group.
 		  (or (file-symlink-p file) file))))))
 
 (defun news-get-certifications ()
-  ;;; Read the certified-read file from last session
+  ;; Read the certified-read file from last session
   (save-excursion
     (save-window-excursion
       (setq news-current-certifications
@@ -189,9 +227,9 @@ You can reply to articles posted and send articles to any group.
 	       (error nil)))))))
 
 (defun news-write-certifications ()
-  ;;; Write a certification file.  This is an assoc list of group names with
-  ;;;doubletons that represent mod times of the directory when group is read
-  ;;;completely.
+  ;; Write a certification file.
+  ;; This is an assoc list of group names with doubletons that represent
+  ;; mod times of the directory when group is read completely.
   (save-excursion
     (save-window-excursion
       (with-output-to-temp-buffer
@@ -211,11 +249,15 @@ You can reply to articles posted and send articles to any group.
 (defun news-set-minor-modes ()
   "Creates a minor mode list that has group name, total articles,
 and attribute for current article."
-  (setq minor-modes (list (cons 'foo
-				(concat news-current-message-number
-					"/"
-					news-total-current-group
-					(news-get-attribute-string))))))
+  (setq news-minor-modes (list (cons 'foo
+				     (concat news-current-message-number
+					     "/"
+					     news-total-current-group
+					     (news-get-attribute-string)))))
+  ;; Detect Emacs versions 18.16 and up, which display
+  ;; directly from news-minor-modes by using a list for mode-name.
+  (or (boundp 'minor-mode-alist)
+      (setq minor-modes news-minor-modes)))
 
 (defun news-set-message-counters ()
   "Scan through current news-groups filelist to figure out how many messages
@@ -247,14 +289,17 @@ are there. Set counters for use with minor mode display."
   (define-key news-mode-map "a" 'news-post-news)
   (define-key news-mode-map "r" 'news-mail-reply)
   (define-key news-mode-map "o" 'news-save-item-in-file)
+  (define-key news-mode-map "\C-o" 'rmail-output)
   (define-key news-mode-map "t" 'news-show-all-headers)
   (define-key news-mode-map "x" 'news-force-update)
   (define-key news-mode-map "A" 'news-add-news-group)
   (define-key news-mode-map "u" 'news-unsubscribe-current-group)
-  (define-key news-mode-map "U" 'news-unsubscribe-group))
+  (define-key news-mode-map "U" 'news-unsubscribe-group)
+  (define-key news-mode-map "\C-c\C-r" 'news-caesar-buffer-body))
 
 (defun news-mode ()
-  "News Mode is used by M-x rnews for editing News files.
+  "News Mode is used by M-x rnews for reading USENET Newsgroups articles.
+New readers can find additional help in newsgroup: news.announce.newusers .
 All normal editing commands are turned off.
 Instead, these commands are available:
 
@@ -269,11 +314,13 @@ M-n     goto next news group.
 M-p     goto previous news group.
 l       list all the news groups with current status.
 ?       print this help message.
-g       get new net news.
-f       post follow-up article to the net.
-a       post a news article.
+C-c C-r caesar rotate all letters by 13 places in the article's body (rot13).
+g       get new USENET news.
+f       post a reply article to USENET.
+a       post an original news article.
 A       add a newsgroup. 
 o	save the current article in the named file (append if file exists).
+C-o	output this message to a Unix-format mail file (append it).
 c       \"copy\" (actually link) current or prefix-arg msg to file.
 	warning: target directory and message file must be on same device
 		(UNIX magic)
@@ -282,7 +329,7 @@ q	quit reading news after updating .newsrc file.
 e	exit updating .newsrc file.
 m	mail a news article.  Same as C-x 4 m.
 x       update last message seen to be the current message.
-r	reply to this news article.  Like m but initializes some fields.
+r	mail a reply to this news article.  Like m but initializes some fields.
 u       unsubscribe from current newsgroup.
 U       unsubscribe from specified newsgroup."
   (interactive)
@@ -303,7 +350,11 @@ U       unsubscribe from specified newsgroup."
 ;  This breaks it.  I don't have time to figure out why. -- RMS
 ;  (make-local-variable 'news-group-article-assoc)
   (setq major-mode 'news-mode)
-  (setq mode-name "NEWS")
+  (if (boundp 'minor-mode-alist)
+      ;; Emacs versions 18.16 and up.
+      (setq mode-name '("NEWS" news-minor-modes))
+    ;; Earlier versions display minor-modes via a special mechanism.
+    (setq mode-name "NEWS"))
   (news-set-mode-line)
   (set-syntax-table text-mode-syntax-table)
   (use-local-map news-mode-map)
@@ -318,7 +369,7 @@ U       unsubscribe from specified newsgroup."
       (aset string index new)))
   string)
 
-;;; update read message number
+;; update read message number
 (defmacro news-update-message-read (ngroup nno)
   (list 'setcar
 	(list 'cdadr
@@ -342,15 +393,14 @@ to a list (a . b)"
 ;	  (throw 'foo t)
 ;	(setq lis (cdr lis))))))
 
-
 (defun news-get-new-news ()
-  "Get new netnews if there is any for the current user."
+  "Get new USENET news, if there is any for the current user."
   (interactive)
   (if (not (null news-user-group-list))
-	(news-update-newsrc-file))
+      (news-update-newsrc-file))
   (setq news-group-article-assoc ())
   (setq news-user-group-list ())
-  (message "Looking up .newsrc file...")
+  (message "Looking up %s file..." news-startup-file)
   (let ((file (substitute-in-file-name news-startup-file))
 	(temp-user-groups ()))
     (save-excursion
@@ -366,22 +416,16 @@ to a list (a . b)"
 	  (setq endofline (point))
 	  (setq tem (buffer-substring start (- end 2)))
 	  (let ((range (news-parse-range
-			 (buffer-substring end endofline))))
-
-;	    (if (is-in tem temp-user-groups)
-;		(progn
-;		  (setq temp-user-groups (delq tem temp-user-groups))
-;		  (setq news-group-article-assoc 
-;			(delq (assoc tem news-group-article-assoc)
-;			news-group-article-assoc))
-;		  (message "Subscribed to the same group twice?")))
-
-	    (setq temp-user-groups (cons tem temp-user-groups)
-		  news-group-article-assoc
+			(buffer-substring end endofline))))
+	    (if (assoc tem news-group-article-assoc)
+		(message "You are subscribed twice to %s; I ignore second"
+			 tem)	      
+	      (setq temp-user-groups (cons tem temp-user-groups)
+		    news-group-article-assoc
 		    (cons (list tem (list (car range)
 					  (cdr range)
 					  (cdr range)))
-			  news-group-article-assoc))))
+			  news-group-article-assoc)))))
 	(kill-buffer newsrcbuf)))      
     (setq temp-user-groups (nreverse temp-user-groups))
     (message "Prefrobnicating...")
@@ -389,7 +433,7 @@ to a list (a . b)"
     (setq news-user-group-list temp-user-groups)
     (while (and temp-user-groups
 		(not (news-read-files-into-buffer
-		       (car temp-user-groups) nil)))
+		      (car temp-user-groups) nil)))
       (setq temp-user-groups (cdr temp-user-groups)))
     (if (null temp-user-groups)
 	(message "No news is good news.")
@@ -398,79 +442,45 @@ to a list (a . b)"
 (defun news-list-news-groups ()
   "Display all the news groups to which you belong."
   (interactive)
-  (if (null news-user-group-list)
-      (message "No user groups read yet!")
-    (let ((buffer-read-only ()))
-      (setq mode-line-format "--%%--[q: to goback, space: scroll-forward, delete:scroll-backward] %M --%--")
-      (local-set-key " " 'scroll-up)
-      (local-set-key "\177" 'scroll-down)
-      (local-set-key "q" 'news-get-back)
-      (goto-char 0)
-      (save-excursion
-        (erase-buffer)
-	(insert
-	  "News Group        Msg No.       News Group        Msg No.\n")
-	(insert
-	  "-------------------------       -------------------------\n")
-	(let ((temp news-user-group-list)
-	      (flag nil))
-	  (while temp
-	    (let ((item (assoc (car temp) news-group-article-assoc)))
-	      (insert (car item))
-	      (indent-to (if flag 52 20))
-	      (insert (int-to-string (cadr (cadr item))))
-	      (if flag
-		  (insert "\n")
-		  (indent-to 33))
-	      (setq temp (cdr temp) flag (not flag)))))))))
-
-(defun news-get-back ()
-  "Called when you quit from seeing the news groups list."
-  (interactive)
-  (let ((buffer-read-only ()))
-    (erase-buffer)
-    (local-set-key "q" 'news-exit)
-    (news-set-mode-line)
-    (news-read-in-file
-      (concat news-path
-	      (string-subst-char ?/ ?. news-current-news-group)
-	      "/" (int-to-string news-current-message-number)))))
-
-(defun strcpyn (str1 str2 len)
-  (if (string= str2 "")
-      str1
-    (while (>= len 0)
-      (aset str1 len (aref str2 len))
-      (setq len (1- len)))
-    str1))
+  (with-output-to-temp-buffer "*Newsgroups*"
+    (save-excursion
+      (set-buffer standard-output)
+      (insert
+	"News Group        Msg No.       News Group        Msg No.\n")
+      (insert
+	"-------------------------       -------------------------\n")
+      (let ((temp news-user-group-list)
+	    (flag nil))
+	(while temp
+	  (let ((item (assoc (car temp) news-group-article-assoc)))
+	    (insert (car item))
+	    (indent-to (if flag 52 20))
+	    (insert (int-to-string (cadr (cadr item))))
+	    (if flag
+		(insert "\n")
+	      (indent-to 33))
+	    (setq temp (cdr temp) flag (not flag))))))))
 
 ;; Mode line hack
 (defun news-set-mode-line ()
   "Set mode line string to something useful."
-  (let ((tem (1- (length news-current-news-group)))
-	(idx 0)
-	(buffer-modified-p ()))
-    (setq mode-line-format 
-	  (concat "--%1*%1*-NEWS: "
-		  (if (> tem 15)
-		      news-current-news-group
-		    (let ((string (make-string 16 ? )))
-		      (setq idx 0)
-		      (while (<= idx tem)
-			(aset string idx (aref news-current-news-group idx))
-			(setq idx (1+ idx)))
-		      string))
-		  " ["
-		  (if (integerp news-current-message-number)
-		      (int-to-string news-current-message-number)
-		   "??")
-		 "/"
-		 (if (integerp news-current-group-end)
-		     (int-to-string news-current-group-end)
-		   news-current-group-end)
-		 "] %M ----%3p-%-"))
-    (set-buffer-modified-p t)
-    (sit-for 0)))
+  (setq mode-line-process
+	(concat " "
+		(if (integerp news-current-message-number)
+		    (int-to-string news-current-message-number)
+		 "??")
+		"/"
+		(if (integerp news-current-group-end)
+		    (int-to-string news-current-group-end)
+		  news-current-group-end)))
+  (setq mode-line-buffer-identification
+	(concat "NEWS: "
+		news-current-news-group
+		;; Enough spaces to pad group name to 17 positions.
+		(substring "                 "
+			   0 (max 0 (- 17 (length news-current-news-group))))))
+  (set-buffer-modified-p t)
+  (sit-for 0))
 
 (defun news-goto-news-group (gp)
   "Takes a string and goes to that news group."
@@ -483,7 +493,7 @@ to a list (a . b)"
 (defun news-select-news-group (gp)
   (let ((grp (assoc gp news-group-article-assoc)))
     (if (null grp)
-	(error "No more news groups")
+ 	(error "Group not subscribed to in file %s." news-startup-file)
       (progn
 	(news-update-message-read news-current-news-group
 				  (cdar news-point-pdl))
@@ -529,13 +539,9 @@ If ARG is 1 or -1, moves to next or previous newsgroup if at end."
 	    (> no news-current-group-end))
 	(cond ((= arg 1)
 	       (news-set-current-group-certification)
-	       (news-next-group)
-	       (while (null news-list-of-files)
-		 (news-next-group)))
+	       (news-next-group))
 	      ((= arg -1)
-	       (news-previous-group)
-	       (while (null news-list-of-files)
-		 (news-previous-group)))
+	       (news-previous-group))
 	      (t (error "Article out of range")))
       (let ((plist (news-get-motion-lists
 		     news-current-message-number
@@ -559,23 +565,27 @@ A negative ARG means move forward."
 	  ngrp)
       (if (< arg 0)
 	  (or (setq ngrp (nth (1- (- arg)) (cadr plist)))
-	      (error "No more news groups"))
+	      (error "No previous news groups"))
 	(or (setq ngrp (nth arg (car plist)))
-	    (error "No previous news groups")))
+	    (error "No more news groups")))
       (news-select-news-group ngrp))))
 
 (defun news-next-group ()
   "Moves to the next user group."
   (interactive)
 ;  (message "Moving to next group...")
-  (news-move-to-group 0))
+  (news-move-to-group 0)
+  (while (null news-list-of-files)
+    (news-move-to-group 0)))
 ;  (message "Moving to next group... done.")
 
 (defun news-previous-group ()
   "Moves to the previous user group."
   (interactive)
 ;  (message "Moving to previous group...")
-  (news-move-to-group -1))
+  (news-move-to-group -1)
+  (while (null news-list-of-files)
+    (news-move-to-group -1)))
 ;  (message "Moving to previous group... done.")
 
 (defun news-get-motion-lists (arg listy)
@@ -625,8 +635,14 @@ one for moving forward and one for moving backward."
 (defun news-show-all-headers ()
   "Redisplay current news item with all original headers"
   (interactive)
-  (let (news-ignored-headers)
-    (news-get-back)))
+  (let (news-ignored-headers
+	(buffer-read-only ()))
+    (erase-buffer)
+    (news-set-mode-line)
+    (news-read-in-file
+     (concat news-path
+	     (string-subst-char ?/ ?. news-current-news-group)
+	     "/" (int-to-string news-current-message-number)))))
 
 (defun news-delete-headers (pos)
   (goto-char pos)
@@ -639,13 +655,13 @@ one for moving forward and one for moving backward."
 			       (point))))))
 
 (defun news-exit ()
-  "Quit news reading session and update the newsrc file."
+  "Quit news reading session and update the .newsrc file."
   (interactive)
   (if (y-or-n-p "Do you really wanna quit reading news ? ")
-      (progn (message "Updating .newsrc...")
+      (progn (message "Updating %s..." news-startup-file)
 	     (news-update-newsrc-file)
 	     (news-write-certifications)
-	     (message "Updating .newsrc... done")
+	     (message "Updating %s... done" news-startup-file)
 	     (message "Now do some real work")
 	     (and (fboundp 'bury-buffer) (bury-buffer (current-buffer)))
 	     (switch-to-buffer news-buffer-save)
@@ -653,7 +669,7 @@ one for moving forward and one for moving backward."
     (message "")))
 
 (defun news-update-newsrc-file ()
-  "Updates the newsrc file in the users home dir."
+  "Updates the .newsrc file in the users home dir."
   (let ((newsrcbuf (find-file-noselect
 		     (substitute-in-file-name news-startup-file)))
 	(tem news-user-group-list)
@@ -710,14 +726,14 @@ one for moving forward and one for moving backward."
 	  (news-update-message-read group (cdar news-point-pdl))
 	  (if (equal group news-current-news-group)
 	      (news-next-group))
-	  (message "Member-p of %s ==> nil" group))
-      (error "No such group: %s" group))))
+	  (message ""))
+      (error "Not subscribed to group: %s" group))))
 
 (defun news-save-item-in-file (file)
   "Save the current article that is being read by appending to a file."
   (interactive "FSave item in file: ")
   (append-to-file (point-min) (point-max) file))
-
+
 (defun news-get-pruned-list-of-files (gp-list end-file-no)
   "Given a news group it does an ls to give all files in the news group.
 The arg must be in slashified format."
@@ -775,15 +791,14 @@ The arg must be in slashified format."
 	 (start-file-no (car files-start-end))
 	 (end-file-no (cadr files-start-end))
 	 (buffer-read-only nil))
-
     (setq news-current-news-group group)
     (setq news-current-message-number nil)
     (setq news-current-group-end nil)
     (news-set-mode-line)
     (news-get-pruned-list-of-files group end-file-no)
     (news-set-mode-line)
-    ;; should be a lot smarter than this if we have to move
-    ;; around correctly.
+    ;; @@ should be a lot smarter than this if we have to move
+    ;; @@ around correctly.
     (setq news-point-pdl (list (cons (car files-start-end)
 				     (cadr files-start-end))))
     (if (null news-list-of-files)
@@ -811,187 +826,55 @@ The arg must be in slashified format."
       (news-set-mode-line)
       t)))
 
-
-;;; Replying and posting news items are done by these functions.
-;;; imported from rmail and modified to work with rnews ...
-;;; Mon Mar 25,1985 at 03:07:04 ads@mit-hermes.
-;;; this is done so that rnews can operate independently from rmail.el and sendmail and
-;;; dosen't have to autoload these functions.
-
-;;;>> Nuked by Mly to autoload those functions again, as the duplication of
-;;;>>  code was making maintenance too difficult.
-
-(defvar news-reply-mode-map () "Mode map used by news-reply.")
-
-(or news-reply-mode-map
-    (progn (setq news-reply-mode-map (make-keymap))
-	   (define-key news-reply-mode-map "\C-c?" 'describe-mode)
-	   (define-key news-reply-mode-map "\C-ct" 'mail-to)
-	   (define-key news-reply-mode-map "\C-cb" 'mail-bcc)
-	   (define-key news-reply-mode-map "\C-cc" 'mail-cc)
-	   (define-key news-reply-mode-map "\C-cs" 'mail-subject)
-	   (define-key news-reply-mode-map "\C-cy" 'mail-yank-original)
-	   (define-key news-reply-mode-map "\C-c\C-c" 'news-inews)
-	   (define-key news-reply-mode-map "\C-c\C-s" 'news-inews)))
-
-(defun news-reply-mode ()
-  "Major mode for editing news to be posted on netnews.
-Like Text Mode but with these additional commands:
-\\{news-reply-mode-map}"
-  (interactive)
-  ;; require...
-  (or (fboundp 'mail-setup) (load "sendmail"))
-  (kill-all-local-variables)
-  (make-local-variable 'mail-reply-buffer)
-  (setq mail-reply-buffer nil)
-  (set-syntax-table text-mode-syntax-table)
-  (use-local-map news-reply-mode-map)
-  (setq local-abbrev-table text-mode-abbrev-table)
-  (setq major-mode 'news-reply-mode)
-  (setq mode-name "News")
-  (make-local-variable 'paragraph-separate)
-  (make-local-variable 'paragraph-start)
-  (setq paragraph-start (concat "^" mail-header-separator "$\\|"
-				paragraph-start))
-  (setq paragraph-separate (concat "^" mail-header-separator "$\\|"
-				   paragraph-separate))
-  (run-hooks 'text-mode-hook 'news-reply-mode-hook))
-
-(defun news-setup (to subject in-reply-to newsgroups replybuffer)
-  (setq mail-reply-buffer replybuffer)
-  (let ((mail-setup-hook nil))
-    (if (null to)
-	;; this hack is needed so that inews wont be confused by 
-	;; the fcc: and bcc: fields
-	(let ((mail-self-blind nil)
-	      (mail-archive-file-name nil))
-	  (mail-setup to subject in-reply-to nil replybuffer)
-	  (beginning-of-line)
-	  (kill-line 1)
-	  (goto-char (point-max)))
-      (mail-setup to subject in-reply-to nil replybuffer))
-    (goto-char (point-max))
-    (if (let ((case-fold-search t))
-	  (re-search-backward "^Subject:" (point-min) t))
-	(progn (beginning-of-line)
-	       (insert "Newsgroups: " (or newsgroups "") "\n")
-	       (if (not newsgroups)
-		   (backward-char 1)
-		 (goto-char (point-max)))))
-    (run-hooks 'news-setup-hook)))
-   
-(defun news-inews ()
-  "Send a news message using inews."
-  (interactive)
-  (let* (newsgroups subject
-	 (case-fold-search nil))
-    (save-restriction
-      (goto-char (point-min))
-      (search-forward (concat "\n" mail-header-separator "\n"))
-      (narrow-to-region (point-min) (point))
-      (setq newsgroups (mail-fetch-field "newsgroups")
-	    subject (mail-fetch-field "subject")))
-    (widen)
-    (goto-char (point-min))
-    (search-forward (concat "\n" mail-header-separator "\n"))
-    (message "Posting to the net...")
-    (call-process-region (point) (point-max) 
-			 news-inews-program nil 0 nil
-			 "-t" subject
-			 "-n" newsgroups)
-    (message "Posting to the net... done")
-    (set-buffer-modified-p nil)
-    (delete-windows-on (current-buffer))
-    (and (fboundp 'bury-buffer) (bury-buffer (current-buffer)))))
-		       
-(defun news-mail-reply ()
-  "Mail a reply to the author of the current article.
-While composing the reply, use \\[mail-yank-original] to yank the original message into it."
-  (interactive)
-  (let (from cc subject date to reply-to
-	     (buffer (current-buffer)))
-    (save-restriction
-      (narrow-to-region (point-min) (progn (goto-line (point-min))
-					   (search-forward "\n\n")
-					   (- (point) 2)))
-      (setq from (mail-fetch-field "from")
-	    subject (mail-fetch-field "subject")
-	    reply-to (mail-fetch-field "reply-to")
-	    date (mail-fetch-field "date"))
-      (setq to from)
-      (pop-to-buffer "*mail*")
-      (mail nil
-	    (if reply-to reply-to to)
-	    subject
-	    (let ((stop-pos (string-match "  *at \\|  *@ \\| *(\\| *<" from)))
-	      (concat (if stop-pos (substring from 0 stop-pos) from)
-		      "'s message of "
-		      date))
-	    nil
-	   buffer))))
-  
-(defun news-reply ()
-  "Compose and send a reply to the current article to the net.
-While composing the reply, use \\[mail-yank-original] to yank the original message into it."
-  (interactive)
-  (if (y-or-n-p "Are you sure you want to reply to the net? ")
-      (let (from cc subject date to newsgroups
-		 (buffer (current-buffer)))
-	(save-restriction
-	  (narrow-to-region (point-min) (progn (search-forward "\n\n")
-					       (- (point) 2)))
-	  (setq from (mail-fetch-field "from")
-		subject (mail-fetch-field "subject")
-		date (mail-fetch-field "date")
-		newsgroups (mail-fetch-field "newsgroups"))
-	  (pop-to-buffer "*post-news*")
-	  (news-reply-mode)
-	  (erase-buffer)
-	  (news-setup
-	   nil
-	   subject
-	   (let ((stop-pos (string-match "  *at \\|  *@ \\| *(\\| *<" from)))
-	     (concat (if stop-pos (substring from 0 stop-pos) from)
-		     "'s message of "
-		     date))
-	   newsgroups
-	   buffer)))
-    (message "")))
-
-(defun news-post-news ()
-  "Begin editing a news article to be posted."
-  (interactive)
-  (pop-to-buffer "*post-news*")
-  (news-reply-mode)
-  (erase-buffer)
-  (news-setup () () () () ()))
- 
 (defun news-add-news-group (gp)
-  "Add you to news group named GROUP (a string)."
-; (completing-read ...)
+  "Resubscribe to or add a USENET news group named GROUP (a string)."
+; @@ (completing-read ...)
+; @@ could be based on news library file ../active (slightly facist)
+; @@ or (expensive to compute) all directories under the news spool directory
   (interactive "sAdd news group: ")
   (let ((file-dir (concat news-path (string-subst-char ?/ ?. gp))))
     (save-excursion
-     (if (null (assoc gp news-group-article-assoc))
-	 (let ((newsrcbuf (find-file-noselect
-			   (substitute-in-file-name news-startup-file))))
-	   (if (file-directory-p file-dir)
-	       (progn
-		 (switch-to-buffer newsrcbuf)
-		 (end-of-buffer)
-		 (insert (string-subst-char ?. ?\ gp) ": 1-1\n")
-		 (save-buffer)
-		 (kill-buffer (current-buffer))
-		 (message "Added %s to your current list of newsgroups." gp))
-	    (message "Newsgroup %s doesn't exist." gp)))
-       (message "Already subscribed to group %s." gp)))))
-
-(defun news-mail-other-window ()
-  "Send mail in another window.
-While composing the message, use \\[mail-yank-original] to yank the
-original message into it."
-  (interactive)
-  (mail-other-window nil nil nil nil nil (current-buffer)))
+      (if (null (assoc gp news-group-article-assoc))
+	  (let ((newsrcbuf (find-file-noselect
+			    (substitute-in-file-name news-startup-file))))
+	    (if (file-directory-p file-dir)
+		(progn
+		  (switch-to-buffer newsrcbuf)
+		  (goto-char 0)
+		  (if (search-forward (concat gp "! ") nil t)
+		      (progn
+			(message "Re-subscribing to group %s." gp)
+			;;@@ news-unsubscribe-groups isn't being used
+			;;(setq news-unsubscribe-groups
+			;;    (delq gp news-unsubscribe-groups))
+			(backward-char 2)
+			(delete-char 1)
+			(insert ":"))
+		    (progn
+		      (message
+		       "Added %s to your list of newsgroups." gp)
+		      (end-of-buffer)
+		      (insert gp ": 1-1\n")))
+		  (search-backward gp nil t)
+		  (let (start end endofline tem)
+		    (search-forward ": " nil t)
+		    (setq end (point))
+		    (beginning-of-line)
+		    (setq start (point))
+		    (end-of-line)
+		    (setq endofline (point))
+		    (setq tem (buffer-substring start (- end 2)))
+		    (let ((range (news-parse-range
+				  (buffer-substring end endofline))))
+		      (setq news-group-article-assoc
+			    (cons (list tem (list (car range)
+						  (cdr range)
+						  (cdr range)))
+				  news-group-article-assoc))))
+		  (save-buffer)
+		  (kill-buffer (current-buffer)))
+	      (message "Newsgroup %s doesn't exist." gp)))
+	(message "Already subscribed to group %s." gp)))))
 
 (defun news-make-link-to-message (number newname)
 	"Forges a link to an rnews message numbered number (current if no arg)
@@ -1007,4 +890,67 @@ FName to link to message: ")
 		 news-current-message-number))
    newname))
 
+;;; caesar-region written by phr@prep.ai.mit.edu  Nov 86
+;;; modified by tower@prep Nov 86
+(defun caesar-region (&optional n)
+  "Caesar rotation of region by N, default 13, for decrypting netnews."
+  (interactive (if current-prefix-arg	; Was there a prefix arg?
+		   (list (prefix-numeric-value current-prefix-arg))
+		 (list nil)))
+  (cond ((not (numberp n)) (setq n 13))
+	((< n 0) (setq n (- 26 (% (- n) 26))))
+	(t (setq n (% n 26))))		;canonicalize N
+  (if (not (zerop n))		; no action needed for a rot of 0
+      (progn
+	(if (or (not (boundp 'caesar-translate-table))
+		(/= (aref caesar-translate-table ?a) (+ ?a n)))
+	    (let ((i 0) (lower "abcdefghijklmnopqrstuvwxyz") upper)
+	      (message "Building caesar-translate-table...")
+	      (setq caesar-translate-table (make-vector 256 0))
+	      (while (< i 256)
+		(aset caesar-translate-table i i)
+		(setq i (1+ i)))
+	      (setq lower (concat lower lower) upper (upcase lower) i 0)
+	      (while (< i 26)
+		(aset caesar-translate-table (+ ?a i) (aref lower (+ i n)))
+		(aset caesar-translate-table (+ ?A i) (aref upper (+ i n)))
+		(setq i (1+ i)))
+	      (message "Building caesar-translate-table... done")))
+	(let ((from (region-beginning))
+	      (to (region-end))
+	      (i 0) str len)
+	  (setq str (buffer-substring from to))
+	  (setq len (length str))
+	  (while (< i len)
+	    (aset str i (aref caesar-translate-table (aref str i)))
+	    (setq i (1+ i)))
+	  (goto-char from)
+	  (kill-region from to)
+	  (insert str)))))
 
+;;; news-caesar-buffer-body written by paul@media-lab.mit.edu  Wed Oct 1, 1986
+;;; hacked further by tower@prep.ai.mit.edu
+(defun news-caesar-buffer-body (&optional rotnum)
+  "Caesar rotates all letters in the current buffer by 13 places.
+Used to encode/decode possibly offensive messages (commonly in net.jokes).
+With prefix arg, specifies the number of places to rotate each letter forward.
+Mail and USENET news headers are not rotated."
+  (interactive (if current-prefix-arg	; Was there a prefix arg?
+		   (list (prefix-numeric-value current-prefix-arg))
+		 (list nil)))
+  (save-excursion
+    (let ((buffer-status buffer-read-only))
+      (setq buffer-read-only nil)
+      ;; setup the region
+      (set-mark (if (progn (goto-char (point-min))
+			    (search-forward
+			     (concat "\n"
+				     (if (equal major-mode 'news-mode)
+					 ""
+				       mail-header-separator)
+				     "\n") nil t))
+		     (point)
+		   (point-min)))
+      (goto-char (point-max))
+      (caesar-region rotnum)
+      (setq buffer-read-only buffer-status))))

@@ -1,5 +1,5 @@
 /* Mocklisp compatibility functions for GNU Emacs Lisp interpreter.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -161,7 +161,7 @@ DEFUN ("ml-prefix-argument-loop", Fml_prefix_argument_loop, Sml_prefix_argument_
   else
     {
       tem = Vcurrent_prefix_arg;
-      if (LISTP (tem))
+      if (CONSP (tem))
 	tem = Fcar (tem);
       if (EQ (tem, Qminus))
 	i = -1;
@@ -175,6 +175,8 @@ DEFUN ("ml-prefix-argument-loop", Fml_prefix_argument_loop, Sml_prefix_argument_
   return Qnil;
 }
 
+#ifdef NOTDEF /* Now in mlsupport.el */
+
 DEFUN ("ml-substr", Fml_substr, Sml_substr, 3, 3, 0,
   "Return a substring of STRING, starting at index FROM and of length LENGTH.\n\
 If either FROM or LENGTH is negative, the length of STRING is added to it.")
@@ -192,10 +194,11 @@ If either FROM or LENGTH is negative, the length of STRING is added to it.")
   XSETINT (to, XINT (to) + XINT (from));
   return Fsubstring (string, from, to);
 }
-
+#endif NOTDEF
 DEFUN ("insert-string", Finsert_string, Sinsert_string, 0, MANY, 0,
-  "Insert the arguments (all strings) into the buffer, moving point forward.\n\
-Any argument that is a number is converted to a string by printing it in decimal.")
+  "Mocklisp-compatibility insert function.\n\
+Like the function `insert' except that any argument that is a number\n\
+is converted into a string by expressing it in decimal.")
   (nargs, args)
      int nargs;
      Lisp_Object *args;
@@ -236,6 +239,6 @@ syms_of_mocklisp ()
   defsubr (&Sml_interactive);
   defsubr (&Sml_provide_prefix_argument);
   defsubr (&Sml_prefix_argument_loop);
-  defsubr (&Sml_substr);
+/*defsubr (&Sml_substr);*/
   defsubr (&Sinsert_string);
 }

@@ -1,5 +1,5 @@
 /* m- file for tahoe.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -51,6 +51,14 @@ and this notice must be preserved on all copies.  */
 
 #define NO_UNION_TYPE
 
+/* crt0.c should use the vax-bsd style of entry, with no dummy args.  */
+
+#define CRT0_DUMMIES
+
+/* crt0.c should define a symbol `start' and do .globl with a dot.  */
+
+#define DOT_GLOBAL_START
+
 /* Data type of load average, as read out of kmem.  */
 
 #define LOAD_AVE_TYPE double
@@ -62,3 +70,7 @@ and this notice must be preserved on all copies.  */
 /* This triggers some stuff to avoid a compiler bug */
 
 #define TAHOE_REGISTER_BUG
+
+/* System provides alloca.  */
+
+#define HAVE_ALLOCA

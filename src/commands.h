@@ -1,5 +1,5 @@
 /* Definitions needed by most editing commands.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -68,3 +68,8 @@ extern Lisp_Object Vexecuting_macro;
 /* Set this nonzero to force reconsideration of mode line. */
 
 extern int RedoModes;
+
+/* Nonzero means reading single-character input with prompt
+   so put cursor on minibuffer after the prompt.  */
+
+extern int cursor_in_echo_area;

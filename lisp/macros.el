@@ -1,5 +1,5 @@
 ;; Non-primitive commands for keyboard macros.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,39 +19,49 @@
 ;; and this notice must be preserved on all copies.
 
 
-(defun append-kbd-macro (macroname filename &optional keys)
-  "Append kbd macro NAME in file FILE, as Lisp code to define the macro.
-Use  load  to load the file.
-Third argument KEYS non-nil means also record the keys it is on.
- (This is the prefix argument, when calling interactively.)"
-  (interactive "CAppend kbd macro (name): \nFAppend kbd macro %s to file: \nP")
-  (write-kbd-macro macroname filename keys t))
+(defun name-last-kbd-macro (symbol)
+  "Assign a name to the last keyboard macro defined.
+One arg, a symbol, which is the name to define.
+The symbol's function definition becomes the keyboard macro string.
+Such a \"function\" cannot be called from Lisp, but it is a valid command
+definition for the editor command loop."
+  (interactive "SName for last kbd macro: ")
+  (or last-kbd-macro
+      (error "No keyboard macro defined"))
+  (and (fboundp symbol)
+       (not (stringp (symbol-function symbol)))
+       (error "Function %s is already defined and not a keyboard macro."
+	      symbol))
+  (fset symbol last-kbd-macro))
 
-(defun write-kbd-macro (macroname filename &optional keys appendflag)
-  "Save kbd macro NAME in file FILE, as Lisp code to define the macro.
-Use  load  to load the file.
-Third argument KEYS non-nil means also record the keys it is on.
+(defun insert-kbd-macro (macroname &optional keys)
+  "Insert in buffer the definition of kbd macro NAME, as Lisp code.
+Second argument KEYS non-nil means also record the keys it is on.
  (This is the prefix argument, when calling interactively.)
-Fourth argument APPENDFLAG non-nil meams append to FILE's existing contents."
-  (interactive "CWrite kbd macro (name): \nFWrite kbd macro %s to file: \nP")
-  (let ((buffer (get-buffer-create " write-kbd-macro-temp")))
-    (save-excursion
-     (set-buffer buffer)
-     (erase-buffer)
-     (insert "(fset '")
-     (prin1 macroname buffer)
-     (insert "\n   ")
-     (prin1 (symbol-function macroname) buffer)
-     (insert ")\n")
-     (let ((keys (where-is-internal macroname)))
-       (while keys
-	 (insert "(global-set-key ")
-	 (prin1 (car keys) buffer)
-	 (insert " '")
-	 (prin1 macroname buffer)
-	 (insert ")\n")
-	 (setq keys (cdr keys))))
-     (write-region (point-min) (point-max) filename appendflag))))
+
+This Lisp code will, when executed, define the kbd macro with the
+same definition it has now.  If you say to record the keys,
+the Lisp code will also rebind those keys to the macro.
+Only global key bindings are recorded since executing this Lisp code
+always makes global bindings.
+
+To save a kbd macro, visit a file of Lisp code such as your ~/.emacs,
+use this command, and then save the file."
+  (interactive "CInsert kbd macro (name): \nP")
+  (insert "(fset '")
+  (prin1 macroname (current-buffer))
+  (insert "\n   ")
+  (prin1 (symbol-function macroname) (current-buffer))
+  (insert ")\n")
+  (if keys
+      (let ((keys (where-is-internal macroname nil)))
+	(while keys
+	  (insert "(global-set-key ")
+	  (prin1 (car keys) (current-buffer))
+	  (insert " '")
+	  (prin1 macroname (current-buffer))
+	  (insert ")\n")
+	  (setq keys (cdr keys))))))
 
 (defun kbd-macro-query (flag)
   "Query user during kbd macro execution.
@@ -75,7 +85,8 @@ Without prefix argument, reads a character.  Your options are:
 	nil
       (let ((loop t))
 	(while loop
-	  (let ((char (let (executing-macro defining-kbd-macro)
+	  (let ((char (let ((executing-macro nil)
+			    (defining-kbd-macro nil))
 			(message "Proceed with macro? (Space, DEL, C-d, C-r or C-l) ")
 			(read-char))))
 	    (cond ((= char ? )
@@ -83,11 +94,11 @@ Without prefix argument, reads a character.  Your options are:
 		  ((= char ?\177)
 		   (setq loop nil)
 		   (setq executing-macro ""))
-		  ((= char ?\^d)
+		  ((= char ?\C-d)
 		   (setq loop nil)
 		   (setq executing-macro t))
-		  ((= char ?\^l)
-		   (redraw-screen))
-		  ((= char ?\^r)
+		  ((= char ?\C-l)
+		   (recenter nil))
+		  ((= char ?\C-r)
 		   (let (executing-macro defining-kbd-macro)
 		     (recursive-edit))))))))))

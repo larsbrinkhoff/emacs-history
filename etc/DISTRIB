@@ -1,38 +1,48 @@
-	GNU Emacs availability information, 22 Nov 1985
-	     Copyright (C) 1985 Richard M. Stallman
+	GNU Emacs availability information, 11 Feb 1987
+	     Copyright (C) 1986 Richard M. Stallman
 
    Permission is granted to anyone to make or distribute
    verbatim copies of this document provided that the
    copyright notice and this permission notice are preserved.
 
-GNU Emacs is legally owned by me, Richard Stallman, its author,
-but I regard myself actually as its custodian on behalf of the
-public, since all software ought to be the common property of
-mankind.
+GNU Emacs is legally owned by the Free Software Foundation, but we
+regard the foundation actually as its custodian on behalf of the
+public, since all software ought to be the common property of mankind.
 
-I permit everyone to have and run copies of GNU Emacs, at no
-charge, and to redistribute copies under certain conditions which
-are designed to make sure that that all modified versions of GNU
-Emacs remain as free as the versions I distribute.  These
-conditions are stated in the document "GNU Emacs General Public
-License", a copy of which is required to be distributed with
-every copy of GNU Emacs.  It is usually in a file named COPYING
-in the same directory as this file.
+The foundation permits everyone to have and run copies of GNU Emacs,
+at no charge, and to redistribute copies under certain conditions
+which are designed to make sure that that all modified versions of GNU
+Emacs remain as free as the versions we distribute.  These conditions
+are stated in the document "GNU Emacs General Public License", a copy
+of which is required to be distributed with every copy of GNU Emacs.
+It is usually in a file named COPYING in the same directory as this
+file.
 
-If you do not know anyone to get a copy of GNU Emacs from, you
-can order a tape from the Free Software Foundation.  We distribute
-Emacs in tar format on 1600bpi industry standard mag tapes.  We
-also distributed nicely typeset copies of the Emacs manual.
-See the order form at the end of this file.
+If you do not know anyone to get a copy of GNU Emacs from, you can
+order a tape from the Free Software Foundation.  We distribute Emacs
+version 17 on 1600bpi industry standard mag tape in tar format.  We
+also distribute nicely typeset copies of the Emacs manual.  See the
+order form at the end of this file.
+
+The file you are reading comes with Emacs version 18, which is
+currently still in beta test.  When version 18 is officially released
+(by March, we hope), we will also start shipping it on 1/4" cartridge
+tapes in tar format and on 1600bpi magtape in VMS interchange format.
 
 If you have Internet access, you can copy the latest Emacs
-distribution from host PREP.AI.MIT.ARPA.  There are several ways to do
-this; see the file `/u2/emacs/GETTING.GNU.SOFTWARE' for info on
-current arrangements.
+distribution from host prep.ai.mit.arpa.  There are several ways to do
+this; see the file `FTP' in the same directory as this file for more
+information.  Even better, get the latest version of the file from
+`/u2/emacs/etc/FTP' on prep.ai.mit.edu for the most current
+arrangements.  It may also be possible to copy Emacs through UUCP; the
+file `FTP' contains information on that too.
 
-See the file MACHINES in this directory for a list of machines
-that GNU Emacs has been tested on.  Emacs has been run on both
-Berkeley Unix and System V Unix, on a variety of types of cpu.
+Emacs has been run on both Berkeley Unix and System V Unix, on a
+variety of types of cpu.  It also works on VMS and on Apollo
+computers, though with some deficiencies that reflect problems in
+these operating systems.  See the file MACHINES in this directory for
+a full list of machines that GNU Emacs has been tested on, with
+machine-specific installation notes and warnings.
 
 Note that there is significant variation between Unix systems
 supposedly running the same version of Unix; it is possible that
@@ -44,8 +54,9 @@ GNU Emacs is distributed with no warranty (see the General Public
 License for full details), and neither I nor the Free Software
 Foundation promises any kind of support or assistance to users.
 The foundation keeps a list of people who are willing to offer
-support and assistance for hire.  We will list anyone who pays a
-$50 listing fee.
+support and assistance for hire.  We will list anyone who agrees
+never to ask customers to keep secret anything they are told
+or given as part of the support.
 
 However, I plan to continue to improve GNU Emacs and keep it
 reliable, so please send me any complaints and suggestions you
@@ -62,10 +73,12 @@ bug-gnu-emacs@prep.ai.mit.edu; on Usenet, use the address
 foundation at (617) 876-3296, or write to the address listed
 below.
 
-If you are a computer manufacturer, I encourage you to ship a
-copy of GNU Emacs with every computer you deliver.  The same
-copying permission terms apply to computer manufacturers as to
-everyone else.
+If you are a computer manufacturer, I encourage you to ship a copy of
+GNU Emacs with every computer you deliver.  The same copying
+permission terms apply to computer manufacturers as to everyone else.
+You should consider making a donation to help support the GNU project;
+if you estimate what it would cost to distribute some commercial
+product and divide it by five, that is a good amount.
 
 If you like GNU Emacs, please express your satisfaction with a
 donation: send me or the Foundation what you feel Emacs has been
@@ -88,39 +101,44 @@ GNU in this directory.
 
 
 		Free Software Foundation Order Form
-			  March 26, 1986
+			  February 11, 1987
 
 All software and publications are distributed with permission to
 copy and redistribute.
 
 Quantity  Price  Item
 
-________  $150	GNU Emacs source code, on a 1600bpi industry standard
-		mag tape in tar format.  The tape also contains
-		MIT Scheme (a dialect of Lisp), hack (a rogue-like game)
-		and bison (a compatible replacement for yacc).
+________ $150	GNU Emacs source code, on a 1600bpi industry standard
+		mag tape in tar format.  The tape also contains GDB
+		(the GNU source-level C debugger), MIT Scheme (a dialect
+		of Lisp), hack (a rogue-like game) and bison (a
+		compatible replacement for yacc).
 
-________  $15	GNU Emacs manual.  This includes a reference card.
-		These manuals are phototypeset and offset printed.
-		We may have both plastic ring binding and standard
-		paperback book binding.
+		Currently our tapes are of Emacs version 17.  We will
+		switch to Emacs version 18 when it is considered stable.
+		Version 18 tapes will contain a copy of the X window system
+		(a window system for bitmap displays written at MIT),
+		and GNU Chess (a chess playing program with an interface
+		to X), as well as the programs listed above.
 
-		Do you have a preference? _________________________
+		_______ Please hold my tape order until version 18 is ready.
 
-		If that's out of stock, do you want to wait? ______
+________ $15	GNU Emacs manual (~300 pages).  These manuals are
+		phototypeset and offset printed, with illustrated covers,
+		GBC plastic ring binding that stays open flat, and a
+		tear-out reference card.
 
-		There may be a choice of two cover designs: the
-		"strong" cover (warning: material may be offensive
-		to the guilty consciences of software "owners") and
-		the "innocuous" cover.
+Thus, a 1600 bpi tape and one Emacs manual come to $165.
 
-		Do you have a preference? _________________________
+________  $10   GDB Manual (~55 pages, side stapled.)
 
-		If that's out of stock, do you want to wait? ______
+________  $10	Texinfo Manual (~30 pages, side stapled.  Texinfo is
+		GNU's structured documentation system, included with
+		GNU Emacs.  This manual describes how to write Texinfo
+		documents).
 
-Thus, a tape and one manual come to $165.
 
-________  $60	Box of six GNU Emacs manuals, shipped book rate.
+________  $60	Box of six GNU Emacs manuals.
 
 ________  $1	GNU Emacs reference card. Or:
 
@@ -133,6 +151,9 @@ reference card, or 50 cents per card in quantity ten or more.
 
 Prices are subject to change without notice.  Massachusetts residents
 please add 5% sales tax to all prices.
+
+
+________   Optional tax deductable donation
 
 
 ________   Total paid

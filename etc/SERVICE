@@ -12,6 +12,17 @@ We have no opinions and usually no information about the abilities of
 any specific person.  We provide this list to enable you to contact
 service providers and decide for yourself whether to hire one.
 
+Giuseppe Attardi <mcvax!delphi!dipisa!attardi>
+Dipartimento di Informatica
+Corso Italia 40
+I-56100 Pisa, ITALY
++39 (50) 40862
+Emacs: installation aid, question answering
+
+Rates: Free
+
+Entered 3/25/86
+
 Stuart Cracraft  <cracraft@isi-vaxa.isi.edu>
 UUCP: berkeley!cracraft%isi-vaxa.isi.edu
 70923 Fairway Drive
@@ -51,26 +62,51 @@ Rates: $25/hr.  Credentials: BS Applied Physics, MS Computer Engineering.
 
 Entered: 1/23/86
 
-Stephen Gildea <gildea@mit-mc.arpa> <mit-eddie!mit-erl!gildea>
+Dennis Gentry <uw-nsr!uw-warp!dennis@beaver.cs.washington.edu>
+BITNET:	dennis@uwachem.bitnet
+Optimal Solutions
+P.O. Box 25816
+Seattle, WA  98125
+(206) 547-1864
+Emacs: questions answered, teaching, customization, troubleshooting, porting.
+Rates: $60/hr, 20 minute free initial consultation
+
+EXPERIENCE: System management, consulting at: the Fred Hutchinson
+Cancer Research Center, the National Science Foundation's Center for
+Process Analytical Chemistry, Global Technology International, others.
+
+DEGREE:     Honors B.S. Comp Sci, University of Washington
+
+Entered: 5 March 1987
+
+Stephen Gildea <gildea@erl.mit.edu> <mit-eddie!mit-erl!gildea>
 42 Carleton St
 Cambridge MA 02142
 +1 617 253 7866
 Emacs: question answering, library writing, etc.
 
-Rates: $40/hr, negotiable.
+Rates: $60/hr.
 
-Entered: 1/22/86
+Entered: 11/04/86
 
-Giuseppe Attardi <mcvax!delphi!dipisa!attardi>
-Dipartimento di Informatica
-Corso Italia 40
-I-56100 Pisa, ITALY
-+39 (50) 40862
-Emacs: installation aid, question answering
+Jacob Levy
+Dept of Computer Science  <jaakov%wisdom.bitnet@wiscvm.ARPA>
+Weizmann Institute
+Rehovot 76100 Israel
+(+972)-8-482856
 
-Rates: Free
+Services -
 
-Entered 3/25/86
+Electronic, snail-mail and phone help with installation of GNU Emacs.
+Will hand out on request source and local mods for GNU Emacs, as they
+become available.  Willing to help to maintain compatibility with
+other/previous versions of Emacs, such as Gosling, CCA and MicroEmacs.
+Preferable contact - through elec- tronic mail via BITNET.
+
+Rates -
+
+Free. Will only help as much as possible,  not conflicting
+with my main occupation in life, that of obtaining a Ph.D.
 
 Joachim Carlo Santos Martillo <martillo@ATHENA.MIT.EDU>
 1667 Cambridge St. #1
@@ -92,6 +128,51 @@ Fee: ~$40/hr. depending upon assignment.
 Resume available upon request.
 
 Entered: 2/22/86
+
+The Nice Computer Company of Australia Pty Ltd
+36 Parliament Place
+Perth 6000
+Western Australia
++61(9)321-6636
+Sydney office planned.
+
+Emacs assistance by telephone; media conversion;
+distributes tapes locally on behalf of the Free Software Foundation.
+
+Rates: ask.  For tapes, rates are the same as the Foundation
+and the profits go to the Foundation.
+
+Entered: 5/5/86
+
+Scott J. Kramer <sjk@ads.arpa>
+2995 Woodside Road, Suite 400
+Woodside  CA  94062
+Emacs:	Tutoring, installations/upgrades, Lisp customizations,
+	general troubleshooting/support.  Prefer that work I do
+	becomes part of the official Free Software Foundation
+	distribution.
+
+Rate:	Task- and time-dependent; non-monetary offers considered.
+
+Entered: 11/05/86
+
+Lee McLoughlin <lmjm@doc.ic.ac.uk> <seismo!mcvax!doc.ic.ac.uk!lmjm>
+Department of Computing, Imperial College,
+180 Queens Gate, London. SW7 2BZ
+01-589-5111 X 5032
+
+Emacs and Bison: Porting to new machines, installation,
+troubleshooting, teaching their use at user level and general hand
+holding.
+
+Rate: 200-300 pounds a day, negotiable.
+I am responsible for putting GNU Emacs up under 4.1 BSD and for
+the ports to the HLH Orion and the WhiteChapel MG-1.  I also developed
+and support the UK-UUCP and UK news distribution.  I am one of the
+group setting up the UKUUG Software Library (still in progress).
+I have been an invited speaker at several recent UKUUG meetings.
+
+Entered: 11/17/86
 
 Karl A. Nyberg  <nyberg@utexas-20> (..!seismo!{decuac,vrdxhq}!grebyn!karl)
 P. O. Box 1144
@@ -147,6 +228,23 @@ Rates: $12/hr.
 
 Entered: 1/23/86
 
+Paul Rubin <phr@berkeley.berkeley.edu>
+UUCP: ucbvax!phr
+2516 Durant Ave. #73
+Berkeley, CA  94704
+
+Emacs: installation, porting, customizing, macro writing, etc.  I often
+  have a supply of manuals on hand (normal Foundation single copy prices).
+Other GNU stuff: ask.
+Rates: $35/hr, time permitting.
+
+I wrote the GNU C preprocessor, most of the Awk interpreter, and various
+other utilities.  I also co-produced (with Bob Chassell) the printed copies
+of the Emacs manual that the Foundation sells.  I maintain Emacs on a
+gaggle of Vaxen at Berkeley.
+
+Entered: 11/13/86
+
 John Sechrest <sechrest@oregon-state> (hplabs!hp-pcd!orstcs!sechrest)
 30606 Petersen Road
 Corvallis, Oregon 97333
@@ -183,9 +281,30 @@ Rates: $5/min or $150/hr.
 
 Is anyone interested in courses in using or extending GNU Emacs?
 
-Invented Emacs and wrote GNU Emacs.
+Original inventor of Emacs and main author of GNU Emacs.
 
 Entered: 1/24/86
+
+Earl Stutes <{hplabs,allegra,decwrl,sun}!pyramid!earls>
+4188 King Arthur Ct.
+Palo Alto, CA. 94306
++1 (415) 424 9177
+
+Rate $50.00 hr. negotiable
+
+GNU emacs installation / troubleshooting
+emacs lisp programming. C programming. YACC programming
+15 years of programming experience.  Working with UNIX for the
+last 7 years.
+
+Jason Venner  <jason@berkeley.edu> <ucbvax!jason> <jason@ucbjade.bitnet>
+San Francisco
+(415) 642 0514 (work)
+
+I am not in a position to take money,  but am willing to help with
+advice, and simple software hacks (c and lisp).
+
+Entered: 11/5/86
 
 Scott Weikart  <cdp!scott@SU-Glacier.ARPA> (hplabs!cdp!scott)
 EMACS: user handholding, elisp programming and troubleshooting, porting

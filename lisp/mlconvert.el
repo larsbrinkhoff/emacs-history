@@ -1,5 +1,5 @@
 ;; Convert buffer of Mocklisp code to real lisp.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -18,18 +18,37 @@
 ;; file named COPYING.  Among other things, the copyright notice
 ;; and this notice must be preserved on all copies.
 
-
 (defun convert-mocklisp-buffer ()
   "Convert buffer of mocklisp code into real lisp."
   (interactive)
   (emacs-lisp-mode)
+  (set-syntax-table (copy-sequence (syntax-table)))
+  (modify-syntax-entry ?\| "w")
   (message "Converting mocklisp (ugh!)...")
+  (goto-char (point-min))
+  (fix-mlisp-syntax)
+
+  ;; Emulation of mocklisp is accurate only within a mocklisp-function
+  ;; so turn any non-function into a defun and then call it.
+  (goto-char (point-min))
+  (condition-case ignore
+      (while t
+	(let ((opt (point))
+	      (form (read (current-buffer))))
+	  (and (listp form)
+	       (not (eq (car form) 'defun))
+	       (progn (insert "))\n\n(ml-foo)\n\n")
+		      (save-excursion
+			(goto-char opt)
+			(skip-chars-forward "\n")
+			(insert "(defun (ml-foo \n "))))))
+    (end-of-file nil))
+
   (goto-char (point-min))
   (insert ";;; GNU Emacs code converted from Mocklisp\n")
   (insert "(require 'mlsupport)\n\n")
-  (fix-mlisp-syntax)
-  (goto-char (point-min))
   (fix-mlisp-symbols)
+
   (goto-char (point-min))
   (message "Converting mocklisp...done"))
 
@@ -40,7 +59,7 @@
 	       (forward-sexp 1))
       (delete-char -1)
       (insert "?")
-      (if (= (following-char) ?\\)
+    (if (or (= (following-char) ?\\) (= (following-char) ?^))
 	  (forward-char 1)
 	(if (looking-at "[^a-zA-Z]")
 	    (insert ?\\)))
@@ -242,7 +261,7 @@
 (ml-expansion '& "logand")
 (ml-expansion '| "logior")
 (ml-expansion '^ "logxor")
-(ml-expansion '! "lognot")
+(ml-expansion '! "ml-not")
 (ml-expansion '<< "lsh")
 
 ;Variable pause-writes-files

@@ -1,47 +1,81 @@
 /* C code startup routine.
-   Copyright (C) 1985 Richard M. Stallman
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
-This program is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+		       NO WARRANTY
 
-   Permission is granted to anyone to distribute verbatim copies
-   of this program's source code as received, in any medium, provided that
-   the copyright notice, the nonwarraty notice above
-   and this permission notice are preserved,
-   and that the distributor grants the recipient all rights
-   for further redistribution as permitted by this notice,
-   and informs him of these rights.
+  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
 
-   Permission is granted to distribute modified versions of this
-   program's source code, or of portions of it, under the above
-   conditions, plus the conditions that all changed files carry
-   prominent notices stating who last changed them and that the
-   derived material, including anything packaged together with it and
-   conceptually functioning as a modification of it rather than an
-   application of it, is in its entirety subject to a permission
-   notice identical to this one.
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
+OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
+DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
+A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
+PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
 
-   Permission is granted to distribute this program (verbatim or
-   as modified) in compiled or executable form, provided verbatim
-   redistribution is permitted as stated above for source code, and
-    A.  it is accompanied by the corresponding machine-readable
-      source code, under the above conditions, or
-    B.  it is accompanied by a written offer, with no time limit,
-      to distribute the corresponding machine-readable source code,
-      under the above conditions, to any one, in return for reimbursement
-      of the cost of distribution.   Verbatim redistribution of the
-      written offer must be permitted.  Or,
-    C.  it is distributed by someone who received only the
-      compiled or executable form, and is accompanied by a copy of the
-      written offer of source code which he received along with it.
+		GENERAL PUBLIC LICENSE TO COPY
 
-   Permission is granted to distribute this program (verbatim or as modified)
-   in executable form as part of a larger system provided that the source
-   code for this program, including any modifications used,
-   is also distributed or offered as stated in the preceding paragraph.
+  1. You may copy and distribute verbatim copies of this source file
+as you receive it, in any medium, provided that you conspicuously
+and appropriately publish on each copy a valid copyright notice
+"Copyright (C) 1986 Richard M. Stallman"; and include following the
+copyright notice a verbatim copy of the above disclaimer of warranty
+and of this License.
+
+  2. You may modify your copy or copies of this source file or
+any portion of it, and copy and distribute such modifications under
+the terms of Paragraph 1 above, provided that you also do the following:
+
+    a) cause the modified files to carry prominent notices stating
+    that you changed the files and the date of any change; and
+
+    b) cause the whole of any work that you distribute or publish,
+    that in whole or in part contains or is a derivative of this
+    program or any part thereof, to be freely distributed
+    and licensed to all third parties on terms identical to those
+    contained in this License Agreement (except that you may choose
+    to grant more extensive warranty protection to third parties,
+    at your option).
+
+  3. You may copy and distribute this program or any portion of it in
+compiled, executable or object code form under the terms of Paragraphs
+1 and 2 above provided that you do the following:
+
+    a) cause each such copy to be accompanied by the
+    corresponding machine-readable source code, which must
+    be distributed under the terms of Paragraphs 1 and 2 above; or,
+
+    b) cause each such copy to be accompanied by a
+    written offer, with no time limit, to give any third party
+    free (except for a nominal shipping charge) a machine readable
+    copy of the corresponding source code, to be distributed
+    under the terms of Paragraphs 1 and 2 above; or,
+
+    c) in the case of a recipient of this program in compiled, executable
+    or object code form (without the corresponding source code) you
+    shall cause copies you distribute to be accompanied by a copy
+    of the written offer of source code which you received along
+    with the copy you received.
+
+  4. You may not copy, sublicense, distribute or transfer this program
+except as expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer this program is void and
+your rights to use the program under this License agreement shall be
+automatically terminated.  However, parties who have received computer
+software programs from you with this License Agreement will not have
+their licenses terminated so long as such parties remain in full compliance.
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -97,21 +131,38 @@ int data_start = 0;
 #ifdef NEED_ERRNO
 int errno = 0;
 #endif
- 
-char **environ;
 
-#if defined(orion) || defined(pyramid) || defined (celerity)
+#ifndef DONT_NEED_ENVIRON 
+char **environ;
+#endif
+
+#if defined(orion) || defined(pyramid) || defined(celerity) || defined(ALLIANT)
+
+#ifdef ALLIANT
+/* _start must initialize _curbrk and _minbrk on the first startup;
+   when starting up after dumping, it must initialize them to what they were
+   before the dumping, since they are in the shared library and
+   are not dumped.  See ADJUST_EXEC_HEADER in m-alliant.h.  */
+extern unsigned char *_curbrk, *_minbrk;
+extern unsigned char end;
+unsigned char *_setbrk = &end;
+#endif
 
 _start (argc, argv, envp)
      int argc;
      char **argv, **envp;
 {
+#ifdef ALLIANT
+  _curbrk = _setbrk;
+  _minbrk = _setbrk;
+#endif
+
   environ = envp;
 
   exit (main (argc, argv, envp));
 }
 
-#endif /* orion or pyramid or celerity */
+#endif /* orion or pyramid or celerity or alliant */
 
 #if defined (ns16000) && !defined (sequent) && !defined (UMAX)
 
@@ -194,29 +245,20 @@ _start()
 }
 #endif /* UMAX */
 
-#if defined(vax) || defined(tahoe) || defined (sequent) || defined (BOGUS)
-
-#ifdef sequent
-#define BOGUS bogus_fp,
-#endif /* sequent */
-
-#ifdef vax
-#define BOGUS
-#endif /* vax */
-
-#ifdef tahoe
-#define BOGUS
-#endif /* tahoe */
+#ifdef CRT0_DUMMIES
 
 /* Define symbol "start": here; some systems want that symbol.  */
-#ifdef tower32
-asm("	text		");
-asm("	global start	");
-#else
+#ifdef DOT_GLOBAL_START
 asm("	.text		");
 asm("	.globl start	");
-#endif
 asm("	start:		");
+#endif /* DOT_GLOBAL_START */
+
+#ifdef NODOT_GLOBAL_START
+asm("	text		");
+asm("	global start	");
+asm("	start:		");
+#endif /* NODOT_GLOBAL_START */
 
 _start ()
 {
@@ -226,7 +268,7 @@ _start ()
 }
 
 static
-start1 (BOGUS argc, xargv)
+start1 (CRT0_DUMMIES argc, xargv)
      int argc;
      char *xargv;
 {
@@ -237,18 +279,22 @@ start1 (BOGUS argc, xargv)
     environ--;
   exit (main (argc, argv, environ));
 }
-#else /* not vax or tahoe or sequent or BOGUS */
+#else /* not CRT0_DUMMIES */
 
 /* "m68k" and "m68000" both stand for m68000 processors,
    but with different program-entry conventions.
-   This is a kludge.  Now that the BOGUS mechanism above exists,
+   This is a kludge.  Now that the CRT0_DUMMIES mechanism above exists,
    most of these machines could use the vax code above
-   with some suitable definition of BOGUS.
+   with some suitable definition of CRT0_DUMMIES.
    Then the symbol m68k could be flushed.
    But I don't want to risk breaking these machines
    in a version 17 patch release, so that change is being put off.  */
 
 #ifdef m68k			/* Can't do it all from C */
+	asm ("	global	_start");
+	asm ("	text");
+	asm ("_start:");
+#ifndef NU
 #ifdef STRIDE
 	asm ("	comm	havefpu%,2");
 #else /* m68k, not STRIDE */
@@ -258,16 +304,15 @@ start1 (BOGUS argc, xargv)
 	asm ("splimit%:");
 	asm ("	space 4");
 #endif /* STRIDE */
-	asm ("	global	_start");
 	asm ("	global	exit");
 	asm ("	text");
-	asm ("_start:");
 #ifdef STRIDE
 	asm ("	trap	&3");
 	asm ("	mov.w	%d0,havefpu%");
 #else /* m68k, not STRIDE */
   	asm ("	mov.l	%d0,splimit%");
 #endif /* STRIDE */
+#endif /* not NU */
 	asm ("	jsr	start1");
 	asm ("	mov.l	%d0,(%sp)");
 	asm ("	jsr	exit");
@@ -276,19 +321,31 @@ start1 (BOGUS argc, xargv)
 #else /* m68000, not m68k */
 
 #ifdef m68000
+  
+#ifdef ISI68K
+	asm ("	.text");
+	asm ("	.globl	__start");
+	asm ("__start:");
+	asm ("	.word 0");
+	asm ("	link	fp,#0");
+	asm ("	jbsr	_start1");
+	asm ("	unlk	fp");
+	asm ("	rts");
+#else /* not ISI68K */
 
 _start ()
 {
 /* On 68000, _start pushes a6 onto stack  */
   start1 ();
 }
+#endif /* not ISI68k */
 #endif /* m68000 */
 #endif /* m68k */
 
 #if defined(m68k) || defined(m68000)
 /* ignore takes care of skipping the a6 value pushed in start.  */
 static
-#ifdef m68k
+#if defined(m68k)
 start1 (argc, xargv)
 #else
 start1 (ignore, argc, xargv)
@@ -301,20 +358,17 @@ start1 (ignore, argc, xargv)
 
   if ((char *)environ == xargv)
     environ--;
-#ifdef sun2
-  hack_sky();
-#endif /* sun2 */
   exit (main (argc, argv, environ));
 }
 
 #endif /* m68k or m68000 */
 
-#endif /* not vax or tahoe or sequent or BOGUS */
+#endif /* not CRT0_DUMMIES */
 
-#ifdef hp9000s200
+#ifdef hp9000
 int argc_value;
 char **argv_value;
-
+#ifdef OLD_HP_ASSEMBLER
 	asm("   text");
 	asm("	globl __start");
 	asm("	globl _exit");
@@ -354,4 +408,126 @@ char **argv_value;
 	asm("	comm	float_soft,4");
 /* float_soft is allocated in this way because C would
    put an underscore character in its name otherwise. */ 
-#endif /* hp9000s200 */
+
+#else /* new hp assembler */
+
+	asm("	text");
+	asm("	global	__start");
+	asm("	global	_exit");
+	asm("	global	_main");
+	asm("__start:");
+	asm("	byte	0,0,0,0");
+	asm("	subq.w	&1,%d0");
+	asm("	mov.w	%d0,float_soft");
+	asm("	mov.w	%d1,flag_68881");
+	asm("	beq.b	skip_float"); 
+	asm("	fmov.l	&0x7480,%fpcr");
+	asm("skip_float:");
+	asm("	mov.l	4(%a7),%d0");
+	asm("	beq.b	skip_1");
+	asm("	mov.l	%d0,%a0");
+	asm("	clr.l	-4(%a0)");
+	asm("skip_1:");
+	asm("	mov.l	%a7,%a0");
+	asm("	subq.l	&8,%a7");
+	asm("	mov.l	(%a0),(%a7)");
+	asm("	mov.l	(%a0),_argc_value");
+	asm("	addq.l	&4,%a0");
+	asm("	mov.l	%a0,4(%a7)");
+	asm("	mov.l	%a0,_argv_value");
+	asm("incr_loop:");
+	asm("	tst.l	(%a0)+");
+	asm("	bne.b	incr_loop");
+	asm("	mov.l	4(%a7),%a1");
+	asm("	cmp.l	%a0,(%a1)");
+	asm("	blt.b	skip_2");
+	asm("	subq.l	&4,%a0");
+	asm("skip_2:");
+	asm("	mov.l	%a0,8(%a7)");
+	asm("	mov.l	%a0,_environ");
+	asm("	jsr	_main");
+	asm("	addq.l	&8,%a7");
+	asm("	mov.l	%d0,-(%a7)");
+	asm("	jsr	_exit");
+	asm("	mov.w	&1,%d0");
+	asm("	trap	&0");
+	asm("	comm	float_soft, 4");
+	asm("	comm	flag_68881, 4");
+	
+#endif /* new hp assembler */
+#endif /* hp9000 */
+
+#ifdef GOULD
+
+/* startup code has to be in near text rather
+   than fartext as allocated by the C compiler. */
+	asm("	.text");
+	asm("	.align	2");
+	asm("	.globl	__start");
+	asm("	.text");
+	asm("__start:");
+/* setup base register b1 (function base). */
+	asm("	.using	b1,.");
+	asm("	tpcbr	b1");
+/* setup base registers b3 through b7 (data references). */
+	asm("	file	basevals,b3");
+/* setup base register b2 (stack pointer); it should be
+   aligned on a 8-word boundary; but because it is pointing
+   to argc, its value should be remembered (in r5). */
+	asm("	movw	b2,r4");
+	asm("	movw	b2,r5");
+	asm("	andw	#~0x1f,r4");
+	asm("	movw	r4,b2");
+/* allocate stack frame to do some work. */
+	asm("	subea	16w,b2");
+/* initialize signal catching for UTX/32 1.2; this is 
+   necessary to make restart from saved image work. */
+	asm("	movea	sigcatch,r1");
+	asm("	movw	r1,8w[b2]");
+	asm("	svc	#1,#150");
+/* setup address of argc for start1. */
+	asm("	movw	r5,8w[b2]");
+	asm("   func	#1,_start1");
+	asm("	halt");
+/* space for ld to store base register initial values. */
+	asm("	.align	5");
+	asm("basevals:");
+	asm("	.word	__base3,__base4,__base5,__base6,__base7");
+
+static
+start1 (xargc)
+     int *xargc;
+{
+  register int	argc;
+  register char **argv;
+
+  argc = *xargc;
+  argv = (char **)(xargc) + 1;
+  environ = argv + argc + 1;
+
+  if (environ == argv)
+    environ--;
+  exit (main (argc, argv, environ));
+
+}
+
+#endif /* GOULD */
+
+#ifdef elxsi
+extern int errno;
+extern char **environ;
+
+_start()
+{
+  register int r;
+  
+  errno = 0;
+  environ = *(&environ + 8);
+  _stdinit();
+  r = main(*(&environ + 6), *(&environ + 7), environ);
+  exit(r);
+  _exit(r);
+}
+#endif /* elxsi */
+
+  

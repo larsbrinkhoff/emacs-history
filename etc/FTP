@@ -1,0 +1,120 @@
+How to get GNU Software by Internet FTP or by UUCP.  Last updated 30 Jan 1987
+
+* No Warranties
+
+We distribute software in the hope that it will be useful, but
+without any warranty.  No author or distributor of this software
+accepts responsibility to anyone for the consequences of using it or
+for whether it serves any particular purpose or works at all, unless
+he says so in writing.
+
+* Updates
+
+If you find this file in the Emacs distribution, there is a chance
+it is out of date.  If you plan to FTP files from prep.ai.mit.edu,
+you might as well start by FTPing the current version of this file,
+which is `/u2/emacs/etc/FTP'.
+
+* FTPing GNU Software
+
+** GNU Emacs and How To FTP It
+
+If you are on the Internet (note also "** Alternative Internet FTP
+Sources" below), you can at present copy the latest distribution
+version of GNU Emacs from the file /u2/emacs/edist.tar on host
+prep.ai.mit.edu (or the file /u2/emacs/edist.tar.Z which has been run
+through compress after tar).  These files are about 7 and 3 megabytes
+long, respectively.  After you unpack the distribution, be sure to
+look at the files README and INSTALL.
+
+Because of difficulties in transferring large files, often a split
+version of the tar file is created.  This is a directory named
+/u2/emacs/edist.tar-MM.NN-split or perhaps
+/u2/emacs/edist.tar-MM.NN.Z-split, containing files of 100000
+characters each.  There is generally no trouble in ftping files of
+this size.  They can be combined with cat to make a tar file or
+compressed tar file.
+
+Some ftp'ers have found it necessary for successful file transfer:
+   - to set the binary/image mode
+   - to use another of prep.ai.mit.edu internet addresses than the
+default for your machine.  They are (as of 22 Oct 86):
+  128.52.14.14
+  128.52.22.14
+  128.52.32.14
+
+Files of differences from previous widely distributed GNU Emacs
+versions to the present version are also available on prep.ai.mit.edu
+under names of the form diff-OO.OO-NN.NN in directory /u2/emacs .
+These are made with diff -rc2.  Sometimes there are compressed
+versions of these difference files as well; their names have .Z
+appended.
+
+The Emacs manual in source form is included in the distribution.
+The dvi file produced by TeX is not included, but a copy may be
+available for ftp under the name /u2/emacs/emacs.dvi.
+
+** Copying Only Recently Changed Files
+
+A special version of rcp exists which allows you, on an Internet host,
+to copy all GNU Emacs files whose last-mod-dates don't match your
+files.  See the file /u2/emacs/etc/RCP on prep.ai.mit.edu for
+information on using it.
+
+** Scheme and How To FTP It
+
+The latest distribution version of C Scheme is in the directory
+/u2/scheme/dist.  To obtain a "tarred" copy of this directory, telnet
+to prep.ai.mit.edu and log in as scheme (password: scheme).  A file called
+dist.tar will be created (if there isn't one already), and you will be
+given a choice of the file transfer program to run (of all the ones
+supported by PREP).  It should be self-explanatory (ha, ha! [try ? for
+help]).
+
+Read the files INSTALL and README in the top level C Scheme directory.
+
+** GDB and how to FTP it.
+
+GDB, the GNU source-level C debugger, is part of the Emacs distribution.
+It can be found separately in the directory /u2/emacs/dist/gdb as
+65 separate files.  If there is a demand, separate tar files of
+GDB can be made available.
+
+** Bison and how to FTP it.
+
+Bison can be found in the directory /u2/emacs/bison, as 30 small to
+medium size files.  It should be easy enough to FTP all of these
+with the mget command.
+
+** Alternative Internet FTP Sources
+
+The administrators of simtel20.arpa also maintains copies of GNU
+distributed software for MILNET/DDN hosts.  It is available via
+anonymous ftp from PD:<UNIX.GNU> in the original tar format.
+
+The administrators of louie.udel.edu also maintains copies of GNU
+Emacs and the compress program.  The files are available via anonymous
+ftp under directory ~ftp/gnu.  louie's addresses are (as of 21 Feb
+1987):
+
+10.0.0.96	louie udel-louie eecis3 udel-relay udel
+192.5.39.3      louie.udel.edu udel-louie.arpa udel-louie louie udel-relay udel udel.edu
+
+* Getting GNU Emacs via UUCP
+
+OSU is distributing GNU Emacs via uucp.  Current details from Karl
+Kleinpaste <..!cbosgd!osu-eddie!karl> or <karl@ohio-state.arap> or
+<karl%ohio-state@csnet-relay.arpa>.
+
+* If You Like The Software
+
+If you like the software developed and distributed by the Free
+Software Foundation, please express your satisfaction with a donation.
+Your donations will help to support the Foundation and make our future
+efforts successful, including a complete development and operating
+system, called GNU (Gnu's Not Un*x), which will run Un*x user
+programs.  For more information on GNU and the Foundation, contact us
+at the above address.
+
+Ordering a distribution tape from the Foundation is often a good
+way to bring your company or university to make a donation.

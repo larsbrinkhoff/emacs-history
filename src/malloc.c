@@ -1,48 +1,94 @@
-/* Dynamic memory allocation for GNU.
-   Copyright (C) 1985 Richard M. Stallman,
-    based mostly on the public domain work of others.
+/* dynamic memory allocation for GNU.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
-This program is distributed in the hope that it will be useful,
-but without any warranty.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.
+		       NO WARRANTY
 
-   Permission is granted to anyone to distribute verbatim copies
-   of this program's source code as received, in any medium, provided that
-   the copyright notice, the nonwarraty notice above
-   and this permission notice are preserved,
-   and that the distributor grants the recipient all rights
-   for further redistribution as permitted by this notice,
-   and informs him of these rights.
+  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
 
-   Permission is granted to distribute modified versions of this
-   program's source code, or of portions of it, under the above
-   conditions, plus the conditions that all changed files carry
-   prominent notices stating who last changed them and that the
-   derived material, including anything packaged together with it and
-   conceptually functioning as a modification of it rather than an
-   application of it, is in its entirety subject to a permission
-   notice identical to this one.
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
+OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
+DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
+A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
+PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
 
-   Permission is granted to distribute this program (verbatim or
-   as modified) in compiled or executable form, provided verbatim
-   redistribution is permitted as stated above for source code, and
-    A.  it is accompanied by the corresponding machine-readable
-      source code, under the above conditions, or
-    B.  it is accompanied by a written offer, with no time limit,
-      to distribute the corresponding machine-readable source code,
-      under the above conditions, to any one, in return for reimbursement
-      of the cost of distribution.   Verbatim redistribution of the
-      written offer must be permitted.  Or,
-    C.  it is distributed by someone who received only the
-      compiled or executable form, and is accompanied by a copy of the
-      written offer of source code which he received along with it.
+		GENERAL PUBLIC LICENSE TO COPY
 
-   Permission is granted to distribute this program (verbatim or as modified)
-   in executable form as part of a larger system provided that the source
-   code for this program, including any modifications used,
-   is also distributed or offered as stated in the preceding paragraph.
+  1. You may copy and distribute verbatim copies of this source file
+as you receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy a valid copyright notice "Copyright
+(C) 1985 Free Software Foundation, Inc."; and include following the
+copyright notice a verbatim copy of the above disclaimer of warranty
+and of this License.  You may charge a distribution fee for the
+physical act of transferring a copy.
+
+  2. You may modify your copy or copies of this source file or
+any portion of it, and copy and distribute such modifications under
+the terms of Paragraph 1 above, provided that you also do the following:
+
+    a) cause the modified files to carry prominent notices stating
+    that you changed the files and the date of any change; and
+
+    b) cause the whole of any work that you distribute or publish,
+    that in whole or in part contains or is a derivative of this
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more
+    extensive warranty protection to third parties, at your option).
+
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
+
+  3. You may copy and distribute this program or any portion of it in
+compiled, executable or object code form under the terms of Paragraphs
+1 and 2 above provided that you do the following:
+
+    a) cause each such copy to be accompanied by the
+    corresponding machine-readable source code, which must
+    be distributed under the terms of Paragraphs 1 and 2 above; or,
+
+    b) cause each such copy to be accompanied by a
+    written offer, with no time limit, to give any third party
+    free (except for a nominal shipping charge) a machine readable
+    copy of the corresponding source code, to be distributed
+    under the terms of Paragraphs 1 and 2 above; or,
+
+    c) in the case of a recipient of this program in compiled, executable
+    or object code form (without the corresponding source code) you
+    shall cause copies you distribute to be accompanied by a copy
+    of the written offer of source code which you received along
+    with the copy you received.
+
+  4. You may not copy, sublicense, distribute or transfer this program
+except as expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer this program is void and
+your rights to use the program under this License agreement shall be
+automatically terminated.  However, parties who have received computer
+software programs from you with this License Agreement will not have
+their licenses terminated so long as such parties remain in full compliance.
+
+  5. If you wish to incorporate parts of this program into other free
+programs whose distribution conditions are different, write to the Free
+Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet
+worked out a simple rule that can be stated here, but we will often permit
+this.  We will be guided by the two goals of preserving the free status of
+all derivatives our free software and of promoting the sharing and reuse of
+software.
+
 
 In other words, you are welcome to use, share and improve this program.
 You are forbidden to forbid anyone else to use, share and improve
@@ -90,43 +136,43 @@ what you give them.   Help stamp out software-hoarding!  */
 #include "config.h"
 #endif /* emacs */
 
-#include <sys/param.h>
-
 /* Determine which kind of system this is.  */
 #include <signal.h>
 #ifndef SIGTSTP
+#ifndef VMS
+#ifndef USG
 #define USG
+#endif
+#endif /* not VMS */
 #else /* SIGTSTP */
 #ifdef SIGIO
 #define BSD42
 #endif /* SIGIO */
 #endif /* SIGTSTP */
 
+/* Define getpagesize () if the system does not.  */
+#include "getpagesize.h"
+
 #ifndef BSD42
 #ifndef USG
 #include <sys/vlimit.h>		/* warn the user when near the end */
-#endif
+#endif /* not USG */
 #else /* if BSD42 */
 #include <sys/time.h>
 #include <sys/resource.h>
 #endif /* BSD42 */
 
+extern char *start_of_data ();
 
-#if defined (BSD4_1) || defined (USG)
-#ifdef EXEC_PAGESIZE
-#define getpagesize() EXEC_PAGESIZE
-#else
-#ifdef NBPG
-#define getpagesize() NBPG * CLSIZE
-#ifndef CLSIZE
-#define CLSIZE 1
-#endif /* no CLSIZE */
-#else /* no NBPG */
-#define getpagesize() NBPC
-#endif /* no NBPG */
-#endif /* no EXEC_PAGESIZE */
-#endif /* BSD4_1 or USG */
+#ifdef BSD
+#ifndef DATA_SEG_BITS
+#define start_of_data() &etext
+#endif
+#endif
 
+#ifndef emacs
+#define start_of_data() &etext
+#endif
 
 #define ISALLOC ((char) 0xf7)	/* magic byte that implies allocation */
 #define ISFREE ((char) 0x54)	/* magic byte that implies free block */
@@ -137,7 +183,6 @@ what you give them.   Help stamp out software-hoarding!  */
 				     beginning of the block.  */
 
 extern char etext;
-extern char *start_of_data ();
 
 /* These two are for user programs to look at, when they are interested.  */
 
@@ -201,8 +246,13 @@ struct mhead {
 
 static struct mhead *nextf[30];
 
+/* busy[i] is nonzero while allocation of block size i is in progress.  */
+
+static char busy[30];
+
 /* Number of bytes of writable memory we can expect to be able to get */
 static int lim_data;
+
 /* Level number of warnings already issued.
   0 -- no warnings issued.
   1 -- 75% warning already issued.
@@ -210,17 +260,26 @@ static int lim_data;
 */
 static int warnlevel;
 
+/* Function to call to issue a warning;
+   0 means don't issue them.  */
+static void (*warnfunction) ();
+
 /* nonzero once initial bunch of free blocks made */
 static int gotpool;
 
+char *_malloc_base;
+
 /* Cause reinitialization based on job parameters;
   also declare where the end of pure storage is. */
-malloc_init (start)
+malloc_init (start, warnfun)
      char *start;
+     void (*warnfun) ();
 {
-  data_space_start = start;
+  if (start)
+    data_space_start = start;
   lim_data = 0;
   warnlevel = 0;
+  warnfunction = warnfun;
 }
 
 static
@@ -231,14 +290,17 @@ morecore (nu)			/* ask system for more memory */
   register char *cp;
   register int nblks;
   register int siz;
+  int oldmask;
+
+#ifdef BSD
+#ifndef BSD4_1
+  oldmask = sigsetmask (-1);
+#endif
+#endif
 
   if (!data_space_start)
     {
-#if defined(USG) && defined (emacs)
       data_space_start = start_of_data ();
-#else /* not USG, or not Emacs */
-      data_space_start = &etext;
-#endif /* not USG, or not Emacs */
     }
 
   if (lim_data == 0)
@@ -246,7 +308,7 @@ morecore (nu)			/* ask system for more memory */
 
  /* On initial startup, get two blocks of each size up to 1k bytes */
   if (!gotpool)
-    getpool (), getpool (), gotpool = 1;
+    { getpool (); getpool (); gotpool = 1; }
 
  /* Find current end of memory and issue warning if getting near max */
 
@@ -255,30 +317,31 @@ morecore (nu)			/* ask system for more memory */
   malloc_sbrk_used = siz;
   malloc_sbrk_unused = lim_data - siz;
 
-  switch (warnlevel)
-    {
-    case 0: 
-      if (siz > (lim_data / 4) * 3)
-	{
-	  warnlevel++;
-	  malloc_warning ("Warning: past 75% of memory limit");
-	}
-      break;
-    case 1: 
-      if (siz > (lim_data / 20) * 17)
-	{
-	  warnlevel++;
-	  malloc_warning ("Warning: past 85% of memory limit");
-	}
-      break;
-    case 2: 
-      if (siz > (lim_data / 20) * 19)
-	{
-	  warnlevel++;
-	  malloc_warning ("Warning: past 95% of memory limit");
-	}
-      break;
-    }
+  if (warnfunction)
+    switch (warnlevel)
+      {
+      case 0: 
+	if (siz > (lim_data / 4) * 3)
+	  {
+	    warnlevel++;
+	    (*warnfunction) ("Warning: past 75% of memory limit");
+	  }
+	break;
+      case 1: 
+	if (siz > (lim_data / 20) * 17)
+	  {
+	    warnlevel++;
+	    (*warnfunction) ("Warning: past 85% of memory limit");
+	  }
+	break;
+      case 2: 
+	if (siz > (lim_data / 20) * 19)
+	  {
+	    warnlevel++;
+	    (*warnfunction) ("Warning: past 95% of memory limit");
+	  }
+	break;
+      }
 
   if ((int) cp & 0x3ff)	/* land on 1K boundaries */
     sbrk (1024 - ((int) cp & 0x3ff));
@@ -310,16 +373,27 @@ morecore (nu)			/* ask system for more memory */
     }
  /* CHAIN ((struct mhead *) cp) = 0; */
  /* since sbrk() returns cleared core, this is already set */
+
+#ifdef BSD
+#ifndef BSD4_1
+  sigsetmask (oldmask);
+#endif
+#endif
 }
 
 static
 getpool ()
 {
   register int nu;
+  char * sbrk ();
   register char *cp = sbrk (0);
 
   if ((int) cp & 0x3ff)	/* land on 1K boundaries */
     sbrk (1024 - ((int) cp & 0x3ff));
+
+  /* Record address of start of space allocated by malloc.  */
+  if (_malloc_base == 0)
+    _malloc_base = cp;
 
   /* Get 2k of storage */
 
@@ -364,6 +438,13 @@ malloc (n)		/* get a block */
       nunits++;
   }
 
+  /* In case this is reentrant use of malloc from signal handler,
+     pick a block size that no other malloc level is currently
+     trying to allocate.  That's the easiest harmless way not to
+     interfere with the other level of execution.  */
+  while (busy[nunits]) nunits++;
+  busy[nunits] = 1;
+
   /* If there are no blocks of the appropriate size, go get some */
   /* COULD SPLIT UP A LARGER BLOCK HERE ... ACT */
   if (nextf[nunits] == 0)
@@ -371,8 +452,12 @@ malloc (n)		/* get a block */
 
   /* Get one block off the list, and set the new list head */
   if ((p = nextf[nunits]) == 0)
-    return 0;
+    {
+      busy[nunits] = 0;
+      return 0;
+    }
   nextf[nunits] = CHAIN (p);
+  busy[nunits] = 0;
 
   /* Check for free block clobbered */
   /* If not for this check, we would gobble a clobbered free chain ptr */

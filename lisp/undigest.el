@@ -1,5 +1,5 @@
 ;; "RMAIL" mail reader for Emacs.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -31,7 +31,7 @@ Leaves original message, deleted, before the undigestified messages."
     (narrow-to-region (point) (point))
     (insert msg-string)
     (narrow-to-region (point-min) (1- (point-max))))
-  (let ((error_ t)
+  (let ((error t)
 	(buffer-read-only nil))
     (unwind-protect
 	(progn
@@ -57,12 +57,17 @@ Leaves original message, deleted, before the undigestified messages."
 	      (save-excursion
 		(goto-char (point-max))
 		(skip-chars-backward " \t\n")
-		(forward-line -1)
-		(if (not (looking-at
-			  (concat "End of.*Digest.*\n"
-				  (regexp-quote "*********") "*$")))
-		    (error "Message is not a digest")))
-	      (re-search-forward (concat "^" (make-string 65 ?-) "-*\n*"))
+		(let ((count 10) found)
+		  ;; compensate for broken un*x digestifiers.  Sigh Sigh.
+		  (while (and (> count 0) (not found))
+		    (forward-line -1)
+		    (setq count (1- count))
+		    (if (looking-at (concat "End of.*Digest.*\n"
+					    (regexp-quote "*********") "*"
+					    "\\(\n------*\\)*"))
+			(setq found t)))
+		  (if (not found) (error "Message is not a digest"))))
+	      (re-search-forward (concat "^" (make-string 55 ?-) "-*\n*"))
 	      (replace-match "\^_\^L\n0,unseen,,\n*** EOOH ***\n")
 	      (save-restriction
 		(narrow-to-region (point)
@@ -72,8 +77,7 @@ Leaves original message, deleted, before the undigestified messages."
 		  (goto-char (point-min))
 		  (insert "To: " digest-name "\n")))
 	      (while (re-search-forward
-		      (concat "\n\n" (make-string 27 ?-)
-			      "-?-?-?-?-?-?\n*")
+		      (concat "\n\n" (make-string 27 ?-) "-*\n*")
 		      nil t)
 		(replace-match "\n\n\^_\^L\n0,unseen,,\n*** EOOH ***\n")
 		(save-restriction
@@ -86,13 +90,13 @@ Leaves original message, deleted, before the undigestified messages."
 		  (if (mail-fetch-field "To") nil
 		    (goto-char (point-min))
 		    (insert "To: " digest-name "\n"))))))
-	  (setq error_ nil)
+	  (setq error nil)
 	  (message "Message successfully undigestified")
 	  (let ((n rmail-current-message))
 	    (rmail-forget-messages)
 	    (rmail-show-message n)
 	    (rmail-delete-forward)))
-      (cond (error_
+      (cond (error
 	     (delete-region (point-min) (point-max))
 	     (rmail-show-message rmail-current-message))))))
 

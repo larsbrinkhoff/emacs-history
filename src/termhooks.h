@@ -1,6 +1,6 @@
 /* Hooks by which low level terminal operations
    can be made to call other routines.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 

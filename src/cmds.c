@@ -1,5 +1,5 @@
 /* Simple built-in editing commands.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -55,7 +55,7 @@ On reaching end of buffer, stop and signal error.")
 
 DEFUN ("backward-char", Fbackward_char, Sbackward_char, 0, 1, "p",
   "Move point left ARG characters (right if ARG negative).\n\
-On reaching end of buffer, stop and signal error.")
+On attempt to pass beginning or end of buffer, stop and signal error.")
   (n)
      Lisp_Object n;
 {
@@ -69,16 +69,17 @@ On reaching end of buffer, stop and signal error.")
 }
 
 DEFUN ("forward-line", Fforward_line, Sforward_line, 0, 1, "p",
-  "Move point forward past ARG newlines.\n\
-If ARG is zero, position after previous newline.\n\
-If ARG is negative, position after -ARG'th newline before that one.\n\
-If scan reaches end of buffer, stop there without error;\n\
- value is count of lines left to move.")
+  "If point is on line i, move to the start of line i + ARG.\n\
+If there isn't room, go as far as possible (no error).\n\
+Returns the count of lines left to move.\n\
+With positive ARG, a non-empty line at the end counts as one line\n\
+  successfully moved (for the return value).")
   (n)
      Lisp_Object n;
 {
-  register int pos = point;
-  register int count, stop;
+  int pos2 = point;
+  int pos;
+  int count, shortage, negp;
 
   if (NULL (n))
     count = 1;
@@ -88,31 +89,15 @@ If scan reaches end of buffer, stop there without error;\n\
       count = XINT (n);
     }
 
-  stop = FirstCharacter;
-  if (count <= 0)
-    {
-      while (pos > stop && CharAt (pos - 1) != '\n')
-	pos--;
-    }
-  while (count < 0 && pos > stop)
-    {
-      count++;
-      pos--;
-      /* In this loop, pos is one less than the position of scan. */
-      while (--pos >= stop && CharAt (pos) != '\n');
-      pos++;
-    }
-  stop = NumCharacters;
-  while (count > 0 && pos <= stop)
-    {
-      count--;
-      pos--;
-      /* In this loop, pos is one less than the position of scan. */
-      while (++pos < stop && CharAt (pos) != '\n');
-      pos++;
-    }
+  negp = count <= 0;
+  pos = scan_buffer ('\n', pos2, count - negp, &shortage);
+  if (shortage > 0
+      && (negp
+	  || (NumCharacters >= FirstCharacter
+	      && CharAt (pos - 1) != '\n')))
+    shortage--;
   SetPoint (pos);
-  return make_number (count);
+  return make_number (negp ? - shortage : shortage);
 }
 
 DEFUN ("beginning-of-line", Fbeginning_of_line, Sbeginning_of_line,
@@ -162,7 +147,8 @@ If scan reaches end of buffer, stop there without error.")
 DEFUN ("delete-char", Fdelete_char, Sdelete_char, 1, 2, "p\nP",
   "Delete the following ARG characters (previous, with negative arg).\n\
 Optional second arg KILLFLAG non-nil means kill instead (save in kill ring).\n\
-Interactively, ARG is the prefix arg, and kill if ARG was explicitly specd.")
+Interactively, ARG is the prefix arg, and KILLFLAG is set if\n\
+ARG was explicitly specified.")
   (n, killflag)
      Lisp_Object n, killflag;
 {
@@ -196,7 +182,8 @@ DEFUN ("delete-backward-char", Fdelete_backward_char, Sdelete_backward_char,
   1, 2, "p\nP",
   "Delete the previous ARG characters (following, with negative ARG).\n\
 Optional second arg KILLFLAG non-nil means kill instead (save in kill ring).\n\
-Interactively, ARG is the prefix arg, and kill if ARG was explicitly specd.")
+Interactively, ARG is the prefix arg, and KILLFLAG is set if\n\
+ARG was explicitly specified.")
   (n, killflag)
      Lisp_Object n, killflag;
 {
@@ -215,7 +202,7 @@ DEFUN ("self-insert-command", Fself_insert_command, Sself_insert_command, 1, 1, 
       && !NULL (bf_cur->auto_fill_hook)
       && !NULL (bf_cur->read_only)
       && current_column () > XFASTINT (bf_cur->fill_column))
-    Fapply (bf_cur->auto_fill_hook, Qnil);
+    call0 (bf_cur->auto_fill_hook);
 
   while (XINT (arg) > 0)
     {
@@ -242,7 +229,7 @@ In Auto Fill mode, can break the preceding line if no numeric arg.")
   if (NULL (arg1)
       && !NULL (bf_cur->auto_fill_hook)
       && current_column () > XFASTINT (bf_cur->fill_column))
-    Fapply (bf_cur->auto_fill_hook, Qnil);
+    call0 (bf_cur->auto_fill_hook);
 
   flag = point > FirstCharacter && CharAt (point - 1) == '\n';
   if (flag) PointLeft (1);
@@ -291,7 +278,7 @@ SelfInsert (c1)
       && current_column () > XFASTINT (bf_cur->fill_column))
     {
       InsCStr (&c1, 1);
-      Fapply (bf_cur->auto_fill_hook, Qnil);
+      call0 (bf_cur->auto_fill_hook);
       hairy = 1;
     }
   else
@@ -300,7 +287,7 @@ SelfInsert (c1)
   if ((synt == Sclose || synt == Smath)
       && !NULL (Vblink_paren_hook) && INTERACTIVE)
     {
-      Fapply (Vblink_paren_hook, Qnil);
+      call0 (Vblink_paren_hook);
       hairy = 1;
     }
   return hairy;
@@ -316,7 +303,7 @@ syms_of_cmds ()
   Qkill_forward_chars = intern ("kill-forward-chars");
   staticpro (&Qkill_forward_chars);
 
-  DefLispVar ("blink-paren-hook", &Vblink_paren_hook,
+  DEFVAR_LISP ("blink-paren-hook", &Vblink_paren_hook,
     "Function called, if non-nil, whenever a char with closeparen syntax is self-inserted.");
   Vblink_paren_hook = Qnil;
 

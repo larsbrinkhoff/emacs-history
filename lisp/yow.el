@@ -1,5 +1,4 @@
-;; Copyright (C) 1985 Free Software Foundation
-;; Author Richard Mlynarik.
+;; Copyright (C) 1985, 1987 Free Software Foundation
 
 ;; This file is part of GNU Emacs.
 
@@ -33,10 +32,10 @@
       (list nil t)))
   (if (null yow-vector)
       (setq yow-vector (snarf-yows)))
-  (let ((yow (aref yow-vector
-		   (if n
-		       n
-		     (% (logand 0777777 (random)) (length yow-vector))))))
+  (cond (n)
+	((>= (setq n (% (random) (length yow-vector))) 0))
+	(t (setq n (- n))))
+  (let ((yow (aref yow-vector n)))
     (cond ((not interactive)
 	   yow)
 	  ((not (string-match "\n" yow))
@@ -48,23 +47,21 @@
 	     (princ yow))))))
 
 (defvar yow-vector nil "Pertinent pinhead statements")
-(defun snarf-yows ()
-  (message "Am I CONSING yet?...")
+(defun snarf-yows (&optional file)
   (save-excursion
     (let ((buf (generate-new-buffer " yow"))
-	  (result '()))
+	  (result '())
+	  (cursor-in-echo-area t))
+      (message "Am I CONSING yet?...")
       (set-buffer buf)
-      (insert-file-contents (expand-file-name "yow.lines" exec-directory))
-      (goto-char (scan-buffer (point-min) 1 000))
-      (while (not (eobp))
-	(or (setq end (scan-buffer (point) 1 000))
-	    (error "Invalid yow.lines file"))
-	(if (if (looking-at "[^ \t\n\r\f]")
-		(progn (forward-char 1) t)
-	      (re-search-forward "[^ \t\n\r\f]" end t))
-	    (setq result (cons (buffer-substring (1- (point)) (1- end))
-			       result)))
-	(goto-char end))
+      (insert-file-contents (or file
+				(expand-file-name "yow.lines" exec-directory)))
+      (search-forward "\0")
+      (while (progn (skip-chars-forward " \t\n\r\f") (not (eobp)))
+	(let ((beg (point)))
+	  (search-forward "\0")
+	  (setq result (cons (buffer-substring beg (1- (point)))
+			     result))))
       (kill-buffer buf)
       (message "I have SEEN the CONSING!!" (length result))
       (apply 'vector (nreverse result)))))
@@ -80,9 +77,10 @@
   (doctor)				; start the psychotherapy
   (if (null yow-vector)
       (setq yow-vector (snarf-yows)))
+  (message "")
   (switch-to-buffer "*doctor*")
   (sit-for 0)
-  (while t
+  (while (not (input-pending-p))
     (insert-string (yow))
     (sit-for 0)
     (doctor-ret-or-read 1)

@@ -1,5 +1,5 @@
 /* Lisp object printing and output streams.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -40,10 +40,18 @@ int print_depth;
 
 Lisp_Object Vprint_length;
 
+/* Nonzero means print newlines in strings as \n.  */
+
+int print_escape_newlines;
+
 /* Nonzero means print newline before next minibuffer message.
    Defined in xdisp.c */
 
 extern int noninteractive_need_newline;
+#ifdef MAX_PRINT_CHARS
+static int print_chars;
+static int max_print;
+#endif /* MAX_PRINT_CHARS */
 
 /* Low level output routines for charaters and strings */
 
@@ -94,6 +102,10 @@ printchar (ch, fun)
 {
   Lisp_Object ch1;
 
+#ifdef MAX_PRINT_CHARS
+  if (max_print)
+    print_chars++;
+#endif /* MAX_PRINT_CHARS */
 #ifndef standalone
   if (EQ (fun, Qnil))
     {
@@ -133,11 +145,19 @@ strout (ptr, size, printcharfun)
   if (EQ (printcharfun, Qnil))
     {
       InsCStr (ptr, size >= 0 ? size : strlen (ptr));
+#ifdef MAX_PRINT_CHARS
+      if (max_print)
+        print_chars += size >= 0 ? size : strlen(ptr);
+#endif /* MAX_PRINT_CHARS */
       return;
     }
   if (EQ (printcharfun, Qt))
     {
       i = size >= 0 ? size : strlen (ptr);
+#ifdef MAX_PRINT_CHARS
+      if (max_print)
+        print_chars += i;
+#endif /* MAX_PRINT_CHARS */
       if (noninteractive)
 	{
 	  fwrite (ptr, 1, i, stdout);
@@ -172,6 +192,8 @@ STREAM defaults to the value of standard-output (which see).")
   int start_point;
   Lisp_Object original;
 
+  if (NULL (printcharfun))
+    printcharfun = Vstandard_output;
   CHECK_NUMBER (ch, 0);
   PRINTPREPARE;
   PRINTCHAR (XINT (ch));
@@ -257,7 +279,9 @@ DEFUN ("with-output-to-temp-buffer", Fwith_output_to_temp_buffer, Swith_output_t
 The buffer is cleared out initially, and marked as unmodified when done.\n\
 All output done by BODY is inserted in that buffer by default.\n\
 It is displayed in another window, but not selected.\n\
-The value of the last form in BODY is returned.")
+The value of the last form in BODY is returned.\n\
+If variable `temp-buffer-show-hook' is non-nil, call it at the end\n\
+to get the buffer displayed.  It gets one argument, the buffer to display.")
   (args)
      Lisp_Object args;
 {
@@ -315,6 +339,9 @@ Output stream is STREAM, or value of standard-output (which see).")
   int start_point;
   Lisp_Object original;
 
+#ifdef MAX_PRINT_CHARS
+  max_print = 0;
+#endif /* MAX_PRINT_CHARS */
   if (NULL (printcharfun))
     printcharfun = Vstandard_output;
   PRINTPREPARE;
@@ -387,6 +414,10 @@ Output stream is STREAM, or value of  standard-output  (which see).")
   int start_point;
   Lisp_Object original;
 
+#ifdef MAX_PRINT_CHARS
+  print_chars = 0;
+  max_print = MAX_PRINT_CHARS;
+#endif /* MAX_PRINT_CHARS */
   if (NULL (printcharfun))
     printcharfun = Vstandard_output;
   PRINTPREPARE;
@@ -395,13 +426,21 @@ Output stream is STREAM, or value of  standard-output  (which see).")
   print (obj, printcharfun, 1);
   PRINTCHAR ('\n');
   PRINTFINISH;
+#ifdef MAX_PRINT_CHARS
+  max_print = 0;
+  print_chars = 0;
+#endif /* MAX_PRINT_CHARS */
   return obj;
 }
 
 static void
 print (obj, printcharfun, escapeflag)
+#ifndef RTPC_REGISTER_BUG
      register Lisp_Object obj;
-     Lisp_Object printcharfun;
+#else
+     Lisp_Object obj;
+#endif
+     register Lisp_Object printcharfun;
      int escapeflag;
 {
   char buf[30];
@@ -411,6 +450,13 @@ print (obj, printcharfun, escapeflag)
   print_depth++;
   if (print_depth > 200)
     error ("Apparently circular structure being printed");
+#ifdef MAX_PRINT_CHARS
+  if (max_print && print_chars > max_print)
+    {
+      PRINTCHAR ('\n');
+      print_chars = 0;
+    }
+#endif /* MAX_PRINT_CHARS */
 
 #ifdef SWITCH_ENUM_BUG
   switch ((int) XTYPE (obj))
@@ -418,6 +464,16 @@ print (obj, printcharfun, escapeflag)
   switch (XTYPE (obj))
 #endif
     {
+    default:
+      /* We're in trouble if this happens!
+	 Probably should just abort () */
+      strout ("#<EMACS BUG: ILLEGAL DATATYPE ", -1, printcharfun);
+      sprintf (buf, "(#o%3o)", (int) XTYPE (obj));
+      strout (buf, -1, printcharfun);
+      strout (" Save your buffers immediately and please report this bug>",
+	      -1, printcharfun);
+      break;
+
     case Lisp_Int:
       sprintf (buf, "%d", XINT (obj));
       strout (buf, -1, printcharfun);
@@ -437,9 +493,17 @@ print (obj, printcharfun, escapeflag)
 	    {
 	      QUIT;
 	      c = *p++;
-	      if (c == '\"' || c == '\\')
-		PRINTCHAR ('\\');
-	      PRINTCHAR (c);
+	      if (c == '\n' && print_escape_newlines)
+		{
+		  PRINTCHAR ('\\');
+		  PRINTCHAR ('n');
+		}
+	      else
+		{
+		  if (c == '\"' || c == '\\')
+		    PRINTCHAR ('\\');
+		  PRINTCHAR (c);
+		}
 	    }
 	  PRINTCHAR ('\"');
 	}
@@ -487,7 +551,7 @@ print (obj, printcharfun, escapeflag)
 
 	if (XTYPE (Vprint_length) == Lisp_Int)
 	  max = XINT (Vprint_length);
-	while (LISTP (obj))
+	while (CONSP (obj))
 	  {
 	    if (i++)
 	      PRINTCHAR (' ');
@@ -500,7 +564,7 @@ print (obj, printcharfun, escapeflag)
 	    obj = Fcdr (obj);
 	  }
       }
-      if (!NULL (obj) && !LISTP (obj))
+      if (!NULL (obj) && !CONSP (obj))
 	{
 	  strout (" . ", 3, printcharfun);
 	  print (obj, printcharfun, escapeflag);
@@ -554,11 +618,15 @@ print (obj, printcharfun, escapeflag)
       strout (buf, -1, printcharfun);
       if (!NULL (XWINDOW (obj)->buffer))
 	{
+	  unsigned char *p = XSTRING (XBUFFER (XWINDOW (obj)->buffer)->name)->data;
 	  strout (" on ", -1, printcharfun);
-	  strout (XSTRING (XBUFFER (XWINDOW (obj)->buffer)->name)->data,
-		  -1, printcharfun);
+	  strout (p, -1, printcharfun);
 	}
       PRINTCHAR ('>');
+      break;
+
+    case Lisp_Window_Configuration:
+      strout ("#<window-configuration>", -1, printcharfun);
       break;
 
     case Lisp_Marker:
@@ -589,7 +657,7 @@ print (obj, printcharfun, escapeflag)
 void
 syms_of_print ()
 {
-  DefLispVar ("standard-output", &Vstandard_output,
+  DEFVAR_LISP ("standard-output", &Vstandard_output,
     "Function print uses by default for outputting a character.\n\
 This may be any function of one argument.\n\
 It may also be a buffer (output is inserted before point)\n\
@@ -599,10 +667,14 @@ or the symbol t (output appears in the minibuffer line).");
   Qstandard_output = intern ("standard-output");
   staticpro (&Qstandard_output);
 
-  DefLispVar ("print-length", &Vprint_length,
+  DEFVAR_LISP ("print-length", &Vprint_length,
     "Maximum length of list to print before abbreviating.\
 `nil' means no limit.");
   Vprint_length = Qnil;
+
+  DEFVAR_BOOL ("print-escape-newlines", &print_escape_newlines,
+    "Non-nil means print newlines in strings as backslash-n.");
+  print_escape_newlines = 0;
 
   /* prin1_to_string_buffer initialized in init_buffer_once in buffer.c */
   staticpro (&Vprin1_to_string_buffer);

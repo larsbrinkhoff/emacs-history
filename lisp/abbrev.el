@@ -1,5 +1,6 @@
 ;; Abbrev mode commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,14 +29,15 @@ and be replaced by its expansion."
   (setq abbrev-mode
 	(if (null arg) (not abbrev-mode)
 	  (> (prefix-numeric-value arg) 0)))
-  (set-minor-mode 'abbrev-mode "Abbrev" abbrev-mode))
+  (set-buffer-modified-p (buffer-modified-p))) ;No-op, but updates mode line.
 
 (defvar edit-abbrevs-map nil
   "Keymap used in edit-abbrevs.")
 (if edit-abbrevs-map
     nil
   (setq edit-abbrevs-map (make-sparse-keymap))
-  (define-key edit-abbrevs-map "\C-x\C-s" 'edit-abbrevs-redefine))
+  (define-key edit-abbrevs-map "\C-x\C-s" 'edit-abbrevs-redefine)
+  (define-key edit-abbrevs-map "\C-c\C-c" 'edit-abbrevs-redefine))
 
 (defun kill-all-abbrevs ()
   "Undefine all defined abbrevs."
@@ -86,7 +88,7 @@ Mark is set after the inserted text."
 (defun edit-abbrevs ()
   "Alter abbrev definitions by editing a list of them.
 Selects a buffer containing a list of abbrev definitions.
-You can edit them and type C-x C-s to redefine abbrevs
+You can edit them and type C-c C-c to redefine abbrevs
 according to your editing.
 Buffer contains a header line for each abbrev table,
  which is the abbrev table name in parentheses.
@@ -101,7 +103,8 @@ or may be omitted (it is usually omitted)."
 (defun edit-abbrevs-redefine ()
   "Redefine abbrevs according to current buffer contents"
   (interactive)
-  (define-abbrevs t))
+  (define-abbrevs t)
+  (set-buffer-modified-p nil))
 
 (defun define-abbrevs (&optional arg)
   "Define abbrevs according to current visible buffer contents.
@@ -133,7 +136,7 @@ Takes file name as argument."
   (interactive "fRead abbrev file: ")
   (load (if (and file (> (length file) 0)) file abbrev-file-name)
 	nil quietly)
-  (setq abbrevs-changed nil))
+  (setq save-abbrevs t abbrevs-changed nil))
 
 (defun quietly-read-abbrev-file (file)
   "Read abbrev definitions from file written with write-abbrev-file.
@@ -242,7 +245,8 @@ then insert the abbrev."
   (interactive "P")
   (or arg (expand-abbrev))
   (setq abbrev-start-location (point-marker)
-	abbrev-start-location-buffer (current-buffer)))
+	abbrev-start-location-buffer (current-buffer))
+  (insert "-"))
 
 (defun expand-region-abbrevs (start end &optional noquery)
   "For abbrev occurrence in the region, offer to expand it.

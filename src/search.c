@@ -1,5 +1,5 @@
 /* String search routines for GNU Emacs.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -19,7 +19,6 @@ file named COPYING.  Among other things, the copyright notice
 and this notice must be preserved on all copies.  */
 
 
-#include <ctype.h>
 #include "config.h"
 #include "lisp.h"
 #include "syntax.h"
@@ -27,11 +26,32 @@ and this notice must be preserved on all copies.  */
 #include "commands.h"
 #include "regex.h"
 
-unsigned char downcase_table[0400] = {0};	/* folds upper to lower case */
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+unsigned char downcase_table[01000] = {0};	/* folds upper to lower case */
+	      /* A WHEEL WILL FALL OFF IF, IN A trt, CHARACTER A */
+	      /* TRANSLATES INTO CHARACTER B AND CHARACTER B DOES NOT */
+	      /* ALSO TRANSLATE INTO CHARACTER B. */ 
+/* If that constraint is met, compute_trt_inverse will follow a */
+ /* translation table with its inverse.  The inverse of a table */
+ /* follows the table at table[0400].  The form of this is that if */
+ /* table[a]=b then the chain starting at table[0400+b], linked by */
+ /* link(x)=table[0400+x] and ended by b must include a. */
+
+/* At present compute_trt_inverse is blinded and the inverse for this */
+ /* particular table is created by a single-purpose loop. */
+ /* compute_trt_inverse has been tested on the following cases: */
+ /* trt[x]=x, trt[x]=(+ 3 (logand x, 0370)), trt[x]='a', and the */
+ /* downcase table. */
+
+#ifdef C_ALLOCA
+int static_BM_tab[0400];    /* if alloca is slow don't use it */
+#endif
 
 /* We compile regexps into this buffer and then use it for searching. */
 
-static struct re_pattern_buffer searchbuf;
+struct re_pattern_buffer searchbuf;
 
 char search_fastmap[0400];
 
@@ -129,10 +149,11 @@ DEFUN ("looking-at", Flooking_at, Slooking_at, 1, 1, 0,
 			  NumCharacters + 1 - FirstCharacter)
 	 ? Qt : Qnil);
   for (i = 0; i < RE_NREGS; i++)
-    {
-      search_regs.start[i] += FirstCharacter - 1;
-      search_regs.end[i] += FirstCharacter - 1;
-    }
+    if (search_regs.start[i] >= 0)
+      {
+	search_regs.start[i] += FirstCharacter;
+	search_regs.end[i] += FirstCharacter;
+      }
   immediate_quit = 0;
   return val;
 }
@@ -156,64 +177,96 @@ matched by parenthesis constructs in the pattern.")
     s = 0;
   else
     {
+      int len = XSTRING (string)->size;
+
       CHECK_NUMBER (start, 2);
       s = XINT (start);
+      if (s < 0 && -s <= len)
+	s = len - s;
+      else if (0 > s || s > len)
+	args_out_of_range (string, start);
     }
 
   compile_pattern (regexp, &searchbuf,
 		   !NULL (bf_cur->case_fold_search) ? (char *) downcase_table : 0);
   val = re_search (&searchbuf, XSTRING (string)->data, XSTRING (string)->size,
 			       s, XSTRING (string)->size - s, &search_regs);
-  /* Correct for propensity of match-beginning and match-end
-     to add 1 to each of these (which is correct for buffer positions
-     since they are origin-1, but not for indices in strings).  */
-  for (s = 0; s < RE_NREGS; s++)
-    {
-      search_regs.start[s]--;
-      search_regs.end[s]--;
-    }
   if (val < 0) return Qnil;
   return make_number (val);
 }
 
-DEFUN ("scan-buffer", Fscan_buffer, Sscan_buffer, 3, 3, 0,
-  "Scan from character number FROM for COUNT occurrences of character C.\n\
-Returns the character number of the position after the character found.\n\
-If not found, returns char number of beginning or end of buffer.\n\
-Note that this does -not- take take  case-fold-search  into consideration.")
-  (from, count, c)
-     Lisp_Object from, count, c;
+scan_buffer (target, pos, cnt, shortage)
+     int *shortage, pos;
+     register int cnt, target;
 {
-  CHECK_NUMBER_COERCE_MARKER (from, 0);
-  CHECK_NUMBER (count, 1);
-  CHECK_NUMBER (c, 2);
+  int lim = ((cnt > 0) ? NumCharacters : FirstCharacter);
+  int direction = ((cnt > 0) ? 1 : -1);
+  register int lim0;
+  unsigned char *base;
+  register unsigned char *cursor, *limit;
 
-  return make_number (ScanBf (XINT (c), XINT (from), XINT (count)));
+  if ((int) shortage)
+    *shortage = 0;
+
+  if (cnt > 0)
+    while (pos != lim + 1)
+      {
+	lim0 =  BufferSafeCeiling (pos);
+	lim0 = min (lim, lim0);
+	limit = &CharAt (lim0) + 1;
+	base = (cursor = &CharAt (pos));
+	while (1)
+	  {
+	    while (*cursor != target && ++cursor != limit)
+	      ;
+	    if (cursor != limit)
+	      {
+		if (--cnt == 0)
+		  return (pos + cursor - base + 1);
+		else
+		  if (++cursor == limit)
+		    break;
+	      }
+	    else
+	      break;
+	  }
+	pos += cursor - base;
+      }
+  else
+    {
+      pos--;			/* first character we scan */
+      while (pos > lim - 1)
+	{			/* we WILL scan under pos */
+	  lim0 =  BufferSafeFloor (pos);
+	  lim0 = max (lim, lim0);
+	  limit = &CharAt (lim0) - 1;
+	  base = (cursor = &CharAt (pos));
+	  cursor++;
+	  while (1)
+	    {
+	      while (--cursor != limit && *cursor != target)
+		;
+	      if (cursor != limit)
+		{
+		  if (++cnt == 0)
+		    return (pos + cursor - base + 1);
+		}
+	      else
+		break;
+	    }
+	  pos += cursor - base;
+	}
+    }
+  if ((int) shortage)
+    *shortage = cnt * direction;
+  return (pos + ((direction == 1 ? 0 : 1)));
 }
 
-ScanBf (target, pos, cnt)
-     register int target, pos, cnt;
+int
+find_next_newline (from, cnt)
+     register int from, cnt;
 {
-  register int end;
-  if (cnt > 0)
-    {
-      end = NumCharacters + 1;
-      while (pos < end)
-	{
-	  if (CharAt (pos) == target && !--cnt)
-	    return pos + 1;
-	  pos++;
-	}
-      return pos;
-    }
-  if (cnt < 0)
-    {
-      end = FirstCharacter;
-      do pos--;
-      while (pos >= end &&
-	     (CharAt (pos) != target || ++cnt));
-    }
-  return pos + 1;
+  return (scan_buffer ('\n', from, cnt, (int *) 0));
 }
 
 DEFUN ("skip-chars-forward", Fskip_chars_forward, Sskip_chars_forward, 1, 2, 0,
@@ -343,20 +396,27 @@ search_command (string, bound, noerror, count, direction, RE)
 
   np = search_buffer (string, point, lim, n, RE,
 		      !NULL (bf_cur->case_fold_search) ? downcase_table : 0);
-  if (np == 0)
+  if (np <= 0)
     {
       if (NULL (noerror))
 	return signal_failure (string);
       if (!EQ (noerror, Qt))
-	SetPoint (lim);
+	{
+	  if (lim < FirstCharacter || lim > NumCharacters + 1)
+	    abort ();
+	  SetPoint (lim);
+	}
       return Qnil;
     }
-  else
-    SetPoint (np);
+
+  if (np < FirstCharacter || np > NumCharacters + 1)
+    abort ();
+
+  SetPoint (np);
 
   return Qt;
 }
-
+
 /* search for the n'th occurrence of `string' in the current buffer,
    starting at position `from' and stopping at position `lim',
    treating `pat' as a literal string if `RE' is false or as
@@ -365,33 +425,67 @@ search_command (string, bound, noerror, count, direction, RE)
    If `n' is positive, searching is forward and `lim' must be greater than `from'.
    If `n' is negative, searching is backward and `lim' must be less than `from'.
 
-   Returns 0 if `n' occurrences are not found,
+   Returns -x if only `n'-x occurrences found (x > 0),
    or else the position at the beginning of the `n'th occurrence (if searching backward)
    or the end (if searching forward).  */
 
-search_buffer (string, from, lim, n, RE, trt)
+/* INTERFACE CHANGE ALERT!!!!  search_buffer now returns -x if only */
+/* n-x occurences are found. */
+
+search_buffer (string, pos, lim, n, RE, trt)
      Lisp_Object string;
-     int from;
-     register int lim;
+     int pos;
+     int lim;
      int n;
      int RE;
-     unsigned char *trt;
+     register unsigned char *trt;
 {
-  register int pos = from;
-  unsigned char *pat = XSTRING (string)->data;
-  register int len = XSTRING (string)->size;
+  int len = XSTRING (string)->size;
+  unsigned char *base_pat = XSTRING (string)->data;
+  register int *BM_tab;
+  int *BM_tab_base;
+  register int direction = ((n > 0) ? 1 : -1);
+  register int dirlen;
+  int infinity, limit, k, stride_for_teases;
+  register unsigned char *pat, *cursor, *p_limit;  
   register int i, j;
   unsigned char *p1, *p2;
   int s1, s2;
 
-  immediate_quit = 1;	/* Quit immediately if user types ^G,
-			   because letting this function finish can take too long. */
-  QUIT;			/* Do a pending quit right away, to avoid paradoxical behavior */
+
+  if (!len)
+    return (0);
+
+  if (RE)
+    compile_pattern (string, &searchbuf, (char *) trt);
+  
+  if (RE			/* Here we detect whether the */
+				/* generality of an RE search is */
+				/* really needed. */
+      && *(searchbuf.buffer) == (char) exactn /* first item is "exact match" */
+      && searchbuf.buffer[1] + 2 == searchbuf.used) /*first is ONLY item */
+    {
+      RE = 0;			/* can do straight (non RE) search */
+      pat = (base_pat = (unsigned char *) searchbuf.buffer + 2);
+				/* trt already applied */
+      len = searchbuf.used - 2;
+    }
+  else if (!RE)
+    {
+      pat = (unsigned char *) alloca (len);
+
+      for (i = len; i--;)		/* Copy the pattern; apply trt */
+	*pat++ = (((int) trt) ? trt [*base_pat++] : *base_pat++);
+      pat -= len; base_pat = pat;
+    }
 
   if (RE)
     {
-      compile_pattern (string, &searchbuf, (char *) trt);
-
+      immediate_quit = 1;	/* Quit immediately if user types ^G,
+				   because letting this function finish
+				   can take too long. */
+      QUIT;			/* Do a pending quit right away,
+				   to avoid paradoxical behavior */
       /* Get pointers and sizes of the two strings
 	 that make up the visible portion of the buffer. */
 
@@ -410,39 +504,7 @@ search_buffer (string, from, lim, n, RE, trt)
 	  s1 += s2;
 	  s2 = 0;
 	}
-    }
-
-  while (n < 0)
-    {
-      if (!RE)
-	{
-          pos -= len;
-	  if (trt && !(trt == downcase_table && !isalpha (pat[0])))
-	    {
-	      j = trt[pat[0]];
-	      while (pos >= lim
-		     && (j != trt[CharAt (pos)]
-			 || bcmp_buffer_translated (pat, len, pos, trt)))
-		pos--;
-	    }
-	  else
-	    {
-	      j = pat[0];
-	      while (pos >= lim
-		     && (j != CharAt (pos)
-			 || bcmp_buffer_translated (pat, len, pos, trt)))
-		pos--;
-	    }
-
-	  if (pos < lim)
-	    {
-	      immediate_quit = 0;
-	      return 0;
-	    }
-	  search_regs.start[0] = pos - 1;
-	  search_regs.end[0] = pos - 1 + len;
-	}
-      else
+      while (n < 0)
 	{
 	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
 			   pos - FirstCharacter, lim - pos, &search_regs,
@@ -450,136 +512,282 @@ search_buffer (string, from, lim, n, RE, trt)
 			   pos - FirstCharacter)
 	      >= 0)
 	    {
-	      j = FirstCharacter - 1;
+	      j = FirstCharacter;
 	      for (i = 0; i < RE_NREGS; i++)
-		{
-		  search_regs.start[i] += j;
-		  search_regs.end[i] += j;
-		}
+		if (search_regs.start[i] >= 0)
+		  {
+		    search_regs.start[i] += j;
+		    search_regs.end[i] += j;
+		  }
 	      /* Set pos to the new position. */
-	      pos = search_regs.start[0] + 1;
+	      pos = search_regs.start[0];
 	    }
 	  else
 	    {
 	      immediate_quit = 0;
-	      return 0;
+	      return (n);
 	    }
+	  n++;
 	}
-      n++;
-    }
-
-  while (n > 0)
-    {
-      if (!RE)
-	{
-	  lim -= len;
-	  if (trt && !(trt == downcase_table && !isalpha (pat[0])))
-	    {
-	      j = trt[pat[0]];
-	      while (pos <= lim
-		     && (j != trt[CharAt (pos)]
-			 || bcmp_buffer_translated (pat, len, pos, trt)))
-		pos++;
-	    }
-	  else
-	    {
-	      j = pat[0];
-	      while (pos <= lim
-		     && (j != CharAt (pos)
-			 || bcmp_buffer_translated (pat, len, pos, trt)))
-		pos++;
-	    }
-
-	  if (pos > lim)
-	    {
-	      immediate_quit = 0;
-	      return 0;
-	    }
-
-	  lim += len;
-
-	  search_regs.start[0] = pos - 1;
-	  pos += len;
-	  search_regs.end[0] = pos - 1;
-	}
-      else
+      while (n > 0)
 	{
 	  if (re_search_2 (&searchbuf, p1, s1, p2, s2,
 			   pos - FirstCharacter, lim - pos, &search_regs,
 			   lim - FirstCharacter)
 	      >= 0)
 	    {
-	      j = FirstCharacter - 1;
+	      j = FirstCharacter;
 	      for (i = 0; i < RE_NREGS; i++)
-		{
-		  search_regs.start[i] += j;
-		  search_regs.end[i] += j;
-		}
-	      pos = 1 + search_regs.end[0];
+		if (search_regs.start[i] >= 0)
+		  {
+		    search_regs.start[i] += j;
+		    search_regs.end[i] += j;
+		  }
+	      pos = search_regs.end[0];
 	    }
 	  else
 	    {
 	      immediate_quit = 0;
-	      return 0;
+	      return (0 - n);
 	    }
+	  n--;
 	}
-      n--;
+      immediate_quit = 0;
+      return (pos);
     }
-  immediate_quit = 0;
-  return pos;
-}
-
-/* Return nonzero unless the `len' characters in the buffer starting at position `pos'
-  match the `len' characters at `pat', with all characters going through the
-  translate table `trt' if `trt' is nonzero.  */
-
-static int
-bcmp_buffer_translated (pat, len, pos, trt)
-     unsigned char *pat;
-     int len;
-     int pos;
-     register char *trt;
-{
-  int dist1 = 0;
-  register int i;
-  register unsigned char *p1, *p2;
-
-  if (pos - 1 < bf_s1)
+  else				/* non-RE case */
     {
-      p1 = pat, p2 = &CharAt (pos);
-      dist1 = bf_s1 - (pos - 1);
-      if (dist1 > len) dist1 = len;
-      i = dist1;
+#ifdef C_ALLOCA
+      BM_tab = &static_BM_tab;
+#else
+      BM_tab = (int *) alloca (0400 * sizeof (int));
+#endif
+      /* The general approach is that we are going to maintain that we know */
+      /* the first (closest to the present position, in whatever direction */
+      /* we're searching) character that could possibly be the last */
+      /* (furthest from present position) character of a valid match.  We */
+      /* advance the state of our knowledge by looking at that character */
+      /* and seeing whether it indeed matches the last character of the */
+      /* pattern.  If it does, we take a closer look.  If it does not, we */
+      /* move our pointer (to putative last characters) as far as is */
+      /* logically possible.  This amount of movement, which I call a */
+      /* stride, will be the length of the pattern if the actual character */
+      /* appears nowhere in the pattern, otherwise it will be the distance */
+      /* from the last occurrence of that character to the end of the */
+      /* pattern. */
+      /* As a coding trick, an enormous stride is coded into the table for */
+      /* characters that match the last character.  This allows use of only */
+      /* a single test, a test for having gone past the end of the */
+      /* permissible match region, to test for both possible matches (when */
+      /* the stride goes past the end immediately) and failure to */
+      /* match (where you get nudged past the end one stride at a time). */ 
 
-      if (trt)
+      /* Here we make a "mickey mouse" BM table.  The stride of the search */
+      /* is determined only by the last character of the putative match. */
+      /* If that character does not match, we will stride the proper */
+      /* distance to propose a match that superimposes it on the last */
+      /* instance of a character that matches it (per trt), or misses */
+      /* it entirely if there is none. */  
+
+      dirlen = len * direction;
+      infinity = dirlen - (lim + pos + len + len) * direction;
+      if (direction < 0)
+	pat = (base_pat += len - 1);
+      BM_tab_base = BM_tab;
+      BM_tab += 0400;
+      j = dirlen;		/* to get it in a register */
+      /* A character that does not appear in the pattern induces a */
+      /* stride equal to the pattern length. */
+      while (BM_tab_base != BM_tab)
 	{
-	  for (; i; i--)
-	    if (trt[*p1++] != trt [*p2++]) return 1;
+	  *--BM_tab = j;
+	  *--BM_tab = j;
+	  *--BM_tab = j;
+	  *--BM_tab = j;
 	}
-      else
+      i = 0;
+      while (i != infinity)
 	{
-	  for (; i; i--)
-	    if (*p1++ != *p2++) return 1;
+	  j = pat[i]; i += direction;
+	  if (i == dirlen) i = infinity;
+	  if ((int) trt)
+	    {
+	      k = (j = trt[j]);
+	      if (i == infinity)
+		stride_for_teases = BM_tab[j];
+	      BM_tab[j] = dirlen - i;
+	      /* A translation table is followed by its inverse -- see */
+	      /* comment following downcase_table for details */ 
+
+	      while ((j = trt[0400+j]) != k)
+		BM_tab[j] = dirlen - i;
+	    }
+	  else
+	    {
+	      if (i == infinity)
+		stride_for_teases = BM_tab[j];
+	      BM_tab[j] = dirlen - i;
+	    }
+	  /* stride_for_teases tells how much to stride if we get a */
+	  /* match on the far character but are subsequently */
+	  /* disappointed, by recording what the stride would have been */
+	  /* for that character if the last character had been */
+	  /* different. */
+	}
+      infinity = dirlen - infinity;
+      pos += dirlen - ((direction > 0) ? direction : 0);
+      /* loop invariant - pos points at where last char (first char if reverse)
+	 of pattern would align in a possible match.  */
+      while (n != 0)
+	{
+	  if ((lim - pos - (direction > 0)) * direction < 0)
+	    return (n * (0 - direction));
+	  /* First we do the part we can by pointers (maybe nothing) */
+	  QUIT;
+	  pat = base_pat;
+	  limit = pos - dirlen + direction;
+	  limit = ((direction > 0)
+		   ? BufferSafeCeiling (limit)
+		   : BufferSafeFloor (limit));
+	  /* LIMIT is now the last (not beyond-last!) value
+	     POS can take on without hitting edge of buffer or the gap.  */
+	  limit = ((direction > 0)
+		   ? min (lim - 1, min (limit, pos + 20000))
+		   : max (lim, max (limit, pos - 20000)));
+	  if ((limit - pos) * direction > 20)
+	    {
+	      p_limit = &CharAt (limit);
+	      p2 = (cursor = &CharAt (pos));
+	      /* In this loop, pos + cursor - p2 is the surrogate for pos */
+	      while (1)		/* use one cursor setting as long as i can */
+		{
+		  if (direction > 0) /* worth duplicating */
+		    {
+		      /* Use signed comparison if appropriate
+			 to make cursor+infinity sure to be > p_limit.
+			 Assuming that the buffer lies in a range of addresses
+			 that are all "positive" (as ints) or all "negative",
+			 either kind of comparison will work as long
+			 as we don't step by infinity.  So pick the kind
+			 that works when we do step by infinity.  */
+		      if ((int) (p_limit + infinity) > (int) p_limit)
+			while ((int) cursor <= (int) p_limit)
+			  cursor += BM_tab[*cursor];
+		      else
+			while ((unsigned int) cursor <= (unsigned int) p_limit)
+			  cursor += BM_tab[*cursor];
+		    }
+		  else
+		    {
+		      if ((int) (p_limit + infinity) < (int) p_limit)
+			while ((int) cursor >= (int) p_limit)
+			  cursor += BM_tab[*cursor];
+		      else
+			while ((unsigned int) cursor >= (unsigned int) p_limit)
+			  cursor += BM_tab[*cursor];
+		    }
+/* If you are here, cursor is beyond the end of the searched region. */
+ /* This can happen if you match on the far character of the pattern, */
+ /* because the "stride" of that character is infinity, a number able */
+ /* to throw you well beyond the end of the search.  It can also */
+ /* happen if you fail to match within the permitted region and would */
+ /* otherwise try a character beyond that region */
+		  if ((cursor - p_limit) * direction <= len)
+		    break;	/* a small overrun is genuine */
+		  cursor -= infinity; /* large overrun = hit */
+		  i = dirlen - direction;
+		  if ((int) trt)
+		    {
+		      while ((i -= direction) + direction != 0)
+			if (pat[i] != trt[*(cursor -= direction)])
+			  break;
+		    }
+		  else
+		    {
+		      while ((i -= direction) + direction != 0)
+			if (pat[i] != *(cursor -= direction))
+			  break;
+		    }
+		  cursor += dirlen - i - direction;	/* fix cursor */
+		  if (i + direction == 0)
+		    {
+		      cursor -= direction;
+		      search_regs.start[0]
+			= pos + cursor - p2 + ((direction > 0)
+					       ? 1 - len : 0);
+		      search_regs.end[0] = len + search_regs.start[0];
+		      if ((n -= direction) != 0)
+			cursor += dirlen; /* to resume search */
+		      else
+			return ((direction > 0)
+				? search_regs.end[0] : search_regs.start[0]);
+		    }
+		  else
+		    cursor += stride_for_teases; /* <sigh> we lose -  */
+		}
+	      pos += cursor - p2;
+	    }
+	  else
+	    /* Now we'll pick up a clump that has to be done the hard */
+	    /* way because it covers a discontinuity */
+	    {
+	      limit = ((direction > 0)
+		       ? BufferSafeCeiling (pos - dirlen + 1)
+		       : BufferSafeFloor (pos - dirlen - 1));
+	      limit = ((direction > 0)
+		       ? min (limit + len, lim - 1)
+		       : max (limit - len, lim));
+	      /* LIMIT is now the last value POS can have
+		 and still be valid for a possible match.  */
+	      while (1)
+		{
+		  /* This loop can be coded for space rather than */
+		  /* speed because it will usually run only once. */
+		  /* (the reach is at most len + 21, and typically */
+		  /* does not exceed len) */    
+		  while ((limit - pos) * direction >= 0)
+		    pos += BM_tab[CharAt(pos)];
+		  /* now run the same tests to distinguish going off the */
+		  /* end, a match or a phoney match. */
+		  if ((pos - limit) * direction <= len)
+		    break;	/* ran off the end */
+		  /* Found what might be a match.
+		     Set POS back to last (first if reverse) char pos.  */
+		  pos -= infinity;
+		  i = dirlen - direction;
+		  while ((i -= direction) + direction != 0)
+		    {
+		      pos -= direction;
+		      if (pat[i] != (((int) trt)
+				     ? trt[CharAt(pos)]
+				     : CharAt (pos)))
+			break;
+		    }
+		  /* Above loop has moved POS part or all the way
+		     back to the first char pos (last char pos if reverse).
+		     Set it once again at the last (first if reverse) char.  */
+		  pos += dirlen - i- direction;
+		  if (i + direction == 0)
+		    {
+		      pos -= direction;
+		      search_regs.start[0]
+			= pos + ((direction > 0) ? 1 - len : 0);
+		      search_regs.end[0] = len + search_regs.start[0];
+		      if ((n -= direction) != 0)
+			pos += dirlen; /* to resume search */
+		      else
+			return ((direction > 0)
+				? search_regs.end[0] : search_regs.start[0]);
+		    }
+		  else
+		    pos += stride_for_teases;
+		}
+	      }
+	  /* We have done one clump.  Can we continue? */
+	  if ((lim - pos) * direction < 0)
+	    return ((0 - n) * direction);
 	}
     }
-
-  if (dist1 < len)
-    {
-      p1 = pat + dist1, p2 = &CharAt (pos + dist1);
-      i = len - dist1;
-
-      if (trt)
-	{
-	  for (; i; i--)
-	    if (trt[*p1++] != trt [*p2++]) return 1;
-	}
-      else
-	{
-	  for (; i; i--)
-	    if (*p1++ != *p2++) return 1;
-	}
-    }
-  return 0;
 }
 
 /* Given a string of words separated by word delimiters,
@@ -692,10 +900,12 @@ Optional fourth argument is repeat count--search for successive occurrences.")
 
 DEFUN ("re-search-backward", Fre_search_backward, Sre_search_backward, 1, 4,
   "sRE search backward: ",
-  "Search backward from point for regular expression REGEXP.\n\
-Set point to the beginning of the occurrence found, and return t.\n\
+  "Search backward from point for match for regular expression REGEXP.\n\
+Set point to the beginning of the match, and return t.\n\
+The match found is the one starting last in the buffer\n\
+and yet ending before the place the origin of the search.\n\
 An optional second argument bounds the search; it is a buffer position.\n\
-The match found must not extend before that position.\n\
+The match found must start at or after that position.\n\
 Optional third argument, if t, means if fail just return nil (no error).\n\
   If not nil and not t, move to limit of search and return nil.\n\
 Optional fourth argument is repeat count--search for successive occurrences.\n\
@@ -729,22 +939,26 @@ Otherwise convert to all caps or cap initials, like replaced text.\n\
 If third arg LITERAL is non-nil, insert NEWTEXT literally.\n\
 Otherwise treat \\ as special:\n\
   \\& in NEWTEXT means substitute original matched text,\n\
-  \\<n> means substitute match for \\(...\\) number <n>,\n\
+  \\N means substitute match for \\(...\\) number N,\n\
   \\\\ means insert one \\.\n\
 Leaves point at end of replacement text.")
   (string, fixedcase, literal)
      Lisp_Object string, fixedcase, literal;
 {
-  enum { nochange, all_caps, cap_initial } case_action = nochange;
+  enum { nochange, all_caps, cap_initial } case_action;
   register int pos, last;
-  int some_multiletter_word = 0;
+  int some_multiletter_word;
   int some_letter = 0;
-  register char c, prevc;
+  register int c, prevc;
   int inslen;
 
-  if (search_regs.start[0] + 1 < FirstCharacter
+  CHECK_STRING (string, 0);
+
+  case_action = nochange;	/* We tried an initialization */
+				/* but some C compilers blew it */
+  if (search_regs.start[0] < FirstCharacter
       || search_regs.start[0] > search_regs.end[0]
-      || search_regs.end[0] > NumCharacters)
+      || search_regs.end[0] > NumCharacters + 1)
     args_out_of_range(make_number (search_regs.start[0]),
 		      make_number (search_regs.end[0]));
 
@@ -760,10 +974,10 @@ Leaves point at end of replacement text.")
 	 is more than one letter long. */
       some_multiletter_word = 0;
 
-      for (pos = search_regs.start[0] + 1; pos <= last; pos++)
+      for (pos = search_regs.start[0]; pos < last; pos++)
 	{
 	  c = CharAt (pos);
-	  if (c >= 'a' && c <= 'z')
+	  if (LOWERCASEP (c))
 	    {
 	      /* Cannot be all caps if any original char is lower case */
 
@@ -778,7 +992,7 @@ Leaves point at end of replacement text.")
 	      else
 		some_multiletter_word = 1;
 	    }
-	  else if (c >= 'A' && c <= 'Z')
+	  else if (!NOCASEP (c))
 	    {
 	      some_letter = 1;
 	      if (!some_multiletter_word && SYNTAX (prevc) == Sword)
@@ -796,7 +1010,7 @@ Leaves point at end of replacement text.")
       if (!some_letter) case_action = nochange;
     }
 
-  SetPoint (search_regs.end[0] + 1);
+  SetPoint (search_regs.end[0]);
   if (!NULL (literal))
     Finsert (1, &string);
   else
@@ -808,11 +1022,12 @@ Leaves point at end of replacement text.")
 	    {
 	      c = XSTRING (string)->data[++pos];
 	      if (c == '&')
-		place (search_regs.start[0] + 1,
-		       search_regs.end[0] + 1);
-	      else if (c >= '1' && c <= RE_NREGS + '0')
-		place (search_regs.start[c - '0'] + 1,
-		       search_regs.end[c - '0'] + 1);
+		place (search_regs.start[0],
+		       search_regs.end[0]);
+	      else if (c >= '1' && c <= RE_NREGS + '0' &&
+		       search_regs.start[c - '0'] >= 1)
+		place (search_regs.start[c - '0'],
+		       search_regs.end[c - '0']);
 	      else
 		insert_char (c);
 	    }
@@ -821,22 +1036,13 @@ Leaves point at end of replacement text.")
 	}
     }
 
-  inslen = point - (search_regs.end[0] + 1);
-  del_range (search_regs.start[0] + 1, search_regs.end[0] + 1);
+  inslen = point - (search_regs.end[0]);
+  del_range (search_regs.start[0], search_regs.end[0]);
 
   if (case_action == all_caps)
     Fupcase_region (make_number (point - inslen), make_number (point));
   else if (case_action == cap_initial)
-    {  /* Fcapitalize_region won't do; must not downcase anything.  */
-      last = 0;
-      for (pos = point - inslen; pos < point; pos++)
-	{
-	  c = CharAt (pos);
-	  if (!last && (c >= 'a' && c <= 'z'))
-	    CharAt (pos) = c ^ ('a' - 'A');
-	  last = SYNTAX (c) == Sword;
-	}
-    }
+    upcase_initials_region (make_number (point - inslen), make_number (point));
   return Qnil;
 }
 
@@ -851,10 +1057,27 @@ place (l1, l2)
   if (l2 < l1) l2 = l1;
   if (l2 >= NumCharacters)
     l2 = NumCharacters;
-  GapTo (point);
+  move_gap (point);
   InsCStr (&CharAt (l1), l2 - l1);
 }
 
+static Lisp_Object
+match_limit (num, beginningp)
+     Lisp_Object num;
+     int beginningp;
+{
+  register int n;
+
+  CHECK_NUMBER (num, 0);
+  n = XINT (num);
+  if (n < 0 || n >= RE_NREGS)
+    args_out_of_range (num, make_number (RE_NREGS));
+  if (search_regs.start[n] < 0)
+    error ("No match for \\(...\\) register %d", n);
+  return (make_number ((beginningp) ? search_regs.start[n]
+		                    : search_regs.end[n]));
+}
+
 DEFUN ("match-beginning", Fmatch_beginning, Smatch_beginning, 1, 1, 0,
   "Return the character number of start of text matched by last regexp searched for.\n\
 ARG, a number, specifies which parenthesized expression in the last regexp.\n\
@@ -862,12 +1085,7 @@ Zero means the entire text matched by the whole regexp.")
   (num)
      Lisp_Object num;
 {
-  register    n;
-  CHECK_NUMBER (num, 0);
-  n = XINT (num);
-  if (n < 0 || n >= RE_NREGS)
-    error ("Out-of-bounds argument");
-  return make_number (search_regs.start[n] + 1);
+  return match_limit (num, 1);
 }
 
 DEFUN ("match-end", Fmatch_end, Smatch_end, 1, 1, 0,
@@ -877,13 +1095,8 @@ Zero means the entire text matched by the whole regexp.")
   (num)
      Lisp_Object num;
 {
-  register    n;
-  CHECK_NUMBER (num, 0);
-  n = XINT (num);
-  if (n < 0 || n >= RE_NREGS)
-    error ("Out-of-bounds argument");
-  return make_number (search_regs.end[n] + 1);
-}
+  return match_limit (num, 0);
+} 
 
 DEFUN ("match-data", Fmatch_data, Smatch_data, 0, 0, 0,
   "Return list containing all info on what the last search matched.\n\
@@ -892,17 +1105,25 @@ All are represented as markers.")
   ()
 {
   Lisp_Object data[2 * RE_NREGS];
-  int i;
+  int i, len;
 
+  len = -1;
   for (i = 0; i < RE_NREGS; i++)
     {
-      data[2 * i] = Fmake_marker ();
-      Fset_marker (data[2*i], make_number (search_regs.start[i] + 1), Qnil);
-      data[2 * i + 1] = Fmake_marker ();
-      Fset_marker (data[2*i + 1], make_number (search_regs.end[i] + 1), Qnil);
+      int start = search_regs.start[i];
+      if (start >= 0)
+	{
+	  data[2 * i] = Fmake_marker ();
+	  Fset_marker (data[2 * i], make_number (start), Qnil);
+	  data[2 * i + 1] = Fmake_marker ();
+	  Fset_marker (data[2 * i + 1],
+		       make_number (search_regs.end[i]), Qnil);
+	  len = i;
+	}
+      else
+	data[2 * i] = data [2 * i + 1] = Qnil;
     }
-
-  return Flist (2 * RE_NREGS, data);
+  return Flist (2 * len + 2, data);
 }
 
 
@@ -915,19 +1136,24 @@ LIST should have been created by calling match-data previously.")
   register int i;
   register Lisp_Object marker;
 
-  if (!LISTP (list))
-    list = wrong_type_argument (Qlistp, list, 0);
+  if (!CONSP (list) && !NULL (list))
+    list = wrong_type_argument (Qconsp, list, 0);
 
   for (i = 0; i < RE_NREGS; i++)
     {
       marker = Fcar (list);
-      CHECK_MARKER (marker, 0);
-      search_regs.start[i] = marker_position (marker) - 1;
-      list = Fcdr (list);
+      if (NULL (marker))
+	search_regs.start[i] = -1;
+      else
+	{
+	  CHECK_MARKER (marker, 0);
+	  search_regs.start[i] = marker_position (marker);
+	  list = Fcdr (list);
 
-      marker = Fcar (list);
-      CHECK_MARKER (marker, 0);
-      search_regs.end[i] = marker_position (marker) - 1;
+	  marker = Fcar (list);
+	  CHECK_MARKER (marker, 0);
+	  search_regs.end[i] = marker_position (marker);
+	}
       list = Fcdr (list);
     }
 
@@ -974,12 +1200,49 @@ DEFUN ("regexp-quote", Fregexp_quote, Sregexp_quote, 1, 1, 0,
   return ostr;
 }
 
+/* This code should be unzapped when there comes to be multiple */
+ /* translation tables.  It has been certified on various cases. */
+/*
+void
+compute_trt_inverse (trt)
+     register unsigned char *trt;
+{
+  register int i = 0400;
+  register unsigned char c, q;
+
+  while (i--)
+    trt[0400+i] = i;
+  i = 0400;
+  while (i--)
+    {
+      if ((q = trt[i]) != (unsigned char) i)
+	{
+	  c = trt[q + 0400];
+	  trt[q + 0400] = i;
+	  trt[0400 + i] = c;
+	}
+    }
+}
+*/
+  
 syms_of_search ()
 {
   register int i;
 
   for (i = 0; i < 0400; i++)
-    downcase_table[i] = (i >= 'A' && i <= 'Z') ? i + 040 : i;
+    {
+      downcase_table[i] = (i >= 'A' && i <= 'Z') ? i + 040 : i;
+/* We do this instead of using compute_trt_inverse to save space. */
+ /* Does it? */
+      downcase_table[0400+i]
+	= ((i >= 'A' && i <= 'Z')
+	   ? i + ('a' - 'A')
+	   : ((i >= 'a' && i <= 'z')
+	      ? i + ('A' - 'a')
+	      : i));
+    }
+/* Use this instead when there come to be multiple translation tables. 
+  compute_trt_inverse (downcase_table);    */
 
   searchbuf.allocated = 100;
   searchbuf.buffer = (char *) malloc (searchbuf.allocated);
@@ -1005,7 +1268,6 @@ syms_of_search ()
 
   defsubr (&Sstring_match);
   defsubr (&Slooking_at);
-  defsubr (&Sscan_buffer);
   defsubr (&Sskip_chars_forward);
   defsubr (&Sskip_chars_backward);
   defsubr (&Ssearch_forward);

@@ -1,5 +1,5 @@
 ;; Load this file to increment the recorded Emacs version number.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -21,7 +21,8 @@
 
 (insert-file-contents "../lisp/version.el")
 
-(re-search-forward "emacs-version \"[0-9.]*")
+(re-search-forward "emacs-version \"[^\"]*[0-9]+\"")
+(forward-char -1)
 (save-excursion
   (save-restriction
     (narrow-to-region (point)

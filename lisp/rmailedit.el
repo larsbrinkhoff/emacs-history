@@ -1,5 +1,5 @@
 ;; "RMAIL edit mode"  Edit the current message.
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,6 +28,9 @@
   (define-key rmail-edit-map "\C-c\C-c" 'rmail-cease-edit)
   (define-key rmail-edit-map "\C-c\C-]" 'rmail-abort-edit))
 
+;; Rmail Edit mode is suitable only for specially formatted data.
+(put 'rmail-edit-mode 'mode-class 'special)
+
 (defun rmail-edit-mode ()
   "Major mode for editing the contents of an RMAIL message.
 The editing commands are the same as in Text mode, together with two commands
@@ -39,7 +42,9 @@ to return to regular RMAIL:
   (use-local-map rmail-edit-map)
   (setq major-mode 'rmail-edit-mode)
   (setq mode-name "RMAIL Edit")
-  (setq mode-line-format default-mode-line-format)
+  (if (boundp 'mode-line-modified)
+      (setq mode-line-modified (default-value 'mode-line-modified))
+    (setq mode-line-format (default-value 'mode-line-format)))
   (run-hooks 'text-mode-hook 'rmail-edit-mode-hook))
 
 (defun rmail-edit-current-message ()
@@ -68,20 +73,28 @@ to return to regular RMAIL:
     ;; Adjust the marker that points to the end of this message.
     (set-marker (aref rmail-message-vector (1+ rmail-current-message))
 		(point)))
-  ;; Update the mode line.
-  (set-buffer-modified-p (buffer-modified-p))
-  (rmail-mode-1)
-  (cond ((boundp 'rmail-summary-vector)
-	 (aset rmail-summary-vector (1- rmail-current-message) nil)
-	 (save-excursion
-	   (rmail-widen-to-current-msgbeg
-	    (function (lambda ()
-			(forward-line 2)
-			(if (looking-at "Summary-line: ")
-			    (let ((buffer-read-only nil))
-			      (delete-region (point)
-					     (progn (forward-line 1) (point))))))))
-	   (rmail-show-message))))
+  (let ((old rmail-old-text))
+    ;; Update the mode line.
+    (set-buffer-modified-p (buffer-modified-p))
+    (rmail-mode-1)
+    (if (and (= (length old) (- (point-max) (point-min)))
+	     (string= old (buffer-substring (point-min) (point-max))))
+	()
+      (setq old nil)
+      (rmail-set-attribute "edited" t)
+      (if (boundp 'rmail-summary-vector)
+	  (progn
+	    (aset rmail-summary-vector (1- rmail-current-message) nil)
+	    (save-excursion
+	      (rmail-widen-to-current-msgbeg
+	        (function (lambda ()
+			    (forward-line 2)
+			    (if (looking-at "Summary-line: ")
+				(let ((buffer-read-only nil))
+				  (delete-region (point)
+						 (progn (forward-line 1)
+							(point))))))))
+	      (rmail-show-message))))))
   (setq buffer-read-only t))
 
 (defun rmail-abort-edit ()

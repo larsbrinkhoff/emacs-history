@@ -1,5 +1,5 @@
 /* Cursor motion calculation definitions for GNU Emacs
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -78,7 +78,6 @@ extern short ospeed;		/* Output speed (from sg_ospeed) */
 #define	Home		Wcm.cm_home
 #define	CR		Wcm.cm_cr
 #define	LastLine	Wcm.cm_ll
-#define	Tab		Wcm.cm_tab
 #define	TabWidth	Wcm.cm_tabwidth
 #define	DontSend	Wcm.cm_ds
 #define	AbsPosition	Wcm.cm_abs

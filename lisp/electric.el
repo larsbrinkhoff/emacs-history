@@ -1,7 +1,6 @@
 ;; electric -- Window maker and Command loop for `electric' modes.
-;; adapted by shane after mly
-
-;; Copyright (C) 1985 Richard M. Stallman and K. Shane Hartman
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Principal author K. Shane Hartman
 
 ;; This file is part of GNU Emacs.
 
@@ -23,15 +22,39 @@
 
 (provide 'electric)                           ; zaaaaaaap
 
+;; perhaps this should be in subr.el...
+(defun shrink-window-if-larger-than-buffer (window)
+  (save-excursion
+    (set-buffer (window-buffer window))
+    (let ((w (selected-window)) ;save-window-excursion can't win
+	  (buffer-file-name buffer-file-name)
+	  (p (point))
+	  (n 0)
+	  (window-min-height 0)
+	  (buffer-read-only nil)
+	  (modified (buffer-modified-p)))
+      (unwind-protect
+	  (progn
+	    (select-window window)
+	    (goto-char (point-min))
+	    (while (pos-visible-in-window-p (point-max))
+	      ;; defeat file locking... don't try this at home, kids!
+	      (setq buffer-file-name nil)
+	      (insert ?\n) (setq n (1+ n)))
+	    (if (> n 0) (shrink-window (1- n))))
+	(delete-region (point-min) (point))
+	(set-buffer-modified-p modified)
+	(goto-char p)
+	(select-window w)))))
+      
+      
 ;; This loop is the guts for non-standard modes which retain control
 ;; until some event occurs.  It is a `do-forever', the only way out is to
 ;; throw.  It assumes that you have set up the keymap, window, and
 ;; everything else: all it does is read commands and execute them -
 ;; providing error messages should one occur (if there is no loop
 ;; function - which see).  The required argument is a tag which should
-;; expect a value of nil if the user decides to punt.  The user is
-;; offered a chance to flush the loop by typing Space as the very first
-;; character.  Thereafter Space is just a normal character.  The
+;; expect a value of nil if the user decides to punt. The
 ;; second argument is a prompt string (defaults to "->").  Given third
 ;; argument non-nil, it INHIBITS quitting unless the user types C-g at
 ;; toplevel.  This is so user can do things like C-u C-g and not get
@@ -43,17 +66,14 @@
 ;; critical stuff).  The second argument for the loop function is the
 ;; conditions for any error that occurred or nil if none.
 
-(defun Electric-command-loop (return-tag &optional prompt inhibit-quit
-					 loop-function loop-state)
+(defun Electric-command-loop (return-tag
+			      &optional prompt inhibit-quit
+					loop-function loop-state)
   (if (not prompt) (setq prompt "->"))
-  (message "<<< Type Space to flush >>>")
-  (let ((cmd (read-char))
-	(err))
-    (if (memq cmd '(?\ ?\C-g))
-	(throw return-tag nil)
-      (setq unread-command-char cmd cmd nil))
+  (let (cmd (err nil))
     (while t
-      (setq cmd (read-key-sequence prompt))
+      (setq cmd (read-key-sequence (if (stringp prompt)
+				       prompt (funcall prompt))))
       (setq last-command-char (aref cmd (1- (length cmd)))
 	    this-command (key-binding cmd)
 	    cmd this-command)
@@ -63,7 +83,7 @@
 		       prefix-arg nil)
 		 ;; If it wasn't cancelling a prefix character, then quit.
 		 (if (or (= (length (this-command-keys)) 1)
-			 (not inhibit-quit)); safety
+			 (not inhibit-quit)) ; safety
 		     (progn (ding)
 			    (message "Quit")
 			    (throw return-tag nil))
@@ -98,7 +118,10 @@
 	    (error (if loop-function
 		       (setq err conditions)
 		     (ding)
-		     (message "%s" (or (car (cdr conditions)) "Huh?"))
+		     (message "Error: %s"
+			      (if (eq (car conditions) 'error)
+				  (car (cdr conditions))
+				(prin1-to-string conditions)))
 		     (sit-for 2))))
 	(ding))
       (if loop-function (funcall loop-function loop-state err))))
@@ -124,7 +147,7 @@
 (defun Electric-pop-up-window (buffer &optional max-height)
   (let* ((win (or (get-buffer-window buffer) (selected-window)))
 	 (buf (get-buffer buffer))
-	 (one-window (eq win (next-window)))
+	 (one-window (one-window-p t))
 	 (pop-up-windows t)
 	 (target-height)
 	 (lines))
@@ -154,3 +177,9 @@
 		 (enlarge-window (- target-height (window-height win)))))
       (goto-char (point-min))
       win)))
+
+;; Avoid error in Emacs versions before 18.37.
+(defun one-window-p (&optional nomini)
+  (eq (selected-window)
+      (if (and nomini (zerop (minibuffer-depth)))
+	  (next-window) (next-window (next-window)))))

@@ -9,11 +9,16 @@ File: dir	Node: Top	This is the top of the INFO tree
   gives a primer for first-timers, "mTexinfo<Return>" visits Texinfo topic,
   etc.
   --- PLEASE ADD DOCUMENTATION TO THIS TREE. (See INFO topic first.) ---
+
 * Menu: The list of major topics begins on the next line.
 
 * Info: (info).	Documentation browsing system.
 
 * Emacs: (emacs).  The extensible self-documenting text editor.
+
+* VIP: (vip).   A VI-emulation for Emacs.
+
+* GDB: (gdb).   The source-level C debugger.
 
 * texinfo: (texinfo).
 		With one source file, make either a printed manual

@@ -1,5 +1,5 @@
 /* Examine the result of  stat  and make a string describing file modes.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1987 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -35,8 +35,9 @@ As usual under Unix, the elements of the string are numbered
 from 0.  Their meanings are:
 
    0	File type.  'd' for directory, 'c' for character
-	special, 'b' for block special, 'm' for multiplex, '-'
-	for any other file type
+	special, 'b' for block special, 'm' for multiplex,
+	'l' for symbolic link, 's' for socket, 'p' for fifo,
+	'-' for any other file type
 
    1	'r' if the owner may read, '-' otherwise.
 
@@ -44,6 +45,9 @@ from 0.  Their meanings are:
 
    3	'x' if the owner may execute, 's' if the file is
 	set-user-id, '-' otherwise.
+	'S' if the file is set-user-id, but the execute
+	bit isn't set.  (sys v `feature' which helps to
+	catch screw case.)
 
    4	'r' if group members may read, '-' otherwise.
 
@@ -51,6 +55,7 @@ from 0.  Their meanings are:
 
    6	'x' if group members may execute, 's' if the file is
 	set-group-id, '-' otherwise.
+	'S' if it is set-group-id but not executable.
 
    7	'r' if any user may read, '-' otherwise.
 
@@ -62,21 +67,21 @@ from 0.  Their meanings are:
 
  */
 
-#define TEXT char
 #define VOID void
 
-static TEXT ftypelet ();
+static char ftypelet ();
 static VOID rwx (), setst ();
 
 VOID
 filemodestring (s,a)
    struct stat	*s;
-   TEXT *a;
+   char *a;
 {
-   a[0] = ftypelet(s);
-   rwx ((s->st_mode&0700)<<0, &(a[1]));
-   rwx ((s->st_mode&0070)<<3, &(a[4]));
-   rwx ((s->st_mode&0007)<<6, &(a[7]));
+   a[0] = ftypelet (s);
+   /* Aren't there symbolic names for these byte-fields? */
+   rwx ((s->st_mode & 0700) << 0, &(a[1]));
+   rwx ((s->st_mode & 0070) << 3, &(a[4]));
+   rwx ((s->st_mode & 0007) << 6, &(a[7]));
    setst (s->st_mode, a);
 }
 
@@ -87,29 +92,51 @@ filemodestring (s,a)
    Ftypelet accepts a file status block and returns a character
 code describing the type of the file.  'd' is returned for
 directories, 'b' for block special files, 'c' for character
-special files, 'm' for multiplexor files, and '-' for regular
-files.
-
+special files, 'm' for multiplexor files, 'l' for symbolic link,
+'s' for socket, 'p' for fifo, '-' for any other file type
  */
 
-static TEXT
+static char
 ftypelet(s)
    struct stat *s;
 {
-   
-   if ((s->st_mode&S_IFMT)==S_IFDIR)
-      return 'd';
-   else if ((s->st_mode&S_IFMT)==S_IFCHR)
-      return 'c';
-   else if ((s->st_mode&S_IFMT)==S_IFBLK)
-      return 'b';
-/* These do not seem to exist */
-/*   else if ((s->st_mode&S_IFMT)==S_IFMPC ||
-	    (s->st_mode&S_IFMT)==S_IFMPB)
-      return 'm';
- */
-   else
+  switch (s->st_mode & S_IFMT)
+    {
+    default:
       return '-';
+    case S_IFDIR:
+      return 'd';
+#ifdef S_IFLNK
+    case S_IFLNK:
+      return 'l';
+#endif
+#ifdef S_IFCHR
+    case S_IFCHR:
+      return 'c';
+#endif
+#ifdef S_IFBLK
+    case S_IFBLK:
+      return 'b';
+#endif
+#ifdef S_IFMPC
+/* These do not seem to exist */
+    case S_IFMPC:
+    case S_IFMPB:
+      return 'm';
+#endif
+#ifdef S_IFSOCK
+    case S_IFSOCK:
+      return 's';
+#endif
+#ifdef S_IFIFO
+    case S_IFIFO:
+      return 'p';
+#endif
+#ifdef S_IFNWK /* hp-ux hack */
+    case S_IFNWK:
+      return 'n';
+#endif
+    }
 }
 
 
@@ -123,15 +150,11 @@ flags accordingly
 static VOID
 rwx (bits, chars)
    unsigned short bits;
-   TEXT chars[];
+   char chars[];
 {
-    chars[0] = chars[1] = chars[2] = '-';
-   if (bits&S_IREAD)
-      chars[0] = 'r';
-   if (bits&S_IWRITE)
-      chars[1] = 'w';
-   if (bits&S_IEXEC)
-      chars[2] = 'x';
+  chars[0] = (bits & S_IREAD)  ? 'r' : '-';
+  chars[1] = (bits & S_IWRITE) ? 'w' : '-';
+  chars[2] = (bits & S_IEXEC)  ? 'x' : '-';
 }
 
 
@@ -140,12 +163,30 @@ rwx (bits, chars)
 static VOID
 setst (bits, chars)
    unsigned short bits;
-   TEXT chars[];
+   char chars[];
 {
-   if (bits&S_ISUID)
-      chars[3] = 's';
-   if (bits&S_ISGID)
-      chars[6] = 's';
-   if (bits&S_ISVTX)
+#ifdef S_ISUID
+   if (bits & S_ISUID)
+     {
+       if (chars[3] != 'x')
+	 /* Screw case: set-uid, but not executable. */
+	 chars[3] = 'S';
+       else
+	 chars[3] = 's';
+     }
+#endif
+#ifdef S_ISGID
+   if (bits & S_ISGID)
+     {
+       if (chars[6] != 'x')
+	 /* Screw case: set-gid, but not executable. */
+	 chars[6] = 'S';
+       else
+	 chars[6] = 's';
+     }
+#endif
+#ifdef S_ISVTX
+   if (bits & S_ISVTX)
       chars[9] = 't';
+#endif
 }

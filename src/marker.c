@@ -1,5 +1,5 @@
 /* Markers: examining, setting and killing.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -29,9 +29,9 @@ DEFUN ("marker-buffer", Fmarker_buffer, Smarker_buffer, 1, 1, 0,
   "Return the buffer that MARKER points into, or nil if none.\n\
 Returns nil if MARKER points into a dead buffer.")
   (marker)
-     Lisp_Object marker;
+     register Lisp_Object marker;
 {
-  Lisp_Object buf;
+  register Lisp_Object buf;
   CHECK_MARKER (marker, 0);
   if (XMARKER (marker)->buffer)
     {
@@ -48,10 +48,10 @@ DEFUN ("marker-position", Fmarker_position, Smarker_position, 1, 1, 0,
   (marker)
      Lisp_Object marker;
 {
-  Lisp_Object pos;
-  int i;
-  struct buffer *buf;
-  struct buffer_text *text;
+  register Lisp_Object pos;
+  register int i;
+  register struct buffer *buf;
+  register struct buffer_text *text;
 
   CHECK_MARKER (marker, 0);
   if (XMARKER (marker)->buffer)
@@ -83,13 +83,16 @@ Returns MARKER.")
   (marker, pos, buffer)
      Lisp_Object marker, pos, buffer;
 {
-  int charno;
+  register int charno;
   register struct buffer *b;
   register struct buffer_text *text;
   register struct Lisp_Marker *m;
 
   CHECK_MARKER (marker, 0);
-  if (NULL (pos))
+  /* If position is nil or a marker that points nowhere,
+     make this marker point nowhere.  */
+  if (NULL (pos) ||
+      (XTYPE (pos) == Lisp_Marker && !XMARKER (pos)->buffer))
     {
       unchain_marker (marker);
       XMARKER (marker)->buffer = 0;
@@ -103,6 +106,12 @@ Returns MARKER.")
     {
       CHECK_BUFFER (buffer, 1);
       b = XBUFFER (buffer);
+      /* If buffer is dead, set marker to point nowhere.  */
+      if (EQ (b->name, Qnil))
+	{
+	  unchain_marker (marker);
+	  return marker;
+	}
     }
 
   charno = XINT (pos);
@@ -135,15 +144,20 @@ Returns MARKER.")
  including those in chain fields of markers.  */
 
 unchain_marker (marker)
-     Lisp_Object marker;
+     register Lisp_Object marker;
 {
-  Lisp_Object tail, prev, next;
+  register Lisp_Object tail, prev, next;
   register int omark;
+  register struct buffer *b;
 
-  if (!XMARKER (marker)->buffer)
+  b = XMARKER (marker)->buffer;
+  if (b == 0)
     return;
 
-  tail = XMARKER (marker)->buffer->markers;
+  if (EQ (b->name, Qnil))
+    abort ();
+
+  tail = b->markers;
   prev = Qnil;
   while (XSYMBOL (tail) != XSYMBOL (Qnil))
     {
@@ -153,7 +167,14 @@ unchain_marker (marker)
       if (XMARKER (marker) == XMARKER (tail))
 	{
 	  if (NULL (prev))
-	    XMARKER (marker)->buffer->markers = next;
+	    {
+	      b->markers = next;
+	      /* Deleting first marker from the buffer's chain.
+		 Crash if new first marker in chain does not say
+		 it belongs to this buffer.  */
+	      if (!EQ (next, Qnil) && b != XMARKER (next)->buffer)
+		abort ();
+	    }
 	  else
 	    {
 	      omark = XMARKBIT (XMARKER (prev)->chain);
@@ -197,20 +218,20 @@ DEFUN ("copy-marker", Fcopy_marker, Scopy_marker, 1, 1, 0,
 If argument is a number, makes a new marker pointing\n\
 at that position in the current buffer.")
   (marker)
-     Lisp_Object marker;
+     register Lisp_Object marker;
 {
-  Lisp_Object new;
+  register Lisp_Object new;
 
   while (1)
     {
-      if (XTYPE (marker) == Lisp_Int
-	  || XTYPE (marker) == Lisp_Marker)
+      if (XTYPE (marker) == Lisp_Int ||
+	  XTYPE (marker) == Lisp_Marker)
 	{
 	  new = Fmake_marker ();
 	  Fset_marker (new, marker,
-		       XTYPE (marker) == Lisp_Marker
-		       ? Fmarker_buffer (marker)
-		       : Qnil);
+		       ((XTYPE (marker) == Lisp_Marker)
+			? Fmarker_buffer (marker)
+			: Qnil));
 	  return new;
 	}
       else
@@ -223,6 +244,5 @@ syms_of_marker ()
   defsubr (&Smarker_position);
   defsubr (&Smarker_buffer);
   defsubr (&Sset_marker);
-  defalias (&Sset_marker, "move-marker");
   defsubr (&Scopy_marker);
 }

@@ -1,5 +1,5 @@
 ;; Process Emacs shell arguments
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,25 +28,36 @@
 ;			 as the terminal.
 ;			 This option must be the first in the arglist.
 ;			 Processed by `main' in emacs.c -- never seen by lisp
+; -nw			Inhibit the use of any window-system-specific display
+;			 code; use the current virtual terminal.
+;			 This option must be the first in the arglist.
+;			 Processed by `main' in emacs.c -- never seen by lisp
 ; -q			load no init file
+; -no-init-file		same
 ; -u user		load user's init file
+; -user user		same
 
 ; These are processed in the order encountered.
 ; -f function		execute function
+; -funcall function	same
 ; -l file		load file
+; -load file		same
+; -i file		insert file into buffer
+; -insert file		same
 ; file			visit file
 ; -kill			kill (exit) emacs
 
 (setq top-level '(normal-top-level))
 
-(defconst inhibit-command-line nil
-  "*Non-nil inhibits usual processing of command line args from shell.
-Exception: -batch, -q and -u are processed normally anyway.")
-
 (defvar command-line-processed nil "t once command line has been processed")
 
 (defconst inhibit-startup-message nil
-  "*Non-nil inhibits the initial startup messages")
+  "*Non-nil inhibits the initial startup messages.
+This is for use in your personal init file, once you are familiar
+with the contents of the startup message.")
+
+(defconst inhibit-default-init nil
+  "*Non-nil inhibits loading the `default' library.")
 
 (defconst command-switch-alist nil
   "Alist of command-line switches.
@@ -77,10 +88,12 @@ remaining command-line args are in the variable `args'.")
 	done)
     (while (and (not done) args)
       (let ((argi (car args)))
-	(if (string-equal argi "-q")
+	(if (or (string-equal argi "-q")
+		(string-equal argi "-no-init-file"))
 	    (setq user nil
 		  args (cdr args))
-	  (if (string-equal argi "-u")
+	  (if (or (string-equal argi "-u")
+		  (string-equal argi "-user"))
 	      (setq args (cdr args)
 		    user (car args)
 		    args (cdr args))
@@ -88,32 +101,38 @@ remaining command-line args are in the variable `args'.")
     ;; Load user's init file, or load default one.
     (condition-case error
 	(if user
-	    (or (load (concat "~" user "/.emacs") t t)
-		;;>> need a good, < 11 character name for this,
-		;;>>  preferably involving the string "init"
-		;;>>  ("defaultinit" almost works)
-		;;>>  The 11 chars is to allow ".elc" and inferior unix versions
-		(load "default-profile" t t)))
+	    (progn (load (if (eq system-type 'vax-vms)
+			     "sys$login:.emacs"
+			     (concat "~" user "/.emacs"))
+			 t t t)
+		   (or inhibit-default-init
+		       (let (inhibit-startup-message)
+			 ;; Users are supposed to be told their rights.
+			 ;; (Plus how to get help and how to undo.)
+			 ;; Don't you dare turn this off for anyone
+			 ;; except yourself.
+			 (load "default" t t)))))
       (error (message "Error in init file")))
-    (setq mode-line-format default-mode-line-format
-	  case-fold-search default-case-fold-search
-	  fill-column default-fill-column
-	  abbrev-mode default-abbrev-mode
-	  ctl-arrow default-ctl-arrow
-	  left-margin default-left-margin
-	  tab-width default-tab-width
-	  truncate-lines default-truncate-lines)
-    (funcall initial-major-mode)
+    (if (get-buffer "*scratch*")
+	(save-excursion
+	  (set-buffer "*scratch*")
+	  (funcall initial-major-mode)))
     ;; Load library for our terminal type.
     ;; User init file can set term-file-prefix to nil to prevent this.
     (and term-file-prefix (not noninteractive)
-	 (load (concat term-file-prefix (getenv "TERM")) t t))
-    ;; init file sets inhibit-command-line to prevent normal processing.
-    (if (not inhibit-command-line)
-	(command-line-1 args))))
+	 (load (if window-system
+		   (concat term-file-prefix
+			   (symbol-name window-system)
+			   "-win")
+		   (concat term-file-prefix
+			   (substring (getenv "TERM") 0
+				      (string-match "-" (getenv "TERM")))))
+	       t t))
+    (command-line-1 args)
+    (if noninteractive (kill-emacs t))))
 
-(defun command-line-1 (command-line-args)
-  (if (null command-line-args)
+(defun command-line-1 (command-line-args-left)
+  (if (null command-line-args-left)
       (cond ((and (not inhibit-startup-message) (not noninteractive)
 		  (not (input-pending-p)))
 	     ;; If there are no switches to procss, we might as well
@@ -127,7 +146,7 @@ remaining command-line args are in the variable `args'.")
 		 (progn
 		   (insert (emacs-version)
 			   "
-Copyright (C) 1985 Richard Stallman/Free Software Foundation, Inc\n")
+Copyright (C) 1987 Free Software Foundation, Inc.\n")
 		   ;; If keys have their default meanings,
 		   ;; use precomputed string to save lots of time.
 		   (if (and (eq (key-binding "\C-h") 'help-command)
@@ -156,20 +175,27 @@ Type \\[help-with-tutorial] for a tutorial on using Emacs.")))
 	     (set-buffer-modified-p nil))))
     (let ((dir default-directory)
 	  (line 0))
-      (while command-line-args
-	(let ((argi (car command-line-args))
+      (while command-line-args-left
+	(let ((argi (car command-line-args-left))
 	      tem)
-	  (setq command-line-args (cdr command-line-args))
+	  (setq command-line-args-left (cdr command-line-args-left))
 	  (cond ((setq tem (assoc argi command-switch-alist))
 		 (funcall (cdr tem) argi))
 		((or (string-equal argi "-f")  ;what the manual claims
+		     (string-equal argi "-funcall")
 		     (string-equal argi "-e")) ; what the source used to say
-		 (setq tem (intern (car command-line-args)))
-		 (setq command-line-args (cdr command-line-args))
+		 (setq tem (intern (car command-line-args-left)))
+		 (setq command-line-args-left (cdr command-line-args-left))
 		 (funcall tem))
-		((string-equal argi "-l")
-		 (load (car command-line-args) nil t)
-		 (setq command-line-args (cdr command-line-args)))
+		((or (string-equal argi "-l")
+		     (string-equal argi "-load"))
+		 (let ((load-path (cons default-directory load-path)))
+		   (load (car command-line-args-left) nil t))
+		 (setq command-line-args-left (cdr command-line-args-left)))
+		((or (string-equal argi "-i")
+		     (string-equal argi "-insert"))
+		 (insert-file-contents (car command-line-args-left))
+		 (setq command-line-args-left (cdr command-line-args-left)))
 		((string-equal argi "-kill")
 		 (kill-emacs t))
 		((string-match "^\\+[0-9]+\\'" argi)

@@ -1,5 +1,5 @@
 ;; Change log maintenance commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -26,7 +26,8 @@
   "Find change log file and add an entry for today.
 With ARG, prompt for name and site of person."
   (interactive "P")
-  (let* ((full-name (if whoami
+  (let* ((default (if (eq system-type 'vax-vms) "$CHANGE_LOG$.TXT" "ChangeLog"))
+	 (full-name (if whoami
 			(read-input "Full name: " (user-full-name))
 		      (user-full-name)))
 	 ;; Note that some sites have room and phone number fields in
@@ -38,10 +39,14 @@ With ARG, prompt for name and site of person."
 		       (user-login-name)))
 	 (site-name (if whoami
 			(read-input "Site name: " (system-name))
-		      (system-name))))
-    (find-file (expand-file-name
-		(read-file-name "Log file (default ChangeLog): "
-				nil "ChangeLog")))
+		      (system-name)))
+	 (file-name (expand-file-name
+		      (read-file-name (format "Log file (default %s): " default)
+				      nil default))))
+    (if (file-directory-p file-name)
+	(setq file-name (concat (file-name-as-directory file-name)
+				default)))
+    (find-file file-name)
     (or (eq major-mode 'indented-text-mode)
 	(progn
 	  (indented-text-mode)

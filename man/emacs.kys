@@ -1,47 +1,83 @@
 \initial {!}
 \entry {! (query-replace)}{74}
+\initial {,}
+\entry {, (query-replace)}{74}
 \initial {.}
 \entry {. (query-replace)}{74}
-\entry {. (Rmail)}{174}
+\entry {. (Rmail)}{184}
+\initial {{\fam \ttfam \tentt \char '042}}
+\entry {{\fam \ttfam \tentt \char '042} (TeX mode)}{115}
+\initial {{\fam \ttfam \tentt \gtr }}
+\entry {{\fam \ttfam \tentt \gtr } (Rmail)}{185}
+\initial {{\fam \ttfam \tentt \hat }}
+\entry {{\fam \ttfam \tentt \hat } (query-replace)}{74}
 \initial {A}
-\entry {a (Rmail)}{179}
+\entry {a (Rmail)}{190}
 \initial {C}
-\entry {c (Rmail)}{184}
-\entry {C-]}{187, 213}
+\entry {c (Rmail)}{194}
+\entry {C-]}{197, 227}
+\entry {C-{\fam \ttfam \tentt \char '137}}{31}
 \entry {C-a}{24}
 \entry {C-b}{24}
 \entry {C-c}{16}
-\entry {C-c '}{166}
-\entry {C-c /}{166}
-\entry {C-c `}{166}
-\entry {C-c c}{171}
-\entry {C-c C-b}{116, 167}
-\entry {C-c C-c}{171, 190}
-\entry {C-c C-d}{166, 190}
-\entry {C-c C-f}{167}
-\entry {C-c C-h (Outline mode)}{118}
-\entry {C-c C-i}{119}
-\entry {C-c C-k}{168}
-\entry {C-c C-o}{190}
-\entry {C-c C-p}{116}
-\entry {C-c C-r}{116, 190}
-\entry {C-c C-s}{171}
-\entry {C-c C-s (Outline mode)}{118}
-\entry {C-c C-u}{190}
-\entry {C-c C-w}{168, 190}
-\entry {C-c C-x}{168}
-\entry {C-c C-y}{168, 190}
-\entry {C-c C-z}{190}
-\entry {C-c C-{\fam \ttfam \tentt \indexbackslash }}{190}
-\entry {C-c q}{172}
-\entry {C-c s}{171}
-\entry {C-c t}{171}
-\entry {C-c TAB}{167}
-\entry {C-c w}{172}
-\entry {C-c y}{172, 183}
-\entry {C-c {\fam \ttfam \tentt \indexbackslash }}{166}
+\entry {C-c ' (Picture mode)}{174}
+\entry {C-c . (Picture mode)}{174}
+\entry {C-c / (Picture mode)}{174}
+\entry {C-c ; (Fortran mode)}{155}
+\entry {C-c ` (Picture mode)}{174}
+\entry {C-c {\fam \ttfam \tentt \gtr } (Picture mode)}{174}
+\entry {C-c {\fam \ttfam \tentt \hat } (Picture mode)}{174}
+\entry {C-c {\fam \ttfam \tentt \indexbackslash } (Picture mode)}{174}
+\entry {C-c {\fam \ttfam \tentt \less } (Picture mode)}{174}
+\entry {C-c C-{\fam \ttfam \tentt \indexbackslash } (Shell mode)}{203}
+\entry {C-c C-b (Outline mode)}{120}
+\entry {C-c C-b (Picture mode)}{175}
+\entry {C-c C-b (TeX mode)}{117}
+\entry {C-c C-c (Edit Abbrevs)}{170}
+\entry {C-c C-c (Edit Tab Stops)}{110}
+\entry {C-c C-c (Mail mode)}{180}
+\entry {C-c C-c (Occur mode)}{75}
+\entry {C-c C-c (Shell mode)}{203}
+\entry {C-c C-d (Picture mode)}{174}
+\entry {C-c C-d (Shell mode)}{203}
+\entry {C-c C-f (LaTeX mode)}{116}
+\entry {C-c C-f (Outline mode)}{120}
+\entry {C-c C-f (Picture mode)}{175}
+\entry {C-c C-f C-c (Mail mode)}{180}
+\entry {C-c C-f C-s (Mail mode)}{180}
+\entry {C-c C-f C-t (Mail mode)}{180}
+\entry {C-c C-h (Outline mode)}{121}
+\entry {C-c C-i (Outline mode)}{121}
+\entry {C-c C-k (Picture mode)}{176}
+\entry {C-c C-k (TeX mode)}{117}
+\entry {C-c C-l (TeX mode)}{117}
+\entry {C-c C-n (Fortran mode)}{151}
+\entry {C-c C-n (Outline mode)}{120}
+\entry {C-c C-o (Shell mode)}{203}
+\entry {C-c C-p (Fortran mode)}{151}
+\entry {C-c C-p (Outline mode)}{120}
+\entry {C-c C-p (TeX mode)}{117}
+\entry {C-c C-q (Mail mode)}{181}
+\entry {C-c C-q (TeX mode)}{117}
+\entry {C-c C-r (Fortran mode)}{155}
+\entry {C-c C-r (Shell mode)}{203}
+\entry {C-c C-r (TeX mode)}{117}
+\entry {C-c C-s (Mail mode)}{180}
+\entry {C-c C-s (Outline mode)}{121}
+\entry {C-c C-u (Outline mode)}{120}
+\entry {C-c C-u (Shell mode)}{203}
+\entry {C-c C-w (Fortran mode)}{155}
+\entry {C-c C-w (Mail mode)}{180}
+\entry {C-c C-w (Picture mode)}{176}
+\entry {C-c C-w (Shell mode)}{203}
+\entry {C-c C-x (Picture mode)}{176}
+\entry {C-c C-y (Mail mode)}{180, 194}
+\entry {C-c C-y (Picture mode)}{176}
+\entry {C-c C-y (Shell mode)}{203}
+\entry {C-c C-z (Shell mode)}{203}
+\entry {C-c TAB (Picture mode)}{175}
 \entry {C-d}{49}
-\entry {C-d (Rmail)}{175}
+\entry {C-d (Rmail)}{186}
 \entry {C-e}{24}
 \entry {C-f}{24}
 \entry {C-g}{33}
@@ -52,258 +88,254 @@
 \entry {C-h C-c}{44}
 \entry {C-h C-d}{44}
 \entry {C-h C-w}{44}
-\entry {C-h f}{42, 142}
+\entry {C-h f}{42, 145}
 \entry {C-h i}{44}
 \entry {C-h k}{42}
 \entry {C-h l}{44}
 \entry {C-h m}{44}
 \entry {C-h n}{44}
-\entry {C-h s}{209}
+\entry {C-h s}{222}
 \entry {C-h t}{23, 44}
-\entry {C-h v}{43, 142, 196}
+\entry {C-h v}{43, 145, 208}
 \entry {C-h w}{43}
 \entry {C-k}{50, 51}
 \entry {C-l}{24, 59}
 \entry {C-l (query-replace)}{74}
-\entry {C-M-a}{132}
-\entry {C-M-b}{131}
-\entry {C-M-c}{187}
-\entry {C-M-d}{132}
-\entry {C-M-e}{132}
-\entry {C-M-f}{131}
-\entry {C-M-h}{47, 132}
-\entry {C-M-k}{51, 131}
-\entry {C-M-l}{181}
-\entry {C-M-l (Rmail)}{179}
-\entry {C-M-n}{131}
-\entry {C-M-n (Rmail)}{179}
+\entry {C-M-{\fam \ttfam \tentt \indexbackslash }}{110, 137}
+\entry {C-M-{\sf @}}{47, 134}
+\entry {C-M-a}{135}
+\entry {C-M-a (Fortran mode)}{151}
+\entry {C-M-b}{133}
+\entry {C-M-c}{197}
+\entry {C-M-d}{134}
+\entry {C-M-e}{135}
+\entry {C-M-e (Fortran mode)}{151}
+\entry {C-M-f}{133}
+\entry {C-M-h}{47, 135}
+\entry {C-M-h (Fortran mode)}{151}
+\entry {C-M-k}{51, 133}
+\entry {C-M-l (Rmail)}{190, 192}
+\entry {C-M-n}{134}
+\entry {C-M-n (Rmail)}{190}
 \entry {C-M-o}{110}
-\entry {C-M-p}{131}
-\entry {C-M-p (Rmail)}{179}
-\entry {C-M-q}{134}
-\entry {C-M-r}{181}
+\entry {C-M-p}{134}
+\entry {C-M-p (Rmail)}{190}
+\entry {C-M-q}{136}
+\entry {C-M-q (Fortran mode)}{152}
+\entry {C-M-r (Rmail)}{192}
 \entry {C-M-s}{67}
-\entry {C-M-t}{78, 132}
-\entry {C-M-u}{132}
-\entry {C-M-v}{104}
-\entry {C-M-w}{52}
-\entry {C-M-x}{154, 157}
-\entry {C-M-{\fam \ttfam \tentt \indexbackslash }}{110, 135}
-\entry {C-M-{\sf @}}{46, 132}
+\entry {C-M-t}{78, 134}
+\entry {C-M-u}{134}
+\entry {C-M-v}{35, 104}
+\entry {C-M-w}{53}
+\entry {C-M-x}{162, 166}
 \entry {C-n}{24}
-\entry {C-n (Rmail summary)}{182}
-\entry {C-o}{26}
-\entry {C-o (Rmail)}{178}
+\entry {C-n (Rmail summary)}{192}
+\entry {C-o}{27}
+\entry {C-o (Rmail)}{188}
 \entry {C-p}{24}
-\entry {C-p (Rmail summary)}{182}
+\entry {C-p (Rmail summary)}{192}
 \entry {C-q}{23}
 \entry {C-r}{63}
 \entry {C-r (query-replace)}{74}
-\entry {C-r (Rmail)}{184}
 \entry {C-s}{63}
 \entry {C-SPC}{45}
 \entry {C-t}{24, 77}
 \entry {C-u}{29}
-\entry {C-u - C-x ;}{140}
-\entry {C-u C-SPC}{47}
+\entry {C-u - C-x ;}{142}
 \entry {C-u C-{\sf @}}{47}
-\entry {C-u TAB}{134}
+\entry {C-u C-SPC}{47}
+\entry {C-u TAB}{137}
 \entry {C-v}{59}
 \entry {C-w}{51}
 \entry {C-w (query-replace)}{74}
 \entry {C-x}{16}
 \entry {C-x $}{61}
-\entry {C-x (}{201}
-\entry {C-x )}{201}
-\entry {C-x +}{159}
-\entry {C-x -}{160}
-\entry {C-x .}{125}
+\entry {C-x (}{213}
+\entry {C-x )}{213}
+\entry {C-x +}{168}
+\entry {C-x -}{168}
+\entry {C-x .}{128}
 \entry {C-x /}{57}
-\entry {C-x 0}{104}
-\entry {C-x 1}{105}
-\entry {C-x 2}{104}
+\entry {C-x ;}{143}
+\entry {C-x =}{28}
+\entry {C-x [}{125}
+\entry {C-x ]}{125}
+\entry {C-x `}{158}
+\entry {C-x {\fam \ttfam \tentt \char '175}}{106}
+\entry {C-x {\fam \ttfam \tentt \gtr }}{60}
+\entry {C-x {\fam \ttfam \tentt \hat }}{106}
+\entry {C-x {\fam \ttfam \tentt \less }}{60}
+\entry {C-x 0}{105}
+\entry {C-x 1}{106}
+\entry {C-x 2}{103}
 \entry {C-x 4}{105}
-\entry {C-x 4 .}{146}
+\entry {C-x 4 .}{149}
 \entry {C-x 4 b}{97}
-\entry {C-x 4 d}{91}
+\entry {C-x 4 d}{93}
 \entry {C-x 4 f}{83}
-\entry {C-x 4 m}{169}
+\entry {C-x 4 m}{177}
 \entry {C-x 5}{104}
-\entry {C-x ;}{141}
-\entry {C-x =}{27}
-\entry {C-x [}{123}
-\entry {C-x ]}{123}
-\entry {C-x `}{150}
 \entry {C-x a}{54}
 \entry {C-x b}{97}
-\entry {C-x C-a}{160}
+\entry {C-x C-a}{168}
 \entry {C-x C-b}{98}
 \entry {C-x C-c}{20}
-\entry {C-x C-d}{91}
-\entry {C-x C-e}{154}
+\entry {C-x C-d}{92}
+\entry {C-x C-e}{162}
 \entry {C-x C-f}{82}
-\entry {C-x C-h}{160}
-\entry {C-x C-l}{127}
-\entry {C-x C-o}{26, 50}
-\entry {C-x C-p}{47, 123}
+\entry {C-x C-h}{168}
+\entry {C-x C-l}{129}
+\entry {C-x C-o}{27, 50}
+\entry {C-x C-p}{47, 125}
 \entry {C-x C-q}{99}
-\entry {C-x C-s}{84, 110, 162}
+\entry {C-x C-s}{84}
 \entry {C-x C-t}{78}
-\entry {C-x C-u}{127}
+\entry {C-x C-u}{129}
 \entry {C-x C-v}{83}
 \entry {C-x C-w}{85}
 \entry {C-x C-x}{46}
-\entry {C-x d}{91}
-\entry {C-x DEL}{51, 77, 121}
-\entry {C-x e}{201}
-\entry {C-x ESC}{37}
-\entry {C-x f}{125}
+\entry {C-x d}{93}
+\entry {C-x DEL}{51, 77, 123}
+\entry {C-x e}{213}
+\entry {C-x ESC}{38}
+\entry {C-x f}{127}
 \entry {C-x g}{58}
 \entry {C-x h}{47}
 \entry {C-x j}{57}
 \entry {C-x k}{99}
-\entry {C-x l}{123}
-\entry {C-x m}{169}
-\entry {C-x n}{188}
+\entry {C-x l}{125}
+\entry {C-x m}{177}
+\entry {C-x n}{198}
 \entry {C-x o}{104}
-\entry {C-x q}{202}
+\entry {C-x q}{215}
 \entry {C-x s}{84}
 \entry {C-x TAB}{110}
 \entry {C-x u}{31}
-\entry {C-x w}{188}
+\entry {C-x w}{198}
 \entry {C-x x}{58}
-\entry {C-x {\fam \ttfam \tentt \char '175}}{105}
-\entry {C-x {\fam \ttfam \tentt \gtr }}{60}
-\entry {C-x {\fam \ttfam \tentt \hat }}{105}
-\entry {C-x {\fam \ttfam \tentt \less }}{60}
-\entry {C-y}{51}
-\entry {C-z}{20}
-\entry {C-{\fam \ttfam \tentt \char '137}}{31}
-\entry {Comma (query-replace)}{74}
+\entry {C-y}{52}
+\entry {C-z}{19}
 \initial {D}
-\entry {d (Rmail summary)}{182}
-\entry {d (Rmail)}{175}
-\entry {DEL}{23, 49, 77, 107, 130}
+\entry {d (Rmail summary)}{193}
+\entry {d (Rmail)}{186}
+\entry {DEL}{23, 49, 77, 107, 132}
 \entry {DEL (query-replace)}{74}
-\entry {DEL (Rmail summary)}{182}
-\entry {DEL (Rmail)}{174}
+\entry {DEL (Rmail summary)}{193}
+\entry {DEL (Rmail)}{184}
 \initial {E}
-\entry {e (Rmail)}{176}
+\entry {e (Rmail)}{186}
 \entry {ESC}{16}
 \entry {ESC (query-replace)}{74}
 \initial {F}
-\entry {f (Rmail)}{183}
+\entry {f (Rmail)}{194}
 \initial {G}
-\entry {g (Rmail)}{178}
+\entry {g (Rmail)}{188}
 \initial {H}
-\entry {h}{181}
+\entry {h (Rmail)}{191}
 \entry {Help}{41}
 \initial {I}
-\entry {i (Rmail)}{177}
+\entry {i (Rmail)}{187}
 \initial {J}
-\entry {j (Rmail summary)}{182}
-\entry {j (Rmail)}{175}
+\entry {j (Rmail summary)}{193}
+\entry {j (Rmail)}{185}
 \initial {K}
-\entry {k (rmail)}{179}
+\entry {k (rmail)}{190}
 \initial {L}
-\entry {l}{181}
-\entry {LFD}{107, 109, 134}
-\entry {LFD (TeX mode)}{115}
+\entry {l (Rmail)}{192}
+\entry {LFD}{107, 109, 136}
+\entry {LFD (TeX mode)}{116}
 \initial {M}
-\entry {m (Rmail)}{184}
-\entry {M-!}{189}
+\entry {m (Rmail)}{194}
+\entry {M-!}{201}
 \entry {M-$}{79}
-\entry {M-%}{73}
-\entry {M-'}{161, 166}
-\entry {M-(}{142}
-\entry {M-)}{142}
-\entry {M-,}{146}
-\entry {M--}{29, 166}
-\entry {M-- M-c}{78}
-\entry {M-- M-l}{78}
-\entry {M-- M-u}{78}
-\entry {M-.}{146}
-\entry {M-1}{29}
-\entry {M-;}{139}
-\entry {M-=}{28, 166}
+\entry {M-%}{74}
+\entry {M-'}{169}
+\entry {M-(}{144}
+\entry {M-)}{144}
+\entry {M-,}{150}
+\entry {M-.}{148}
+\entry {M-/}{171}
+\entry {M-;}{142}
+\entry {M-=}{28}
 \entry {M-?}{114}
-\entry {M-[}{122}
-\entry {M-]}{122}
-\entry {M-`}{166}
-\entry {M-a}{121}
-\entry {M-b}{120}
-\entry {M-c}{126}
-\entry {M-d}{51, 120}
-\entry {M-DEL}{51, 77, 120}
-\entry {M-e}{121}
-\entry {M-ESC}{153}
-\entry {M-f}{120}
-\entry {M-g}{125}
-\entry {M-h}{47, 122}
-\entry {M-i}{110}
-\entry {M-k}{51, 121}
-\entry {M-l}{126}
-\entry {M-LFD}{140}
-\entry {M-m}{109}
-\entry {M-n}{37, 114}
-\entry {M-n (Rmail)}{174}
-\entry {M-p}{37, 114}
-\entry {M-p (Rmail)}{174}
-\entry {M-q}{124}
-\entry {M-r}{60}
-\entry {M-s}{125}
-\entry {M-s (Rmail)}{175}
-\entry {M-SPC}{50}
-\entry {M-t}{78, 120}
-\entry {M-TAB}{167}
-\entry {M-u}{126}
-\entry {M-v}{59}
-\entry {M-w}{52}
-\entry {M-x}{39}
-\entry {M-y}{53}
-\entry {M-z}{51}
-\entry {M-{\fam \ttfam \tentt \char '173}}{115}
-\entry {M-{\fam \ttfam \tentt \char '173} (Outline mode)}{118}
-\entry {M-{\fam \ttfam \tentt \char '174}}{189}
-\entry {M-{\fam \ttfam \tentt \char '175}}{115}
-\entry {M-{\fam \ttfam \tentt \char '175} (Outline mode)}{118}
+\entry {M-[}{124}
+\entry {M-]}{124}
+\entry {M-{\fam \ttfam \tentt \char '173} (TeX mode)}{116}
+\entry {M-{\fam \ttfam \tentt \char '174}}{201}
+\entry {M-{\fam \ttfam \tentt \char '175} (TeX mode)}{116}
 \entry {M-{\fam \ttfam \tentt \char '176}}{84}
 \entry {M-{\fam \ttfam \tentt \gtr }}{24}
 \entry {M-{\fam \ttfam \tentt \hat }}{50, 110}
 \entry {M-{\fam \ttfam \tentt \indexbackslash }}{50, 110}
 \entry {M-{\fam \ttfam \tentt \less }}{24}
-\entry {M-{\sf @}}{46, 120}
+\entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {}}{29}
+\entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {} M-c}{78}
+\entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {} M-l}{78}
+\entry {M-{\fam \ttfam \tentt \rawbackslash -}\hbox {} M-u}{78}
+\entry {M-{\sf @}}{47, 122}
+\entry {M-1}{29}
+\entry {M-a}{123}
+\entry {M-b}{122}
+\entry {M-c}{129}
+\entry {M-d}{51, 122}
+\entry {M-DEL}{51, 77, 122}
+\entry {M-e}{123}
+\entry {M-ESC}{162}
+\entry {M-f}{122}
+\entry {M-g}{127}
+\entry {M-h}{47, 124}
+\entry {M-i}{110}
+\entry {M-k}{51, 123}
+\entry {M-l}{129}
+\entry {M-LFD}{143}
+\entry {M-LFD (Fortran mode)}{152}
+\entry {M-m}{109}
+\entry {M-n}{38, 114}
+\entry {M-n (Rmail)}{184}
+\entry {M-p}{38, 114}
+\entry {M-p (Rmail)}{184}
+\entry {M-q}{127}
+\entry {M-r}{24}
+\entry {M-s}{127}
+\entry {M-s (Rmail)}{185}
+\entry {M-SPC}{50}
+\entry {M-t}{78, 122}
+\entry {M-TAB}{145, 175}
+\entry {M-u}{129}
+\entry {M-v}{59}
+\entry {M-w}{52}
+\entry {M-x}{39}
+\entry {M-y}{53}
+\entry {M-z}{51}
 \initial {N}
-\entry {n (Rmail summary)}{182}
-\entry {n (Rmail)}{174}
+\entry {n (Rmail summary)}{193}
+\entry {n (Rmail)}{184}
 \initial {O}
-\entry {o (Rmail)}{178}
+\entry {o (Rmail)}{188}
 \initial {P}
-\entry {p (Rmail summary)}{182}
-\entry {p (Rmail)}{174}
+\entry {p (Rmail summary)}{193}
+\entry {p (Rmail)}{184}
 \initial {Q}
-\entry {q (Rmail summary)}{183}
-\entry {q (Rmail)}{173}
+\entry {q (Rmail summary)}{193}
+\entry {q (Rmail)}{183}
 \initial {R}
-\entry {r (Rmail)}{183}
-\entry {RET}{23, 190}
+\entry {r (Rmail)}{194}
+\entry {RET}{23}
+\entry {RET (Shell mode)}{203}
 \initial {S}
-\entry {s (Rmail)}{173}
+\entry {s (Rmail)}{183}
 \entry {SPC}{36}
 \entry {SPC (query-replace)}{74}
-\entry {SPC (Rmail summary)}{182}
-\entry {SPC (Rmail)}{174}
+\entry {SPC (Rmail summary)}{193}
+\entry {SPC (Rmail)}{184}
 \initial {T}
-\entry {t (Rmail)}{184}
-\entry {TAB}{35, 107, 109, 113, 133}
+\entry {t (Rmail)}{195}
+\entry {TAB}{36, 107, 109, 113, 136}
 \initial {U}
-\entry {u (Rmail summary)}{182}
-\entry {u (Rmail)}{176}
+\entry {u (Rmail summary)}{193}
+\entry {u (Rmail)}{186}
+\initial {W}
+\entry {w (Rmail)}{195}
 \initial {X}
-\entry {x (Rmail summary)}{182}
-\initial {{\fam \ttfam \tentt \char '042}}
-\entry {{\fam \ttfam \tentt \char '042} (TeX mode)}{115}
-\initial {{\fam \ttfam \tentt \gtr }}
-\entry {{\fam \ttfam \tentt \gtr } (Rmail)}{175}
-\initial {{\fam \ttfam \tentt \hat }}
-\entry {{\fam \ttfam \tentt \hat } (query-replace)}{74}
+\entry {x (Rmail summary)}{193}

@@ -1,6 +1,6 @@
 /* Definitions file for GNU Emacs running on HPUX release 5.0.
    Based on AT&T System V.2.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -52,6 +52,13 @@ and this notice must be preserved on all copies.  */
 #define FIRST_PTY_LETTER 'p'
 
 /*
+ *	Define HAVE_TERMIO if the system provides sysV-style ioctls
+ *	for terminal control.
+ */
+
+#define HAVE_TERMIO
+
+/*
  *	Define HAVE_TIMEVAL if the system supports the BSD style clock values.
  *	Look in <sys/time.h> for a timeval structure.
  */
@@ -70,6 +77,10 @@ and this notice must be preserved on all copies.  */
  */
 
 #undef HAVE_PTYS
+
+/* Define HAVE_SOCKETS if system supports 4.2-compatible sockets.  */
+
+/* #define HAVE_SOCKETS */
 
 /*
  *	Define NONSYSTEM_DIR_LIBRARY to make Emacs emulate
@@ -121,13 +132,17 @@ and this notice must be preserved on all copies.  */
 /* We use the Berkeley (and usg5.2.2) interface to nlist.  */
 
 #define NLIST_STRUCT
+
+/* The file containing the kernel's symbol table is called /hp-ux.  */
+
+#define KERNEL_FILE "/hp-ux"
+
+/* The symbol in the kernel where the load average is found
+   is named _avenrun.  */
+
+#define LDAV_SYMBOL "_avenrun"
 
 /* Special hacks needed to make Emacs run on this system.  */
-
-/* Define this to cause -N to be passed to ld.  This is needed
-   in uniplus because of its funny memory space layout.  */
-
-/* #define LOADER_N_SWITCH */
 
 /*
  *	Make the sigsetmask function go away.  Don't know what the
@@ -157,6 +172,9 @@ and this notice must be preserved on all copies.  */
 #define read sys_read
 #define open sys_open
 #define write sys_write
+
+#define INTERRUPTABLE_OPEN
+#define INTERRUPTABLE_IO
 
 /* Use the system provided termcap(3) library */
 #define TERMINFO
@@ -193,3 +211,32 @@ and this notice must be preserved on all copies.  */
    Foil this.  Emacs carefully avoids static vars inside functions.  */
 
 #define static
+
+/* Define extra libraries to load */
+
+#ifdef HPUX_NET
+#define LIBS_SYSTEM -lBSD -ln
+#else
+#define LIBS_SYSTEM -lBSD
+#endif
+
+#define LIBS_DEBUG /usr/lib/end.o
+
+/* Some additional system facilities exist.  */
+
+#define HAVE_DUP2
+#define HAVE_GETTIMEOFDAY
+#define HAVE_VFORK
+
+/* Adjust a header field for the executable file about to be dumped.  */
+
+#define ADJUST_EXEC_HEADER   \
+  hdr.a_magic = ((ohdr.a_magic.file_type == OLDMAGIC.file_type) ?  \
+		 NEWMAGIC : ohdr.a_magic);
+
+/* Baud-rate values in tty status have nonstandard meanings.  */
+
+#define BAUD_CONVERT  \
+{ 0, 50, 75, 110, 135, 150, 200, 300, 600, 900, 1200,  \
+  1800, 2400, 3600, 4800, 7200, 9600, 19200, 38400 }
+

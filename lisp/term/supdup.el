@@ -67,6 +67,15 @@
 				 (- (* p 10) n)))))))))
 
 ;; Attempt to detect slimebollix machine serving as terminal.
-(if (string-match ":co#131:li#52:\\|:co#135:li#50:"
-		  (getenv "TERMCAP"))
+(if (let ((termcap (getenv "TERMCAP")))
+      (and termcap
+	   (string-match ":co#131:li#52:\\|:co#135:li#50:" termcap)))
     (message "In doing business with Symbolics, you are rewarding a wrong."))
+
+
+;; Mouse support works with Lambdas.
+;(autoload 'sup-mouse-report "sup-mouse"
+;  "This command is sent by a special version of Supdup on the LMI Lambda
+;when the mouse is clicked." t)
+;(global-set-key "\C-x\C-@" 'sup-mouse-report)
+

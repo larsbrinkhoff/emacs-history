@@ -1,22 +1,98 @@
 /* Work-alike for termcap, plus extra features.
-   Copyright (C) 1985 Richard M. Stallman.
+   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
-This file is part of GNU Emacs.
+		       NO WARRANTY
 
-GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY.  No author or distributor
-accepts responsibility to anyone for the consequences of using it
-or for whether it serves any particular purpose or works at all,
-unless he says so in writing.  Refer to the GNU Emacs General Public
-License for full details.
+  BECAUSE THIS PROGRAM IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE THIS PROGRAM "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR OR
+CORRECTION.
 
-Everyone is granted permission to copy, modify and redistribute
-GNU Emacs, but only under the conditions described in the
-GNU Emacs General Public License.   A copy of this license is
-supposed to have been given to you along with GNU Emacs so you
-can know your rights and responsibilities.  It should be in a
-file named COPYING.  Among other things, the copyright notice
-and this notice must be preserved on all copies.  */
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL RICHARD M.
+STALLMAN, THE FREE SOFTWARE FOUNDATION, INC., AND/OR ANY OTHER PARTY
+WHO MAY MODIFY AND REDISTRIBUTE THIS PROGRAM AS PERMITTED BELOW, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR
+OTHER SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+USE OR INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR
+DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR
+A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER PROGRAMS) THIS
+PROGRAM, EVEN IF YOU HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
+DAMAGES, OR FOR ANY CLAIM BY ANY OTHER PARTY.
+
+		GENERAL PUBLIC LICENSE TO COPY
+
+  1. You may copy and distribute verbatim copies of this source file
+as you receive it, in any medium, provided that you conspicuously and
+appropriately publish on each copy a valid copyright notice "Copyright
+(C) 1986 Free Software Foundation, Inc."; and include following the
+copyright notice a verbatim copy of the above disclaimer of warranty
+and of this License.  You may charge a distribution fee for the
+physical act of transferring a copy.
+
+  2. You may modify your copy or copies of this source file or
+any portion of it, and copy and distribute such modifications under
+the terms of Paragraph 1 above, provided that you also do the following:
+
+    a) cause the modified files to carry prominent notices stating
+    that you changed the files and the date of any change; and
+
+    b) cause the whole of any work that you distribute or publish,
+    that in whole or in part contains or is a derivative of this
+    program or any part thereof, to be licensed at no charge to all
+    third parties on terms identical to those contained in this
+    License Agreement (except that you may choose to grant more
+    extensive warranty protection to third parties, at your option).
+
+    c) You may charge a distribution fee for the physical act of
+    transferring a copy, and you may at your option offer warranty
+    protection in exchange for a fee.
+
+  3. You may copy and distribute this program or any portion of it in
+compiled, executable or object code form under the terms of Paragraphs
+1 and 2 above provided that you do the following:
+
+    a) cause each such copy to be accompanied by the
+    corresponding machine-readable source code, which must
+    be distributed under the terms of Paragraphs 1 and 2 above; or,
+
+    b) cause each such copy to be accompanied by a
+    written offer, with no time limit, to give any third party
+    free (except for a nominal shipping charge) a machine readable
+    copy of the corresponding source code, to be distributed
+    under the terms of Paragraphs 1 and 2 above; or,
+
+    c) in the case of a recipient of this program in compiled, executable
+    or object code form (without the corresponding source code) you
+    shall cause copies you distribute to be accompanied by a copy
+    of the written offer of source code which you received along
+    with the copy you received.
+
+  4. You may not copy, sublicense, distribute or transfer this program
+except as expressly provided under this License Agreement.  Any attempt
+otherwise to copy, sublicense, distribute or transfer this program is void and
+your rights to use the program under this License agreement shall be
+automatically terminated.  However, parties who have received computer
+software programs from you with this License Agreement will not have
+their licenses terminated so long as such parties remain in full compliance.
+
+  5. If you wish to incorporate parts of this program into other free
+programs whose distribution conditions are different, write to the Free
+Software Foundation at 1000 Mass Ave, Cambridge, MA 02138.  We have not yet
+worked out a simple rule that can be stated here, but we will often permit
+this.  We will be guided by the two goals of preserving the free status of
+all derivatives our free software and of promoting the sharing and reuse of
+software.
+
+
+In other words, you are welcome to use, share and improve this program.
+You are forbidden to forbid anyone else to use, share and improve
+what you give them.   Help stamp out software-hoarding!  */
 
 
 
@@ -26,6 +102,10 @@ and this notice must be preserved on all copies.  */
    Make it large normally for speed.
    Make it variable when debugging, so can exercise
    increasing the space dynamically.  */
+
+#ifdef emacs
+#include "config.h"
+#endif
 
 #ifndef BUFSIZE
 #ifdef DEBUG
@@ -37,6 +117,7 @@ int bufsize = 128;
 #endif
 #endif
 
+#ifndef emacs
 static
 memory_out ()
 {
@@ -64,6 +145,7 @@ xrealloc (ptr, size)
     memory_out ();
   return tem;
 }
+#endif /* not emacs */
 
 /* Looking up capabilities in the entry already found */
 
@@ -212,8 +294,13 @@ char PC;
 
 static short speeds[] =
   {
-    0, 50, 75, 110, 135, 150, 200, -3, -6, -12,
+#ifdef VMS
+    0, 50, 75, 110, 134, 150, -3, -6, -12, -18,
+    -20, -24, -36, -48, -72, -96, -192
+#else /* not VMS */
+    0, 50, 75, 110, 135, 150, -2, -3, -6, -12,
     -18, -24, -48, -96, -192, -384
+#endif /* not VMS */
   };
 
 tputs (string, nlines, outfun)
@@ -245,11 +332,15 @@ tputs (string, nlines, outfun)
 
   /* padcount is now in units of tenths of msec.  */
   padcount *= speeds[ospeed];
+  padcount += 500;
   padcount /= 1000;
   if (speeds[ospeed] < 0)
     padcount = -padcount;
   else
-    padcount /= 100;
+    {
+      padcount += 50;
+      padcount /= 100;
+    }
 
   while (padcount-- > 0)
     (*outfun) (PC);
@@ -273,6 +364,33 @@ static char *gobble_line ();
 static int compare_contin ();
 static int name_match ();
 
+#ifdef VMS
+
+#include <rmsdef.h>
+#include <fab.h>
+#include <nam.h>
+
+static int
+legal_filename_p (fn)
+     char *fn;
+{
+  struct FAB fab = cc$rms_fab;
+  struct NAM nam = cc$rms_nam;
+  char esa[NAM$C_MAXRSS];
+
+  fab.fab$l_fna = fn;
+  fab.fab$b_fns = strlen(fn);
+  fab.fab$l_nam = &nam;
+  fab.fab$l_fop = FAB$M_NAM;
+
+  nam.nam$l_esa = esa;
+  nam.nam$b_ess = sizeof esa;
+
+  return SYS$PARSE(&fab, 0, 0) == RMS$_NORMAL;
+}
+
+#endif /* VMS */
+
 /* Find the termcap entry data for terminal type `name'
    and store it in the block that `bp' points to.
    Record its address for future use.
@@ -291,26 +409,51 @@ tgetent (bp, name)
   char *term;
   int malloc_size = 0;
   register int c;
+  char *tcenv;			/* TERMCAP value, if it contais :tc=.  */
+  char *indirect = 0;		/* Terminal type in :tc= in TERMCAP value.  */
+  int filep;
 
   tem = (char *) getenv ("TERMCAP");
+  if (tem && *tem == 0) tem = 0;
 
-  /* If tem is non-null and starts with /,
+#ifdef VMS
+  filep = tem && legal_filename_p (tem);
+#else
+  filep = tem && (*tem == '/');
+#endif /* VMS */
+
+  /* If tem is non-null and starts with / (in the un*x case, that is),
      it is a file name to use instead of /etc/termcap.
      If it is non-null and does not start with /,
-     it is the entry itself, but only if it contains
-     a name matching NAME.  */
+     it is the entry itself, but only if
+     the name the caller requested matches the TERM variable.  */
 
-  if (tem && *tem != '/' && name_match (tem, name))
+  if (tem && !filep && !strcmp (name, getenv ("TERM")))
     {
-      if (!bp)
-	bp = tem;
+      indirect = tgetst1 (find_capability (tem, "tc"), 0);
+      if (!indirect)
+	{
+	  if (!bp)
+	    bp = tem;
+	  else
+	    strcpy (bp, tem);
+	  goto ret;
+	}
       else
-	strcpy (bp, tem);
-      goto ret;
+	{			/* we will need to read /etc/termcap */
+	  tcenv = tem;
+ 	  tem = 0;
+	}
     }
+  else
+    indirect = (char *) 0;
 
   if (!tem)
+#ifdef VMS
+    tem = "emacs_library:[emacs.etc]termcap.dat";
+#else
     tem = "/etc/termcap";
+#endif
 
   /* Here we know we must search a file and tem has its name.  */
 
@@ -320,14 +463,20 @@ tgetent (bp, name)
 
   buf.size = BUFSIZE;
   buf.beg = (char *) xmalloc (buf.size);
-  term = name;
+  term = indirect ? indirect : name;
 
   if (!bp)
     {
-      malloc_size = buf.size;
+      malloc_size = indirect ? strlen (tcenv) + 1 : buf.size;
       bp = (char *) xmalloc (malloc_size);
     }
   bp1 = bp;
+
+  if (indirect)			/* copy the data from the environment variable */
+    {
+      strcpy (bp, tcenv);
+      bp1 += strlen (tcenv);
+    }
 
   while (term)
     {
@@ -365,7 +514,7 @@ tgetent (bp, name)
 
       /* Does this entry refer to another terminal type's entry?  */
       /* If something is found, copy it into heap and null-terminate it */
-      term = tgetst1 (find_capability (bp2, "tc", '='), 0);
+      term = tgetst1 (find_capability (bp2, "tc"), 0);
     }
 
   close (fd);
@@ -533,7 +682,7 @@ gobble_line (fd, bufp, append_end)
   return end + 1;
 }
 
-#ifdef DEBUG
+#ifdef TEST
 
 #include <stdio.h>
 
@@ -589,4 +738,4 @@ tprint (cap)
   putchar ('\n');
 }
 
-#endif /* DEBUG */
+#endif /* TEST */

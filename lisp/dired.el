@@ -3,7 +3,7 @@
 ;;; Implement insertion of subdirectories in situ --- tree dired
 
 ;; DIRED commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -23,7 +23,7 @@
 ;; and this notice must be preserved on all copies.
 
 
-;Will be in loaddefs.el for versions 16.2 and up.
+;In loaddefs.el
 ;(defvar dired-listing-switches "-al"
 ;  "Switches passed to ls for dired. MUST contain the 'l' option.
 ;CANNOT contain the 'F' option.")
@@ -98,13 +98,14 @@ Type `h' after entering dired for more info."
       (dired-mode dirname))
     buffer))
 
-(defun dired-revert (&optional arg)
+(defun dired-revert (&optional arg noconfirm)
   (let ((opoint (point))
 	(ofile (dired-get-filename t t))
 	(buffer-read-only nil))
     (erase-buffer)
     (dired-readin dired-directory (current-buffer))
-    (or (and ofile (re-search-forward (concat " " (regexp-quote ofile) "$") nil t))
+    (or (and ofile (re-search-forward (concat " " (regexp-quote ofile) "$")
+				      nil t))
 	(goto-char opoint))
     (beginning-of-line)))
 
@@ -133,7 +134,18 @@ Type `h' after entering dired for more info."
   (define-key dired-mode-map "\C-n" 'dired-next-line)
   (define-key dired-mode-map "\C-p" 'dired-previous-line)
   (define-key dired-mode-map "n" 'dired-next-line)
-  (define-key dired-mode-map "p" 'dired-previous-line))
+  (define-key dired-mode-map "p" 'dired-previous-line)
+  (define-key dired-mode-map "g" 'revert-buffer)
+  (define-key dired-mode-map "C" 'dired-compress)
+  (define-key dired-mode-map "U" 'dired-uncompress)
+  (define-key dired-mode-map "B" 'dired-byte-recompile)
+  (define-key dired-mode-map "M" 'dired-chmod)
+  (define-key dired-mode-map "G" 'dired-chgrp)
+  (define-key dired-mode-map "O" 'dired-chown))
+
+
+;; Dired mode is suitable only for specially formatted data.
+(put 'dired-mode 'mode-class 'special)
 
 (defun dired-mode (dirname)
   "Mode for \"editing\" directory listings.
@@ -154,7 +166,11 @@ Type . to flag numerical backups for Deletion.
 Type r to rename a file.
 Type c to copy a file.
 Type v to view a file in View mode, returning to Dired when done.
-Space can be used to move down and up by lines.
+Type g to read the directory again.  This discards all deletion-flags.
+Space and Rubout can be used to move down and up by lines.
+Also: C -- compress this file.  U -- uncompress this file.
+      B -- byte compile this file.
+ M, G, O -- change file's mode, group or owner.
 \\{dired-mode-map}"
   (kill-all-local-variables)    
   (make-local-variable 'revert-buffer-function)
@@ -166,12 +182,11 @@ Space can be used to move down and up by lines.
   (setq default-directory 
 	(if (file-directory-p dirname)
 	    dirname (file-name-directory dirname)))
+  (setq mode-line-buffer-identification '("Dired: %17b"))
   (setq case-fold-search nil)
-  (setq mode-line-format
-	(concat "--Directory " dirname
-		"      %M   %[(%m)%]----%p--%-"))
   (setq buffer-read-only t)
-  (use-local-map dired-mode-map))
+  (use-local-map dired-mode-map)
+  (run-hooks 'dired-mode-hook))
 
 (defun dired-repeat-over-lines (arg function)
   (beginning-of-line)
@@ -318,7 +333,7 @@ arguments are the short and long filename"
 	       (progn (end-of-line)
 		      (funcall fn filename longfilename))))
 	(forward-line 1)))))
-
+
 (defun dired-flag-auto-save-files ()
   "Flag for deletion files whose names suggest they are auto save files."
   (interactive)
@@ -409,7 +424,12 @@ We may want to flag some for deletion."
      (while (not (eobp))
        (and (not (looking-at "  d"))
 	    (not (eolp))
-	    (progn (end-of-line) (forward-char -1) (looking-at "~"))
+	    (if (fboundp 'backup-file-name-p)
+		(let ((fn (dired-get-filename t t)))
+		  (if fn (backup-file-name-p fn)))
+	      (end-of-line)
+	      (forward-char -1)
+	      (looking-at "~"))
 	    (progn (beginning-of-line)
 		   (delete-char 1)
 		   (insert "D")))
@@ -422,7 +442,7 @@ start with #."
   (interactive)
   (dired-flag-backup-files)
   (dired-flag-auto-save-files))
-
+
 (defun dired-rename-file (to-file)
   "Rename this file to TO-FILE."
   (interactive "FRename to: ")
@@ -452,6 +472,7 @@ start with #."
   ;; etc.
   (if (string-equal directory default-directory)
       (let ((buffer-read-only nil))
+	(beginning-of-line)
 	(call-process "ls" nil t nil
 		      "-d" dired-listing-switches (concat directory filename))
 	(forward-line -1)
@@ -463,7 +484,70 @@ start with #."
 	  (delete-region beg end)
 	  (insert (file-name-nondirectory filename)))
 	(beginning-of-line))))
+
+(defun dired-compress ()
+  "Compress this file."
+  (interactive)
+  (let* ((buffer-read-only nil)
+	 (from-file (dired-get-filename))
+	 (to-file (concat from-file ".Z")))
+    (if (string-match "\\.Z$" from-file)
+	(error "%s is already compressed!" from-file))
+    (call-process "compress" nil nil nil "-f" from-file)
+    (dired-redisplay to-file)))
 
+(defun dired-uncompress ()
+  "Uncompress this file."
+  (interactive)
+  (let* ((buffer-read-only nil)
+	 (from-file (dired-get-filename))
+	 (to-file (substring from-file 0 -2)))
+    (if (string-match "\\.Z$" from-file) nil
+	(error "%s is not compressed!" from-file))
+    (call-process "uncompress" nil nil nil from-file)
+    (dired-redisplay to-file)))
+
+(defun dired-byte-recompile ()
+  "Byte recompile this file."
+  (interactive)
+  (let* ((buffer-read-only nil)
+	 (from-file (dired-get-filename))
+	 (to-file (substring from-file 0 -3)))
+    (if (string-match "\\.el$" from-file) nil
+	(error "%s is uncompilable!" from-file))
+    (byte-compile-file from-file)))
+
+(defun dired-chmod (mode)
+  "Change mode of this file."
+  (interactive "sChange to Mode: ")
+  (let ((buffer-read-only nil)
+	(file (dired-get-filename)))
+    (call-process "/bin/chmod" nil nil nil mode file)
+    (dired-redisplay file)))
+
+(defun dired-chgrp (group)
+  "Change group of this file."
+  (interactive "sChange to Group: ")
+  (let ((buffer-read-only nil)
+	(file (dired-get-filename)))
+    (call-process "/bin/chgrp" nil nil nil group file)
+    (dired-redisplay file)))
+
+(defun dired-chown (owner)
+  "Change Owner of this file."
+  (interactive "sChange to Owner: ")
+  (let ((buffer-read-only nil)
+	(file (dired-get-filename)))
+    (call-process "/etc/chown" nil nil nil owner file)
+    (dired-redisplay file)))
+
+(defun dired-redisplay (file) "Redisplay this line."
+  (beginning-of-line)
+  (delete-region (point) (progn (forward-line 1) (point)))
+  (if file (dired-add-entry (file-name-directory    file)
+			    (file-name-nondirectory file)))
+  (dired-move-to-filename))
+
 (defun dired-do-deletions ()
   "In dired, delete the files flagged for deletion."
   (interactive)
@@ -512,6 +596,3 @@ start with #."
 	    (if failures
 		(message "Deletions failed: %s"
 			 (prin1-to-string failures))))))))
-
-
-  

@@ -1,5 +1,5 @@
 ;; Basic editing commands for Emacs
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -22,7 +22,7 @@
 (defun open-line (arg)
   "Insert a newline and leave point before it.
 With arg, inserts that many newlines."
-  (interactive "p")
+  (interactive "*p")
   (let ((flag (and (bolp) (not (bobp)))))
     (if flag (forward-char -1))
     (while (> arg 0)
@@ -128,15 +128,23 @@ On nonblank line, delete all blank lines that follow it."
   (skip-chars-forward " \t"))
 
 (defun newline-and-indent ()
-  "Insert a newline, then indent according to mode, like Tab."
+  "Insert a newline, then indent according to major mode.
+Indentation is done using the current indent-line-function.
+In programming language modes, this is the same as TAB.
+In some text modes, where TAB inserts a tab, this indents to the
+specified left-margin column."
   (interactive "*")
   (delete-region (point) (progn (skip-chars-backward " \t") (point)))
   (insert ?\n)
   (indent-according-to-mode))
 
 (defun reindent-then-newline-and-indent ()
-  "Reindent the current line according to mode (like Tab), then insert
-a newline, and indent the new line indent according to mode."
+  "Reindent current line, insert newline, then indent the new line.
+Indentation of both lines is done according to the current major mode,
+which means that the current value of indent-line-function is called.
+In programming language modes, this is the same as TAB.
+In some text modes, where TAB inserts a tab, this indents to the
+specified left-margin column."
   (interactive "*")
   (save-excursion
     (delete-region (point) (progn (skip-chars-backward " \t") (point)))
@@ -174,7 +182,7 @@ and KILLP is t if prefix arg is was specified."
   (delete-backward-char arg killp))
 
 (defun zap-to-char (arg char)
-  "Kill up to (but not incl) ARG'th occurrence of CHAR.
+  "Kill up to (but not including) ARG'th occurrence of CHAR.
 Goes backward if ARG is negative; goes to end of buffer if CHAR not found."
   (interactive "*p\ncZap to char: ")
   (kill-region (point) (if (search-forward (char-to-string char) nil t arg)
@@ -185,25 +193,33 @@ Goes backward if ARG is negative; goes to end of buffer if CHAR not found."
 (defun beginning-of-buffer (&optional arg)
   "Move point to the beginning of the buffer; leave mark at previous position.
 With arg N, put point N/10 of the way from the true beginning.
-Avoid use in Lisp programs!
+Don't use this in Lisp programs!
 \(goto-char (point-min)) is faster and does not set the mark."
   (interactive "P")
   (push-mark)
   (goto-char (if arg
-		 (/ (+ 10 (* (buffer-size) (prefix-numeric-value arg))) 10)
+		 (if (> (buffer-size) 10000)
+		     ;; Avoid overflow for large buffer sizes!
+		     (* (prefix-numeric-value arg)
+			(/ (buffer-size) 10))
+		   (/ (+ 10 (* (buffer-size) (prefix-numeric-value arg))) 10))
 	       (point-min)))
   (if arg (forward-line 1)))
 
 (defun end-of-buffer (&optional arg)
   "Move point to the end of the buffer; leave mark at previous position.
 With arg N, put point N/10 of the way from the true end.
-Avoid use in Lisp programs!
+Don't use this in Lisp programs!
 \(goto-char (point-max)) is faster and does not set the mark."
   (interactive "P")
   (push-mark)
   (goto-char (if arg
 		 (- (1+ (buffer-size))
-		    (/ (* (buffer-size) (prefix-numeric-value arg)) 10))
+		    (if (> (buffer-size) 10000)
+			;; Avoid overflow for large buffer sizes!
+			(* (prefix-numeric-value arg)
+			   (/ (buffer-size) 10))
+		      (/ (* (buffer-size) (prefix-numeric-value arg)) 10)))
 	       (point-max)))
   (if arg (forward-line 1)))
 
@@ -265,11 +281,15 @@ Avoid use in Lisp programs!
 	(message "Char: %s (0%o)  point=%d of %d(%d%%)  x=%d %s"
 		 (single-key-description char) char pos total percent col hscroll)))))
 
+(defconst fundamental-mode-map (make-sparse-keymap)
+  "Local keymap for fundamental mode.  Empty unless changed by the user.")
+
 (defun fundamental-mode ()
   "Major mode not specialized for anything in particular.
 Other major modes are defined by comparison with this one."
   (interactive)
-  (kill-all-local-variables))
+  (kill-all-local-variables)
+  (use-local-map fundamental-mode-map))
 
 (put 'eval-expression 'disabled t)
 
@@ -318,32 +338,26 @@ Whilst editing the command, the following commands are available:
       (ding))))
 
 (defun next-complex-command (n)
-  "Inserts the next element of  command-history into the minibuffer"
+  "Inserts the next element of `command-history' into the minibuffer."
   (interactive "p")
-  (setq arg (- arg n))
-  (cond ((< arg 1)
-	 (message "No following item in command history")
-	 (sit-for 2)
-	 (setq arg 1))
-	((> arg (1- (length command-history)))
-	 (message "No preceeding item command history")
-	 (sit-for 2)
-	 (setq arg (1- (length command-history)))))
-  (erase-buffer)
-  (insert (prin1-to-string (nth (1- arg) command-history)))
-  (goto-char (point-min)))
+  (let ((narg (min (max 1 (- arg n)) (length command-history))))
+    (if (= arg narg)
+	(error (if (= arg 1)
+		   "No following item in command history"
+		 "No preceeding item command history"))
+      (erase-buffer)
+      (setq arg narg)
+      (insert (prin1-to-string (nth (1- arg) command-history)))
+      (goto-char (point-min)))))
 
 (defun previous-complex-command (n)
-  "Inserts the previous element of  command-history into the minibuffer"
+  "Inserts the previous element of `command-history' into the minibuffer."
   (interactive "p")
   (next-complex-command (- n)))
 
 (defun goto-line (arg)
-  "Goto line ARG, counting from line 1 at beginning of buffer.
-Reads ARG using the minibuffer."
-  (interactive (list (if current-prefix-arg
-			 (prefix-numeric-value current-prefix-arg)
-		       (read-minibuffer "Goto line: "))))
+  "Goto line ARG, counting from line 1 at beginning of buffer."
+  (interactive "NGoto line: ")
   (save-restriction
     (widen)
     (goto-char 1)
@@ -357,13 +371,15 @@ Reads ARG using the minibuffer."
 Repeat this command to undo more changes.
 A numeric argument serves as a repeat count."
   (interactive "*p")
-  (message "Undo!")
-  (or (eq last-command 'undo)
-      (progn
-       (undo-start)
-       (undo-more 1)))
-  (setq this-command 'undo)
-  (undo-more (or arg 1)))
+  (let ((modified (buffer-modified-p)))
+    (message "Undo!")
+    (or (eq last-command 'undo)
+	(progn (undo-start)
+	       (undo-more 1)))
+    (setq this-command 'undo)
+    (undo-more (or arg 1))
+    (and modified (not (buffer-modified-p))
+	 (delete-auto-save-file-if-necessary))))
 
 (defun shell-command (command &optional flag)
   "Execute string COMMAND in inferior shell; display output, if any.
@@ -486,15 +502,14 @@ When calling from a program, nil means \"no arg\",
 a number counts as a prefix arg."
   (interactive "*P")
   (kill-region (point)
-	       (if arg
-		   (progn (setq arg (prefix-numeric-value arg))
-			  (scan-buffer (point) (if (> arg 0) arg (- arg 1))
-				       ?\n))
-		 (if (eobp)
-		     (signal 'end-of-buffer nil))
-		 (if (looking-at "[ \t]*$")
-		     (forward-line 1)
-		   (end-of-line))
+	       (progn
+		 (if arg
+		     (forward-line (prefix-numeric-value arg))
+		   (if (eobp)
+		       (signal 'end-of-buffer nil))
+		   (if (looking-at "[ \t]*$")
+		       (forward-line 1)
+		     (end-of-line)))
 		 (point))))
 
 ;;;; The kill ring
@@ -547,7 +562,9 @@ to make one entry in the kill ring."
 (defun append-next-kill ()
   "Cause following command, if kill, to append to previous kill."
   (interactive)
-  (setq this-command 'kill-region))
+  (if (interactive-p)
+      (setq this-command 'kill-region)
+      (setq last-command 'kill-region)))
 
 (defun rotate-yank-pointer (arg)
   "Rotate the yanking point in the kill ring."
@@ -659,10 +676,34 @@ specifying the portion of the current buffer to be copied."
       (save-excursion
 	(insert-buffer-substring oldbuf start end)))))
 
+(defun mark ()
+  "Return this buffer's mark value as integer, or nil if no mark.
+If you are using this in an editing command, you are most likely making
+a mistake; see the documentation of `set-mark'."
+  (marker-position (mark-marker)))
+
+(defun set-mark (pos)
+  "Set this buffer's mark to POS.  Don't use this function!
+That is to say, don't use this function unless you want
+the user to see that the mark has moved, and you want the previous
+mark position to be lost.
+
+Normally, when a new mark is set, the old one should go on the stack.
+This is why most applications should use push-mark, not set-mark.
+
+Novice emacs-lisp programmers often try to use the mark for the wrong
+purposes.  The mark saves a location for the user's convenience.
+Most editing commands should not alter the mark.
+To remember a location for internal use in the Lisp program,
+store it in a Lisp variable.  Example:
+
+   (let ((beg (point))) (forward-line 1) (delete-region beg (point)))."
+
+  (set-marker (mark-marker) pos (current-buffer)))
+
 (defvar mark-ring nil
   "The list of saved former marks of the current buffer,
 most recent first.")
-
 (make-variable-buffer-local 'mark-ring)
 
 (defconst mark-ring-max 16
@@ -671,18 +712,24 @@ most recent first.")
 (defun set-mark-command (arg)
   "Set mark at where point is, or jump to mark.
 With no prefix argument, set mark, and push previous mark on mark ring.
-With argument, jump to mark, and pop into mark off the mark ring."
-  (interactive "P")
-  (if arg
-      (progn
-	(if (null (mark))
-	    (error "No mark set in this buffer")
-	  (goto-char (mark))
-	  (pop-mark)))
-    (push-mark)))
+With argument, jump to mark, and pop into mark off the mark ring.
 
-(defun push-mark (&optional location)
-  "Set mark at location (point, by default) and push old mark on mark ring."
+Novice emacs-lisp programmers often try to use the mark for the wrong
+purposes.  See the documentation of `set-mark' for more information."
+  (interactive "P")
+  (if (null arg)
+      (push-mark)
+    (if (null (mark))
+	(error "No mark set in this buffer")
+      (goto-char (mark))
+      (pop-mark))))
+
+(defun push-mark (&optional location nomsg)
+  "Set mark at LOCATION (point, by default) and push old mark on mark ring.
+Displays \"Mark set\" unless the optional second arg NOMSG is non-nil.
+
+Novice emacs-lisp programmers often try to use the mark for the wrong
+purposes.  See the documentation of `set-mark' for more information."
   (if (null (mark))
       nil
     (setq mark-ring (cons (copy-marker (mark-marker)) mark-ring))
@@ -691,7 +738,8 @@ With argument, jump to mark, and pop into mark off the mark ring."
 	  (move-marker (car (nthcdr mark-ring-max mark-ring)) nil)
 	  (setcdr (nthcdr (1- mark-ring-max) mark-ring) nil))))
   (set-mark (or location (point)))
-  (if (null executing-macro) (message "Mark set")))
+  (or nomsg executing-macro (> (minibuffer-depth) 0)
+      (message "Mark set")))
 
 (defun pop-mark ()
   "Pop off mark ring into the buffer's actual mark.
@@ -726,16 +774,19 @@ and the cursor moves to that line.
 
 The command \\[set-goal-column] can be used to create
 a semipermanent goal column to which this command always moves.
-Then it does not try to move vertically."
+Then it does not try to move vertically.
+
+If you are thinking of using this in a Lisp program, consider
+using `forward-line' instead.  It is usually easier to use
+and more reliable (no dependence on goal column, etc.)."
   (interactive "p")
   (if (= arg 1)
-      (let ((tem (scan-buffer (point) 1 ?\n)))
-	(if (or (= tem (point))
-		(not (eq (char-after (1- tem)) ?\n)))
-	    (progn
-	      (goto-char tem)
-	      (insert ?\n)
-	      (goto-char (1+ tem)))
+      (let ((opoint (point)))
+	(forward-line 1)
+	(if (or (= opoint (point))
+		(not (eq (preceding-char) ?\n)))
+	    (insert ?\n)
+	  (goto-char opoint)
 	  (line-move arg)))
     (line-move arg))
   nil)
@@ -748,7 +799,11 @@ column, or at the end of the line if it is not long enough.
 
 The command \\[set-goal-column] can be used to create
 a semipermanent goal column to which this command always moves.
-Then it does not try to move vertically."
+Then it does not try to move vertically.
+
+If you are thinking of using this in a Lisp program, consider using
+`forward-line' with negative argument instead..  It is usually easier
+to use and more reliable (no dependence on goal column, etc.)."
   (interactive "p")
   (line-move (- arg))
   nil)
@@ -899,7 +954,9 @@ With argument 0, interchanges line point is in with line mark is in."
     (insert word2)))
 
 (defconst comment-column 32
-  "*Column to indent right-margin comments to.")
+  "*Column to indent right-margin comments to.
+Setting this variable automatically makes it local to the current buffer.")
+(make-variable-buffer-local 'comment-column)
 
 (defconst comment-start nil
   "*String to insert to start a new comment, or nil if no comment syntax defined.")
@@ -922,13 +979,15 @@ given the character number it starts at.")
   (beginning-of-line 1)
   (if (null comment-start)
       (error "No comment syntax defined")
-    (let* ((eolpos (save-excursion (end-of-line) (dot)))
-	   cpos indent)
+    (let* ((eolpos (save-excursion (end-of-line) (point)))
+	   cpos indent begpos)
       (if (re-search-forward comment-start-skip eolpos 'move)
-	  (progn (setq cpos (dot-marker))
+	  (progn (setq cpos (point-marker))
 		 (goto-char (match-beginning 0))))
+      (setq begpos (point))
       (setq indent (funcall comment-indent-hook))
-      (delete-horizontal-space)
+      (skip-chars-backward " \t")
+      (delete-region (point) begpos)
       (indent-to indent)
       (if cpos 
 	  (progn (goto-char cpos)
@@ -1008,21 +1067,35 @@ With argument, do this that many times."
   (kill-word (- arg)))
 
 (defconst fill-prefix nil
-  "String for auto-fill to insert at front of new line, or nil for none.")
+  "*String for filling to insert at front of new line, or nil for none.
+Setting this variable automatically makes it local to the current buffer.")
+(make-variable-buffer-local 'fill-prefix)
 
 (defun do-auto-fill ()
-  (let ((opoint (point)))
-    (save-excursion
-      (move-to-column (1+ fill-column))
-      (skip-chars-backward "^ \t\n")
-      (if (bolp)
-	  (re-search-forward "[ \t]" opoint t))
-      ;; If there is a space on the line before fill-point,
-      ;; and nonspaces precede it, break the line there.
-      (if (save-excursion
-	    (skip-chars-backward " \t")
-	    (not (bolp)))
-	  (indent-new-comment-line)))))
+  (let ((fill-point
+	 (let ((opoint (point)))
+	   (save-excursion
+	     (move-to-column (1+ fill-column))
+	     (skip-chars-backward "^ \t\n")
+	     (if (bolp)
+		 (re-search-forward "[ \t]" opoint t))
+	     (skip-chars-backward " \t")
+	     (point)))))
+    ;; If there is a space on the line before fill-point,
+    ;; and nonspaces precede it, break the line there.
+    (if (save-excursion
+	  (goto-char fill-point)
+	  (not (bolp)))
+	;; If point is at the fill-point, do not `save-excursion'.
+	;; Otherwise, if a comment prefix or fill-prefix is inserted,
+	;; point will end up before it rather than after it.
+	(if (save-excursion
+	      (skip-chars-backward " \t")
+	      (= (point) fill-point))
+	    (indent-new-comment-line)
+	    (save-excursion
+	      (goto-char fill-point)
+	      (indent-new-comment-line))))))
 
 (defconst comment-multi-line nil
   "*Non-nil means \\[indent-new-comment-line] should continue same comment
@@ -1074,32 +1147,18 @@ With arg, turn auto-fill mode on iff arg is positive.
 In auto-fill mode, inserting a space at a column beyond  fill-column
 automatically breaks the line at a previous space."
   (interactive "P")
-  (setq auto-fill-hook
-	(and
-	  (if (null arg) (not auto-fill-hook)
-	    (> (prefix-numeric-value arg) 0))
-	  'do-auto-fill))
-  (set-minor-mode 'auto-fill-mode "Fill" (not (null auto-fill-hook))))
+  (prog1 (setq auto-fill-hook
+	       (if (if (null arg)
+		       (not auto-fill-hook)
+		       (> (prefix-numeric-value arg) 0))
+		   'do-auto-fill
+		   nil))
+    ;; update mode-line
+    (set-buffer-modified-p (buffer-modified-p))))
 
 (defun turn-on-auto-fill ()
   "Unconditionally turn on Auto Fill mode."
   (auto-fill-mode 1))
-
-(defun set-minor-mode (function-symbol pretty-string on-state)
-  "Set status of minor mode, for mode-line display.
-FUNCTION-SYMBOL is the function that turns the mode on or off.
-PRETTY-STRING is a string to show in the mode line.
-ON-STATE is t if mode should be on, nil if it should be off.
-Returns ON-STATE."
-  (let ((tem (assq function-symbol minor-modes)))
-    (if tem (setq minor-modes (delq tem minor-modes))))
-  (if on-state
-      (setq minor-modes
-	    (append minor-modes
-		    (list (cons function-symbol pretty-string)))))
-  ;; Cause mode-line redisplay.
-  (set-buffer-modified-p (buffer-modified-p))
-  on-state)
 
 (defun set-fill-column (arg)
   "Set fill-column to current column, or to argument if given.
@@ -1132,7 +1191,7 @@ on a one-for-one basis, rather than pushing it to the right."
   (setq overwrite-mode
 	(if (null arg) (not overwrite-mode)
 	  (> (prefix-numeric-value arg) 0)))
-  (set-minor-mode 'overwrite-mode "Overwrite" overwrite-mode))
+  (set-buffer-modified-p (buffer-modified-p))) ;No-op, but updates mode line.
 
 (defconst blink-matching-paren t
   "*Non-nil means show matching open-paren when close-paren is inserted.")
@@ -1203,264 +1262,10 @@ when close-paren is inserted.")
 
 (define-key global-map "\C-g" 'keyboard-quit)
 
-(defvar help-map (make-sparse-keymap)
-  "Keymap for characters following the Help key.")
-
-(define-key global-map "\C-h" 'help-command)
-(fset 'help-command help-map)
-
-(define-key help-map "\C-h" 'help-for-help)
-(define-key help-map "?" 'help-for-help)
-
-(define-key help-map "\C-c" 'describe-copying)
-(define-key help-map "\C-d" 'describe-distribution)
-(define-key help-map "\C-w" 'describe-no-warranty)
-(define-key help-map "a" 'command-apropos)
-
-(define-key help-map "b" 'describe-bindings)
-
-(define-key help-map "c" 'describe-key-briefly)
-(define-key help-map "k" 'describe-key)
-
-(define-key help-map "d" 'describe-function)
-(define-key help-map "f" 'describe-function)
-
-(define-key help-map "i" 'info)
-
-(define-key help-map "l" 'view-lossage)
-
-(define-key help-map "m" 'describe-mode)
-
-(define-key help-map "\C-n" 'view-emacs-news)
-(define-key help-map "n" 'view-emacs-news)
-
-(define-key help-map "s" 'describe-syntax)
-
-(define-key help-map "t" 'help-with-tutorial)
-
-(define-key help-map "w" 'where-is)
-
-(define-key help-map "v" 'describe-variable)
-
-(defun help-with-tutorial ()
-  "Select the Emacs learn-by-doing tutorial."
-  (interactive)
-  (let ((file (expand-file-name "~/TUTORIAL")))
-    (delete-other-windows)
-    (if (get-file-buffer file)
-	(switch-to-buffer (get-file-buffer file))
-      (switch-to-buffer (create-file-buffer "~/TUTORIAL"))
-      (setq buffer-file-name file)
-      (setq default-directory (expand-file-name "~/"))
-      (setq auto-save-file-name nil)
-      (insert-file-contents (expand-file-name "TUTORIAL" exec-directory))
-      (goto-char (point-min))
-      (search-forward "\n<<")
-      (beginning-of-line)
-      (delete-region (point) (progn (end-of-line) (point)))
-      (newline (- (window-height (selected-window))
-		  (count-lines (point-min) (point))
-		  6))
-      (goto-char (point-min))
-      (set-buffer-modified-p nil))))
-
-(defun describe-key-briefly (key)
-  "Print the name of the function KEY invokes.  KEY is a string."
-  (interactive "kDescribe key briefly: ")
-  (let ((defn (key-binding key)))
-    (if (or (null defn) (integerp defn))
-        (message "%s is undefined" (key-description key))
-      (message "%s runs the command %s"
-	       (key-description key)
-	       (if (symbolp defn) defn (prin1-to-string defn))))))
-
-(defun describe-key (key)
-  "Display documentation of the function KEY invokes.  KEY is a string."
-  (interactive "kDescribe key: ")
-  (let ((defn (key-binding key)))
-    (if (or (null defn) (integerp defn))
-        (message "%s is undefined" (key-description key))
-      (with-output-to-temp-buffer "*Help*"
-	(prin1 defn)
-	(princ ":\n")
-	(if (documentation defn)
-	    (princ (documentation defn))
-	  (princ "not documented"))))))
-
-(defun describe-mode ()
-  "Display documentation of current major mode."
-  (interactive)
-  (with-output-to-temp-buffer "*Help*"
-    (princ mode-name)
-    (princ " Mode:\n")
-    (princ (documentation major-mode))))
-
-(defun describe-distribution ()
-  "Display info on how to obtain the latest version of GNU Emacs."
-  (interactive)
-  (find-file-read-only
-   (expand-file-name "DISTRIB" exec-directory)))
-
-(defun describe-copying ()
-  "Display info on how you may redistribute copies of GNU Emacs."
-  (interactive)
-  (find-file-read-only
-   (expand-file-name "COPYING" exec-directory))
-  (goto-char (dot-min)))
-
-(defun describe-no-warranty ()
-  "Display info on all the kinds of warranty Emacs does NOT have."
-  (interactive)
-  (describe-copying)
-  (let (case-fold-search)
-    (search-forward "NO WARRANTY")
-    (recenter 0)))
-
-(defun view-emacs-news ()
-  "Display info on recent changes to Emacs."
-  (interactive)
-  (find-file-read-only
-   (expand-file-name "NEWS" exec-directory)))
-
-(defun view-lossage ()
-  "Display last 100 input keystrokes."
-  (interactive)
-  (with-output-to-temp-buffer "*Help*"
-    (princ (key-description (recent-keys))))
-  (save-excursion
-    (set-buffer (get-buffer "*Help*"))
-    (beginning-of-buffer)
-    (while (progn (move-to-column 50) (not (eobp)))
-      (search-forward " " nil t)
-      (newline))))
-
-(defun help-for-help ()
-  "You have typed C-h, the help character.  Type a Help option:
-
-A  command-apropos.   Give a substring, and see a list of commands
-              (functions interactively callable) that contain
-	      that substring.  See also the  apropos  command.
-B  describe-bindings.  Display table of all key bindings.
-C  describe-key-briefly.  Type a command key sequence;
-	      it prints the function name that sequence runs.
-F  describe-function.  Type a function name and get documentation of it.
-I  info. The  info  documentation reader.
-K  describe-key.  Type a command key sequence;
-	      it displays the full documentation.
-L  view-lossage.  Shows last 100 characters you typed.
-M  describe-mode.  Print documentation of current major mode,
-	      which describes the commands peculiar to it.
-N  view-emacs-news.  Shows emacs news file.
-S  describe-syntax.  Display contents of syntax table, plus explanations
-T  help-with-tutorial.  Select the Emacs learn-by-doing tutorial.
-V  describe-variable.  Type name of a variable;
-	      it displays the variable's documentation and value.
-W  where-is.  Type command name; it prints which keystrokes
-	      invoke that command.
-C-c print Emacs copying permission (General Public License).
-C-d print Emacs ordering information.
-C-n print news of recent Emacs changes.
-C-w print information on absence of warrantee for GNU Emacs."
-  (interactive)
-  (message "A B C F I K L M N S T V W C-c C-d C-n C-w or C-h for more help: ")
-  (let ((char (read-char)))
-    (if (or (= char ?\C-h) (= char ??))
-	(save-window-excursion
-	  (switch-to-buffer "*Help*")
-	  (erase-buffer)
-	  (insert (documentation 'help-for-help))
-	  (goto-char (point-min))
-	  (while (memq char '(?\C-h ?? ?\C-v ?\ ?\177 ?\M-v))
-	    (if (memq char '(?\C-v ?\ ))
-		(scroll-up))
-	    (if (memq char '(?\177 ?\M-v))
-		(scroll-down))
-	    (message
-    "A B C F I K L M N S T V W C-c C-d C-n C-w or Space to scroll: ")
-	    (setq char (read-char)))))
-    (let ((defn (cdr (assq (downcase char) (cdr help-map)))))
-      (if defn (call-interactively defn) (ding)))))
-
-(defun function-called-at-point ()
-  (condition-case ()
-      (save-excursion
-	(save-restriction
-	  (narrow-to-region (max (point-min) (- (point) 1000)) (point-max))
-	  (backward-up-list 1)
-	  (forward-char 1)
-	  (let (obj)
-	    (setq obj (read (current-buffer)))
-	    (and (symbolp obj) (fboundp obj) obj))))
-    (error nil)))
-
-(defun describe-function (function)
-  "Display the full documentation of FUNCTION (a symbol)."
-  (interactive
-   (let ((fn (function-called-at-point))
-	 (enable-recursive-minibuffers t)	     
-	 val)
-     (setq val (completing-read (if fn
-				    (format "Describe function (default %s): " fn)
-				  "Describe function: ")
-				obarray 'fboundp t))
-     (list (if (equal val "")
-	       fn (intern val)))))
-  (with-output-to-temp-buffer "*Help*"
-    (prin1 function)
-    (princ ":
-")
-    (if (documentation function)
-        (princ (documentation function))
-      (princ "not documented")))
-  nil)
-
-(defun variable-at-point ()
-  (save-excursion
-    (forward-sexp -1)
-    (skip-chars-forward "'")
-    (let (obj)
-      (condition-case ()
-	  (setq obj (read (current-buffer)))
-	(error nil))
-      (and (symbolp obj) (boundp obj) obj))))
-
-(defun describe-variable (variable)
-  "Display the full documentation of VARIABLE (a symbol)."
-  (interactive 
-   (let ((v (variable-at-point))
-	 (enable-recursive-minibuffers t)
-	 val)
-     (setq val (completing-read (if v
-				    (format "Describe variable (default %s): " v)
-				  "Describe variable: ")
-				obarray 'boundp t))
-     (list (if (equal val "")
-	       v (intern val)))))
-  (with-output-to-temp-buffer "*Help*"
-    (prin1 variable)
-    (princ "'s value is ")
-    (if (not (boundp variable))
-        (princ "void.")
-      (prin1 (symbol-value variable)))
-    (terpri) (terpri)
-    (princ "Documentation:")
-    (terpri)
-    (if (get variable 'variable-documentation)
-        (princ (substitute-command-keys
-		(get variable 'variable-documentation)))
-      (princ "not documented as a variable.")))
-  nil)
-
-(defun command-apropos (string)
-  "Like apropos but lists only symbols that are names of commands
-\(interactively callable functions)."
-  (interactive "sCommand apropos (regexp): ")
-  (apropos string 'commandp))
-
 (defun set-variable (var val)
   "Set VARIABLE to VALUE.  VALUE is a Lisp object.
 When using this interactively, supply a Lisp expression for VALUE.
-If you want VALUE to be a string, you must type doublequotes."
+If you want VALUE to be a string, you must surround it with doublequotes."
   (interactive
    (let* ((var (read-variable "Set variable: "))
 	  (minibuffer-help-form
@@ -1471,7 +1276,7 @@ If you want VALUE to be a string, you must type doublequotes."
 	      (with-output-to-temp-buffer "*Help*"
 		(prin1 var)
 		(princ "\nDocumentation:\n")
-		(princ (substring (get var 'variable-documentation)
+		(princ (substring (documentation-property var 'variable-documentation)
 				  1))
 		(if (boundp var)
 		    (let ((print-length 20))
@@ -1555,4 +1360,6 @@ If you want VALUE to be a string, you must type doublequotes."
 (define-key esc-map "\\" 'delete-horizontal-space)
 
 (fset 'mode-specific-command-prefix (make-sparse-keymap))
+(defconst mode-specific-map (symbol-function 'mode-specific-command-prefix)
+  "Keymap for characters following C-c.")
 (define-key global-map "\C-c" 'mode-specific-command-prefix)

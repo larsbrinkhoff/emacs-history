@@ -43,6 +43,18 @@ is `cS', which I invented.
 	to be repeated.  Emacs interprets a padding spec with a *
 	as giving the amount of padding per repetition.
 
+	WARNING: Many terminals have a command to repeat the
+	*last character output* N times.  This means that the character
+	will appear N+1 times in a row when the command argument is N.
+	However, the `rp' string's parameter is the total number of
+	times wanted, not one less.  Therefore, such repeat commands
+	may be used in an `rp' string only if you use Emacs's special
+	termcap operator `%a-\001' to subtract 1 from the repeat count
+	before substituting it into the string.  It is probably safe
+	to use this even though the Unix termcap does not accept it
+	because programs other than Emacs probably won't look for `rp'
+	anyway.
+	
 `cs'    set scroll region.  Takes two parameters, the vertical
 	positions of the first line to include in the scroll region
 	and the last line to include in the scroll region.
@@ -77,6 +89,8 @@ is `cS', which I invented.
 	unless these capabilities are present and say to use those
 	characters.
 
+`km'    Says the terminal has a Meta key.
+
 Defining these strings is important for getting maximum performance
 from your terminal.
 
@@ -101,9 +115,9 @@ the `\E[2J' from the `ti' string.
 The `ti' or `vs' strings also usually need stuff added to them, such as
     \E[>33;52;54h\E[>30;37;38;39l
 You might want to add the following to the `te' or `ve' strings:
-    \E[>52l;\E[>37;h
+    \E[>52l\E[>37h
 The following additional capabilities will improve performance:
-    :AL=1*\E[%dL:DL=1*\E[%dM:IC=4\E[%d@:DC=4\E[%dP:rp=1*%.\E[%db:
+    :AL=1*\E[%dL:DL=1*\E[%dM:IC=4\E[%d@:DC=4\E[%dP:rp=1*%.\E[%a-\001%db:
 If you find that the Meta key does not work, make sure that
     :km:
 is present in the termcap entry.
@@ -121,3 +135,8 @@ can support an `rp' string.
 Watch out on HP terminals for problems with standout disappearing on
 part of the mode line.  These problems are due to the absence of
 :sg#0: which some HP terminals need.
+
+The vi55 is said to require `ip=2'.
+
+The Sun console should have these capabilities for good performance.
+	   :AL=\E[%dL:DL=\E[%dM:IC=\E[%d@:DC=\E[%dP:

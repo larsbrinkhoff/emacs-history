@@ -1,9 +1,9 @@
-; buggestions to mly@mit-mc
+; buggestions to mly@ai.ai.mit.edu
 
 ;; who says one can't have typeout windows in gnu emacs?
 ;; like ^r select buffer from its emacs lunar or tmacs libraries.
 
-;; Copyright (C) 1985 Richard M. Stallman.
+;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -28,109 +28,127 @@
 ;; this depends on the format of list-buffers (from src/buffer.c) and
 ;; on stuff in lisp/buff-menu.el
 
-(defvar Electric-buffer-menu-mode-map nil)
+(defvar electric-buffer-menu-mode-map nil)
 (defun electric-buffer-list (arg)
   "Vaguely like ITS lunar select buffer;
 combining typeoutoid buffer listing with menuoid buffer selection.
-This pops up a buffer describing the set of emacs buffers.
-If the very next character typed is a space then the buffer list is killed.
 
-Otherwise, one may use \\[next-line] and \\[previous-line] to move around in the buffer list window
-and select a buffer by typing Space when the cursor is on the
-appropriate line of the buffer-list window.
+This pops up a buffer describing the set of emacs buffers.
+If the very next character typed is a space then the buffer list
+ window disappears.
+
+Otherwise, one may move around in the buffer list window, marking
+ buffers to be selected, saved or deleted.
+
+To exit and select a new buffer, type Space when the cursor is on the
+ appropriate line of the buffer-list window.
+
 Other commands are much like those of buffer-menu-mode.
 
 Calls value of  electric-buffer-menu-mode-hook  on entry if non-nil.
-Calls value of  after-electric-buffer-menu  on exit (select) if non-nil.
 
-\\{Electric-buffer-menu-mode-map}" 
+\\{electric-buffer-menu-mode-map}" 
   (interactive "P")
-  (let ((Helper-return-blurb "return to buffer editing")
-	(Helper-major-mode 'electric-buffer-menu-mode)
-	(Helper-mode-name "Electric Buffer Menu")
-	(goal-column)
-	(select)
-	(buffer))
+  (let (select buffer)
     (save-window-excursion
       (save-window-excursion (list-buffers arg))
       (setq buffer (window-buffer (Electric-pop-up-window "*Buffer List*")))
       (unwind-protect
 	  (progn
 	    (set-buffer buffer)
-	    (electric-buffer-menu-mode)
+	    (Electric-buffer-menu-mode)
 	    (setq select
 		  (catch 'electric-buffer-menu-select
+		    (message "<<< Press Space to bury the buffer list >>>")
+		    (if (= (setq unread-command-char (read-char)) ?\ )
+			(progn (setq unread-command-char -1)
+			       (throw 'electric-buffer-menu-select nil)))
 		    (let ((first (progn (goto-char (point-min))
 					(forward-line 2)
 					(point)))
 			  (last (progn (goto-char (point-max))
 				       (forward-line -1)
-				       (point))))
+				       (point)))
+			  (goal-column 0))
 		      (goto-char first)
 		      (Electric-command-loop 'electric-buffer-menu-select
 					     nil
 					     t
-					     'Electric-buffer-menu-looper
+					     'electric-buffer-menu-looper
 					     (cons first last))))))
 	(set-buffer buffer)
 	(Buffer-menu-mode)
-	(or select (bury-buffer buffer))
+	(bury-buffer buffer)
 	(message "")))
     (if select
 	(progn (set-buffer buffer)
-	       (set-mark select)	; Buffer-menu-execute changes things.
-	       (Buffer-menu-execute)
-	       (goto-char (mark))
-	       (Buffer-menu-select)
-	       (and (boundp 'after-electric-buffer-menu)
-		    after-electric-buffer-menu
-		    (funcall after-electric-buffer-menu))))))
+	       (let ((opoint (point-marker)))
+		 (Buffer-menu-execute)
+		 (goto-char (point-min))
+		 (if (prog1 (search-forward "\n>" nil t)
+		       (goto-char opoint) (set-marker opoint nil))
+		     (Buffer-menu-select)
+		     (switch-to-buffer (Buffer-menu-buffer t))))))))
 
-(defun Electric-buffer-menu-looper (state conditions)
-  (cond ((and conditions
-	      (not (memq (car conditions)
-			 '(buffer-read-only
-			   end-of-buffer beginning-of-buffer))))
-	 (signal (car conditions) (cdr conditions)))
+(defun electric-buffer-menu-looper (state condition)
+  (cond ((and condition
+	      (not (memq (car condition) '(buffer-read-only
+					   end-of-buffer
+					   beginning-of-buffer))))
+	 (signal (car condition) (cdr condition)))
 	((< (point) (car state))
-	 (Electric-buffer-menu-beginning))
+	 (goto-char (point-min))
+	 (forward-line 2))
 	((> (point) (cdr state))
-	 (Electric-buffer-menu-end))))
+	 (goto-char (point-max))
+	 (forward-line -1)
+	 (if (pos-visible-in-window-p (point-max))
+	     (recenter -1)))))
 
-(defun electric-buffer-menu-mode ()
+(put 'Electric-buffer-menu-mode 'mode-class 'special)
+(defun Electric-buffer-menu-mode ()
   "Major mode for editing a list of buffers.
 Each line describes one of the buffers in Emacs.
 Letters do not insert themselves; instead, they are commands.
+\\{electric-buffer-menu-mode-map}
+
 C-g or C-c C-c -- exit buffer menu, returning to previous window and buffer
   configuration.  If the very first character typed is a space, it
   also has this effect.
 Space -- select buffer of line point is on.
   Also show buffers marked with m in other windows,
-  kills buffers marked with k, and saves those marked with s.
+  deletes buffers marked with \"D\", and saves those marked with \"S\".
 m -- mark buffer to be displayed.
 ~ -- clear modified-flag on that buffer.
 s -- mark that buffer to be saved.
-d or k or C-d or C-k -- mark that buffer to be killed.
+d or C-d -- mark that buffer to be deleted.
 u -- remove all kinds of marks from current line.
 v -- view buffer, returning when done.
 Delete -- back up a line and remove marks.
-\\{Electric-buffer-menu-mode-map}
+
+
 Entry to this mode via command \\[electric-buffer-list] calls the value of
-electric-buffer-menu-mode-hook if it is non-nil.  The value of
-after-electric-buffer-menu is called on exit (when a selection is made)
-if it is non-nil."
+electric-buffer-menu-mode-hook if it is non-nil."
   (kill-all-local-variables)
-  (use-local-map Electric-buffer-menu-mode-map)
-  (setq mode-line-format "-- Electric Buffer List   %M   %[%]----%3p-%-")
+  (use-local-map electric-buffer-menu-mode-map)
+  (setq mode-name "Electric Buffer Menu")
+  (setq mode-line-buffer-identification "Electric Buffer List")
+  (if (memq 'mode-name mode-line-format)
+      (progn (setq mode-line-format (copy-sequence mode-line-format))
+	     (setcar (memq 'mode-name mode-line-format) "Buffers")))
+  (make-local-variable 'Helper-return-blurb)
+  (setq Helper-return-blurb "return to buffer editing")
   (setq truncate-lines t)
   (setq buffer-read-only t)
-  (setq major-mode 'electric-buffer-menu-mode)
-  (setq mode-name "Electric Buffer Menu")
+  (setq major-mode 'Electric-buffer-menu-mode)
+  (goto-char (point-min))
+  (if (search-forward "\n." nil t) (forward-char -1))
   (run-hooks 'electric-buffer-menu-mode-hook))
 
-;; generally the same as Buffer-menu-mode-map (except we don't indirect)
+;; generally the same as Buffer-menu-mode-map
+;;  (except we don't indirect to global-map)
 (put 'Electric-buffer-menu-undefined 'suppress-keymap t)
-(if Electric-buffer-menu-mode-map
+(if electric-buffer-menu-mode-map
     nil
   (let ((map (make-keymap)))
     (fillarray map 'Electric-buffer-menu-undefined)
@@ -147,10 +165,10 @@ if it is non-nil."
     (define-key map " " 'Electric-buffer-menu-select)  
     (define-key map "\C-l" 'recenter)
     (define-key map "s" 'Buffer-menu-save)
-    (define-key map "d" 'Buffer-menu-kill)
-    (define-key map "k" 'Buffer-menu-kill)
-    (define-key map "\C-d" 'Buffer-menu-kill)
-    (define-key map "\C-k" 'Buffer-menu-kill)
+    (define-key map "d" 'Buffer-menu-delete)
+    (define-key map "k" 'Buffer-menu-delete)
+    (define-key map "\C-d" 'Buffer-menu-delete-backwards)
+    ;(define-key map "\C-k" 'Buffer-menu-delete)
     (define-key map "\177" 'Buffer-menu-backup-unmark)
     (define-key map "~" 'Buffer-menu-not-modified)
     (define-key map "u" 'Buffer-menu-unmark)
@@ -165,12 +183,14 @@ if it is non-nil."
     (define-key map "\C-u" 'universal-argument)
     (define-key map "\C-p" 'previous-line)
     (define-key map "\C-n" 'next-line)
+    (define-key map "p" 'previous-line)
+    (define-key map "n" 'next-line)
     (define-key map "\C-v" 'scroll-up)
     (define-key map "\ev" 'scroll-down)
     (define-key map "\e\C-v" 'scroll-other-window)
-    (define-key map "\e>" 'Electric-buffer-menu-end)
-    (define-key map "\e<" 'Electric-buffer-menu-beginning)
-    (setq Electric-buffer-menu-mode-map map)))
+    (define-key map "\e>" 'end-of-buffer)
+    (define-key map "\e<" 'beginning-of-buffer)
+    (setq electric-buffer-menu-mode-map map)))
  
 (defun Electric-buffer-menu-exit ()
   (interactive)
@@ -183,15 +203,15 @@ if it is non-nil."
 
 (defun Electric-buffer-menu-select ()
   "Leave Electric Buffer Menu, selecting buffers and executing changes.
-Saves buffers marked `S'.  Kills buffers marked `K'.
-Selects buffer at point and displays buffers marked `>' in other
+Saves buffers marked \"S\".  Deletes buffers marked \"K\".
+Selects buffer at point and displays buffers marked \">\" in other
 windows."
   (interactive)
   (throw 'electric-buffer-menu-select (point)))
 
 (defun Electric-buffer-menu-quit ()
   "Leave Electric Buffer Menu, restoring previous window configuration.
-Does not execute select, save, or kill commands."
+Does not execute select, save, or delete commands."
   (interactive)
   (throw 'electric-buffer-menu-select nil))
 
@@ -208,20 +228,6 @@ Type \\[Electric-buffer-menu-quit] to exit, \
 \\[Electric-buffer-menu-select] to select, \
 \\[Helper-help] for help, \\[Helper-describe-bindings] for commands.")))
   (sit-for 4))
-
-(defun Electric-buffer-menu-beginning ()
-  "Move to the first buffer description in Electric Buffer Menu."
-  (interactive)
-  (goto-char (point-min))
-  (forward-line 2))
-
-(defun Electric-buffer-menu-end ()
-  "Move to the last buffer description in Electric Buffer Menu."
-  (interactive)
-  (goto-char (point-max))
-  (forward-line -1)
-  (if (not (pos-visible-in-window-p (point-max)))
-      (recenter (1- (/ (window-height (selected-window)) 2)))))
 
 (defun Electric-buffer-menu-mode-view-buffer ()
   "View buffer on current line in Electric Buffer Menu.

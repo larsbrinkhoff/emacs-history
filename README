@@ -5,9 +5,10 @@ This directory holds the latest distribution version of GNU Emacs.
     and programs that Emacs runs,
  `info' holds the Info documentation tree.
  `man' holds the source of the Emacs manual.
- `dbx' holds a version of dbx that can debug GNU Emacs.
-   It runs only on Vaxes.
-   See etc/DEBUG for info on how to debug.
+ `gdb' holds the new GNU source-level debugger.
+   It runs only on Vaxes and suns now; you are encouraged to port
+   it to other machines.
+   See etc/DEBUG for info on how to debug Emacs.
  `cpp' holds a C preprocessor for use instead of the installed one
    when the installed one fails to distinguish more than 8 characters
    in a symbol name.
@@ -16,10 +17,31 @@ This directory holds the latest distribution version of GNU Emacs.
    for C compiles that cannot distinguish more than 8 characters.
 
 The file INSTALL in this directory says how to bring up
- GNU Emacs, once you have loaded the entire subtree of this
+ GNU Emacs on Unix, once you have loaded the entire subtree of this
  directory.  It also contains information on many common
  problems that occur in building, installing and running Emacs.
 
 The `etc' subdirectory contains several other files,
  named in capital letters, which you should look at
  when installing GNU Emacs.
+
+The file 'emacs.com' in this directory is for VMS.  It defines
+ logical names and commands such as `emacs', so you must edit
+ it to specify the file and directory names used on your machine.
+ This file must be executed in each session to enable you to run
+ the installed Emacs.  It should be executed by your `login.com' file,
+ or else perhaps it can be executed once at system boot time.
+
+The file `kept_editor.com' in this directory is also for VMS.
+ When a user says to run Emacs, it really runs this command file.
+
+To convert a Unix distribution into a VMS distribution,
+you must change the file names.  `-' must be changed to `_`.
+To convert a VMS distribution into a Unix distribution,
+the reverse change must me made.  Can someone supply procedures
+to automate this?  It is hard because they must be set up
+to work with particular means of transferring the files from
+one kind of system to the other, and I'm not sure what means
+are generally available.
+
+

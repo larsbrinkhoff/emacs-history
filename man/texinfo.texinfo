@@ -416,6 +416,22 @@ produces
 Getting rid of a file is called @dfn{deleting} it.
 @end quotation
 
+@subsection @@emph and @@strong
+
+@code{@@emph} and @code{@@strong} two forms of emphasis.  @code{@@strong}
+is stronger.
+
+In printed output, @code{@@emph} produces italics and @code{@@strong}
+produces bold.
+
+In the Info file, both of these commands put asterisks around the
+argument.
+
+@subsection @@cite
+
+@code{@@cite} is used for the name of a book.  It produces italics
+in the printed manual, and quotation marks in the Info file.
+
 @subsection @@i or @@b or @@t
 
 These three commands specify font change in the printed manual and have no
@@ -588,9 +604,9 @@ only function is to identify the name to use for cross-references to the
 following chapter or section which makes up the body of the node.  (Cross
 references are made with @code{@@xref}.)@refill
 
-@code{@@node} should always be followed immediately by a
-chapter-structuring command such as @code{@@chapter}, @code{@@section},
-@code{@@subsection} or @code{@@subsubsection}.
+@code{@@node} should be followed immediately by a chapter-structuring
+command such as @code{@@chapter}, @code{@@section}, @code{@@subsection} or
+@code{@@subsubsection}.
 
 @subsection @@menu
 
@@ -1434,9 +1450,9 @@ on a line by itself causes @var{title} to be used for the headings.
 The @code{@@settitle} command should precede everything that generates
 actual output.
 
-Normally, headings start appearing after the @samp{@@end titlepage} command.
-(They are not wanted on the title page.)  However, you can turn headings on
-and off explicitly with the @samp{@@headings} command:
+Normally, headings appear on all pages following the @samp{@@end titlepage}
+command.  (Headings are not wanted on the title page.)  However, you can
+turn headings on and off explicitly with the @samp{@@headings} command:
 
 @example
 @@headings on
