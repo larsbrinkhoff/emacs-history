@@ -1,0 +1,1048 @@
+Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+        * Version 19.7 released.
+
+Sat May 22 14:07:02 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* make-docfile.c (scan_lisp_file): Recognize defalias like fset.
+
+Wed May 19 17:09:50 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* tcp.c: New file.
+
+Tue May 18 16:35:06 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Makefile.in (.c.o): Make the rule start with a tab, not spaces.
+
+Sat May 15 18:13:22 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* timer.c (notify): Don't call sighold or sigrelse; they're USG
+	only.  We should really fix this later, but let's just make it
+	compile for now.
+
+	Install patches from David J. Mackenzie to make the srcdir option
+	work.
+	* Makefile.in (srcdir, VPATH): Get this value from the top-level
+	Makefile.
+	(INSTALLABLES): Split this into two lists - INSTALLABLES and
+	INSTALLABLE_SCRIPTS.
+	(INSTALLABLE_SCRIPTS): New list.
+	(EXECUTABLES): Include INSTALLABLE_SCRIPTS.
+	(${archlibdir}): The scripts to be installed live in the source
+	tree, not in the object tree.
+	(test-distrib): Note that the data file lives in the source tree,
+	not the object tree.
+	(GETOPTDEPS): Note that getopt.h lives in the source tree.
+	(all other targets): Change references to source files to use
+	${srcdir}, except for config.h, which lives in the object dir.
+	(timer.o): Note that this depends on ../src/config.h.
+	* make-docfile.c (main): Add a -d option, to tell it where to find
+	the source files.
+	* test-distrib.c (main): Take the name of the distribution file to
+	test from the command line.
+
+	* timer.c: Fix mispellings of get_date function's name.
+
+Wed May 12 23:00:51 1993  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
+
+	* etags.c (main):
+	Don't require that there be input files if -i switches were given.
+
+Sun May  9 17:26:58 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	The GNU coding standards specify that CFLAGS should be left for
+	users to set.
+	* Makefile.in (CFLAGS): Put this in the "things configure might
+	edit" section, and have it default to -g.
+	(ALL_CFLAGS): New variable, set to all the flags which should be
+	passed to compilations.  Replace all other uses of CFLAGS with
+	ALL_CFLAGS.
+	(.c.o): New rule, to pass ALL_CFLAGS to compilations.
+
+	* Makefile.in (DEFS): Remove this; it's always just going to be
+	"-DHAVE_CONFIG_H -Demacs".
+
+Mon May  3 17:55:22 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log: mawk, SunOS 4.1.3 nawk, and Ultrix/MKS nawk all barf on
+	/[/]/, so change it to /[\/]/.  This should work on all
+	Posix-compliant awks.  It's slightly wrong with traditional awk,
+	since it matches \ too, but that's a minor problem compared to awk
+	syntax errors.
+
+Sat May  1 17:26:16 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in (ALLOCA): New variable, whose value we should
+	inherit from the top-level makefile.
+	(etags, ctags): Include ALLOCA in the list of object files that
+	these executables depend on and link.
+
+Fri Apr  9 08:13:16 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Makefile.in (DEFS): Renamed from CONFIG_CFLAGS.
+
+Wed Apr  7 22:05:58 1993  Jim Blandy  (jimb@churchy.gnu.ai.mit.edu)
+
+	* make-docfile.c (write_c_args): Print an argument named "defalt"
+	as "default".
+
+Wed Mar 24 22:45:36 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in (C_SWITCH_SYSTEM): New variable.
+	(CFLAGS): Include C_SWITCH_SYSTEM in the flags to pass to the
+	compiler.
+
+Mon Mar 22 13:16:20 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (YACC): flag added to c_ext.
+	(c_ext): no more a synonim for c_ext&C_PLPL because of YACC.
+	(find_entries): consistently use streq when reasonable.
+	(find_entries): a .y file is a yacc file.
+	(get_C_stab): c_ext becomes c_ext&C_PLPL.
+	(C_entries): logical cplpl means c_ext&C_PLPL.
+	(C_entries): logical yacc_rules means we are after the first %%.
+	(C_entries): added logic for yacc files.
+
+Tue Mar 16 12:13:43 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (C_entries): ':' case moved to the second switch.
+	(C_entries): do not examine token if structdef==scolonseen.
+	(consider_token): structtag set to null string for enum.
+
+Fri Mar 12 19:54:24 1993  Francesco Potorti`  (pot@cnuce.cnr.it)
+
+	* etags.c (GET_COOKIE): and related macros removed.
+	(logical): is now int, no more a char.
+	(reg): define deleted.
+	(isgood, _gd, notgd): deleted.
+	(gotone): deleted.
+	(TOKEN): member linestart removed.
+	(linepos, prev_linepos, lb1): deleted.
+	(main): call initbuffer on lbs array instead of lb1.
+	(init): removed the initialisation of the logical _gd array;
+	(find_entries): a .sa suffix means assembler file.
+	(C_create_stab): "auto", "void", "extern", "static" are st_C_typespec.
+	All C state machines rewritten.
+	(C_entries): complete rewrite.
+	(condider_token): complete rewrite.
+	(getline): deleted.
+
+Mon Mar  1 19:06:26 1993  Francesco Potorti`  (pot@fly.CNUCE.CNR.IT)
+
+	* etags.c (C_entries): Added the quotednl logical variable.
+	Used for parsing of #define's spanning multiple lines.
+
+Tue Feb 23 13:51:16 1993  Francesco Potorti`  (pot@fly.CNUCE.CNR.IT)
+
+	* etags.c (C_entries): Save the definedef status even when a
+	newline is met inside a string.
+
+Fri Mar 19 02:49:40 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
+
+        * Makefile.in (EXECUTABLES): added rcs-checkin.
+
+	* Makefile.in (unlock, relock): New productions.
+
+Tue Mar 16 22:49:00 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log: Some awks don't understand "\r".  Code around this.
+	Unfortunately this requires putting a carriage return in the
+	source code.  Don't assume that rlog will tolerate times like
+	`10:10:60'; RCS 5.7 won't allow this.
+
+Wed Mar 10 20:03:09 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* timer.c (main): Set the ownership of the stdin file descriptor
+	to the current process.  Print error messages if either of the
+	fcntl's fails.
+
+	* timer.c (sigcatch): Declare this to return SIGTYPE (defined in
+	../src/config.h), not void.
+
+Sat Mar  6 16:17:47 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* b2m.c (main): Don't exit upon reading a blank line.
+
+Mon Mar  1 19:06:26 1993  Francesco Potorti`  (pot@fly.CNUCE.CNR.IT)
+
+	* etags.c (C_entries): New local variable quotednl.  Used for
+	parsing of #define's spanning multiple lines.
+
+	* etags.c (C_entries): Save the definedef status
+	even when a newline is met inside a string.
+
+Fri Feb 26 06:10:58 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* timer.c (notify): Initialize waitfor properly.
+
+Mon Feb 22 12:48:14 MET 1993  Francesco Potorti`  (pot@CNUCE.CNR.IT)
+
+	* etags.c (C_entries): Don't reset definedef when a newline inside a
+	comment is met.
+
+Thu Jan 14 14:57:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (find_entries): If filename ends in .f or .for,
+	don't try anything but Fortran.
+
+Fri Jan  8 15:27:42 1993  Michael I Bushnell  (mib@geech.gnu.ai.mit.edu)
+
+	* timer.c (notify): Flush stdout after writing message to avoid lossage
+	on terminals.
+
+	(notify): Also, write a newline after the token.
+
+Sat Dec 12 01:00:29 1992  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Makefile.in (exec_prefix): New variable.
+	(bindir, libdir): Use it instead of `prefix'.
+
+	* Makefile.in (CFLAGS): #define HAVE_CONFIG_H, too.
+
+	* Makefile.in (libdir): Default to ${prefix}/lib.
+	(archlibdir): Adjusted to match.
+
+	* Makefile.in (distclean): Don't delete backup or autosave files.
+	(extraclean): Like realclean, but does delete backup and autosave
+	files.
+
+	* Makefile.in (realclean): Ignore errors from rm.
+
+	* Makefile.in (distclean): Don't bother to delete ../arch-lib;
+	that doesn't exist anymore.
+
+Fri Dec 11 00:51:13 1992  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Makefile.in (prefix, bindir, libdir, srcdir): New variables, as
+	described in the top-level Makefile.
+	(UTILITIES): Add make-path to the list of utility programs.
+	(../arch-lib): Replaced by the ${archlibdir} target, which places
+	the executables in their permanent home.
+	(install, install.sysv, install.xenix): Consolidated into one
+	target which should work under all circumstances, modulo a few
+	ignored error messages.
+
+	* make-docfile.c (scan_c_file): Since DEFVAR_PER_BUFFER now takes
+	a different number of arguments than other DEFVARs, recognize it
+	specially, and expect the right number of commas.
+
+Fri Dec  4 15:05:36 1992  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* make-path.c: New program, to help with the installation process.
+	* Makefile.in (make-path): New target.
+
+	* make-path.c (touchy_mkdir): Remove debugging output.
+
+Thu Nov  5 23:35:53 1992  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Makefile.in (getdate.o): Added explicit target for this, so we
+	can indicate that it depends on ../src/config.h.
+
+Wed Nov  4 15:10:28 1992  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Makefile.in (CONFIG_CFLAGS): Let the configure script edit this
+	instead of CFLAGS.
+	(CFLAGS): Add -Demacs and -I../src to CONFIG_CFLAGS to produce this.
+
+Wed Sep 30 17:42:19 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* getdate.y: Correctly recognize Mt. Xinu BSD running on an HP
+	9000/300 as BSD; don't include both <sys/time.h> and <time.h> on
+	that system.
+
+	* Makefile.in (arch-lib): Give rm the `-f' option.
+
+Mon Sep 28 23:40:10 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* make-docfile.c (write_c_args): Rewritten to correctly print
+	&optionals before the first identifier, but after the first paren.
+	This code used to just wait for commas or spaces; now it notices
+	identifier boundaries.
+
+Sat Sep 26 21:56:46 1992  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* rcs2log: When getting date, use %02d instead of %.2d in awk printf.
+
+Wed Sep 23 06:33:34 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* make-docfile.c (write_c_args): Print the argument lists properly
+	when the first argument is optional.
+
+Sat Sep 19 20:41:45 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* sorted-doc.c (main): Redefine special chars to use fonts tensy, teni.
+	Redefine @item.  Set catcode of +.
+
+Sat Aug 22 03:09:48 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* emacsclient.c (main): Set IPC_CREAT in msgget call.
+
+Thu Aug 20 01:09:32 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (TEX_funcs): Keep just 1 of two redundant nested loops.
+	(TEX_decode_env): Make `tab' one element longer.
+
+Thu Aug 20 17:24:46 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* etags.c (PF_funcs): Recognize the "entry" keyword.
+
+Tue Aug 18 20:30:56 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* Makefile.in: Add rcs2log and vcdiff to the list of utilities.
+
+Fri Aug 14 13:06:07 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* timer.c (events): Rather than having slots marked as in use or
+	out of use by the `token' field, keep all pending events at the
+	beginning of the array.  When we delete an event in the middle of
+	the array, we move the last event into its place.
+	(num_events): New variable.
+	(schedule): It is now cheaper to find a free event slot;
+	events[num_events] is the first free slot.
+	(notify): Scan events[0 .. num_events-1], instead of the whole
+	array.  When an event fires, move the last event in the array into
+	its spot.  Use num_events to determine whether or not there are
+	any pending events, not wait_for.
+	(getevent): Deleted unused variable `ep'.
+	(sigcatch): It's now easier to find all the active events.
+	(main): Initialize num_events.
+
+	* etags.c: Rather than fret about which systems have index and
+	which systems have strchr, and how to tell the difference between
+	them, we just write out our own versions.  Big deal.
+	(index, rindex): Extern declarations removed.
+	(NEED_INDEX, NEED_RINDEX): Special hacks for hpux removed.
+	(etags_index, etags_rindex): New declarations.
+	(process_file, find_entries, pfnote, TEX_funcs, TEX_decode_env,
+	TEX_getit, substr): Use the etags_*index functions, rather than
+	the native *index functions.
+	(rindex, index): Renamed to etags_rindex and tags_rindex, and
+	made them unconditionally defined, rather than having them depend
+	on NEED_*INDEX.
+
+	* etags.c (savenstr): Add declaration for this at top of file.
+	(TEX_decode_env): Don't declare it local to this function.
+
+	* b2m.c: #include "../src/config.h", so we can test for the USG
+	macro, and decide whether to include <string.h> or <strings.h>.
+	* Makefile.in: Note that b2m.c depends on ../src/config.h.
+
+Thu Aug 13 14:17:49 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* timer.c: Reformatted according to the GNU coding standards.
+	Removed arbitrary limits on the number of events queued and the
+	length of the tokens used to identify them.
+	Removed casts to (void).
+	Removed debugging printfs; they clutter the code, and the need
+	can be better filled using a real debugger.
+
+Fri Aug  7 19:41:40 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* timer.c: Installed new version from Eric Raymond; this is more
+	portable, since it doesn't try to use SIGIO.
+
+Fri Jul 17 17:04:40 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* emacsclient.c (main): If we can't find the socket in this
+	person's home directory, print a message which asks if they've
+	started the server, instead of just printing the message from
+	sys_errmsg; Cygnus finds that people are much less confused by
+	this.
+
+Tue Jul 14 16:55:56 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* etags.c: Rather than defining "notdef" when "hpux" is #defined,
+	so that index and rindex get defined, why don't we actually
+	control index and rindex using symbols called "NEED_INDEX" and
+	"NEED_RINDEX", and define them if hpux is defined?  Isn't that a
+	little more readable than defining something whose name implies
+	that it's not?
+
+Wed Jul  8 17:57:18 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* movemail.c: Merged changes from Jamie Zawinski's byte compiler
+	distribution:
+	Miscellaneous doc fixes.
+	(skip_white, read_lisp_symbol): New functions.	
+	(scan_lisp_file): Instead of using long hairy strings of ifs, call
+	read_lisp_symbol and then see what we got.  Call skip_white
+	instead of writing out a loop to do its job.  Correctly extract
+	docstrings from "defmacro" declarations.
+
+Thu Jun 25 21:36:08 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* movemail.c (strcpy): Declare this to return char *.
+
+Thu Jun 18 18:52:36 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* etags.c (C_entries): When we find a C++ comment, do actually
+	skip to the end of the line; do a 'break' instead of a 'continue'.
+
+Thu Jun 11 16:19:48 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* etags.c (getit): Add missing parenthesis to expression which
+	decides if this token is an identifier.
+
+Thu Jun  4 21:14:43 1992  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
+
+	* etags.c (consider_token): Recognize `ENTRY' macro used in libc.
+
+Sat May 30 15:30:54 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (put_entries): Always put space between name and line num.
+
+Thu May 28 09:58:53 1992  Ken Raeburn  (Raeburn@Cygnus.COM)
+
+	* etags.c (getit): Parenthesize &&/|| expression to avoid gcc
+	warning.
+	(LEVEL_OK_FOR_FUNCDEF): Ditto.
+
+Tue May 19 01:22:58 1992  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* make-docfile.c (write_c_args): Pass both arguments to putc.
+
+Sun May 10 14:14:56 1992  Roland McGrath  (roland@albert.gnu.ai.mit.edu)
+
+	* etags.c (C_entries): Fixed reading of "..." strings.
+	(consider_token): Recognize `SYSCALL' and `PSEUDO' macros, used in
+	the C library source.
+
+	* etags.c (C_entries): When we see a backslash inside a quoted
+	string, skip to the next character.  This allows us to correctly
+	deal with strings containing quotes.
+
+Fri May  8 00:34:26 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* make-docfile.c (write_c_args): Print the C argument names as
+	they would be written in Elisp; print '_' as '-'.
+
+Thu May  7 16:11:26 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* movemail.c [POP]: Get user name via getpwuid.
+
+Mon May  4 20:34:51 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* Makefile.in: flags in CC invocations rearranged for no reason.
+
+Mon Apr 20 16:33:51 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* etags.c (print_help): Remember not to imbed raw newlines in
+	strings - end the lines with `\n\'.
+
+Fri Apr 17 06:04:25 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* timer.c (getevent): Removed declaration of memcpy; since
+	different systems have different return types, and we're not even
+	using the return type anyway, it wasn't doing us any good.
+
+Thu Apr 16 23:48:03 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* emacsserver.c (msgcatch): Use the SIGTYPE macro to declare the
+	type of this function.
+
+Tue Apr 14 17:59:46 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* ChangeLog: Since the old etc contents have been split into etc
+	and lib-src, the old etc's ChangeLog has been duplicated in the
+	new etc and lib-src.  That means that each contains complete and
+	coherent information, although each contains extraneous
+	information.	 
+
+Wed Apr  8 00:54:55 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* lib-src/etags.c: "--no-warning" option renamed to "--no-warn",
+	to be consistent with other GNU programs, like makeinfo.
+
+	* lib-src/Makefile: Renamed to Makefile.in; the configure script
+	will edit this to produce Makefile.
+
+Tue Apr  7 02:39:25 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* etags.c (print_help, print_version): New functions.
+	(main): Options added to support them.
+
+	* etags.c (longopts): New array of long names for the options.
+	(main): Recognize them.
+
+Mon Apr  6 22:29:38 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* etags.c (C_entries): Removed comment saying that \" in a string
+	isn't recognized as magic, because it is correctly handled.
+
+	* getopt.c, getopt.h: New files, from GNU C library.
+	* etags.c: Rewritten to use getopt.
+	#include "getopt.h".
+	(file_num): Variable deleted; its role is now played by getopt's
+	optind.
+	(main): Argument processing loop rewritten to call getopt to get
+	next option.  Options which take parameters (-o and -i) rewritten
+	to get parameter from optarg instead of argv[1].  Filename
+	preprocessing loop and update command changed similarly.
+	* Makefile (etags, ctags): Depend on and link with getopt.h,
+	getopt.o, and getopt1.o.
+	(getopt.o, getopt1.o): New targets for the GNU getopt routines.
+
+	* etags.c (outfflag): Variable deleted; it is non-zero iff outfile
+	is non-zero.
+
+	(main): In the argument processing loop, the 'goto next_arg'
+	statements are breaking out of the switch statement in exactly the
+	same way that a simple 'break' statement would; replace the gotos
+	with breaks, and remove the label.
+
+Mon Apr  6 17:29:21 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* etags.c (C_entries): Clear tydef and next_token_is_func at start.
+	(consider_token): Move next_token_is_func to global.
+
+Thu Apr  2 02:03:48 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* Makefile: Conform with GNU coding standards:
+	(mostlyclean): New target, synonymous with clean.
+	(TAGS, check): New targets.
+	(INSTALL, INSTALLFLAGS): New variables.
+
+Tue Mar 31 10:30:56 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+    	* lib-src/Makefile, etc/MACHINES, etc/NEWS: Changed references to
+	`config.emacs' to `configure'.
+
+	* lib-src/Makefile: Adjusted for renaming of share-lib to etc.
+	* etc/MACHINES: Same.
+
+Mon Mar 30 21:34:42 1992  Jim Blandy  (jimb@pogo.cs.oberlin.edu)
+
+	* movemail.c (main): Allow tempname to be as long as necessary,
+	instead of limiting it to 39 characters.
+
+	* movemail.c (main): Move declaration of buf from top of function
+	to local block surrounding the copy loop.  This makes it less
+	likely to be confused with the buf used by the code which checks the
+	permissions on outname's directory.
+
+Fri Mar 20 08:58:40 1992  Jim Kingdon  (kingdon@albert.gnu.ai.mit.edu)
+
+	* SERVICE: Remove my entry.
+
+Mon Mar  9 12:24:19 1992  David J. MacKenzie  (djm@nutrimat.gnu.ai.mit.edu)
+
+	* Makefile (emacstool, nemacstool, xvetool): Use ${CFLAGS}, not
+	hardcoded -g.
+
+	* movemail.c (xmalloc): Return char *, not int.
+	(main) [!MAIL_USE_FLOCK]: Add a new conditional, MAIL_UNLINK_SPOOL,
+	that is off by default -- normally don't unlink the mail spool
+	file, just empty it.  Pass creat mode 0600, not 0666.
+
+Fri Feb  7 16:28:01 1992  Jim Blandy  (jimb at pogo.cs.oberlin.edu)
+
+	* Makefile (../arch-lib): Depend on ${EXECUTABLES}.
+	(all): Instead of here.
+	(install): Don't use the -s option, since people need symbols to
+	debug code.
+
+Sun Jan 19 11:29:00 1992    (Eric Youngdale at youngdale@v6550c.nrl.navy.mil)
+
+	* etags-vmslib.c (fn_exp): Add type cast.
+
+Sat Jan 18 17:46:03 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* movemail.c: Changes in comments.
+
+Mon Jan 13 01:41:23 1992  Jim Blandy  (jimb at pogo.cs.oberlin.edu)
+
+	* Makefile: Make the distclean target erase the DOC files from
+	../share-lib and the executables from ../arch-lib.
+
+Thu Jan  9 01:37:24 1992  Jim Blandy  (jimb at pogo.cs.oberlin.edu)
+
+	* emacsclient.c: #include <sys/stat.h>
+	(main): Do declare statbfr.
+
+Sat Dec 21 01:35:24 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* emacsserver.c, emacsclient.c [BSD]: Use either /tmp or ~
+	for the socket, depending on SERVER_HOME_DIR.
+	If using /tmp, put host name in the socket name.
+
+	* movemail.c (pfatal_and_delete): New function.
+	(main, popmail): Use it.
+	(popmail): Close output before deleting messages.
+	Check for error on close and on fsync.
+	Use `fatal' where appropriate.
+	(main): Remove (void).
+
+	* aixcc.lex: New file.  Not officially part of Emacs.
+	* Makefile: Rules for that.
+
+Wed Dec  4 15:16:22 1991  Jim Blandy  (jimb at pogo.gnu.ai.mit.edu)
+
+	* yow.c (main): Rename all references to PATH_EXEC to PATH_DATA.
+
+	* etags.c (main): Properly cast call to alloca that initializes
+	included_files.
+
+Sat Aug 17 21:33:34 1991  Roland McGrath  (roland@geech.gnu.ai.mit.edu)
+
+	* etags.c (files_are_tag_tables): Remove global var.
+	(process_file): Don't test it.  Also remove hack checking for a
+	file named "TAGS".
+	(main): -i now takes an arg which is the name of a file to include.
+	Collect these names and emit include tags for them after processing
+	all the argument files.
+
+Tue Jul 30 17:03:41 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* wakeup.c: Terminate if parent goes away.
+
+Thu Jul 18 18:09:51 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* etags.c (C_entries): Process token before handling end of line.
+	When inner loops reach end of line, just back up.
+	Let the real end of line processing happen in just one place.
+	(consider_token):  Likewise.
+
+Thu Apr 11 14:35:34 1991  Jim Blandy  (jimb at geech.gnu.ai.mit.edu)
+
+	* etags.c (TEX_mode): Skip comments while scanning the text to see
+	which escape character this file uses.
+
+Fri Mar 29 19:00:10 1991  Richard Stallman  (rms at mole.gnu.ai.mit.edu)
+
+	* emacsserver.c [USG]: Terminate if msgrcv fails.
+
+Sun Mar  3 22:05:52 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* emacsserver.c [BSD]: Check for errors on stdin after scanf.
+
+Fri Jan 25 22:37:29 1991  Jim Blandy  (jimb at churchy.ai.mit.edu)
+
+	* make-docfile: Find the arguments to a C function correctly,
+	by not ignoring the character that read_c_string returns.  Don't
+	even try to find argument names for functions that take MANY
+	or UNEVALLED arguments, since they're a figment of the docstring's
+	imagination.
+
+Mon Jan 14 18:47:17 1991  Jim Blandy  (jimb at churchy.ai.mit.edu)
+
+	* make-docfile: Read the .elc files generated by the new byte
+	compiler.
+
+Mon Dec 31 17:51:53 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* refcard.tex: Use cm fonts, not am, in multi-column mode.
+
+Thu Nov 29 17:34:14 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* movemail.c (mbx_delimit_begin): Put space before `unseen'.
+
+Tue Nov 27 17:50:37 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Makefile (install*): No need to install wakeup.
+
+Mon Nov 26 20:31:47 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Makefile (install*): Install emacsclient like etags.
+
+Tue Nov 13 00:01:54 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* movemail.c (error): Handle 3 args.
+	(main): Don't check input access if using pop.
+
+Tue Oct 16 14:04:05 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* etags.c (find_entries): Check for numbers after Scheme suffix.
+
+Sun Oct 14 18:46:21 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* termcap.dat (vt200-80): Fix ke and ks to frob flag 1.
+
+Tue Oct  9 15:22:16 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* Makefile (nemacstool, xvetool): New targets.
+
+Wed Sep 26 18:43:44 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* emacsclient.c: Include errno.h and define related variables.
+
+Sun Sep 23 02:22:44 1990  Richard Stallman  (rms at mole.ai.mit.edu)
+
+	* emacsclient.c: Change usage message.
+
+Thu Aug 30 06:17:53 1990  David Lawrence  (tale at pogo.ai.mit.edu)
+
+	* emacs.1:  Add break before -nw option.
+
+Sun Aug 19 19:07:48 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* qsort.c: Replace with GNU version.
+
+Tue Aug 14 23:47:28 1990  David J. MacKenzie  (djm at apple-gunkies)
+
+	* wakeup.c: New program replacing loadst.c.
+
+Tue Aug 14 21:34:50 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c [USG]: Pass msgsnd only 4 args.
+
+Thu Aug  9 10:36:18 1990  David J. MacKenzie  (djm at pogo.ai.mit.edu)
+
+	* etags.c: Rename `flag' variables for what they do instead of
+	which option character sets them.
+
+Mon May 28 21:54:59 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c (main): Conditional to get load average on Apollo.
+
+Tue May 22 12:51:56 1990  Joseph Arceneaux  (jla at churchy.ai.mit.edu)
+
+	* emacsserver.c: Set the permission on the socket to 0600.
+
+Tue Mar 27 20:09:49 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c [BSD]: Print clean message for failing getwd.
+
+Tue Mar 20 19:53:07 1990  David Lawrence  (tale at pogo.ai.mit.edu)
+
+	* getdate.y: Use the getdate.y from GNU tar for timer.
+
+Sun Mar 18 12:03:44 1990  Jim Kingdon  (kingdon at pogo.ai.mit.edu)
+
+	* emacsclient.c (main): Don't put brackets around "filename" in
+	usage message.  It isn't optional.
+
+Wed Mar 14 15:23:26 1990  Joseph Arceneaux  (jla at churchy.ai.mit.edu)
+
+	* etags.c (getit):  Recognize '$' as beginning identifiers.
+
+Thu Feb 22 05:36:36 1990  David Lawrence  (tale at pogo.ai.mit.edu)
+
+	* emacsserver.c: Renamed from server.c.
+	* Makefile: Reference emacsserver rather than server.
+	* MACHINES: Doc fix for new emacsserver name.
+
+Thu Jan 25 22:14:15 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c: Print program name in error messages.
+
+Fri Jan 19 22:55:07 1990  David Lawrence  (tale at cocoa-puffs)
+
+	* timer.c, getdate.y (new files) and Makefile:
+	  Sub-process support for run-at-time in timer.el.
+	  Doesn't yet work correctly for USG. 
+
+Wed Jan 10 21:58:18 1990  Jim Kingdon  (kingdon at pogo)
+
+	* MACHINES: Add HP 300 running BSD.
+
+Tue Jan  2 12:15:41 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* yow.c: Dynamically allocate buffer; skip header before random
+	choice to avoid bias toward first item.
+
+Sun Dec 24 23:54:28 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (readline): Separate out init of `pend'.
+
+Sun Dec 17 14:28:23 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Undo changes relating to isgoodhdr.
+
+Sat Dec 16 15:31:34 1989  Mosur Mohan  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (isgoodhdr): New macro.
+	(_gdh, notgdh): New variable used by that.
+	(init): Initialize _gdh.
+	(find_entries): Set header_file.
+	(consider_token): Use isgoodhdr if in header file.
+
+	* etags.c (total_size_of_entries):
+	Was miscalculating by 1 in rewritten case.
+
+	* etags.c (PAS_funcs): One arg to pfnote was missing.
+
+Tue Dec  5 14:10:36 1989  Joseph Arceneaux  (jla at spiff)
+
+	* MACHINES: Change for the ULTRIX entry.
+
+Tue Nov 21 10:33:43 1989  Joseph Arceneaux  (jla at spiff)
+
+	* etags.c (process_file): If file is not regular, return.
+
+Mon Nov  6 03:05:31 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c (main): Handle FIXUP_KERNEL_SYMBOL_ADDR.
+
+Mon Oct 30 01:49:21 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c (load_average): If HAVE_GETLOADAVG, use getloadavg.
+	(main): If HAVE_GETLOADAVG, don't call `nlist'.
+
+Wed Oct 25 01:12:02 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (consider_token): Allow any number of typespec keywords
+	after `typedef', before new type name.
+	(enum sym_type): Add st_C_typespec.
+	(C_create_stab): Put typespec kwds in table.
+
+Sun Aug 27 13:39:02 1989  Richard Stallman  (rms at apple-gunkies.ai.mit.edu)
+
+	* etags.c (main): Don't depend on name invoked by.
+	If CTAGS is not defined, assume it is ETAGS.
+
+Mon Jul 31 02:08:58 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (L_funcs): Allow package name in define construct,
+	as in (foo::defmumble name-defined ...).
+
+Sun Jul 30 20:55:13 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (find_entries): Stupid bug testing for C filename suffixes.
+
+	* Makefile (yow): Depends on ../src/paths.h.
+
+Tue Jul  4 15:24:23 1989  Richard Stallman  (rms at apple-gunkies.ai.mit.edu)
+
+	* etags.c: Fix compilation by moving Pascal after Fortran.
+
+Thu Jun 15 12:52:48 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c [USG]: Define F_OK, etc., if not found in header.
+
+Sat May 27 00:24:28 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* hexl.c: New file, supports hexl-mode.
+
+Sun May 14 18:52:58 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: New compilation flag MAIL_USE_MMDF.
+
+Mon May  8 17:10:28 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c: Use BSD code whenever HAVE_SOCKETS.
+	* server.c: Likewise.
+
+	* make-docfile.c (scan_c_file): Output argument names at end of string.
+	(write_c_args): New subroutine.
+
+Thu Apr 27 23:54:04 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Report failure of flock.
+
+Wed Apr 19 23:57:21 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (find_entries): Allow multi-letter extensions for fortran.
+
+Tue Apr 18 21:23:15 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c: on bsd4.3, use gettimeofday instead of CPUSTATES.
+
+Wed Mar 15 23:23:33 1989  Jeff Peck  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacstool.c: setenv IN_EMACSTOOL=t, TERM=sun, TERMCAP=.
+
+	* emacsstool.1: update to document environment variables.
+
+Tue Feb 21 12:58:08 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (PAS_funcs): New function by Mosur Mohan.
+
+	* movemail.c: On sysv, include unistd.h.
+
+Sat Feb 18 08:26:27 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* b2m.c: New file.
+
+Wed Feb 15 10:17:27 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Prolog support from Sunichirou Sugou
+
+Fri Feb  3 18:37:04 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile (clean): New target.
+
+Wed Jan 25 01:54:13 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fakemail.c (put_line): Break header lines at 79 cols.
+
+Thu Jan 19 21:38:34 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Greatly rewritten by Sam Kendall for C++ support and for
+	multiple tags per line.
+
+Tue Jan  3 13:29:46 1989  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Check access before doing real work.
+	Check that outfile is in a writable directory.
+	On fatal error, delete the lock file.
+
+Sat Dec 31 17:46:29 1988  Richard Mlynarik  (mly at rice-chex.ai.mit.edu)
+
+        * env.c:  Add decl for my-index
+        * etags.c (file-entries): .oak => scheme
+
+Fri Dec 30 16:37:27 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Use `access' to check input and output files.
+
+Wed Dec 28 02:31:00 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c (main): Ignore all of CWD before first slash.
+
+Tue Dec 27 23:11:46 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (readline): Double linebuffer->size outside the xrealloc.
+
+Thu Dec 22 21:51:55 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.c, emacsclient.c: Don't try to use gid_t; it isn't defined.
+	* server.c: chmod the socket to 0700.
+
+Fri Dec  9 12:01:25 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* fakemail.c (main): Let env var FAKEMAILER override pgm to run.
+	(add_field): Delete comments and turn `<', `>' to spaces
+	in header lines.
+	(USE_FAKEMAIL): New customization macro says to make fakemail
+	not be a no-op even on a BSD system.
+
+Thu Dec  1 23:37:16 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c (consider_token): Skip comments just like whitespace.
+	Notice `struct', etc. and set strtag for those tokens.
+	Return 1 for the token following `struct' if an open-brace follows it.
+	(C_entries): Special handling of token following `struct'
+	needed because we have probably advanced to the following line
+	to find the `{'.
+	(main): New option `T' sets tflag and strflag.
+	Set both of them by default if eflags.
+
+Wed Nov 30 15:21:13 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Do fsync before closing output.
+
+Tue Nov 29 09:59:54 1988  Richard Mlynarik  (mly at pickled-brain.ai.mit.edu)
+
+        * movemail.c:  Better error message when can't create tempname.
+        This file needs a great deal of extra error-checking and lucid reporting...
+
+Wed Nov 16 22:03:15 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Support assembler code for .s and .a files.
+	(getit): Allow underscore in a tag.
+
+Tue Nov 15 10:00:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* movemail.c: Close output and check errors before deleting input.
+
+Sat Oct  1 17:34:46 1988  Richard Stallman  (rms at apple-gunkies.ai.mit.edu)
+
+	* emacsclient.c [SYSVIPC]: Compute cwd only once; decide properly
+	whether to prefix it.  Handle line number args.
+
+Sat Sep 24 00:23:49 1988  Richard Stallman  (rms at gluteus.ai.mit.edu)
+
+	* etags.c (main): default setting of eflag was backwards.
+
+Fri Sep 23 17:05:34 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: New option -i.  -f renamed -o.
+	`-' as input file means read input file names from stdin.
+	-i spec'd or input file named TAGS means the input file is another
+	tag table; output an "include" line for it.
+
+Mon Sep 19 17:52:09 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* Makefile: New vars DESTDIR, BINDIR, LIBDIR, MANDIR, MANEXT.
+	New targets install, install.sysv, install.xenix.
+	This makefile is now responsible for installing executables
+	and documentation from this directory into system directories.
+
+Fri Sep 16 01:03:55 1988  Richard Stallman  (rms at corn-chex.ai.mit.edu)
+
+	* server.c, emacsclient.c (main): Compute socket name from euid.
+
+Thu Aug  4 19:42:45 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* emacsclient.c: Args like +DIGITS are passed through unchanged.
+
+Tue Jul 12 22:08:00 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* server.c: If both BSD and HAVE_SYSVIPC, use the latter.
+	* emacsclient.c: Likewise.
+	In the HAVE_SYSVIPC alternative, if BSD, use getwd instead of getcwd.
+
+Thu Jun 23 08:40:53 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Handle `typedef struct foo {' (price@mcc.com).
+	(istoken) New string-comparison macro.
+	(consider_token): New arg `level'.  New state `tag_ok' in `tydef'.
+
+Tue Jun 14 04:25:58 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* etags.c: Changes for VMS.
+	Always define ETAGS on VMS.
+	Define macros GOOD and BAD for success and failure exit codes.
+	(begtk, intk): Allow `$' in identifiers
+	(main): Don't support -B, -F or -u on VMS.
+	Alternate loop for scanning filename arguments.
+	(system): Delete definition of this function.
+
+	* etags-vmslib.c (system): Undefine this; VMS now provides it.
+
+Wed Jun  8 08:18:21 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* loadst.c: Prevent multiple-def errors on BSD and BSD4_3
+	around include of param.h.  (Like fns.c.)
+
+Mon May 16 01:06:26 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c (load_average): Move load-average code to this new fn.
+	Add conditionals to compute load ave on UMAX.
+
+Sat May 14 01:24:53 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* loadst.c: Change DK_HEADER_FILE to DKSTAT_HEADER_FILE
+	with opposite sense.
+
+Fri May 13 18:09:39 1988  Chris Hanson  (cph at kleph)
+
+	* emacsclient.c: Delete references to unused variable `out'.  This
+	caused a bus error when used under hp-ux.
+
+Fri May  6 10:42:31 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c: Control dk.h conditional with DK_HEADER_FILE.
+
+Wed May  4 16:08:43 1988  Richard Stallman  (rms at rice-krispies.ai.mit.edu)
+
+	* etags.c (find_entries): `.t' or `.sch' means scheme code.
+
+Fri Apr 29 00:22:26 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* loadst.c: Add BSD4_3 conditional for file dk.h instead of dkstat.h.
+
+Thu Apr 28 08:55:46 1988  Richard Stallman  (rms at frosted-flakes.ai.mit.edu)
+
+	* movemail.c: #undef close, since config can #define it on V.3.
+	* emacsclient.c, fakemail.c, loadst.c, server.c: likewise.
+
+Tue Apr 26 07:33:01 1988  Richard Stallman  (rms at lucky-charms.ai.mit.edu)
+
+	* etags.c (TEX_mode, etc.): Remove superfluous backslashes from
+	invalid escape sequences such as `\{'.
+
+	* loadst.c: Add `sequent' conditional for file dk.h.
+
+Sun Mar 20 13:17:13 1988  Richard M. Stallman  (rms at wilson)
+
+	* server.c [not BSD and not HAVE_SYSVIPC]: fix error message.
+
+	* loadst.c (main) [XENIX]: use /usr/spool/mail, not /usr/mail.
+
+Local Variables:
+mode: indented-text
+left-margin: 8
+fill-column: 74
+version-control: never
+End:

@@ -1,0 +1,230 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Windows, Frames, Buffers, Top
+@chapter Multiple Windows
+@cindex windows
+
+  Emacs can split a frame into two or many windows.  Multiple windows
+can display parts of different buffers, or different parts of one
+buffer.  Multiple frames always imply multiple windows, because each
+window belongs to one and only one frame.
+
+@menu
+* Basic Window::     Introduction to Emacs windows.
+* Split Window::     New windows are made by splitting existing windows.
+* Other Window::     Moving to another window or doing something to it.
+* Pop Up Window::    Finding a file or buffer in another window.
+* Change Window::    Deleting windows and changing their sizes.
+@end menu
+
+@node Basic Window, Split Window, Windows, Windows
+@section Concepts of Emacs Windows
+
+  When multiple windows are being displayed, each window has an Emacs
+buffer designated for display in it.  The same buffer may appear in more
+than one window; if it does, any changes in its text are displayed in all
+the windows where it appears.  But the windows showing the same buffer can
+show different parts of it, because each window has its own value of point.
+
+@cindex selected window
+  At any time, one of the windows is the @dfn{selected window}; the buffer
+this window is displaying is the current buffer.  The terminal's cursor
+shows the location of point in this window.  Each other window has a
+location of point as well, but since the terminal has only one cursor there
+is no way to show where those locations are.  When you make multiple frames,
+each frame has a cursor which appears in the frame's selected window.
+
+  Commands to move point affect the value of point for the selected Emacs
+window only.  They do not change the value of point in any other Emacs
+window, even one showing the same buffer.  The same is true for commands
+such as @kbd{C-x b} to change the selected buffer in the selected window;
+they do not affect other windows at all.  However, there are other commands
+such as @kbd{C-x 4 b} that select a different window and switch buffers in
+it.  Also, all commands that display information in a window, including
+(for example) @kbd{C-h f} (@code{describe-function}) and @kbd{C-x C-b}
+(@code{list-buffers}), work by switching buffers in a nonselected window
+without affecting the selected window.
+
+  Each window has its own mode line, which displays the buffer name,
+modification status and major and minor modes of the buffer that is
+displayed in the window.  @xref{Mode Line}, for full details on the mode
+line.
+
+@node Split Window, Other Window, Basic Window, Windows
+@section Splitting Windows
+
+@table @kbd
+@item C-x 2
+Split the selected window into two windows, one above the other
+(@code{split-window-vertically}).
+@item C-x 3
+Split the selected window into two windows positioned side by side
+(@code{split-window-horizontally}).
+@end table
+
+@kindex C-x 2
+@findex split-window-vertically
+  The command @kbd{C-x 2} (@code{split-window-vertically}) breaks the
+selected window into two windows, one above the other.  Both windows start
+out displaying the same buffer, with the same value of point.  By default
+the two windows each get half the height of the window that was split; a
+numeric argument specifies how many lines to give to the top window.
+
+@kindex C-x 3
+@findex split-window-horizontally
+  @kbd{C-x 3} (@code{split-window-horizontally}) breaks the selected
+window into two side-by-side windows.  A numeric argument specifies
+how many columns to give the one on the left.  A line of vertical bars
+separates the two windows.  Windows that are not the full width of the
+screen have mode lines, but they are truncated; also, they do not
+always appear in inverse video, because the Emacs display routines
+have not been taught how to display a region of inverse video that is
+only part of a line on the screen.
+
+@vindex truncate-partial-width-windows
+  When a window is less than the full width, text lines too long to fit are
+frequent.  Continuing all those lines might be confusing.  The variable
+@code{truncate-partial-width-windows} can be set non-@code{nil} to force
+truncation in all windows less than the full width of the screen,
+independent of the buffer being displayed and its value for
+@code{truncate-lines}.  @xref{Continuation Lines}.@refill
+
+  Horizontal scrolling is often used in side-by-side windows.
+@xref{Display}.
+
+@vindex split-window-keep-point
+  If @code{split-window-keep-point} is non-nil, @kbd{C-x 2} tries to
+avoid shifting any text on the screen by putting point in whichever
+window happens to contain the screen line the cursor is already on.  The
+default is that @code{split-window-keep-point} is non-nil on slow
+terminals.
+
+@node Other Window, Pop Up Window, Split Window, Windows
+@section Using Other Windows
+
+@table @kbd
+@item C-x o
+Select another window (@code{other-window}).  That is @kbd{o}, not zero.
+@item C-M-v
+Scroll the next window (@code{scroll-other-window}).
+@item M-x compare-windows
+Find next place where the text in the selected window does not match
+the text in the next window.
+@end table
+
+@kindex C-x o
+@findex other-window
+  To select a different window, use @kbd{C-x o} (@code{other-window}).
+That is an @kbd{o}, for `other', not a zero.  When there are more than two
+windows, this command moves through all the windows in a cyclic order,
+generally top to bottom and left to right.  After the rightmost and
+bottommost window, it goes back to the one at the upper left corner.  A
+numeric argument means to move several steps in the cyclic order of
+windows.  A negative argument moves around the cycle in the opposite order.
+When the minibuffer is active, the minibuffer is the last window in the
+cycle; you can switch from the minibuffer window to one of the other
+windows, and later switch back and finish supplying the minibuffer argument
+that is requested.  @xref{Minibuffer Edit}.
+
+@kindex C-M-v
+@findex scroll-other-window
+  The usual scrolling commands (@pxref{Display}) apply to the selected
+window only, but there is one command to scroll the next window.
+@kbd{C-M-v} (@code{scroll-other-window}) scrolls the window that
+@kbd{C-x o} would select.  It takes arguments, positive and negative,
+like @kbd{C-v}.  (In the minibuffer, @kbd{C-M-v} scrolls the window
+that contains the minibuffer help display, if any, rather than the
+next window in the standard cyclic order.)
+
+  The command @code{M-x compare-windows} lets you compare two files or
+buffers visible in two windows, by moving through them to the next
+mismatch.  @xref{Comparing Files}.
+
+@node Pop Up Window, Change Window, Other Window, Windows
+@section Displaying in Another Window
+
+@kindex C-x 4
+  @kbd{C-x 4} is a prefix key for commands that select another window
+(splitting the window if there is only one) and select a buffer in that
+window.  Different @kbd{C-x 4} commands have different ways of finding the
+buffer to select.
+
+@table @kbd
+@item C-x 4 b @var{bufname} @key{RET}
+Select buffer @var{bufname} in another window.  This runs
+@code{switch-to-buffer-other-window}.
+@item C-x 4 C-o @var{bufname} @key{RET}
+Display buffer @var{bufname} in another window, but
+don't select that buffer or that window.  This runs
+@code{display-buffer}.
+@item C-x 4 f @var{filename} @key{RET}
+Visit file @var{filename} and select its buffer in another window.  This
+runs @code{find-file-other-window}.  @xref{Visiting}.
+@item C-x 4 d @var{directory} @key{RET}
+Select a Dired buffer for directory @var{directory} in another window.
+This runs @code{dired-other-window}.  @xref{Dired}.
+@item C-x 4 m
+Start composing a mail message in another window.  This runs
+@code{mail-other-window}; its same-window analogue is @kbd{C-x m}
+(@pxref{Sending Mail}).
+@item C-x 4 .
+Find a tag in the current tag table in another window.  This runs
+@code{find-tag-other-window}, the multiple-window variant of @kbd{M-.}
+(@pxref{Tags}).
+@item C-x 4 r @var{filename} @key{RET}
+Visit file @var{filename} read-only, and select its buffer in another
+window.  This runs @code{find-file-read-only-other-window}.
+@xref{Visiting}.
+@end table
+
+@node Change Window,, Pop Up Window, Windows
+@section Deleting and Rearranging Windows
+
+@table @kbd
+@item C-x 0
+Get rid of the selected window (@code{kill-window}).  That is a zero.
+@item C-x 1
+Get rid of all windows except the selected one (@code{delete-other-windows}).
+@item C-x ^
+Make the selected window taller, at the expense of the other(s)
+(@code{enlarge-window}).
+@item C-x @}
+Make the selected window wider (@code{enlarge-window-horizontally}).
+@end table
+
+@kindex C-x 0
+@findex delete-window
+  To delete a window, type @kbd{C-x 0} (@code{delete-window}).  (That is
+a zero.)  The space occupied by the deleted window is given to an
+adjacent window (but not the minibuffer window, even if that is active
+at the time).  Once a window is deleted, its attributes are forgotten;
+only restoring a window configuration can bring it back.  Deleting the
+window has no effect on the buffer it used to display; the buffer
+continues to exist, and you can select it in any window with @kbd{C-x
+b}.
+
+@kindex C-x 1
+@findex delete-other-windows
+  @kbd{C-x 1} (@code{delete-other-windows}) is more powerful than
+@kbd{C-x 0}; it deletes all the windows except the selected one (and the
+minibuffer); the selected window expands to use the whole frame except
+for the echo area.
+
+@kindex C-x ^
+@findex enlarge-window
+@kindex C-x @}
+@findex enlarge-window-horizontally
+@vindex window-min-height
+@vindex window-min-width
+  To readjust the division of space among vertically adjacent windows,
+use @kbd{C-x ^} (@code{enlarge-window}).  It makes the currently
+selected window get one line bigger, or as many lines as is specified
+with a numeric argument.  With a negative argument, it makes the
+selected window smaller.  @kbd{C-x @}}
+(@code{enlarge-window-horizontally}) makes the selected window wider by
+the specified number of columns.  The extra screen space given to a
+window comes from one of its neighbors, if that is possible.  If this
+makes any window too small, it is deleted and its space is given to an
+adjacent window.  The minimum size is specified by the variables
+@code{window-min-height} and @code{window-min-width}.

@@ -1,3 +1,9 @@
+EMACS belongs in <sys/errno.h>: Editor too big!
+
+
+Escape-Meta-Alt-Control-Shift
+
+
 From: harvard!topaz!BLUE!BRAIL@mit-eddie
 Date: 9 Sep 85 17:25:27 EDT
 Subject: EMACS -- What does it mean?
@@ -8,6 +14,11 @@ suggested some more creative definitions. Here they are. Anyone have
 any additions?
 
 --------
+Eight
+Megabytes
+And
+Constantly
+Swapping
 
 Even a
 Master of
@@ -290,6 +301,7 @@ Crank out these
 Slogans
 -------
 
+
 From: ihnss!warren@mit-eddie (Warren Montgomery)
 Newsgroups: net.emacs
 Subject: Re: EMACS -- What does it mean?
@@ -426,17 +438,49 @@ Apparently-To: emacs-netnews-distribution@mit-prep
 DREI:	DREI - Really Emacs Inside
 	(Exists only in my head)
 
-Paul.
+From: friedman@gnu.ai.mit.edu (Noah Friedman)
+Sender: friedman@gnu.ai.mit.edu
+To: jimb@gnu.ai.mit.edu, rms@gnu.ai.mit.edu
+Subject: etc/emacs.names
+Date: Fri, 9 Oct 92 00:54:57 edt
 
-UUCP:	{decvax,allegra,vax135,ucbvax}!ulysses!circe!pajb
-DDD:	(201) 582 7346
-USPS:	AT&T Bell Labs, Room 5E-103, Murray Hill, NJ 07974
+The following should be added:
 
-.. I don't care WHO you are, you're not walking on the water while I'M fishing.-- 
-Paul.
 
-UUCP:	{decvax,allegra,vax135,ucbvax}!ulysses!circe!pajb
-DDD:	(201) 582 7346
-USPS:	AT&T Bell Labs, Room 5E-103, Murray Hill, NJ 07974
+Emacs
+Makes
+A
+Computer
+Slow
 
-.. I don't care WHO you are, you're not walking on the water while I'M fishing.
+From: S_TITZ@iravcl.ira.uka.de (Olaf Titz)
+Newsgroups: alt.religion.emacs
+Subject: Re: what emacs stands for
+Date: 12 Oct 92 19:29:32 GMT
+
+Emacs Masquerades As Comfortable Shell
+Ever Made A Control-key Setup?
+Emacs: My Alternative Computer Story
+Emacs Made Almost Completely Screwed
+       (by extensive use of M-x global-unset-key)
+Emacs Macht Alle Computer Schoen 
+       (deutsch)  (=Emacs makes all computers beautiful)
+Each Mail A Continued Surprise
+Every Mode Acknowledges Customized Strokes 
+       (keystrokes, of course :-)
+Eating Memory And Cycle-Sucking
+Everyday Material Almost Compiled Successfully
+
+now enough bashing for today :-)
+
+
+Elvis
+Masterminds
+All
+Computer
+Software
+
+Just so you boys know the score.
+
+Thank you very Much,
+The King

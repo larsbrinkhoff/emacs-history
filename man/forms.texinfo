@@ -1,0 +1,897 @@
+\input texinfo			@c -*-texinfo-*-
+
+@c  forms.ti -- documentation for forms-mode
+@c  SCCS Status     : @(#)@ forms	1.2.7
+@c  Author          : Johan Vromans
+@c  Created On      : 1989
+@c  Last Modified By: Johan Vromans
+@c  Last Modified On: Mon Jul  1 14:54:22 1991
+@c  Update Count    : 16
+@c  Status          : OK
+
+@c  HISTORY 
+@c  1-Jul-1991		Johan Vromans	
+@c     Restructured parts of the doc.
+@c  30-Jun-1991		Johan Vromans	
+@c     Add doc for forms-modified-record-filter.
+@c     Doc that the filters may be the name of a function.
+@c     Clarified the use of quoted lists and symbols in
+@c     forms-format-list.
+@c
+@c  29-Jun-1991         Johan Vromans   
+@c     Inserted these headers.
+@c     Added doc to use lisp lists and symbols in forms-forms-list. 
+
+@comment %**start of header (This is for running Texinfo on a region.)
+@setfilename ../info/forms
+@settitle Forms Mode User's Manual
+@iftex
+@finalout
+@setchapternewpage odd
+@end iftex
+@c      @smallbook
+@comment %**end of header (This is for running Texinfo on a region.)
+
+@tex
+\global\chapno=30
+@end tex
+
+@ifinfo
+This file documents forms-mode, a forms based major mode for GNU Emacs.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+@ignore
+Permission is granted to process this file through TeX and print the
+results, provided the printed document carries copying permission notice
+identical to this one except for the removal of this paragraph (this
+paragraph not being relevant to the printed manual).
+
+@end ignore
+@end ifinfo
+
+@iftex
+@titlepage
+@sp 6
+@center @titlefont{Forms Mode User's Manual}
+@sp 4
+@center Forms-Mode version 1.2, patchlevel 7
+@sp 1
+@center July 1991
+@sp 5
+@center Johan Vromans
+@center @i{jv@@mh.nl}
+@page
+
+@vskip 0pt plus 1filll
+Copyright @copyright{} 1989,1990,1991 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+@end titlepage
+@page
+@end iftex
+
+@ifinfo
+@node Top, What is in a Forms, , (DIR)
+@end ifinfo
+
+@iftex
+@chapter Forms mode
+@end iftex
+
+Forms mode is an Emacs major mode for working with simple plain-text
+databases in a forms-oriented manner. In forms mode, the information in
+these files is presented in an Emacs window in a user-defined format,
+one record at a time. Forms can be inspected read-only (viewing) or
+modified and updated.
+@cindex forms-mode
+
+Forms mode is not a simple major mode, but requires two files to do its
+job: a control file and a data file. The data file holds the
+actual data which will be presented. The control file describes
+how it will be presented.
+
+@menu
+* What is in a Forms::	Introduction.
+* Data File Format::	How to format the data file.
+* Control File Format::	How to control forms mode.
+* Forms Format Description::
+			How to define the forms layout.
+* Modifying Forms Contents::
+			How to modify.
+* Forms Mode Commands::	The commands available, and how to use them.
+* Key Bindings::	Which keys are bound to what commands.
+* Miscellaneous::	Forms mode messages and other remarks.
+* Error Messages::	List of error messages forms mode can produce.
+* Examples::		Some examples.
+* Credits::		Thanks everyone.
+* Concept Index::	Index of Concepts
+* Variable Index::	Index of Variables.
+* Function Index::	Index of Functions.
+@end menu
+
+@node What is in a Forms, Data File Format, Top, Top
+@section What is in a forms
+
+Let's illustrate forms mode with an example. Suppose you are looking at
+your @file{/etc/passwd} file, and your screen looks as follows:
+
+@example
+====== /etc/passwd ======
+
+User : root   Uid: 0   Gid: 1
+
+Name : Super User
+
+Home : /
+
+Shell: /bin/sh
+@end example
+
+As you can see, the familiar fields from the entry for the super user
+are all there, but instead of being colon-separated on one single line,
+they make up a forms.
+
+The contents of the forms consists of the contents of the fields of the
+record (e.g. ``root'', ``0'', ``1'', ``Super User'')
+interspersed with normal text (e.g ``User : '', ``Uid: '').
+
+You can define yourself how text and fields will be used to make up the
+forms.
+
+When you modifiy the contents of the forms, it will be analyzed and the
+new contents of the fields of this record will be extracted. It
+possible, the file will be updated with the new contents.
+
+@node Data File Format, Control File Format, What is in a Forms, Top
+@section Data file format
+
+Files for use with forms mode are very simple -- each record (line)
+forms the contents one form.  Each record is supposed to consist of a
+number of fields. These fields are separated by the value of the string
+@code{forms-field-sep}, which is a @code{TAB} by default.
+
+@cindex pseudo-newline
+Fields may contain text which shows up in the forms in multiple lines.
+These lines are separated in the field using a @var{pseudo-newline}
+character which is defined by the value of the string
+@code{forms-multi-line}. Its default value is a Control-K character. If
+it is set to @code{nil} multiple line fields are prohibited.
+
+@node Control File Format, Forms Format Description, Data File Format, Top
+@section Control file format
+
+The control file serves two purposes.
+
+First, it defines the data file to use, and its properties.
+
+Second, the Emacs buffer it occupies will be used by the forms mode to
+display the forms.
+
+@findex eval-current-buffer
+The contents of the control file are evaluated using the Emacs command
+@code{eval-current-buffer}, hence must contain valid Emacs-lisp expressions.
+These expressions must set the following lisp variables to a suitable
+value:
+
+@table @code
+@vindex forms-file
+@item forms-file
+This variable must be set to the name of the data file.@*
+Example:
+@example
+(setq forms-file "my/data-file")
+@end example
+
+@vindex forms-format-list
+@item forms-format-list
+This variable describes the way the fields of the record are formatted on
+the screen. See the next section for details.
+
+@vindex forms-number-of-fields
+@item forms-number-of-fields
+This variable holds the number of fields in each record of the data
+file.@*
+Example:
+@example
+(setq forms-number-of-fields 10)
+@end example
+
+@end table
+
+An error will be given if one of the above values has not been set.
+
+Other variables that may be set from the control file are optional. Most
+of them have suitable default values.
+
+@table @code
+@vindex forms-field-sep
+@item forms-field-sep
+This variable may be used to designate the string which separates the fields
+in the records of the data file. If not set, it defaults to a string
+containing a single @code{TAB} character. @*
+Example:
+@example
+(setq forms-field-sep "\t")
+@end example
+
+@vindex forms-read-only
+@item forms-read-only
+If set to a value other than @code{nil}, the data file is treated
+read-only. If the data file can not be written into, read-only mode is
+enforced. The default value for @code{forms-read-only} is derieved from
+the access permissions of the data file.@*
+Example:
+@example
+(set forms-read-only t)
+@end example
+
+@vindex forms-multi-line
+@item forms-multi-line
+This variable may be set to allow multi-line text in fields. It should
+be set to a string of one character, which denotes the pseudo new-line
+character to be used to separate the text lines.@*
+Its default value is Control-K (octal 013). If set to @code{nil},
+multi-line text fields are prohibited.@*
+It may not be a character contained in @code{forms-field-sep}.@*
+Example:
+@example
+(setq forms-multi-line "\C-k")
+@end example
+
+@vindex forms-forms-scroll
+@item forms-forms-scroll
+@xref{Forms Mode Commands} for the description.
+
+@vindex forms-forms-jump
+@item forms-forms-jump
+@xref{Forms Mode Commands} for the description.
+
+@findex forms-new-record-filter
+@item forms-new-record-filter
+The control file may define a function @code{forms-new-record-filter},
+or set @code{forms-new-record-filter} to such a function. If so, this
+function is called when a new record is created to supply default values
+for fields.
+
+@findex forms-modified-record-filter
+@item  forms-modified-record-filter
+The control file may define a function
+@code{forms-modified-record-filter}, or set
+@code{forms-modified-record-filter} to such a function.  If so, this
+function is called when a record is modified, just before writing the
+modified record back to the data file.
+
+@end table
+
+@node Forms Format Description, Modifying Forms Contents, Control File Format, Top
+@section The forms format description
+
+@vindex forms-format-list
+The value of the variable @code{forms-format-list} is used to specify
+the format of the forms. It must be a list of formatting elements, each
+of which can be a string, number, lisp list or a lisp symbol that
+evaluates to one of these. The formatting elements are processed in the
+order they appear in the list.
+
+A @code{string} formatting element is inserted in the forms ``as is''.
+
+A @code{number} element selects a field of the record. The contents of
+this field are inserted. The first field of the record has number 1
+(one).
+
+A @code{lisp list} specifies a function call. This function is called
+every time a record is displayed, and its result, that must be a
+string, is inserted in the forms. The function should do nothing
+but returning a string. The fields of the record being displayed are
+@vindex forms-fields
+available to this function as the list @code{forms-fields} and can be
+accessed using @code{(nth }@var{FIELD NUMBER}@code{ forms-fields)}.
+Fields are numbered starting from 1 (one).
+
+A @code{lisp symbol} must evaluate to one of the above possibilities.
+
+If a record does not contain the number of fields as specified in
+@code{forms-number-of-fields}, a warning message will be printed. Excess
+fields are ignored, missing fields are set to empty.
+
+The control file which shows your @file{/etc/passwd} file as demonstrated
+in the beginning of this document might look as follows:
+@example
+;; This demo visits /etc/passwd.
+
+(setq forms-file "/etc/passwd")
+(setq forms-number-of-fields 7)
+(setq forms-read-only t)                 ; to make sure
+(setq forms-field-sep ":")
+(setq forms-multi-line nil)              ; not allowed
+
+(setq forms-format-list
+      (list
+       "====== /etc/passwd ======\n\n"
+       "User : "    1
+       "   Uid: "   3
+       "   Gid: "   4
+       "\n\n"
+       "Name : "    5
+       "\n\n"
+       "Home : "    6
+       "\n\n"
+       "Shell: "    7
+       "\n"))
+@end example
+
+When functions are to be used in @code{forms-format-list} they must be
+quoted to prevent them from being evaluated too early:
+
+@example
+(setq forms-format-list
+      (list
+       "====== " forms-file " ======\n\n"
+       "User : "    1
+       '(make-string 20 ?-)
+       ...
+      ))
+@end example
+
+Alternativily, instead of quoting the functions, the whole list may be
+quoted: 
+
+@example
+(setq forms-format-list
+     '(
+       "====== " forms-file " ======\n\n"
+       "User : "    1
+       (make-string 20 ?-)
+       ...
+      ))
+@end example
+
+Upon startup, the contents of @code{forms-format-list} are
+validated. If errors are encountered, processing is aborted with 
+an error message which includes a descriptive text. @xref{Error
+Messages}, for a detailed list of error messages.
+
+@node Modifying Forms Contents, Forms Mode Commands, Forms Format Description, Top
+@section Modifying The Forms Contents
+
+If a forms is not read-only, it's contents can be modified.
+
+All normal editor commands may be used to change the forms. There is no
+distinction between the ``fixed'' text and the text from the fields of
+the records. However, upon completion, the forms is parsed to extract
+the new contents of the fields. The ``fixed'' portions of the forms are
+used to delimit the fields, these portions should therefore not be
+modified to avoid the risk that the field contents cannot be determined.
+Moreover, ambiguous field contents, which can not be discriminated from
+``fixed'' text, must be avoided.
+
+If the contents of the forms cannot be recognized properly, this is
+signaled using a descriptive text. @xref{Error Messages}, for more info.
+The cursor will indicate the last part of the forms which was
+successfully parsed.
+
+@findex forms-modified-record-filter
+If @code{forms-modified-record-filter} has been set, this function is
+called before the new data is written to the data file. The function
+is called with one argument: a vector that contains the contents of the
+fields of the record. Fields can referenced or modified using the lisp
+functions @code{aref} and @code{aset}. The first field has number 1
+(one). The function must return the (possibly modified) vector to the
+calling environment.
+
+@example
+(defun my-modified-record-filter (record)
+  ;; modify second field
+  (aset record 2 (current-time-string))
+  record		; return it
+)
+(setq forms-modified-record-filter 'my-modified-record-filter)
+@end example
+
+@node Forms Mode Commands, Key Bindings, Modifying Forms Contents, Top
+@section Forms mode commands
+
+@table @kbd
+@findex forms-find-file
+@item M-x forms-find-file @var{file}
+@end table
+
+Visits @var{file}, runs @code{eval-current-buffer} on it, and puts the
+buffer into forms-mode. The first record of the data file will be loaded
+and shown.
+
+The modeline will display the major mode @code{"Forms"} followed by the
+minor mode @code{"View"} if the file is visited read-only.  The number
+of the current record (@var{n}) and the total number of records
+(@var{t}) in the file is shown in the modeline as @code{"n/t"}.@*
+For example:
+@example
+--%%-Emacs: passwd-demo          (Forms View 1/54)----All-------
+@end example
+
+@table @kbd
+@findex forms-find-file-other-window
+@item M-x forms-find-file-other-window @var{file}
+@end table
+
+This command is similar to @code{forms-find-file}, but visits the file
+in another window.
+
+If the buffer is not read-only, you may change the buffer to modify the
+fields in the record. When the current record is left, e.g. by switching
+to another record, the contents of the buffer are parsed using the
+specifications in @code{forms-format-list}, and a new record is constructed
+which replaces the current record in the data file. Fields of the record
+which are not shown in the forms are not modified; they retain their
+original contents.
+
+Most forms mode commands are bound to keys, and are accessible with the
+conventional @code{C-c} prefix. In read-only mode this prefix is not used.
+@xref{Key Bindings}, for the default key bindigs used by forms mode.
+
+The following commands are available within forms mode.
+
+@table @kbd
+@findex forms-next-record
+@item forms-next-record
+shows the next record. With a prefix argument, show the n-th next
+record.
+
+@findex forms-prev-record
+@item forms-prev-record
+shows the previous record. With a prefix argument, show the n-th previous
+record.
+
+@findex forms-jump-record
+@item forms-jump-record
+jumps to a record by number. A prefix argument is used for the record
+number to jump to. If no prefix argument is supplied, a record number is
+asked for in the minibuffer.@*
+If an invalid record number is supplied, an error message is displayed
+reading the offending record number, and the allowable range of numbers.
+
+@findex forms-first-record
+@item forms-first-record
+jumps to the first record.
+
+@findex forms-last-record
+@item forms-last-record
+jumps to the last record. Also re-counts the number of records in the data
+file.
+
+@findex forms-next-field
+@item forms-next-field
+jumps to the next field in the forms. With a numeric argument: jumps
+that many fields, or to the first field if there are not that many
+fields left.
+
+Jumping to fields is implemented using markers, which are placed
+in front of the fields. If the contents of the forms are modified, the
+markers are adjusted. However, if text around a marker has been deleted
+from the screen and inserted again it is possible that this marker no
+longer points at its field correctly.
+@xref{Markers,,Markers, emacs, the GNU Emacs Lisp Manual}, for more
+information on markers.
+
+@findex forms-view-mode
+@item forms-view-mode
+switches to read-only mode. Forms mode commands may no longer be prefixed
+with @code{C-c}.
+
+@findex forms-edit-mode
+@item forms-edit-mode
+switches to edit mode. Forms mode commands must be prefixed with
+@code{C-c}.@*
+Switching to edit mode is only possible if write access to the data
+file is allowed.
+
+@findex forms-insert-record
+@item forms-insert-record
+create a new record, which is inserted before the current record. An
+empty form is presented, which can be filled in using familiar editor
+commands. With a prefix argument: the new record is created @i{after} the
+current one.
+
+If a function @code{forms-new-record-filter} was defined in the control
+file, this function is called to fill in default values for fields. The
+function is passed a vector of empty strings, one for each field. For
+convenience, an additional element is added so the numbers of the
+elements are the same as the numbers used in the forms description. The
+function must return the (updated) vector.
+
+Instead of defining the function, @code{forms-new-record-filter} may be
+set to a function.
+
+Example:
+@example
+(defun my-new-record-filter (fields)
+  (aset fields 5 (login-name))
+  (aset fields 1 (current-time-string))
+  ;; and return it
+  fields)
+(setq forms-new-record-filter 'my-new-record-filter)
+@end example
+
+@findex forms-delete-record
+@item forms-delete-record
+deletes the current record. You are prompted for confirmation before the
+record is deleted unless a prefix argument has been provided.
+
+@findex forms-search
+@item forms-search @var{regexp}
+searches for @var{regexp} in all records following this one. If found,
+this record is shown.@*
+The next time it is invoked, the previous regexp is the default, so you
+can do repeated searches by simply pressing @key{RET} in response to the
+prompt.
+
+@findex revert-buffer
+@item revert-buffer
+reverts a possibly modified forms to its original state. It only affect
+the record currently in the forms.
+
+@findex forms-exit
+@item forms-exit
+terminates forms processing. The data file is saved
+if it has been modified.
+
+@findex forms-exit-no-save
+@item forms-exit-no-save
+aborts forms processing. If the data file has been modified Emacs will
+ask questions.
+
+@findex describe-mode
+@item describe-mode
+gives additional help.
+
+@findex save-buffer
+@item save-buffer
+saves the changes in the data file, if modified.
+
+@end table
+
+@vindex forms-forms-scroll
+@findex scroll-up
+@findex scroll-down
+If the variable @code{forms-forms-scrolls} is set to a value other
+than @code{nil} (which it is, by default), the Emacs functions
+@code{scroll-up} and @code{scroll-down} will perform a
+@code{forms-next-record} and @code{forms-prev-record} when in forms
+mode.  So you can use your favourite page commands to page through the
+data file.
+
+@vindex forms-forms-jump
+@findex beginning-of-buffer
+@findex end-of-buffer
+Likewise, if the variable @code{forms-forms-jump} is not @code{nil}
+(which it is, by default), Emacs functions @code{beginning-of-buffer}
+and @code{end-of-buffer} will perform @code{forms-first-record} and
+@code{forms-last-record} when in forms mode.
+
+@vindex forms-mode-hooks
+After forms mode is entered, functions contained in
+@code{forms-mode-hooks} are executed to perform user defined customization.
+
+@node Key Bindings, Miscellaneous, Forms Mode Commands, Top
+@section Key bindings
+
+This section describes the key bindings as they are defined when
+invoking forms mode.@*
+All commands must be prefixed with @kbd{C-c} when editing a forms. If a
+forms is read-only, @kbd{C-c} is not used.  The only exception to
+this rule is @code{forms-next-field}, which is bound to @kbd{TAB} in all
+maps.
+
+@table @kbd
+
+@itemx C-c @key{TAB}
+@code{forms-next-field}
+
+@itemx C-c @key{SPC}
+@code{forms-next-record}
+
+@itemx C-c <
+@code{forms-first-record}
+
+@itemx C-c >
+@code{forms-first-record}
+
+@itemx C-c d
+@code{forms-delete-record}
+
+@itemx C-c e
+@code{forms-edit-mode}
+
+@itemx C-c i
+@code{forms-insert-record}
+
+@itemx C-c j
+@code{forms-jump-record}
+
+@itemx C-c n
+@code{forms-next-record}
+
+@itemx C-c p
+@code{forms-prev-record}
+
+@itemx C-c q
+@code{forms-exit}
+
+@itemx C-c s @var{regexp} 
+@code{forms-search}
+
+@itemx C-c v
+@code{forms-view-mode}
+
+@itemx C-c x
+@code{forms-exit-no-save}
+
+@itemx C-c ?
+@code{describe-mode}
+
+@itemx C-c @key{DEL}
+@code{forms-prev-record}
+
+@end table
+
+@node Miscellaneous, Error Messages, Key Bindings, Top
+@section Miscellaneous
+
+@vindex forms-version
+A global variable @code{forms-version} holds the version information of
+the current implementation of forms mode.
+
+@findex forms-enumerate
+It is very convenient to use symbolic names for the fields in a record.
+The function @code{forms-enumerate} provides an elegant means to define
+a series of variables to consecutive numbers.
+The function returns the higest number used, so it can be used to set
+@code{forms-number-of-fields} also:
+@example
+(setq forms-number-of-fields
+      (forms-enumerate
+       '(field1 field2 field3 ... )))
+@end example
+
+@code{field1} will be set to 1, @code{field2} to 2 and so on.
+
+Care has been taken to localize the current information of the forms
+mode, so it is possible to visit multiple files in forms mode
+simultaneously, even if they have different properties.
+
+Since buffer-local functions are not available in this version of GNU
+Emacs, the definitions of the filter functions
+@code{forms-new-record-filter} and @code{forms-modified-record-filter}
+are copied into internal, buffer local variables when forms-mode is
+initialized.
+
+If a control file is visited using the standard @code{find-file}
+commands, forms mode can be enabled with the command @code{M-x forms-mode}.@*
+Forms mode will be automatically enabled if the file contains
+the string @code{"-*- forms -*-"} somewhere in the first line. However,
+this makes it hard to edit the control file itself so you'd better think
+twice before using this.
+
+The default format for the data file, using @key{TAB} to separate fields
+and @code{C-k} to separate multi-line fields, matches the file format of
+some popular Macintosh database programs, e.g. FileMaker. So
+@code{forms-mode} could decrease the need to use Apple computers.
+
+@node Error Messages, Examples, Miscellaneous, Top
+@section Error Messages
+
+This section describes all error messages which can be generated by
+forms mode.
+
+@table @code
+@item 'forms-file' has not been set
+The variable @code{forms-file} was not set by the control file.
+
+@item 'forms-number-of-fields' has not been set
+The variable @code{forms-number-of-fields} was not set by the control
+file.
+
+@item 'forms-number-of-fields' must be > 0
+The variable @code{forms-number-of-fields} did not contain a positive
+number. 
+
+@item 'forms-field-sep' is not a string
+@itemx 'forms-multi-line' must be nil or a one-character string
+The variable @code{forms-multi-line} was set to something other than
+@code{nil or} a single-character string.
+
+@item 'forms-multi-line' is equal to 'forms-field-sep'
+The variable @code{forms-multi-line} may not be equal to
+@code{forms-field-sep} for this would make it impossible to distinguish
+fields and the lines in the fields.
+
+@item 'forms-format-list' has not been set
+@itemx 'forms-format-list' is not a list
+The variable @code{forms-format-list} was not set to a lisp @code{list}
+by the control file.
+
+@item Forms error: field number @var{XX} out of range 1..@var{NN}
+A field number was supplied with a value of @var{XX}, which was not
+greater than zero and smaller than or equal to the number of fields in the
+forms, @var{NN}.
+
+@item Forms error: not a function @var{FUN}
+The first element of the lisp list specified in @code{forms-format-list}
+did not have a function value.
+
+@item Invalid element in 'forms-format-list': @var{XX}
+A list element was supplied in @code{forms-format-list} which was not a
+@code{string}, @code{number} nor a @code{lisp list}.
+
+@item Parse error: not looking at "..."
+When re-parsing the contents of a forms, the text shown could not
+be found.
+
+@item Parse error: cannot find "..."
+When re-parsing the contents of a forms, the text shown, which
+separates two fields, could not be found.
+
+@item Parse error: cannot parse adjacent fields @var{XX} and @var{YY}
+Fields @var{XX} and @var{YY} were not separated by text, so could not be
+parsed again.
+
+@item Record has @var{XX} fields instead of @var{YY}
+The number of fields in this record in the data file did not match
+@code{forms-number-of-fields}. Missing fields will be set to empty.
+
+@item Multi-line fields in this record - update refused!
+The current record contains newline characters, hence can not be written
+back to the data file, for it would corrupt it.@*
+probably a field was set to a multi-line value, while the setting of
+@code{forms-multi-line} prohibited this.
+
+@item Record number @var{XX} out of range 1..@var{YY}
+A jump was made to non-existing record @var{XX}. @var{YY} denotes the
+number of records in the file.
+
+@item Stuck at record @var{XX}
+An internal error prevented a specific record from being retrieved.
+
+@end table
+
+@node Examples, Credits, Error Messages, Top
+@section Examples
+
+The following example exploits most of the features of forms-mode.
+This example is included in the distribution as file @file{forms-d2.el}.
+
+@example
+;; demo2 -- demo forms-mode	-*- emacs-lisp -*-
+
+;; SCCS Status     : demo2	1.1.2
+;; Author          : Johan Vromans
+;; Created On      : 1989
+;; Last Modified By: Johan Vromans
+;; Last Modified On: Mon Jul  1 13:56:31 1991
+;; Update Count    : 2
+;; Status          : OK
+;; 
+;; This sample forms exploit most of the features of forms mode.
+
+;; Set the name of the data file.
+(setq forms-file "forms-d2.dat")
+
+;; Use 'forms-enumerate' to set field names and number thereof.
+(setq forms-number-of-fields
+      (forms-enumerate
+       '(arch-newsgroup			; 1
+	 arch-volume			; 2
+	 arch-issue			; and ...
+	 arch-article			; ... so
+	 arch-shortname			; ... ... on
+	 arch-parts
+	 arch-from
+	 arch-longname
+	 arch-keywords
+	 arch-date
+	 arch-remarks)))
+
+;; The following functions are used by this form for layout purposes.
+;;
+(defun arch-tocol (target &optional fill)
+  "Produces a string to skip to column TARGET. Prepends newline if needed.
+The optional FILL should be a character, used to fill to the column."
+  (if (null fill)
+      (setq fill ? ))
+  (if (< target (current-column))
+      (concat "\n" (make-string target fill))
+    (make-string (- target (current-column)) fill)))
+;;
+(defun arch-rj (target field &optional fill) 
+  "Produces a string to skip to column TARGET minus the width of field FIELD.
+Prepends newline if needed. The optional FILL should be a character,
+used to fill to the column."
+  (arch-tocol (- target (length (nth field forms-fields))) fill))
+
+;; Record filters.
+;; This example uses the (defun ...) method of defining.
+;;
+(defun forms-new-record-filter (the-record)
+  "Form a new record with some defaults."
+  (aset the-record arch-from (user-full-name))
+  (aset the-record arch-date (current-time-string))
+  the-record				; return it
+)
+
+;; The format list.
+(setq forms-format-list
+     (list
+       "====== Public Domain Software Archive ======\n\n"
+       arch-shortname
+       " - "			arch-longname
+       "\n\n"
+       "Article: "		arch-newsgroup
+       "/"			arch-article
+       " "
+       '(arch-tocol 40)
+       "Issue: "		arch-issue
+       " "
+       '(arch-rj 73 10)
+       "Date: "			arch-date
+       "\n\n"
+       "Submitted by: "		arch-from
+       "\n"
+       '(arch-tocol 79 ?-)
+       "\n"
+       "Keywords: "		arch-keywords
+       "\n\n"
+       "Parts: "		arch-parts
+       "\n\n====== Remarks ======\n\n"
+       arch-remarks
+     ))
+
+;; That's all, folks!
+@end example
+
+@node Credits, Concept Index, Examples, Top
+@section Credits
+
+Forms mode is developed by Johan Vromans @code{<jv@@mh.nl>} at Multihouse
+Reseach in the Netherlands. 
+
+Harald Hanche-Olsen @code{<hanche@@imf.unit.no>} supplied the idea for
+the new record filter, and provided better replacements for some
+internal functions. 
+
+Bugfixes and other useful suggestions were supplied by
+cwitty@@portia.stanford.edu, Jonathan I. Kamens, Ignatios Souvatzis and
+Harald Hanche-Olsen.
+
+This documentation was slightly inspired by the documentation of ``rolo
+mode'' by Paul Davis at Schlumberger Cambridge Research
+@code{<davis%scrsu1%sdr.slb.com@@relay.cs.net>}.
+
+None of this would have been possible without GNU Emacs of the Free
+Software Foundation. Thanks, Richard!
+
+@node Concept Index, Variable Index, Credits, Top
+@unnumbered Concept Index
+@printindex cp
+
+@node Variable Index, Function Index, Concept Index, Top
+@unnumbered Variable Index
+@printindex vr
+
+@node Function Index, , Variable Index, Top
+@unnumbered Function Index
+@printindex fn
+
+@contents
+@bye
+
+@c Local Variables:
+@c eval: (headers)
+@c eval: (setq comment-start "@c  ")
+@c eval: (setq comment-start-skip "@c +")
+@c End:

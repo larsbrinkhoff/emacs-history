@@ -1,8 +1,43 @@
-;
-; hanoi - towers of hanoi in GNUmacs
-;
+;;; hanoi.el --- towers of hanoi in GNUmacs
+
+;; Author: Damon Anton Permezel
+;; Maintainer: FSF
+;; Keywords: games
+
 ; Author (a) 1985, Damon Anton Permezel
-;
+; This is in the public domain
+; since he distributed it without copyright notice in 1985.
+
+;;; Commentary:
+
+;; Solves the Towers of Hanoi puzzle while-U-wait.
+;;
+;; The puzzle: Start with N rings, decreasing in sizes from bottom to
+;; top, stacked around a post.  There are two other posts.  Your mission,
+;; should you choose to accept it, is to shift the pile, stacked in its
+;; original order, to another post.
+;;
+;; The challenge is to do it in the fewest possible moves.  Each move
+;; shifts one ring to a different post.  But there's a rule; you can
+;; only stack a ring on top of a larger one.
+;;
+;; The simplest nontrivial version of this puzzle is N = 3.  Solution
+;; time rises as 2**N, and programs to solve it have long been considered
+;; classic introductory exercises in the use of recursion.
+;;
+;; The puzzle is called `Towers of Hanoi' because an early popular
+;; presentation wove a fanciful legend around it.  According to this
+;; myth (uttered long before the Vietnam War), there is a Buddhist
+;; monastery at Hanoi which contains a large room with three time-worn
+;; posts in it surrounded by 21 golden discs.  Monks, acting out the
+;; command of an ancient prophecy, have been moving these disks, in
+;; accordance with the rules of the puzzle, once every day since the
+;; monastery was founded over a thousand years ago.  They are said
+;; believe that when the last move of the puzzle is completed, the
+;; world will end in a clap of thunder.  Fortunately, they are nowhere
+;; even close to being done...
+
+;;; Code:
 
 ;;;
 ;;; hanoi-topos - direct cursor addressing
@@ -15,6 +50,7 @@
 ;;;
 ;;; hanoi - user callable Towers of Hanoi
 ;;;
+;;;###autoload
 (defun hanoi (nrings)
   "Towers of Hanoi diversion.  Argument is number of rings."
   (interactive
@@ -22,26 +58,40 @@
 	     3
 	     (prefix-numeric-value current-prefix-arg))))  
   (if (<= nrings 0) (error "Negative number of rings"))
-  (let (pole-spacing
-	floor-row
-	fly-row
-	(window-height (window-height (selected-window)))
-	(window-width (window-width (selected-window))))
-    (let ((h (+ nrings 2))
-	  (w (+ (* (1- nrings) 6) 2 5)))
-      (if (not (and (>= window-width h)
-		    (> window-width w)))
+  (let* (floor-row
+	 fly-row
+	 (window-height (window-height (selected-window)))
+	 (window-width (window-width (selected-window)))
+
+	 ;; This is the unit of spacing to use between poles.  It
+	 ;; must be even.  We round down, since rounding up might
+	 ;; cause us to draw off the edge of the window.
+	 (pole-spacing (logand (/ window-width 6) (lognot 1))))
+    (let (
+	  ;; The poles are (1+ NRINGS) rows high; we also want an
+	  ;; empty row at the top for the flying rings, a base, and a
+	  ;; blank line underneath that.
+	  (h (+ nrings 4))
+
+	  ;; If we have NRINGS rings, we label them with the numbers 0
+	  ;; through NRINGS-1.  The width of ring i is 2i+3; it pokes
+	  ;; out i spaces on either side of the pole.  Rather than
+	  ;; checking if the window is wide enough to accomodate this,
+	  ;; we make sure pole-spacing is large enough, since that
+	  ;; works even when we have decremented pole-spacing to make
+	  ;; it even.
+	  (w (1+ nrings)))
+      (if (not (and (>= window-height h)
+		    (> pole-spacing w)))
 	  (progn
 	    (delete-other-windows)
 	    (if (not (and (>= (setq window-height
-				    (window-height (selected-window))) h)
-			  (> (setq window-width
-				   (window-width (selected-window))) w)))
+				    (window-height (selected-window)))
+			      h)
+			  (> (setq pole-spacing
+				   (logand (/ window-width 6) (lognot 1)))
+			     w)))
 		(error "Screen is too small (need at least %dx%d)" w h))))
-      (setq pole-spacing (/ window-width 6))
-      (if (not (zerop (logand pole-spacing 1)))
-	  ;; must be even
-	  (setq pole-spacing (1+ pole-spacing)))
       (setq floor-row (if (> (- window-height 3) h)
 			  (- window-height 3) window-height)))
     (let ((fly-row (- floor-row nrings 1))
@@ -63,7 +113,7 @@
       ;;
       (switch-to-buffer "*Hanoi*")
       (setq buffer-read-only nil)
-      (buffer-flush-undo (current-buffer))
+      (buffer-disable-undo (current-buffer))
       (erase-buffer)
       (let ((i 0))
 	(while (< i floor-row)
@@ -190,3 +240,4 @@
 	    (backward-char (/ (+ len 1) 2))
 	    (delete-char 1) (insert ?\|))))))
 
+;;; hanoi.el

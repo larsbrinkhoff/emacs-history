@@ -1,0 +1,156 @@
+.\" Copyright (c) 1992 Free Software Foundation
+.\" See section COPYING for conditions for redistribution
+.TH etags 1 "10feb1992" "GNU Tools" "GNU Tools"
+.de BP
+.sp
+.ti -.2i
+\(**
+..
+
+.SH NAME
+etags -- generate tag file for Emacs
+.br
+ctags -- generate tag file for vi
+.SH SYNOPSIS
+.hy 0
+.na
+.B etags [\|\-CDSTVHadt\|] [\|\-i \fIfile\fP\|] [\|\-o \fIoutfile\fP\|]
+.br
+[\|\-\-defines\|] [\|\-\-no\-defines\|] [\|\-\-c++\|] [\|\-\-typedefs\|] [\|\-\-typedefs\-and\-c++\|] [\|\-\-ignore\-indentation\|]
+.br
+[\|\-\-help\|] [\|\-\-version\|]
+.br
+[\|\-\-include=\fIfile\fP\|] [\|\-\-output=\fIoutfile\fP\|] [\|\-\-append\|] \fIfile\fP .\|.\|.
+
+.B ctags [\|\-CDSTVHadt\|] [\|\-BFuvwx\|] [\|\-o \fIoutfile\fP\|]
+.br
+[\|\-\-defines\|] [\|\-\-no\-defines\|] [\|\-\-c++\|] [\|\-\-typedefs\|] [\|\-\-typedefs\-and\-c++\|] [\|\-\-ignore\-indentation\|] [\|\-\-no\-warn\|]
+.br
+[\|\-\-backward\-search\|] [\|\-\-forward\-search\|] [\|\-\-vgrind\|] [\|\-\-cxref\|]
+.br
+[\|\-\-help\|] [\|\-\-version\|]
+.br
+[\|\-\-output=\fIoutfile\fP\|] [\|\-\-append\|] [\|\-\-update\|] \fIfile\fP .\|.\|.
+.ad b
+.hy 1
+.SH DESCRIPTION
+The `\|\fBetags\fP\|' program is used to create a tag table file, in a format
+understood by 
+.BR emacs ( 1 )\c
+\&; the `\|\fBctags\fP\|' program is used to create a similar table in a
+format understood by
+.BR vi ( 1 )\c
+\&.  Both forms of the program understand
+the syntax of C, Fortran, LaTeX, Scheme and Emacs Lisp/Common Lisp.  
+Both forms read the files specified on the command line, and write a tag
+table (defaults: `\|TAGS\|' for \fBetags\fP, `\|tags\|' for
+\fBctags\fP) in the current working directory. 
+The programs recognize the language used in an input file based on its
+file name and contents; there are no switches for specifying the language.  
+.SH OPTIONS
+Some options make sense only for \fBvi\fP style tag files;
+\fBetags\fP does not recognize them.
+The programs accept unambiguous abbreviations for long option names.
+.TP
+.B \-d, \-\-defines
+Create tag entries for C preprocessor definitions, too.  This is the
+default behavior for -\Betags\fP.
+.TP
+.B \-D, \-\-no\-defines
+Do not create tag entries for C preprocessor definitions.  This is the default behavior for -\Bctags\fP.
+.TP
+.B \-C, \-\-c++
+Treat files with `\|.c\|' and `\|.h\|' extensions as C++ code, not C
+code.  Files with `\|.C\|', `\|.H\|', `\|.cxx\|', `\|.hxx\|', or
+`\|.cc\|' extensions are always assumed to be C++ code.
+.TP
+.B \-t, \-\-typedefs
+Record typedefs in C code as tags.
+.TP
+.B \-T, \-\-typedefs\-and\-c++
+Generate tag entries for typedefs, struct, enum, and union tags, and
+C++ member functions.
+.TP
+.B \-S, \-\-ignore\-indentation
+Don't rely on indentation as much as we normally do.  Currently, this
+means not to assume that a closing brace in the first column is the
+final brace of a function or structure definition.
+.TP
+.B \-w, \-\-no\-warn
+Suppress warning messages about duplicate entries.  The \fBetags\fP
+program does not check for duplicate entries, so this option has no
+effect on it.
+.TP
+.B \-B, \-\-backward\-search
+Tag files written in the format expected by \fBvi\fP contain regular
+expression search instructions; the \fB\-B\fP option writes them using
+the delimiter `\|\fB?\fP\|', to search \fIbackwards\fP through files.
+Only \fBctags\fP accepts this option.
+.TP
+.B \-F, \-\-forward\-search
+Tag files written in the format expected by \fBvi\fP contain regular
+expression search instructions; the \fB\-F\fP option writes them using
+the delimiter `\|\fB/\fP\|', to search \fIforwards\fP through files.
+Only \fBctags\fP accepts this option; it is the default behavior.
+.TP
+.B \-v, \-\-vgrind
+Instead of generating a tag file, write index (in \fBvgrind\fP format)
+to standard output.  Only \fBctags\fP accepts this option.
+.TP
+.B \-x, \-\-cxref
+Instead of generating a tag file, write a cross reference (in
+\fBcxref\fP format) to standard output.  Only \fBctags\fP accepts this option.
+.TP
+.B \-H, \-\-help
+Print usage information.
+.TP
+.B \-V, \-\-version
+Print the current version of the program.
+.TP
+\fB\-i\fP \fIfile\fP, \fB\-\-include=\fIfile\fP
+Include a note in tag file indicating that, when searching for a tag,
+one should also consult the tags file \fIfile\fP after checking the
+current file.  Only \fBetags\fP accepts this option.
+.TP
+\fB\-o\fP \fIoutfile\fP, \fB\-\-output=\fIoutfile\fP
+Explicit name of file for tag table; overrides default `\|TAGS\|' or
+`\|tags\|'.   (But ignored with \fB\-v\fP or \fB\-x\fP.)
+.TP
+.B \-a, \-\-append
+Append to existing tag file.  (For vi-format tag files, see also
+\fB\-\-update\fP.)
+.TP
+.B \-u, \-\-update
+Update tag entries for \fIfiles\fP specified on command line, leaving
+tag entries for other files in place.  Currently, this is implemented
+by deleting the existing entries for the given files and then
+rewriting the new entries at the end of the tags file.  It is often
+faster to simply rebuild the entire tag file than to use this.
+(Implies vi-format tag file.)
+
+.SH "SEE ALSO"
+`\|\fBemacs\fP\|' entry in \fBinfo\fP; \fIGNU Emacs Manual\fP, Richard
+Stallman. 
+.br
+.BR cxref ( 1 ),
+.BR emacs ( 1 ),
+.BR vgrind ( 1 ),
+.BR vi ( 1 ).
+
+.SH COPYING
+Copyright (c) 1992 Free Software Foundation, Inc.
+.PP
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+.PP
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided that the
+entire resulting derived work is distributed under the terms of a
+permission notice identical to this one.
+.PP
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that this permission notice may be included in
+translations approved by the Free Software Foundation instead of in
+the original English.

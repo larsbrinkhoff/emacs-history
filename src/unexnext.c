@@ -1,12 +1,12 @@
 /* Dump Emacs in macho format.
-   Copyright (C) 1990 Free Software Foundation, Inc.
+   Copyright (C) 1990, 1993 Free Software Foundation, Inc.
    Written by Bradley Taylor (btaylor@next.com).
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -26,13 +26,13 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include <stdarg.h>
 #include <mach/mach.h>
 #include <mach-o/loader.h>
-#include <mach-o/fat.h>
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <libc.h>
 
+
 int malloc_cookie;
-    
+
 /*
  * Kludge: we don't expect any program data beyond VM_HIGHDATA
  * What is really needed is a way to find out from malloc() which
@@ -119,10 +119,6 @@ read_macho(
 		fatal_unexec("cannot read macho header");
 		return (0);
 	}
-	/* the mach header should already be in native form */
-	if (the_header->magic != MH_MAGIC) {
-		fatal_unexec("wrong magic in macho header");
-	}
 	for (i = 0; i < the_header->ncmds; i++) {
 		if (read(fd, &command, sizeof(struct load_command)) != 
 		    sizeof(struct load_command)) {
@@ -145,7 +141,6 @@ read_macho(
 		}
 		save_command(buf, the_commands, the_commands_len);
 	}
-	/* Leave the file pointer at the beginning of the text segment */
 	return (1);
 }
 
@@ -178,7 +173,7 @@ get_data_region(
 {
 	region_t region;
 	kern_return_t ret;
-	const struct section *sect;
+	struct section *sect;
 
 	sect = getsectbyname(SEG_DATA, SECT_DATA);
 	region.address = 0;
@@ -262,8 +257,8 @@ unexec_doit(
 		return (0);
 	}
 
-	malloc_cookie = malloc_freezedry();
 
+	malloc_cookie = malloc_freezedry ();
 	if (!get_data_region(&data_address, &data_size)) {
 		return (0);
 	}
@@ -328,9 +323,12 @@ unexec_doit(
 		
 		/*
 		 * Write original text
-		 * We're already positioned at the beginning of the text
-		 * segment, so all we need to do is to copy the bytes.
 		 */
+		if (lseek(infd, the_header.sizeofcmds + sizeof(the_header), 
+			  L_SET) < 0) {
+		  	fatal_unexec("cannot seek input file");
+			return (0);
+		}
 		size = fdatastart - (sizeof(the_header) + 
 				     the_header.sizeofcmds);
 		buf = my_malloc(size);

@@ -1,11 +1,15 @@
-;; Generate key binding summary for Emacs
+;;; makesum.el --- generate key binding summary for Emacs
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: help
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,7 +21,14 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
+;; Displays a nice human-readable summary of all keybindings in a
+;; two-column format.
+
+;;; Code:
+
+;;;###autoload
 (defun make-command-summary ()
   "Make a summary of current key bindings in the buffer *Summary*.
 Previous contents of that buffer are killed first."
@@ -98,3 +109,5 @@ Previous contents of that buffer are killed first."
 	(forward-line 1)
 	(setq lines (cdr lines))))
     (goto-char (- (point-max) from-end))))
+
+;;; makesum.el ends here

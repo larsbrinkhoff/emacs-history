@@ -32,7 +32,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 * {
 *  Lisp_Object elt;
 *
-*   while (!NULL (args))
+*   while (!NILP (args))
 *     {
 *       elt = Fcar (args);
 *       Ffset (Fcar (elt), Fcons (Qmocklisp, Fcdr (elt)));
@@ -42,7 +42,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 * }
 */
 
-DEFUN ("ml-if", Fml_if, Sml_if, 0, UNEVALLED, 0, "if  for mocklisp programs")
+DEFUN ("ml-if", Fml_if, Sml_if, 0, UNEVALLED, 0, "Mocklisp version of `if'.")
   (args)
      Lisp_Object args;
 {
@@ -50,11 +50,11 @@ DEFUN ("ml-if", Fml_if, Sml_if, 0, UNEVALLED, 0, "if  for mocklisp programs")
   struct gcpro gcpro1;
 
   GCPRO1 (args);
-  while (!NULL (args))
+  while (!NILP (args))
     {
       val = Feval (Fcar (args));
       args = Fcdr (args);
-      if (NULL (args)) break;
+      if (NILP (args)) break;
       if (XINT (val))
 	{
 	  val = Feval (Fcar (args));
@@ -101,11 +101,11 @@ ml_apply (function, args)
 
   specbind (Qmocklisp_arguments, args);
   val = Fprogn (Fcdr (function));
-  unbind_to (count);
-  return val;
+  return unbind_to (count, val);
 }
 
-DEFUN ("ml-nargs", Fml_nargs, Sml_nargs, 0, 0, 0, "# arguments to this mocklisp function")
+DEFUN ("ml-nargs", Fml_nargs, Sml_nargs, 0, 0, 0,
+  "Number of arguments to currently executing mocklisp function.")
   ()
 {
   if (EQ (Vmocklisp_arguments, Qinteractive))
@@ -113,7 +113,8 @@ DEFUN ("ml-nargs", Fml_nargs, Sml_nargs, 0, 0, 0, "# arguments to this mocklisp 
   return Flength (Vmocklisp_arguments);
 }
 
-DEFUN ("ml-arg", Fml_arg, Sml_arg, 1, 2, 0, "Argument #N to this mocklisp function.")
+DEFUN ("ml-arg", Fml_arg, Sml_arg, 1, 2, 0,
+  "Argument number N to currently executing mocklisp function.")
   (n, prompt)
      Lisp_Object n, prompt;
 {
@@ -125,7 +126,7 @@ DEFUN ("ml-arg", Fml_arg, Sml_arg, 1, 2, 0, "Argument #N to this mocklisp functi
 }
 
 DEFUN ("ml-interactive", Fml_interactive, Sml_interactive, 0, 0, 0,
- "True if this mocklisp function was called interactively.")
+ "True if currently executing mocklisp function was called interactively.")
   ()
 {
   return (EQ (Vmocklisp_arguments, Qinteractive)) ? Qt : Qnil;
@@ -155,7 +156,7 @@ DEFUN ("ml-prefix-argument-loop", Fml_prefix_argument_loop, Sml_prefix_argument_
   struct gcpro gcpro1;
 
   /* Set `arg' in case we call a built-in function that looks at it.  Still are a few. */
-  if (NULL (Vcurrent_prefix_arg))
+  if (NILP (Vcurrent_prefix_arg))
     i = 1;
   else
     {
@@ -174,7 +175,7 @@ DEFUN ("ml-prefix-argument-loop", Fml_prefix_argument_loop, Sml_prefix_argument_
   return Qnil;
 }
 
-#ifdef NOTDEF /* Now in mlsupport.el */
+#if 0 /* Now in mlsupport.el */
 
 DEFUN ("ml-substr", Fml_substr, Sml_substr, 3, 3, 0,
   "Return a substring of STRING, starting at index FROM and of length LENGTH.\n\
@@ -193,7 +194,7 @@ If either FROM or LENGTH is negative, the length of STRING is added to it.")
   XSETINT (to, XINT (to) + XINT (from));
   return Fsubstring (string, from, to);
 }
-#endif NOTDEF
+#endif /* 0 */
 DEFUN ("insert-string", Finsert_string, Sinsert_string, 0, MANY, 0,
   "Mocklisp-compatibility insert function.\n\
 Like the function `insert' except that any argument that is a number\n\
@@ -210,17 +211,16 @@ is converted into a string by expressing it in decimal.")
       tem = args[argnum];
     retry:
       if (XTYPE (tem) == Lisp_Int)
-	tem = Fint_to_string (tem);
+	tem = Fnumber_to_string (tem);
       if (XTYPE (tem) == Lisp_String)
-	{
-	  insert (XSTRING (tem)->data, XSTRING (tem)->size);
-	}
+	insert1 (tem);
       else
 	{
 	  tem = wrong_type_argument (Qstringp, tem);
 	  goto retry;
 	}
     }
+
   return Qnil;
 }
 

@@ -1,23 +1,21 @@
 /* C code startup routine.
-   Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1992 Free Software Foundation, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
-    any later version.
+This file is part of GNU Emacs.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-In other words, you are welcome to use, share and improve this program.
-You are forbidden to forbid anyone else to use, share and improve
-what you give them.   Help stamp out software-hoarding!  */
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /* The standard Vax 4.2 Unix crt0.c cannot be used for Emacs
@@ -48,7 +46,9 @@ And always:
          word pointing to first arg string, and so on as above
 */
 
+#ifdef emacs
 #include "config.h"
+#endif
 
 /*		********  WARNING ********
     Do not insert any data definitions before data_start!
@@ -74,7 +74,20 @@ int errno;
 char **environ;
 #endif
 
-#if defined(orion) || defined(pyramid) || defined(celerity) || defined(ALLIANT) || defined(clipper)
+#ifndef static
+/* On systems where the static storage class is usable, this function
+   should be declared as static.  Otherwise, the static keyword has
+   been defined to be something else, and code for those systems must
+   take care of this declaration appropriately.  */
+static start1 ();
+#endif
+
+#if defined(orion) || defined(pyramid) || defined(celerity) || defined(ALLIANT) || defined(clipper) || defined(sps7)
+
+#if defined(sps7) && defined(V3x)
+        asm("	section	10");
+        asm("	ds.b	0xb0");
+#endif
 
 #ifdef ALLIANT
 /* _start must initialize _curbrk and _minbrk on the first startup;
@@ -114,7 +127,7 @@ _start (DUMMIES argc, argv, envp)
 
 #endif /* orion or pyramid or celerity or alliant or clipper */
 
-#if defined (ns16000) && !defined (sequent) && !defined (UMAX)
+#if defined (ns16000) && !defined (sequent) && !defined (UMAX) && !defined (CRT0_DUMMIES)
 
 _start ()
 {
@@ -135,7 +148,7 @@ start1 (ignore, argc, argv)
     environ--;
   exit (main (argc, argv, environ));
 }
-#endif /* ns16000, not sequent and not UMAX */
+#endif /* ns16000, not sequent and not UMAX, and not the CRT0_DUMMIES method */
 
 #ifdef UMAX
 _start()
@@ -210,7 +223,21 @@ asm("	global start	");
 asm("	start:		");
 #endif /* NODOT_GLOBAL_START */
 
-static start1 ();
+#ifdef m68000
+
+/* GCC 2.1, when optimization is turned off, seems to want to push a
+   word of garbage on the stack, which screws up the CRT0_DUMMIES
+   hack.  So we hand-code _start in assembly language.  */
+asm(".text			");
+asm("	.even			");
+asm(".globl __start		");
+asm("__start:			");
+asm("	link a6,#0		");
+asm("	jbsr _start1		");
+asm("	unlk a6			");
+asm("	rts			");
+
+#else /* not m68000 */
 
 _start ()
 {
@@ -218,6 +245,8 @@ _start ()
 /* On sequent, bogus fp is pushed here  */
   start1 ();
 }
+
+#endif /* possibly m68000 */
 
 static
 start1 (CRT0_DUMMIES argc, xargv)
@@ -272,7 +301,8 @@ start1 (CRT0_DUMMIES argc, xargv)
 
 #ifdef ISI68K
 /* Added by ESM Sun May 24 12:44:02 1987 to get new ISI library to work */
-#ifdef BSD4_3
+/* Edited by Ray Mon May 15 15:59:56 EST 1989 so we can compile with gcc */
+#if defined(BSD4_3) && !defined(__GNUC__)
 static foo () {
 #endif
 	asm ("	.globl  is68020");
@@ -286,17 +316,22 @@ static foo () {
 	asm ("	.globl	__start");
 	asm ("__start:");
 	asm ("	.word 0");
-	asm ("	link	fp,#0");
+	asm ("	link	a6,#0");
 	asm ("	jbsr	_start1");
-	asm ("	unlk	fp");
+	asm ("	unlk	a6");
 	asm ("	rts");
-#ifdef BSD4_3
+#if defined(BSD4_3) && !defined(__GNUC__)
       }
 #endif
 #else /* not ISI68K */
 
 _start ()
 {
+#ifdef sun
+#ifdef LISP_FLOAT_TYPE
+  finitfp_();
+#endif
+#endif     
 /* On 68000, _start pushes a6 onto stack  */
   start1 ();
 }
@@ -320,6 +355,15 @@ start1 (ignore, argc, xargv)
 
   if ((char *)environ == xargv)
     environ--;
+#ifdef sun_68881
+  asm("    jsr     f68881_used");
+#endif
+#ifdef sun_fpa
+  asm("    jsr     ffpa_used");
+#endif
+#ifdef sun_soft
+  asm("    jsr     start_float");
+#endif
   exit (main (argc, argv, environ));
 }
 
@@ -497,19 +541,24 @@ start1 (xargc)
 #endif /* GOULD */
 
 #ifdef elxsi
-extern int errno;
+#include <elxsi/argvcache.h>
+
 extern char **environ;
+extern int	errno;
+extern void	_init_doscan(), _init_iob();
+extern char	end[];
+char		*_init_brk = end;
 
 _start()
 {
-  register int r;
-
+  environ = exec_cache.ac_envp;
+  brk (_init_brk);
   errno = 0;
-  environ = *(&environ + 8);
-  _stdinit();
-  r = main(*(&environ + 6), *(&environ + 7), environ);
-  exit(r);
-  _exit(r);
+  _init_doscan ();
+  _init_iob ();
+  _exit (exit (main (exec_cache.ac_argc,
+		     exec_cache.ac_argv,
+		     exec_cache.ac_envp)));
 }
 #endif /* elxsi */
 

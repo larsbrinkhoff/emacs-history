@@ -1,11 +1,16 @@
+;;; float.el --- floating point arithmetic package.
+
 ;; Copyright (C) 1986 Free Software Foundation, Inc.
-;; Author Bill Rosenblatt
+
+;; Author: Bill Rosenblatt
+;; Maintainer: FSF
+;; Keywords: extensions
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,8 +22,8 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;; Floating point arithmetic package.
-;;
+;;; Commentary:
+
 ;; Floating point numbers are represented by dot-pairs (mant . exp)
 ;; where mant is the 24-bit signed integral mantissa and exp is the
 ;; base 2 exponent.
@@ -46,7 +51,7 @@
 ;; June 20, 1986
 ;;
 
-(provide 'float)
+;;; Code:
 
 ;; fundamental implementation constants
 (defconst exp-base 2
@@ -68,15 +73,8 @@
 (defconst mantissa-maxval (1- (ash 1 maxbit))
   "Maximum permissable value of mantissa")
 
-;;; Note that this value can't be plain (ash 1 maxbit), since
-;;; (- (ash 1 maxbit)) = (ash 1 maxbit) - it overflows.
-(defconst mantissa-minval (1- (ash 1 maxbit))
+(defconst mantissa-minval (ash 1 maxbit)
   "Minimum permissable value of mantissa")
-
-;;; This is used when normalizing negative numbers; if the number is
-;;; less than this, multiplying it by 2 will overflow past
-;;; mantissa-minval.
-(defconst mantissa-half-minval (ash (ash 1 maxbit) -1))
 
 (defconst floating-point-regexp
   "^[ \t]*\\(-?\\)\\([0-9]*\\)\
@@ -127,15 +125,14 @@
   (if (> (car fnum) 0)			; make sure next-to-highest bit is set
       (while (zerop (logand (car fnum) second-bit-mask))
 	(setq fnum (fashl fnum)))
-    (if (< (car fnum) 0)		; make sure next-to-highest bit is
-					; zero, but fnum /= mantissa-minval.
-	(while (> (car fnum) mantissa-half-minval)
+    (if (< (car fnum) 0)		; make sure highest bit is set
+	(while (zerop (logand (car fnum) high-bit-mask))
 	  (setq fnum (fashl fnum)))
       (setq fnum _f0)))			; "standard 0"
   fnum)
       
 (defun abs (n)				; integer absolute value
-  (if (natnump n) n (- n)))
+  (if (>= n 0) n (- n)))
 
 (defun fabs (fnum)			; re-normalize after taking abs value
   (normalize (cons (abs (car fnum)) (cdr fnum))))
@@ -168,8 +165,8 @@
 ;; Arithmetic functions
 (defun f+ (a1 a2)
   "Returns the sum of two floating point numbers."
-  (let ((f1 (if (> (cdr a1) (cdr a2)) a1 a2))
-	(f2 (if (> (cdr a1) (cdr a2)) a2 a1)))
+  (let ((f1 (fmax a1 a2))
+	(f2 (fmin a1 a2)))
     (if (same-sign a1 a2)
 	(setq f1 (fashr f1)		; shift right to avoid overflow
 	      f2 (fashr f2)))
@@ -394,11 +391,10 @@ Optional second argument non-nil means use scientific notation."
 ;; digits of the exponent.
 (defun string-to-float (str)
   "Convert the string to a floating point number.
-Accepts a decimal string in scientific notation, 
-with exponent preceded by either E or e.
-Only the 6 most significant digits of the integer and fractional parts
-are used; only the first two digits of the exponent are used.
-Negative signs preceding both the decimal number and the exponent
+Accepts a decimal string in scientific notation,  with exponent preceded
+by either E or e.  Only the six most significant digits of the integer
+and fractional parts are used; only the first two digits of the exponent
+are used.  Negative signs preceding both the decimal number and the exponent
 are recognized."
 
   (if (string-match floating-point-regexp str 0)
@@ -456,4 +452,6 @@ are recognized."
 		  
     _f0))				; if invalid, return 0
 
+(provide 'float)
 
+;;; float.el ends here

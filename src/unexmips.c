@@ -1,6 +1,4 @@
 /* Unexec for MIPS (including IRIS4D).
-   Copyright (C) 1988 Free Software Foundation, Inc.
-
    Note that the GNU project considers support for MIPS operation
    a peripheral activity which should not be allowed to divert effort
    from development of the GNU system.  Changes in this code will be
@@ -8,23 +6,24 @@
    we don't plan to think about it, or about whether other Emacs
    maintenance might break it.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
-    any later version.
+   Copyright (C) 1988 Free Software Foundation, Inc.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This file is part of GNU Emacs.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-In other words, you are welcome to use, share and improve this program.
-You are forbidden to forbid anyone else to use, share and improve
-what you give them.   Help stamp out software-hoarding!  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+
 
 #include "config.h"
 #include <sys/types.h>
@@ -43,7 +42,7 @@ what you give them.   Help stamp out software-hoarding!  */
 #endif
 
 static void fatal_unexec ();
-static int mark_x ();
+static void mark_x ();
 
 #define READ(_fd, _buffer, _size, _error_message, _error_arg) \
 	errno = EEOF; \
@@ -119,9 +118,9 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
 	       hdr.fhdr.f_magic,
 	       MIPSELMAGIC, MIPSEBMAGIC,
 	       MIPSELMAGIC | 1, MIPSEBMAGIC | 1);
-      exit (1);
+      exit(1);
     }
-#else  /* not MIPS2 */
+#else /* not MIPS2 */
   if (hdr.fhdr.f_magic != MIPSELMAGIC
       && hdr.fhdr.f_magic != MIPSEBMAGIC)
     {
@@ -143,16 +142,16 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
       exit (1);
     }
 
-#define CHECK_SCNHDR(ptr, name, flags) \
-  ptr = NULL; \
-  for (i = 0; i < hdr.fhdr.f_nscns && !ptr; i++) \
-    if (strcmp (hdr.section[i].s_name, name) == 0) { \
-      if (hdr.section[i].s_flags != flags) { \
-	fprintf (stderr, "unexec: %x flags where %x expected in %s section.\n", \
-		 hdr.section[i].s_flags, flags, name); \
-	} \
-      ptr = hdr.section + i; \
-    }
+#define CHECK_SCNHDR(ptr, name, flags)					\
+  ptr = NULL;								\
+  for (i = 0; i < hdr.fhdr.f_nscns && !ptr; i++)			\
+    if (strcmp (hdr.section[i].s_name, name) == 0)			\
+      {									\
+	if (hdr.section[i].s_flags != flags)				\
+	  fprintf (stderr, "unexec: %x flags (%x expected) in %s section.\n", \
+		   hdr.section[i].s_flags, flags, name);		\
+	ptr = hdr.section + i;						\
+      }									\
 
   CHECK_SCNHDR (text_section,  _TEXT,  STYP_TEXT);
   CHECK_SCNHDR (init_section,  _INIT,  STYP_INIT);
@@ -285,7 +284,7 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
  * After succesfully building the new a.out, mark it executable
  */
 
-static int
+static void
 mark_x (name)
      char *name;
 {

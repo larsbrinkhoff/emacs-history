@@ -1,11 +1,15 @@
-;; Convert buffer of Mocklisp code to real lisp.
+;;; mlconvert.el --- convert buffer of Mocklisp code to real lisp.
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: emulations
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +21,15 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; This package conversts Mocklisp code written under a Gosling or UniPress
+;; Emacs for use with GNU Emacs.  The translated code will require runtime
+;; support from the mlsupport.el equivalent.
+
+;;; Code:
+
+;;;###autoload
 (defun convert-mocklisp-buffer ()
   "Convert buffer of Mocklisp code to real Lisp that GNU Emacs can run."
   (interactive)
@@ -246,8 +259,8 @@
 (ml-expansion 'file-modified-time "you-lose-on-file-modified-time")
 (ml-expansion 'needs-checkpointing "you-lose-on-needs-checkpointing")
 
-(ml-expansion 'lines-on-screen "set-screen-height")
-(ml-expansion 'columns-on-screen "set-screen-width")
+(ml-expansion 'lines-on-screen "set-frame-height")
+(ml-expansion 'columns-on-screen "set-frame-width")
 
 (ml-expansion 'dumped-emacs "t")
 
@@ -270,3 +283,4 @@
 
 ;Variable pause-writes-files
 
+;;; mlconvert.el ends here

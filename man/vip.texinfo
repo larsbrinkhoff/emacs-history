@@ -720,7 +720,10 @@ commands described in this chapter are to be used in vi mode.
 * Viewing the Buffer::	How you can view the current buffer.
 * Mark Commands::	Marking positions in a buffer.
 * Motion Commands::	Commands for moving point.
+* Searching and Replacing::	Commands for searching and replacing.
 * Modifying Commands::	Commands for modifying the buffer.
+* Other Vi Commands::	Miscellaneous Commands.
+* Commands in Insert Mode::	Commands for entering insert mode.
 @end menu
 
 @node Numeric Arguments, Important Keys, Vi Commands, Vi Commands
@@ -1330,8 +1333,9 @@ command.
 @menu
 * Delete Commands::	Commands for deleting text.
 * Yank Commands::	Commands for yanking text in Vi's sense.
-* Put Back Commands::	Commands for putting bake deleted/yanked text.
+* Put Back Commands::	Commands for putting back deleted/yanked text.
 * Change Commands::	Commands for changing text.
+* Repeating and Undoing Modifications::
 @end menu
 @node Delete Commands, Yank Commands, Modifying Commands, Modifying Commands
 @subsection Delete Commands

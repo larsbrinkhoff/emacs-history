@@ -1,0 +1,139 @@
+I hate to sound ungrateful, but....
+
+Somewhere between version 18 and version 19 someone has hacked on the
+VMS sections of the code.  And it looks like they didn't finish.  Most
+of the problems I've found are minor, however, I've run into some that
+are leaving me puzzled.
+
+================
+In sysdep.c:
+
+There is a small piece of code in sysdep.c that refers to undeclared
+variables.  It is not commented, and it is not in 18.58.  I have no idea
+what it is supposed to be doing, so for now I've commented it out.  This
+gets sysdep.c to compile, with a few warning messages.  Here's the
+function with the code:
+
+kbd_input_ast ()
+{
+  register int c = -1;
+  int old_errno = errno;
+  extern EMACS_TIME *input_available_clear_time;
+
+  if (waiting_for_ast)
+    SYS$SETEF (input_ef);
+  waiting_for_ast = 0;
+  input_count++;
+#ifdef ASTDEBUG
+  if (input_count == 25)
+    exit (1);
+  printf ("Ast # %d,", input_count);
+  printf (" iosb = %x, %x, %x, %x",
+	  input_iosb.offset, input_iosb.status, input_iosb.termlen,
+	  input_iosb.term);
+#endif
+  if (input_iosb.offset)
+    {
+      c = input_buffer;
+#ifdef ASTDEBUG
+      printf (", char = 0%o", c);
+#endif
+    }
+#ifdef ASTDEBUG
+  printf ("\n");
+  fflush (stdout);
+  sleep (1);
+#endif
+  if (! stop_input)
+    queue_kbd_input ();
+/* I don't know what this is doing!  The variables buf, cbuf and i are
+   not declared.  This is new from version 18, what does it do?
+  if (c >= 0)
+    {
+      struct input_event e;
+      e.kind = ascii_keystroke;
+      XSET (buf[i].code, Lisp_Int, cbuf[i]);
+      e.frame = selected_frame;
+      kbd_buffer_store_event (&e);
+    }
+*/
+  if (input_available_clear_time)
+    EMACS_SET_SECS_USECS (*input_available_clear_time, 0, 0);
+  errno = old_errno;
+}
+
+So the question is, who put it in and why?
+
+
+================
+In regex.c:
+
+I can't figure out what VAXC hates about the macros EXTRACT_NUMBER and
+EXTRACT_NUMBER_AND_INCR.  Here is a typical error
+
+    Compiling REGEX...
+		      EXTRACT_NUMBER_AND_INCR (j, p);
+    %CC-W-REPLACED, Replaced reserved word "char" with ")".
+		    Listing line number 5925.
+		    At line number 2658 in GNU:[EMACS19.SRC]REGEX.C;1.
+
+		      EXTRACT_NUMBER_AND_INCR (j, p);
+    %CC-E-SYNTAXERROR, Found ")" when expecting
+		    one of { "," ";" }.
+		    Listing line number 5925.
+		    At line number 2658 in GNU:[EMACS19.SRC]REGEX.C;1.
+
+		      EXTRACT_NUMBER_AND_INCR (j, p);
+
+And here is the actual source line(s)
+
+	case jump:
+        case jump_past_alt:
+	case dummy_failure_jump:
+          EXTRACT_NUMBER_AND_INCR (j, p);
+	  p += j;	
+	  if (j > 0)
+	    continue;
+            
+The macro definition looks fine to me, and the expansion is okay.  This
+looks to me like a bug in VAX C.  The stuff below is from the listing
+produced by the compiler (formatted pretty for readability).
+
+    EXTRACT_NUMBER_AND_INCR (j, p); 
+    1	do { 
+	    EXTRACT_NUMBER (j, p);
+	    (p) += 2;
+	} while (0);
+    2   do {
+	    do {
+		(j) = *(p) & 0377;
+		(j) += SIGN_EXTEND_CHAR (*((p) + 1)) << 8;
+	    } while (0);
+	    (p) += 2;
+	} while (0);
+    3   do {
+	    do {
+		(j) = *(p) & 0377; 
+		(j) += ((signed char) (*((p) + 1))) << 8; 
+	    } while (0);
+	    (p) += 2;
+	} while (0);
+
+It seems to be at this third level of expansion that the compiler barfs.
+It replaces the (valid) reserved word `char' with a ')' which is
+horribly wrong.  It screws up the cast.
+
+================
+In vmsproc.c
+
+The function call_process_cleanup is missing.  For the time being, I've
+lifted the version from process.c.  It will probably cause Emacs to
+crash the first time it is called, but will serve for now.
+
+The macros DCL_PROMPT, INTERACTIVE, RUNNING, EXITTED, and CHANGED are
+not defined.  I defined them in vmsproc.h as "$" for DCL_PROMPT, with
+the rest as integers, which is probably wrong.
+
+Vprocess_alist is referenced, but it is not at all clear to me that this
+is what should be being used here.  I don't understand the ideas behind
+how this was to be run in the first place....

@@ -1,6 +1,6 @@
 #include "copyright.h"
 
-/* $Header: Locate.c,v 1.5 88/02/02 19:09:02 jim Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/Locate.c,v 1.1 1992/04/11 22:10:20 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 /*

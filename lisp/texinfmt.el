@@ -1,11 +1,16 @@
-;; Convert texinfo files to info files.
-;; Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
+;;; texinfmt.el --- convert Texinfo files to Info files.
+
+;; Copyright (C) 1985, 1986, 1988, 1990 Free Software Foundation, Inc.
+
+;; Author: Robert J. Chassell <bob@gnu.ai.mit.edu>
+;; Version: 2.00
+;; Keywords: tex, help
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +22,15 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; Updated May 1990 to correspond, more or less, to version 2.8 of
+;; texinfo.tex.  NOTE: texinfmt.el is being phased out; it is being
+;; replaced by makeinfo.c, which is faster and provides better error
+;; checking.  
+;; Robert J. Chassell, bob@ai.mit.edu
+
+;;; Code:
 
 (defvar texinfo-format-syntax-table nil)
 
@@ -44,6 +58,7 @@
   (modify-syntax-entry ?} "){" texinfo-format-syntax-table)
   (modify-syntax-entry ?\' "." texinfo-format-syntax-table))
 
+;;;###autoload
 (defun texinfo-format-buffer (&optional notagify)
   "Process the current buffer as texinfo code, into an Info file.
 The Info file output is generated in a buffer visiting the Info file
@@ -57,37 +72,40 @@ Info-split to do these manually."
     (message lastmessage)
     (texinfo-format-buffer-1)
     (if notagify
-	nil
+        nil
       (if (> (buffer-size) 30000)
-	  (progn
-	    (message (setq lastmessage "Making tags table for Info file..."))
-	    (Info-tagify)))
+          (progn
+            (message (setq lastmessage "Making tags table for Info file..."))
+            (Info-tagify)))
       (if (> (buffer-size) 100000)
-	  (progn
-	    (message (setq lastmessage "Splitting Info file..."))
-	    (Info-split))))
+          (progn
+            (message (setq lastmessage "Splitting Info file..."))
+            (Info-split))))
     (message (concat lastmessage
-		     (if (interactive-p) "done.  Now save it." "done.")))))
+                     (if (interactive-p) "done.  Now save it." "done.")))))
+
 
 (defun texinfo-format-buffer-1 ()
   (let (texinfo-format-filename
-	texinfo-example-start
-	texinfo-command-start
-	texinfo-command-end
-	texinfo-command-name
-	texinfo-last-node
-	texinfo-vindex
-	texinfo-findex
-	texinfo-cindex
-	texinfo-pindex
-	texinfo-tindex
-	texinfo-kindex
-	texinfo-stack
-	texinfo-node-names
-	outfile
-	(fill-column fill-column)
-	(input-buffer (current-buffer))
-	(input-directory default-directory))
+        texinfo-example-start
+        texinfo-command-start
+        texinfo-command-end
+        texinfo-command-name
+        texinfo-last-node
+        texinfo-vindex
+        texinfo-findex
+        texinfo-cindex
+        texinfo-pindex
+        texinfo-tindex
+        texinfo-kindex
+        texinfo-stack
+        texinfo-node-names
+	(texinfo-footnote-number 0)
+        last-input-buffer
+        outfile
+        (fill-column fill-column)
+        (input-buffer (current-buffer))
+        (input-directory default-directory))
     (save-excursion
       (goto-char (point-min))
       (search-forward "@setfilename")
@@ -105,47 +123,50 @@ Info-split to do these manually."
     ;; Remove @bye at end of file, if it is there.
     (goto-char (point-max))
     (if (search-backward "@bye" nil t)
-	(delete-region (point) (point-max)))
+        (delete-region (point) (point-max)))
     ;; Make sure buffer ends in a newline.
     (or (= (preceding-char) ?\n)
-	(insert "\n"))
+        (insert "\n"))
     ;; Scan the whole buffer, converting to Info format.
     (texinfo-format-scan)
     ;; Return data for indices.
     (goto-char (point-min))
     (list outfile
-	  texinfo-vindex texinfo-findex texinfo-cindex
-	  texinfo-pindex texinfo-tindex texinfo-kindex)))
+          texinfo-vindex texinfo-findex texinfo-cindex
+          texinfo-pindex texinfo-tindex texinfo-kindex)))
 
 (defvar texinfo-region-buffer-name "*Info Region*"
   "*Name of the temporary buffer used by \\[texinfo-format-region].")
 
+;;;###autoload
 (defun texinfo-format-region (region-beginning region-ending)
-  "Convert the the current region of the Texinfo file to Info format.
+  "Convert the current region of the Texinfo file to Info format.
 This lets you see what that part of the file will look like in Info.
 The command is bound to \\[texinfo-format-region].  The text that is
 converted to Info is stored in a temporary buffer."
   (interactive "r")
   (message "Converting region to Info format...")
   (let (texinfo-command-start
-	texinfo-command-end
-	texinfo-command-name
-	texinfo-vindex
-	texinfo-findex
-	texinfo-cindex
-	texinfo-pindex
-	texinfo-tindex
-	texinfo-kindex
-	texinfo-stack
-	texinfo-format-filename
-	texinfo-example-start
-	texinfo-last-node
-	texinfo-node-names
-	(fill-column fill-column)
-	(input-buffer (current-buffer))
-	(input-directory default-directory)
-	filename-beginning
-	filename-ending)
+        texinfo-command-end
+        texinfo-command-name
+        texinfo-vindex
+        texinfo-findex
+        texinfo-cindex
+        texinfo-pindex
+        texinfo-tindex
+        texinfo-kindex
+        texinfo-stack
+        texinfo-format-filename
+        texinfo-example-start
+        texinfo-last-node
+        texinfo-node-names
+	(texinfo-footnote-number 0)
+        last-input-buffer
+        (fill-column fill-column)
+        (input-buffer (current-buffer))
+        (input-directory default-directory)
+        filename-beginning
+        filename-ending)
 
 ;;; Find a buffer to use.
 
@@ -157,28 +178,28 @@ converted to Info is stored in a temporary buffer."
     (save-excursion
       (set-buffer input-buffer)
       (save-excursion
-	(save-restriction
-	  (widen)
-	  (goto-char (point-min))
-	  ;; Initialize the buffer with the filename
-	  ;; or else explain that a filename is needed.
-	  (or (search-forward "@setfilename"
-			      (save-excursion (forward-line 100) (point)) t)
-	      (error "The texinfo file needs a line saying: @setfilename <name>"))
-	  (beginning-of-line)
-	  (setq filename-beginning (point))
-	  (forward-line 1)
-	  (setq filename-ending (point)))))
+        (save-restriction
+          (widen)
+          (goto-char (point-min))
+          ;; Initialize the buffer with the filename
+          ;; or else explain that a filename is needed.
+          (or (search-forward "@setfilename"
+                              (save-excursion (forward-line 100) (point)) t)
+              (error "The texinfo file needs a line saying: @setfilename <name>"))
+          (beginning-of-line)
+          (setq filename-beginning (point))
+          (forward-line 1)
+          (setq filename-ending (point)))))
 
     ;; Insert the @setfilename line into the buffer.
     (insert-buffer-substring input-buffer
-			     (min filename-beginning region-beginning)  
-			     filename-ending)
+                             (min filename-beginning region-beginning)  
+                             filename-ending)
     
     ;; Insert the region into the buffer.
     (insert-buffer-substring input-buffer
-			     (max region-beginning filename-ending)
-			     region-ending)
+                             (max region-beginning filename-ending)
+                             region-ending)
 
     (texinfo-mode)
 
@@ -189,10 +210,10 @@ converted to Info is stored in a temporary buffer."
     ;; discard everything after that.
     (goto-char (point-max))
     (if (re-search-backward "^@bye" nil t)
-	(delete-region (point) (point-max)))
+        (delete-region (point) (point-max)))
     ;; Make sure buffer ends in a newline.
     (or (= (preceding-char) ?\n)
-	(insert "\n"))
+        (insert "\n"))
 
     ;; Now convert for real.
     (goto-char (point-min))
@@ -200,44 +221,50 @@ converted to Info is stored in a temporary buffer."
     (goto-char (point-min)))
 
   (message "Done."))
+
 
 ;; Perform those texinfo-to-info conversions that apply to the whole input
 ;; uniformly.
 (defun texinfo-format-scan ()
-  ;; Convert left and right quotes to typewriter font quotes.
-  (goto-char (point-min))
-  (while (search-forward "``" nil t)
-    (replace-match "\""))
-  (goto-char (point-min))
-  (while (search-forward "''" nil t)
-    (replace-match "\""))
-  ;; Scan for @-commands.
-  (goto-char (point-min))
-  (while (search-forward "@" nil t)
-    (if (looking-at "[@{}'` *]")
-	;; Handle a few special @-followed-by-one-char commands.
-	(if (= (following-char) ?*)
-	    ;; @* has no effect, since we are not filling.
-	    (delete-region (1- (point)) (1+ (point)))
-	  ;; The other characters are simply quoted.  Delete the @.
-	  (delete-char -1)
-	  (forward-char 1))
-      ;; @ is followed by a command-word; find the end of the word.
-      (setq texinfo-command-start (1- (point)))
-      (if (= (char-syntax (following-char)) ?w)
-	  (forward-word 1)
-	(forward-char 1))
-      (setq texinfo-command-end (point))
-      ;; Call the handler for this command.
-      (setq texinfo-command-name
-	    (intern (buffer-substring (1+ texinfo-command-start)
-				      texinfo-command-end)))
-      (let ((cmd (get texinfo-command-name 'texinfo-format)))
-	(if cmd (funcall cmd)
-	  (texinfo-unsupported)))))
-  (cond (texinfo-stack
-	 (goto-char (nth 2 (car texinfo-stack)))
-	 (error "Unterminated @%s" (car (car texinfo-stack))))))
+    ;; Convert left and right quotes to typewriter font quotes.
+    (goto-char (point-min))
+    (while (search-forward "``" nil t)
+      (replace-match "\""))
+    (goto-char (point-min))
+    (while (search-forward "''" nil t)
+      (replace-match "\""))
+    ;; Scan for @-commands.
+    (goto-char (point-min))
+    (while (search-forward "@" nil t)
+      (if (looking-at "[@{}'` *]")
+          ;; Handle a few special @-followed-by-one-char commands.
+          (if (= (following-char) ?*)
+              (progn
+                ;; remove command
+                (delete-region (1- (point)) (1+ (point)))
+                ;; insert return if not at end of line;
+                ;; else line is already broken.
+                (if (not (= (following-char) ?\n))
+                    (insert ?\n)))      
+            ;; The other characters are simply quoted.  Delete the @.
+            (delete-char -1)
+            (forward-char 1))
+        ;; @ is followed by a command-word; find the end of the word.
+        (setq texinfo-command-start (1- (point)))
+        (if (= (char-syntax (following-char)) ?w)
+            (forward-word 1)
+          (forward-char 1))
+        (setq texinfo-command-end (point))
+        ;; Call the handler for this command.
+        (setq texinfo-command-name
+              (intern (buffer-substring (1+ texinfo-command-start)
+                                        texinfo-command-end)))
+        (let ((cmd (get texinfo-command-name 'texinfo-format)))
+          (if cmd (funcall cmd)
+            (texinfo-unsupported)))))
+    (cond (texinfo-stack
+           (goto-char (nth 2 (car texinfo-stack)))
+           (error "Unterminated @%s" (car (car texinfo-stack))))))
 
 (put 'begin 'texinfo-format 'texinfo-format-begin)
 (defun texinfo-format-begin ()
@@ -260,6 +287,7 @@ converted to Info is stored in a temporary buffer."
 	   (skip-chars-forward " ")
 	   (setq start (point))
 	   (end-of-line)
+           (skip-chars-backward " ")
 	   (setq texinfo-command-end (1+ (point))))
 	  ((looking-at "{")
 	   (setq start (1+ (point)))
@@ -311,6 +339,19 @@ converted to Info is stored in a temporary buffer."
 (defun texinfo-discard-command ()
   (delete-region texinfo-command-start texinfo-command-end))
 
+(defun texinfo-optional-braces-discard ()
+  "Discard braces following command, if any."
+  (goto-char texinfo-command-end)
+  (let ((start (point)))
+    (cond ((looking-at "[ \t]*\n"))     ; do nothing
+          ((looking-at "{")             ; remove braces, if any
+	   (forward-list 1)
+	   (setq texinfo-command-end (point)))
+	  (t
+           (error
+            "Invalid `texinfo-optional-braces-discard' format \(need braces?\)")))
+    (delete-region texinfo-command-start texinfo-command-end)))
+
 (defun texinfo-format-parse-line-args ()
   (let ((start (1- (point)))
 	next beg end
@@ -337,6 +378,10 @@ converted to Info is stored in a temporary buffer."
 	next beg end
 	args)
     (search-forward "{")
+    (save-excursion
+      (texinfo-format-expand-region 
+       (point)
+       (save-excursion (up-list 1) (1- (point)))))
     (while (/= (preceding-char) ?\})
       (skip-chars-forward " \t\n")
       (setq beg (point))
@@ -384,21 +429,42 @@ converted to Info is stored in a temporary buffer."
       (forward-char 1)
       (nreverse args))))
 
+
+; 19 October 1990
+; @setfilename modifed to work with include files; see @include
+; (defun texinfo-format-setfilename ()
+;   (let ((arg (texinfo-parse-arg-discard)))
+;     (setq texinfo-format-filename
+; 	  (file-name-nondirectory (expand-file-name arg)))
+;     (insert "Info file: "
+; 	    texinfo-format-filename ",    -*-Text-*-\n"
+; 	    "produced by texinfo-format-buffer\nfrom "
+; 	    (if (buffer-file-name input-buffer)
+; 		(concat "file: "
+; 			(file-name-sans-versions
+; 			 (file-name-nondirectory
+; 			  (buffer-file-name input-buffer))))
+; 	      (concat "buffer " (buffer-name input-buffer)))
+; 	    "\n\n")))
+
 (put 'setfilename 'texinfo-format 'texinfo-format-setfilename)
 (defun texinfo-format-setfilename ()
   (let ((arg (texinfo-parse-arg-discard)))
-    (setq texinfo-format-filename
-	  (file-name-nondirectory (expand-file-name arg)))
-    (insert "Info file: "
-	    texinfo-format-filename ",    -*-Text-*-\n"
-	    "produced by texinfo-format-buffer\nfrom "
-	    (if (buffer-file-name input-buffer)
-		(concat "file: "
-			(file-name-sans-versions
-			 (file-name-nondirectory
-			  (buffer-file-name input-buffer))))
-	      (concat "buffer " (buffer-name input-buffer)))
-	    "\n\n")))
+    (if (eq input-buffer last-input-buffer)
+	nil				; only use first setfilename in buffer
+      (message "Formatting Info file: %s" arg)
+      (setq texinfo-format-filename
+	    (file-name-nondirectory (expand-file-name arg)))
+      (insert "Info file: "
+	      texinfo-format-filename ",    -*-Text-*-\n"
+	      "produced by texinfo-format-buffer\nfrom "
+	      (if (buffer-file-name input-buffer)
+		  (concat "file: "
+			  (file-name-sans-versions
+			   (file-name-nondirectory
+			    (buffer-file-name input-buffer))))
+		(concat "buffer " (buffer-name input-buffer)))
+	      "\n\n"))))
 
 (put 'node 'texinfo-format 'texinfo-format-node)
 (defun texinfo-format-node ()
@@ -412,7 +478,8 @@ converted to Info is stored in a temporary buffer."
     (let ((tem (downcase name)))
       (if (assoc tem texinfo-node-names)
 	  (error "Duplicate node name: %s" name)
-	(setq texinfo-node-names (cons tem texinfo-node-names))))
+	(setq texinfo-node-names (cons (list tem) texinfo-node-names))))
+    (setq texinfo-footnote-number 0)
     (or (bolp)
 	(insert ?\n))
     (insert "\^_\nFile: " texinfo-format-filename
@@ -455,6 +522,11 @@ converted to Info is stored in a temporary buffer."
 ;   If fifth argument DOCUMENT is specified, produces
 ;    See section <xref to NODE> [NAME, else NODE], page <xref to NODE>
 ;    of DOCUMENT
+
+; @ref             a reference that does not put `See' or `see' in
+;                  the hardcopy and is the same as @xref in Info
+(put 'ref 'texinfo-format 'texinfo-format-xref)
+
 (put 'xref 'texinfo-format 'texinfo-format-xref)
 (defun texinfo-format-xref ()
   (let ((args (texinfo-format-parse-args)))
@@ -483,7 +555,9 @@ converted to Info is stored in a temporary buffer."
 (defun texinfo-format-inforef ()
   (let ((args (texinfo-format-parse-args)))
     (texinfo-discard-command)
-    (insert "*Note " (nth 1 args) ": (" (nth 2 args) ")" (car args))))
+    (if (nth 1 args)
+        (insert "*Note " (nth 1 args) ": (" (nth 2 args) ")" (car args))
+      (insert "*Note " "(" (nth 2 args) ")" (car args) "::"))))
 
 (put 'chapheading 'texinfo-format 'texinfo-format-chapter)
 (put 'ichapter 'texinfo-format 'texinfo-format-chapter)
@@ -529,6 +603,7 @@ converted to Info is stored in a temporary buffer."
 
 (defun texinfo-format-chapter-1 (belowchar)
   (let ((arg (texinfo-parse-arg-discard)))
+    (message "Formatting: %s ... " arg)   ; So we can see where we are.
     (insert ?\n arg ?\n "@SectionPAD " belowchar ?\n)
     (forward-line -2)))
 
@@ -557,6 +632,132 @@ converted to Info is stored in a temporary buffer."
   (texinfo-discard-command)
   (let ((indent-tabs-mode nil))
     (center-line)))
+
+(put 'sp 'texinfo-format 'texinfo-format-sp)
+(defun texinfo-format-sp ()
+  (let* ((arg (texinfo-parse-arg-discard))
+	 (num (read arg)))
+    (insert-char ?\n num)))
+
+(put 'br 'texinfo-format 'texinfo-format-paragraph-break)
+(defun texinfo-format-paragraph-break ()
+  "Force a paragraph break.
+If used within a line, follow `@br' with braces."
+  (texinfo-optional-braces-discard)
+  ;; insert one return if at end of line;
+  ;; else insert two returns, to generate a blank line.
+  (if (= (following-char) ?\n)
+      (insert ?\n)
+    (insert-char ?\n 2)))
+
+
+;;; @footnote
+
+; In Texinfo, footnotes are created with the `@footnote' command.
+; This command is followed immediately by a left brace, then by the text of
+; the footnote, and then by a terminating right brace.  The
+; template for a footnote is:
+; 
+;      @footnote{TEXT}
+;
+; Info has two footnote styles:
+; 
+; `End Node'
+;      In the "End Node" style, all the footnotes for a single node
+;      are placed at the end of that node.  The footnotes are
+;      separated from the rest of the node by a line of dashes with
+;      the word `Footnotes' within it.
+; 
+; `Make Node'
+;      In the "Make Node" style, all the footnotes for a single node are
+;      placed in an automatically constructed node of their own.  
+
+(put 'footnote 'texinfo-format 'texinfo-format-footnote)
+
+(defvar texinfo-footnote-style 'MN "\
+*Footnote style, either EN for end node or MN for make node.")
+
+(defvar texinfo-footnote-number)
+
+(defun texinfo-format-footnote ()
+  "Format a footnote in either `end node' or `make node' style.
+The `texinfo-footnote-style' variable controls which style is used."
+  (setq texinfo-footnote-number (1+ texinfo-footnote-number))
+  (cond ((eq texinfo-footnote-style 'EN) (texinfo-format-end-node))
+        ((eq texinfo-footnote-style 'MN) (texinfo-format-make-node))))
+
+(defun texinfo-format-make-node ()
+  "Format footnote in `MN', Make Node, style with notes in own node.
+The node is constructed automatically."
+  (let* (start
+         (arg (texinfo-parse-expanded-arg))
+         (node-name-beginning
+          (save-excursion
+            (re-search-backward
+             "^File: \\w+\\(\\w\\|\\s_\\|\\.\\)*[ \t]+Node:")
+            (match-end 0)))
+         (node-name
+          (save-excursion
+            (buffer-substring
+             (progn (goto-char node-name-beginning) ; skip over node command
+                    (skip-chars-forward " \t")  ; and over spaces
+                    (point))
+             (if (search-forward
+                  ","
+                  (save-excursion (end-of-line) (point)) t) ; bound search
+                 (1- (point))
+               (end-of-line) (point))))))
+    (texinfo-discard-command)
+    (insert (format "(%d) (*note %s-Footnotes::)"
+		    texinfo-footnote-number node-name))
+    (fill-paragraph nil)
+    (save-excursion
+    (if (re-search-forward "^@node" nil 'move)
+        (forward-line -1))
+
+    ;; two cases: for the first footnote, we must insert a node header;
+    ;; for the second and subsequent footnotes, we need only insert 
+    ;; the text of the  footnote.
+
+    (if (save-excursion
+         (re-search-backward
+          (concat node-name "-Footnotes, Up: ")
+          node-name-beginning
+          t))
+        (progn   ; already at least one footnote
+          (setq start (point))
+          (insert (format "\n(%d)  %s\n" texinfo-footnote-number arg))
+          (fill-region start (point)))
+      ;; else not yet a footnote
+      (insert "\n\^_\nFile: "  texinfo-format-filename
+              "  Node: " node-name "-Footnotes, Up: " node-name "\n")
+      (setq start (point))
+      (insert (format "\n(%d)  %s\n" texinfo-footnote-number arg))
+      (fill-region start (point))))))
+
+(defun texinfo-format-end-node ()
+  "Format footnote in `EN', End Node, style with notes at end of node."
+  (let (start
+        (arg (texinfo-parse-expanded-arg)))
+    (texinfo-discard-command)
+    (insert (format "(%d) " texinfo-footnote-number))
+    (fill-paragraph nil)
+    (save-excursion
+      (if (search-forward "\n--------- Footnotes ---------\n" nil t)
+          (progn ; already have footnote, put new one before end of node
+            (if (re-search-forward "^@node" nil 'move)
+                (forward-line -1))
+            (setq start (point))
+            (insert (format "\n(%d)  %s\n" texinfo-footnote-number arg))
+            (fill-region start (point)))
+        ;; else no prior footnote
+        (if (re-search-forward "^@node" nil 'move)
+            (forward-line -1))
+        (insert "\n--------- Footnotes ---------\n")
+        (setq start (point))
+        (insert (format "\n(%d)  %s\n" texinfo-footnote-number arg))
+        (fill-region start (point))))))
+
 
 ;; @itemize pushes (itemize "COMMANDS" STARTPOS) on texinfo-stack.
 ;; @enumerate pushes (enumerate 0 STARTPOS).
@@ -675,6 +876,47 @@ converted to Info is stored in a temporary buffer."
 	(itemfont (car (cdr (car texinfo-stack)))))
     (insert ?\b itemfont ?\{ arg "}\n     \n"))
   (forward-line -2))
+
+
+; @ftable
+
+; The `@ftable' command is like the `@table' command but it also
+; inserts each item in the first column into the function index.
+
+(put 'ftable 'texinfo-format 'texinfo-ftable)
+
+; The following function presumes that the first column of the table
+; should be in `@code' font; but the texinfo.tex source does not
+; presume this.  
+; (defun texinfo-ftable ()
+;   (texinfo-push-stack 'ftable "@code")
+;   (setq fill-column (- fill-column 5))
+;   (texinfo-discard-line))
+
+(defun texinfo-ftable ()
+  (texinfo-push-stack 'ftable (texinfo-parse-arg-discard))
+  (setq fill-column (- fill-column 5)))
+
+(put 'ftable 'texinfo-item 'texinfo-ftable-item)
+(defun texinfo-ftable-item ()
+  (let ((item (texinfo-parse-arg-discard))
+        (itemfont (car (cdr (car texinfo-stack))))
+        (indexvar 'texinfo-findex))
+    (insert ?\b itemfont ?\{ item "}\n     \n")
+    (set indexvar
+         (cons
+          (list item texinfo-last-node)
+          (symbol-value indexvar)))
+    (forward-line -2)))
+
+(put 'ftable 'texinfo-end 'texinfo-end-ftable)
+(defun texinfo-end-ftable ()
+  (setq fill-column (+ fill-column 5))
+  (texinfo-discard-command)
+  (let ((stacktop
+         (texinfo-pop-stack 'ftable)))
+    (texinfo-do-itemize (nth 1 stacktop))))
+
 
 (put 'ifinfo 'texinfo-format 'texinfo-discard-line)
 (put 'ifinfo 'texinfo-end 'texinfo-discard-command)
@@ -699,6 +941,30 @@ converted to Info is stored in a temporary buffer."
 
 (put 'endtitlepage 'texinfo-format 'texinfo-discard-line)
 
+; @titlespec         an alternative titling command; ignored by Info
+
+(put 'titlespec 'texinfo-format 'texinfo-format-titlespec)
+(defun texinfo-format-titlespec ()
+  (delete-region texinfo-command-start
+                 (progn (search-forward "@end titlespec\n")
+                        (point))))
+
+(put 'endtitlespec 'texinfo-format 'texinfo-discard-line)
+
+; @today{}
+
+(put 'today 'texinfo-format 'texinfo-format-today)
+
+; Produces Day Month Year style of output.  eg `1 Jan 1900'
+; The `@today{}' command requires a pair of braces, like `@dots{}'.
+(defun texinfo-format-today ()
+  (texinfo-parse-arg-discard)
+  (insert (format "%s %s %s"
+          (substring (current-time-string) 8 10)
+          (substring (current-time-string) 4 7)
+          (substring (current-time-string) -4))))
+
+
 (put 'ignore 'texinfo-format 'texinfo-format-ignore)
 (defun texinfo-format-ignore ()
   (delete-region texinfo-command-start
@@ -708,15 +974,20 @@ converted to Info is stored in a temporary buffer."
 (put 'endignore 'texinfo-format 'texinfo-discard-line)
 
 (put 'var 'texinfo-format 'texinfo-format-var)
+;  @sc  a small caps font for TeX; formatted as `var' in Info
+(put 'sc 'texinfo-format 'texinfo-format-var)
 (defun texinfo-format-var ()
   (insert (upcase (texinfo-parse-arg-discard)))
   (goto-char texinfo-command-start))
+
+; various noops
 
 (put 'asis 'texinfo-format 'texinfo-format-noop)
 (put 'b 'texinfo-format 'texinfo-format-noop)
 (put 't 'texinfo-format 'texinfo-format-noop)
 (put 'i 'texinfo-format 'texinfo-format-noop)
 (put 'r 'texinfo-format 'texinfo-format-noop)
+(put 'titlefont 'texinfo-format 'texinfo-format-noop)
 (put 'key 'texinfo-format 'texinfo-format-noop)
 (put 'w 'texinfo-format 'texinfo-format-noop)
 (defun texinfo-format-noop ()
@@ -746,10 +1017,13 @@ converted to Info is stored in a temporary buffer."
 
 (put 'bullet 'texinfo-format 'texinfo-format-bullet)
 (defun texinfo-format-bullet ()
-  (texinfo-discard-command)
+  "Insert an asterisk.
+If used within a line, follow `@bullet' with braces."
+  (texinfo-optional-braces-discard)
   (insert "*"))
 
 (put 'smallexample 'texinfo-format 'texinfo-format-example)
+(put 'smalllisp 'texinfo-format 'texinfo-format-example)
 (put 'example 'texinfo-format 'texinfo-format-example)
 (put 'quotation 'texinfo-format 'texinfo-format-example)
 (put 'lisp 'texinfo-format 'texinfo-format-example)
@@ -789,6 +1063,41 @@ converted to Info is stored in a temporary buffer."
     (end-of-line)
     (insert "\n     ")))
 
+
+;; @flushright  ...   @end flushright
+
+; The @flushright command right justifies every line but leaves the
+; left end ragged.
+
+(put 'flushright 'texinfo-format 'texinfo-format-flushright)
+(defun texinfo-format-flushright ()
+  (texinfo-push-stack 'flushright nil)
+  (texinfo-discard-line))
+
+(put 'flushright 'texinfo-end 'texinfo-end-flushright)
+(defun texinfo-end-flushright ()
+  (texinfo-discard-command)
+
+  (let ((stacktop
+         (texinfo-pop-stack 'flushright)))
+
+    (texinfo-do-flushright (nth 1 stacktop))))
+
+(defun texinfo-do-flushright (from)
+  (save-excursion
+   (while (progn (forward-line -1)
+                 (>= (point) from))
+
+     (beginning-of-line)
+     (insert
+      (make-string
+       (- fill-column
+          (save-excursion
+            (end-of-line)
+            (current-column)))  
+       ? )))))
+
+
 (put 'ctrl 'texinfo-format 'texinfo-format-ctrl)
 (defun texinfo-format-ctrl ()
   (let ((str (texinfo-parse-arg-discard)))
@@ -806,7 +1115,9 @@ converted to Info is stored in a temporary buffer."
 
 (put 'minus 'texinfo-format 'texinfo-format-minus)
 (defun texinfo-format-minus ()
-  (texinfo-parse-arg-discard)
+  "Insert a minus sign.
+If used within a line, follow `@minus' with braces."
+  (texinfo-optional-braces-discard)
   (insert "-"))
 
 (put 'dots 'texinfo-format 'texinfo-format-dots)
@@ -819,12 +1130,8 @@ converted to Info is stored in a temporary buffer."
   (texinfo-discard-command)
   (fill-paragraph nil))
 
-(put 'sp 'texinfo-format 'texinfo-format-sp)
-(defun texinfo-format-sp ()
-  (texinfo-discard-command)
-  (insert "\n"))
 
-;; Index generation
+;;; Index generation
 
 (put 'vindex 'texinfo-format 'texinfo-format-vindex)
 (defun texinfo-format-vindex ()
@@ -865,7 +1172,83 @@ converted to Info is stored in a temporary buffer."
     ("pg" . texinfo-pindex)
     ("ky" . texinfo-kindex)))
 
+
+;;; @defindex   @defcodeindex
+(put 'defindex 'texinfo-format 'texinfo-format-defindex)
+(put 'defcodeindex 'texinfo-format 'texinfo-format-defindex)
+
+(defun texinfo-format-defindex ()
+  (let* ((index-name (texinfo-parse-arg-discard)) ; eg: `aa'
+         (indexing-command (intern (concat index-name "index")))
+         (index-formatting-command      ; eg: `texinfo-format-aaindex'
+          (intern (concat "texinfo-format-" index-name "index")))
+         (index-alist-name              ; eg: `texinfo-aaindex'
+          (intern (concat "texinfo-" index-name "index"))))
+
+    (set index-alist-name nil)
+
+    (put indexing-command               ; eg, aaindex
+         'texinfo-format
+         index-formatting-command)      ; eg, texinfo-format-aaindex
+
+    ;; eg: "aa" . texinfo-aaindex
+    (or (assoc index-name texinfo-indexvar-alist)
+        (setq texinfo-indexvar-alist
+              (cons
+               (cons index-name
+                     index-alist-name)
+               texinfo-indexvar-alist)))
+
+    (fset index-formatting-command
+          (list 'lambda 'nil
+                (list 'texinfo-index 
+                      (list 'quote index-alist-name))))))
+
+
+;;; @synindex   @syncodeindex
+
+(put 'synindex 'texinfo-format 'texinfo-format-synindex)
+(put 'syncodeindex 'texinfo-format 'texinfo-format-synindex)
+
+(defun texinfo-format-synindex ()
+  (let* ((args (texinfo-parse-arg-discard))
+         (second (cdr (read-from-string args)))
+         (joiner (symbol-name (car (read-from-string args))))
+         (joined (symbol-name (car (read-from-string args second)))))
+
+    (if (assoc joiner texinfo-short-index-cmds-alist)
+        (put
+          (cdr (assoc joiner texinfo-short-index-cmds-alist))
+         'texinfo-format
+         (or (cdr (assoc joined texinfo-short-index-format-cmds-alist))
+             (intern (concat "texinfo-format-" joined "index"))))
+      (put
+       (intern (concat joiner "index"))
+       'texinfo-format
+       (or (cdr(assoc joined texinfo-short-index-format-cmds-alist))
+           (intern (concat "texinfo-format-" joined "index")))))))
+
+(defconst texinfo-short-index-cmds-alist
+  '(("cp" . cindex)
+    ("fn" . findex)
+    ("vr" . vindex)
+    ("tp" . tindex)
+    ("pg" . pindex)
+    ("ky" . kindex)))
+
+(defconst texinfo-short-index-format-cmds-alist
+  '(("cp" . texinfo-format-cindex)
+    ("fn" . texinfo-format-findex)
+    ("vr" . texinfo-format-vindex)
+    ("tp" . texinfo-format-tindex)
+    ("pg" . texinfo-format-pindex)
+    ("ky" . texinfo-format-kindex)))
+
+
+;;; @printindex
+
 (put 'printindex 'texinfo-format 'texinfo-format-printindex)
+
 (defun texinfo-format-printindex ()
   (let ((indexelts (symbol-value
 		    (cdr (assoc (texinfo-parse-arg-discard)
@@ -874,8 +1257,9 @@ converted to Info is stored in a temporary buffer."
     (insert "\n* Menu:\n\n")
     (setq opoint (point))
     (texinfo-print-index nil indexelts)
-    (if (eq system-type 'vax-vms) 
-	(texinfo-sort-region opoint (point))
+
+    (if (eq system-type 'vax-vms)
+        (texinfo-sort-region opoint (point))
       (shell-command-on-region opoint (point) "sort -fd" 1))))
 
 (defun texinfo-print-index (file indexelts)
@@ -890,7 +1274,47 @@ converted to Info is stored in a temporary buffer."
     (setq indexelts (cdr indexelts))))
 
 
-;;;; Lisp Definitions
+;;; NOTATIONS: @equiv, @error, etc
+
+;; @equiv           to show that two expressions are equivalent
+;; @error           to show an error message
+;; @expansion       to show what a macro expands to
+;; @point           to show the location of point in an example
+;; @print           to show what an evaluated expression prints
+;; @result          to indicate the value returned by an expression
+
+(put 'equiv 'texinfo-format 'texinfo-format-equiv)
+(defun texinfo-format-equiv ()
+  (texinfo-parse-arg-discard)
+  (insert "=="))
+
+(put 'error 'texinfo-format 'texinfo-format-error)
+(defun texinfo-format-error ()
+  (texinfo-parse-arg-discard)
+  (insert "error-->"))
+
+(put 'expansion 'texinfo-format 'texinfo-format-expansion)
+(defun texinfo-format-expansion ()
+  (texinfo-parse-arg-discard)
+  (insert "==>"))
+
+(put 'point 'texinfo-format 'texinfo-format-point)
+(defun texinfo-format-point ()
+  (texinfo-parse-arg-discard)
+  (insert "-!-"))
+
+(put 'print 'texinfo-format 'texinfo-format-print)
+(defun texinfo-format-print ()
+  (texinfo-parse-arg-discard)
+  (insert "-|"))
+
+(put 'result 'texinfo-format 'texinfo-format-result)
+(defun texinfo-format-result ()
+  (texinfo-parse-arg-discard)
+  (insert "=>"))
+
+
+;;;; Description formatting: @deffn, @defun, etc
 
 (defun texinfo-format-defun ()
   (texinfo-push-stack 'defun nil)
@@ -902,34 +1326,115 @@ converted to Info is stored in a temporary buffer."
 
 (defun texinfo-format-defun-1 (first-p)
   (let ((args (texinfo-format-parse-defun-args))
-	(type (get texinfo-command-name 'texinfo-defun-type)))
+	(command-type (get texinfo-command-name 'texinfo-defun-type))
+        (class "")
+        (name "")
+        (classification "") 
+        (data-type ""))
     (texinfo-discard-command)
-    (if (eq type 'arg)
-	(progn (setq type (car args))
-	       (setq args (cdr args))))
-    (let ((formatter (get texinfo-command-name 'texinfo-defun-format-type)))
-      (if formatter
-	  (setq type (funcall formatter type args))))
+
+    (cond 
+     ;; Generalized object oriented entity: `category class name [args...]'
+     ;; In Info, `Category on class: name ARG'
+     ((eq (eval (car command-type)) 'defop-type)
+      (setq category (car args))
+      (setq class (car (cdr args)))
+      (setq name (car args))
+      (setq args (cdr (cdr args))))
+
+     ;; Specialized object oriented entity:  @defmethod, @defivar
+     ;; "Instance Variable"    `class name [args...]'
+     ;; In Info, `Instance variable of class: name'
+     ((eq  (eval (car command-type)) 'defmethod-type)
+      (setq category (car (cdr command-type)))
+      (setq class (car args))
+      (setq name (car args))
+      (setq args (cdr args)))
+     
+     ;; Generalized function-like or variable-like entity:
+     ;; `category name [args...]'
+     ;; In Info, `Category: name ARGS'
+     ((or (eq (eval (car command-type)) 'deffn-type)
+          (eq (eval (car command-type)) 'deftp-type))
+      (setq category (car args))
+      (setq args (cdr args))
+      (setq name (car args)))
+     
+     ;; Specialized function-like or variable-like entity:
+     ;; "Macro"    `name [args...]'
+     ;; In Info, `Macro: Name ARGS'
+     ((eq (eval (car command-type)) 'defun-type)
+      (setq category (car (cdr command-type)))
+      (setq name (car args)))
+
+     ;; Generalized typed-function-like or typed-variable-like entity:
+     ;; `Classification data-type name [args...]'
+     ;; In Info, `Classification:  data-type name ARGS'
+     ((or (eq (eval (car command-type)) 'deftypefn-type)
+          (eq (eval (car command-type)) 'deftypevr-type))
+      (setq classification (car args))
+      (setq data-type (car (cdr args)))
+      (setq name (car (cdr (cdr args))))
+      (setq args (cdr (cdr (cdr args)))))
+
+     ;; Specialized typed-function-like or typed-variable-like entity:
+     ;; `data-type name [args...]'
+     ;; In Info, `Function:  data-type name ARGS'
+     ;; or,      `Variable:  data-type name'
+     ((or (eq (eval (car command-type)) 'deftypefun-type)
+          (eq (eval (car command-type)) 'deftypevar-type))
+      (setq classification (car (cdr command-type)))
+      (setq data-type (car args))
+      (setq name (car (cdr args)))
+      (setq args (cdr (cdr args)))))
+
     ;; Delete extra newline inserted after previous header line.
     (if (not first-p)
 	(delete-char -1))
-    (insert "* " type ": " (car args))
-    (let ((args (cdr args)))
-      (while args
-	(insert " "
-		(if (= ?& (aref (car args) 0))
-		    (car args)
-		  (upcase (car args))))
-	(setq args (cdr args))))
+
+    (let ((formatter (get texinfo-command-name 'texinfo-defun-format-type)))
+      (cond
+       ;; if typed function or variable
+       ((eq formatter 'texinfo-format-deftypefn-type)
+        (insert "* " classification ": " data-type " " name)
+        (let ((args args))
+          (while args
+            (insert " " (car args))
+            (setq args (cdr args)))))
+       (t
+        ;; and if object oriented, set category
+        (if (or (eq formatter 'texinfo-format-defop-type)
+                 (eq formatter 'texinfo-format-defcv-type))
+             (setq category (funcall formatter category class)))
+        (insert "* " category ": " name)
+        (let ((args (cdr args)))
+          (while args
+            (insert " "
+                    (if (or (= ?& (aref (car args) 0))
+                            (eq (eval (car command-type)) 'deftp-type))
+                        (car args)
+                      (upcase (car args))))
+            (setq args (cdr args)))))))
+
     ;; Insert extra newline so that paragraph filling does not mess
     ;; with header line.
     (insert "\n\n")
     (rplaca (cdr (cdr (car texinfo-stack))) (point))
+
     (let ((indexvar (get texinfo-command-name 'texinfo-defun-index))
-	  (formatter (get texinfo-command-name 'texinfo-defun-format-index)))
+	  (index-formatter
+           (get texinfo-command-name 'texinfo-defun-format-index)))
       (set indexvar
-	   (cons (list (if formatter (funcall formatter type args) (car args))
-		       texinfo-last-node)
+	   (cons (list
+                  (cond
+                   ;; if object oriented
+                   ((or (eq index-formatter 'texinfo-format-defop-index)
+                        (eq index-formatter 'texinfo-format-defcv-index))
+                    (funcall index-formatter name class))
+                   ((eq index-formatter 'texinfo-format-deftypefn-index)
+                    (funcall index-formatter name data-type))
+                   (t (car args)))
+                  texinfo-last-node)
 		 (symbol-value indexvar))))))
 
 (defun texinfo-end-defun ()
@@ -942,67 +1447,95 @@ converted to Info is stored in a temporary buffer."
       (goto-char start)
       (delete-char -1))))
 
+(defun texinfo-format-defop-type (category class)
+  (format "%s on %s" category class))
+
+(defun texinfo-format-defop-index (name class)
+  (format "%s on %s" name class))
+
+(defun texinfo-format-defcv-type (category class)
+  (format "%s of %s" category class))
+
+(defun texinfo-format-defcv-index (name class)
+  (format "%s of %s" name class))
+
 (put 'deffn 'texinfo-format 'texinfo-format-defun)
 (put 'deffnx 'texinfo-format 'texinfo-format-defunx)
 (put 'deffn 'texinfo-end 'texinfo-end-defun)
-(put 'deffn 'texinfo-defun-type 'arg)
-(put 'deffnx 'texinfo-defun-type 'arg)
+(put 'deffn 'texinfo-defun-type '('deffn-type nil))
+(put 'deffnx 'texinfo-defun-type '('deffn-type nil))
 (put 'deffn 'texinfo-defun-index 'texinfo-findex)
 (put 'deffnx 'texinfo-defun-index 'texinfo-findex)
 
 (put 'defun 'texinfo-format 'texinfo-format-defun)
 (put 'defunx 'texinfo-format 'texinfo-format-defunx)
 (put 'defun 'texinfo-end 'texinfo-end-defun)
-(put 'defun 'texinfo-defun-type "Function")
-(put 'defunx 'texinfo-defun-type "Function")
+(put 'defun 'texinfo-defun-type '('defun-type "Function"))
+(put 'defunx 'texinfo-defun-type '('defun-type "Function"))
 (put 'defun 'texinfo-defun-index 'texinfo-findex)
 (put 'defunx 'texinfo-defun-index 'texinfo-findex)
 
 (put 'defmac 'texinfo-format 'texinfo-format-defun)
 (put 'defmacx 'texinfo-format 'texinfo-format-defunx)
 (put 'defmac 'texinfo-end 'texinfo-end-defun)
-(put 'defmac 'texinfo-defun-type "Macro")
-(put 'defmacx 'texinfo-defun-type "Macro")
+(put 'defmac 'texinfo-defun-type '('defun-type "Macro"))
+(put 'defmacx 'texinfo-defun-type '('defun-type "Macro"))
 (put 'defmac 'texinfo-defun-index 'texinfo-findex)
 (put 'defmacx 'texinfo-defun-index 'texinfo-findex)
 
 (put 'defspec 'texinfo-format 'texinfo-format-defun)
 (put 'defspecx 'texinfo-format 'texinfo-format-defunx)
 (put 'defspec 'texinfo-end 'texinfo-end-defun)
-(put 'defspec 'texinfo-defun-type "Special form")
-(put 'defspecx 'texinfo-defun-type "Special form")
+(put 'defspec 'texinfo-defun-type '('defun-type "Special form"))
+(put 'defspecx 'texinfo-defun-type '('defun-type "Special form"))
 (put 'defspec 'texinfo-defun-index 'texinfo-findex)
 (put 'defspecx 'texinfo-defun-index 'texinfo-findex)
 
 (put 'defvr 'texinfo-format 'texinfo-format-defun)
 (put 'defvrx 'texinfo-format 'texinfo-format-defunx)
 (put 'defvr 'texinfo-end 'texinfo-end-defun)
-(put 'defvr 'texinfo-defun-type 'arg)
-(put 'defvrx 'texinfo-defun-type 'arg)
+(put 'defvr 'texinfo-defun-type '('deffn-type nil))
+(put 'defvrx 'texinfo-defun-type '('deffn-type nil))
 (put 'defvr 'texinfo-defun-index 'texinfo-vindex)
 (put 'defvrx 'texinfo-defun-index 'texinfo-vindex)
 
 (put 'defvar 'texinfo-format 'texinfo-format-defun)
 (put 'defvarx 'texinfo-format 'texinfo-format-defunx)
 (put 'defvar 'texinfo-end 'texinfo-end-defun)
-(put 'defvar 'texinfo-defun-type "Variable")
-(put 'defvarx 'texinfo-defun-type "Variable")
+(put 'defvar 'texinfo-defun-type '('defun-type "Variable"))
+(put 'defvarx 'texinfo-defun-type '('defun-type "Variable"))
 (put 'defvar 'texinfo-defun-index 'texinfo-vindex)
 (put 'defvarx 'texinfo-defun-index 'texinfo-vindex)
+
+(put 'defconst 'texinfo-format 'texinfo-format-defun)
+(put 'defconstx 'texinfo-format 'texinfo-format-defunx)
+(put 'defconst 'texinfo-end 'texinfo-end-defun)
+(put 'defconst 'texinfo-defun-type '('defun-type "Constant"))
+(put 'defconstx 'texinfo-defun-type '('defun-type "Constant"))
+(put 'defconst 'texinfo-defun-index 'texinfo-vindex)
+(put 'defconstx 'texinfo-defun-index 'texinfo-vindex)
+
+(put 'defcmd 'texinfo-format 'texinfo-format-defun)
+(put 'defcmdx 'texinfo-format 'texinfo-format-defunx)
+(put 'defcmd 'texinfo-end 'texinfo-end-defun)
+(put 'defcmd 'texinfo-defun-type '('defun-type "Command"))
+(put 'defcmdx 'texinfo-defun-type '('defun-type "Command"))
+(put 'defcmd 'texinfo-defun-index 'texinfo-findex)
+(put 'defcmdx 'texinfo-defun-index 'texinfo-findex)
 
 (put 'defopt 'texinfo-format 'texinfo-format-defun)
 (put 'defoptx 'texinfo-format 'texinfo-format-defunx)
 (put 'defopt 'texinfo-end 'texinfo-end-defun)
-(put 'defopt 'texinfo-defun-type "User Option")
-(put 'defoptx 'texinfo-defun-type "User Option")
+(put 'defopt 'texinfo-defun-type '('defun-type "User Option"))
+(put 'defoptx 'texinfo-defun-type '('defun-type "User Option"))
 (put 'defopt 'texinfo-defun-index 'texinfo-vindex)
 (put 'defoptx 'texinfo-defun-index 'texinfo-vindex)
 
 (put 'deftp 'texinfo-format 'texinfo-format-defun)
 (put 'deftpx 'texinfo-format 'texinfo-format-defunx)
 (put 'deftp 'texinfo-end 'texinfo-end-defun)
-(put 'deftp 'texinfo-defun-type 'arg)
-(put 'deftpx 'texinfo-defun-type 'arg)
+(put 'deftp 'texinfo-defun-type '('deftp-type nil))
+(put 'deftpx 'texinfo-defun-type '('deftp-type nil))
 (put 'deftp 'texinfo-defun-index 'texinfo-tindex)
 (put 'deftpx 'texinfo-defun-index 'texinfo-tindex)
 
@@ -1011,8 +1544,8 @@ converted to Info is stored in a temporary buffer."
 (put 'defop 'texinfo-format 'texinfo-format-defun)
 (put 'defopx 'texinfo-format 'texinfo-format-defunx)
 (put 'defop 'texinfo-end 'texinfo-end-defun)
-(put 'defop 'texinfo-defun-type 'arg)
-(put 'defopx 'texinfo-defun-type 'arg)
+(put 'defop 'texinfo-defun-type '('defop-type nil))
+(put 'defopx 'texinfo-defun-type '('defop-type nil))
 (put 'defop 'texinfo-defun-format-type 'texinfo-format-defop-type)
 (put 'defopx 'texinfo-defun-format-type 'texinfo-format-defop-type)
 (put 'defop 'texinfo-defun-index 'texinfo-findex)
@@ -1023,8 +1556,8 @@ converted to Info is stored in a temporary buffer."
 (put 'defmethod 'texinfo-format 'texinfo-format-defun)
 (put 'defmethodx 'texinfo-format 'texinfo-format-defunx)
 (put 'defmethod 'texinfo-end 'texinfo-end-defun)
-(put 'defmethod 'texinfo-defun-type "Operation")
-(put 'defmethodx 'texinfo-defun-type "Operation")
+(put 'defmethod 'texinfo-defun-type '('defmethod-type "Operation"))
+(put 'defmethodx 'texinfo-defun-type '('defmethod-type "Operation"))
 (put 'defmethod 'texinfo-defun-format-type 'texinfo-format-defop-type)
 (put 'defmethodx 'texinfo-defun-format-type 'texinfo-format-defop-type)
 (put 'defmethod 'texinfo-defun-index 'texinfo-findex)
@@ -1032,17 +1565,11 @@ converted to Info is stored in a temporary buffer."
 (put 'defmethod 'texinfo-defun-format-index 'texinfo-format-defop-index)
 (put 'defmethodx 'texinfo-defun-format-index 'texinfo-format-defop-index)
 
-(defun texinfo-format-defop-type (type args)
-  (format "%s on %s" type (car args)))
-
-(defun texinfo-format-defop-index (type args)
-  (format "%s on %s" (car (cdr args)) (car args)))
-
 (put 'defcv 'texinfo-format 'texinfo-format-defun)
 (put 'defcvx 'texinfo-format 'texinfo-format-defunx)
 (put 'defcv 'texinfo-end 'texinfo-end-defun)
-(put 'defcv 'texinfo-defun-type 'arg)
-(put 'defcvx 'texinfo-defun-type 'arg)
+(put 'defcv 'texinfo-defun-type '('defop-type nil))
+(put 'defcvx 'texinfo-defun-type '('defop-type nil))
 (put 'defcv 'texinfo-defun-format-type 'texinfo-format-defcv-type)
 (put 'defcvx 'texinfo-defun-format-type 'texinfo-format-defcv-type)
 (put 'defcv 'texinfo-defun-index 'texinfo-vindex)
@@ -1053,8 +1580,8 @@ converted to Info is stored in a temporary buffer."
 (put 'defivar 'texinfo-format 'texinfo-format-defun)
 (put 'defivarx 'texinfo-format 'texinfo-format-defunx)
 (put 'defivar 'texinfo-end 'texinfo-end-defun)
-(put 'defivar 'texinfo-defun-type "Instance variable")
-(put 'defivarx 'texinfo-defun-type "Instance variable")
+(put 'defivar 'texinfo-defun-type '('defmethod-type "Instance variable"))
+(put 'defivarx 'texinfo-defun-type '('defmethod-type "Instance variable"))
 (put 'defivar 'texinfo-defun-format-type 'texinfo-format-defcv-type)
 (put 'defivarx 'texinfo-defun-format-type 'texinfo-format-defcv-type)
 (put 'defivar 'texinfo-defun-index 'texinfo-vindex)
@@ -1062,58 +1589,140 @@ converted to Info is stored in a temporary buffer."
 (put 'defivar 'texinfo-defun-format-index 'texinfo-format-defcv-index)
 (put 'defivarx 'texinfo-defun-format-index 'texinfo-format-defcv-index)
 
-(defun texinfo-format-defcv-type (type args)
-  (format "%s of %s" type (car args)))
+;;; Typed functions and variables
 
-(defun texinfo-format-defcv-index (type args)
-  (format "%s of %s" (car (cdr args)) (car args)))
+(defun texinfo-format-deftypefn-type (classification data-type)
+  (format "%s" classification data-type))
+
+(defun texinfo-format-deftypefn-index (name data-type)
+  (format "%s of type %s" name data-type))
+
+
+(put 'deftypefn 'texinfo-format 'texinfo-format-defun)
+(put 'deftypefnx 'texinfo-format 'texinfo-format-defunx)
+(put 'deftypefn 'texinfo-end 'texinfo-end-defun)
+(put 'deftypefn 'texinfo-defun-type '('deftypefn-type nil))
+(put 'deftypefnx 'texinfo-defun-type '('deftypefn-type nil))
+(put 'deftypefn 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypefnx 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypefn 'texinfo-defun-index 'texinfo-findex)
+(put 'deftypefnx 'texinfo-defun-index 'texinfo-findex)
+(put 'deftypefn 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+(put 'deftypefnx 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+
+(put 'deftypefun 'texinfo-format 'texinfo-format-defun)
+(put 'deftypefunx 'texinfo-format 'texinfo-format-defunx)
+(put 'deftypefun 'texinfo-end 'texinfo-end-defun)
+(put 'deftypefun 'texinfo-defun-type '('deftypefun-type "Function"))
+(put 'deftypefunx 'texinfo-defun-type '('deftypefun-type "Function"))
+(put 'deftypefun 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypefunx 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypefun 'texinfo-defun-index 'texinfo-findex)
+(put 'deftypefunx 'texinfo-defun-index 'texinfo-findex)
+(put 'deftypefun 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+(put 'deftypefunx 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+
+(put 'deftypevr 'texinfo-format 'texinfo-format-defun)
+(put 'deftypevrx 'texinfo-format 'texinfo-format-defunx)
+(put 'deftypevr 'texinfo-end 'texinfo-end-defun)
+(put 'deftypevr 'texinfo-defun-type '('deftypefn-type nil))
+(put 'deftypevrx 'texinfo-defun-type '('deftypefn-type nil))
+(put 'deftypevr 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypevrx 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypevr 'texinfo-defun-index 'texinfo-vindex)
+(put 'deftypevrx 'texinfo-defun-index 'texinfo-vindex)
+(put 'deftypevr 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+(put 'deftypevrx 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+
+(put 'deftypevar 'texinfo-format 'texinfo-format-defun)
+(put 'deftypevarx 'texinfo-format 'texinfo-format-defunx)
+(put 'deftypevar 'texinfo-end 'texinfo-end-defun)
+(put 'deftypevar 'texinfo-defun-type '('deftypevar-type "Variable"))
+(put 'deftypevarx 'texinfo-defun-type '('deftypevar-type "Variable"))
+(put 'deftypevar 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypevarx 'texinfo-defun-format-type 'texinfo-format-deftypefn-type)
+(put 'deftypevar 'texinfo-defun-index 'texinfo-vindex)
+(put 'deftypevarx 'texinfo-defun-index 'texinfo-vindex)
+(put 'deftypevar 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+(put 'deftypevarx 'texinfo-defun-format-index 'texinfo-format-deftypefn-index)
+
 
-;; process included files
-(put 'include 'texinfo-format 'texinfo-format-include)
-(defun texinfo-format-include ()
-  (let ((filename (texinfo-parse-arg-discard))
-	(default-directory input-directory)
-	subindex)
-    (setq subindex
-	  (save-excursion
-	    (progn (find-file
-		    (cond ((file-readable-p (concat filename ".texinfo"))
-			   (concat filename ".texinfo"))
-			  ((file-readable-p (concat filename ".tex"))
-			   (concat filename ".tex"))
-			  ((file-readable-p filename)
-			   filename)
-			  (t (error "@include'd file %s not found"
-				    filename))))
-		   (texinfo-format-buffer-1))))
-    (texinfo-subindex 'texinfo-vindex (car subindex) (nth 1 subindex))
-    (texinfo-subindex 'texinfo-findex (car subindex) (nth 2 subindex))
-    (texinfo-subindex 'texinfo-cindex (car subindex) (nth 3 subindex))
-    (texinfo-subindex 'texinfo-pindex (car subindex) (nth 4 subindex))
-    (texinfo-subindex 'texinfo-tindex (car subindex) (nth 5 subindex))
-    (texinfo-subindex 'texinfo-kindex (car subindex) (nth 6 subindex))))
+;; process included files:  `@include' command
+
+;; Updated 19 October 1990
+;; In the original version, include files were ignored by Info but
+;; incorporated in to the printed manual.  To make references to the
+;; included file, the Texinfo source file has to refer to the included
+;; files using the `(filename)nodename' format for refering to other
+;; Info files.  Also, the included files had to be formatted on their
+;; own.  It was just like they were another file.
+
+;; Currently, include files are inserted into the buffer that is
+;; formatted for Info.  If large, the resulting info file is split and
+;; tagified.  For current include files to work, the master menu must
+;; refer to all the nodes, and the highest level nodes in the include
+;; files must have the correct next, prev, and up pointers.
+
+;; The included file may have an @setfilename and even an @settitle,
+;; but not an /input texinfo
+
+; Original definition:
+; (defun texinfo-format-include ()
+;   (let ((filename (texinfo-parse-arg-discard))
+; 	(default-directory input-directory)
+; 	subindex)
+;     (setq subindex
+; 	  (save-excursion
+; 	    (progn (find-file
+; 		    (cond ((file-readable-p (concat filename ".texinfo"))
+; 			   (concat filename ".texinfo"))
+; 			  ((file-readable-p (concat filename ".texi"))
+; 			   (concat filename ".texi"))
+; 			  ((file-readable-p (concat filename ".tex"))
+; 			   (concat filename ".tex"))
+; 			  ((file-readable-p filename)
+; 			   filename)
+; 			  (t (error "@include'd file %s not found"
+; 				    filename))))
+; 		   (texinfo-format-buffer-1))))
+;     (texinfo-subindex 'texinfo-vindex (car subindex) (nth 1 subindex))
+;     (texinfo-subindex 'texinfo-findex (car subindex) (nth 2 subindex))
+;     (texinfo-subindex 'texinfo-cindex (car subindex) (nth 3 subindex))
+;     (texinfo-subindex 'texinfo-pindex (car subindex) (nth 4 subindex))
+;     (texinfo-subindex 'texinfo-tindex (car subindex) (nth 5 subindex))
+;     (texinfo-subindex 'texinfo-kindex (car subindex) (nth 6 subindex))))
 
 (defun texinfo-subindex (indexvar file content)
   (set indexvar (cons (list 'recurse file content)
 		      (symbol-value indexvar))))
 
+(put 'include 'texinfo-format 'texinfo-format-include)
+(defun texinfo-format-include ()
+  (let ((filename (concat input-directory
+			  (texinfo-parse-arg-discard)))
+	(default-directory input-directory))
+    (message "Reading: %s" filename)
+    (save-excursion
+      (insert-file-contents filename)))
+  (setq last-input-buffer input-buffer)  ; to bypass setfilename
+  )
+
+
 
 ;; Lots of bolio constructs do nothing in texinfo.
 
-(put 'need 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'page 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'c 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'comment 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'setchapternewpage 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'contents 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'summarycontents 'texinfo-format 'texinfo-discard-line-with-args)
+(put 'shortcontents 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'nopara 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'noindent 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'setx 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'setq 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'settitle 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'defindex 'texinfo-format 'texinfo-discard-line-with-args)
-(put 'synindex 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'hsize 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'parindent 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'lispnarrowing 'texinfo-format 'texinfo-discard-line-with-args)
@@ -1121,6 +1730,7 @@ converted to Info is stored in a temporary buffer."
 (put 'headings 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'group 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'group 'texinfo-end 'texinfo-discard-line-with-args)
+(put 'need 'texinfo-format 'texinfo-discard-line-with-args)
 (put 'bye 'texinfo-format 'texinfo-discard-line)
 (put 'smallbook 'texinfo-format 'texinfo-discard-line)
 
@@ -1154,8 +1764,9 @@ converted to Info is stored in a temporary buffer."
   (error "%s is not handled by texinfo"
 	 (buffer-substring texinfo-command-start texinfo-command-end)))
 
+;;;###autoload
 (defun batch-texinfo-format ()
-  "Runs  texinfo-format-buffer  on the files remaining on the command line.
+  "Runs `texinfo-format-buffer' on the files remaining on the command line.
 Must be used only with -batch, and kills emacs on completion.
 Each file will be processed even if an error occurred previously.
 For example, invoke
@@ -1190,7 +1801,7 @@ For example, invoke
 	    (progn
 	      (if buffer-file-name (kill-buffer (current-buffer)))
 	      (find-file file)
-	      (buffer-flush-undo (current-buffer))
+	      (buffer-disable-undo (current-buffer))
 	      (set-buffer-modified-p nil)
 	      (texinfo-mode)
 	      (message "texinfo formatting %s..." file)
@@ -1213,3 +1824,5 @@ For example, invoke
 	     (message ">>  %s" s))
 	   (setq error 1))))
       (kill-emacs error))))
+
+;;; texinfmt.el ends here

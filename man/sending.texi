@@ -1,0 +1,397 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Sending Mail, Rmail, Picture, Top
+@chapter Sending Mail
+@cindex mail
+@cindex message
+
+  To send a message in Emacs, you start by typing a command (@kbd{C-x m})
+to select and initialize the @samp{*mail*} buffer.  Then you edit the text
+and headers of the message in this buffer, and type another command
+(@kbd{C-c C-c}) to send the message.
+
+@table @kbd
+@item C-x m
+Begin composing a message to send (@code{mail}).
+@item C-x 4 m
+Likewise, but display the message in another window
+(@code{mail-other-window}).
+@item C-x 5 m
+Likewise, but make a new frame (@code{mail-other-frame}).
+@item C-c C-c
+In Mail mode, send the message and switch to another buffer
+(@code{mail-send-and-exit}).
+@end table
+
+@kindex C-x m
+@findex mail
+@kindex C-x 4 m
+@findex mail-other-window
+@kindex C-x 5 m
+@findex mail-other-frame
+  The command @kbd{C-x m} (@code{mail}) selects a buffer named
+@samp{*mail*} and initializes it with the skeleton of an outgoing
+message.  @kbd{C-x 4 m} (@code{mail-other-window}) selects the
+@samp{*mail*} buffer in a different window, leaving the previous current
+buffer visible.  @kbd{C-x 5 m} (@code{mail-other-frame}) creates a new
+frame to select the @samp{*mail*} buffer.
+
+  Because the mail composition buffer is an ordinary Emacs buffer, you can
+switch to other buffers while in the middle of composing mail, and switch
+back later (or never).  If you use the @kbd{C-x m} command again when you
+have been composing another message but have not sent it, you are asked to
+confirm before the old message is erased.  If you answer @kbd{n}, the
+@samp{*mail*} buffer is left selected with its old contents, so you can
+finish the old message and send it.  @kbd{C-u C-x m} is another way to do
+this.  Sending the message marks the @samp{*mail*} buffer ``unmodified'',
+which avoids the need for confirmation when @kbd{C-x m} is next used.
+
+  If you are composing a message in the @samp{*mail*} buffer and want to
+send another message before finishing the first, rename the
+@samp{*mail*} buffer using @kbd{M-x rename-uniquely} (@pxref{Misc
+Buffer}).  Then you can use @kbd{C-x m} or its variants described above
+to make a new @samp{*mail} buffer.  Once you've done that, you can work
+with each mail buffer independently.
+
+@menu
+* Format: Mail Format.    Format of the mail being composed.
+* Headers: Mail Headers.  Details of permitted mail header fields.
+* Aliases: Mail Aliases.  Abbreviating and grouping mail addresses.
+* Mode: Mail Mode.        Special commands for editing mail being composed.
+* Spook: Distracting NSA. How to distract the NSA's attention.
+@end menu
+
+@node Mail Format
+@section The Format of the Mail Buffer
+
+  In addition to the @dfn{text} or @dfn{body}, a message has @dfn{header
+fields} which say who sent it, when, to whom, why, and so on.  Some header
+fields such as the date and sender are created automatically after the
+message is sent.  Others, such as the recipient names, must be specified by
+you in order to send the message properly.
+
+  Mail mode provides a few commands to help you edit some header fields,
+and some are preinitialized in the buffer automatically at times.  You can
+insert or edit any header fields using ordinary editing commands.
+
+  The line in the buffer that says
+
+@example
+--text follows this line--
+@end example
+
+@vindex mail-header-separator
+@noindent
+is a special delimiter that separates the headers you have specified from
+the text.  Whatever follows this line is the text of the message; the
+headers precede it.  The delimiter line itself does not appear in the
+message actually sent.  The text used for the delimiter line is controlled
+by the variable @code{mail-header-separator}.
+
+Here is an example of what the headers and text in the @samp{*mail*} buffer
+might look like.
+
+@example
+To: gnu@@prep.ai.mit.edu
+CC: lungfish@@spam.org, byob@@spam.org
+Subject: The Emacs Manual
+--Text follows this line--
+Please ignore this message.
+@end example
+
+@node Mail Headers
+@section Mail Header Fields
+@cindex headers (of mail message)
+
+  There are several header fields you can use in the @samp{*mail*}
+buffer.  Each header field starts with a field name at the beginning of
+a line, terminated by a colon.  Upper and lower case are equivalent in
+field names (and in mailing addresses also).  After the colon and
+optional whitespace comes the contents of the field.
+
+@table @samp
+@item To
+This field contains the mailing addresses to which the message is
+addressed.
+
+@item Subject
+The contents of the @samp{Subject} field should be a piece of text
+that says what the message is about.  The reason @samp{Subject} fields
+are useful is that most mail-reading programs can provide a summary of
+messages, listing the subject of each message but not its text.
+
+@item CC
+This field contains additional mailing addresses to send the message
+to, but whose readers should not regard the message as addressed to
+them.
+
+@item BCC
+This field contains additional mailing addresses to send the message to,
+which should not appear in the header of the message actually sent.
+Copies sent this way are called @dfn{blind carbon copies}.
+
+@vindex mail-self-blind
+To send a blind carbon copy of every outgoing message to yourself, set
+the variable @code{mail-self-blind} to @code{t}.
+
+@item FCC
+This field contains the name of one file (in system mail file format) to
+which a copy of the message should be appended when the message is
+sent.  Do not output directly into an Rmail file with FCC; instead,
+output to an inbox file and ``get new mail'' from that inbox file into
+the Rmail file.  @xref{Rmail Inbox}.
+
+@item From
+Use the @samp{From} field to say who you are, when the account you are
+using to send the mail is not your own.  The contents of the
+@samp{From} field should be a valid mailing address, since replies
+will normally go there.
+
+@item Reply-to
+Use this field to direct replies to a different address.  Most
+mail-reading programs (including Rmail) automatically send replies to
+the @samp{Reply-to} address in preference to the @samp{From} address.
+By adding a @samp{Reply-to} field to your header, you can work around
+any problems your @samp{From} address may cause for replies.
+
+@vindex mail-default-reply-to
+If you want to put the same @samp{Reply-to} address into every outgoing
+message, set the variable @code{mail-default-reply-to} to that address
+(as a string).
+
+@item In-reply-to
+This field contains a piece of text describing a message you are
+replying to.  Some mail systems can use this information to correlate
+related pieces of mail.  Normally this field is filled in by Rmail
+when you are replying to a message in Rmail, and you never need to
+think about it (@pxref{Rmail}).
+@end table
+
+@noindent
+The @samp{To}, @samp{CC}, @samp{BCC} and @samp{FCC} fields can appear
+any number of times, to specify many places to send the message.
+
+@noindent
+The @samp{To}, @samp{CC}, and @samp{BCC} fields can have continuation
+lines.  All the lines starting with whitespace, following the line on
+which the field starts, are considered part of the field.  For
+example,@refill
+
+@example
+@group
+To: foo@@here.net, this@@there.net,
+  me@@gnu.cambridge.mass.usa.earth.spiral3281
+@end group
+@end example
+
+@vindex mail-archive-file-name
+  If the variable @code{mail-archive-file-name} is non-@code{nil}, it
+should be a string naming a file; every time you start to edit a message
+to send, the message starts out with an @samp{FCC} field specifying that
+file.  Unless you remove the @samp{FCC} field before sending, the
+message will be written into that file when it is sent.
+
+@node Mail Aliases
+@section Mail Aliases
+@cindex mail aliases
+@cindex .mailrc file
+@cindex mailrc file
+
+  You can define @dfn{mail aliases} in a file named @file{~/.mailrc}.
+These are short mnemonic names stand for mail addresses or groups of
+mail addresses.  Like many other mail programs, Emacs expands aliases
+when they occur in the @samp{To}, @samp{CC}, and @samp{BCC} fields.
+
+  To define an alias in @file{~/.mailrc}, write a line in the following
+format:
+
+@example
+alias @var{shortaddress} @var{fulladdress}
+@end example
+
+@noindent
+For instance, if you send want to use @code{maingnu} as a short form of the
+address @code{gnu@@prep.ai.mit.edu}, put in the line:@refill
+
+@example
+alias maingnu gnu@@prep.ai.mit.edu
+@end example
+
+@noindent
+The file @file{~/.mailrc} is used primarily by other mail-reading
+programs; it can contain various other commands.  Emacs ignores
+everything in it except for alias definitions.
+
+@findex define-mail-alias
+  Another way to define a mail alias, within Emacs alone, is with the
+@code{define-mail-alias} command.  It prompts for the alias and then the
+full address.  You can use it to define aliases in your @file{.emacs}
+file, like this:
+
+@example
+(define-mail-alias "maingnu" "gnu@@prep.ai.mit.edu")
+@end example
+
+@vindex mail-aliases
+  @code{define-mail-alias} records aliases by adding them to a
+variable named @code{mail-aliases}.  If your are comfortable with
+manipulating Lisp lists, you can set @code{mail-aliases} directly.  The
+initial value of @code{mail-aliases} is @code{t}, which means that
+Emacs should read @file{.mailrc} to get the proper value.
+
+  Normally, Emacs expands aliases when you send the message.  If you
+like, you can have mail aliases expand as abbrevs, as soon as you type
+them in.  To enable this feature, execute the following:
+
+@example
+(add-hook 'mail-setup-hook 'mail-abbrevs-setup)
+@end example
+
+@noindent
+This can go in your @file{.emacs} file.  @xref{Hooks}.
+
+  Note that abbrevs expand only if you insert a word-separator character
+afterward.  However, any mail aliases that you didn't expand in the mail
+buffer are expanded subsequently when you send the message.
+@xref{Abbrevs}.
+
+@node Mail Mode
+@section Mail Mode
+
+  The major mode used in the @samp{*mail*} buffer is Mail mode, which is
+much like Text mode except that various special commands are provided on
+the @kbd{C-c} prefix.  These commands all have to do specifically with
+editing or sending the message.
+
+@table @kbd
+@item C-c C-s
+Send the message, and leave the @samp{*mail*} buffer selected
+(@code{mail-send}).
+@item C-c C-c
+Send the message, and select some other buffer (@code{mail-send-and-exit}).
+@item C-c C-f C-t
+Move to the @samp{To} header field, creating one if there is none
+(@code{mail-to}).
+@item C-c C-f C-s
+Move to the @samp{Subject} header field, creating one if there is
+none (@code{mail-subject}).
+@item C-c C-f C-c
+Move to the @samp{CC} header field, creating one if there is none
+(@code{mail-cc}).
+@item C-c C-w
+Insert the file @file{~/.signature} at the end of the message text
+(@code{mail-signature}).
+@item C-c C-y
+Yank the selected message from Rmail (@code{mail-yank-original}).
+This command does nothing unless your command to start sending a
+message was issued with Rmail.
+@item C-c C-q
+Fill all paragraphs of yanked old messages, each individually
+(@code{mail-fill-yanked-message}).
+@end table
+
+@kindex C-c C-s @r{(Mail mode)}
+@kindex C-c C-c @r{(Mail mode)}
+@findex mail-send
+@findex mail-send-and-exit
+  There are two ways to send the message.  @kbd{C-c C-s}
+(@code{mail-send}) sends the message and marks the @samp{*mail*} buffer
+unmodified, but leaves that buffer selected so that you can modify the
+message (perhaps with new recipients) and send it again.  @kbd{C-c C-c}
+(@code{mail-send-and-exit}) sends and then deletes the window or
+switches to another buffer.  It puts the @samp{*mail*} buffer at the
+lowest priority for reselection by default, since you are finished with
+using it.  This is the usual way to send the message.
+
+@kindex C-c C-f C-t @r{(Mail mode)}
+@findex mail-to
+@kindex C-c C-f C-s @r{(Mail mode)}
+@findex mail-subject
+@kindex C-c C-f C-c @r{(Mail mode)}
+@findex mail-cc
+  Mail mode provides some other special commands that are useful for
+editing the headers and text of the message before you send it.  There are
+three commands defined to move point to particular header fields, all based
+on the prefix @kbd{C-c C-f} (@samp{C-f} is for ``field'').  They are
+@kbd{C-c C-f C-t} (@code{mail-to}) to move to the @samp{To} field, @kbd{C-c
+C-f C-s} (@code{mail-subject}) for the @samp{Subject} field, and @kbd{C-c
+C-f C-c} (@code{mail-cc}) for the @samp{CC} field.  These fields have
+special motion commands because they are the most common fields for the
+user to want to edit.
+
+@kindex C-c C-w @r{(Mail mode)}
+@findex mail-signature
+  @kbd{C-c C-w} (@code{mail-signature}) adds a standard piece text at
+the end of the message to say more about who you are.  The text comes
+from the file @file{.signature} in your home directory.
+
+@vindex mail-signature
+  To insert signatures automatically, set the variable
+@code{mail-signature} non-@code{nil}; then starting a mail message
+automatically inserts the contents of your @file{.signature} file.  If
+you want to omit your signature from a particular message, delete it
+from the buffer before you send the message.
+
+@kindex C-c C-y @r{(Mail mode)}
+@findex mail-yank-original
+  When mail sending is invoked from the Rmail mail reader using an Rmail
+command, @kbd{C-c C-y} can be used inside the @samp{*mail*} buffer to insert
+the text of the message you are replying to.  Normally it indents each line
+of that message four spaces and eliminates most header fields.  A numeric
+argument specifies the number of spaces to indent.  An argument of just
+@kbd{C-u} says not to indent at all and not to eliminate anything.
+@kbd{C-c C-y} always uses the current message from the @samp{RMAIL} buffer,
+so you can insert several old messages by selecting one in @samp{RMAIL},
+switching to @samp{*mail*} and yanking it, then switching back to
+@samp{RMAIL} to select another.@refill
+
+@vindex mail-yank-prefix
+  You can specify the text for @kbd{C-c C-y} to insert at the beginning
+of each line: set @code{mail-yank-prefix} to the desired string.  (A
+value of @code{nil} means to use indentation; this is the default.)
+However, @kbd{C-u C-c C-y} never adds anything at the beginning of the
+inserted lines, regardless of the value of @code{mail-yank-prefix}.
+
+@kindex C-c C-q @r{(Mail mode)}
+@findex mail-fill-yanked-message
+  After using @kbd{C-c C-y}, you can use the command @kbd{C-c C-q}
+(@code{mail-fill-yanked-message}) to fill the paragraphs of the yanked
+old message or messages.  One use of @kbd{C-c C-q} fills all such
+paragraphs, each one individually.
+
+  Mail mode defines the character @samp{%} as part of a word; this is
+helpful for using the word commands to edit mail addresses.
+
+@vindex mail-mode-hook
+@vindex mail-setup-hook
+  Turning on Mail mode (which @kbd{C-x m} does automatically) runs the
+normal hooks @code{text-mode-hook} and @code{mail-mode-hook}.
+Initializing a new outgoing message runs the normal hook
+@code{mail-setup-hook}; if you want to add special fields to your mail
+header or make other changes to the appearance of the mail buffer, use
+that hook.  @xref{Hooks}.
+
+  The main difference between these hooks is just when they are
+invoked.  Whenever you type @kbd{M-x mail}, @code{mail-mode-hook} runs
+as soon as the @samp{*mail*} buffer is created.  Then the
+@code{mail-setup} function puts in the default contents of the buffer.
+After these default contents are inserted, @code{mail-setup-hook} runs.
+
+@node Distracting NSA
+@section Distracting the NSA
+
+@findex spook
+@cindex NSA
+  @kbd{M-x spook} adds a line of randomly chosen keywords to an outgoing
+mail message.  The keywords are chosen from a list of words that suggest
+you are discussing something subversive.
+
+  The idea behind this feature is that the suspicion that the NSA snoops
+on all electronic mail messages that contain keywords suggesting they
+might be interested.  (The NSA says they don't, but there is no way to
+be certain.)  The idea is that if lots of people add suspicious words to
+their messages, the NSA will get so busy with spurious input that they
+will have to give up reading it all.
+
+  Whether or not this confuses the NSA, it at least amuses people.

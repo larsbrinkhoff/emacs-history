@@ -1,217 +1,241 @@
 \initial {A}
-\entry {\code {abbrev-all-caps}}{172}
-\entry {\code {abbrev-file-name}}{174}
-\entry {\code {abbrev-mode}}{171}
-\entry {\code {auto-mode-alist}}{112}
-\entry {\code {auto-save-default}}{95}
-\entry {\code {auto-save-interval}}{95}
-\entry {\code {auto-save-timeout \r {(V19)}}}{240}
-\entry {\code {auto-save-visited-file-name}}{94}
+\entry {\code {abbrev-all-caps}}{224}
+\entry {\code {abbrev-file-name}}{227}
+\entry {\code {abbrev-mode}}{223}
+\entry {\code {adaptive-fill-mode}}{155}
+\entry {\code {appt-display-diary}}{287}
+\entry {\code {appt-issue-message}}{287}
+\entry {\code {auto-mode-alist}}{142}
+\entry {\code {auto-save-default}}{109}
+\entry {\code {auto-save-interval}}{109}
+\entry {\code {auto-save-timeout}}{109}
+\entry {\code {auto-save-visited-file-name}}{108}
 \initial {B}
-\entry {\code {backup-by-copying}}{91}
-\entry {\code {backup-by-copying-when-linked}}{91}
-\entry {\code {backup-by-copying-when-mismatch}}{91}
-\entry {\code {blink-matching-paren}}{145}
-\entry {\code {blink-matching-paren-distance}}{145}
-\entry {\code {buffer-read-only}}{102}
+\entry {\code {backup-by-copying}}{105}
+\entry {\code {backup-by-copying-when-linked}}{105}
+\entry {\code {backup-by-copying-when-mismatch}}{105}
+\entry {\code {blink-matching-paren}}{182}
+\entry {\code {blink-matching-paren-distance}}{182}
+\entry {\code {buffer-read-only}}{127}
 \initial {C}
-\entry {\code {c-argdecl-indent}}{144}
-\entry {\code {c-auto-newline}}{142}
-\entry {\code {c-brace-imaginary-offset}}{143}
-\entry {\code {c-brace-offset}}{144}
-\entry {\code {c-continued-statement-offset}}{144}
-\entry {\code {c-indent-level}}{143}
-\entry {\code {c-label-offset}}{144}
-\entry {\code {c-mode-hook}}{136}
-\entry {\code {c-mode-map}}{219}
-\entry {\code {c-tab-always-indent}}{142}
-\entry {\code {case-fold-search}}{76, 77}
-\entry {\code {case-replace}}{77}
-\entry {\code {command-history}}{42}
-\entry {\code {command-line-args}}{25}
-\entry {\code {comment-column}}{147}
-\entry {\code {comment-end}}{147}
-\entry {\code {comment-indent-hook}}{148}
-\entry {\code {comment-line-start}}{158}
-\entry {\code {comment-line-start-skip}}{158}
-\entry {\code {comment-multi-line}}{147}
-\entry {\code {comment-start}}{147}
-\entry {\code {comment-start-skip}}{147}
-\entry {\code {compile-command}}{161}
-\entry {\code {completion-auto-help}}{41}
-\entry {\code {completion-ignored-extensions}}{41}
-\entry {\code {ctl-arrow}}{65}
-\entry {\code {ctl-x-map}}{220}
+\entry {\code {c-argdecl-indent}}{181}
+\entry {\code {c-auto-newline}}{179}
+\entry {\code {c-brace-imaginary-offset}}{180}
+\entry {\code {c-brace-offset}}{180}
+\entry {\code {c-continued-statement-offset}}{180}
+\entry {\code {c-indent-level}}{179}
+\entry {\code {c-label-offset}}{181}
+\entry {\code {c-mode-hook}}{172}
+\entry {\code {c-mode-map}}{321}
+\entry {\code {c-tab-always-indent}}{179}
+\entry {\code {calendar-daylight-savings-ends}}{287}
+\entry {\code {calendar-daylight-savings-starts}}{287}
+\entry {\code {calendar-daylight-time-zone-name}}{274}
+\entry {\code {calendar-latitude}}{274}
+\entry {\code {calendar-location-name}}{274}
+\entry {\code {calendar-longitude}}{274}
+\entry {\code {calendar-standard-time-zone-name}}{274}
+\entry {\code {calendar-time-zone}}{274}
+\entry {\code {case-fold-search}}{88}
+\entry {\code {case-replace}}{90}
+\entry {\code {command-history}}{45}
+\entry {\code {command-line-args}}{350}
+\entry {\code {comment-column}}{184}
+\entry {\code {comment-end}}{185}
+\entry {\code {comment-indent-function}}{185}
+\entry {\code {comment-line-start}}{206}
+\entry {\code {comment-line-start-skip}}{206}
+\entry {\code {comment-multi-line}}{185}
+\entry {\code {comment-start}}{185}
+\entry {\code {comment-start-skip}}{184}
+\entry {\code {compare-ignore-case}}{122}
+\entry {\code {compile-command}}{211}
+\entry {\code {completion-auto-help}}{43}
+\entry {\code {completion-ignored-extensions}}{43}
+\entry {\code {ctl-arrow}}{77}
+\entry {\code {ctl-x-4-map}}{321}
+\entry {\code {ctl-x-map}}{321}
 \initial {D}
-\entry {\code {dbx-mode-hook}}{284}
-\entry {\code {debug-on-error}}{167}
-\entry {\code {debug-on-quit}}{167}
-\entry {\code {default-directory}}{85}
-\entry {\code {default-major-mode}}{112}
-\entry {\code {delete-auto-save-files}}{94}
-\entry {\code {diary-display-hook \r {(V19)}}}{266}
-\entry {\code {diary-file \r {(V19)}}}{264}
-\entry {\code {diff-switches \r {(V19)}}}{247}
-\entry {\code {dired-chown-program \r {(V19)}}}{255}
-\entry {\code {dired-copy-preserve-time \r {(V19)}}}{255}
-\entry {\code {dired-kept-versions}}{98}
-\entry {\code {dired-listing-switches}}{96}
+\entry {\code {dbx-mode-hook}}{216}
+\entry {\code {default-directory}}{97}
+\entry {\code {default-major-mode}}{142}
+\entry {\code {delete-auto-save-files}}{108}
+\entry {\code {diary-display-hook}}{286}
+\entry {\code {diary-file}}{281}
+\entry {\code {diff-switches}}{121}
+\entry {\code {dired-chown-program}}{262}
+\entry {\code {dired-copy-preserve-time}}{261}
+\entry {\code {dired-kept-versions}}{259}
+\entry {\code {dired-listing-switches}}{257}
 \initial {E}
-\entry {\code {echo-keystrokes}}{65}
-\entry {\code {emacs-lisp-mode-hook}}{136}
-\entry {\code {emerge-combine-template \r {(V19)}}}{282}
-\entry {\code {emerge-startup-hook \r {(V19)}}}{282}
-\entry {\code {enable-local-variables \r {(V19)}}}{240}
-\entry {\code {enable-recursive-minibuffers}}{39}
-\entry {\code {esc-map}}{220}
-\entry {\code {european-calendar-style \r {(V19)}}}{266}
-\entry {\code {explicit-shell-file-name}}{206}
+\entry {\code {echo-keystrokes}}{77}
+\entry {\code {emacs-lisp-mode-hook}}{172}
+\entry {\code {emerge-combine-versions-template}}{200}
+\entry {\code {emerge-startup-hook}}{200}
+\entry {\code {enable-recursive-minibuffers}}{41}
+\entry {\code {esc-map}}{321}
+\entry {\code {european-calendar-style}}{283}
+\entry {\code {explicit-shell-file-name}}{295}
 \initial {F}
-\entry {\code {fill-column}}{131}
-\entry {\code {fill-prefix}}{132}
-\entry {\code {find-file-hooks}}{87}
-\entry {\code {find-file-not-found-hooks}}{87}
-\entry {\code {find-file-run-dired}}{87}
-\entry {\code {fortran-check-all-num-for-matching-do}}{157}
-\entry {\code {fortran-column-ruler}}{159}
-\entry {\code {fortran-comment-indent-char}}{158}
-\entry {\code {fortran-comment-indent-style}}{158}
-\entry {\code {fortran-comment-line-column}}{158}
-\entry {\code {fortran-comment-region}}{158}
-\entry {\code {fortran-continuation-char}}{156}
-\entry {\code {fortran-continuation-indent}}{157}
-\entry {\code {fortran-do-indent}}{157}
-\entry {\code {fortran-electric-line-number}}{156}
-\entry {\code {fortran-if-indent}}{157}
-\entry {\code {fortran-line-number-indent}}{156}
-\entry {\code {fortran-minimum-statement-indent}}{157}
+\entry {\code {fill-column}}{156}
+\entry {\code {fill-prefix}}{157}
+\entry {\code {find-file-existing-other-name}}{110}
+\entry {\code {find-file-hooks}}{100}
+\entry {\code {find-file-not-found-hooks}}{100}
+\entry {\code {find-file-run-dired}}{100}
+\entry {\code {find-file-visit-truename}}{110}
+\entry {\code {fortran-analyze-depth}}{203}
+\entry {\code {fortran-break-before-delimiters}}{207}
+\entry {\code {fortran-check-all-num-for-matching-do}}{205}
+\entry {\code {fortran-column-ruler}}{208}
+\entry {\code {fortran-comment-indent-char}}{206}
+\entry {\code {fortran-comment-indent-style}}{206}
+\entry {\code {fortran-comment-line-extra-indent}}{206}
+\entry {\code {fortran-comment-region}}{207}
+\entry {\code {fortran-continuation-indent}}{205}
+\entry {\code {fortran-continuation-string}}{204}
+\entry {\code {fortran-do-indent}}{205}
+\entry {\code {fortran-electric-line-number}}{204}
+\entry {\code {fortran-if-indent}}{205}
+\entry {\code {fortran-line-number-indent}}{204}
+\entry {\code {fortran-minimum-statement-indent-fixed}}{205}
+\entry {\code {fortran-minimum-statement-indent-tab}}{205}
+\entry {\code {fortran-structure-indent}}{205}
+\entry {\code {fortran-tab-mode-default}}{203}
 \initial {G}
-\entry {\code {gdb-mode-hook}}{284}
-\entry {\code {global-map}}{219}
+\entry {\code {gdb-mode-hook}}{216}
 \initial {H}
-\entry {\code {help-map}}{220}
+\entry {\code {help-map}}{321}
 \initial {I}
-\entry {\code {indent-tabs-mode}}{115}
-\entry {\code {Info-directory-list \r {(V19)}}}{253}
-\entry {\code {INFOPATH}}{253}
-\entry {\code {inhibit-local-variables}}{216}
-\entry {\code {inhibit-local-variables \r {(V19)}}}{240}
-\entry {\code {initial-major-mode}}{21}
-\entry {\code {insert-default-directory}}{38, 85}
-\entry {\code {inverse-video}}{65}
+\entry {\code {indent-tabs-mode}}{147}
+\entry {\code {indent-tabs-mode \r {(Fortran mode)}}}{203}
+\entry {\code {inferior-lisp-program}}{221}
+\entry {\code {initial-major-mode}}{23}
+\entry {\code {insert-default-directory}}{97}
+\entry {\code {inverse-video}}{76}
+\entry {\code {isearch-mode-map}}{81}
 \initial {K}
-\entry {\code {kept-new-versions}}{91}
-\entry {\code {kept-old-versions}}{91}
-\entry {\code {kill-buffer-hook \r {(V19)}}}{289}
-\entry {\code {kill-ring-max}}{58}
+\entry {\code {kept-new-versions}}{104}
+\entry {\code {kept-old-versions}}{104}
+\entry {\code {kill-buffer-hook}}{128}
+\entry {\code {kill-ring}}{64}
+\entry {\code {kill-ring-max}}{64}
+\entry {\code {kill-whole-line}}{61}
 \initial {L}
-\entry {\code {LaTeX-mode-hook}}{121}
-\entry {\code {lisp-body-indent}}{141}
-\entry {\code {lisp-indent-offset}}{141}
-\entry {\code {lisp-interaction-mode-hook}}{136}
-\entry {\code {lisp-mode-hook}}{136}
-\entry {\code {lisp-mode-map}}{219}
-\entry {\code {list-directory-brief-switches}}{96}
-\entry {\code {list-directory-verbose-switches}}{96}
-\entry {\code {load-path}}{164}
-\entry {\code {lpr-command}}{208}
-\entry {\code {lpr-switches}}{208}
+\entry {\code {latex-block-names}}{165}
+\entry {\code {latex-mode-hook}}{167}
+\entry {\code {latex-run-command}}{166}
+\entry {\code {line-number-display-limit}}{76}
+\entry {\code {lisp-body-indent}}{178}
+\entry {\code {lisp-indent-offset}}{177}
+\entry {\code {lisp-interaction-mode-hook}}{172}
+\entry {\code {lisp-mode-hook}}{172}
+\entry {\code {lisp-mode-map}}{321}
+\entry {\code {list-directory-brief-switches}}{121}
+\entry {\code {list-directory-verbose-switches}}{121}
+\entry {\code {load-path}}{218}
+\entry {\code {local-write-file-hooks}}{103}
+\entry {\code {lpr-switches}}{299}
 \initial {M}
-\entry {\code {mail-archive-file-name}}{183}
-\entry {\code {mail-default-reply-to}}{183}
-\entry {\code {mail-header-separator}}{182}
-\entry {\code {mail-mode-hook}}{185}
-\entry {\code {mail-setup-hook}}{185}
-\entry {\code {mail-signature \r {(V19)}}}{251}
-\entry {\code {mail-yank-prefix \r {(V19)}}}{251}
-\entry {\code {make-backup-files}}{90}
-\entry {\code {mark-ring}}{52}
-\entry {\code {mark-ring-max}}{51}
-\entry {\code {meta-flag}}{17}
-\entry {\code {minibuffer-local-completion-map}}{220}
-\entry {\code {minibuffer-local-map}}{220}
-\entry {\code {minibuffer-local-must-match-map}}{220}
-\entry {\code {minibuffer-local-ns-map}}{220}
-\entry {\code {mode-line-inverse-video}}{16, 65}
-\entry {\code {muddle-mode-hook}}{136}
+\entry {\code {mail-aliases}}{236}
+\entry {\code {mail-archive-file-name}}{235}
+\entry {\code {mail-default-reply-to}}{235}
+\entry {\code {mail-header-separator}}{234}
+\entry {\code {mail-mode-hook}}{238}
+\entry {\code {mail-self-blind}}{234}
+\entry {\code {mail-setup-hook}}{238}
+\entry {\code {mail-signature}}{237}
+\entry {\code {mail-yank-prefix}}{238}
+\entry {\code {make-backup-files}}{103}
+\entry {\code {mark-ring}}{58}
+\entry {\code {mark-ring-max}}{58}
+\entry {\code {minibuffer-local-completion-map}}{322}
+\entry {\code {minibuffer-local-map}}{322}
+\entry {\code {minibuffer-local-must-match-map}}{322}
+\entry {\code {minibuffer-local-ns-map}}{322}
+\entry {\code {mode-line-inverse-video}}{76}
+\entry {\code {mode-specific-map}}{321}
+\entry {\code {muddle-mode-hook}}{172}
 \initial {N}
-\entry {\code {next-screen-context-lines}}{63}
-\entry {\code {no-redraw-on-reenter}}{65}
-\entry {\code {nroff-mode-hook}}{118}
+\entry {\code {next-line-add-newlines}}{29}
+\entry {\code {next-screen-context-lines}}{74}
+\entry {\code {no-redraw-on-reenter}}{77}
+\entry {\code {nroff-mode-hook}}{169}
 \initial {O}
-\entry {\code {outline-mode-hook}}{122}
-\entry {\code {outline-regexp}}{123}
+\entry {\code {outline-mode-hook}}{159}
+\entry {\code {outline-regexp}}{160}
 \initial {P}
-\entry {\code {page-delimiter}}{129}
-\entry {\code {paragraph-separate}}{128}
-\entry {\code {paragraph-start}}{128}
-\entry {\code {parse-sexp-ignore-comments}}{224}
-\entry {\code {picture-mode-hook}}{177}
-\entry {\code {picture-tab-chars}}{179}
-\entry {\code {plain-TeX-mode-hook}}{121}
-\entry {\code {pre-abbrev-expand-hook \r {(V19)}}}{289}
+\entry {\code {page-delimiter}}{153}
+\entry {\code {paragraph-separate}}{152}
+\entry {\code {paragraph-start}}{152}
+\entry {\code {picture-mode-hook}}{229}
+\entry {\code {picture-tab-chars}}{231}
+\entry {\code {plain-tex-mode-hook}}{167}
 \initial {R}
-\entry {\code {repeat-complex-command-map}}{220}
-\entry {\code {require-final-newline}}{89}
-\entry {\code {rmail-dont-reply-to}}{197}
-\entry {\code {rmail-edit-mode-hook}}{199}
-\entry {\code {rmail-ignored-headers}}{198}
-\entry {\code {rmail-output-file-alist}}{252}
+\entry {\code {repeat-complex-command-map}}{322}
+\entry {\code {require-final-newline}}{102}
+\entry {\code {rmail-delete-after-output}}{247}
+\entry {\code {rmail-dont-reply-to-names}}{250}
+\entry {\code {rmail-edit-mode-hook}}{255}
+\entry {\code {rmail-ignored-headers}}{254}
+\entry {\code {rmail-output-file-alist}}{247}
+\entry {\code {rmail-redisplay-summary}}{254}
 \initial {S}
-\entry {\code {save-abbrevs}}{175}
-\entry {\code {scheme-mode-hook}}{136}
-\entry {\code {scroll-step}}{64}
-\entry {\code {sdb-mode-hook}}{284}
-\entry {\code {search-delete-char}}{69}
-\entry {\code {search-exit-char}}{69}
-\entry {\code {search-quote-char}}{69}
-\entry {\code {search-repeat-char}}{69}
-\entry {\code {search-reverse-char}}{69}
-\entry {\code {search-slow-speed}}{70}
-\entry {\code {search-slow-window-lines}}{70}
-\entry {\code {search-yank-line-char}}{69}
-\entry {\code {search-yank-word-char}}{69}
-\entry {\code {selective-display-ellipses}}{66, 126}
-\entry {\code {sentence-end}}{128}
-\entry {\code {shell-cd-regexp}}{206}
-\entry {\code {shell-file-name}}{205}
-\entry {\code {shell-popd-regexp}}{206}
-\entry {\code {shell-prompt-pattern}}{207}
-\entry {\code {shell-pushd-regexp}}{206}
-\entry {\code {shell-set-directory-error-hook}}{206}
-\entry {\code {split-window-keep-point \r {(V19)}}}{243}
+\entry {\code {save-abbrevs}}{227}
+\entry {\code {scheme-mode-hook}}{172}
+\entry {\code {scroll-step}}{74}
+\entry {\code {sdb-mode-hook}}{216}
+\entry {\code {search-slow-speed}}{81}
+\entry {\code {search-slow-window-lines}}{81}
+\entry {\code {selective-display-ellipses}}{77}
+\entry {\code {sentence-end}}{151}
+\entry {\code {shell-cd-regexp}}{295}
+\entry {\code {shell-file-name}}{294}
+\entry {\code {shell-popd-regexp}}{295}
+\entry {\code {shell-prompt-pattern}}{296}
+\entry {\code {shell-pushd-regexp}}{295}
+\entry {\code {shell-set-directory-error-hook}}{295}
+\entry {\code {slitex-mode-hook}}{167}
+\entry {\code {slitex-run-command}}{166}
+\entry {\code {split-window-keep-point}}{132}
 \initial {T}
-\entry {\code {tab-stop-list}}{114}
-\entry {\code {tab-width}}{66}
-\entry {\code {tags-file-name}}{152}
-\entry {\code {term-file-prefix}}{229}
-\entry {\code {term-setup-hook}}{229}
-\entry {\code {tex-directory \r {(V19)}}}{248}
-\entry {\code {TeX-mode-hook}}{121}
-\entry {\code {text-mode-hook}}{117}
+\entry {\code {tab-stop-list}}{147}
+\entry {\code {tab-width}}{77}
+\entry {\code {tags-file-name}}{190}
+\entry {\code {term-file-prefix}}{332}
+\entry {\code {term-setup-hook}}{333}
+\entry {\code {tex-bibtex-command}}{167}
+\entry {\code {tex-default-mode}}{163}
+\entry {\code {tex-directory \r {(V19)}}}{166}
+\entry {\code {tex-dvi-print-command}}{166}
+\entry {\code {tex-dvi-view-command}}{166}
+\entry {\code {tex-mode-hook}}{167}
+\entry {\code {tex-run-command}}{166}
+\entry {\code {tex-shell-hook}}{167}
+\entry {\code {tex-show-queue-command}}{166}
+\entry {\code {text-mode-hook}}{159}
 \entry {\code {track-eol}}{29}
-\entry {\code {trim-versions-without-asking}}{91}
-\entry {\code {truncate-lines}}{31}
-\entry {\code {truncate-partial-width-windows}}{108}
+\entry {\code {trim-versions-without-asking}}{105}
+\entry {\code {truncate-lines}}{32}
+\entry {\code {truncate-partial-width-windows}}{132}
 \initial {U}
-\entry {\code {undo-limit}}{36}
-\entry {\code {undo-strong-limit}}{36}
+\entry {\code {undo-limit}}{38}
+\entry {\code {undo-strong-limit}}{38}
 \initial {V}
-\entry {\code {vc-command-messages \r {(V19)}}}{270}
-\entry {\code {vc-comment-alist \r {(V19)}}}{276}
-\entry {\code {vc-header-string \r {(V19)}}}{276}
-\entry {\code {vc-initial-comment \r {(V19)}}}{270}
-\entry {\code {vc-keep-workfiles \r {(V19)}}}{269}
-\entry {\code {vc-log-mode-hook \r {(V19)}}}{271}
-\entry {\code {vc-make-backups \r {(V19)}}}{269}
-\entry {\code {vc-mistrust-permissions \r {(V19)}}}{271}
-\entry {\code {vc-static-header-alist \r {(V19)}}}{276}
-\entry {\code {vc-suppress-confirm \r {(V19)}}}{270}
-\entry {\code {version-control}}{90}
-\entry {\code {version-control \r {(V19)}}}{241}
-\entry {\code {VERSION{\_}CONTROL}}{241}
-\entry {\code {visible-bell}}{65}
+\entry {\code {vc-command-messages}}{113}
+\entry {\code {vc-comment-alist}}{120}
+\entry {\code {vc-header-alist}}{119}
+\entry {\code {vc-initial-comment}}{113}
+\entry {\code {vc-keep-workfiles}}{112}
+\entry {\code {vc-log-mode-hook}}{114}
+\entry {\code {vc-make-backups}}{112}
+\entry {\code {vc-mistrust-permissions}}{113}
+\entry {\code {vc-static-header-alist}}{120}
+\entry {\code {vc-suppress-confirm}}{113}
+\entry {\code {version-control}}{104}
+\entry {\code {visible-bell}}{76}
 \initial {W}
-\entry {\code {window-min-height}}{110}
-\entry {\code {window-min-width}}{110}
-\entry {\code {write-file-hooks}}{89}
+\entry {\code {window-min-height}}{134}
+\entry {\code {window-min-width}}{134}
+\entry {\code {write-contents-hooks}}{103}
+\entry {\code {write-file-hooks}}{102}

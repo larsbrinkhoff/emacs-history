@@ -1,0 +1,307 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Frames, Major Modes, Windows, Top
+@chapter Frames and X Windows
+@cindex frames
+
+  When using the X Window System, you can create multiple windows at the
+X level in a single Emacs session.  Each X window that belongs to Emacs
+displays a @dfn{frame} which can contain one or several Emacs windows.
+A frame initially contains a single general-purpose Emacs window which
+you can subdivide vertically or horizontally into smaller windows.  A
+frame normally contains its own echo area and minibuffer, but you can
+make frames that don't have these---they use the echo area and
+minibuffer of another frame.
+
+  To avoid confusion, we reserve the word ``window'' for the
+subdivisions that Emacs implements, and never use it to refer to a
+frame.
+
+@menu
+* Mouse Commands::
+* Creating Frames::
+* Frame Parameters::
+* Scroll Bars::
+* Menu Bars::
+* Faces::
+* Misc X::
+@end menu
+
+@node Mouse Commands
+@section Mouse Commands
+@cindex mouse buttons (what they do)
+
+@findex mouse-set-region
+@findex mouse-set-point
+@findex mouse-yank-at-click
+@findex mouse-save-then-click
+@kindex MOUSE
+@table @kbd
+@item mouse-1
+Move point to where you click (@code{mouse-set-point}).
+
+@item drag-mouse-1
+Move point to where you release the mouse, and set the mark where you
+initially clicked the mouse (@code{mouse-set-region}).  Thus, you can
+specify both ends of the region.
+
+@item mouse-2
+Yank the last kill text, where you click (@code{mouse-yank-at-click}).
+
+@item mouse-3
+Copy text to the kill ring (@code{mouse-save-then-click}).
+When repeated, kills the text.
+
+This operation applies to the text between point and the place where
+you click.
+@end table
+
+Thus, to kill a section of text, you can press @key{MOUSE-1} at one
+end, then press @key{MOUSE-3} twice at the other end.  To prepare
+to copy the text without killing it, press @key{MOUSE-3} just once.
+
+To yank the killed or copied text somewhere else, move the mouse there
+and press @key{MOUSE-2}.
+
+@cindex cutting and X
+@cindex pasting and X
+@cindex X cutting and pasting
+@cindex X pasting and cutting
+To copy text to another X window, kill it or save it in the kill ring.
+Under X, this also sets the @dfn{primary selection}.  Then use the
+``paste'' or ``yank'' command of the program operating the other window
+to insert the text from the selection.
+
+To copy text from another X window, use the ``cut'' or ``copy'' command
+of the program operating the other window, to select the text you want.
+Then yank it in Emacs with @kbd{C-y} or @key{MOUSE-2}.
+
+@node Creating Frames
+@section Creating Frames
+@cindex creating frames
+
+@kindex C-x 5
+  The prefix key @kbd{C-x 5} is analogous to @kbd{C-x 4}, with parallel
+subcommands.  The difference is that @kbd{C-x 5} commands create a new
+frame rather than just a new window in the selected frame.  (@xref{Pop
+Up Window}.)  Different @kbd{C-x 4} commands have different ways of
+finding the buffer to select.
+
+@table @kbd
+@item C-x 5 b @var{bufname} @key{RET}
+Select buffer @var{bufname} in another window.  This runs @*
+@code{switch-to-buffer-other-frame}.
+@item C-x 5 f @var{filename} @key{RET}
+Visit file @var{filename} and select its buffer in another frame.  This
+runs @code{find-file-other-frame}.  @xref{Visiting}.
+@item C-x 5 d @var{directory} @key{RET}
+Select a Dired buffer for directory @var{directory} in another frame.
+This runs @code{dired-other-frame}.  @xref{Dired}.
+@item C-x 5 m
+Start composing a mail message in another frame.  This runs
+@code{mail-other-frame}, and its same-frame version is @kbd{C-x m}.
+@xref{Sending Mail}.
+@item C-x 5 .
+Find a tag in the current tag table in another frame.  This runs
+@code{find-tag-other-frame}, the multiple-frame variant of @kbd{M-.}.
+@xref{Tags}.
+@item C-x 5 r @var{filename} @key{RET}
+Visit file @var{filename} read-only, and select its buffer in another
+frame.  This runs @code{find-file-read-only-other-frame}.
+@xref{Visiting}.
+@end table
+
+@node Frame Parameters
+@section Setting Frame Parameters
+@cindex colors
+@cindex Auto-Raise mode
+@cindex Auto-Lower mode
+
+  This section describes the commands for setting various parameters
+controlling the display style and window management behavior of a
+frame.  All of them apply to the selected frame only.
+
+@findex set-foreground-color
+@findex set-background-color
+@findex set-cursor-color
+@findex set-mouse-color
+@findex set-border-color
+@findex auto-raise-mode
+@findex auto-lower-mode
+@table @kbd
+@item M-x set-foreground-color @key{RET} @var{color} @key{RET}
+Specify color @var{color} for the foreground of the selected frame.
+
+@item M-x set-background-color @key{RET} @var{color} @key{RET}
+Specify color @var{color} for the background of the selected frame.
+
+@item M-x set-cursor-color @key{RET} @var{color} @key{RET}
+Specify color @var{color} for the cursor of the selected frame.
+
+@item M-x set-mouse-color @key{RET} @var{color} @key{RET}
+Specify color @var{color} for the mouse cursor when it is over the
+selected frame.
+
+@item M-x set-border-color @key{RET} @var{color} @key{RET}
+Specify color @var{color} for the border of the selected frame.
+
+@item M-x auto-raise-mode
+Toggle whether or not the selected frame should auto-raise.
+Auto-raise means that every time you move the mouse onto the frame,
+it raises the frame.
+
+@item M-x auto-lower-mode
+Toggle whether or not the selected frame should auto-lower.
+Auto-lower means that every time you move the mouse off of the frame,
+the frame moves to the bottom of the stack of X windows.
+
+@findex set-default-font
+@item M-x set-default-font @key{RET} @var{font} @key{RET}
+Specify font @var{font} as the default for the selected frame.
+@end table
+
+@node Scroll Bars
+@section Scroll Bars
+@cindex Scroll Bar mode
+@cindex mode, Scroll Bar
+
+  When using X, Emacs normally makes a @dfn{scroll bar} at the right of
+each Emacs window.  The scroll bar runs the height of the window, and
+shows a moving rectangular inner box which represents the portion of the
+buffer currently displayed.  The entire height of the scroll bar
+represents the entire length of the buffer.
+
+  You can use the middle mouse button in the scroll bar to move or drag
+the inner box up and down.  If you move it to the top of the scroll bar,
+you see the top of the buffer.  If you move it to the bottom of the
+scroll bar, you see the bottom of the buffer.
+
+  The left and right buttons in the scroll bar scroll by controlled
+increments.  The left button moves the line at the level where you click
+up to the top of the window.  The right button moves the line at the top
+of the window down to the level where you click.  By clicking repeatedly
+in the same place, you can scroll by the same distance over and over.
+
+@findex scroll-bar-mode
+  You can enable or disable Scroll Bar mode with the command @kbd{M-x
+scroll-bar-mode}.  With no argument, it toggles the use of scroll bars.
+With an argument, it turns use of scroll bars on if and only if the
+argument is positive.  This command applies to all frames, including
+frames yet to be created.
+
+@findex toggle-scroll-bar
+  To enable or disable scroll bars for just the selected frame, use the
+@kbd{M-x toggle-scroll-bar} command.
+
+@node Menu Bars
+@section Menu Bars
+@cindex Menu Bar mode
+@cindex mode, Menu Bar
+
+  By default, each Emacs frame has a menu bar at the top which you can
+use to perform certain common operations.
+
+  You can turn display of menu bars on or off with @kbd{M-x menu-bar-mode}.
+With no argument, this command toggles Menu Bar mode, a minor mode.
+With an argument, the command turns Menu Bar mode on if the argument
+is positive, off if the argument is not positive.
+
+@node Faces
+@section Using Multiple Typefaces
+@cindex faces
+
+  When using Emacs with X, you can set up multiple styles of displaying
+characters.  The aspects of style that you can control are the type
+font, the foreground color, the background color, and whether to
+underline.
+
+  The way you control display style is by defining named @dfn{faces}.
+Each face can specify a type font, a foreground color, a background
+color, and an underline flag; but it does not have to specify all of
+them.
+
+  The style of display used for a given character in the text is
+determined by combining several faces.  Which faces to use is always set
+up by Lisp programs, at present, by means of text properties and
+overlays.  Any aspect of the display style that isn't specified by
+overlays or text properties comes from the frame itself.
+
+@cindex @code{region} face
+@cindex region highlighting
+  When Transient Mark mode is enabled, the text of the region is
+highlighted when the mark is active.  This uses a face named
+@code{region}; you can control the style of highlighting by changing the
+style of this face with the commands below.  @xref{Setting Mark}, for
+more information about Transient Mark mode and activation and
+deactivation of the mark.
+
+  Here are the commands for users to change the font of a face.
+
+@cindex bold font
+@cindex italic font
+@cindex fonts and faces
+@findex set-face-font
+@findex make-face-bold
+@findex make-face-italic
+@findex make-face-bold-italic
+@findex make-face-unbold
+@findex make-face-unitalic
+@table @kbd
+@item M-x set-face-font @key{RET} @var{face} @key{RET} @var{font} @key{RET}
+Use font @var{font} in face @var{face}.
+
+@item M-x make-face-bold @key{RET} @var{face} @key{RET}
+Convert face @var{face} to use a bold version of its current font.
+
+@item M-x make-face-italic @key{RET} @var{face} @key{RET}
+Convert face @var{face} to use a italic version of its current font.
+
+@item M-x make-face-bold-italic @key{RET} @var{face} @key{RET}
+Convert face @var{face} to use a bold-italic version of its current font.
+
+@item M-x make-face-unbold @key{RET} @var{face} @key{RET}
+Convert face @var{face} to use a non-bold version of its current font.
+
+@item M-x make-face-unitalic @key{RET} @var{face} @key{RET}
+Convert face @var{face} to use a non-italic version of its current font.
+@end table
+
+  Here are the commands for users to set the colors and underline flag
+of a face:
+
+@cindex underlining and faces
+@cindex inverse video and faces
+@cindex colors and faces
+@findex set-face-foreground
+@findex set-face-background
+@findex set-face-underline-p
+@findex invert-face
+@table @kbd
+@item M-x set-face-foreground @key{RET} @var{face} @key{RET} @var{color} @key{RET}
+Use color @var{color} for the foreground of characters in face @var{face}.
+
+@item M-x set-face-background @key{RET} @var{face} @key{RET} @var{color} @key{RET}
+Use color @var{color} for the background of characters in face @var{face}.
+
+@item M-x set-face-underline-p @key{RET} @var{face} @key{RET} @var{flag} @key{RET}
+Specify whether to underline characters in face @var{face}.
+
+@item M-x invert-face @key{RET} @var{face} @key{RET}
+Swap the foreground and background colors of face @var{face}.
+@end table
+
+@node Misc X
+@section Miscellaneous X Window Features
+
+@kindex C-z
+@findex iconify-frame
+To iconify the selected Emacs frame, type @kbd{C-z}.  The normal meaning
+of @kbd{C-z}, to suspend Emacs, is not useful under a window system, so
+it has a different binding in that case (the command
+@code{iconify-frame}).
+
+  Under X Windows, when Transient Mark mode is enabled, Emacs highlights
+the region when the mark is active.  This is the main motive for using
+Transient Mark mode.  To enable this mode, use the command @kbd{M-x
+transient-mark-mode}.  @xref{Mark}.

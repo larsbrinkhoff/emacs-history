@@ -1,12 +1,15 @@
-;; View: Peruse file or buffer without editing.
-;; Copyright (C) 1985 Free Software Foundation, Inc.
-;; Principal author K. Shane Hartman
+;;; view.el --- peruse file or buffer without editing.
+
+;; Copyright (C) 1985, 1989 Free Software Foundation, Inc.
+
+;; Author: K. Shane Hartman
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -18,17 +21,21 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
-(provide 'view)
+;; This package provides the `view' major mode documented in the Emacs
+;; user's manual.
+
+;;; Code:
 
 (defvar view-mode-map nil)
 (if view-mode-map
     nil
   (setq view-mode-map (make-keymap))
-  (fillarray view-mode-map 'View-undefined)
-  (define-key view-mode-map "\C-c" 'exit-recursive-edit)
+  (fillarray (nth 1 view-mode-map) 'View-undefined)
+  (define-key view-mode-map "\C-c" 'view-exit)
   (define-key view-mode-map "\C-z" 'suspend-emacs)
-  (define-key view-mode-map "q" 'exit-recursive-edit)
+  (define-key view-mode-map "q" 'view-exit)
   (define-key view-mode-map "-" 'negative-argument)
   (define-key view-mode-map "0" 'digit-argument)
   (define-key view-mode-map "1" 'digit-argument)
@@ -73,9 +80,9 @@
   (define-key view-mode-map "x" 'exchange-point-and-mark)
   (define-key view-mode-map "h" 'Helper-describe-bindings)
   (define-key view-mode-map "?" 'Helper-describe-bindings)
-  (define-key view-mode-map "\C-h" 'Helper-help)
-  (define-key view-mode-map "\C-n" 'View-next-line)
-  (define-key view-mode-map "\C-p" 'View-previous-line)
+  (define-key view-mode-map (char-to-string help-char) 'Helper-help)
+  (define-key view-mode-map "\C-n" 'next-line)
+  (define-key view-mode-map "\C-p" 'previous-line)
   (define-key view-mode-map "\C-s" 'isearch-forward)
   (define-key view-mode-map "\C-r" 'isearch-backward)
   (define-key view-mode-map "s" 'isearch-forward)
@@ -90,6 +97,7 @@
   )
 
 
+;;;###autoload
 (defun view-file (file-name)
   "View FILE in View mode, returning to previous buffer when done.
 The usual Emacs commands are not available; instead,
@@ -100,15 +108,35 @@ For list of all View commands, type ? or h while viewing.
 
 Calls the value of  view-hook  if that is non-nil."
   (interactive "fView file: ")
-  (let ((had-a-buf (get-file-buffer file-name))
-	(buf-to-view nil))
-    (unwind-protect
-	(view-mode (prog1 (current-buffer)
-		     (switch-to-buffer
-		      (setq buf-to-view (find-file-noselect file-name)) t)))
-      (and (not had-a-buf) buf-to-view (not (buffer-modified-p buf-to-view))
-	   (kill-buffer buf-to-view)))))
+  (let ((old-buf (current-buffer))
+	(had-a-buf (get-file-buffer file-name))
+	(buf-to-view (find-file-noselect file-name)))
+    (switch-to-buffer buf-to-view t)
+    (view-mode old-buf
+	       (and (not had-a-buf) (not (buffer-modified-p buf-to-view))
+		    'kill-buffer))))
 
+;;;###autoload
+(defun view-file-other-window (file-name)
+  "View FILE in View mode in other window.
+Return to previous buffer when done.
+The usual Emacs commands are not available; instead,
+a special set of commands (mostly letters and punctuation)
+are defined for moving around in the buffer.
+Space scrolls forward, Delete scrolls backward.
+For list of all View commands, type ? or h while viewing.
+
+Calls the value of  view-hook  if that is non-nil."
+  (interactive "fView file: ")
+  (let ((old-arrangement (current-window-configuration))
+	(had-a-buf (get-file-buffer file-name))
+	(buf-to-view (find-file-noselect file-name)))
+    (switch-to-buffer-other-window buf-to-view)
+    (view-mode old-arrangement
+	       (and (not had-a-buf) (not (buffer-modified-p buf-to-view))
+		    'kill-buffer))))
+
+;;;###autoload
 (defun view-buffer (buffer-name)
   "View BUFFER in View mode, returning to previous buffer when done.
 The usual Emacs commands are not available; instead,
@@ -119,9 +147,29 @@ For list of all View commands, type ? or h while viewing.
 
 Calls the value of  view-hook  if that is non-nil."
   (interactive "bView buffer: ")
-  (view-mode (prog1 (current-buffer) (switch-to-buffer buffer-name))))
+  (let ((old-buf (current-buffer)))
+    (switch-to-buffer buffer-name t)
+    (view-mode old-buf nil)))
 
-(defun view-mode (&optional view-return-to-buffer)
+;;;###autoload
+(defun view-buffer-other-window (buffer-name not-return)
+  "View BUFFER in View mode in another window,
+returning to original buffer when done  ONLY if 
+prefix argument not-return is nil (as by default).
+  The usual Emacs commands are not available; instead,
+a special set of commands (mostly letters and punctuation)
+are defined for moving around in the buffer.
+Space scrolls forward, Delete scrolls backward.
+For list of all View commands, type ? or h while viewing.
+
+Calls the value of  view-hook  if that is non-nil."
+  (interactive "bView buffer:\nP")
+  (let ((return-to (and not-return (current-window-configuration))))
+    (switch-to-buffer-other-window buffer-name)
+    (view-mode return-to)))
+
+;;;###autoload
+(defun view-mode (&optional prev-buffer action)
   "Major mode for viewing text but not editing it.
 Letters do not insert themselves.  Instead these commands are provided.
 Most commands take prefix arguments.  Commands dealing with lines
@@ -150,7 +198,7 @@ C-r or r	do reverse incremental search.
 		  successful search and when jump to line to occurs.
 		  The mark is set on jump to buffer start or end.
 ? or h		provide help message (list of commands).
-C-h		provides help (list of commands or description of a command).
+\\[Helper-help]		provides help (list of commands or description of a command).
 C-n		moves down lines vertically.
 C-p		moves upward lines vertically.
 C-l		recenters the screen.
@@ -162,67 +210,98 @@ Entry to this mode calls the value of  view-hook  if non-nil.
 ;  if you call it without passing a buffer as argument
 ;  and they are not easy to fix.
 ;  (interactive)
-  (let* ((view-buffer-window (selected-window))
-	 (view-scroll-size nil))
-    (unwind-protect
-	(let ((buffer-read-only t)
-	      (mode-line-buffer-identification
-	       (list
+  (make-local-variable 'view-old-mode-line-buffer-identification)
+  (setq view-old-mode-line-buffer-identification
+	mode-line-buffer-identification)
+  (make-local-variable 'view-old-buffer-read-only)
+  (setq view-old-buffer-read-only buffer-read-only)
+  (make-local-variable 'view-old-mode-name)
+  (setq view-old-mode-name mode-name)
+  (make-local-variable 'view-old-major-mode)
+  (setq view-old-major-mode major-mode)
+  (make-local-variable 'view-old-local-map)
+  (setq view-old-local-map (current-local-map))
+  (make-local-variable 'view-old-Helper-return-blurb)
+  (setq view-old-Helper-return-blurb
+	(and (boundp 'Helper-return-blurb) Helper-return-blurb))
+
+  (setq buffer-read-only t)
+  (setq mode-line-buffer-identification
+	(list
+	 (if (buffer-file-name)
+	     "Viewing %f"
+	   "Viewing %b")))
+  (setq mode-name "View")
+  (setq major-mode 'view-mode)
+  (setq Helper-return-blurb
+	(format "continue viewing %s"
 		(if (buffer-file-name)
-		    "Viewing %f"
-		  "Viewing %b")))
-	      (mode-name "View"))
-	  (beginning-of-line)
-	  (catch 'view-mode-exit (view-mode-command-loop)))
-      (if view-return-to-buffer
-	  (switch-to-buffer view-return-to-buffer)))))
+		    (file-name-nondirectory (buffer-file-name))
+		    (buffer-name))))
+
+  (make-local-variable 'view-exit-action)
+  (setq view-exit-action action)
+  (make-local-variable 'view-return-here)
+  (setq view-return-here prev-buffer)
+  (make-local-variable 'view-exit-position)
+  (setq view-exit-position (point-marker))
+
+  (make-local-variable 'view-scroll-size)
+  (setq view-scroll-size nil)
+  (make-local-variable 'view-last-regexp)
+  (setq view-last-regexp nil)
+
+  (beginning-of-line)
+  (setq goal-column nil)
+
+  (use-local-map view-mode-map)
+  (run-hooks 'view-hook)
+  (view-helpful-message))
+
+
+(defun view-exit ()
+  "Exit from view-mode.
+If you viewed an existing buffer, that buffer returns to its previous mode.
+If you viewed a file that was not present in Emacs, its buffer is killed."
+  (interactive)
+  (setq mode-line-buffer-identification
+	view-old-mode-line-buffer-identification)
+  (setq major-mode view-old-major-mode)
+  (setq mode-name view-old-mode-name)
+  (use-local-map view-old-local-map)
+  (setq buffer-read-only view-old-buffer-read-only)
+
+  (goto-char view-exit-position)
+  (set-marker view-exit-position nil)
+
+  ;; Now do something to the buffer that we were viewing
+  ;; (such as kill it).
+  (let ((viewed-buffer (current-buffer))
+	(action view-exit-action))
+    (cond
+     ((bufferp view-return-here)
+      (switch-to-buffer view-return-here))
+     ((window-configuration-p view-return-here)
+      (set-window-configuration view-return-here)))
+    (if action (funcall action viewed-buffer))))
 
 (defun view-helpful-message ()
   (message
-   (if (and (eq (key-binding "\C-h") 'Helper-help)
-	    (eq (key-binding "?") 'Helper-describe-bindings)
-	    (eq (key-binding "\C-c") 'exit-recursive-edit))
-       "Type C-h for help, ? for commands, C-c to quit"
      (substitute-command-keys
-      "Type \\[Helper-help] for help, \\[Helper-describe-bindings] for commands, \\[exit-recursive-edit] to quit."))))
+      "Type \\[Helper-help] for help, \\[Helper-describe-bindings] for commands, \\[view-exit] to quit.")))
 
 (defun View-undefined ()
   (interactive)
   (ding)
   (view-helpful-message))
 
-(defun view-window-size () (1- (window-height view-buffer-window)))
+(defun view-window-size () (1- (window-height)))
 
 (defun view-scroll-size ()
   (min (view-window-size) (or view-scroll-size (view-window-size))))
 
 (defvar view-hook nil
   "If non-nil, its value is called when viewing buffer or file.")
-
-(defun view-mode-command-loop ()
-  (push-mark)
-  (let ((old-local-map (current-local-map))
-	(mark-ring)
-;	(view-last-command)
-;	(view-last-command-entry)
-;	(view-last-command-argument)
-	(view-last-regexp)
-	(Helper-return-blurb
-	 (format "continue viewing %s"
-		 (if (buffer-file-name)
-		     (file-name-nondirectory (buffer-file-name))
-		     (buffer-name))))
-	(view-buffer (buffer-name)))
-    (unwind-protect
-	(progn
-	  (use-local-map view-mode-map)
-	  (run-hooks 'view-hook)
-	  (view-helpful-message)
-	  (recursive-edit))
-      (save-excursion
-	(set-buffer view-buffer)
-	(use-local-map old-local-map))))
-  (pop-mark))
 
 ;(defun view-last-command (&optional who what)
 ;  (setq view-last-command-entry this-command)
@@ -252,7 +331,7 @@ No arg means whole window full, or number of lines set by \\[View-scroll-lines-f
 Arg is number of lines to scroll."
   (interactive "P")
   (if (pos-visible-in-window-p (point-max))
-      (exit-recursive-edit))
+      (view-exit))
   (setq lines
 	(if lines (prefix-numeric-value lines)
 	  (view-scroll-size)))
@@ -266,7 +345,7 @@ Arg is number of lines to scroll."
 	 (goto-char (point-max))
 	 (recenter -1)
 	 (message (substitute-command-keys
-		"End.  Type \\[exit-recursive-edit] to quit viewing."))))
+		"End.  Type \\[view-exit] to quit viewing."))))
   (move-to-window-line -1)
   (beginning-of-line))
 
@@ -356,12 +435,7 @@ invocations return to earlier marks."
       (message "Can't find occurrence %d of %s" times regexp)
       (sit-for 4))))
 
-(defun View-previous-line (count)
-  "Move up to start of previous line.  Argument is repeat count."
-  (interactive "p")
-  (forward-line (- count)))
+
+(provide 'view)
 
-(defun View-next-line (count)
-  "Move down to start of next line.  Argument is repeat count."
-  (interactive "p")
-  (forward-line count))
+;;; view.el ends here

@@ -1,12 +1,15 @@
-;; Electric Command History Mode
+;;; echistory.el --- Electric Command History Mode
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
-;; Principal author K. Shane Hartman
+
+;; Author: K. Shane Hartman
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -18,13 +21,15 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
 
 (require 'electric)			; command loop
 (require 'chistory)			; history lister
 
+;;;###autoload
 (defun Electric-command-history-redo-expression (&optional noconfirm)
   "Edit current history line in minibuffer and execute result.
-With prefix argument NOCONFIRM, execute current line as is without editing."
+With prefix arg NOCONFIRM, execute current line as-is without editing."
   (interactive "P")
   (let (todo)
     (save-excursion
@@ -58,7 +63,7 @@ With prefix argument NOCONFIRM, execute current line as is without editing."
   (define-key electric-history-map "\C-c\C-c" 'Electric-history-quit)
   (define-key electric-history-map "\C-]" 'Electric-history-quit)
   (define-key electric-history-map "\C-z" 'suspend-emacs)
-  (define-key electric-history-map "\C-h" 'Helper-help)
+  (define-key electric-history-map (char-to-string help-char) 'Helper-help)
   (define-key electric-history-map "?" 'Helper-describe-bindings)
   (define-key electric-history-map "\e>" 'end-of-buffer)
   (define-key electric-history-map "\e<" 'beginning-of-buffer)
@@ -73,35 +78,23 @@ With prefix argument NOCONFIRM, execute current line as is without editing."
   (define-key electric-history-map "\e\C-v" 'scroll-other-window))
 
 (defvar electric-command-history-hook nil
-  "If non-nil, its value is called by  electric-command-history.")
+  "If non-nil, its value is called by `electric-command-history'.")
 
 (defun electric-command-history ()
-  "Major mode for examining and redoing commands from  command-history.
-The number of command listed is controlled by  list-command-history-max.
-The command history is filtered by  list-command-history-filter  if non-nil.
+  "\\<electric-history-map>Major mode for examining and redoing commands from `command-history'.
+This pops up a window with the Command History listing.
+The number of command listed is controlled by `list-command-history-max'.
+The command history is filtered by `list-command-history-filter' if non-nil.
 Combines typeout Command History list window with menu like selection
 of an expression from the history for re-evaluation in the *original* buffer.
 
-The history displayed is filtered by  list-command-history-filter  if non-nil.
+The history displayed is filtered by `list-command-history-filter' if non-nil.
 
-This pops up a window with the Command History listing.  If the very
-next character typed is Space, the listing is killed and the previous
-window configuration is restored.  Otherwise, you can browse in the
-Command History with  Return  moving down and  Delete  moving up, possibly
-selecting an expression to be redone with Space or quitting with `Q'.
+Like Emacs-Lisp mode except that characters do not insert themselves and
+Tab and Linefeed do not indent.  Instead these commands are provided:
+\\{electric-history-map}
 
-Like Emacs-Lisp Mode except that characters do not insert themselves and
-Tab and linefeed do not indent.  Instead these commands are provided:
-Space or !	edit then evaluate current line in history inside
-		   the ORIGINAL buffer which invoked this mode.
-		   The previous window configuration is restored
-		   unless the invoked command changes it.
-C-c C-c, C-], Q	Quit and restore previous window configuration.
-LFD, RET	Move to the next line in the history.
-DEL		Move to the previous line in the history.
-?		Provides a complete list of commands.
-
-Calls the value of  electric-command-history-hook  if that is non-nil
+Calls the value of `electric-command-history-hook' if that is non-nil.
 The Command History listing is recomputed each time this mode is invoked."
   (interactive)
   (let ((electric-history-in-progress t)
@@ -138,7 +131,7 @@ The Command History listing is recomputed each time this mode is invoked."
 (defun Electric-history-undefined ()
   (interactive)
   (ding)
-  (message "Type C-h for help, ? for commands, C-c to quit, Space to execute")
+  (message (substitute-command-keys "Type \\[Help-for-help] for help, ? for commands, C-c to quit, Space to execute"))
   (sit-for 4))
 
 (defun Electric-history-quit ()
@@ -147,3 +140,5 @@ The Command History listing is recomputed each time this mode is invoked."
   (if (boundp 'electric-history-in-progress)
       (progn (message "")
 	     (throw 'electric-history-quit nil))))
+
+;;; echistory.el ends here

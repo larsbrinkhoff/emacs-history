@@ -1,14 +1,27 @@
-; Modula-2 editing support package
-; Author Mick Jordan
-; amended Peter Robinson
-; ported to GNU Michael Schmidt
-;;;From: "Michael Schmidt" <michael@pbinfo.UUCP>
-;;;Modified by Tom Perrine <Perrin@LOGICON.ARPA> (TEP)
+;;; modula2.el --- Modula-2 editing support package
 
+;; Author: Michael Schmidt <michael@pbinfo.UUCP> 
+;;	Tom Perrine <Perrin@LOGICON.ARPA>
+;; Keywords: languages
 
-;;; Added by TEP
+;; The authors distributed this without a copyright notice
+;; back in 1988, so it is in the public domain.  The original included
+;; the following credit:
+
+;; Author Mick Jordan
+;; amended Peter Robinson
+
+;;; Commentary:
+
+;; A major mode for editing Modula-2 code.  It provides convenient abbrevs
+;; for Modula-2 keywords, knows about the standard layout rules, and supports
+;; a native compile command.
+
+;;; Code:
+
+;;; Added by Tom Perrine (TEP)
 (defvar m2-mode-syntax-table nil
-  "Syntax table in use in Modula-2-mode buffers.")
+  "Syntax table in use in Modula-2 buffers.")
 
 (defvar m2-compile-command "m2c"
   "Command to compile Modula-2 programs")
@@ -65,6 +78,7 @@
     (define-key map "\C-cy" 'm2-import)
     (define-key map "\C-c{" 'm2-begin-comment)
     (define-key map "\C-c}" 'm2-end-comment)
+    (define-key map "\C-j"  'm2-newline)
     (define-key map "\C-c\C-z" 'suspend-emacs)
     (define-key map "\C-c\C-v" 'm2-visit)
     (define-key map "\C-c\C-t" 'm2-toggle)
@@ -74,29 +88,30 @@
 
 (defvar m2-indent 5 "*This variable gives the indentation in Modula-2-Mode")
   
+;;;###autoload
 (defun modula-2-mode ()
-"This is a mode intended to support program development in Modula-2.
-All control constructs of Modula-2 can be reached by typing
-Control-C followed by the first character of the construct.
-\\{m2-mode-map}
-  Control-c b begin         Control-c c case
-  Control-c d definition    Control-c e else
-  Control-c f for           Control-c h header
-  Control-c i if            Control-c m module
-  Control-c l loop          Control-c o or
-  Control-c p procedure     Control-c Control-w with
-  Control-c r record        Control-c s stdio
-  Control-c t type          Control-c u until
-  Control-c v var           Control-c w while
-  Control-c x export        Control-c y import
-  Control-c { begin-comment Control-c } end-comment
-  Control-c Control-z suspend-emacs     Control-c Control-t toggle
-  Control-c Control-c compile           Control-x ` next-error
-  Control-c Control-l link
+  "This is a mode intended to support program development in Modula-2.
+All control constructs of Modula-2 can be reached by typing C-c
+followed by the first character of the construct.
+\\<m2-mode-map>
+  \\[m2-begin] begin         \\[m2-case] case
+  \\[m2-definition] definition    \\[m2-else] else
+  \\[m2-for] for           \\[m2-header] header
+  \\[m2-if] if            \\[m2-module] module
+  \\[m2-loop] loop          \\[m2-or] or
+  \\[m2-procedure] procedure     Control-c Control-w with
+  \\[m2-record] record        \\[m2-stdio] stdio
+  \\[m2-type] type          \\[m2-until] until
+  \\[m2-var] var           \\[m2-while] while
+  \\[m2-export] export        \\[m2-import] import
+  \\[m2-begin-comment] begin-comment \\[m2-end-comment] end-comment
+  \\[suspend-emacs] suspend Emacs     \\[m2-toggle] toggle
+  \\[m2-compile] compile           \\[m2-next-error] next-error
+  \\[m2-link] link
 
-   m2-indent controls the number of spaces for each indentation.
-   m2-compile-command holds the command to compile a Modula-2 program.
-   m2-link-command holds the command to link a Modula-2 program."
+   `m2-indent' controls the number of spaces for each indentation.
+   `m2-compile-command' holds the command to compile a Modula-2 program.
+   `m2-link-command' holds the command to link a Modula-2 program."
   (interactive)
   (kill-all-local-variables)
   (use-local-map m2-mode-map)
@@ -125,8 +140,8 @@ Control-C followed by the first character of the construct.
   (setq comment-column 41)
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip "/\\*+ *")
-  (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'c-comment-indent)
+  (make-local-variable 'comment-indent-function)
+  (setq comment-indent-function 'c-comment-indent)
   (make-local-variable 'parse-sexp-ignore-comments)
   (setq parse-sexp-ignore-comments t)
   (run-hooks 'm2-mode-hook))
@@ -153,10 +168,11 @@ Control-C followed by the first character of the construct.
 (defun m2-case ()
   "Build skeleton CASE statment, prompting for the <expression>."
   (interactive)
-  (insert "CASE " (read-string ": ") " OF")
-  (m2-newline)
-  (m2-newline)
-  (insert "END (* case *);")
+  (let ((name (read-string "Case-Expression: ")))
+    (insert "CASE " name " OF")
+    (m2-newline)
+    (m2-newline)
+    (insert "END (* case " name " *);"))
   (end-of-line 0)
   (m2-tab))
 
@@ -180,14 +196,18 @@ Control-C followed by the first character of the construct.
 (defun m2-for ()
   "Build skeleton FOR loop statment, prompting for the loop parameters."
   (interactive)
-  (insert "FOR " (read-string "init: ") " TO " (read-string "end: "))
-  (let ((by (read-string "by: ")))
+  (insert "FOR ")
+  (let ((name (read-string "Loop Initialiser: ")) limit by)
+    (insert name " TO ")
+    (setq limit (read-string "Limit: "))
+    (insert limit)
+    (setq by (read-string "Step: "))
     (if (not (string-equal by ""))
-	(insert " BY " by)))
-  (insert " DO")
-  (m2-newline)
-  (m2-newline)
-  (insert "END (* for *);")
+	(insert " BY " by))
+    (insert " DO")
+    (m2-newline)
+    (m2-newline)
+    (insert "END (* for " name " to " limit " *);"))
   (end-of-line 0)
   (m2-tab))
 
@@ -206,10 +226,12 @@ Control-C followed by the first character of the construct.
 (defun m2-if ()
   "Insert skeleton IF statment, prompting for <boolean-expression>."
   (interactive)
-  (insert "IF " (read-string "<boolean-expression>: ") " THEN")
-  (m2-newline)
-  (m2-newline)
-  (insert "END (* if *);")
+  (insert "IF ")
+  (let ((thecondition (read-string "<boolean-expression>: ")))
+    (insert thecondition " THEN")
+    (m2-newline)
+    (m2-newline)
+    (insert "END (* if " thecondition " *);"))
   (end-of-line 0)
   (m2-tab))
 
@@ -228,8 +250,19 @@ Control-C followed by the first character of the construct.
   (interactive)
   (insert "IMPLEMENTATION MODULE ")
   (let ((name (read-string "Name: ")))
-    (insert name ";\n\n\n\nEND " name ".\n"))
-  (previous-line 3))
+    (insert name ";\n\n\n\nEND " name ".\n")
+    (previous-line 3)
+    (m2-header)
+    (m2-type)
+    (newline)
+    (m2-var)
+    (newline)
+    (m2-begin)
+    (m2-begin-comment)
+    (insert " Module " name " Initialisation Code "))
+  (m2-end-comment)
+  (newline)
+  (m2-tab))
 
 (defun m2-or ()
   (interactive)
@@ -263,11 +296,12 @@ Control-C followed by the first character of the construct.
 (defun m2-with ()
   (interactive)
   (insert "WITH ")
-  (insert (read-string ": "))
-  (insert " DO")
-  (m2-newline)
-  (m2-newline)
-  (insert "END (* with *);")
+  (let ((name (read-string "Record-Type: ")))
+    (insert name)
+    (insert " DO")
+    (m2-newline)
+    (m2-newline)
+    (insert "END (* with " name " *);"))
   (end-of-line 0)
   (m2-tab))
 
@@ -283,14 +317,14 @@ Control-C followed by the first character of the construct.
 (defun m2-stdio ()
   (interactive)
   (insert "
->FROM TextIO IMPORT 
+FROM TextIO IMPORT 
    WriteCHAR, ReadCHAR, WriteINTEGER, ReadINTEGER,
    WriteCARDINAL, ReadCARDINAL, WriteBOOLEAN, ReadBOOLEAN,
    WriteREAL, ReadREAL, WriteBITSET, ReadBITSET,
    WriteBasedCARDINAL, ReadBasedCARDINAL, WriteChars, ReadChars,
    WriteString, ReadString, WhiteSpace, EndOfLine;
 
->FROM SysStreams IMPORT sysIn, sysOut, sysErr;
+FROM SysStreams IMPORT sysIn, sysOut, sysErr;
 
 "))
 
@@ -306,7 +340,7 @@ Control-C followed by the first character of the construct.
   (m2-newline)
   (m2-newline)
   (insert "UNTIL ")
-  (insert (read-string ": ") ";")
+  (insert (read-string "<boolean-expression>: ") ";")
   (end-of-line 0)
   (m2-tab))
 
@@ -320,11 +354,11 @@ Control-C followed by the first character of the construct.
 (defun m2-while ()
   (interactive)
   (insert "WHILE ")
-  (insert (read-string ": "))
-  (insert " DO")
-  (m2-newline)
-  (m2-newline)
-  (insert "END (* while *);")
+  (let ((name (read-string "<boolean-expression>: ")))
+    (insert name " DO" )
+    (m2-newline)
+    (m2-newline)
+    (insert "END (* while " name " *);"))
   (end-of-line 0)
   (m2-tab))
 
@@ -416,3 +450,5 @@ Control-C followed by the first character of the construct.
 	((string-equal (substring (buffer-name) -3) ".md")
 	 (find-file-other-window
 	  (concat (substring (buffer-name) 0 -3)  ".mi")))))
+
+;;; modula2.el ends here

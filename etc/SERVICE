@@ -43,15 +43,21 @@ PO Box 460633
 San Francisco, CA  94146-0633
 +1 415 285 9088
 
-Performed X11 implementation of Emacs version 19.
-Worked on Emacs text annotation.
+Former FSF staffmember.  Performed X11 implementation of Emacs version
+19 and worked on WYSIWYG Emacs.  Installed and administered FSF
+network.  Maintainer of GNU indent.  10 years experience with Unix
+systems, from writing ROM monitors to UI design.
 
-Service and development of GNU and X11 software.  Handholding, teaching,
-and installations at lower rates.
+I provide installation, porting, debugging and customization or
+extensions of GNU and other Unix software.  I also design and
+implement free software projects.  Handholding, teaching, and
+installations are available.
 
-Rates: $150/hour.  Free to selected non-profit and activist organizations.
+Rates: $150 hour or fixed project prices.  Free to selected non-profit
+and activist organizations.  Ask if you are interested in support and
+update contracts.
 
-Updated: 11/7/91
+Updated: 2/15/93
 
 Giuseppe Attardi	<attardi@di.unipi.it>
 Dipartimento di Informatica
@@ -141,7 +147,7 @@ Rate: $75/hour, though somewhat volatile due to commitments regarding
 Entered: 10 Jul 92
 
 Michael I. Bushnell		<mib@gnu.ai.mit.edu>
-NE43-426, 545 Technology Square
+545 Technology Square, NE43-426
 Cambridge, MA  02139
 (617) 253-8568
 
@@ -228,10 +234,15 @@ Rates are DM 150,-- plus tax per hour, educational sites get rebates.
 Entered: 10 Jul 92
 
 Cygnus Support			<info@cygnus.com>
-814 University Avenue		...uunet!cygint!info
-Palo Alto, CA 94301
-+1 415 322 3811 Voice
-+1 415 322 3270 FAX
+1937 Landings Drive		...uunet!cygint!info
+Mountain View, CA 94043 USA
++1 415 903 1400 voice
++1 415 903 0122 fax
+
+Cygnus Support
+1 Kendall Square
+Cambridge, MA 02139
++1 617 494 1040
 
 Cygnus Support offers warranty protection (service contracts) for a
 number of free software tools.	For a fixed annual fee our customers
@@ -249,9 +260,9 @@ contact us for the latest information.
 For those who need on-site assistance, support is also available from
 our Cambridge office.
 
-Rates: $300/hour.	Annual Support starts at $35,000.
+Annual Support starts at $3,000.
 
-Updated: 11 Sept 91
+Updated: 16 Feb 93
 
 Bradley N. Davis	<b-davis@jaguar.utah.edu>
 3242 South 540 West
@@ -312,6 +323,24 @@ Rates: For software items, request our price list.
 
 Entered: 2/14/92
 
+Free Software Association of Germany
+Michaela Merz
+Heimatring 19
+6000 Frankfurt/Main 70
+phone:    (+49 69) 6312083
+modems:   (+49 69) 6312934 | 6311235 | 634588
+email:    <misch@eurom.rhein-main.de>
+
+We distribute, install and/or port, teach, support free software and
+offer regular consulting.  We accept software development contracts for
+any (unix) software as long as you will release it into free software. 
+
+Rates are DM 200,-- plus VAT per hour. 25 % will be donated to the
+Free Software Foundation.  For worthy organizations, we may
+offer our services for free.  Please ask.
+
+Entered: 12/24/92
+
 Andy Gaynor -- [Ag]	<gaynor@paul.rutgers.edu>
 597 Hoes Lane, Piscataway, NJ 08854
 908-463-3376
@@ -332,7 +361,7 @@ Other Tasks:
 
 Entered: 10 Feb 92
 
-Ron Guilmette	<rfg@ncd.com>
+Ron Guilmette	<rfg@netcom.com>
 396 Ano Nuevo Ave. #216
 Sunnyvale, CA 94086
 408-732-7839
@@ -533,7 +562,7 @@ GNU products.
 
 Entered: 10 Jul 92
 
-Marty Leisner	   <leisner.henr801c@xerox.com>
+Marty Leisner	   <leisner@eso.mc.xerox.com>
 332 Shaftsbury Road
 Rochester, New York  14610
 Home:(716) 654-7931
@@ -544,7 +573,7 @@ Experience: 10 years C/Unix, 7 years DOS.
 Degree :    BS CS, Cornell University
 Rates:	    $75/hr
 
-Updated: 6 Jul 91
+Updated: 3 Apr 93
 
 Roland McGrath		<roland@idr.org>
 545 Tech Sq rm 426
@@ -553,6 +582,7 @@ Work: (617) 253-8568
 
 Co-author of GNU Make (with Richard Stallman); maintainer of GNU Make.
 Author and maintainer of the GNU C Library and parts of the GNU Hurd.
+Author of several Emacs Lisp packages and parts of Emacs 19.
 FSF employee summer 1989, fall 1990 to the present.
 
 Installation, maintenance, porting, enhancement of all GNU software.
@@ -884,6 +914,39 @@ Extensive experience coding for portability under UNIX.
 Typical rates $35-$150/hour; will telecommute (Internet or phone)
 
 Entered: 1/16/91
+
+Joe Wells <jbw@cs.bu.edu>
+c/o: Boston University Computer Science Department
+111 Cummington Street, Room 138
+Boston, Massachusetts 02215
+Work: (617)353-3381; Home: (617)352-7508
+Finger "jbw@cs.bu.edu" for up-to-date contact information.
+
+Experience:
+    I have B.A. and M.A. degrees in Computer Science and am
+    all-but-dissertation for a Ph.D. in C.S.  My primary programming
+    languages are Emacs Lisp, Perl, and Bourne shell.  I have written
+    numerous Emacs Lisp packages.  I started the USENET "List of
+    Frequently Asked Questions about GNU Emacs with Answers" and
+    maintained it for more than two years.  Send e-mail for my complete
+    resume.
+
+Programs supported:
+    GNU Emacs: installation, training, customization, bug fixing,
+               troubleshooting, extension, development, or answering any
+	       kind of question.
+    Any other GNU program: installation and answering questions.
+
+Working conditions:
+    I can do part-time (less than 20 hours/week) work for a long term and
+    full-time work for a short term (a month or two).  I can either work
+    in or near Boston or via the Internet.  My schedule is fairly
+    flexible.  I prefer that any Emacs Lisp package I write have the GNU
+    GPL copying conditions.
+
+Rates: $45/hour, provided I don't have to travel far.
+
+Entered: 18Feb93
 
 Chris Welty		<weltyc@cs.rpi.edu>
 RPI Computer Science Dept

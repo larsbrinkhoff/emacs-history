@@ -79,7 +79,7 @@ typedef int    (*FUNC)();     /* pointer to a function        */
 
 static int              hfqry();
 static int              hfskbd();
-       char            *malloc();
+       char            *xmalloc();
 
 extern int              errno;
 static jmp_buf          hftenv;
@@ -233,7 +233,7 @@ GT_ACK (fd, req, buf)
     }
 
   alarm(3);			/* time out in 3 secs          */
-  sav_alrm = (FUNC) signal (SIGALRM, (void(*)())hft_alrm); /* prepare to catch time out */
+  sav_alrm = signal (SIGALRM, hft_alrm); /* prepare to catch time out   */
 
   p.ack = &ack;
   while (! is_ack_vtd)		/* do until valid ACK VTD      */
@@ -261,7 +261,7 @@ GT_ACK (fd, req, buf)
     }				/***** TRY AGAIN               */
 
   alarm(0);			/* ACK VTD received, reset alrm*/
-  signal (SIGALRM, (void(*)())sav_alrm); /* reset signal                */
+  signal (SIGALRM, sav_alrm);	/* reset signal                */
 
   if (i = ack.hf_arg_len)	/* any data following ?        */
     {				/* yes,                        */
@@ -279,7 +279,7 @@ static int
 hft_alrm (sig)                    /* Function hft_alrm - handle  */
         int sig;		/* alarm signal               */
 {
-  signal (SIGALRM, (void(*)())sav_alrm); /* reset to previous          */
+  signal (SIGALRM, sav_alrm);	/* reset to previous          */
 
   if (is_ack_vtd)		/* has ack vtd arrived ?      */
     return(0);			/* yes, then continue         */
@@ -319,7 +319,7 @@ WR_REQ (fd, request, cmdlen, cmd, resplen)
   if (cmdlen)			/* if arg structure to pass    */
     {
       size = sizeof (struct hfctlreq) + cmdlen;
-      if ((p.c = malloc(size)) == NULL) /* malloc one area            */
+      if ((p.c = xmalloc(size)) == NULL) /* malloc one area            */
 	return (-1);
 
       memcpy (p.c, &req, sizeof (req)); /* copy CTL REQ struct         */
@@ -334,7 +334,7 @@ WR_REQ (fd, request, cmdlen, cmd, resplen)
   /* write request to terminal   */
   if (write(fd,p.c,size) == -1) return (-1);
   if (p.req != &req)		/* free if allocated           */
-    free (p.c);
+    xfree (p.c);
   return (0);
 
 }

@@ -1,11 +1,15 @@
-;; Spelling correction interface for Emacs.
+;;; spell.el --- spelling correction interface for Emacs.
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: wp, unix
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +21,14 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; This mode orovides an Emacs interface to the UNIX spell(1) program.
+;; Entry points are `spell-buffer', `spell-word', `spell-region' and
+;; `spell-string'.  These facilities are documented in the Emacs user's
+;; manual.
+
+;;; Code:
 
 (defvar spell-command "spell"
   "*Command to run the spell program.")
@@ -26,6 +38,7 @@
 This function might remove text-processor commands.
 nil means don't alter the text before checking it.")
 
+;;;###autoload
 (defun spell-buffer ()
   "Check spelling of every word in the buffer.
 For each incorrect word, you are asked for the correct spelling
@@ -35,10 +48,11 @@ as its \"correct\" spelling; then the query replace is skipped."
   (interactive)
   (spell-region (point-min) (point-max) "buffer"))
 
+;;;###autoload
 (defun spell-word ()
   "Check spelling of word at or before point.
 If it is not correct, ask user for the correct spelling
-and query-replace the entire buffer to substitute it."
+and `query-replace' the entire buffer to substitute it."
   (interactive)
   (let (beg end spell-filter)
     (save-excursion
@@ -49,8 +63,9 @@ and query-replace the entire buffer to substitute it."
      (setq end (point)))
     (spell-region beg end (buffer-substring beg end))))
 
+;;;###autoload
 (defun spell-region (start end &optional description)
-  "Like spell-buffer but applies only to region.
+  "Like `spell-buffer' but applies only to region.
 Used in a program, applies from START to END.
 DESCRIPTION is an optional string naming the unit being checked:
 for example, \"word\"."
@@ -110,6 +125,7 @@ for example, \"word\"."
 				   newword)))))))
 
 
+;;;###autoload
 (defun spell-string (string)
   "Check spelling of string supplied as argument."
   (interactive "sSpell string: ")
@@ -130,3 +146,5 @@ for example, \"word\"."
        (while (search-forward "\n" nil t)
 	 (replace-match " "))
        (message "%sincorrect" (buffer-substring 1 (point-max)))))))
+
+;;; spell.el ends here

@@ -1,12 +1,17 @@
-;; Lisp mode, and its idiosyncratic commands.
+;;; cl-indent.el --- enhanced lisp-indent mode
+
 ;; Copyright (C) 1987 Free Software Foundation, Inc.
-;; Written by Richard Mlynarik July 1987
+
+;; Author: Richard Mlynark <mly@eddie.mit.edu>
+;; Created: July 1987
+;; Maintainer: FSF
+;; Keywords: lisp, tools
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +22,14 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+;;; Commentary:
+
+;; This package supplies a single entry point, common-lisp-indent-function,
+;; which performs indentation in the preferred style for Common Lisp code.
+;; To enable it:
+;;
+;; (setq lisp-indent-function 'common-lisp-indent-function)
 
 ;;>> TODO
 ;; :foo
@@ -32,30 +45,30 @@
 ;;              baz)
 ;;  Need something better than &rest for such cases
 
-
-;;; Hairy lisp indentation.
+;;; Code:
 
 (defvar lisp-indent-maximum-backtracking 3
   "*Maximum depth to backtrack out from a sublist for structured indentation.
-If this variable is  0, no backtracking will occur and forms such as  flet
+If this variable is  0, no backtracking will occur and forms such as flet
 may not be correctly indented.")
 
 (defvar lisp-tag-indentation 1
   "*Indentation of tags relative to containing list.
-This variable is used by the function  lisp-indent-tagbody.")
+This variable is used by the function `lisp-indent-tagbody'.")
 
 (defvar lisp-tag-body-indentation 3
   "*Indentation of non-tagged lines relative to containing list.
-This variable is used by the function  lisp-indent-tagbody  to indent normal
+This variable is used by the function `lisp-indent-tagbody' to indent normal
 lines (lines without tags).
 The indentation is relative to the indentation of the parenthesis enclosing
-he special form.  If the value is  t, the body of tags will be indented
+the special form.  If the value is t, the body of tags will be indented
 as a block at the same indentation as the first s-expression following
 the tag.  In this case, any forms before the first tag are indented
-by lisp-body-indent.")
+by `lisp-body-indent'.")
 
 
-(defun common-lisp-indent-hook (indent-point state)
+;;;###autoload
+(defun common-lisp-indent-function (indent-point state)
   (let ((normal-indent (current-column)))
     ;; Walk up list levels until we see something
     ;;  which does special things with subforms.
@@ -90,17 +103,17 @@ by lisp-body-indent.")
               (setq function (downcase (buffer-substring tem (point))))
               (goto-char tem)
               (setq tem (intern-soft function)
-                    method (get tem 'common-lisp-indent-hook))
+                    method (get tem 'common-lisp-indent-function))
               (cond ((and (null method)
                           (string-match ":[^:]+" function))
                      ;; The pleblisp package feature
                      (setq function (substring function
                                                (1+ (match-beginning 0)))
                            method (get (intern-soft function)
-                                       'common-lisp-indent-hook)))
+                                       'common-lisp-indent-function)))
                     ((and (null method))
                      ;; backwards compatibility
-                     (setq method (get tem 'lisp-indent-hook)))))
+                     (setq method (get tem 'lisp-indent-function)))))
             (let ((n 0))
               ;; How far into the containing form is the current form?
               (if (< (point) indent-point)
@@ -135,13 +148,18 @@ by lisp-body-indent.")
                         (not (eql (char-after (- containing-sexp 2)) ?\#)))
                    ;; No indentation for "'(...)" elements
                    (setq calculated (1+ sexp-column)))
+		  ((or (eql (char-after (1- containing-sexp)) ?\,)
+		       (and (eql (char-after (1- containing-sexp)) ?\@)
+			    (eql (char-after (- containing-sexp 2)) ?\,)))
+		   ;; ",(...)" or ",@(...)"
+		   (setq calculated normal-indent))
                   ((eql (char-after (1- containing-sexp)) ?\#)
                    ;; "#(...)"
                    (setq calculated (1+ sexp-column)))
                   ((null method))
                   ((integerp method)
                    ;; convenient top-level hack.
-                   ;;  (also compatible with lisp-indent-hook)
+                   ;;  (also compatible with lisp-indent-function)
                    ;; The number specifies how many `distinguished'
                    ;;  forms there are before the body starts
                    ;; Equivalent to (4 4 ... &body)
@@ -177,8 +195,8 @@ by lisp-body-indent.")
 
 (defun lisp-indent-report-bad-format (m)
   (error "%s has a badly-formed %s property: %s"
-         ;; Love them free variable references!!
-         function 'common-lisp-indent-hook m))
+         ;; Love those free variable references!!
+         function 'common-lisp-indent-function m))
 
 ;; Blame the crufty control structure on dynamic scoping
 ;;  -- not on me!
@@ -202,7 +220,6 @@ by lisp-body-indent.")
           ;; is reached.
           ;; n is set to (1- n) and method to (cdr method)
           ;; each iteration.
-; (message "trying %s for %s %s" method p function) (sit-for 1)
           (setq tem (car method))
 
           (or (eq tem 'nil)             ;default indentation
@@ -378,6 +395,7 @@ by lisp-body-indent.")
                          &rest lisp-indent-function-lambda-hack))
            (let         ((&whole 4 &rest (&whole 1 1 2)) &body))
            (let* . let)
+           (compiler-let . let) ;barf
            (locally	1)
            ;(loop ...)
            (multiple-value-bind
@@ -404,9 +422,9 @@ by lisp-body-indent.")
                         (5 &body))
            (when 1))))
   (while l
-    (put (car (car l)) 'common-lisp-indent-hook
+    (put (car (car l)) 'common-lisp-indent-function
          (if (symbolp (cdr (car l)))
-             (get (cdr (car l)) 'common-lisp-indent-hook)
+             (get (cdr (car l)) 'common-lisp-indent-function)
              (car (cdr (car l)))))
     (setq l (cdr l))))
 
@@ -440,22 +458,16 @@ by lisp-body-indent.")
 ;                3))))))
           
 
-;(put 'while    'common-lisp-indent-hook 1)
-;(put 'defwrapper'common-lisp-indent-hook ...)
-;(put 'def 'common-lisp-indent-hook ...)
-;(put 'defflavor        'common-lisp-indent-hook ...)
-;(put 'defsubst 'common-lisp-indent-hook ...)
+;(put 'while    'common-lisp-indent-function 1)
+;(put 'defwrapper'common-lisp-indent-function ...)
+;(put 'def 'common-lisp-indent-function ...)
+;(put 'defflavor        'common-lisp-indent-function ...)
+;(put 'defsubst 'common-lisp-indent-function ...)
 
-;;(put 'define-restart-name 'common-lisp-indent-hook '1)
-;(put 'with-restart 'common-lisp-indent-hook '((1 4 ((* 1))) (2 &body)))
-;(put 'restart-case 'common-lisp-indent-hook '((1 4) (* 2 ((0 1) (* 1)))))
-;(put 'define-condition 'common-lisp-indent-hook '((1 6) (2 6 ((* 1))) (3 4 ((* 1))) (4 &body)))
-;(put 'with-condition-handler 'common-lisp-indent-hook '((1 4 ((* 1))) (2 &body)))
-;(put 'condition-case 'common-lisp-indent-hook '((1 4) (* 2 ((0 1) (1 3) (2 &body)))))
+;(put 'with-restart 'common-lisp-indent-function '((1 4 ((* 1))) (2 &body)))
+;(put 'restart-case 'common-lisp-indent-function '((1 4) (* 2 ((0 1) (* 1)))))
+;(put 'define-condition 'common-lisp-indent-function '((1 6) (2 6 ((* 1))) (3 4 ((* 1))) (4 &body)))
+;(put 'with-condition-handler 'common-lisp-indent-function '((1 4 ((* 1))) (2 &body)))
+;(put 'condition-case 'common-lisp-indent-function '((1 4) (* 2 ((0 1) (1 3) (2 &body)))))
 
-
-;;;; Turn it on.
-;(setq lisp-indent-hook 'common-lisp-indent-hook)
-
-;; To disable this stuff, (setq lisp-indent-hook 'lisp-indent-hook)
-
+;;; cl-indent.el ends here

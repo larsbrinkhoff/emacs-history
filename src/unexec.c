@@ -1,22 +1,20 @@
-/* Copyright (C) 1985, 1986, 1987, 1988 Free Software Foundation, Inc.
+/* Copyright (C) 1985, 1986, 1987, 1988, 1992 Free Software Foundation, Inc.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
-    any later version.
+This file is part of GNU Emacs.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-In other words, you are welcome to use, share and improve this program.
-You are forbidden to forbid anyone else to use, share and improve
-what you give them.   Help stamp out software-hoarding!  */
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 /*
@@ -76,6 +74,13 @@ what you give them.   Help stamp out software-hoarding!  */
 * COFF
 
 Define this if your system uses COFF for executables.
+
+* COFF_ENCAPSULATE
+
+Define this if you are using the GNU coff encapsulated a.out format.
+This is closer to a.out than COFF. You should *not* define COFF if
+you define COFF_ENCAPSULATE
+
 Otherwise we assume you use Berkeley format.
 
 * NO_REMAP
@@ -158,6 +163,7 @@ pointer looks like an int) but not on all machines.
 #ifndef emacs
 #define PERROR(arg) perror (arg); return -1
 #else
+#define IN_UNEXEC
 #include "config.h"
 #define PERROR(file) report_error (file, new)
 #endif
@@ -166,7 +172,13 @@ pointer looks like an int) but not on all machines.
 
 #ifndef CANNOT_UNEXEC /* most of rest of file */
 
+#ifdef COFF_ENCAPSULATE
+int need_coff_header = 1;
+#include <coff-encap/a.out.encap.h> /* The location might be a poor assumption */
+#else
 #include <a.out.h>
+#endif
+
 /* Define getpagesize () if the system does not.
    Note that this may depend on symbols defined in a.out.h
  */
@@ -174,7 +186,7 @@ pointer looks like an int) but not on all machines.
 
 #ifndef makedev			/* Try to detect types.h already loaded */
 #include <sys/types.h>
-#endif
+#endif /* makedev */
 #include <stdio.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -182,24 +194,7 @@ pointer looks like an int) but not on all machines.
 extern char *start_of_text ();		/* Start of text */
 extern char *start_of_data ();		/* Start of initialized data */
 
-static int make_hdr (), copy_text_and_data (), copy_sym ();
-static int mark_x ();
-
 #ifdef COFF
-#ifndef USG
-#ifndef STRIDE
-#ifndef UMAX
-#ifndef sun386
-/* I have a suspicion that these are turned off on all systems
-   and can be deleted.  Try it in version 19.  */
-#include <filehdr.h>
-#include <aouthdr.h>
-#include <scnhdr.h>
-#include <syms.h>
-#endif /* not sun386 */
-#endif /* not UMAX */
-#endif /* Not STRIDE */
-#endif /* not USG */
 static long block_copy_start;		/* Old executable start point */
 static struct filehdr f_hdr;		/* File header */
 static struct aouthdr f_ohdr;		/* Optional file header (a.out) */
@@ -211,6 +206,12 @@ static long text_scnptr;
 static long data_scnptr;
 
 #else /* not COFF */
+
+#ifdef __STDC__
+extern void *sbrk ();
+#else
+extern char *sbrk ();
+#endif
 
 #define SYMS_START ((long) N_SYMOFF (ohdr))
 
@@ -234,9 +235,7 @@ static EXEC_HDR_TYPE hdr, ohdr;
 
 #else /* not HPUX */
 
-extern char *sbrk ();
-
-#if defined (USG) && !defined (IBMRTAIX) && !defined (IRIS)
+#if defined (USG) && !defined (IBMAIX) && !defined (IRIS) && !defined (COFF_ENCAPSULATE) && !defined (LINUX)
 static struct bhdr hdr, ohdr;
 #define a_magic fmagic
 #define a_text tsize
@@ -250,14 +249,19 @@ static struct bhdr hdr, ohdr;
     (((x).fmagic)!=OMAGIC && ((x).fmagic)!=NMAGIC &&\
      ((x).fmagic)!=FMAGIC && ((x).fmagic)!=IMAGIC)
 #define NEWMAGIC FMAGIC
-#else /* IRIS or IBMRTAIX or not USG */
+#else /* IRIS or IBMAIX or not USG */
 static EXEC_HDR_TYPE hdr, ohdr;
 #define NEWMAGIC ZMAGIC
-#endif /* IRIS or IBMRTAIX not USG */
+#endif /* IRIS or IBMAIX not USG */
 #endif /* not HPUX */
 
 static int unexec_text_start;
 static int unexec_data_start;
+
+#ifdef COFF_ENCAPSULATE
+/* coffheader is defined in the GNU a.out.encap.h file.  */
+struct coffheader coffheader;
+#endif
 
 #endif /* not COFF */
 
@@ -280,7 +284,7 @@ report_error (file, fd)
 {
   if (fd)
     close (fd);
-  error ("Failure operating on %s", file);
+  error ("Failure operating on %s\n", file);
 }
 #endif /* emacs */
 
@@ -303,6 +307,11 @@ report_error_1 (fd, msg, a1, a2)
 #endif
 }
 
+static int make_hdr ();
+static int copy_text_and_data ();
+static int copy_sym ();
+static void mark_x ();
+
 /* ****************************************************************
  * unexec
  *
@@ -327,7 +336,9 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
       || copy_text_and_data (new, a_out) < 0
       || copy_sym (new, a_out, a_name, new_name) < 0
 #ifdef COFF
+#ifndef COFF_BSD_SYMBOLS
       || adjust_lnnoptrs (new, a_out, new_name) < 0
+#endif
 #endif
       )
     {
@@ -339,7 +350,8 @@ unexec (new_name, a_name, data_start, bss_start, entry_address)
   close (new);
   if (a_out >= 0)
     close (a_out);
-  return mark_x (new_name);
+  mark_x (new_name);
+  return 0;
 }
 
 /* ****************************************************************
@@ -467,7 +479,7 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
    * space.
    */
 
-  bias = bss_end - (f_ohdr.data_start + f_dhdr.s_size);
+  bias = bss_start - (f_ohdr.data_start + f_dhdr.s_size);
 
 #endif
 
@@ -485,9 +497,17 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 #endif /* NO_REMAP */
   f_ohdr.dsize = bss_start - f_ohdr.data_start;
   f_ohdr.bsize = bss_end - bss_start;
+#ifndef KEEP_OLD_TEXT_SCNPTR
+  /* On some machines, the old values are right.
+     ??? Maybe on all machines with NO_REMAP.  */
   f_thdr.s_size = f_ohdr.tsize;
   f_thdr.s_scnptr = sizeof (f_hdr) + sizeof (f_ohdr);
   f_thdr.s_scnptr += (f_hdr.f_nscns) * (sizeof (f_thdr));
+#endif /* KEEP_OLD_TEXT_SCNPTR */
+#ifdef ADJUST_TEXT_SCNHDR_SIZE
+  /* On some machines, `text size' includes all headers.  */
+  f_thdr.s_size -= f_thdr.s_scnptr;
+#endif /* ADJUST_TEST_SCNHDR_SIZE */
   lnnoptr = f_thdr.s_lnnoptr;
 #ifdef SECTION_ALIGNMENT
   /* Some systems require special alignment
@@ -499,7 +519,12 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   f_thdr.s_scnptr = 0xd0;
 #endif
   text_scnptr = f_thdr.s_scnptr;
+#ifdef ADJUST_TEXTBASE
+  text_scnptr = sizeof (f_hdr) + sizeof (f_ohdr) + (f_hdr.f_nscns) * (sizeof (f_thdr));
+#endif
+#ifndef KEEP_OLD_PADDR
   f_dhdr.s_paddr = f_ohdr.data_start;
+#endif /* KEEP_OLD_PADDR */
   f_dhdr.s_vaddr = f_ohdr.data_start;
   f_dhdr.s_size = f_ohdr.dsize;
   f_dhdr.s_scnptr = f_thdr.s_scnptr + f_thdr.s_size;
@@ -516,7 +541,9 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
     = (f_dhdr.s_scnptr + DATA_SECTION_ALIGNMENT) & ~DATA_SECTION_ALIGNMENT;
 #endif /* DATA_SECTION_ALIGNMENT */
   data_scnptr = f_dhdr.s_scnptr;
+#ifndef KEEP_OLD_PADDR
   f_bhdr.s_paddr = f_ohdr.data_start + f_ohdr.dsize;
+#endif /* KEEP_OLD_PADDR */
   f_bhdr.s_vaddr = f_ohdr.data_start + f_ohdr.dsize;
   f_bhdr.s_size = f_ohdr.bsize;
   f_bhdr.s_scnptr = 0L;
@@ -535,7 +562,7 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
     }
 
 #ifdef ADJUST_EXEC_HEADER
-  ADJUST_EXEC_HEADER
+  ADJUST_EXEC_HEADER;
 #endif /* ADJUST_EXEC_HEADER */
 
   if (write (new, &f_hdr, sizeof (f_hdr)) != sizeof (f_hdr))
@@ -619,6 +646,16 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
   /* Get symbol table info from header of a.out file if given one. */
   if (a_out >= 0)
     {
+#ifdef COFF_ENCAPSULATE
+      if (read (a_out, &coffheader, sizeof coffheader) != sizeof coffheader)
+	{
+	  PERROR(a_name);
+	}
+      if (coffheader.f_magic != COFF_MAGIC)
+	{
+	  ERROR1("%s doesn't have legal coff magic number\n", a_name);
+	}
+#endif
       if (read (a_out, &ohdr, sizeof hdr) != sizeof hdr)
 	{
 	  PERROR (a_name);
@@ -632,7 +669,14 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
     }
   else
     {
+#ifdef COFF_ENCAPSULATE
+      /* We probably could without too much trouble. The code is in gld
+       * but I don't have that much time or incentive.
+       */
+      ERROR0 ("can't build a COFF file from scratch yet");
+#else
       bzero (hdr, sizeof hdr);
+#endif
     }
 
   unexec_text_start = (long) start_of_text ();
@@ -660,6 +704,32 @@ make_hdr (new, a_out, data_start, bss_start, entry_address, a_name, new_name)
 #endif
 
 #endif /* not NO_REMAP */
+
+#ifdef COFF_ENCAPSULATE
+  /* We are encapsulating BSD format within COFF format.  */
+  {
+    struct coffscn *tp, *dp, *bp;
+    tp = &coffheader.scns[0];
+    dp = &coffheader.scns[1];
+    bp = &coffheader.scns[2];
+    tp->s_size = hdr.a_text + sizeof(struct exec);
+    dp->s_paddr = data_start;
+    dp->s_vaddr = data_start;
+    dp->s_size = hdr.a_data;
+    bp->s_paddr = dp->s_vaddr + dp->s_size;
+    bp->s_vaddr = bp->s_paddr;
+    bp->s_size = hdr.a_bss;
+    coffheader.tsize = tp->s_size;
+    coffheader.dsize = dp->s_size;
+    coffheader.bsize = bp->s_size;
+    coffheader.text_start = tp->s_vaddr;
+    coffheader.data_start = dp->s_vaddr;
+  }
+  if (write (new, &coffheader, sizeof coffheader) != sizeof coffheader)
+    {
+      PERROR(new_name);
+    }
+#endif /* COFF_ENCAPSULATE */
 
   if (write (new, &hdr, sizeof hdr) != sizeof hdr)
     {
@@ -738,7 +808,7 @@ copy_text_and_data (new, a_out)
 	    {
 	      n = size > sizeof (page) ? sizeof (page) : size;
 	      if (read (a_out, page, n) != n || write (new, page, n) != n)
-		PERROR ("xemacs");
+		PERROR ("emacs");
 	    }
 	  lseek (a_out, old_a_out_ptr, 0);
 	}
@@ -748,6 +818,10 @@ copy_text_and_data (new, a_out)
 
   lseek (new, (long) text_scnptr, 0);
   ptr = (char *) f_ohdr.text_start;
+#ifdef HEADER_INCL_IN_TEXT
+  /* For Gould UTX/32, text starts after headers */
+  ptr = (char *) (ptr + text_scnptr);
+#endif /* HEADER_INCL_IN_TEXT */
   end = ptr + f_ohdr.tsize;
   write_segment (new, ptr, end);
 
@@ -771,15 +845,7 @@ copy_text_and_data (new, a_out)
 #ifdef A_TEXT_SEEK
   lseek (new, (long) A_TEXT_SEEK (hdr), 0);
 #else
-#ifdef A_TEXT_OFFSET
-  /* Note that on the Sequent machine A_TEXT_OFFSET != sizeof (hdr)
-     and sizeof (hdr) is the correct amount to add here.  */
-  /* In version 19, eliminate this case and use A_TEXT_SEEK whenever
-     N_TXTOFF is not right.  */
-  lseek (new, (long) N_TXTOFF (hdr) + sizeof (hdr), 0);
-#else
   lseek (new, (long) N_TXTOFF (hdr), 0);
-#endif /* no A_TEXT_OFFSET */
 #endif /* no A_TEXT_SEEK */
 
   ptr = (char *) unexec_text_start;
@@ -882,7 +948,7 @@ copy_sym (new, a_out, a_name, new_name)
  *
  * After succesfully building the new a.out, mark it executable
  */
-static int
+static void
 mark_x (name)
      char *name;
 {
@@ -899,9 +965,11 @@ mark_x (name)
   sbuf.st_mode |= 0111 & ~um;
   if (chmod (name, sbuf.st_mode) == -1)
     PERROR (name);
-  return 0;
 }
 
+#ifdef COFF
+#ifndef COFF_BSD_SYMBOLS
+
 /*
  *	If the COFF file contains a symbol table and a line number section,
  *	then any auxiliary entries that have values for x_lnnoptr must
@@ -916,8 +984,6 @@ mark_x (name)
  *	be fixed.  As it is now, all such entries are wrong and sdb
  *	will complain.   Fred Fish, UniSoft Systems Inc.
  */
-
-#ifdef COFF
 
 /* This function is probably very slow.  Instead of reopening the new
    file for input and output it should copy from the old to the new
@@ -958,15 +1024,18 @@ adjust_lnnoptrs (writedesc, readdesc, new_name)
 	{
 	  read (new, &auxentry, AUXESZ);
 	  nsyms++;
-	  if (ISFCN (symentry.n_type)) {
-	    auxentry.x_sym.x_fcnary.x_fcn.x_lnnoptr += bias;
-	    lseek (new, -AUXESZ, 1);
-	    write (new, &auxentry, AUXESZ);
-	  }
+	  if (ISFCN (symentry.n_type) || symentry.n_type == 0x2400)
+	    {
+	      auxentry.x_sym.x_fcnary.x_fcn.x_lnnoptr += bias;
+	      lseek (new, -AUXESZ, 1);
+	      write (new, &auxentry, AUXESZ);
+	    }
 	}
     }
   close (new);
 }
+
+#endif /* COFF_BSD_SYMBOLS */
 
 #endif /* COFF */
 

@@ -181,10 +181,6 @@ pointer looks like an int) but not on all machines.
 #include <sys/stat.h>
 #include <errno.h>
 
-static int make_hdr ();
-static mark_x ();
-static int copy_text_and_data (), copy_sym ();
-
 extern char *start_of_text ();		/* Start of text */
 extern char *start_of_data ();		/* Start of initialized data */
 
@@ -271,6 +267,11 @@ report_error_1 (fd, msg, a1, a2)
   fprintf (stderr, "\n");
 #endif
 }
+
+static int make_hdr ();
+static void mark_x ();
+static int copy_text_and_data ();
+static int copy_sym ();
 
 /* ****************************************************************
  * unexec
@@ -670,7 +671,7 @@ copy_sym (new, a_out, a_name, new_name)
  *
  * After succesfully building the new a.out, mark it executable
  */
-static
+static void
 mark_x (name)
      char *name;
 {

@@ -1,11 +1,15 @@
-;; Expand mailing address aliases defined in ~/.mailrc.
+;;; mailalias.el --- expand mailing address aliases defined in ~/.mailrc.
+
 ;; Copyright (C) 1985, 1987 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: mail
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,19 +21,32 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; Basic functions for defining and expanding mail aliases.
+;; These seal off the interface to the alias-definition parts of a
+;; .mailrc file formatted for BSD's Mail or USL's mailx.
+
+;;; Code:
+
+(defvar mail-aliases t
+  "Alias of mail address aliases,
+or t meaning should be initialized from `~/.mailrc'.")
 
 ;; Called from sendmail-send-it, or similar functions,
 ;; only if some mail aliases are defined.
-(defun expand-mail-aliases (beg end)
+(defun expand-mail-aliases (beg end &optional exclude)
   "Expand all mail aliases in suitable header fields found between BEG and END.
-Suitable header fields are To, Cc and Bcc."
+Suitable header fields are `To', `Cc' and `Bcc' and their `Resent-' variants.
+Optional second arg EXCLUDE may be a regular expression defining text to be
+removed from alias expansions."
   (if (eq mail-aliases t)
       (progn (setq mail-aliases nil) (build-mail-aliases)))
   (goto-char beg)
   (setq end (set-marker (make-marker) end))
   (let ((case-fold-search nil))
     (while (let ((case-fold-search t))
-	     (re-search-forward "^\\(to\\|cc\\|bcc\\):" end t))
+	     (re-search-forward "^\\(to\\|cc\\|bcc\\|resent-to\\|resent-cc\\|resent-bcc\\):" end t))
       (skip-chars-forward " \t")
       (let ((beg1 (point))
 	    end1 pos epos seplen
@@ -69,6 +86,14 @@ Suitable header fields are To, Cc and Bcc."
 		  ;; then rescan the expansion for more aliases.
 		  (goto-char pos)
 		  (insert translation)
+		  (if exclude
+ 		      (let ((regexp
+			     (concat "\\b\\(" exclude "\\)\\b"))
+			    (end (point-marker)))
+			(goto-char pos)
+			(while (re-search-forward regexp end t)
+			  (replace-match ""))
+			(goto-char end)))
 		  (delete-region (point) (+ (point) (- epos pos)))
 		  (goto-char pos))
 	      ;; Name is not an alias.  Skip to start of next name.
@@ -79,14 +104,14 @@ Suitable header fields are To, Cc and Bcc."
 
 ;; Called by mail-setup, or similar functions, only if ~/.mailrc exists.
 (defun build-mail-aliases (&optional file)
-  "Read mail aliases from ~/.mailrc and set mail-aliases."
+  "Read mail aliases from `~/.mailrc' and set `mail-aliases'."
   (setq file (expand-file-name (or file "~/.mailrc")))
   (let ((buffer nil)
 	(obuf (current-buffer)))
     (unwind-protect
 	(progn
 	  (setq buffer (generate-new-buffer "mailrc"))
-	  (buffer-flush-undo buffer)
+	  (buffer-disable-undo buffer)
 	  (set-buffer buffer)
 	  (cond ((get-file-buffer file)
 		 (insert (save-excursion
@@ -120,8 +145,11 @@ Suitable header fields are To, Cc and Bcc."
 
 ;; Always autoloadable in case the user wants to define aliases
 ;; interactively or in .emacs.
+;;;###autoload
 (defun define-mail-alias (name definition)
-  "Define NAME as a mail-alias that translates to DEFINITION."
+  "Define NAME as a mail alias that translates to DEFINITION.
+This means that sending a message to NAME will actually send to DEFINITION.
+DEFINITION can be one or more mail addresses separated by commas."
   (interactive "sDefine mail alias: \nsDefine %s as mail alias for: ")
   ;; Read the defaults first, if we have not done so.
   (if (eq mail-aliases t)
@@ -129,18 +157,32 @@ Suitable header fields are To, Cc and Bcc."
 	(setq mail-aliases nil)
 	(if (file-exists-p "~/.mailrc")
 	    (build-mail-aliases))))
-  (let (tem)
-    ;; ~/.mailrc contains addresses separated by spaces.
-    ;; mailers should expect addresses separated by commas.
-    (while (setq tem (string-match "[^ \t,][ \t,]+" definition tem))
-      (if (= (match-end 0) (length definition))
-	  (setq definition (substring definition 0 (1+ tem)))
-	(setq definition (concat (substring definition
-					    0 (1+ tem))
-				 ", "
-				 (substring definition (match-end 0))))
-	(setq tem (+ 3 tem))))
+  ;; Strip leading and trailing blanks.
+  (if (string-match "^[ \t]+" definition)
+      (setq definition (substring definition (match-end 0))))
+  (if (string-match "[ \t]+$" definition)
+      (setq definition (substring definition 0 (match-beginning 0))))
+  (let ((first (aref definition 0))
+	(last (aref definition (1- (length definition))))
+	tem)
+    (if (and (= first last) (memq first '(?\' ?\")))
+	;; Strip quotation marks.
+	(setq definition (substring definition 1 (1- (length definition))))
+      ;; ~/.mailrc contains addresses separated by spaces.
+      ;; mailers should expect addresses separated by commas.
+      (while (setq tem (string-match "[^ \t,][ \t,]+" definition tem))
+	(if (= (match-end 0) (length definition))
+	    (setq definition (substring definition 0 (1+ tem)))
+	  (setq definition (concat (substring definition
+					      0 (1+ tem))
+				   ", "
+				   (substring definition (match-end 0))))
+	  (setq tem (+ 3 tem)))))
     (setq tem (assoc name mail-aliases))
     (if tem
 	(rplacd tem definition)
       (setq mail-aliases (cons (cons name definition) mail-aliases)))))
+
+(provide 'mailalias)
+
+;;; mailalias.el ends here

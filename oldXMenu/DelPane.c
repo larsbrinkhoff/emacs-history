@@ -1,6 +1,6 @@
 #include "copyright.h"
 
-/* $Header: DelPane.c,v 1.2 87/12/20 12:04:26 rws Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/DelPane.c,v 1.1 1992/04/11 22:10:18 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 /*

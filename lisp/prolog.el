@@ -1,12 +1,15 @@
-;; Major mode for editing Prolog, and for running Prolog under Emacs
+;;; prolog.el --- major mode for editing and running Prolog under Emacs
+
 ;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
-;; Author Masanobu UMEDA (umerin@flab.flab.fujitsu.junet)
+
+;; Author: Masanobu UMEDA <umerin@flab.flab.fujitsu.junet>
+;; Keywords: languages
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -18,10 +21,21 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; This package provides a major mode for editing Prolog.  It knows
+;; about Prolog syntax and comments, and can send regions to an inferior
+;; Prolog interpreter process.
+
+;;; Code:
+
 (defvar prolog-mode-syntax-table nil)
 (defvar prolog-mode-abbrev-table nil)
 (defvar prolog-mode-map nil)
   
+(defvar prolog-program-name "prolog"
+  "*Program name for invoking an inferior Prolog with `run-prolog'.")
+
 (defvar prolog-consult-string "reconsult(user).\n"
   "*(Re)Consult mode (for C-Prolog and Quintus Prolog). ")
 
@@ -30,7 +44,7 @@
 
 (defvar prolog-eof-string "end_of_file.\n"
   "*String that represents end of file for prolog.
-nil means send actual operaing system end of file.")
+nil means send actual operating system end of file.")
 
 (defvar prolog-indent-width 4)
 
@@ -69,8 +83,8 @@ nil means send actual operaing system end of file.")
   (setq comment-start-skip "%+ *")
   (make-local-variable 'comment-column)
   (setq comment-column 48)
-  (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'prolog-comment-indent))
+  (make-local-variable 'comment-indent-function)
+  (setq comment-indent-function 'prolog-comment-indent))
 
 (defun prolog-mode-commands (map)
   (define-key map "\t" 'prolog-indent-line)
@@ -81,12 +95,13 @@ nil means send actual operaing system end of file.")
   (setq prolog-mode-map (make-sparse-keymap))
   (prolog-mode-commands prolog-mode-map))
 
+;;;###autoload
 (defun prolog-mode ()
   "Major mode for editing Prolog code for Prologs.
 Blank lines and `%%...' separate paragraphs.  `%'s start comments.
 Commands:
 \\{prolog-mode-map}
-Entry to this mode calls the value of prolog-mode-hook
+Entry to this mode calls the value of `prolog-mode-hook'
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
@@ -176,7 +191,8 @@ rigidly along with this one (not yet)."
 	(t
 	 (save-excursion
 	       (skip-chars-backward " \t")
-	       (max (1+ (current-column)) ;Insert one space at least
+	       ;; Insert one space at least, except at left margin.
+	       (max (+ (current-column) (if (bolp) 0 1))
 		    comment-column)))
 	))
 
@@ -186,67 +202,54 @@ rigidly along with this one (not yet)."
 ;;;
 (defvar inferior-prolog-mode-map nil)
 
-;; Moved into inferior-prolog-mode
-;;(if inferior-prolog-mode-map
-;;    nil
-;;  (setq inferior-prolog-mode-map (copy-alist shell-mode-map))
-;;  (prolog-mode-commands inferior-prolog-mode-map))
-
 (defun inferior-prolog-mode ()
   "Major mode for interacting with an inferior Prolog process.
 
 The following commands are available:
 \\{inferior-prolog-mode-map}
 
-Entry to this mode calls the value of prolog-mode-hook with no arguments,
-if that value is non-nil.  Likewise with the value of shell-mode-hook.
-prolog-mode-hook is called after shell-mode-hook.
+Entry to this mode calls the value of `prolog-mode-hook' with no arguments,
+if that value is non-nil.  Likewise with the value of `comint-mode-hook'.
+`prolog-mode-hook' is called after `comint-mode-hook'.
 
 You can send text to the inferior Prolog from other buffers
-using the commands send-region, send-string and \\[prolog-consult-region].
+using the commands `send-region', `send-string' and \\[prolog-consult-region].
 
 Commands:
 Tab indents for Prolog; with argument, shifts rest
  of expression rigidly with the current line.
-Paragraphs are separated only by blank lines and '%%'. '%'s start comments.
+Paragraphs are separated only by blank lines and '%%'.
+'%'s start comments.
 
 Return at end of buffer sends line as input.
 Return not at end copies rest of line to end and sends it.
-\\[shell-send-eof] sends end-of-file as input.
-\\[kill-shell-input] and \\[backward-kill-word] are kill commands, imitating normal Unix input editing.
-\\[interrupt-shell-subjob] interrupts the shell or its current subjob if any.
-\\[stop-shell-subjob] stops, likewise. \\[quit-shell-subjob] sends quit signal, likewise."
+\\[comint-kill-input] and \\[backward-kill-word] are kill commands, imitating normal Unix input editing.
+\\[comint-interrupt-subjob] interrupts the shell or its current subjob if any.
+\\[comint-stop-subjob] stops. \\[comint-quit-subjob] sends quit signal."
   (interactive)
-  (kill-all-local-variables)
-  (setq major-mode 'inferior-prolog-mode)
-  (setq mode-name "Inferior Prolog")
-  (setq mode-line-process '(": %s"))
+  (require 'comint)
+  (comint-mode)
+  (setq major-mode 'inferior-prolog-mode
+	mode-name "Inferior Prolog"
+	comint-prompt-regexp "^| [ ?][- ] *")
   (prolog-mode-variables)
-  (require 'shell)
-  (if inferior-prolog-mode-map
-      nil
-    (setq inferior-prolog-mode-map (copy-alist shell-mode-map))
+  (if inferior-prolog-mode-map nil
+    (setq inferior-prolog-mode-map (copy-keymap comint-mode-map))
     (prolog-mode-commands inferior-prolog-mode-map))
   (use-local-map inferior-prolog-mode-map)
-  (make-local-variable 'last-input-start)
-  (setq last-input-start (make-marker))
-  (make-local-variable 'last-input-end)
-  (setq last-input-end (make-marker))
-  (make-variable-buffer-local 'shell-prompt-pattern)
-  (setq shell-prompt-pattern "^| [ ?][- ] *") ;Set prolog prompt pattern
-  (run-hooks 'shell-mode-hook 'prolog-mode-hook))
+  (run-hooks 'prolog-mode-hook))
 
+;;;###autoload
 (defun run-prolog ()
   "Run an inferior Prolog process, input and output via buffer *prolog*."
   (interactive)
-  (require 'shell)
-  (switch-to-buffer (make-shell "prolog" "prolog"))
+  (require 'comint)
+  (switch-to-buffer (make-comint "prolog" prolog-program-name))
   (inferior-prolog-mode))
 
 (defun prolog-consult-region (compile beg end)
-  "Send the region to the Prolog process made by M-x run-prolog.
- If COMPILE (prefix arg) is not nil,
- use compile mode rather than consult mode."
+  "Send the region to the Prolog process made by \"M-x run-prolog\".
+If COMPILE (prefix arg) is not nil, use compile mode rather than consult mode."
   (interactive "P\nr")
   (save-excursion
     (if compile
@@ -260,8 +263,9 @@ Return not at end copies rest of line to end and sends it.
 
 (defun prolog-consult-region-and-go (compile beg end)
   "Send the region to the inferior Prolog, and switch to *prolog* buffer.
- If COMPILE (prefix arg) is not nil,
- use compile mode rather than consult mode."
+If COMPILE (prefix arg) is not nil, use compile mode rather than consult mode."
   (interactive "P\nr")
   (prolog-consult-region compile beg end)
   (switch-to-buffer "*prolog*"))
+
+;;; prolog.el ends here

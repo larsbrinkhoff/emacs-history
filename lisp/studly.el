@@ -1,4 +1,17 @@
-;;; StudlyCaps (tm)(r)(c)(xxx)
+;;; studly.el --- StudlyCaps (tm)(r)(c)(xxx)
+
+;;; This is in the public domain, since it was distributed
+;;; by its author without a copyright notice in 1986.
+
+;; Keywords: games
+
+;;; Commentary:
+
+;; Functions to studlycapsify a region, word, or buffer.  Possibly the
+;; esoteric significance of studlycapsification escapes you; that is,
+;; you suffer from autostudlycapsifibogotification.  Too bad.
+
+;;; Code:
 
 (defun studlify-region (begin end)
   "Studlify-case the region"
@@ -46,3 +59,5 @@
   "Studlify-case the current buffer"
   (interactive "*")
   (studlify-region (point-min) (point-max)))
+
+;;; studly.el ends here

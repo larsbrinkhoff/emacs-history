@@ -13,9 +13,9 @@ suitability of this software for any purpose.  It is provided "as is"
 without express or implied warranty.
 */
 
-#include "X11/Xlib.h"
+#include <X11/Xlib.h>
+#include <errno.h>
 #include "X10.h"
-#include "errno.h"
 
 #ifndef NULL
 #define NULL 0
@@ -44,7 +44,7 @@ XAssocTable *XCreateAssocTable(size)
 		return(NULL);
 	}
 	
-	/* malloc the buckets (actually just their headers). */
+	/* calloc the buckets (actually just their headers). */
 	buckets = (XAssoc *)calloc((unsigned)size, (unsigned)sizeof(XAssoc));
 	if (buckets == NULL) {
 		/* calloc call failed! */

@@ -1,21 +1,22 @@
 /* undo handling for GNU Emacs.
-   Copyright (C) 1990 Free Software Foundation, Inc.
+   Copyright (C) 1990, 1993 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
-GNU Emacs is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
-any later version.
-
 GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
-You should have received a copy of the GNU General Public License
-along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+Everyone is granted permission to copy, modify and redistribute
+GNU Emacs, but only under the conditions described in the
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 #include "config.h"
@@ -35,12 +36,13 @@ record_insert (beg, length)
 {
   Lisp_Object lbeg, lend;
 
+  if (EQ (current_buffer->undo_list, Qt))
+    return;
+
   if (current_buffer != XBUFFER (last_undo_buffer))
     Fundo_boundary ();
   XSET (last_undo_buffer, Lisp_Buffer, current_buffer);
 
-  if (EQ (current_buffer->undo_list, Qt))
-    return;
   if (MODIFF <= current_buffer->save_modified)
     record_first_change ();
 
@@ -53,16 +55,17 @@ record_insert (beg, length)
       if (XTYPE (elt) == Lisp_Cons
 	  && XTYPE (XCONS (elt)->car) == Lisp_Int
 	  && XTYPE (XCONS (elt)->cdr) == Lisp_Int
-	  && XINT (XCONS (elt)->cdr) == beg)
+	  && XINT (XCONS (elt)->cdr) == XINT (beg))
 	{
-	  XSETINT (XCONS (elt)->cdr, beg + length);
+	  XSETINT (XCONS (elt)->cdr, XINT (beg) + XINT (length));
 	  return;
 	}
     }
 
-  XFASTINT (lbeg) = beg;
-  XFASTINT (lend) = beg + length;
-  current_buffer->undo_list = Fcons (Fcons (lbeg, lend), current_buffer->undo_list);
+  lbeg = beg;
+  XSET (lend, Lisp_Int, XINT (beg) + XINT (length));
+  current_buffer->undo_list = Fcons (Fcons (lbeg, lend),
+                                     current_buffer->undo_list);
 }
 
 /* Record that a deletion is about to take place,
@@ -71,14 +74,15 @@ record_insert (beg, length)
 record_delete (beg, length)
      int beg, length;
 {
-  Lisp_Object lbeg, llength, lend, sbeg;
+  Lisp_Object lbeg, lend, sbeg;
+
+  if (EQ (current_buffer->undo_list, Qt))
+    return;
 
   if (current_buffer != XBUFFER (last_undo_buffer))
     Fundo_boundary ();
   XSET (last_undo_buffer, Lisp_Buffer, current_buffer);
 
-  if (EQ (current_buffer->undo_list, Qt))
-    return;
   if (MODIFF <= current_buffer->save_modified)
     record_first_change ();
 
@@ -87,10 +91,16 @@ record_delete (beg, length)
   else
     XFASTINT (sbeg) = beg;
   XFASTINT (lbeg) = beg;
-  XFASTINT (llength) = length;
   XFASTINT (lend) = beg + length;
-  current_buffer->undo_list = Fcons (Fcons (Fbuffer_substring (lbeg, lend), sbeg),
-			     current_buffer->undo_list);
+
+  /* If point isn't at start of deleted range, record where it is.  */
+  if (PT != sbeg)
+    current_buffer->undo_list
+      = Fcons (make_number (PT), current_buffer->undo_list);
+
+  current_buffer->undo_list
+    = Fcons (Fcons (Fbuffer_substring (lbeg, lend), sbeg),
+	     current_buffer->undo_list);
 }
 
 /* Record that a replacement is about to take place,
@@ -116,6 +126,41 @@ record_first_change ()
   current_buffer->undo_list = Fcons (Fcons (Qt, Fcons (high, low)), current_buffer->undo_list);
 }
 
+/* Record a change in property PROP (whose old value was VAL)
+   for LENGTH characters starting at position BEG in BUFFER.  */
+
+record_property_change (beg, length, prop, value, buffer)
+     int beg, length;
+     Lisp_Object prop, value, buffer;
+{
+  Lisp_Object lbeg, lend, entry;
+  struct buffer *obuf = current_buffer;
+  int boundary = 0;
+
+  if (EQ (current_buffer->undo_list, Qt))
+    return;
+
+  if (!EQ (buffer, last_undo_buffer))
+    boundary = 1;
+  last_undo_buffer = buffer;
+
+  /* Switch temporarily to the buffer that was changed.  */
+  current_buffer = XBUFFER (buffer);
+
+  if (boundary)
+    Fundo_boundary ();
+
+  if (MODIFF <= current_buffer->save_modified)
+    record_first_change ();
+
+  XSET (lbeg, Lisp_Int, beg);
+  XSET (lend, Lisp_Int, beg + length);
+  entry = Fcons (Qnil, Fcons (prop, Fcons (value, Fcons (lbeg, lend))));
+  current_buffer->undo_list = Fcons (entry, current_buffer->undo_list);
+
+  current_buffer = obuf;
+}
+
 DEFUN ("undo-boundary", Fundo_boundary, Sundo_boundary, 0, 0, 0,
   "Mark a boundary between units of undo.\n\
 An undo command will stop at this point,\n\
@@ -126,7 +171,7 @@ but another undo command will undo to the previous boundary.")
   if (EQ (current_buffer->undo_list, Qt))
     return Qnil;
   tem = Fcar (current_buffer->undo_list);
-  if (!NULL (tem))
+  if (!NILP (tem))
     current_buffer->undo_list = Fcons (Qnil, current_buffer->undo_list);
   return Qnil;
 }
@@ -134,20 +179,59 @@ but another undo command will undo to the previous boundary.")
 /* At garbage collection time, make an undo list shorter at the end,
    returning the truncated list.
    MINSIZE and MAXSIZE are the limits on size allowed, as described below.
-   In practice, these are the values of undo-threshold and
-   undo-high-threshold.  */
+   In practice, these are the values of undo-limit and
+   undo-strong-limit.  */
 
 Lisp_Object
 truncate_undo_list (list, minsize, maxsize)
      Lisp_Object list;
      int minsize, maxsize;
 {
-  Lisp_Object prev, next, save_prev;
+  Lisp_Object prev, next, last_boundary;
   int size_so_far = 0;
 
   prev = Qnil;
   next = list;
-  save_prev = Qnil;
+  last_boundary = Qnil;
+
+  /* Always preserve at least the most recent undo record.
+     If the first element is an undo boundary, skip past it.
+
+     Skip, skip, skip the undo, skip, skip, skip the undo,
+     Skip, skip, skip the undo, skip to the undo bound'ry. 
+     (Get it?  "Skip to my Loo?")  */
+  if (XTYPE (next) == Lisp_Cons
+      && NILP (XCONS (next)->car))
+    {
+      /* Add in the space occupied by this element and its chain link.  */
+      size_so_far += sizeof (struct Lisp_Cons);
+
+      /* Advance to next element.  */
+      prev = next;
+      next = XCONS (next)->cdr;
+    }
+  while (XTYPE (next) == Lisp_Cons
+	 && ! NILP (XCONS (next)->car))
+    {
+      Lisp_Object elt;
+      elt = XCONS (next)->car;
+
+      /* Add in the space occupied by this element and its chain link.  */
+      size_so_far += sizeof (struct Lisp_Cons);
+      if (XTYPE (elt) == Lisp_Cons)
+	{
+	  size_so_far += sizeof (struct Lisp_Cons);
+	  if (XTYPE (XCONS (elt)->car) == Lisp_String)
+	    size_so_far += (sizeof (struct Lisp_String) - 1
+			    + XSTRING (XCONS (elt)->car)->size);
+	}
+
+      /* Advance to next element.  */
+      prev = next;
+      next = XCONS (next)->cdr;
+    }
+  if (XTYPE (next) == Lisp_Cons)
+    last_boundary = prev;
 
   while (XTYPE (next) == Lisp_Cons)
     {
@@ -158,22 +242,23 @@ truncate_undo_list (list, minsize, maxsize)
 	 either before or after it.  The lower threshold, MINSIZE,
 	 tells us to truncate after it.  If its size pushes past
 	 the higher threshold MAXSIZE as well, we truncate before it.  */
-      if (NULL (elt))
+      if (NILP (elt))
 	{
 	  if (size_so_far > maxsize)
 	    break;
-	  save_prev = prev;
+	  last_boundary = prev;
 	  if (size_so_far > minsize)
 	    break;
 	}
 
       /* Add in the space occupied by this element and its chain link.  */
-      size_so_far += 8;
+      size_so_far += sizeof (struct Lisp_Cons);
       if (XTYPE (elt) == Lisp_Cons)
 	{
-	  size_so_far += 8;
+	  size_so_far += sizeof (struct Lisp_Cons);
 	  if (XTYPE (XCONS (elt)->car) == Lisp_String)
-	    size_so_far += 6 + XSTRING (XCONS (elt)->car)->size;
+	    size_so_far += (sizeof (struct Lisp_String) - 1
+			    + XSTRING (XCONS (elt)->car)->size);
 	}
 
       /* Advance to next element.  */
@@ -182,13 +267,13 @@ truncate_undo_list (list, minsize, maxsize)
     }
 
   /* If we scanned the whole list, it is short enough; don't change it.  */
-  if (NULL (next))
+  if (NILP (next))
     return list;
 
   /* Truncate at the boundary where we decided to truncate.  */
-  if (!NULL (save_prev))
+  if (!NILP (last_boundary))
     {
-      XCONS (save_prev)->cdr = Qnil;
+      XCONS (last_boundary)->cdr = Qnil;
       return list;
     }
   else
@@ -209,7 +294,7 @@ Return what remains of the list.")
   /* If the head of the list is a boundary, it is the boundary
      preceding this command.  Get rid of it and don't count it.  */
   tem = Fcar (list);
-  if (NULL (tem))
+  if (NILP (tem))
     list = Fcdr (list);
 #endif
 
@@ -217,60 +302,97 @@ Return what remains of the list.")
     {
       while (1)
 	{
-	  Lisp_Object next, car, cdr;
+	  Lisp_Object next;
 	  next = Fcar (list);
 	  list = Fcdr (list);
-	  if (NULL (next))
+	  /* Exit inner loop at undo boundary.  */
+	  if (NILP (next))
 	    break;
-	  car = Fcar (next);
-	  cdr = Fcdr (next);
-	  if (EQ (car, Qt))
+	  /* Handle an integer by setting point to that value.  */
+	  if (XTYPE (next) == Lisp_Int)
+	    SET_PT (clip_to_bounds (BEGV, XINT (next), ZV));
+	  else if (XTYPE (next) == Lisp_Cons)
 	    {
-	      Lisp_Object high, low;
-	      int mod_time;
-	      high = Fcar (cdr);
-	      low = Fcdr (cdr);
-	      mod_time = (high << 16) + low;
-	      /* If this records an obsolete save
-		 (not matching the actual disk file)
-		 then don't mark unmodified.  */
-	      if (mod_time != current_buffer->modtime)
-		break;
+	      Lisp_Object car, cdr;
+
+	      car = Fcar (next);
+	      cdr = Fcdr (next);
+	      if (EQ (car, Qt))
+		{
+		  /* Element (t high . low) records previous modtime.  */
+		  Lisp_Object high, low;
+		  int mod_time;
+
+		  high = Fcar (cdr);
+		  low = Fcdr (cdr);
+		  mod_time = (high << 16) + low;
+		  /* If this records an obsolete save
+		     (not matching the actual disk file)
+		     then don't mark unmodified.  */
+		  if (mod_time != current_buffer->modtime)
+		    break;
 #ifdef CLASH_DETECTION
-	      Funlock_buffer ();
+		  Funlock_buffer ();
 #endif /* CLASH_DETECTION */
-	      Fset_buffer_modified_p (Qnil);
-	    }
-	  else if (XTYPE (car) == Lisp_Int && XTYPE (cdr) == Lisp_Int)
-	    {
-	      Lisp_Object end;
-	      if (XINT (car) < BEGV
-		  || XINT (cdr) > ZV)
-		error ("Changes to be undone are outside visible portion of buffer");
-	      Fdelete_region (car, cdr);
-	      Fgoto_char (car);
-	    }
-	  else if (XTYPE (car) == Lisp_String && XTYPE (cdr) == Lisp_Int)
-	    {
-	      Lisp_Object membuf;
-	      int pos = XINT (cdr);
-	      membuf = car;
-	      if (pos < 0)
-		{
-		  if (-pos < BEGV || -pos > ZV)
-		    error ("Changes to be undone are outside visible portion of buffer");
-		  SET_PT (-pos);
-		  Finsert (1, &membuf);
+		  Fset_buffer_modified_p (Qnil);
 		}
-	      else
+	      if (EQ (car, Qnil))
 		{
-		  if (pos < BEGV || pos > ZV)
+		  /* Element (t prop val beg . end) records property change.  */
+		  Lisp_Object beg, end, prop, val;
+
+		  prop = Fcar (cdr);
+		  cdr = Fcdr (cdr);
+		  val = Fcar (cdr);
+		  cdr = Fcdr (cdr);
+		  beg = Fcar (cdr);
+		  end = Fcdr (cdr);
+
+		  Fput_text_property (beg, end, prop, val, Qnil);
+		}
+	      else if (XTYPE (car) == Lisp_Int && XTYPE (cdr) == Lisp_Int)
+		{
+		  /* Element (BEG . END) means range was inserted.  */
+		  Lisp_Object end;
+
+		  if (XINT (car) < BEGV
+		      || XINT (cdr) > ZV)
 		    error ("Changes to be undone are outside visible portion of buffer");
-		  SET_PT (pos);
-		  /* The idea here is to leave mark after this text,
-		     which will be the desirable thing if undoing C-w.  */
-		  Finsert_before_markers (1, &membuf);
-		  SET_PT (pos);
+		  /* Set point first thing, so that undoing this undo
+		     does not send point back to where it is now.  */
+		  Fgoto_char (car);
+		  Fdelete_region (car, cdr);
+		}
+	      else if (XTYPE (car) == Lisp_String && XTYPE (cdr) == Lisp_Int)
+		{
+		  /* Element (STRING . POS) means STRING was deleted.  */
+		  Lisp_Object membuf;
+		  int pos = XINT (cdr);
+
+		  membuf = car;
+		  if (pos < 0)
+		    {
+		      if (-pos < BEGV || -pos > ZV)
+			error ("Changes to be undone are outside visible portion of buffer");
+		      SET_PT (-pos);
+		      Finsert (1, &membuf);
+		    }
+		  else
+		    {
+		      if (pos < BEGV || pos > ZV)
+			error ("Changes to be undone are outside visible portion of buffer");
+		      SET_PT (pos);
+
+		      /* Insert before markers so that if the mark is
+			 currently on the boundary of this deletion, it
+			 ends up on the other side of the now-undeleted
+			 text from point.  Since undo doesn't even keep
+			 track of the mark, this isn't really necessary,
+			 but it may lead to better behavior in certain
+			 situations.  */
+		      Finsert_before_markers (1, &membuf);
+		      SET_PT (pos);
+		    }
 		}
 	    }
 	}

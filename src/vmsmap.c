@@ -1,7 +1,7 @@
 /* VMS mapping of data and alloc arena for GNU Emacs.
    Copyright (C) 1986, 1987 Free Software Foundation, Inc.
    
-This file is part of GNU Emacs.
+   This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -43,18 +43,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
    uses the cluster command to group all Emacs psects into one cluster;
    this keeps the dumped data separate from any loaded libraries. */
 
-#ifdef __GNUC__
-/* We need a large sdata array because otherwise the impure storage will end up
-   in low memory, and this will screw up garbage collection (Emacs will not
-   be able to tell the difference between a string length and an address).
-   This array guarantees that the impure storage is at a sufficiently high
-   address so that this problem will not occur. */
-char sdata[8192] asm("_$$PsectAttributes_NOOVR$$$D$ATA") ;
-char edata[512]  asm("_$$PsectAttributes_NOOVR$$__DATA") ;
-#else
 globaldef {"$D$ATA"} char sdata[512]; /* Start of saved data area */
 globaldef {"__DATA"} char edata[512]; /* End of saved data area */
-#endif
 
 /* Structure to write into first block of map file.
  */
@@ -84,8 +74,7 @@ mapin_data (name)
   int status, size;
   int inadr[2];
   struct map_data map_data;
-
-
+  
   /* Open map file. */
   fab = cc$rms_fab;
   fab.fab$b_fac = FAB$M_BIO|FAB$M_GET;
@@ -106,7 +95,7 @@ mapin_data (name)
   if (status != RMS$_NORMAL)
     lib$stop (status);
   /* Read the header data */
-  rab.rab$l_ubf = (char *) &map_data;
+  rab.rab$l_ubf = &map_data;
   rab.rab$w_usz = sizeof (map_data);
   rab.rab$l_bkt = 0;
   status = sys$read (&rab);
@@ -130,8 +119,8 @@ mapin_data (name)
   if (status != RMS$_NORMAL)
     lib$stop (status);
   /* Map data area. */
-  inadr[0] = (int) map_data.sdata;
-  inadr[1] = (int) map_data.edata;
+  inadr[0] = map_data.sdata;
+  inadr[1] = map_data.edata;
   status = sys$crmpsc (inadr, 0, 0, SEC$M_CRF | SEC$M_WRT, 0, 0, 0,
 		       fab.fab$l_stv, 0, map_data.datablk, 0, 0);
   if (! (status & 1))
@@ -187,7 +176,7 @@ mapout_data (into)
       return 0;
     }
   /* Write the header */
-  rab.rab$l_rbf = (char *) &map_data;
+  rab.rab$l_rbf = &map_data;
   rab.rab$w_rsz = sizeof (map_data);
   status = sys$write (&rab);
   if (status != RMS$_NORMAL)

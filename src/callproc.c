@@ -1,5 +1,5 @@
 /* Synchronous subprocess invocation for GNU Emacs.
-   Copyright (C) 1985, 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1993 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -18,12 +18,23 @@ along with GNU Emacs; see the file COPYING.  If not, write to
 the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-/* This must precede sys/signal.h on certain machines.  */
-#include <sys/types.h>
 #include <signal.h>
+#include <errno.h>
 
 #include "config.h"
 
+extern int errno;
+#ifndef VMS
+extern char *sys_errlist[];
+#endif
+
+/* Define SIGCHLD as an alias for SIGCLD.  */
+
+#if !defined (SIGCHLD) && defined (SIGCLD)
+#define SIGCHLD SIGCLD
+#endif /* SIGCLD */
+
+#include <sys/types.h>
 #define PRIO_PROCESS 0
 #include <sys/file.h>
 #ifdef USG5
@@ -42,26 +53,22 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "commands.h"
 #include "buffer.h"
 #include "paths.h"
+#include "process.h"
+#include "syssignal.h"
+
+#ifdef VMS
+extern noshare char **environ;
+#else
+extern char **environ;
+#endif
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
-Lisp_Object Vexec_path, Vexec_directory;
+Lisp_Object Vexec_path, Vexec_directory, Vdata_directory;
 
 Lisp_Object Vshell_file_name;
 
-#ifndef MAINTAIN_ENVIRONMENT
-/* List of strings to append to front of environment of
-   all subprocesses when they are started.  */
-
 Lisp_Object Vprocess_environment;
-#endif
-
-#ifdef BSD4_1
-/* Set nonzero when a synchronous subprocess is made,
-   and set to zero again when it is observed to die.
-   We wait for this to be zero in order to wait for termination.  */
-int synch_process_pid;
-#endif /* BSD4_1 */
 
 /* True iff we are about to fork off a synchronous process or if we
    are waiting for it.  */
@@ -70,48 +77,61 @@ int synch_process_alive;
 /* Nonzero => this is a string explaining death of synchronous subprocess.  */
 char *synch_process_death;
 
-/* Exit code of synchronous subprocess if positive,
-   minus the signal number if negative.  */
+/* If synch_process_death is zero,
+   this is exit code of synchronous subprocess.  */
 int synch_process_retcode;
 
+#ifndef VMS  /* VMS version is in vmsproc.c.  */
+
+static Lisp_Object
+call_process_kill (fdpid)
+     Lisp_Object fdpid;
+{
+  close (XFASTINT (Fcar (fdpid)));
+  EMACS_KILLPG (XFASTINT (Fcdr (fdpid)), SIGKILL);
+  synch_process_alive = 0;
+  return Qnil;
+}
+
 Lisp_Object
 call_process_cleanup (fdpid)
      Lisp_Object fdpid;
 {
-  register Lisp_Object fd, pid;
-  fd = Fcar (fdpid);
-  pid = Fcdr (fdpid);
-  close (XFASTINT (fd));
-  kill (XFASTINT (pid), SIGKILL);
+  register int pid = XFASTINT (Fcdr (fdpid));
+
+  if (EMACS_KILLPG (pid, SIGINT) == 0)
+    {
+      int count = specpdl_ptr - specpdl;
+      record_unwind_protect (call_process_kill, fdpid);
+      message1 ("Waiting for process to die...(type C-g again to kill it instantly)");
+      immediate_quit = 1;
+      QUIT;
+      wait_for_termination (pid);
+      immediate_quit = 0;
+      specpdl_ptr = specpdl + count; /* Discard the unwind protect.  */
+      message1 ("Waiting for process to die...done");
+    }
+  synch_process_alive = 0;
+  close (XFASTINT (Fcar (fdpid)));
   return Qnil;
 }
 
-#ifdef VMS
-#ifdef __GNUC__
-#define	environ $$PsectAttributes_NOSHR$$environ
-extern char **environ;
-#else
-extern noshare char **environ;
-#endif
-#else
-extern char **environ;
-#endif
-
 DEFUN ("call-process", Fcall_process, Scall_process, 1, MANY, 0,
-  "Call PROGRAM in separate process.\n\
-Program's input comes from file INFILE (nil means /dev/null).\n\
+  "Call PROGRAM synchronously in separate process.\n\
+The program's input comes from file INFILE (nil means `/dev/null').\n\
 Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Fourth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
 Remaining arguments are strings passed as command arguments to PROGRAM.\n\
-Returns nil if BUFFER is 0; otherwise waits for PROGRAM to terminate\n\
+If BUFFER is 0, returns immediately with value nil.\n\
+Otherwise waits for PROGRAM to terminate\n\
 and returns a numeric exit status or a signal description string.\n\
-If you quit, the process is killed with SIGKILL.")
+If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   (nargs, args)
      int nargs;
      register Lisp_Object *args;
 {
-  Lisp_Object display, buffer, path;
+  Lisp_Object infile, buffer, current_dir, display, path;
   int fd[2];
   int filefd;
   register int pid;
@@ -120,34 +140,63 @@ If you quit, the process is killed with SIGKILL.")
   register unsigned char **new_argv
     = (unsigned char **) alloca ((max (2, nargs - 2)) * sizeof (char *));
   struct buffer *old = current_buffer;
-
+#if 0
+  int mask;
+#endif
   CHECK_STRING (args[0], 0);
 
-  if (nargs <= 1 || NULL (args[1]))
-#ifdef VMS
-    args[1] = build_string ("NLA0:");
-#else
-    args[1] = build_string ("/dev/null");
-#endif /* not VMS */
+  if (nargs >= 2 && ! NILP (args[1]))
+    {
+      infile = Fexpand_file_name (args[1], current_buffer->directory);
+      CHECK_STRING (infile, 1);
+    }
   else
-    args[1] = Fexpand_file_name (args[1], current_buffer->directory);
+    infile = build_string (NULL_DEVICE);
 
-  CHECK_STRING (args[1], 1);
+  if (nargs >= 3)
+    {
+      register Lisp_Object tem;
 
+      buffer = tem = args[2];
+      if (!(EQ (tem, Qnil)
+	    || EQ (tem, Qt)
+	    || XFASTINT (tem) == 0))
+	{
+	  buffer = Fget_buffer (tem);
+	  CHECK_BUFFER (buffer, 2);
+	}
+    }
+  else 
+    buffer = Qnil;
+
+  /* Make sure that the child will be able to chdir to the current
+     buffer's current directory, or its unhandled equivalent.  We
+     can't just have the child check for an error when it does the
+     chdir, since it's in a vfork.
+
+     We have to GCPRO around this because Fexpand_file_name,
+     Funhandled_file_name_directory, and Ffile_accessible_directory_p
+     might call a file name handling function.  The argument list is
+     protected by the caller, so all we really have to worry about is
+     buffer.  */
   {
-    register Lisp_Object tem;
-    buffer = tem = args[2];
-    if (nargs <= 2)
-      buffer = Qnil;
-    else if (!(EQ (tem, Qnil) || EQ (tem, Qt)
-	       || XFASTINT (tem) == 0))
-      {
-	buffer = Fget_buffer (tem);
-	CHECK_BUFFER (buffer, 2);
-      }
+    struct gcpro gcpro1, gcpro2, gcpro3;
+
+    current_dir = current_buffer->directory;
+
+    GCPRO3 (infile, buffer, current_dir);
+
+    current_dir = 
+      expand_and_dir_to_file
+	(Funhandled_file_name_directory (current_dir), Qnil);
+    if (NILP (Ffile_accessible_directory_p (current_dir)))
+      report_file_error ("Setting current directory",
+			 Fcons (current_buffer->directory, Qnil));
+
+    UNGCPRO;
   }
 
-  display = nargs > 3 ? args[3] : Qnil;
+  display = nargs >= 4 ? args[3] : Qnil;
 
   {
     register int i;
@@ -161,14 +210,14 @@ If you quit, the process is killed with SIGKILL.")
     new_argv[i - 3] = 0;
   }
 
-  filefd = open (XSTRING (args[1])->data, O_RDONLY, 0);
+  filefd = open (XSTRING (infile)->data, O_RDONLY, 0);
   if (filefd < 0)
     {
-      report_file_error ("Opening process input file", Fcons (args[1], Qnil));
+      report_file_error ("Opening process input file", Fcons (infile, Qnil));
     }
   /* Search for program; barf if not found.  */
-  openp (Vexec_path, args[0], "", &path, 1);
-  if (NULL (path))
+  openp (Vexec_path, args[0], EXEC_SUFFIXES, &path, 1);
+  if (NILP (path))
     {
       close (filefd);
       report_file_error ("Searching for program", Fcons (args[0], Qnil));
@@ -176,11 +225,7 @@ If you quit, the process is killed with SIGKILL.")
   new_argv[0] = XSTRING (path)->data;
 
   if (XTYPE (buffer) == Lisp_Int)
-#ifdef VMS
-    fd[1] = open ("NLA0:", 0), fd[0] = -1;
-#else
-    fd[1] = open ("/dev/null", O_WRONLY), fd[0] = -1;
-#endif /* not VMS */
+    fd[1] = open (NULL_DEVICE, O_WRONLY), fd[0] = -1;
   else
     {
       pipe (fd);
@@ -190,40 +235,39 @@ If you quit, the process is killed with SIGKILL.")
 #endif
     }
 
-  synch_process_death = 0;
-  synch_process_retcode = 0;
-
   {
     /* child_setup must clobber environ in systems with true vfork.
        Protect it from permanent change.  */
     register char **save_environ = environ;
     register int fd1 = fd[1];
-    char **env;
 
-#ifdef MAINTAIN_ENVIRONMENT
-    env = (char **) alloca (size_of_current_environ ());
-    get_current_environ (env);
-#else
-    env = environ;
-#endif /* MAINTAIN_ENVIRONMENT */
+#if 0  /* Some systems don't have sigblock.  */
+    mask = sigblock (sigmask (SIGCHLD));
+#endif
+
+    /* Record that we're about to create a synchronous process.  */
+    synch_process_alive = 1;
 
     pid = vfork ();
-#ifdef BSD4_1
-    /* cause SIGCHLD interrupts to look for this pid. */
-    synch_process_pid = pid;
-#endif /* BSD4_1 */
 
     if (pid == 0)
       {
 	if (fd[0] >= 0)
 	  close (fd[0]);
 #ifdef USG
-#ifdef HAVE_PTYS
-	setpgrp ();
-#endif
-#endif
-	child_setup (filefd, fd1, fd1, new_argv, env);
+        setpgrp ();
+#else
+        setpgrp (pid, pid);
+#endif /* USG */
+	child_setup (filefd, fd1, fd1, new_argv, 0, current_dir);
       }
+
+#if 0
+    /* Tell SIGCHLD handler to look for this pid.  */
+    synch_process_pid = pid;
+    /* Now let SIGCHLD come through.  */
+    sigsetmask (mask);
+#endif
 
     environ = save_environ;
 
@@ -240,10 +284,16 @@ If you quit, the process is killed with SIGKILL.")
   if (XTYPE (buffer) == Lisp_Int)
     {
 #ifndef subprocesses
+      /* If Emacs has been built with asynchronous subprocess support,
+	 we don't need to do this, I think because it will then have
+	 the facilities for handling SIGCHLD.  */
       wait_without_blocking ();
-#endif subprocesses
+#endif /* subprocesses */
       return Qnil;
     }
+
+  synch_process_death = 0;
+  synch_process_retcode = 0;
 
   record_unwind_protect (call_process_cleanup,
 			 Fcons (make_number (fd[0]), make_number (pid)));
@@ -261,9 +311,9 @@ If you quit, the process is killed with SIGKILL.")
     while ((nread = read (fd[0], buf, sizeof buf)) > 0)
       {
 	immediate_quit = 0;
-	if (!NULL (buffer))
+	if (!NILP (buffer))
 	  insert (buf, nread);
-	if (!NULL (display) && FROM_KBD)
+	if (!NILP (display) && INTERACTIVE)
 	  redisplay_preserve_echo_area ();
 	immediate_quit = 1;
 	QUIT;
@@ -277,48 +327,64 @@ If you quit, the process is killed with SIGKILL.")
 
   set_buffer_internal (old);
 
-  unbind_to (count);
+  unbind_to (count, Qnil);
 
   if (synch_process_death)
     return build_string (synch_process_death);
   return make_number (synch_process_retcode);
 }
+#endif
+
+static Lisp_Object
+delete_temp_file (name)
+     Lisp_Object name;
+{
+  unlink (XSTRING (name)->data);
+}
 
 DEFUN ("call-process-region", Fcall_process_region, Scall_process_region,
   3, MANY, 0,
-  "Send text from START to END to a process running PROGRAM.\n\
-Delete the text if DELETE is non-nil.\n\
+  "Send text from START to END to a synchronous process running PROGRAM.\n\
+Delete the text if fourth arg DELETE is non-nil.\n\
 Insert output in BUFFER before point; t means current buffer;\n\
  nil for BUFFER means discard it; 0 means discard and don't wait.\n\
 Sixth arg DISPLAY non-nil means redisplay buffer as output is inserted.\n\
-Remaining arguments are strings passed as command arguments to PROGRAM.\n\
-Returns nil if BUFFER is 0; otherwise waits for PROGRAM to terminate\n\
+Remaining args are passed to PROGRAM at startup as command args.\n\
+If BUFFER is nil, returns immediately with value nil.\n\
+Otherwise waits for PROGRAM to terminate\n\
 and returns a numeric exit status or a signal description string.\n\
-If you quit, the process is killed with SIGKILL.")
+If you quit, the process is killed with SIGINT, or SIGKILL if you quit again.")
   (nargs, args)
      int nargs;
      register Lisp_Object *args;
 {
-  register Lisp_Object filename_string, start, end, status;
+  register Lisp_Object filename_string, start, end;
   char tempfile[20];
+  int count = specpdl_ptr - specpdl;
 
+#ifdef VMS
+  strcpy (tempfile, "tmp:emacsXXXXXX.");
+#else
   strcpy (tempfile, "/tmp/emacsXXXXXX");
+#endif
   mktemp (tempfile);
 
   filename_string = build_string (tempfile);
   start = args[0];
   end = args[1];
   Fwrite_region (start, end, filename_string, Qnil, Qlambda);
+  record_unwind_protect (delete_temp_file, filename_string);
 
-  if (!NULL (args[3]))
+  if (!NILP (args[3]))
     Fdelete_region (start, end);
 
   args[3] = filename_string;
-  status = Fcall_process (nargs - 2, args + 2);
-  unlink (tempfile);
-  return status;
+
+  return unbind_to (count, Fcall_process (nargs - 2, args + 2));
 }
 
+#ifndef VMS /* VMS version is in vmsproc.c.  */
+
 /* This is the last thing run in a newly forked inferior
    either synchronous or asynchronous.
    Copy descriptors IN, OUT and ERR as descriptors 0, 1 and 2.
@@ -329,16 +395,31 @@ If you quit, the process is killed with SIGKILL.")
    Therefore, the superior process must save and restore the value
    of environ around the vfork and the call to this function.
 
-   ENV is the environment */
+   ENV is the environment for the subprocess.
 
-child_setup (in, out, err, new_argv, env)
+   SET_PGRP is nonzero if we should put the subprocess into a separate
+   process group.  
+
+   CURRENT_DIR is an elisp string giving the path of the current
+   directory the subprocess should have.  Since we can't really signal
+   a decent error from within the child, this should be verified as an
+   executable directory by the parent.  */
+
+child_setup (in, out, err, new_argv, set_pgrp, current_dir)
      int in, out, err;
      register char **new_argv;
-     char **env;
+     int set_pgrp;
+     Lisp_Object current_dir;
 {
+  char **env;
+
   register int pid = getpid();
 
-  setpriority (PRIO_PROCESS, pid, 0);
+  {
+    extern int emacs_priority;
+
+    nice (- emacs_priority);
+  }
 
 #ifdef subprocesses
   /* Close Emacs's descriptors that this process should not have.  */
@@ -350,21 +431,25 @@ child_setup (in, out, err, new_argv, env)
      If using vfork and C_ALLOCA it is safe because that changes
      the superior's static variables as if the superior had done alloca
      and will be cleaned up in the usual way.  */
+  {
+    register unsigned char *temp;
+    register int i;
 
-  if (XTYPE (current_buffer->directory) == Lisp_String)
-    {
-      register unsigned char *temp;
-      register int i;
+    i = XSTRING (current_dir)->size;
+    temp = (unsigned char *) alloca (i + 2);
+    bcopy (XSTRING (current_dir)->data, temp, i);
+    if (temp[i - 1] != '/') temp[i++] = '/';
+    temp[i] = 0;
 
-      i = XSTRING (current_buffer->directory)->size;
-      temp = (unsigned char *) alloca (i + 2);
-      bcopy (XSTRING (current_buffer->directory)->data, temp, i);
-      if (temp[i - 1] != '/') temp[i++] = '/';
-      temp[i] = 0;
-      chdir (temp);
-    }
+    /* We can't signal an Elisp error here; we're in a vfork.  Since
+       the callers check the current directory before forking, this
+       should only return an error if the directory's permissions
+       are changed between the check and this chdir, but we should
+       at least check.  */
+    if (chdir (temp) < 0)
+      exit (errno);
+  }
 
-#ifndef MAINTAIN_ENVIRONMENT
   /* Set `env' to a vector of the strings in Vprocess_environment.  */
   {
     register Lisp_Object tem;
@@ -378,18 +463,49 @@ child_setup (in, out, err, new_argv, env)
 	 tem = XCONS (tem)->cdr)
       new_length++;
 
-    /* new_length + 1 to include terminating 0 */
+    /* new_length + 1 to include terminating 0.  */
     env = new_env = (char **) alloca ((new_length + 1) * sizeof (char *));
 
-    /* Copy the env strings into new_env.  */
+    /* Copy the Vprocess_environment strings into new_env.  */
     for (tem = Vprocess_environment;
 	 (XTYPE (tem) == Lisp_Cons
 	  && XTYPE (XCONS (tem)->car) == Lisp_String);
 	 tem = XCONS (tem)->cdr)
-      *new_env++ = (char *) XSTRING (XCONS (tem)->car)->data;
+      {
+	char **ep = env;
+	char *string = (char *) XSTRING (XCONS (tem)->car)->data;
+	/* See if this string duplicates any string already in the env.
+	   If so, don't put it in.
+	   When an env var has multiple definitions,
+	   we keep the definition that comes first in process-environment.  */
+	for (; ep != new_env; ep++)
+	  {
+	    char *p = *ep, *q = string;
+	    while (1)
+	      {
+		if (*q == 0)
+		  /* The string is malformed; might as well drop it.  */
+		  goto duplicate;
+		if (*q != *p)
+		  break;
+		if (*q == '=')
+		  goto duplicate;
+		p++, q++;
+	      }
+	  }
+	*new_env++ = string;
+      duplicate: ;
+      }
     *new_env = 0;
   }
-#endif /* Not MAINTAIN_ENVIRONMENT */
+
+  /* Make sure that in, out, and err are not actually already in
+     descriptors zero, one, or two; this could happen if Emacs is
+     started with its standard in, our, or error closed, as might
+     happen under X.  */
+  in = relocate_fd (in, 3);
+  out = relocate_fd (out, 3);
+  err = relocate_fd (err, 3);
 
   close (0);
   close (1);
@@ -403,9 +519,7 @@ child_setup (in, out, err, new_argv, env)
   close (err);
 
 #ifdef USG
-#ifndef HAVE_PTYS
   setpgrp ();			/* No arguments but equivalent in this case */
-#endif
 #else
   setpgrp (pid, pid);
 #endif /* USG */
@@ -413,7 +527,7 @@ child_setup (in, out, err, new_argv, env)
 
 #ifdef vipc
   something missing here;
-#endif vipc
+#endif /* vipc */
 
   /* execvp does not accept an environment arg so the only way
      to pass this environment is to set environ.  Our caller
@@ -425,33 +539,144 @@ child_setup (in, out, err, new_argv, env)
   write (1, new_argv[0], strlen (new_argv[0]));
   _exit (1);
 }
+
+/* Move the file descriptor FD so that its number is not less than MIN.
+   If the file descriptor is moved at all, the original is freed.  */
+int
+relocate_fd (fd, min)
+     int fd, min;
+{
+  if (fd >= min)
+    return fd;
+  else
+    {
+      int new = dup (fd);
+      if (new == -1)
+	{
+	  char *message1 = "Error while setting up child: ";
+	  char *message2 = "\n";
+	  write (2, message1, strlen (message1));
+	  write (2, sys_errlist[errno], strlen (sys_errlist[errno]));
+	  write (2, message2, strlen (message2));
+	  _exit (1);
+	}
+      /* Note that we hold the original FD open while we recurse,
+	 to guarantee we'll get a new FD if we need it.  */
+      new = relocate_fd (new, min);
+      close (fd);
+      return new;
+    }
+}
+
+static int
+getenv_internal (var, varlen, value, valuelen)
+     char *var;
+     int varlen;
+     char **value;
+     int *valuelen;
+{
+  Lisp_Object scan;
+
+  for (scan = Vprocess_environment; CONSP (scan); scan = XCONS (scan)->cdr)
+    {
+      Lisp_Object entry = XCONS (scan)->car;
+      
+      if (XTYPE (entry) == Lisp_String
+	  && XSTRING (entry)->size > varlen
+	  && XSTRING (entry)->data[varlen] == '='
+	  && ! bcmp (XSTRING (entry)->data, var, varlen))
+	{
+	  *value    = (char *) XSTRING (entry)->data + (varlen + 1);
+	  *valuelen = XSTRING (entry)->size - (varlen + 1);
+	  return 1;
+	}
+    }
+
+  return 0;
+}
+
+DEFUN ("getenv", Fgetenv, Sgetenv, 1, 2, 0,
+  "Return the value of environment variable VAR, as a string.\n\
+VAR should be a string.  Value is nil if VAR is undefined in the environment.\n\
+This function consults the variable ``process-environment'' for its value.")
+  (var)
+     Lisp_Object var;
+{
+  char *value;
+  int valuelen;
+
+  CHECK_STRING (var, 0);
+  if (getenv_internal (XSTRING (var)->data, XSTRING (var)->size,
+		       &value, &valuelen))
+    return make_string (value, valuelen);
+  else
+    return Qnil;
+}
+
+/* A version of getenv that consults process_environment, easily
+   callable from C.  */
+char *
+egetenv (var)
+     char *var;
+{
+  char *value;
+  int valuelen;
+
+  if (getenv_internal (var, strlen (var), &value, &valuelen))
+    return value;
+  else
+    return 0;
+}
+
+#endif /* not VMS */
 
 init_callproc ()
 {
   register char * sh;
-  extern char **environ;
-  register char **envp;
-  Lisp_Object execdir;
+  Lisp_Object tempdir;
 
-  /* Turn PATH_EXEC into a path.  Don't look at environment.  */
-  Vexec_path = decode_env_path (0, PATH_EXEC);
+  {
+    char *data_dir = egetenv ("EMACSDATA");
+    
+    Vdata_directory =
+      Ffile_name_as_directory
+	(build_string (data_dir ? data_dir : PATH_DATA));
+  }
+
+  /* Check the EMACSPATH environment variable, defaulting to the
+     PATH_EXEC path from paths.h.  */
+  Vexec_path = decode_env_path ("EMACSPATH", PATH_EXEC);
   Vexec_directory = Ffile_name_as_directory (Fcar (Vexec_path));
   Vexec_path = nconc2 (decode_env_path ("PATH", ""), Vexec_path);
 
-  execdir = Fdirectory_file_name (Vexec_directory);
-  if (access (XSTRING (execdir)->data, 0) < 0)
+  tempdir = Fdirectory_file_name (Vexec_directory);
+  if (access (XSTRING (tempdir)->data, 0) < 0)
     {
-      printf ("Warning: executable/documentation dir (%s) does not exist.\n",
+      printf ("Warning: arch-dependent data dir (%s) does not exist.\n",
 	      XSTRING (Vexec_directory)->data);
       sleep (2);
     }
 
-  sh = (char *) egetenv ("SHELL");
-  Vshell_file_name = build_string (sh ? sh : "/bin/sh");
+  tempdir = Fdirectory_file_name (Vdata_directory);
+  if (access (XSTRING (tempdir)->data, 0) < 0)
+    {
+      printf ("Warning: arch-independent data dir (%s) does not exist.\n",
+	      XSTRING (Vdata_directory)->data);
+      sleep (2);
+    }
 
-#ifndef MAINTAIN_ENVIRONMENT
-  /* The equivalent of this operation was done
-     in init_environ in environ.c if MAINTAIN_ENVIRONMENT */
+#ifdef VMS
+  Vshell_file_name = build_string ("*dcl*");
+#else
+  sh = (char *) getenv ("SHELL");
+  Vshell_file_name = build_string (sh ? sh : "/bin/sh");
+#endif
+}
+
+set_process_environment ()
+{
+  register char **envp;
+
   Vprocess_environment = Qnil;
 #ifndef CANNOT_DUMP
   if (initialized)
@@ -459,7 +684,6 @@ init_callproc ()
     for (envp = environ; *envp; envp++)
       Vprocess_environment = Fcons (build_string (*envp),
 				    Vprocess_environment);
-#endif /* MAINTAIN_ENVIRONMENT */
 }
 
 syms_of_callproc ()
@@ -473,15 +697,22 @@ Initialized from the SHELL environment variable.");
 Each element is a string (directory name) or nil (try default directory).");
 
   DEFVAR_LISP ("exec-directory", &Vexec_directory,
-    "Directory that holds programs that come with GNU Emacs,\n\
-intended for Emacs to invoke.");
+    "Directory of architecture-dependent files that come with GNU Emacs,\n\
+especially executable programs intended for Emacs to invoke.");
 
-#ifndef MAINTAIN_ENVIRONMENT
+  DEFVAR_LISP ("data-directory", &Vdata_directory,
+    "Directory of architecture-independent files that come with GNU Emacs,\n\
+intended for Emacs to use.");
+
   DEFVAR_LISP ("process-environment", &Vprocess_environment,
-    "List of strings to append to environment of subprocesses that are started.\n\
-Each string should have the format ENVVARNAME=VALUE.");
-#endif
+    "List of environment variables for subprocesses to inherit.\n\
+Each element should be a string of the form ENVVARNAME=VALUE.\n\
+The environment which Emacs inherits is placed in this variable\n\
+when Emacs starts.");
 
+#ifndef VMS
   defsubr (&Scall_process);
+  defsubr (&Sgetenv);
+#endif
   defsubr (&Scall_process_region);
 }

@@ -1,6 +1,4 @@
 /* Modified version of unexec for convex machines.
-   Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
-
    Note that the GNU project considers support for the peculiarities
    of the Convex operating system a peripheral activity which should
    not be allowed to divert effort from development of the GNU system.
@@ -9,26 +7,26 @@
    think about it, or about whether other Emacs maintenance might
    break it.
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 1, or (at your option)
-    any later version.
+   Copyright (C) 1985, 1986, 1988 Free Software Foundation, Inc.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This file is part of GNU Emacs.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+GNU Emacs is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 1, or (at your option)
+any later version.
 
-In other words, you are welcome to use, share and improve this program.
-You are forbidden to forbid anyone else to use, share and improve
-what you give them.   Help stamp out software-hoarding!  */
+GNU Emacs is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GNU Emacs; see the file COPYING.  If not, write to
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
-/* modifyed for C-1 arch by jthomp@convex 871103 */
+/* modified for C-1 arch by jthomp@convex 871103 */
 /* Corrected to support convex SOFF object file formats and thread specific
  * regions.  streepy@convex 890302
 */

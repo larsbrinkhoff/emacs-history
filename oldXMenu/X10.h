@@ -1,4 +1,4 @@
-/* $Header: X10.h,v 8.1 89/07/27 14:16:10 merge Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/X10.h,v 1.1 1992/04/11 22:10:21 jimb Exp $ */
 /* 
  * Copyright 1985, 1986, 1987 by the Massachusetts Institute of Technology
  *

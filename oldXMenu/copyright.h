@@ -1,4 +1,4 @@
-/* $Header: copyright.h,v 8.0 88/08/19 13:47:05 nathanm Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/copyright.h,v 1.1 1992/04/11 22:10:22 jimb Exp $ */
 /*
 
 Copyright 1985, 1986, 1987 by the Massachusetts Institute of Technology

@@ -1,11 +1,14 @@
-;; Text mode, and its ideosyncratic commands.
-;; Copyright (C) 1985 Free Software Foundation, Inc.
+;;; text-mode.el --- text mode, and its idiosyncratic commands.
+
+;; Copyright (C) 1985, 1992 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +20,13 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+
+;;; Commentary:
+
+;; This package provides the fundamental text mode documented in the
+;; Emacs user's manual.
+
+;;; Code:
 
 (defvar text-mode-syntax-table nil
   "Syntax table used while in text mode.")
@@ -32,7 +42,11 @@
   (modify-syntax-entry ?\\ ".   " text-mode-syntax-table)
   (modify-syntax-entry ?' "w   " text-mode-syntax-table))
 
-(defvar text-mode-map nil "")
+(defvar text-mode-map nil
+  "Keymap for Text mode.
+Many other modes, such as Mail mode, Outline mode and Indented Text mode,
+inherit all the commands defined in this map.")
+
 (if text-mode-map
     ()
   (setq text-mode-map (make-sparse-keymap))
@@ -49,7 +63,7 @@
 
 (defun text-mode ()
   "Major mode for editing text intended for humans to read.  Special commands:\\{text-mode-map}
-Turning on text-mode calls the value of the variable text-mode-hook,
+Turning on Text mode calls the value of the variable `text-mode-hook',
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
@@ -60,18 +74,22 @@ if that value is non-nil."
   (set-syntax-table text-mode-syntax-table)
   (run-hooks 'text-mode-hook))
 
-(defvar indented-text-mode-map ())
+(defvar indented-text-mode-map ()
+  "Keymap for Indented Text mode.
+All the commands defined in Text mode are inherited unless overridden.")
+
 (if indented-text-mode-map
     ()
-  (setq indented-text-mode-map (make-sparse-keymap))
-  (define-key indented-text-mode-map "\t" 'indent-relative)
-  (define-key indented-text-mode-map "\es" 'center-line)
-  (define-key indented-text-mode-map "\eS" 'center-paragraph))
+  ;; Make different definintion for TAB before the one in text-mode-map, but
+  ;; share the rest.
+  (let ((newmap (make-sparse-keymap)))
+    (define-key newmap "\t" 'indent-relative)
+    (setq indented-text-mode-map (nconc newmap text-mode-map))))
 
 (defun indented-text-mode ()
   "Major mode for editing indented text intended for humans to read.\\{indented-text-mode-map}
-Turning on indented-text-mode calls the value of the variable text-mode-hook,
-if that value is non-nil."
+Turning on `indented-text-mode' calls the value of the variable
+`text-mode-hook', if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
   (use-local-map text-mode-map)
@@ -86,8 +104,8 @@ if that value is non-nil."
   (run-hooks 'text-mode-hook))
 
 (defun center-paragraph ()
-  "Center each line in the paragraph at or after point.
-See center-line for more info."
+  "Center each nonblank line in the paragraph at or after point.
+See `center-line' for more info."
   (interactive)
   (save-excursion
     (forward-paragraph)
@@ -97,8 +115,8 @@ See center-line for more info."
       (center-region (point) end))))
 
 (defun center-region (from to)
-  "Center each line starting in the region.
-See center-line for more info."
+  "Center each nonblank line starting in the region.
+See `center-line' for more info."
   (interactive "r")
   (if (> from to)
       (let ((tem to))
@@ -108,12 +126,13 @@ See center-line for more info."
       (narrow-to-region from to)
       (goto-char from)
       (while (not (eobp))
-	(center-line)
+	(or (save-excursion (skip-chars-forward " \t") (eolp))
+	    (center-line))
 	(forward-line 1)))))
 
 (defun center-line ()
   "Center the line point is on, within the width specified by `fill-column'.
-This means adjusting the indentation to match
+This means adjusting the indentation so that it equals
 the distance between the end of the text and `fill-column'."
   (interactive)
   (save-excursion
@@ -127,3 +146,5 @@ the distance between the end of the text and `fill-column'."
       (indent-to 
 	(+ left-margin 
 	   (/ (- fill-column left-margin line-length) 2))))))
+
+;;; text-mode.el ends here

@@ -1,17 +1,16 @@
-;; Note: use
-;;  (autoload 'icon-mode "icon" nil t)
-;;  (setq auto-mode-alist (cons '("\\.icn$" . icon-mode) auto-mode-alist))
-;; if not permanently installed in your emacs
+;;; icon.el --- mode for editing Icon code
 
-;; Icon code editing commands for Emacs
-;; from c-mode.el  13-Apr-88  Chris Smith;  bugs to convex!csmith
-;; Copyright (C) 1988 Free Software Foundation, Inc.
+;; Copyright (C) 1989 Free Software Foundation, Inc.
+
+;; Author: Chris Smith <convex!csmith>
+;; Created: 15 Feb 89
+;; Keywords: languages
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -23,6 +22,16 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; A major mode for editing the Icon programming language.
+;;
+;; Note: use
+;;  (autoload 'icon-mode "icon" nil t)
+;;  (setq auto-mode-alist (cons '("\\.icn$" . icon-mode) auto-mode-alist))
+;; if not permanently installed in your emacs
+
+;;; Code:
 
 (defvar icon-mode-abbrev-table nil
   "Abbrev table in use in Icon-mode buffers.")
@@ -77,8 +86,8 @@
 This is in addition to icon-continued-statement-offset.")
 
 (defconst icon-auto-newline nil
-  "*Non-nil means automatically newline before and after braces,
-and after colons and semicolons, inserted in C code.")
+  "*Non-nil means automatically newline before and after braces
+inserted in Icon code.")
 
 (defconst icon-tab-always-indent t
   "*Non-nil means TAB in Icon mode should always reindent the current line,
@@ -107,15 +116,15 @@ Variables controlling indentation style:
     then-clause of an if or body of a while.
  icon-continued-brace-offset
     Extra indentation given to a brace that starts a substatement.
-    This is in addition to icon-continued-statement-offset.
+    This is in addition to `icon-continued-statement-offset'.
  icon-brace-offset
     Extra indentation for line if it starts with an open brace.
  icon-brace-imaginary-offset
     An open brace following other text is treated as if it were
     this far to the right of the start of its line.
 
-Turning on Icon mode calls the value of the variable icon-mode-hook with no args,
-if that value is non-nil."
+Turning on Icon mode calls the value of the variable `icon-mode-hook'
+with no args, if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
   (use-local-map icon-mode-map)
@@ -139,20 +148,19 @@ if that value is non-nil."
   (setq comment-column 32)
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip "# *")
-  (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'icon-comment-indent)
+  (make-local-variable 'comment-indent-function)
+  (setq comment-indent-function 'icon-comment-indent)
   (run-hooks 'icon-mode-hook))
 
-;; This is used by indent-for-comment
-;; to decide how much to indent a comment in Icon code
-;; based on its context.
+;; This is used by indent-for-comment to decide how much to
+;; indent a comment in Icon code based on its context.
 (defun icon-comment-indent ()
   (if (looking-at "^#")
-      0				;Existing comment at bol stays there.
+      0	
     (save-excursion
       (skip-chars-backward " \t")
-      (max (1+ (current-column))	;Else indent at comment column
-	   comment-column))))	; except leave at least one space.
+      (max (if (bolp) 0 (1+ (current-column)))
+	   comment-column))))
 
 (defun electric-icon-brace (arg)
   "Insert character and correct line's indentation."
@@ -187,14 +195,14 @@ if that value is non-nil."
 (defun icon-indent-command (&optional whole-exp)
   (interactive "P")
   "Indent current line as Icon code, or in some cases insert a tab character.
-If icon-tab-always-indent is non-nil (the default), always indent current line.
-Otherwise, indent the current line only if point is at the left margin
+If `icon-tab-always-indent' is non-nil (the default), always indent current
+line.  Otherwise, indent the current line only if point is at the left margin
 or in the line's indentation; otherwise insert a tab.
 
-A numeric argument, regardless of its value,
-means indent rigidly all the lines of the expression starting after point
-so that this line becomes properly indented.
-The relative indentation among the lines of the expression are preserved."
+A numeric argument, regardless of its value, means indent rigidly all the
+lines of the expression starting after point so that this line becomes
+properly indented.  The relative indentation among the lines of the
+expression are preserved."
   (if whole-exp
       ;; If arg, always indent this line as Icon
       ;; and shift remaining lines of expression the same amount.
@@ -287,16 +295,18 @@ Returns nil if line starts inside a string, t if in a comment."
 	     (goto-char (1+ containing-sexp))
 	     (current-column))
 	    (t
-	      ;; Statement level.  Is it a continuation or a new statement?
-	      ;; Find previous non-comment character.
 	      (if toplevel
+		  ;; Outside any procedures.
 		  (progn (icon-backward-to-noncomment (point-min))
 			 (if (icon-is-continuation-line)
 			     icon-continued-statement-offset 0))
+		;; Statement level.
 		(if (null containing-sexp)
 		    (progn (beginning-of-icon-defun)
 			   (setq containing-sexp (point))))
 		(goto-char indent-point)
+		;; Is it a continuation or a new statement?
+		;; Find previous non-comment character.
 		(icon-backward-to-noncomment containing-sexp)
 		;; Now we get the answer.
 		(if (icon-is-continuation-line)
@@ -332,29 +342,40 @@ Returns nil if line starts inside a string, t if in a comment."
 		    ;; indent it relative to line brace is on.
 		    ;; For open brace in column zero, don't let statement
 		    ;; start there too.  If icon-indent-level is zero,
-		    ;; use icon-brace-offset + icon-continued-statement-offset instead.
+		    ;; use icon-brace-offset + icon-continued-statement-offset
+		    ;; instead.
 		    ;; For open-braces not the first thing in a line,
 		    ;; add in icon-brace-imaginary-offset.
 		    (+ (if (and (bolp) (zerop icon-indent-level))
-			   (+ icon-brace-offset icon-continued-statement-offset)
+			   (+ icon-brace-offset
+			      icon-continued-statement-offset)
 			 icon-indent-level)
 		       ;; Move back over whitespace before the openbrace.
 		       ;; If openbrace is not first nonwhite thing on the line,
 		       ;; add the icon-brace-imaginary-offset.
 		       (progn (skip-chars-backward " \t")
 			      (if (bolp) 0 icon-brace-imaginary-offset))
-		       ;; here we are
+		       ;; Get initial indentation of the line we are on.
 		       (current-indentation))))))))))
+
+;; List of words to check for as the last thing on a line.
+;; If cdr is t, next line is a continuation of the same statement,
+;; if cdr is nil, next line starts a new (possibly indented) statement.
+
+(defconst icon-resword-alist
+  '(("by" . t) ("case" . t) ("create") ("do") ("dynamic" . t) ("else")
+    ("every" . t) ("if" . t) ("global" . t) ("initial" . t)
+    ("link" . t) ("local" . t) ("of") ("record" . t) ("repeat" . t)
+    ("static" . t) ("then") ("to" . t) ("until" . t) ("while" . t)))
 
 (defun icon-is-continuation-line ()
   (let* ((ch (preceding-char))
 	 (ch-syntax (char-syntax ch)))
     (if (eq ch-syntax ?w)
 	(assoc (buffer-substring
-		 (progn (forward-word -1) (point))
-		 (progn (forward-word 1) (point)))
-	       '(("do") ("dynamic") ("else") ("initial") ("link")
-		 ("local") ("of") ("static") ("then")))
+		(progn (forward-word -1) (point))
+		(progn (forward-word 1) (point)))
+	       icon-resword-alist)
       (not (memq ch '(0 ?\; ?\} ?\{ ?\) ?\] ?\" ?\' ?\n))))))
 
 (defun icon-backward-to-noncomment (lim)
@@ -363,20 +384,25 @@ Returns nil if line starts inside a string, t if in a comment."
       (skip-chars-backward " \t\n\f" lim)
       (setq opoint (point))
       (beginning-of-line)
-      (if (and (search-forward "#" opoint 'move)
+      (if (and (nth 5 (parse-partial-sexp (point) opoint))
 	       (< lim (point)))
-	  (forward-char -1)
+	  (search-backward "#")
 	(setq stop t)))))
 
 (defun icon-backward-to-start-of-continued-exp (lim)
   (if (memq (preceding-char) '(?\) ?\]))
       (forward-sexp -1))
-  (while (icon-is-continued-line)
-    (end-of-line 0))
   (beginning-of-line)
-  (if (<= (point) lim)
-      (goto-char (1+ lim)))
-  (skip-chars-forward " \t"))
+  (skip-chars-forward " \t")
+  (cond
+   ((<= (point) lim) (goto-char (1+ lim)))
+   ((not (icon-is-continued-line)) 0)
+   ((and (eq (char-syntax (following-char)) ?w)
+	 (cdr
+	  (assoc (buffer-substring (point)
+				   (save-excursion (forward-word 1) (point)))
+		 icon-resword-alist))) 0)
+   (t (end-of-line 0) (icon-backward-to-start-of-continued-exp lim))))
 
 (defun icon-is-continued-line ()
   (save-excursion
@@ -384,7 +410,7 @@ Returns nil if line starts inside a string, t if in a comment."
     (icon-is-continuation-line)))
 
 (defun icon-backward-to-start-of-if (&optional limit)
-  "Move to the start of the last ``unbalanced'' if."
+  "Move to the start of the last \"unbalanced\" if."
   (or limit (setq limit (save-excursion (beginning-of-icon-defun) (point))))
   (let ((if-level 1)
 	(case-fold-search nil))
@@ -529,3 +555,5 @@ Returns nil if line starts inside a string, t if in a comment."
 	    (or (looking-at comment-start-skip)
 		(if (re-search-forward comment-start-skip (save-excursion (end-of-line) (point)) t)
 		    (progn (indent-for-comment) (beginning-of-line))))))))))
+
+;;; icon.el ends here

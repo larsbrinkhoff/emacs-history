@@ -1,11 +1,15 @@
-;; Load this file to increment the recorded Emacs version number.
+;;; inc-vers.el --- load this to increment the recorded Emacs version number.
+
 ;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: internal
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,19 +21,9 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
 
-;; Find the file version.el in the path for lisp files, 
-;; and set version-file.
-(setq version-file nil)
-(setq temp (mapcar '(lambda (dir)
-		      (cons dir (file-exists-p (expand-file-name "version.el" dir))))
-		   load-path))
-(while temp
-  (and (cdr (car temp)) (null version-file)
-       (setq version-file (expand-file-name "version.el" (car (car temp)))))
-  (setq temp (cdr temp)))
-      
-(insert-file-contents version-file)
+(insert-file-contents "../lisp/version.el")
 
 (re-search-forward "emacs-version \"[^\"]*[0-9]+\"")
 (forward-char -1)
@@ -47,8 +41,10 @@
 			   (progn (skip-chars-forward "^\"") (point))))
 
 
-(write-region (point-min) (point-max) version-file nil 'nomsg)
+(write-region (point-min) (point-max) "../lisp/version.el" nil 'nomsg)
 (erase-buffer)
 (set-buffer-modified-p nil)
 
 (kill-emacs)
+
+;;; inc-vers.el ends here

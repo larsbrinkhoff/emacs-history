@@ -1,10 +1,15 @@
+;;; rmailmsc.el --- miscellaneous support functions for the RMAIL mail reader
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: mail
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -16,11 +21,12 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
 
 (defun set-rmail-inbox-list (file-name)
-  "Set the inbox list of the current RMAIL file to FILE-NAME.  This may be
-a list of file names separated by commas.  If FILE-NAME is empty, remove
-any inbox list."
+  "Set the inbox list of the current RMAIL file to FILE-NAME.
+This may be a list of file names separated by commas.
+If FILE-NAME is empty, remove any inbox list."
   (interactive "sSet mailbox list to (comma-separated list of filenames): ")
   (save-excursion
     (let ((names (rmail-parse-file-inboxes))
@@ -43,3 +49,5 @@ any inbox list."
 		(insert "Mail: " file-name "\n"))))))
   (setq rmail-inbox-list (rmail-parse-file-inboxes))
   (rmail-show-message rmail-current-message))
+
+;;; rmailmsc.el ends here

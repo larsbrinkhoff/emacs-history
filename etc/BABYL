@@ -1,127 +1,176 @@
->From rlk@think.COM (Robert Krawitz) Mon Nov 30 10:56:46 1987
+Format of Version 5 Babyl Files:
 
-Let's see if I remember my BNF for babyl files; this corresponds to
-version 5:
+Warning:
+
+    This was written Tuesday, 12 April 1983 (by Eugene Cicciarelli),
+based on looking at a particular Babyl file and recalling various
+issues.  Therefore it is not guaranteed to be complete, but it is a
+start, and I will try to point the reader to various Babyl functions
+that will serve to clarify certain format questions.
+
+    Also note that this file will not contain control-characters,
+but instead have two-character sequences starting with Uparrow.
+Unless otherwise stated, an Uparrow <character> is to be read as
+Control-<character>, e.g. ^L is a Control-L.
+
+Versions:
+
+    First, note that each Babyl file contains in its BABYL OPTIONS
+section the version for the Babyl file format.  In principle, the
+format can be changed in any way as long as we increment the format
+version number; then programs can support both old and new formats.
+
+    In practice, version 5 is the only format version used, and the
+previous versions have been obsolete for so long that Emacs does not
+support them.
+
+
+Overall Babyl File Structure:
+
+    A Babyl file consists of a BABYL OPTIONS section followed by
+0 or more message sections.  The BABYL OPTIONS section starts
+with the line "BABYL OPTIONS:".  Message sections start with
+Control-Underscore Control-L Newline.  Each section ends
+with a Control-Underscore.  (That is also the first character
+of the starter for the next section, if any.)  Thus, a three
+message Babyl file looks like:
+
+BABYL OPTIONS:
+...the stuff within the Babyl Options section...
+^_^L
+...the stuff within the 1st message section...
+^_^L
+...the stuff within the 2nd message section...
+^_^L
+...the stuff within the last message section...
+^_
+
+    Babyl is tolerant about some whitespace at the end of the
+file -- the file may end with the final ^_ or it may have some
+whitespace, e.g. a newline, after it.
+
+
+The BABYL OPTIONS Section:
+
+    Each Babyl option is specified on one line (thus restricting
+string values these options can currently have).  Values are
+either numbers or strings.  The format is name, colon, and the
+value, with whitespace after the colon ignored, e.g.:
+
+Mail: ~/special-inbox
+
+    Unrecognized options are ignored.
+
+    Here are those options and the kind of values currently expected:
+
+    MAIL		Filename, the input mail file for this
+			Babyl file.  You may also use several file names
+			separated by commas.
+    Version		Number.  This should always be 5.
+    Labels		String, list of labels, separated by commas.
+
+
+Message Sections:
+
+    A message section contains one message and information
+associated with it.  The first line is the "status line", which
+contains a bit (0 or 1 character) saying whether the message has
+been reformed yet, and a list of the labels attached to this
+message.  Certain labels, called basic labels, are built into
+Babyl in a fundamental way, and are separated in the status line
+for convenience of operation.  For example, consider the status
+line:
+
+1, answered,, zval, bug,
+
+    The 1 means this message has been reformed.  This message is
+labeled "answered", "zval", and "bug".  The first, "answered", is
+a basic label, and the other two are user labels.  The basic
+labels come before the double-comma in the line.  Each label is
+preceded by ", " and followed by ",".  (The last basic label is
+in fact followed by ",,".)  If this message had no labels at all,
+it would look like:
+
+1,,
+
+    Or, if it had two basic labels, "answered" and "deleted", it
+would look like:
+
+1, answered, deleted,, zval, bug,
+
+    The & Label Babyl Message knows which are the basic labels.
+Currently they are:  deleted, unseen, recent, and answered.
+
+    After the status line comes the original header if any.
+Following that is the EOOH line, which contains exactly the
+characters "*** EOOH ***" (which stands for "end of original
+header").  Note that the original header, if a network format
+header, includes the trailing newline.  And finally, following the
+EOOH line is the visible message, header and text.  For example,
+here is a complete message section, starting with the message
+starter, and ending with the terminator:
+
+^_^L
+1,, wordab, eccmacs,
+Date: 11 May 1982 21:40-EDT
+From: Eugene C. Ciccarelli <ECC at MIT-AI>
+Subject: notes
+To: ECC at MIT-AI
+
+*** EOOH ***
+Date: Tuesday, 11 May 1982  21:40-EDT
+From: Eugene C. Ciccarelli <ECC>
+To:   ECC
+Re:   notes
+
+Remember to pickup check at cashier's office, and deposit it
+soon.  Pay rent.
+^_
+
+;;; Babyl File BNF:
+
+;;; Overall Babyl file structure:
 
 
-File := <header>
-	<message>*	; Some say there must be at least one message.
-
-Header := Babyl Options:\n
-	  <header-option>*
-	  |^_
-
-Header-option := <header-token>	; See note [5]
-		 : *
-		 <value>
-
-header-token := [^\000-\017:\177-\377]*	; Not these characters [tab is OK]
-header-value := ditto, if a list, each element separated by a comma and
-		a space.
-
-message := \^L\n
-	   [01],	; See note [1] below
-	   ( <attribute>,)*	; Note space before and comma after token
-	   ,
-	   ( <label>,)*		; ditto, see note [4] below
-	   \n
-	   <header>*	; See note [1] and [2] below
-	   *** EOOH ***\n
-	   <header>*	; See note [2] below
-	   \n
-	   <body>
-	   \^_
-
-attribute := unseen |
-	     last |	; Not all programs implement this.  It
-			; generally only gets used internally, and
-			; isn't written out to a file.
-	     >last |	; Babyl uses this for a deleted message at the
-			; end.  It shouldn't be written out to a file.
-	     deleted |
-	     recent |	; Not all programs implement this.  It refers
-			; to a message in the last batch of new mail;
-			; thus it probably shouldn't be written out to
-			; a file during a normal save although it
-			; makes sense to write it out in an emergency save.
-	     filed |
-	     answered |
-	     forwarded |
-	     redistributed |
-	     badheader |	; Not all programs implement this
-	     filed		; Not all programs implement this
-
-label := [^\000-\020,\177-\377]*	; No control chars,
-			; whitespace, commas, rubout, or high bit set
-
-header := [^\000-\020:\177-\377]*:
-	  <header-line>
-	  <header-line>*
-
-header-line := [ \t][^\n]*\n	; Continuation lines must be indented
-
-body := (.*\n)*		; See note [3] below
+Babyl-File	::= Babyl-Options-Section  (Message-Section)*
 
 
-[1] A zero means that the headers have not been cleaned up,
-reprocessed, toggled, or whatever.  In this case there should be no
-headers before the EOOH line.  A one means that the headers have been
-reprocessed.  In this case, the original headers will typically be
-before the EOOH line and the reformatted or whatever subset of headers
-that the user should see will be after it.  Note that in this case
-it's permissible to garbage collect all headers before the EOOH line.
-No one's defined what it means to garbage collect SOME of the headers
-before this line, or what that means.
+;;; Babyl Options section:
 
-[2] It's apparently permissible to add headers of the program's own
-choosing before the EOOH line.  Or at least, Rmail does so (it caches
-a summary line) and nothing seems to object.  There's no particular
-guarantee that something else won't step all over it, though.  Headers
-after the EOOH line can be reformatted as the program wishes (e. g.
-indent the header lines to the same distance, canonicalize machine
-names) for display to the user.  It's generally best for programs that
-read a babyl file to look at the headers before the EOOH line if they
-exist, since these should be untouched by the user.  Remember, the
-user can edit anything after the EOOH line.
 
-[3] A \^_ at the beginning of a line should be quoted somehow.  The
-normal way seems to be to decompose it into 2 characters: a ^ and a _.
-Strictly speaking, it doesn't always have to be, since the following
-text would have to be parsable as a message, but some programs don't
-try to use that much intelligence.  Oh well.
+Babyl-Options-Section
+		::= "BABYL OPTIONS:" newline (Babyl-Option)* Terminator
 
-[4] Labels, or keywords as they are often called, are generally
-defined by the user, although it's not entirely impermissible for a
-program to use these for its own purpose (e. g. a keyword named
-RemindMe might be used to automatically find important messages).
-Some people also want these used to cache other state implemented by
-certain programs; this use is undefined.  Note that all keywords used
-should be inserted in a header-option named Keywords:.  Can a keyword
-have the same name as an attribute?  Who knows?  It's probably not a
-good idea, since some programs use the concept of <labels> =
-<keywords> + <attributes>.  Sigh.
+Babyl-Option	::= Option-Name ":" Horiz-Whitespace BOptValue newline
 
-[5] Some tokens are standardized in meaning.  Common tokens are Mail
-inboxes, babyl file version number, which is currently 5, labels used
-in messages, window format for Zmail, anything else you want to be
-associated with a file.  Be warned that labels should be a complete
-list of all user-defined keywords used in the file, so if you add a
-new label to a message, you should add it to this list.  You should
-also have a Babyl version: 5 file attribute (look in a babyl file for
-details).
+BOptValue	::= Number | 1-Line-String
 
-Anyone know if there actually is a "formal" standard?  This was done
-quickly from memory and a Zmail manual, but there are at least three
-programs around that use Babyl files (zmail, babyl, and emacs/rmail)
-and someone at SIPB was going to write a command-based mail reader
-similar to Unix Mail but operating on babyl files, and someone (of
-course not me :-)) should probably write xbabyl :-)
 
-References:
 
-ITS/Tops-20 INFO file on babyl (who wrote it?  ECC?  GZ?)
+;;; Message section:
 
-Zmail manual (the MIT version was written by RMS; ECC wrote the
-section on Babyl file format)
--- 
 
+Message-Section	::= Message-Starter  Status-Line  Orig-Header
+		    EOOH-Line  Message  Terminator
+
+Message-Starter	::= "^L" newline
+
+Status-Line	::= Bit-Char  ","  (Basic-Label)* "," (User-Label)* newline
+
+Basic-Label	::= Space  BLabel-Name  ","
+
+User-Label	::= Space  ULabel-Name  ","
+
+EOOH-Line	::= "*** EOOH ***" newline
+
+Message		::= Visible-Header  Message-Text
+
+
+;;; Utilities:
+
+Terminator	::= "^_"
+
+Horiz-Whitespace
+		::= (Space | Tab)*
+
+Bit-Char	::= "0" | "1"

@@ -1,0 +1,97 @@
+srcdir=@srcdir@/oldXmenu
+VPATH=@srcdir@/oldXMenu
+
+# Uncomment following line if linking temacs complains about missing insque.
+# EXTRA=insque.o
+
+             AS = as
+#            CC = cc
+            CPP = /lib/cpp
+             LD = ld
+           TAGS = etags
+             RM = rm -f
+             MV = mv
+             LN = ln -s
+         RANLIB = ranlib
+# Solaris 2.1 ar doesn't accept the 'l' option.
+             AR = ar cq
+             LS = ls
+       LINTOPTS = -axz
+    LINTLIBFLAG = -C
+           MAKE = make
+    STD_DEFINES =
+    CDEBUGFLAGS = -O
+         RM_CMD = $(RM) *.CKP *.ln *.BAK *.bak *.o core errs ,* *~ *.a \
+			tags TAGS make.log
+
+SRCS =  ${srcdir}/Activate.c \
+	${srcdir}/AddPane.c \
+	${srcdir}/AddSel.c \
+	${srcdir}/ChgPane.c \
+	${srcdir}/ChgSel.c \
+	${srcdir}/Create.c \
+	${srcdir}/DelPane.c \
+	${srcdir}/DelSel.c \
+	${srcdir}/Destroy.c \
+	${srcdir}/Error.c \
+	${srcdir}/EvHand.c \
+	${srcdir}/FindPane.c \
+	${srcdir}/FindSel.c \
+	${srcdir}/InsPane.c \
+	${srcdir}/InsSel.c \
+	${srcdir}/Internal.c \
+	${srcdir}/Locate.c \
+	${srcdir}/Post.c \
+	${srcdir}/Recomp.c \
+	${srcdir}/SetAEQ.c \
+	${srcdir}/SetFrz.c \
+	${srcdir}/SetPane.c \
+	${srcdir}/SetSel.c \
+	${srcdir}/XDelAssoc.c \
+	${srcdir}/XLookAssoc.c \
+	${srcdir}/XCrAssoc.c \
+	${srcdir}/XDestAssoc.c \
+	${srcdir}/XMakeAssoc.c
+
+OBJS =  Activate.o \
+	AddPane.o \
+	AddSel.o \
+	ChgPane.o \
+	ChgSel.o \
+	Create.o \
+	DelPane.o \
+	DelSel.o \
+	Destroy.o \
+	Error.o \
+	EvHand.o \
+	FindPane.o \
+	FindSel.o \
+	InsPane.o \
+	InsSel.o \
+	Internal.o \
+	Locate.o \
+	Post.o \
+	Recomp.o \
+	SetAEQ.o \
+	SetFrz.o \
+	SetPane.o \
+	SetSel.o \
+      XDelAssoc.o XLookAssoc.o XCrAssoc.o XDestAssoc.o XMakeAssoc.o
+
+.c.o:
+	$(CC) -c $(CFLAGS) $(C_SWITCH_SITE) $(C_SWITCH_SYSTEM) ${srcdir}/$*.c
+
+all:: libXMenu11.a
+
+libXMenu11.a: $(OBJS) $(EXTRA)
+	$(RM) $@
+	$(AR) $@ $(OBJS) $(EXTRA)
+	-$(RANLIB) $@
+#If running ranlib fails, probably there is none.
+#That's ok.  So don't stop the build.
+
+distclean: clean
+clean::
+	$(RM_CMD) \#* libXMenu11.a *.o
+tags::
+	$(TAGS) -t *.[ch]

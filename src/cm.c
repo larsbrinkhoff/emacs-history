@@ -266,10 +266,12 @@ done:
     return totalcost;
 }
 
+#if 0
 losecursor ()
 {
   curY = -1;
 }
+#endif
 
 #define	USEREL	0
 #define	USEHOME	1
@@ -293,8 +295,9 @@ cmgoto (row, col)
 
   if (curY >= 0 && curX >= 0)
     {
-      /* 
-       * Pick least-cost motions
+      /* We may have quick ways to go to the upper-left, bottom-left,
+       * start-of-line, or start-of-next-line.  Or it might be best to
+       * start where we are.  Examine the options, and pick the cheapest.
        */
 
       relcost = calccost (curY, curX, row, col, 0);
@@ -387,19 +390,25 @@ Wcm_clear ()
 /*
  * Initialized stuff
  * Return 0 if can do CM.
+ * Return -1 if cannot.
+ * Return -2 if size not specified.
  */
 
 Wcm_init ()
 {
-  /* Check that we know the size of the screen.... */
-  if (Wcm.cm_rows <= 0 || Wcm.cm_cols <= 0)
-    return - 1;
+#if 0
   if (Wcm.cm_abs && !Wcm.cm_ds)
+    return 0;
+#endif
+  if (Wcm.cm_abs)
     return 0;
   /* Require up and left, and, if no absolute, down and right */
   if (!Wcm.cm_up || !Wcm.cm_left)
     return - 1;
   if (!Wcm.cm_abs && (!Wcm.cm_down || !Wcm.cm_right))
     return - 1;
+  /* Check that we know the size of the screen.... */
+  if (Wcm.cm_rows <= 0 || Wcm.cm_cols <= 0)
+    return - 2;
   return 0;
 }

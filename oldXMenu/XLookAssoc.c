@@ -13,7 +13,8 @@ suitability of this software for any purpose.  It is provided "as is"
 without express or implied warranty.
 */
 
-#include "X11/Xlib.h"
+#include <X11/Xlib.h>
+#include <X11/Xresource.h>
 #include "X10.h"
 
 #ifndef NULL

@@ -1,6 +1,16 @@
-;; Editing commands in GNU Emacs that turned out not to be used.
-;; They were added with an eye to making possible a more CCA-compatible
+;;; unused.el --- editing commands in GNU Emacs that turned out not to be used.
+;;; This file is in the public domain, as it was distributed in
+;;; 1985 or 1986 without a copyright notice.  Written by RMS.
+
+;; Maintainer: FSF
+;; Keywords: emulations
+
+;;; Commentary:
+
+;; These were added with an eye to making possible a more CCA-compatible
 ;; command set; but that turned out not to be interesting.
+
+;;; Code:
 
 (defun mark-beginning-of-buffer ()
   "Set mark at the beginning of the buffer."
@@ -30,3 +40,5 @@ With argument, do this that many times."
 With argument, do this that many times."
   (interactive "p")
   (forward-to-word (- arg)))
+
+;;; unused.el ends here

@@ -1,0 +1,330 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Display, Search, Registers, Top
+@chapter Controlling the Display
+
+  Since only part of a large buffer fits in the window, Emacs tries to show
+the part that is likely to be interesting.  The display control commands
+allow you to specify which part of the text you want to see.
+
+@table @kbd
+@item C-l
+Clear screen and redisplay, scrolling the selected window to center
+point vertically within it (@code{recenter}).
+@item C-v
+Scroll forward (a windowful or a specified number of lines) (@code{scroll-up}).
+@item @key{NEXT}
+Likewise, scroll forward.
+@item M-v
+Scroll backward (@code{scroll-down}).
+@item @key{PRIOR}
+Likewise, scroll backward.
+@item @var{arg} C-l
+Scroll so point is on line @var{arg} (@code{recenter}).
+@item C-x <
+Scroll text in current window to the left (@code{scroll-left}).
+@item C-x >
+Scroll to the right (@code{scroll-right}).
+@item C-x $
+Make deeply indented lines invisible (@code{set-selective-display}).
+@end table
+
+  The names of all scroll commands are based on the direction that the text
+moves in the window.  Thus, the command to scrolling forward is called
+@code{scroll-up}, since the text moves up.
+
+@menu
+* Scrolling::	           Moving text up and down in a window.
+* Horizontal Scrolling::   Moving text left and right in a window.
+* Selective Display::      Hiding lines with lots of indentation.
+* Optional Display::       Optional display features.
+* Display Vars::           Information on variables for customizing display.
+@end menu
+
+@node Scrolling
+@section Scrolling
+
+  If a buffer contains text that is too large to fit entirely within a
+window that is displaying the buffer, Emacs shows a contiguous portion of
+the text.  The portion shown always contains point.
+
+@cindex scrolling
+  @dfn{Scrolling} means moving text up or down in the window so that
+different parts of the text are visible.  Scrolling forward means that text
+moves up, and new text appears at the bottom.  Scrolling backward moves
+text down and new text appears at the top.
+
+  Scrolling happens automatically if you move point past the bottom or top
+of the window.  You can also explicitly request scrolling with the commands
+in this section.
+
+@ifinfo
+@table @kbd
+@item C-l
+Clear screen and redisplay, scrolling the selected window to center
+point vertically within it (@code{recenter}).
+@item C-v
+Scroll forward (a windowful or a specified number of lines) (@code{scroll-up}).
+@item @key{NEXT}
+Likewise, scroll forward.
+@item M-v
+Scroll backward (@code{scroll-down}).
+@item @key{PRIOR}
+Likewise, scroll backward.
+@item @var{arg} C-l
+Scroll so point is on line @var{arg} (@code{recenter}).
+@item C-M-l
+Scroll heuristically to bring useful information onto the screen
+(@code{reposition-window}).
+@end table
+@end ifinfo
+
+@kindex C-l
+@findex recenter
+  The most basic scrolling command is @kbd{C-l} (@code{recenter}) with
+no argument.  It clears the entire screen and redisplays all windows.
+In addition, it scrolls the selected window so that point is halfway
+down from the top of the window.
+
+@kindex C-v
+@kindex M-v
+@kindex @key{NEXT}
+@kindex @key{PRIOR}
+@findex scroll-up
+@findex scroll-down
+  The scrolling commands @kbd{C-v} and @kbd{M-v} let you move all the text
+in the window up or down a few lines.  @kbd{C-v} (@code{scroll-up}) with an
+argument shows you that many more lines at the bottom of the window, moving
+the text and point up together as @kbd{C-l} might.  @kbd{C-v} with a
+negative argument shows you more lines at the top of the window.
+@kbd{M-v} (@code{scroll-down}) is like @kbd{C-v}, but moves in the
+opposite direction.  The function keys @key{NEXT} and @key{PRIOR} are
+equivalent to @kbd{C-v} and @kbd{M-v}.
+
+@vindex next-screen-context-lines
+  To read the buffer a windowful at a time, use @kbd{C-v} with no argument.
+It takes the last two lines at the bottom of the window and puts them at
+the top, followed by nearly a whole windowful of lines not previously
+visible.  If point was in the text scrolled off the top, it moves to the
+new top of the window.  @kbd{M-v} with no argument moves backward with
+overlap similarly.  The number of lines of overlap across a @kbd{C-v} or
+@kbd{M-v} is controlled by the variable @code{next-screen-context-lines}; by
+default, it is two.
+
+  Another way to do scrolling is with @kbd{C-l} with a numeric argument.
+@kbd{C-l} does not clear the screen when given an argument; it only scrolls
+the selected window.  With a positive argument @var{n}, it repositions text
+to put point @var{n} lines down from the top.  An argument of zero puts
+point on the very top line.  Point does not move with respect to the text;
+rather, the text and point move rigidly on the screen.  @kbd{C-l} with a
+negative argument puts point that many lines from the bottom of the window.
+For example, @kbd{C-u - 1 C-l} puts point on the bottom line, and @kbd{C-u
+- 5 C-l} puts it five lines from the bottom.  Just @kbd{C-u} as argument,
+as in @kbd{C-u C-l}, scrolls point to the center of the screen.
+
+@kindex C-M-l
+@findex reposition-window
+  The @kbd{C-M-l} command (@code{reposition-window}) scrolls the current
+window heuristically in a way designed to get useful information onto
+the screen.  For example, in a Lisp file, this command tries to get the
+entire current defun onto the screen if possible.
+
+@vindex scroll-step
+  Scrolling happens automatically if point has moved out of the visible
+portion of the text when it is time to display.  Usually the scrolling is
+done so as to put point vertically centered within the window.  However, if
+the variable @code{scroll-step} has a nonzero value, an attempt is made to
+scroll the buffer by that many lines; if that is enough to bring point back
+into visibility, that is what is done.
+
+@node Horizontal Scrolling
+@section Horizontal Scrolling
+
+@ifinfo
+@table @kbd
+@item C-x <
+Scroll text in current window to the left (@code{scroll-left}).
+@item C-x >
+Scroll to the right (@code{scroll-right}).
+@end table
+@end ifinfo
+
+@kindex C-x <
+@kindex C-x >
+@findex scroll-left
+@findex scroll-right
+@cindex horizontal scrolling
+  The text in a window can also be scrolled horizontally.  This means that
+each line of text is shifted sideways in the window, and one or more
+characters at the beginning of each line are not displayed at all.  When a
+window has been scrolled horizontally in this way, text lines are truncated
+rather than continued (@pxref{Continuation Lines}), with a @samp{$} appearing
+in the first column when there is text truncated to the left, and in the
+last column when there is text truncated to the right.
+
+  The command @kbd{C-x <} (@code{scroll-left}) scrolls the selected
+window to the left by @var{n} columns with argument @var{n}.  This moves
+part of the beginning of each line off the left edge of the window.
+With no argument, it scrolls by almost the full width of the window (two
+columns less, to be precise).
+
+  @kbd{C-x >} (@code{scroll-right}) scrolls similarly to the right.  The
+window cannot be scrolled any farther to the right once it is displaying
+normally (with each line starting at the window's left margin);
+attempting to do so has no effect.  This means that you don't have to
+calculate the argument precisely for @kbd{C-x >}; any sufficiently large
+argument will restore normally display.
+
+@node Selective Display
+@section Selective Display
+@findex set-selective-display
+@kindex C-x $
+
+  Emacs has the ability to hide lines indented more than a certain number
+of columns (you specify how many columns).  You can use this to get an
+overview of a part of a program.
+
+  To hide lines, type @kbd{C-x $} (@code{set-selective-display}) with a
+numeric argument @var{n}.  Then lines with at least @var{n} columns of
+indentation disappear from the screen.  The only indication of their
+presence is that three dots (@samp{@dots{}}) appear at the end of each
+visible line that is followed by one or more invisible ones.
+
+  The commands @kbd{C-n} and @kbd{C-p} move across the invisible lines
+as if they were not there.
+
+  The invisible lines are still present in the buffer, and most editing
+commands see them as usual, so you may find point in the middle of
+invisible text.  When this happens, the cursor appears at the end of the
+previous line, after the three dots.  If point is at the end of the
+visible line, before the newline that ends it, the cursor appears before
+the three dots.
+
+  To make everything visible again, type @kbd{C-x $} with no argument.
+
+@node Optional Display
+@section Optional Display Features
+
+@cindex Line Number mode
+@cindex mode, Line Number
+@findex line-number-mode
+  To add the current line number of point to the mode line, enable Line
+Number mode with the command @kbd{M-x line-number-mode}.  The line
+number appears before @var{pos}, with the letter @samp{L} to indicate
+what it is.  @xref{Minor Modes}, for more information about minor modes
+and about how to use this command.
+
+@vindex line-number-display-limit
+  If the buffer is very large (larger than the value of
+@code{line-number-display-limit}), then the line number doesn't appear.
+Emacs doesn't compute the line number when the buffer is large, because
+that would be too slow.
+
+@findex display-time
+@cindex time (on mode line)
+  Emacs can optionally display the time and system load in all mode
+lines.  To enable this feature, type @kbd{M-x display-time}.  The
+information added to the mode line usually appears after the buffer
+name, before the mode names and their parentheses.  It looks like this:
+
+@example
+@var{hh}:@var{mm}pm @var{l.ll} [@var{d}]
+@end example
+
+@noindent
+Here @var{hh} and @var{mm} are the hour and minute, followed always by
+@samp{am} or @samp{pm}.  @var{l.ll} is the average number of running
+processes in the whole system recently.  @var{d} is an approximate index
+of the ratio of disk activity to cpu activity for all users.  (Some
+fields may be missing if your operating system cannot support them.)
+
+@cindex mail (on mode line)
+  The word @samp{Mail} appears after the load level if there is mail
+for you that you have not read yet.
+
+  Customization note: the variable @code{mode-line-inverse-video} controls
+whether the mode line is displayed in inverse video (assuming the terminal
+supports it); @code{nil} means no inverse video.  The default is @code{t}.
+@xref{Display Vars}.
+
+@node Display Vars
+@section Variables Controlling Display
+
+  This section contains information for customization only.  Beginning
+users should skip it.
+
+@vindex mode-line-inverse-video
+  The variable @code{mode-line-inverse-video} controls whether the mode
+line is displayed in inverse video (assuming the terminal supports it);
+@code{nil} means don't do so.  @xref{Mode Line}.
+
+@vindex inverse-video
+  If the variable @code{inverse-video} is non-@code{nil}, Emacs attempts
+to invert all the lines of the display from what they normally are.
+
+@vindex visible-bell
+  If the variable @code{visible-bell} is non-@code{nil}, Emacs attempts
+to make the whole screen blink when it would normally make an audible bell
+sound.  This variable has no effect if your terminal does not have a way
+to make the screen blink.@refill
+
+@vindex no-redraw-on-reenter
+  When you reenter Emacs after suspending, Emacs normally clears the
+screen and redraws the entire display.  On some terminals with more than
+one page of memory, it is possible to arrange the termcap entry so that
+the @samp{ti} and @samp{te} strings (output to the terminal when Emacs
+is entered and exited, respectively) switch between pages of memory so
+as to use one page for Emacs and another page for other output.  Then
+you might want to set the variable @code{no-redraw-on-reenter}
+non-@code{nil}; this tells Emacs to assume, when resumed, that the
+screen page it is using still contains what Emacs last wrote there.
+
+@vindex echo-keystrokes
+  The variable @code{echo-keystrokes} controls the echoing of multi-character
+keys; its value is the number of seconds of pause required to cause echoing
+to start, or zero meaning don't echo at all.  @xref{Echo Area}.
+
+@vindex ctl-arrow
+  If the variable @code{ctl-arrow} is @code{nil}, control characters in
+the buffer are displayed with octal escape sequences, all except newline
+and tab.  Altering the value of @code{ctl-arrow} makes it local to the
+current buffer; until that time, the default value is in effect.  The
+default is initially @code{t}.  @xref{Display Tables,, Display Tables,
+elisp, The Emacs Lisp Reference Manual}.
+
+@vindex tab-width
+  Normally, a tab character in the buffer is displayed as whitespace which
+extends to the next display tab stop position, and display tab stops come
+at intervals equal to eight spaces.  The number of spaces per tab is
+controlled by the variable @code{tab-width}, which is made local by
+changing it, just like @code{ctl-arrow}.  Note that how the tab character
+in the buffer is displayed has nothing to do with the definition of
+@key{TAB} as a command.  The variable @code{tab-width} must have an
+integer value between 1 and 1000, inclusive.
+
+@vindex selective-display-ellipses
+  If you set the variable @code{selective-display-ellipses} to @code{nil},
+the three dots do not appear at the end of a line that precedes invisible
+lines.  Then there is no visible indication of the invisible lines.
+This variable too becomes local automatically when set.
+
+@c @vindex truncate-lines  @c No index entry here, because we have one
+@c in the continuation section.
+  If the variable @code{truncate-lines} is non-@code{nil}, then each
+line of text gets just one screen line for display; if the text line is
+too long, display shows only the part that fits.  If
+@code{truncate-lines} is @code{nil}, then long text lines display as
+more than one screen line, enough to show the whole text of the line.
+@xref{Continuation Lines}.  Altering the value of @code{truncate-lines}
+makes it local to the current buffer; until that time, the default value
+is in effect.  The default is initially @code{nil}.
+
+@c @vindex truncate-partial-width-windows  @c Idx entry is in Split Windows.
+  If the variable @code{truncate-partial-width-windows} is
+non-@code{nil}, it forces truncation rather than continuation in any
+window less than the full width of the screen or frame, regardless of
+the value of @code{truncate-lines}.  For information about side-by-side
+windows, see @ref{Split Window}.  See also @ref{Display,, Display,
+elisp, The Emacs Lisp Reference Manual}.
+

@@ -1,0 +1,232 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Fixit, Files, Search, Top
+@chapter Commands for Fixing Typos
+@cindex typos
+@cindex mistakes, correcting
+
+  In this chapter we describe the commands that are especially useful for
+the times when you catch a mistake in your text just after you have made
+it, or change your mind while composing text on line.
+
+@menu
+* Kill Errors:: Commands to kill a batch of recently entered text.
+* Transpose::   Exchanging two characters, words, lines, lists...
+* Fixing Case:: Correcting case of last word entered.
+* Spelling::    Apply spelling checker to a word, or a whole file.
+@end menu
+
+@node Kill Errors
+@section Killing Your Mistakes
+
+@table @kbd
+@item @key{DEL}
+Delete last character (@code{delete-backward-char}).
+@item M-@key{DEL}
+Kill last word (@code{backward-kill-word}).
+@item C-x @key{DEL}
+Kill to beginning of sentence (@code{backward-kill-sentence}).
+@end table
+
+@kindex DEL
+@findex delete-backward-char
+  The @key{DEL} character (@code{delete-backward-char}) is the most
+important correction command.  When used among graphic (self-inserting)
+characters, it can be thought of as canceling the last character typed.
+
+@kindex M-DEL
+@kindex C-x DEL
+@findex backward-kill-word
+@findex backward-kill-sentence
+  When your mistake is longer than a couple of characters, it might be
+more convenient to use @kbd{M-@key{DEL}} or @kbd{C-x @key{DEL}}.
+@kbd{M-@key{DEL}} kills back to the start of the last word, and @kbd{C-x
+@key{DEL}} kills back to the start of the last sentence.  @kbd{C-x
+@key{DEL}} is particularly useful when you change your mind about the
+phrasing of the text you are writing.  @kbd{M-@key{DEL}} and @kbd{C-x
+@key{DEL}} save the killed text for @kbd{C-y} and @kbd{M-y} to
+retrieve.  @xref{Yanking}.@refill
+
+  @kbd{M-@key{DEL}} is often useful even when you have typed only a few
+characters wrong, if you know you are confused in your typing and aren't
+sure exactly what you typed.  At such a time, you cannot correct with
+@key{DEL} except by looking at the screen to see what you did.  It requires
+less thought to kill the whole word and start over again.
+
+@node Transpose
+@section Transposing Text
+
+@table @kbd
+@item C-t
+Transpose two characters (@code{transpose-chars}).
+@item M-t
+Transpose two words (@code{transpose-words}).
+@item C-M-t
+Transpose two balanced expressions (@code{transpose-sexps}).
+@item C-x C-t
+Transpose two lines (@code{transpose-lines}).
+@end table
+
+@cindex transposition
+@kindex C-t
+@findex transpose-chars
+  The common error of transposing two characters can be fixed, when they
+are adjacent, with the @kbd{C-t} command (@code{transpose-chars}).  Normally,
+@kbd{C-t} transposes the two characters on either side of point.  When
+given at the end of a line, rather than transposing the last character of
+the line with the newline, which would be useless, @kbd{C-t} transposes the
+last two characters on the line.  So, if you catch your transposition error
+right away, you can fix it with just a @kbd{C-t}.  If you don't catch it so
+fast, you must move the cursor back to between the two transposed
+characters.  If you transposed a space with the last character of the word
+before it, the word motion commands are a good way of getting there.
+Otherwise, a reverse search (@kbd{C-r}) is often the best way.
+@xref{Search}.
+
+
+@kindex C-x C-t
+@findex transpose-lines
+@kindex M-t
+@findex transpose-words
+@kindex C-M-t
+@findex transpose-sexps
+  @kbd{M-t} (@code{transpose-words}) transposes the word before point
+with the word after point.  It moves point forward over a word, dragging
+the word preceding or containing point forward as well.  The punctuation
+characters between the words do not move.  For example, @w{@samp{FOO, BAR}}
+transposes into @w{@samp{BAR, FOO}} rather than @samp{@w{BAR FOO,}}.
+
+  @kbd{C-M-t} (@code{transpose-sexps}) is a similar command for transposing
+two expressions (@pxref{Lists}), and @kbd{C-x C-t} (@code{transpose-lines})
+exchanges lines.  They work like @kbd{M-t} except in determining the
+division of the text into syntactic units.
+
+  A numeric argument to a transpose command serves as a repeat count: it
+tells the transpose command to move the character (word, sexp, line)
+before or containing point across several other characters (words,
+sexps, lines).  For example, @kbd{C-u 3 C-t} moves the character before
+point forward across three other characters.  It would change
+@samp{f@point{}oobar} into @samp{oobf@point{}ar}.  This is equivalent to
+repeating @kbd{C-t} three times.  @kbd{C-u - 4 M-t} moves the word
+before point backward across four words.  @kbd{C-u - C-M-t} would cancel
+the effect of plain @kbd{C-M-t}.@refill
+
+  A numeric argument of zero is assigned a special meaning (because
+otherwise a command with a repeat count of zero would do nothing): to
+transpose the character (word, sexp, line) ending after point with the
+one ending after the mark.
+
+@node Fixing Case
+@section Case Conversion
+
+@table @kbd
+@item M-- M-l
+Convert last word to lower case.  Note @kbd{Meta--} is Meta-minus.
+@item M-- M-u
+Convert last word to all upper case.
+@item M-- M-c
+Convert last word to lower case with capital initial.
+@end table
+
+@findex downcase-word
+@findex upcase-word
+@findex capitalize-word
+@kindex M-@t{-} M-l
+@kindex M-@t{-} M-u
+@kindex M-@t{-} M-c
+@cindex case conversion
+@cindex words
+  A very common error is to type words in the wrong case.  Because of this,
+the word case-conversion commands @kbd{M-l}, @kbd{M-u} and @kbd{M-c} have a
+special feature when used with a negative argument: they do not move the
+cursor.  As soon as you see you have mistyped the last word, you can simply
+case-convert it and go on typing.  @xref{Case}.@refill
+
+@node Spelling
+@section Checking and Correcting Spelling
+@cindex spelling
+
+  This section describes the commands to check the spelling of a single
+word or of a portion of a buffer.
+
+@table @kbd
+@item M-$
+Check and correct spelling of word at point (@code{ispell-word}).
+@item M-x ispell-buffer
+Check and correct spelling of each word in the buffer.
+@item M-x ispell-region
+Check and correct spelling of each word in the region.
+@item M-x ispell-string @key{RET} @var{word} @key{RET}
+Check spelling of @var{word}.
+@item M-x reload-ispell
+Make the Ispell subprocess reread your private dictionary.
+@item M-x kill-ispell
+Kill the Ispell subprocess.
+@end table
+
+@kindex M-$
+@findex ispell-word
+  To check the spelling of the word around or next to point, and
+optionally correct it as well, use the command @kbd{M-$}
+(@code{ispell-word}).  If the word is not correct, the command offers
+you various alternatives for what to do about it.
+
+@findex ispell-buffer
+@findex ispell-region
+  To check the entire current buffer, use @kbd{M-x ispell-buffer}.  Use
+@kbd{M-x ispell-region} to check just the current region.  Each time
+these commands encounter an incorrect word, they ask you what to do.
+
+  Whenever one of these commands finds an incorrect word, it displays a
+list of alternatives, usually including several ``near-misses''---words
+that are close to the word being checked.  Here are the valid responses:
+
+@table @kbd
+@item @key{SPC}
+Skip this word---continue to consider it incorrect, but don't change it
+here.
+
+@item r @var{new} @key{RET}
+Replace the word (just this time) with @var{new}.
+
+@item @var{digit}
+Replace the word (just this time) with one of the displayed
+near-misses.  Each near-miss is listed with a digit; type that digit to
+select it.
+
+@item a
+Accept the incorrect word---treat it as correct, but only in this
+editing session.
+
+@item i
+Insert this word in your private dictionary file so that Ispell will
+consider it correct it from now on, even in future sessions.
+
+@item l @var{regexp} @key{RET}
+Look in the dictionary for words that match @var{regexp}.  These words
+become the new list of ``near-misses''; you can select one of them to
+replace with by typing a digit.
+
+@item C-g
+Quit interactive spell checking.  You can restart it again afterward
+with @kbd{C-u M-$}.
+@end table
+
+@findex reload-ispell
+  The first time you use any of the spell checking commands, it starts
+an Ispell subprocess.  The first thing the subprocess does is read your
+private dictionary, which is the file @file{~/ispell.words}.  Words that
+you ``insert'' with the @kbd{i} command are added to that file, but not
+right away---only at the end of the interactive replacement procedure.
+Use the @kbd{M-x reload-ispell} command to reload your private
+dictionary from @file{~/ispell.words} if you edit the file outside of
+Ispell.
+
+@cindex @code{ispell} program
+@findex kill-ispell
+  Once started, the Ispell subprocess continues to run (waiting for
+something to do), so that subsequent spell checking commands complete
+more quickly.  If you want to get rid of the Ispell process, use
+@kbd{M-x kill-ispell}.  This is not usually necessary, since the process
+uses no time except when you do spelling correction.

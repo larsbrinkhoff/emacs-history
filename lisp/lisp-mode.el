@@ -1,11 +1,15 @@
-;; Lisp mode, and its idiosyncratic commands.
+;;; lisp-mode.el --- Lisp mode, and its idiosyncratic commands.
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: lisp, languages
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +21,14 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
+
+;;; Commentary:
+
+;; The base major mode for editing Lisp code (used also for Emacs Lisp).
+;; This mode is documented in the Emacs manual
+
+;;; Code:
 
 (defvar lisp-mode-syntax-table nil "")
 (defvar emacs-lisp-mode-syntax-table nil "")
@@ -48,7 +60,8 @@
       (modify-syntax-entry ?` "'   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?' "'   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?, "'   " emacs-lisp-mode-syntax-table)
-      (modify-syntax-entry ?. "'   " emacs-lisp-mode-syntax-table)
+      ;; Used to be singlequote; changed for flonums.
+      (modify-syntax-entry ?. "_   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?# "'   " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?\" "\"    " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?\\ "\\   " emacs-lisp-mode-syntax-table)
@@ -57,19 +70,17 @@
       (modify-syntax-entry ?\[ "(]  " emacs-lisp-mode-syntax-table)
       (modify-syntax-entry ?\] ")[  " emacs-lisp-mode-syntax-table)))
 
+(if (not lisp-mode-syntax-table)
+    (progn (setq lisp-mode-syntax-table
+		 (copy-syntax-table emacs-lisp-mode-syntax-table))
+	   (modify-syntax-entry ?\| "\"   " lisp-mode-syntax-table)
+	   (modify-syntax-entry ?\[ "_   " lisp-mode-syntax-table)
+	   (modify-syntax-entry ?\] "_   " lisp-mode-syntax-table)))
+
 (define-abbrev-table 'lisp-mode-abbrev-table ())
 
 (defun lisp-mode-variables (lisp-syntax)
   (cond (lisp-syntax
-	  (if (not lisp-mode-syntax-table)
-	      (progn (setq lisp-mode-syntax-table
-			   (copy-syntax-table emacs-lisp-mode-syntax-table))
-		     (modify-syntax-entry ?\| "\"   "
-					  lisp-mode-syntax-table)
-		     (modify-syntax-entry ?\[ "_   "
-					  lisp-mode-syntax-table)
-		     (modify-syntax-entry ?\] "_   "
-					  lisp-mode-syntax-table)))
 	  (set-syntax-table lisp-mode-syntax-table)))
   (setq local-abbrev-table lisp-mode-abbrev-table)
   (make-local-variable 'paragraph-start)
@@ -80,26 +91,40 @@
   (setq paragraph-ignore-fill-prefix t)
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'lisp-indent-line)
+  (make-local-variable 'indent-region-function)
+  (setq indent-region-function 'lisp-indent-region)
+  (make-local-variable 'parse-sexp-ignore-comments)
+  (setq parse-sexp-ignore-comments t)
   (make-local-variable 'comment-start)
   (setq comment-start ";")
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip ";+ *")
   (make-local-variable 'comment-column)
   (setq comment-column 40)
-  (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'lisp-comment-indent))
-
-(defun lisp-mode-commands (map)
-  (define-key map "\e\C-q" 'indent-sexp)
-  (define-key map "\177" 'backward-delete-char-untabify)
-  (define-key map "\t" 'lisp-indent-line))
+  (make-local-variable 'comment-indent-function)
+  (setq comment-indent-function 'lisp-comment-indent))
 
-(defvar emacs-lisp-mode-map () "")
+(defvar shared-lisp-mode-map ()
+  "Keymap for commands shared by all sorts of Lisp modes.")
+
+(if shared-lisp-mode-map
+    ()
+   (setq shared-lisp-mode-map (make-sparse-keymap))
+   (define-key shared-lisp-mode-map "\e\C-q" 'indent-sexp)
+   (define-key shared-lisp-mode-map "\M-q" 'lisp-fill-paragraph)
+   (define-key shared-lisp-mode-map "\177" 'backward-delete-char-untabify)
+   (define-key shared-lisp-mode-map "\t" 'lisp-indent-line))
+
+(defvar emacs-lisp-mode-map ()
+  "Keymap for Emacs Lisp mode.
+All commands in shared-lisp-mode-map are inherited by this map.")
+
 (if emacs-lisp-mode-map
     ()
-   (setq emacs-lisp-mode-map (make-sparse-keymap))
-   (define-key emacs-lisp-mode-map "\e\C-x" 'eval-defun)
-   (lisp-mode-commands emacs-lisp-mode-map))
+  (setq emacs-lisp-mode-map
+	(nconc (make-sparse-keymap) shared-lisp-mode-map))
+  (define-key emacs-lisp-mode-map "\e\t" 'lisp-complete-symbol)
+  (define-key emacs-lisp-mode-map "\e\C-x" 'eval-defun))
 
 (defun emacs-lisp-mode ()
   "Major mode for editing Lisp code to run in Emacs.
@@ -107,7 +132,7 @@ Commands:
 Delete converts tabs to spaces as it moves back.
 Blank lines separate paragraphs.  Semicolons start comments.
 \\{emacs-lisp-mode-map}
-Entry to this mode calls the value of emacs-lisp-mode-hook
+Entry to this mode calls the value of `emacs-lisp-mode-hook'
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
@@ -118,13 +143,16 @@ if that value is non-nil."
   (lisp-mode-variables nil)
   (run-hooks 'emacs-lisp-mode-hook))
 
-(defvar lisp-mode-map ())
+(defvar lisp-mode-map ()
+  "Keymap for ordinary Lisp mode.
+All commands in `shared-lisp-mode-map' are inherited by this map.")
+
 (if lisp-mode-map
     ()
-  (setq lisp-mode-map (make-sparse-keymap))
+  (setq lisp-mode-map
+	(nconc (make-sparse-keymap) shared-lisp-mode-map))
   (define-key lisp-mode-map "\e\C-x" 'lisp-send-defun)
-  (define-key lisp-mode-map "\C-c\C-l" 'run-lisp)
-  (lisp-mode-commands lisp-mode-map))
+  (define-key lisp-mode-map "\C-c\C-l" 'run-lisp))
 
 (defun lisp-mode ()
   "Major mode for editing Lisp code for Lisps other than GNU Emacs Lisp.
@@ -135,7 +163,7 @@ Blank lines separate paragraphs.  Semicolons start comments.
 Note that `run-lisp' may be used either to start an inferior Lisp job
 or to switch back to an existing one.
 
-Entry to this mode calls the value of lisp-mode-hook
+Entry to this mode calls the value of `lisp-mode-hook'
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
@@ -148,16 +176,20 @@ if that value is non-nil."
 
 ;; This will do unless shell.el is loaded.
 (defun lisp-send-defun nil
-  "Send the current defun to the Lisp process made by M-x run-lisp."
+  "Send the current defun to the Lisp process made by \\[run-lisp]."
   (interactive)
   (error "Process lisp does not exist"))
 
-(defvar lisp-interaction-mode-map ())
+(defvar lisp-interaction-mode-map ()
+  "Keymap for Lisp Interaction moe.
+All commands in `shared-lisp-mode-map' are inherited by this map.")
+
 (if lisp-interaction-mode-map
     ()
-  (setq lisp-interaction-mode-map (make-sparse-keymap))
-  (lisp-mode-commands lisp-interaction-mode-map)
+  (setq lisp-interaction-mode-map
+	(nconc (make-sparse-keymap) shared-lisp-mode-map))
   (define-key lisp-interaction-mode-map "\e\C-x" 'eval-defun)
+  (define-key lisp-interaction-mode-map "\e\t" 'lisp-complete-symbol)
   (define-key lisp-interaction-mode-map "\n" 'eval-print-last-sexp))
 
 (defun lisp-interaction-mode ()
@@ -167,64 +199,59 @@ before point, and prints its value into the buffer, advancing point.
 
 Commands:
 Delete converts tabs to spaces as it moves back.
-Paragraphs are separated only by blank lines.  Semicolons start comments.
+Paragraphs are separated only by blank lines.
+Semicolons start comments.
 \\{lisp-interaction-mode-map}
-Entry to this mode calls the value of lisp-interaction-mode-hook
+Entry to this mode calls the value of `lisp-interaction-mode-hook'
 if that value is non-nil."
   (interactive)
   (kill-all-local-variables)
   (use-local-map lisp-interaction-mode-map)
-  (set-syntax-table emacs-lisp-mode-syntax-table)
   (setq major-mode 'lisp-interaction-mode)
   (setq mode-name "Lisp Interaction")
+  (set-syntax-table emacs-lisp-mode-syntax-table)
   (lisp-mode-variables nil)
   (run-hooks 'lisp-interaction-mode-hook))
 
-(defun eval-print-last-sexp (arg)
+(defun eval-print-last-sexp ()
   "Evaluate sexp before point; print value into current buffer."
-  (interactive "P")
-  (eval-region
-    (let ((stab (syntax-table)))
-      (unwind-protect
-	  (save-excursion
-	    (set-syntax-table emacs-lisp-mode-syntax-table)
-	    (forward-sexp -1)
-	    (point))
-	(set-syntax-table stab)))
-    (point)
-    (current-buffer)))
+  (interactive)
+  (let ((standard-output (current-buffer)))
+    (terpri)
+    (eval-last-sexp t)
+    (terpri)))
 
-(defun eval-last-sexp (arg)
+(defun eval-last-sexp (eval-last-sexp-arg-internal)
   "Evaluate sexp before point; print value in minibuffer.
 With argument, print output into current buffer."
   (interactive "P")
-  (eval-region
-    (let ((stab (syntax-table)))
-      (unwind-protect
-	  (save-excursion
-	    (set-syntax-table emacs-lisp-mode-syntax-table)
-	    (forward-sexp -1)
-	    (point))
-	(set-syntax-table stab)))
-    (point)
-    (if arg (current-buffer) t)))
+  (let ((standard-output (if eval-last-sexp-arg-internal (current-buffer) t))
+	(opoint (point)))
+    (prin1 (let ((stab (syntax-table)))
+	     (eval (unwind-protect
+		       (save-excursion
+			 (set-syntax-table emacs-lisp-mode-syntax-table)
+			 (forward-sexp -1)
+			 (save-restriction
+			   (narrow-to-region (point-min) opoint)
+			   (read (current-buffer))))
+		     (set-syntax-table stab)))))))
 
-(defun eval-defun (arg)
+(defun eval-defun (eval-defun-arg-internal)
   "Evaluate defun that point is in or before.
 Print value in minibuffer.
 With argument, insert value in current buffer after the defun."
   (interactive "P")
-  (save-excursion
-    (end-of-defun)
-    (let ((end (point)))
-      (beginning-of-defun)
-      (eval-region (point) end
-		   (if arg (current-buffer) t)))))
+  (let ((standard-output (if eval-defun-arg-internal (current-buffer) t)))
+    (prin1 (eval (save-excursion
+		   (end-of-defun)
+		   (beginning-of-defun)
+		   (read (current-buffer)))))))
 
 (defun lisp-comment-indent ()
-  (if (looking-at ";;;")
+  (if (looking-at "\\s<\\s<\\s<")
       (current-column)
-    (if (looking-at ";;")
+    (if (looking-at "\\s<\\s<")
 	(let ((tem (calculate-lisp-indent)))
 	  (if (listp tem) (car tem) tem))
       (skip-chars-backward " \t")
@@ -232,7 +259,7 @@ With argument, insert value in current buffer after the defun."
 	   comment-column))))
 
 (defconst lisp-indent-offset nil "")
-(defconst lisp-indent-hook 'lisp-indent-hook "")
+(defconst lisp-indent-function 'lisp-indent-function "")
 
 (defun lisp-indent-line (&optional whole-exp)
   "Indent current line as Lisp code.
@@ -244,10 +271,10 @@ rigidly along with this one."
     (beginning-of-line)
     (setq beg (point))
     (skip-chars-forward " \t")
-    (if (looking-at ";;;")
+    (if (looking-at "\\s<\\s<\\s<")
 	;; Don't alter indentation of a ;;; comment line.
-	nil
-      (if (and (looking-at ";") (not (looking-at ";;")))
+	(goto-char (- (point-max) pos))
+      (if (and (looking-at "\\s<") (not (looking-at "\\s<\\s<")))
 	  ;; Single-semicolon comment lines should be indented
 	  ;; as comment lines, not as code.
 	  (progn (indent-for-comment) (forward-char -1))
@@ -355,17 +382,17 @@ of the start of the containing expression."
               ((and (integerp lisp-indent-offset) containing-sexp)
                ;; Indent by constant offset
                (goto-char containing-sexp)
-               (+ normal-indent lisp-indent-offset))
+               (+ (current-column) lisp-indent-offset))
               (desired-indent)
-              ((and (boundp 'lisp-indent-hook)
-                    lisp-indent-hook
+              ((and (boundp 'lisp-indent-function)
+                    lisp-indent-function
                     (not retry))
-               (or (funcall lisp-indent-hook indent-point state)
+               (or (funcall lisp-indent-function indent-point state)
                    normal-indent))
               (t
                normal-indent))))))
 
-(defun lisp-indent-hook (indent-point state)
+(defun lisp-indent-function (indent-point state)
   (let ((normal-indent (current-column)))
     (goto-char (1+ (elt state 1)))
     (parse-partial-sexp (point) last-sexp 0 t)
@@ -387,7 +414,7 @@ of the start of the containing expression."
       (let ((function (buffer-substring (point)
 					(progn (forward-sexp 1) (point))))
 	    method)
-	(setq method (get (intern-soft function) 'lisp-indent-hook))
+	(setq method (get (intern-soft function) 'lisp-indent-function))
 	(cond ((or (eq method 'defun)
 		   (and (null method)
 			(> (length function) 3)
@@ -399,7 +426,8 @@ of the start of the containing expression."
 	      (method
 		(funcall method state indent-point)))))))
 
-(defconst lisp-body-indent 2 "")
+(defconst lisp-body-indent 2
+  "Number of columns to indent the second line of a `(def...)' form.")
 
 (defun lisp-indent-specform (count state indent-point normal-indent)
   (let ((containing-form-start (elt state 1))
@@ -407,7 +435,7 @@ of the start of the containing expression."
         body-indent containing-form-column)
     ;; Move to the start of containing form, calculate indentation
     ;; to use for non-distinguished forms (> count), and move past the
-    ;; function symbol.  lisp-indent-hook guarantees that there is at
+    ;; function symbol.  lisp-indent-function guarantees that there is at
     ;; least one word or symbol character following open paren of containing
     ;; form.
     (goto-char containing-form-start)
@@ -455,35 +483,44 @@ of the start of the containing expression."
 	(+ lisp-body-indent (current-column)))))
 
 
-;; (put 'progn 'lisp-indent-hook 0), say, causes progn to be indented
+;; (put 'progn 'lisp-indent-function 0), say, causes progn to be indented
 ;; like defun if the first form is placed on the next line, otherwise
 ;; it is indented like any other form (i.e. forms line up under first).
 
-(put 'lambda 'lisp-indent-hook 'defun)
-(put 'progn 'lisp-indent-hook 0)
-(put 'prog1 'lisp-indent-hook 1)
-(put 'save-excursion 'lisp-indent-hook 0)
-(put 'save-window-excursion 'lisp-indent-hook 0)
-(put 'save-restriction 'lisp-indent-hook 0)
-(put 'let 'lisp-indent-hook 1)
-(put 'let* 'lisp-indent-hook 1)
-(put 'while 'lisp-indent-hook 1)
-(put 'if 'lisp-indent-hook 2)
-(put 'catch 'lisp-indent-hook 1)
-(put 'condition-case 'lisp-indent-hook 2)
-(put 'unwind-protect 'lisp-indent-hook 1)
-(put 'with-output-to-temp-buffer 'lisp-indent-hook 1)
+(put 'lambda 'lisp-indent-function 'defun)
+(put 'autoload 'lisp-indent-function 'defun)
+(put 'progn 'lisp-indent-function 0)
+(put 'prog1 'lisp-indent-function 1)
+(put 'prog2 'lisp-indent-function 2)
+(put 'save-excursion 'lisp-indent-function 0)
+(put 'save-window-excursion 'lisp-indent-function 0)
+(put 'save-restriction 'lisp-indent-function 0)
+(put 'save-match-data 'lisp-indent-function 0)
+(put 'let 'lisp-indent-function 1)
+(put 'let* 'lisp-indent-function 1)
+(put 'while 'lisp-indent-function 1)
+(put 'if 'lisp-indent-function 2)
+(put 'catch 'lisp-indent-function 1)
+(put 'condition-case 'lisp-indent-function 2)
+(put 'unwind-protect 'lisp-indent-function 1)
+(put 'with-output-to-temp-buffer 'lisp-indent-function 1)
 
-(defun indent-sexp ()
-  "Indent each line of the list starting just after point."
+(defun indent-sexp (&optional endpos)
+  "Indent each line of the list starting just after point.
+If optional arg ENDPOS is given, indent each line, stopping when
+ENDPOS is encountered."
   (interactive)
-  (let ((indent-stack (list nil)) (next-depth 0) bol
-	outer-loop-done inner-loop-done state this-indent)
+  (let ((indent-stack (list nil))
+	(next-depth 0)
+	(starting-point (point))
+	(last-point (point))
+	last-depth bol outer-loop-done inner-loop-done state this-indent)
     ;; Get error now if we don't have a complete sexp after point.
     (save-excursion (forward-sexp 1))
     (save-excursion
       (setq outer-loop-done nil)
-      (while (not outer-loop-done)
+      (while (if endpos (< (point) endpos)
+	       (not outer-loop-done))
 	(setq last-depth next-depth
 	      inner-loop-done nil)
 	;; Parse this line so we can learn the state
@@ -513,7 +550,16 @@ of the start of the containing expression."
 		(forward-line 1)
 		(setcar (nthcdr 5 state) nil))
 	    (setq inner-loop-done t)))
-	(if (or outer-loop-done (setq outer-loop-done (<= next-depth 0)))
+	(and endpos
+	     (<= next-depth 0)
+	     (progn
+	       (setq indent-stack (append indent-stack
+					  (make-list (- next-depth) nil))
+		     last-depth (- last-depth next-depth)
+		     next-depth 0)))
+	(or outer-loop-done
+	    (setq outer-loop-done (<= next-depth 0)))
+	(if outer-loop-done
 	    nil
 	  (while (> last-depth next-depth)
 	    (setq indent-stack (cdr indent-stack)
@@ -528,13 +574,14 @@ of the start of the containing expression."
 	  (skip-chars-forward " \t")
 	  ;; But not if the line is blank, or just a comment
 	  ;; (except for double-semi comments; indent them as usual).
-	  (if (or (eobp) (looking-at "[;\n]"))
+	  (if (or (eobp) (looking-at "\\s<\\|\n"))
 	      nil
 	    (if (and (car indent-stack)
 		     (>= (car indent-stack) 0))
 		(setq this-indent (car indent-stack))
 	      (let ((val (calculate-lisp-indent
-			  (if (car indent-stack) (- (car indent-stack))))))
+			  (if (car indent-stack) (- (car indent-stack))
+			    starting-point))))
 		(if (integerp val)
 		    (setcar indent-stack
 			    (setq this-indent val))
@@ -542,12 +589,95 @@ of the start of the containing expression."
 		  (setq this-indent (car val)))))
 	    (if (/= (current-column) this-indent)
 		(progn (delete-region bol (point))
-		       (indent-to this-indent)))))))))
+		       (indent-to this-indent)))))
+	(or outer-loop-done
+	    (setq outer-loop-done (= (point) last-point))
+	    (setq last-point (point)))))))
+
+;; Indent every line whose first char is between START and END inclusive.
+(defun lisp-indent-region (start end)
+  (save-excursion
+    (goto-char start)
+    (and (bolp) (not (eolp))
+	 (lisp-indent-line))
+    (let ((endmark (copy-marker end)))
+      (indent-sexp endmark)
+      (set-marker endmark nil))))
+
+;;;; Lisp paragraph filling commands.
+
+(defun lisp-fill-paragraph (&optional justify)
+  "Like \\[fill-paragraph], but handle Emacs Lisp comments.
+If any of the current line is a comment, fill the comment or the
+paragraph of it that point is in, preserving the comment's indentation
+and initial semicolons."
+  (interactive "P")
+  (let (
+	;; Non-nil if the current line contains a comment.
+	has-comment
+
+	;; If has-comment, the appropriate fill-prefix for the comment.
+	comment-fill-prefix
+	)
+
+    ;; Figure out what kind of comment we are looking at.
+    (save-excursion
+      (beginning-of-line)
+      (cond
+
+       ;; A line with nothing but a comment on it?
+       ((looking-at "[ \t]*;[; \t]*")
+	(setq has-comment t
+	      comment-fill-prefix (buffer-substring (match-beginning 0)
+						    (match-end 0))))
+
+       ;; A line with some code, followed by a comment?  Remember that the
+       ;; semi which starts the comment shouldn't be part of a string or
+       ;; character.
+       ((progn
+	  (while (not (looking-at ";\\|$"))
+	    (skip-chars-forward "^;\n\"\\\\?")
+	    (cond
+	     ((eq (char-after (point)) ?\\) (forward-char 2))
+	     ((memq (char-after (point)) '(?\" ??)) (forward-sexp 1))))
+	  (looking-at ";+[\t ]*"))
+	(setq has-comment t)
+	(setq comment-fill-prefix
+	      (concat (make-string (current-column) ? )
+		      (buffer-substring (match-beginning 0) (match-end 0)))))))
+
+    (if (not has-comment)
+	(fill-paragraph justify)
+
+      ;; Narrow to include only the comment, and then fill the region.
+      (save-restriction
+	(narrow-to-region
+	 ;; Find the first line we should include in the region to fill.
+	 (save-excursion
+	   (while (and (zerop (forward-line -1))
+		       (looking-at "^[ \t]*;")))
+	   ;; We may have gone to far.  Go forward again.
+	   (or (looking-at "^[ \t]*;")
+	       (forward-line 1))
+	   (point))
+	 ;; Find the beginning of the first line past the region to fill.
+	 (save-excursion
+	   (while (progn (forward-line 1)
+			 (looking-at "^[ \t]*;")))
+	   (point)))
+
+	;; Lines with only semicolons on them can be paragraph boundaries.
+	(let ((paragraph-start (concat paragraph-start "\\|^[ \t;]*$"))
+	      (paragraph-separate (concat paragraph-start "\\|^[ \t;]*$"))
+	      (fill-prefix comment-fill-prefix))
+	  (fill-paragraph justify))))))
+
 
 (defun indent-code-rigidly (start end arg &optional nochange-regexp)
   "Indent all lines of code, starting in the region, sideways by ARG columns.
-Does not affect lines starting inside comments or strings,
-assuming that the start of the region is not inside them.
+Does not affect lines starting inside comments or strings, assuming that
+the start of the region is not inside them.
+
 Called from a program, takes args START, END, COLUMNS and NOCHANGE-REGEXP.
 The last is a regexp which, if matched at the beginning of a line,
 means don't indent that line."
@@ -576,3 +706,6 @@ means don't indent that line."
 					  (forward-line 1) (point))
 					nil nil state))))))
 
+(provide 'lisp-mode)
+
+;;; lisp-mode.el ends here

@@ -1,11 +1,15 @@
-;; "RMAIL" mail reader for Emacs.
+;;; rmailkwd.el --- part of the "RMAIL" mail reader for Emacs.
+
 ;; Copyright (C) 1985, 1988 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: mail
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,6 +21,7 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
 
 ;; Global to all RMAIL buffers.  It exists primarily for the sake of
 ;; completion.  It is better to use strings with the label functions
@@ -111,7 +116,7 @@ Completion is performed over known labels when reading."
 
 ;; Commented functions aren't used by RMAIL but might be nice for user
 ;; packages that do stuff with RMAIL.  Note that rmail-message-labels-p
-;; is in rmailsum now.
+;; is in rmail.el now.
 
 ;(defun rmail-message-attribute-p (attribute &optional n)
 ;  "Returns t if ATTRIBUTE on NTH or current message."
@@ -171,14 +176,18 @@ Completion is performed over known labels when reading."
 
 ;; Motion on messages with keywords.
 
-(defun rmail-previous-labeled-message (n label)
-  "Show previous message with LABEL.  Defaults to last labels used.
+(defun rmail-previous-labeled-message (n labels)
+  "Show previous message with one of the labels LABELS.
+LABELS should be a comma-separated list of label names.
+If LABELS is empty, the last set of labels specified is used.
 With prefix argument N moves backward N messages with these labels."
   (interactive "p\nsMove to previous msg with labels: ")
-  (rmail-next-labeled-message (- n) label))
+  (rmail-next-labeled-message (- n) labels))
 
 (defun rmail-next-labeled-message (n labels)
-  "Show next message with LABEL.  Defaults to last labels used.
+  "Show next message with one of the labels LABELS.
+LABELS should be a comma-separated list of label names.
+If LABELS is empty, the last set of labels specified is used.
 With prefix argument N moves forward N messages with these labels."
   (interactive "p\nsMove to next msg with labels: ")
   (if (string= labels "")
@@ -258,3 +267,5 @@ With prefix argument N moves forward N messages with these labels."
 	    (narrow-to-region (- (buffer-size) omin)
 			      (- (buffer-size) omax)))))
     keyword))
+
+;;; rmailkwd.el ends here

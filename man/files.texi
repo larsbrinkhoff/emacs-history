@@ -1,0 +1,1567 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Files, Buffers, Fixit, Top
+@chapter File Handling
+@cindex files
+
+  The basic unit of stored data in Unix is the @dfn{file}.  To edit a file,
+you must tell Emacs to examine the file and prepare a buffer containing a
+copy of the file's text.  This is called @dfn{visiting} the file.  Editing
+commands apply directly to text in the buffer; that is, to the copy inside
+Emacs.  Your changes appear in the file itself only when you @dfn{save} the
+buffer back into the file.
+
+  In addition to visiting and saving files, Emacs can delete, copy,
+rename, and append to files, keep multiple versions of them, and operate
+on file directories.
+
+@menu
+* File Names::   How to type and edit file name arguments.
+* Visiting::     Visiting a file prepares Emacs to edit the file.
+* Saving::       Saving makes your changes permanent.
+* Reverting::    Reverting cancels all the changes not saved.
+* Auto Save::    Auto Save periodically protects against loss of data.
+* File Aliases:: Handling multiple names for one file.
+* Version Control:: 
+* ListDir::      Listing the contents of a file directory.
+* Comparing Files::  Finding where two files differ.
+* Misc File Ops:: Other things you can do on files.
+@end menu
+
+@node File Names
+@section File Names
+@cindex file names
+
+  Most Emacs commands that operate on a file require you to specify the
+file name.  (Saving and reverting are exceptions; the buffer knows which
+file name to use for them.)  You enter the file name using the
+minibuffer (@pxref{Minibuffer}).  @dfn{Completion} is available, to make
+it easier to specify long file names.  @xref{Completion}.
+
+  For most operations, there is a @dfn{default file name} which is used
+if you type just @key{RET} to enter an empty argument.  Normally the
+default file name is the name of the file visited in the current buffer;
+this makes it easy to operate on that file with any of the Emacs file
+commands.
+
+@vindex default-directory
+  Each buffer has a default directory, normally the same as the
+directory of the file visited in that buffer.  When you enter a file
+name without a directory, the default directory is used.  If you specify
+a directory in a relative fashion, with a name that does not start with
+a slash, it is interpreted with respect to the default directory.  The
+default directory is kept in the variable @code{default-directory},
+which has a separate value in every buffer.
+
+  For example, if the default file name is @file{/u/rms/gnu/gnu.tasks} then
+the default directory is @file{/u/rms/gnu/}.  If you type just @samp{foo},
+which does not specify a directory, it is short for @file{/u/rms/gnu/foo}.
+@samp{../.login} would stand for @file{/u/rms/.login}.  @samp{new/foo}
+would stand for the file name @file{/u/rms/gnu/new/foo}.
+
+  The command @kbd{M-x pwd} prints the current buffer's default
+directory, and the command @kbd{M-x cd} sets it (to a value read using
+the minibuffer).  A buffer's default directory changes only when the
+@code{cd} command is used.  A file-visiting buffer's default directory
+is initialized to the directory of the file that is visited there.  If
+you create a buffer with @kbd{C-x b}, its default directory is copied
+from that of the buffer that was current at the time.
+
+@vindex insert-default-directory
+  The default directory actually appears in the minibuffer when the
+minibuffer becomes active to read a file name.  This serves two
+purposes: it @emph{shows} you what the default is, so that you can type
+a relative file name and know with certainty what it will mean, and it
+allows you to @emph{edit} the default to specify a different directory.
+This insertion of the default directory is inhibited if the variable
+@code{insert-default-directory} is set to @code{nil}.
+
+  Note that it is legitimate to type an absolute file name after you
+enter the minibuffer, ignoring the presence of the default directory
+name as part of the text.  The final minibuffer contents may look
+invalid, but that is not so.  For example, if the minibuffer starts out
+with @samp{/usr/tmp/} and you add @samp{/x1/rms/foo}, the double slash
+says to ignore the default directory and use just the name that you
+typed.  @xref{Minibuffer File}.
+
+@cindex ftp
+@cindex remote file access
+  You can refer to files on other machines using a special file name syntax:
+
+@example
+@group
+/@var{host}:@var{filename}
+/@var{user}@@@var{host}:@var{filename}
+@end group
+@end example
+
+  When you do this, Emacs uses the FTP program to read and write files
+on the specified host.  It logs in through FTP using your user name or
+the name @var{user}.  It may ask you for a password from time to time;
+this is used for logging in on @var{host}.
+
+  @samp{$} in a file name is used to substitute environment variables.  For
+example, if you have used the shell command @samp{setenv FOO rms/hacks} to
+set up an environment variable named @samp{FOO}, then you can use
+@file{/u/$FOO/test.c} or @file{/u/$@{FOO@}/test.c} as an abbreviation for
+@file{/u/rms/hacks/test.c}.  The environment variable name consists of all
+the alphanumeric characters after the @samp{$}; alternatively, it may be
+enclosed in braces after the @samp{$}.  Note that the @samp{setenv} command
+affects Emacs only if done before Emacs is started.
+
+  To access a file with @samp{$} in its name, type @samp{$$}.  This pair
+is converted to a single @samp{$} at the same time as variable substitution
+is performed for single @samp{$}.  The Lisp function that performs the
+substitution is called @code{substitute-in-file-name}.  The substitution
+is performed only on file names read as such using the minibuffer.
+
+@node Visiting
+@section Visiting Files
+@cindex visiting files
+
+@c WideCommands
+@table @kbd
+@item C-x C-f
+Visit a file (@code{find-file}).
+@item C-x C-r
+Visit a file for viewing, without allowing changes to it
+(@code{find-file-read-only}).
+@item C-x C-v
+Visit a different file instead of the one visited last
+(@code{find-alternate-file}).
+@item C-x 4 C-f
+Visit a file, in another window (@code{find-file-other-window}).  Don't
+change this window.
+@item C-x 5 C-f
+Visit a file, in a new frame (@code{find-file-other-frame}).  Don't
+change this window.
+@end table
+
+@cindex files
+@cindex visiting
+@cindex saving
+  @dfn{Visiting} a file means copying its contents into an Emacs buffer
+so you can edit them.  Emacs makes a new buffer for each file that you
+visit.  We say that this buffer is visiting the file that it was created
+to hold.  Emacs constructs the buffer name from the file name by
+throwing away the directory, keeping just the name proper.  For example,
+a file named @file{/usr/rms/emacs.tex} would get a buffer named
+@samp{emacs.tex}.  If there is already a buffer with that name, a unique
+name is constructed by appending @samp{<2>}, @samp{<3>}, or so on, using
+the lowest number that makes a name that is not already in use.
+
+  Each window's mode line shows the name of the buffer that is being displayed
+in that window, so you can always tell what buffer you are editing.
+
+  The changes you make with Emacs are made in the Emacs buffer.  They do
+not take effect in the file that you visited, or any place permanent, until
+you @dfn{save} the buffer.  Saving the buffer means that Emacs writes the
+current contents of the buffer into its visited file.  @xref{Saving}.
+
+@cindex modified (buffer)
+  If a buffer contains changes that have not been saved, we say the
+buffer is @dfn{modified}.  This is important because it implies that
+some changes will be lost if the buffer is not saved.  The mode line
+displays two stars near the left margin to indicate that the buffer is
+modified.
+
+@kindex C-x C-f
+@findex find-file
+  To visit a file, use the command @kbd{C-x C-f} (@code{find-file}).  Follow
+the command with the name of the file you wish to visit, terminated by a
+@key{RET}.
+
+  The file name is read using the minibuffer (@pxref{Minibuffer}), with
+defaulting and completion in the standard manner (@pxref{File Names}).
+While in the minibuffer, you can abort @kbd{C-x C-f} by typing @kbd{C-g}.
+
+  Your confirmation that @kbd{C-x C-f} has completed successfully is the
+appearance of new text on the screen and a new buffer name in the mode
+line.  If the specified file does not exist and could not be created, or
+cannot be read, then you get an error, with an error message displayed
+in the echo area.
+
+  If you visit a file that is already in Emacs, @kbd{C-x C-f} does not make
+another copy.  It selects the existing buffer containing that file.
+However, before doing so, it checks that the file itself has not changed
+since you visited or saved it last.  If the file has changed, a warning
+message is printed.  @xref{Interlocking,,Simultaneous Editing}.
+
+@cindex creating files
+  What if you want to create a new file?  Just visit it.  Emacs prints
+@samp{(New File)} in the echo area, but in other respects behaves as if
+you had visited an existing empty file.  If you make any changes and
+save them, the file is created.
+
+@vindex find-file-run-dired
+  If the file you specify is actually a directory, Dired is called on that
+directory (@pxref{Dired}).  This can be inhibited by setting the variable
+@code{find-file-run-dired} to @code{nil}; then it is an error to try to
+visit a directory.
+
+  If you visit a file that the operating system won't let you modify,
+Emacs makes the buffer read-only, so that you won't go ahead and make
+changes that you'll have trouble saving afterward.  You can make the
+buffer writable with @kbd{C-x C-q} (@code{toggle-read-only}).
+@xref{Misc Buffer}.
+
+@kindex C-x C-r
+@findex find-file-read-only
+  Occasionally you might want to visit a file as read-only in order to
+protect yourself from entering changes accidentally; do so by visiting
+the file with the command @kbd{C-x C-r} (@code{find-file-read-only}).
+
+@kindex C-x C-v
+@findex find-alternate-file
+  If you visit a nonexistent file unintentionally (because you typed the
+wrong file name), use the @kbd{C-x C-v} command
+(@code{find-alternate-file}) to visit the file you really wanted.
+@kbd{C-x C-v} is similar to @kbd{C-x C-f}, but it kills the current
+buffer (after first offering to save it if it is modified).  When it
+reads the file name to visit, it inserts the entire default file name in
+the buffer, with point just after the directory part; this is convenient
+if you made a slight error in typing the name.
+
+@kindex C-x 4 f
+@findex find-file-other-window
+  @kbd{C-x 4 f} (@code{find-file-other-window}) is like @kbd{C-x C-f}
+except that the buffer containing the specified file is selected in another
+window.  The window that was selected before @kbd{C-x 4 f} continues to
+show the same buffer it was already showing.  If this command is used when
+only one window is being displayed, that window is split in two, with one
+window showing the same buffer as before, and the other one showing the
+newly requested file.  @xref{Windows}.
+
+@vindex find-file-hooks
+@vindex find-file-not-found-hooks
+  Two special hook variables allow extensions to modify the operation of
+visiting files.  Visiting a file that does not exist runs the functions
+in the list @code{find-file-not-found-hooks}; this variable holds a list
+of functions, and the functions are called one by one until one of them
+returns non-@code{nil}.  Any visiting of a file, whether extant or not,
+expects @code{find-file-hooks} to contain a list of functions and calls
+them all, one by one.  In both cases the functions receive no
+arguments.  Of these two variables, @code{find-file-not-found-hooks}
+takes effect first.  These variables are @emph{not} normal hooks, and
+their names end in @samp{-hooks} rather than @samp{-hook} to indicate
+that fact.
+
+  There are several ways to specify automatically the major mode for
+editing the file (@pxref{Choosing Modes}), and to specify local
+variables defined for that file (@pxref{File Variables}).
+
+@node Saving
+@section Saving Files
+
+  @dfn{Saving} a buffer in Emacs means writing its contents back into the file
+that was visited in the buffer.
+
+@table @kbd
+@item C-x C-s
+Save the current buffer in its visited file (@code{save-buffer}).
+@item C-x s
+Save any or all buffers in their visited files (@code{save-some-buffers}).
+@item M-~
+Forget that the current buffer has been changed (@code{not-modified}).
+@item C-x C-w
+Save the current buffer in a specified file (@code{write-file}).
+@item M-x set-visited-file-name
+Change file the name under which the current buffer will be saved.
+@end table
+
+@kindex C-x C-s
+@findex save-buffer
+  When you wish to save the file and make your changes permanent, type
+@kbd{C-x C-s} (@code{save-buffer}).  After saving is finished, @kbd{C-x C-s}
+prints a message such as
+
+@example
+Wrote /u/rms/gnu/gnu.tasks
+@end example
+
+@noindent
+If the selected buffer is not modified (no changes have been made in it
+since the buffer was created or last saved), saving is not really done,
+because it would have no effect.  Instead, @kbd{C-x C-s} prints a message
+in the echo area saying
+
+@example
+(No changes need to be written)
+@end example
+
+@kindex C-x s
+@findex save-some-buffers
+  The command @kbd{C-x s} (@code{save-some-buffers}) offers to save any
+or all modified buffers.  It asks you what to do with each buffer.  The
+options are analogous to those of @code{query-replace}:
+
+@table @kbd
+@item y
+Save this buffer and ask about the rest of the buffers.
+@item n
+Don't save this buffer, but ask about the rest of the buffers.
+@item !
+Save this buffer and all the rest with no more questions.
+@c following generates acceptable underfull hbox
+@item @key{ESC}
+Terminate @code{save-some-buffers} without any more saving.
+@item .
+Save this buffer, then exit @code{save-some-buffers} without even asking
+about other buffers.
+@item C-r
+View the buffer that you are currently being asked about.  When you exit
+View mode, you get back to @code{save-some-buffers}, which asks the
+question again.
+@item C-h
+Display a help message about these options.
+@end table
+
+  @kbd{C-x C-c}, the key sequence to exit Emacs, invokes
+@code{save-some-buffers} and therefore asks the same questions.
+
+@kindex M-~
+@findex not-modified
+  If you have changed a buffer and do not want the changes to be saved,
+you should take some action to prevent it.  Otherwise, each time you use
+@kbd{C-x s} or @kbd{C-x C-c}, you are liable to save it by mistake.  One
+thing you can do is type @kbd{M-~} (@code{not-modified}), which clears
+out the indication that the buffer is modified.  If you do this, none of
+the save commands will believe that the buffer needs to be saved.
+(@samp{~} is often used as a mathematical symbol for `not'; thus
+@kbd{M-~} is `not', metafied.)  You could also use
+@code{set-visited-file-name} (see below) to mark the buffer as visiting
+a different file name, one which is not in use for anything important.
+Alternatively, you can cancel all the changes made since the file was
+visited or saved, by reading the text from the file again.  This is
+called @dfn{reverting}.  @xref{Reverting}.  You could also undo all the
+changes by repeating the undo command @kbd{C-x u} until you have undone
+all the changes; but reverting is easier.
+
+@findex set-visited-file-name
+  @kbd{M-x set-visited-file-name} alters the name of the file that the
+current buffer is visiting.  It reads the new file name using the
+minibuffer.  Then it specifies the visited file name and changes the
+buffer name correspondingly (as long as the new name is not in use).
+@code{set-visited-file-name} does not save the buffer in the newly
+visited file; it just alters the records inside Emacs in case you do
+save later.  It also marks the buffer as ``modified'' so that @kbd{C-x
+C-s} in that buffer @emph{will} save.
+
+@kindex C-x C-w
+@findex write-file
+  If you wish to mark the buffer as visiting a different file and save it
+right away, use @kbd{C-x C-w} (@code{write-file}).  It is precisely
+equivalent to @code{set-visited-file-name} followed by @kbd{C-x C-s}.
+@kbd{C-x C-s} used on a buffer that is not visiting with a file has the
+same effect as @kbd{C-x C-w}; that is, it reads a file name, marks the
+buffer as visiting that file, and saves it there.  The default file name in
+a buffer that is not visiting a file is made by combining the buffer name
+with the buffer's default directory.
+
+  If Emacs is about to save a file and sees that the date of the latest
+version on disk does not match what Emacs last read or wrote, Emacs
+notifies you of this fact, because it probably indicates a problem caused
+by simultaneous editing and requires your immediate attention.
+@xref{Interlocking,, Simultaneous Editing}.
+
+@vindex require-final-newline
+  If the variable @code{require-final-newline} is non-@code{nil}, Emacs
+puts a newline at the end of any file that doesn't already end in one,
+every time a file is saved or written.
+
+@vindex write-file-hooks
+  You can implement other ways to write files, and other things to be
+done before writing them, using the variable
+@code{write-file-hooks}.  The value of this variable should be a list of
+Lisp functions.  When a file is to be written, the functions in the list
+are called, one by one, with no arguments.  If one of them returns a
+non-@code{nil} value, Emacs takes this to mean that the file has been
+written in some suitable fashion; the rest of the functions are not
+called, and normal writing is not done.  If this variable is local to a
+buffer, changing major modes does not clear it.  However, changing the
+visited file name does clear this variable to @code{nil}.
+
+@vindex local-write-file-hooks
+  The list @code{local-write-file-hooks} is used just like
+@code{write-file-hooks}.  This list is for use as a local variable.  It
+is a permanent local, so that switching major modes does not affect it.
+
+@vindex write-contents-hooks
+  The variable @code{write-contents-hooks} holds another list of
+functions to be called before writing out a buffer to a file.  These
+functions are used just like the ones in @code{write-file-hooks}.  The
+difference between this and @code{write-file-hooks} is that changing the
+major mode does clear this variable, and setting the visited file name
+does not clear it.
+
+  The hook variables described here are not normal hooks, because the
+values returned by the hook functions do matter.  This is why they have
+names ending in @samp{-hooks} rather than @samp{-hook}.  @xref{Hooks}.
+
+@menu
+* Backup::       How Emacs saves the old version of your file.
+* Interlocking:: How Emacs protects against simultaneous editing
+                  of one file by two users.
+@end menu
+
+@node Backup
+@subsection Backup Files
+@cindex backup file
+@vindex make-backup-files
+
+  Because Unix does not provide version numbers in file names, rewriting a
+file in Unix automatically destroys all record of what the file used to
+contain.  Thus, saving a file from Emacs throws away the old contents of
+the file---or it would, except that Emacs carefully copies the old contents
+to another file, called the @dfn{backup} file, before actually saving.
+(This assumes that the variable @code{make-backup-files} is non-@code{nil}.
+Backup files are not written if this variable is @code{nil}.)
+
+  At your option, Emacs can keep either a single backup file or a series of
+numbered backup files for each file that you edit.
+
+  Emacs makes a backup for a file only the first time the file is saved
+from one buffer.  No matter how many times you save a file, its backup file
+continues to contain the contents from before the file was visited.
+Normally this means that the backup file contains the contents from before
+the current editing session; however, if you kill the buffer and then visit
+the file again, a new backup file will be made by the next save.
+
+@menu
+* Names: Backup Names.		How backup files are named;
+				Choosing single or numbered backup files.
+* Deletion: Backup Deletion.	Emacs deletes excess numbered backups.
+* Copying: Backup Copying.	Backups can be made by copying or renaming.
+@end menu
+
+@node Backup Names
+@subsubsection Single or Numbered Backups
+
+  If you choose to have a single backup file (this is the default),
+the backup file's name is constructed by appending @samp{~} to the
+file name being edited; thus, the backup file for @file{eval.c} would
+be @file{eval.c~}.
+
+  If you choose to have a series of numbered backup files, backup file
+names are made by appending @samp{.~}, the number, and another @samp{~} to
+the original file name.  Thus, the backup files of @file{eval.c} would be
+called @file{eval.c.~1~}, @file{eval.c.~2~}, and so on, through names
+like @file{eval.c.~259~} and beyond.
+
+  If protection stops you from writing backup files under the usual names,
+the backup file is written as @file{%backup%~} in your home directory.
+Only one such file can exist, so only the most recently made such backup is
+available.
+
+@vindex version-control
+  The choice of single backup or numbered backups is controlled by the
+variable @code{version-control}.  Its possible values are
+
+@table @code
+@item t
+Make numbered backups.
+@item nil
+Make numbered backups for files that have numbered backups already.
+Otherwise, make single backups.
+@item never
+Do not in any case make numbered backups; always make single backups.
+@end table
+
+@noindent
+You can set @code{version-control} locally in an individual buffer to
+control the making of backups for that buffer's file.  For example,
+Rmail mode locally sets @code{version-control} to @code{never} to make sure
+that there is only one backup for an Rmail file.  @xref{Locals}.
+
+@cindex @code{VERSION_CONTROL} environment variable
+  If you set the environment variable @code{VERSION_CONTROL}, to tell
+various GNU utilities what to do with backup files, Emacs also obeys the
+environment variable by setting the Lisp variable @code{version-control}
+accordingly at startup.  If the environment variable's value is @samp{t}
+or @samp{numbered}, then @code{version-control} becomes @code{t}; if the
+value is @samp{nil} or @samp{existing}, then @code{version-control}
+becomes @code{nil}; if it is @samp{never} or @samp{simple}, then
+@code{version-control} becomes @code{never}.
+
+@node Backup Deletion
+@subsubsection Automatic Deletion of Backups
+
+  To prevent unlimited consumption of disk space, Emacs can delete numbered
+backup versions automatically.  Generally Emacs keeps the first few backups
+and the latest few backups, deleting any in between.  This happens every
+time a new backup is made.
+
+@vindex kept-old-versions
+@vindex kept-new-versions
+  The two variables @code{kept-old-versions} and
+@code{kept-new-versions} control this deletion.  Their values are,
+respectively the number of oldest (lowest-numbered) backups to keep and
+the number of newest (highest-numbered) ones to keep, each time a new
+backup is made.  Recall that these values are used just after a new
+backup version is made; that newly made backup is included in the count
+in @code{kept-new-versions}.  By default, both variables are 2.
+
+@vindex trim-versions-without-asking
+  If @code{trim-versions-without-asking} is non-@code{nil}, the excess
+middle versions are deleted without a murmur.  If it is @code{nil}, the
+default, then you are asked whether the excess middle versions should
+really be deleted.
+
+  Dired's @kbd{.} (Period) command can also be used to delete old versions.
+@xref{Dired Deletion}.
+
+@node Backup Copying
+@subsubsection Copying vs.@: Renaming
+
+  Backup files can be made by copying the old file or by renaming it.  This
+makes a difference when the old file has multiple names.  If the old file
+is renamed into the backup file, then the alternate names become names for
+the backup file.  If the old file is copied instead, then the alternate
+names remain names for the file that you are editing, and the contents
+accessed by those names will be the new contents.
+
+  The method of making a backup file may also affect the file's owner
+and group.  If copying is used, these do not change.  If renaming is used,
+you become the file's owner, and the file's group becomes the default
+(different operating systems have different defaults for the group).
+
+  Having the owner change is usually a good idea, because then the owner
+always shows who last edited the file.  Also, the owners of the backups
+show who produced those versions.  Occasionally there is a file whose
+owner should not change; it is a good idea for such files to contain
+local variable lists to set @code{backup-by-copying-when-mismatch}
+locally (@pxref{File Variables}).
+
+@vindex backup-by-copying
+@vindex backup-by-copying-when-linked
+@vindex backup-by-copying-when-mismatch
+  The choice of renaming or copying is controlled by three variables.
+Renaming is the default choice.  If the variable
+@code{backup-by-copying} is non-@code{nil}, copying is used.  Otherwise,
+if the variable @code{backup-by-copying-when-linked} is non-@code{nil},
+then copying is used for files that have multiple names, but renaming
+may still used when the file being edited has only one name.  If the
+variable @code{backup-by-copying-when-mismatch} is non-@code{nil}, then
+copying is used if renaming would cause the file's owner or group to
+change.
+
+@node Interlocking
+@subsection Protection against Simultaneous Editing
+
+@cindex file dates
+@cindex simultaneous editing
+  Simultaneous editing occurs when two users visit the same file, both
+make changes, and then both save them.  If nobody were informed that
+this was happening, whichever user saved first would later find that his
+changes were lost.  On some systems, Emacs notices immediately when the
+second user starts to change the file, and issues an immediate warning.
+
+  For the sake of systems where that is not possible, and in case
+someone else proceeds to change the file despite the warning, Emacs also
+checks when the file is saved, and issues a second warning if you are
+about to overwrite a file containing another user's changes.  You can
+prevent loss of the other user's work by taking the proper corrective
+action at that time.
+
+@findex ask-user-about-lock
+@cindex locking files
+  When you make the first modification in an Emacs buffer that is visiting
+a file, Emacs records that  the file is @dfn{locked} by you.  (It does this by
+writing another file in a directory reserved for this purpose.)  The lock
+is removed when you save the changes.  The idea is that the file is locked
+whenever an Emacs buffer visiting it has unsaved changes.
+
+@cindex collision
+  If you begin to modify the buffer while the visited file is locked by
+someone else, this constitutes a @dfn{collision}.  When Emacs detects a
+collision, it asks you what to do, by calling the Lisp function
+@code{ask-user-about-lock}.  You can redefine this function for the sake
+of customization.  The standard definition of this function asks you a
+question and accepts three possible answers:
+
+@table @kbd
+@item s
+Steal the lock.  Whoever was already changing the file loses the lock,
+and you gain the lock.
+@item p
+Proceed.  Go ahead and edit the file despite its being locked by someone else.
+@item q
+Quit.  This causes an error (@code{file-locked}) and the modification you
+were trying to make in the buffer does not actually take place.
+@end table
+
+  Note that locking works on the basis of a file name; if a file has
+multiple names, Emacs does not realize that the two names are the same file
+and cannot prevent two users from editing it simultaneously under different
+names.  However, basing locking on names means that Emacs can interlock the
+editing of new files that will not really exist until they are saved.
+
+  Some systems are not configured to allow Emacs to make locks.  On
+these systems, Emacs cannot detect trouble in advance, but it still can
+detect the collision when you try to save a file and overwrite someone
+else's changes.
+
+  Every time Emacs saves a buffer, it first checks the last-modification
+date of the existing file on disk to verify that it has not changed since the
+file was last visited or saved.  If the date does not match, it implies
+that changes were made in the file in some other way, and these changes are
+about to be lost if Emacs actually does save.  To prevent this, Emacs
+prints a warning message and asks for confirmation before saving.
+Occasionally you will know why the file was changed and know that it does
+not matter; then you can answer @kbd{yes} and proceed.  Otherwise, you should
+cancel the save with @kbd{C-g} and investigate the situation.
+
+  The first thing you should do when notified that simultaneous editing has
+already taken place is to list the directory with @kbd{C-u C-x C-d}
+(@pxref{ListDir,,Directory Listing}).  This  shows the file's current
+author.  You should attempt to contact him to warn him not to continue
+editing.  Often the next step is to save the contents of your Emacs buffer
+under a different name, and use @code{diff} to compare the two
+files.@refill
+
+  Simultaneous editing checks are also made when you visit with @kbd{C-x
+C-f} a file that is already visited and when you start to modify a
+file.  This is not strictly necessary, but it can cause you to find out
+about the collision earlier, when perhaps correction takes less work.
+
+@node Reverting
+@section Reverting a Buffer
+@findex revert-buffer
+@cindex drastic changes
+
+  If you have made extensive changes to a file and then change your mind
+about them, you can get rid of them by reading in the previous version of
+the file.  To do this, use @kbd{M-x revert-buffer}, which operates on the
+current buffer.  Since this is a very dangerous thing to do, you must
+confirm it with @kbd{yes}.
+
+  @code{revert-buffer} keeps point at the same distance (measured in
+characters) from the beginning of the file.  If the file was edited only
+slightly, you will be at approximately the same piece of text after
+reverting as before.  If you have made drastic changes, the same value of
+point in the old file may address a totally different piece of text.
+
+  Reverting marks the buffer as ``not modified'' until another change is
+made.
+
+  Some kinds of buffers whose contents reflect data bases other than files,
+such as Dired buffers, can also be reverted.  For them, reverting means
+recalculating their contents from the appropriate data base.  Buffers
+created randomly with @kbd{C-x b} cannot be reverted; @code{revert-buffer}
+reports an error when asked to do so.
+
+@node Auto Save
+@section Auto-Saving: Protection Against Disasters
+@cindex Auto Save mode
+@cindex mode, Auto Save
+@cindex crashes
+
+  Emacs saves all the visited files from time to time (based on counting
+your keystrokes) without being asked.  This is called @dfn{auto-saving}.
+It prevents you from losing more than a limited amount of work if the
+system crashes.
+
+  When Emacs determines that it is time for auto-saving, each buffer is
+considered, and is auto-saved if auto-saving is turned on for it and it has
+been changed since the last time it was auto-saved.  If any auto-saving is
+done, the message @samp{Auto-saving...} is displayed in the echo area until
+auto-saving is finished.  Errors occurring during auto-saving are caught
+so that they do not interfere with the execution of commands you have been
+typing.
+
+@menu
+* Files: Auto Save Files.
+* Control: Auto Save Control.
+* Recover::		Recovering text from auto-save files.
+@end menu
+
+@node Auto Save Files
+@subsection Auto-Save Files
+
+  Auto-saving does not normally save in the files that you visited, because
+it can be very undesirable to save a program that is in an inconsistent
+state when you have made half of a planned change.  Instead, auto-saving
+is done in a different file called the @dfn{auto-save file}, and the
+visited file is changed only when you request saving explicitly (such as
+with @kbd{C-x C-s}).
+
+  Normally, the auto-save file name is made by appending @samp{#} to the
+front and rear of the visited file name.  Thus, a buffer visiting file
+@file{foo.c} is auto-saved in a file @file{#foo.c#}.  Most buffers that
+are not visiting files are auto-saved only if you request it explicitly;
+when they are auto-saved, the auto-save file name is made by appending
+@samp{#%} to the front and @samp{#} to the rear of buffer name.  For
+example, the @samp{*mail*} buffer in which you compose messages to be
+sent is auto-saved in a file named @file{#%*mail*#}.  Auto-save file
+names are made this way unless you reprogram parts of Emacs to do
+something different (the functions @code{make-auto-save-file-name} and
+@code{auto-save-file-name-p}).  The file name to be used for auto-saving
+in a buffer is calculated when auto-saving is turned on in that buffer.
+
+@vindex auto-save-visited-file-name
+  If you want auto-saving to be done in the visited file, set the variable
+@code{auto-save-visited-file-name} to be non-@code{nil}.  In this mode,
+there is really no difference between auto-saving and explicit saving.
+
+@vindex delete-auto-save-files
+  A buffer's auto-save file is deleted when you save the buffer in its
+visited file.  To inhibit this, set the variable @code{delete-auto-save-files}
+to @code{nil}.  Changing the visited file name with @kbd{C-x C-w} or
+@code{set-visited-file-name} renames any auto-save file to go with
+the new visited name.
+
+  When you delete a large amount of a buffer's text, auto-saving turns
+off in that buffer.  This is because if you deleted the text
+unintentionally, you might find the auto-save file more useful if it
+contains the deleted text.  To restart auto-saving in that buffer, use
+@kbd{M-x auto-save} with a positive argument.
+
+@node Auto Save Control
+@subsection Controlling Auto-Saving
+
+@vindex auto-save-default
+@findex auto-save-mode
+  Each time you visit a file, auto-saving is turned on for that file's
+buffer if the variable @code{auto-save-default} is non-@code{nil} (but not
+in batch mode; @pxref{Entering Emacs}).  The default for this variable is
+@code{t}, so auto-saving is the usual practice for file-visiting buffers.
+Auto-saving can be turned on or off for any existing buffer with the
+command @kbd{M-x auto-save-mode}.  Like other minor mode commands, @kbd{M-x
+auto-save-mode} turns auto-saving on with a positive argument, off with a
+zero or negative argument; with no argument, it toggles.
+
+@vindex auto-save-interval
+  Emacs does auto-saving periodically based on counting how many characters
+you have typed since the last time auto-saving was done.  The variable
+@code{auto-save-interval} specifies how many characters there are between
+auto-saves.  By default, it is 300.
+
+@vindex auto-save-timeout
+  Auto-saving also takes place when you stop typing for a while.  The
+variable @code{auto-save-timeout} says how many seconds Emacs should
+wait before it does an auto save (and perhaps also a garbage
+collection).  (The actual time period is longer if the current buffer is
+long; this is a heuristic which aims to keep out of your way when you
+are editing long buffers in which auto-save takes an appreciable amount
+of time.)  Auto-saving during idle periods accomplishes two things:
+first, it makes sure all your work is saved if you go away from the
+terminal for a while; second, it may avoid some auto-saving while you
+are actually typing.
+
+  Emacs also does auto-saving whenever it gets a fatal error.  This
+includes killing the Emacs job with a shell command such as @code{kill
+%emacs}, or disconnecting a phone line or network connection.
+
+@findex do-auto-save
+  You can request an auto-save explicitly with the command @kbd{M-x
+do-auto-save}.
+
+@node Recover
+@subsection Recovering Data from Auto-Saves
+
+@findex recover-file
+  The way to use the contents of an auto-save file to recover from a loss
+of data is with the command @kbd{M-x recover-file @key{RET} @var{file}
+@key{RET}}.  This visits @var{file} and then (after your confirmation)
+restores the contents from from its auto-save file @file{#@var{file}#}.  You
+can then save with @kbd{C-x C-s} to put the recovered text into @var{file}
+itself.  For example, to recover file @file{foo.c} from its auto-save file
+@file{#foo.c#}, do:@refill
+
+@example
+M-x recover-file @key{RET} foo.c @key{RET}
+yes @key{RET}
+C-x C-s
+@end example
+
+  Before asking for confirmation, @kbd{M-x recover-file} displays a
+directory listing describing the specified file and the auto-save file,
+so you can compare their sizes and dates.  If the auto-save file
+is older, @kbd{M-x recover-file} does not offer to read it.
+
+@node File Aliases
+@section File Name Aliases
+
+  Symbolic links and hard links both make it possible for several file
+names to refer to the same file.  For example, when @file{foo} is a
+symbolic link to @file{bar}, the file has two names, but @file{bar} is
+the real name, and @file{foo} is just an alias.  More complex cases
+occur when symbolic links point to directories.
+
+  If you visit two names for the same file, normally Emacs makes
+two different buffers, but it warns you about the situation.
+
+@vindex find-file-existing-other-name
+  If you wish to avoid visiting the same file in two buffers under
+different names, set the variable @code{find-file-existing-other-name}
+to a non-@code{nil} value.  Then @code{find-file} uses the existing
+buffer visiting the file, no matter which of the file's names you
+specify.
+
+@vindex find-file-visit-truename
+@cindex truenames of files
+@cindex file truenames
+  If the variable @code{find-file-visit-truename} is non-@code{nil},
+then the file name recorded for a buffer is the file's @dfn{truename}
+(made by replacing all symbolic links with their target names), rather
+than the name you specify.  Setting @code{find-file-visit-truename} also
+implies the effect of @code{find-file-existing-other-name}.
+
+@node Version Control
+@section Version Control
+@cindex version control
+
+  @dfn{Version control systems} are packages that can record multiple
+versions of a source file, usually storing the unchanged parts of the
+file just once.  Version control systems also record history information
+such as the creation time of each version, who created it, and a 
+description of what was changed in that version.
+
+  The GNU project recommends the version control system known as RCS,
+which is free software and available from the Free Software Foundation.
+Emacs supports use of either RCS or SCCS (a proprietary, but widely
+used, version control system that is not quite as powerful as RCS)
+through a facility called VC.  The same Emacs commands work with either
+RCS or SCCS, so you hardly have to know which one of them you are
+using.
+
+@menu
+* Concepts of VC::
+* Editing with VC::
+* Variables for Check-in/out::
+* Comparing Versions::
+* VC Status::
+* Renaming and VC::
+* Snapshots::
+* Log Entries::
+* Change Logs and VC::
+* Version Headers::
+@end menu
+
+@node Concepts of VC
+@subsection Concepts of Version Control
+
+@cindex RCS
+@cindex SCCS
+@cindex master file
+@cindex registered file
+@cindex work file
+   When a file is under version control, we also say that it is
+@dfn{registered} in the version control system.  Each registered file
+has a corresponding @dfn{master file} which represents the file's
+present state plus its change history, so that you can reconstruct from
+it either the current version or any specified earlier version.  Usually
+the master file also records a @dfn{log entry} for each version describing
+what was changed in that version.
+
+  The file that is maintained under version control is sometimes called
+the @dfn{work file} corresponding to its master file.
+
+@cindex checking out files
+@cindex checking in files
+@cindex locking and version control
+   To examine a file, you @dfn{check it out}.  This extracts a version
+of the source file (typically, the most recent) from the master file.
+If you want to edit the file, you must check it out @dfn{locked}.  Only
+one user can do this at a time for any given source file.  (This kind 
+of locking is completely unrelated to the locking that Emacs uses to
+detect simultaneous editing of a file.)
+
+  When you are done with your editing, you must @dfn{check in} the new
+version.  This records the new version in the master file, and unlocks
+the source file so that other people can lock it and thus modify it.
+
+  Checkin and checkout are the basic operations of version control.  You
+can do both of them with a single Emacs command: @w{@kbd{C-x C-q}}
+(@code{vc-toggle-read-only}).
+
+@node Editing with VC
+@subsection Editing with Version Control
+
+  When you visit a file that is maintained using version control, the
+mode line displays @samp{RCS} or @samp{SCCS} to inform you that version
+control is in use, and also (in case you care) which low-level system
+the file is actually stored in.  Normally, such a source file is
+read-only, and the mode line indicates this with @samp{%%}.
+
+  These are the commands for editing a file maintained with
+version control:
+
+@table @kbd
+@item C-x C-q
+Check the visited file in or out.
+
+@item C-x v u
+Revert the buffer and the file to the last checked in version.
+
+@item C-x v c
+Remove the last-entered change from the master for the visited file.
+This undoes your last check-in.
+
+@item C-x v i
+Register the visited file in version control.
+@end table
+
+@noindent
+(@kbd{C-x v} is the prefix key for version control commands; all of these
+commands except for @kbd{C-x C-q} start with @kbd{C-x v}.)
+
+@kindex C-x C-q @r{(version control)}
+  When you want to modify a file maintained with version control, type
+@kbd{C-x C-q} (@code{vc-toggle-read-only}).  This @dfn{checks out} the
+file, and tells RCS or SCCS to lock the file.  This means making the
+file writable for you (but not for anyone else).
+
+@cindex log entry
+  When you are finished editing the file, type @kbd{C-x C-q} again.
+When used on a file that is checked out, this command checks the file
+in.  But check-in does not start immediately; first, you must enter the
+@dfn{log entry}---a description of the changes in the new version.
+@kbd{C-x C-q} pops up a buffer for you to enter this in.  When you are
+finished typing in the log entry, type @kbd{C-c C-c} to terminate it; this is
+when actual check-in takes place.
+
+  Once you have checked in your changes, the file is unlocked, so that
+other users can lock it and modify it.
+
+@vindex vc-make-backups
+  Emacs does not save backup files for source files that are maintained
+with version control.  If you want to make backup files despite version
+control, set the variable @code{vc-make-backups} to a non-@code{nil} value.
+
+@vindex vc-keep-workfiles
+  Normally the work file exists all the time, whether it is locked or
+not.  If you set @code{vc-keep-workfiles} to @code{nil}, then checking
+in a new version with @kbd{C-x C-q} deletes the work file; but any
+attempt to visit the file with Emacs creates it again.
+
+  It is not impossible to lock a file that someone else has locked.  If
+you try to check out a file that is locked, @kbd{C-x C-q} asks you
+whether you want to ``steal the lock.''  If you say yes, the file
+becomes locked by you, but a message is sent to the person who had
+formerly locked the file, to inform him of what has happened.
+
+@kindex C-x v u
+@findex vc-revert-buffer
+  If you want to discard your current set of changes and revert to the
+last version checked in, use @kbd{C-x v u} (@code{vc-revert-buffer}).
+This cancels your last check-out, leaving the file unlocked.  If you want
+to make a different set of changes, you must first check the file out
+again.  @kbd{C-x v u} requires confirmation, unless it sees that 
+you haven't made any changes since the last checked-in version.
+
+  @kbd{C-x v u} is also the command to use if you lock a file and then
+don't actually change it.
+
+@kindex C-x v c
+@findex vc-cancel-version
+  You can cancel a change after checking it in, with @kbd{C-x v c}
+(@code{vc-cancel-version}).  This command discards all record of the
+most recent checked in version, so be careful about using it.  It
+requires confirmation with @kbd{yes}.  By default, @kbd{C-x v c} reverts
+your workfile and buffer to the previous version (the one that precedes
+the version that is deleted), but you can prevent the reversion by
+giving the command a prefix argument.  Then the buffer does not change.
+
+  This command with a prefix argument is useful when you have checked in
+a change and then discover a trivial error in it; you can cancel the
+erroneous check-in, fix the error, and repeat the check-in.
+
+  Be careful when invoking @kbd{C-x v c}, as it is easy to throw away a
+lot of work with it.  To help you be careful, this command always asks
+for confirmation with @samp{yes}.
+
+@kindex C-x v i
+@findex vc-register
+  You can register the visited file for version control using
+@w{@kbd{C-x v i}} (@code{vc-register}).  This uses RCS if RCS is
+installed on your system; otherwise, it uses SCCS.  After @kbd{C-x v i},
+the file is unlocked and read-only.  Type @kbd{C-x C-q} if you wish to
+edit it.
+
+  By default, the initial version number is 1.1.  If you want to use a
+different number, give @kbd{C-x v i} a prefix argument; then it reads
+the initial version number using the minibuffer.
+
+@vindex vc-initial-comment
+  If @code{vc-initial-comment} is non-@code{nil}, @kbd{C-x v i} reads
+an initial comment (much like a log entry) to describe the purpose of
+this source file.
+
+@node Variables for Check-in/out
+@subsection Variables Affecting Check-in and Check-out
+@c There is no need to tell users about vc-master-templates.
+
+@vindex vc-suppress-confirm
+  If @code{vc-suppress-confirm} is non-@code{nil}, then @kbd{C-x C-q}
+and @kbd{C-x v i} can save the current buffer without asking, and
+@kbd{C-x v u} also operates without asking for confirmation.
+(This variable does not affect @kbd{C-x v c}; that is so drastic
+that it should always ask for confirmation.)
+
+@vindex vc-command-messages
+  VC mode does much of its work by running the shell commands for RCS
+and SCCS.  If @code{vc-command-messages} is non-@code{nil}, VC displays
+messages to indicate which shell commands it runs, and additional
+messages when the commands finish.
+
+  Normally, VC assumes that it can deduce the locked/unlocked state of
+files by looking at the file permissions of the work file; this is
+fast.  However, if the @file{RCS} or @file{SCCS} subdirectory is
+actually a symbolic link, then VC does not trust the file permissions to
+reflect this status.
+
+@vindex vc-mistrust-permissions
+You can specify the criterion for whether to trust the file permissions
+by setting the variable @code{vc-mistrust-permissions}.  Its value may
+be @code{t} (always mistrust the file permissions and check the master
+file), @code{nil} (always trust the file permissions), or a function of
+one argument which makes the decision.  The argument is the directory
+name of the @file{RCS} or @file{SCCS} subdirectory.  A non-@code{nil}
+value from the function says to mistrust the file permissions.
+
+  If you find that the file permissions of work files are changed
+erroneously, set @code{vc-mistrust-permissions} to @code{t}.  Then VC
+always checks the master file to determine the file's status.
+
+@node Log Entries
+@subsection Log Entries
+
+  When you're editing an initial comment or log entry for inclusion in a
+master file, finish your entry by typing @kbd{C-c C-c}.
+
+@table @kbd
+@item C-c C-c
+Finish the comment edit normally (@code{vc-finish-logentry}).
+This finishes check-in.
+@end table
+
+  To abort check-in, just don't type @kbd{C-c C-c} in that buffer.  You
+can switch buffers and do other editing.  As long as you don't try to
+check in another file, the entry you were editing remains in its
+buffer, and you can go back to that buffer at any time to complete the
+check-in.
+
+  If you change several source files for the same reason, it is often
+convenient to specify the same log entry for many of the files.  To do
+this, use the history of previous log entries.  The commands @kbd{M-n},
+@kbd{M-p}, @kbd{M-s} and @kbd{M-r} for doing this work just like the
+minibuffer history commands (except that these versions are used outside
+the minibuffer).
+
+@vindex vc-log-mode-hook
+  Each time you check in a file, the log entry buffer is put into VC Log
+mode, which involves running two hooks: @code{text-mode-hook} and
+@code{vc-log-mode-hook}.  @xref{Hooks}.
+
+@node Change Logs and VC
+@subsection Change Logs and VC
+
+  If you use RCS for a program and also maintain a change log file for
+it (@pxref{Change Log}), you can generate change log entries
+automatically from the version control log entries:
+
+@table @kbd
+@item C-x v a
+@kindex C-x v a
+@findex vc-update-change-log
+Visit the current directory's change log file and create new entries for
+versions checked in since the most recent entry in the change log file
+(@code{vc-update-change-log}).
+
+This command works with RCS only; it does not work with SCCS.
+@end table
+
+  For example, suppose the first line of @file{ChangeLog} is dated 10
+April 1992, and that the only check-in since then was by Nathaniel
+Bowditch to @file{rcs2log} on 8 May 1992 with log text @samp{Ignore log
+messages that start with `#'.}.  Then @kbd{C-x v a} visits
+@file{ChangeLog} and inserts text like this:
+
+@example
+@group
+Fri May  8 21:45:00 1992  Nathaniel Bowditch  (nat@@apn.org)
+
+        * rcs2log: Ignore log messages that start with `#'.
+@end group
+@end example
+
+@noindent
+You can then edit the new change log entry further as you wish.
+
+  Normally, the log entry for file @file{foo} is displayed as @samp{*
+foo: @var{text of log entry}}.  The @samp{:} after @file{foo} is omitted
+if the text of the log entry starts with @w{@samp{(@var{functionname}):
+}}.  For example, if the log entry for @file{vc.el} is
+@samp{(vc-do-command): Check call-process status.}, then the text in
+@file{ChangeLog} looks like this:
+
+@example
+@group
+Wed May  6 10:53:00 1992  Nathaniel Bowditch  (nat@@apn.org)
+
+        * vc.el (vc-do-command): Check call-process status.
+@end group
+@end example
+
+  When @kbd{C-x v a} adds several change log entries at once, it groups
+related log entries together if they all are checked in by the same
+author at nearly the same time.  If the log entries for several such
+files all have the same text, it coalesces them into a single entry.
+For example, suppose the most recent checkins have the following log
+entries:
+
+@example
+@exdent For @file{vc.texinfo}:
+Fix expansion typos.
+@exdent For @file{vc.el}:
+Don't call expand-file-name.
+@exdent For @file{vc-hooks.el}:
+Don't call expand-file-name.
+@end example
+
+  They appear like this in @file{ChangeLog}:
+
+@example
+@group
+Wed Apr  1 08:57:59 1992  Nathaniel Bowditch  (nat@@apn.org)
+
+        * vc.texinfo: Fix expansion typos.
+
+        * vc.el, vc-hooks.el: Don't call expand-file-name.
+@end group
+@end example
+
+  Normally, @kbd{C-x v a} separates log entries by a blank line, but you
+can mark several related log entries to be clumped together (without an
+intervening blank line) by starting the text of each related log entry
+with a label of the form @w{@samp{@{@var{clumpname}@} }}.  The label
+itself is not copied to @file{ChangeLog}.  For example, suppose the log
+entries are:
+
+@example
+@exdent For @file{vc.texinfo}:
+@{expand@} Fix expansion typos.
+@exdent For @file{vc.el}:
+@{expand@} Don't call expand-file-name.
+@exdent For @file{vc-hooks.el}:
+@{expand@} Don't call expand-file-name.
+@end example
+
+@noindent
+Then the text in @file{ChangeLog} looks like this:
+
+@example
+@group
+Wed Apr  1 08:57:59 1992  Nathaniel Bowditch  (nat@@apn.org)
+
+        * vc.texinfo: Fix expansion typos.
+        * vc.el, vc-hooks.el: Don't call expand-file-name.
+@end group
+@end example
+
+  A log entry whose text begins with @samp{#} is not copied to
+@file{ChangeLog}.  For example, if you merely fix some misspellings in
+comments, you can log the change with an entry beginning with @samp{#}
+to avoid putting such trivia into @file{ChangeLog}.
+
+@node Comparing Versions
+@subsection Comparing Versions
+
+@findex vc-diff
+@kindex C-x v =
+  To compare two versions of a file, use the command @kbd{C-x v =}
+(@code{vc-diff}).
+
+  Plain @kbd{C-x v =} compares the current buffer contents (saving them
+in the file if necessary) with the last checked-in version of the file.
+With a prefix argument, @kbd{C-x v =} reads a file name and two version
+numbers, then compares those versions of the specified file.
+
+  If you supply a directory name instead of the name of a work file,
+this command compares the two specified versions of all registered files
+in that directory and its subdirectories.  You can also specify a
+snapshot name (@pxref{Snapshots}) instead of one or both version
+numbers.
+
+  You can specify a checked-in version by its number; you can specify
+the most recent checked-in version with an empty version number.
+
+  This command works by running the @code{diff} utility, getting the
+options from the variable @code{diff-switches}.  It displays the output
+in a special buffer in another window.  Unlike the @kbd{M-x diff}
+command, @kbd{C-x v =} does not try to find the changes in the old and
+new versions.  This is because one or both versions normally do not
+exist as files.  They exist only in the records of the master file.
+@xref{Comparing Files}, for more information about @kbd{M-x diff}.
+
+@node VC Status
+@subsection VC Status Commands
+
+@kindex C-x v l
+@findex vc-print-log
+  To view the detailed version control status and history of a file,
+type @kbd{C-x v l} (@code{vc-print-log}).  It displays the history of
+changes to the current file, including the text of the log entries.  The
+output appears in a separate window.
+
+@kindex C-x v d
+@findex vc-directory
+  When you are working on a large program, it's often useful to find all
+the files that are currently locked, or all the files maintained in
+version control at all.  You can use @kbd{C-x v d} (@code{vc-directory})
+to show all the locked files in or beneath the current directory.  This
+includes all files that are locked by any user.  @kbd{C-u C-x v d} lists
+all files in or beneath the current directory that are maintained with
+version control.
+
+  The list of files is displayed as a buffer that uses an augmented
+Dired mode.  The names of the users locking various files are shown (in
+parentheses) in place of the owner and group.  All the normal Dired
+commands work in this buffer.  Most interactive VC commands work also,
+and apply to the file name on the current line.
+
+  The @code{vc-next-action} command, when used in the augmented Dired
+buffer, operates on all the marked files (or the file on the current
+line).  If it operates on more than one file, it handles each file
+according to its current state; thus, it may check in one file and check
+in another (which is already checked out).  If it has to check in any
+files, it reads a single log entry, then uses that text for all the
+files being checked in.  This can be convenient for registering or
+checking in several files at once, as part of the same change.
+
+@node Renaming and VC
+@subsection Renaming VC Work Files and Master Files
+
+@findex vc-rename-file
+  When you rename a registered file, you must also rename its master
+file correspondingly to get proper results.  Use @code{vc-rename-file}
+to rename the source file as you specify, and rename its master file
+accordingly.  It also updates any snapshots (@pxref{Snapshots}) that
+mention the file, so that they use the new name; despite this, the
+snapshot thus modified may not completely work (@pxref{Snapshot
+Caveats}).
+
+  You cannot use @code{vc-rename-file} on a file that is locked by
+someone else.
+
+@node Snapshots
+@subsection Snapshots
+@cindex snapshots and version control
+
+  A @dfn{snapshot} is a named set of file versions (one for each
+registered file) that you can treat as a unit.  One important kind of
+snapshot is a @dfn{release}, a (theoretically) stable version of the
+system that is ready for distribution to users.
+
+@menu
+* Making Snapshots::		The snapshot facilities.
+* Snapshot Caveats::		Things to be careful of, when using snapshots.
+@end menu
+
+@node Making Snapshots
+@subsubsection Making and Using Snapshots
+
+  There are two basic commands for snapshots; one makes a
+snapshot with a given name, the other retrieves a named snapshot.
+
+@table @code
+@kindex C-x v s
+@findex vc-create-snapshot
+@item C-x v s @var{name} @key{RET}
+Define the last saved versions of every registered file in or under the
+current directory as a snapshot named @var{name}
+(@code{vc-create-snapshot}).
+
+@kindex C-x v r
+@findex vc-retrieve-snapshot
+@item C-x v r @var{name} @key{RET}
+Check out all registered files at or below the current directory level
+using whatever versions correspond to the snapshot @var{name}
+(@code{vc-retrieve-snapshot}).
+
+This command reports an error if any files are locked at or below the
+current directory, without changing anything; this is to avoid
+overwriting work in progress.
+@end table
+
+  A snapshot uses a very small amount of resources---just enough to record
+the list of file names and which version belongs to the snapshot.  Thus,
+you need not hesitate to create snapshots whenever they are useful.
+
+  You can give a snapshot name as an argument to @kbd{C-x v =}
+(@pxref{Comparing Versions}).  Thus, you can use it to compare a
+snapshot against the current files, or two snapshots against each other,
+or a snapshot against a named version.
+
+@node Snapshot Caveats
+@subsubsection Snapshot Caveats
+
+@cindex named configurations (RCS)
+VC's snapshot facilities are modeled on RCS's named-configuration
+support.  They use RCS's native facilities for this, so under VC
+snapshots made using RCS are visible even when you bypass VC.
+
+@c worded verbosely to avoid overfull hbox.
+For SCCS, VC implements snapshots itself.  The files it uses contain
+name/file/version-number triples.  These snapshots are visible only
+through VC.
+
+  File renaming and deletion can create some difficulties with snapshots.
+This is not a VC-specific problem, but a general design issue in version
+control systems that no one has solved very well yet.
+
+  If you rename a registered file, you need to rename its master along
+with it (the command @code{vc-rename-file} does this automatically).  If
+you are using SCCS, you must also update the records of the snapshot, to
+mention the file by its new name (@code{vc-rename-file} does this,
+too).  An old snapshot that refers to a master file that no longer
+exists under the recorded name is invalid; VC can no longer retrieve
+it.  It would be beyond the scope of this manual to explain enough about
+RCS and SCCS to explain how to update the snapshots by hand.
+
+  Using @code{vc-rename-file} makes the snapshot remain valid for
+retrieval, but it does not solve all problems.  For example, some of the
+files in the program probably refer to others by name.  At the very
+least, the makefile probably mentions the file that you renamed.  If you
+retrieve an old snapshot, the renamed file is retrieved under its new
+name, which is not the name that the makefile expects.  So the program
+won't really work as retrieved.
+
+@node Version Headers
+@subsection Inserting Version Control Headers
+
+   Sometimes it is convenient to put version identification strings
+directly into working files.  Certain special strings called
+@dfn{version headers} are replaced in each successive version by the
+number of that version.
+
+@kindex C-x v h
+@findex vc-insert-headers
+  You can use the @kbd{C-x v h} command (@code{vc-insert-headers}) to
+insert a suitable header string.
+
+@table @kbd
+@item C-x v h
+Insert headers in a file for use with your version-control system.
+@end table
+
+@vindex vc-header-alist
+  The default header string is @samp{$Id$} for RCS and @samp{%W%} for
+SCCS.  You can specify other headers to insert by setting the variable
+@code{vc-header-alist}.  Its value is a list of elements of the form
+@code{(@var{program} . @var{string})} where @var{program} is @code{RCS}
+or @code{SCCS} and @var{string} is the string to use.
+
+  Instead of a single string, you can specify a list of strings; then
+each string in the list is inserted as a separate header on a line of
+its own.
+
+  It is often necessary to use ``superfluous'' backslashes when writing
+the strings that you put in this variable.  This is to prevent the
+string in the constant from being interpreted as a header itself if the
+Emacs Lisp file containing it is maintained with version control.
+
+@vindex vc-comment-alist
+  Each header is inserted surrounded by tabs, inside comment delimiters,
+on a new line at the start of the buffer.  Normally the ordinary comment
+start and comment end strings of the current mode are used, but for
+certain modes, there are special comment delimiters for this purpose;
+the variable @code{vc-comment-alist} specifies them.  Each element of
+this list has the form @code{(@var{mode} @var{starter} @var{ender})}.
+
+@vindex vc-static-header-alist
+  The variable @code{vc-static-header-alist} specifies further strings
+to add based on the name of the buffer.  Its value should be a list of
+elements of the form @code{(@var{regexp} . @var{format})}.  Whenever
+@var{regexp} matches the buffer name, @var{format} is inserted as part
+of the header.  A header line is inserted for each element that matches
+the buffer name, and for each string specified by
+@code{vc-header-alist}.  The header line is made by processing the
+string from @code{vc-header-alist} with the format taken from the
+element.  The default value for @code{vc-static-header-alist} is:
+
+@example
+@group
+(("\\.c$" .
+  "\n#ifndef lint\nstatic char vcid[] = \"\%s\";\n\
+#endif /* lint */\n"))
+@end group
+@end example
+
+@noindent
+which specifies insertion of a string of this form:
+
+@example
+@group
+
+#ifndef lint
+static char vcid[] = "@var{string}";
+#endif /* lint */
+@end group
+@end example
+
+@node ListDir
+@section Listing a File Directory
+
+@cindex file directory
+@cindex directory listing
+  The file system groups files into @dfn{directories}.  A @dfn{directory
+listing} is a list of all the files in a directory.  Emacs provides
+directory listings in brief format (file names only) and verbose format
+(sizes, dates, and authors included).
+
+@table @kbd
+@item C-x C-d @var{dir-or-pattern}
+Print a brief directory listing (@code{list-directory}).
+@item C-u C-x C-d @var{dir-or-pattern}
+Print a verbose directory listing.
+@end table
+
+@findex list-directory
+@kindex C-x C-d
+  The command to display a directory listing is @kbd{C-x C-d}
+(@code{list-directory}).  It reads using the minibuffer a file name
+which is either a directory to be listed or a wildcard-containing
+pattern for the files to be listed.  For example,
+
+@example
+C-x C-d /u2/emacs/etc @key{RET}
+@end example
+
+@noindent
+lists all the files in directory @file{/u2/emacs/etc}.  An example of
+specifying a file name pattern is
+
+@example
+C-x C-d /u2/emacs/src/*.c @key{RET}
+@end example
+
+  Normally, @kbd{C-x C-d} prints a brief directory listing containing just
+file names.  A numeric argument (regardless of value) tells it to print a
+verbose listing (like @samp{ls -l}).
+
+@vindex list-directory-brief-switches
+@vindex list-directory-verbose-switches
+  The text of a directory listing is obtained by running @code{ls} in an
+inferior process.  Two Emacs variables control the switches passed to
+@code{ls}: @code{list-directory-brief-switches} is a string giving the
+switches to use in brief listings (@code{"-CF"} by default), and
+@code{list-directory-verbose-switches} is a string giving the switches to
+use in a verbose listing (@code{"-l"} by default).
+
+@node Comparing Files
+@section Comparing Files
+@cindex comparing files
+
+@findex diff
+@vindex diff-switches
+  The command @kbd{M-x diff} compares two files, displaying the
+differences in an Emacs buffer named @samp{*Diff*}.  It works by running
+the @code{diff} program, using options taken from the variable
+@code{diff-switches}, whose value should be a string.
+
+  The buffer @samp{*Diff*} has Compilation mode as its major mode, so
+you can use @kbd{C-x `} to visit successive changed locations in the two
+source files.  You can also move to a particular hunk of changes and
+type @kbd{C-c C-c} to find the corresponding source location.  You can
+also use the other special commands of Compilation mode: @key{SPC} and
+@key{DEL} for scrolling, and @kbd{M-p} and @kbd{M-n} for cursor motion.
+@xref{Compilation}.
+
+@findex diff-backup
+  The command @kbd{M-x diff-backup} compares a specified file with its most
+recent backup.  If you specify the name of a backup file,
+@code{diff-backup} compares it with the source file that it is a backup
+of.
+
+@findex compare-windows
+@cindex comparing files
+  The command @kbd{M-x compare-windows} compares the text in the current
+window with that in the next window.  Comparison starts at point in each
+window.  Point moves forward in each window, a character at a time in each
+window, until the next characters in the two windows are different.  Then
+the command is finished.  For more information about windows in Emacs,
+@ref{Windows}.
+
+@vindex compare-ignore-case
+  With a numeric argument, @code{compare-windows} ignores changes in
+whitespace.  If the variable @code{compare-ignore-case} is
+non-@code{nil}, it ignores differences in case as well.
+
+  See also @ref{Emerge}, for convenient facilities for merging two
+similar files.
+
+@node Misc File Ops
+@section Miscellaneous File Operations
+
+  Emacs has commands for performing many other operations on files.
+All operate on one file; they do not accept wild card file names.
+
+@findex view-file
+@cindex viewing
+@cindex View mode
+  @kbd{M-x view-file} allows you to scan or read a file by sequential
+screenfuls.  It reads a file name argument using the minibuffer.  After
+reading the file into an Emacs buffer, @code{view-file} displays the
+beginning.  You can then type @key{SPC} to scroll forward one windowful,
+or @key{DEL} to scroll backward.  Various other commands are provided
+for moving around in the file, but none for changing it; type @kbd{C-h}
+while viewing for a list of them.  They are mostly the same as normal
+Emacs cursor motion commands.  To exit from viewing, type @kbd{C-c}.
+The commands for viewing are defined by a special major mode called View
+mode.
+
+  A related command, @kbd{M-x view-buffer}, views a buffer already present
+in Emacs.  @xref{Misc Buffer}.
+
+@findex insert-file
+  @kbd{M-x insert-file} inserts a copy of the contents of the specified
+file into the current buffer at point, leaving point unchanged before the
+contents and the mark after them.
+
+@findex write-region
+  @kbd{M-x write-region} is the inverse of @kbd{M-x insert-file}; it
+copies the contents of the region into the specified file.  @kbd{M-x
+append-to-file} adds the text of the region to the end of the specified
+file.  @xref{Accumulating Text}.
+
+@findex delete-file
+@cindex deletion (of files)
+  @kbd{M-x delete-file} deletes the specified file, like the @code{rm}
+command in the shell.  If you are deleting many files in one directory, it
+may be more convenient to use Dired (@pxref{Dired}).
+
+@findex rename-file
+  @kbd{M-x rename-file} reads two file names @var{old} and @var{new} using
+the minibuffer, then renames file @var{old} as @var{new}.  If a file named
+@var{new} already exists, you must confirm with @kbd{yes} or renaming is not
+done; this is because renaming causes the old meaning of the name @var{new}
+to be lost.  If @var{old} and @var{new} are on different file systems, the
+file @var{old} is copied and deleted.
+
+@findex add-name-to-file
+  The similar command @kbd{M-x add-name-to-file} is used to add an
+additional name to an existing file without removing its old name.
+The new name must belong on the same file system that the file is on.
+
+@findex copy-file
+@cindex copying files
+  @kbd{M-x copy-file} reads the file @var{old} and writes a new file named
+@var{new} with the same contents.  Confirmation is required if a file named
+@var{new} already exists, because copying has the consequence of overwriting
+the old contents of the file @var{new}.
+
+@findex make-symbolic-link
+  @kbd{M-x make-symbolic-link} reads two file names @var{old} and
+@var{linkname}, then creates a symbolic link named @var{linkname} and
+pointing at @var{old}.  The effect is that future attempts to open file
+@var{linkname} will refer to whatever file is named @var{old} at the
+time the opening is done, or will get an error if the name @var{old} is
+not in use at that time.  This command does not expand the argument
+@var{filename}, so that it allows you to specify a relative name
+as the target of the link.
+
+  Confirmation is required when creating the link if @var{linkname} is
+in use.  Note that not all systems support symbolic links.

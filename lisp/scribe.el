@@ -1,22 +1,33 @@
-;; scribe mode, and its ideosyncratic commands.
+;;; scribe.el --- scribe mode, and its idiosyncratic commands.
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
 
-;; This file is part of GNU Emacs.
+;; Maintainer: FSF
+;; Keywords: wp
 
-;; GNU Emacs is free software; you can redistribute it and/or modify
-;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
-;; any later version.
+;; This file might become part of GNU Emacs.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
-;; but WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-;; GNU General Public License for more details.
+;; but without any warranty.  No author or distributor
+;; accepts responsibility to anyone for the consequences of using it
+;; or for whether it serves any particular purpose or works at all,
+;; unless he says so in writing.
 
-;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to
-;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+;; Everyone is granted permission to copy, modify and redistribute
+;; GNU Emacs, but only under the conditions described in the
+;; document "GNU Emacs copying permission notice".   An exact copy
+;; of the document is supposed to have been given to you along with
+;; GNU Emacs so that you can know how you may redistribute it all.
+;; It should be in a file named COPYING.  Among other things, the
+;; copyright notice and this notice must be preserved on all copies.
 
+;;; Commentary:
+
+;; A major mode for editing source in written for the Scribe text formatter.
+;; Knows about Scribe syntax and standard layout rules.  The command to
+;; run Scribe on a buffer is bogus; someone interested should fix it.
+
+;;; Code:
 
 (defvar scribe-mode-syntax-table nil
   "Syntax table used while in scribe mode.")
@@ -38,8 +49,8 @@ if typed after an @Command form.")
   "Open parenthesis characters for Scribe.")
 
 (defconst scribe-close-parentheses "])}>"
-  "Close parenthesis characters for Scribe.  These should match up with
-scribe-open-parenthesis.")
+  "Close parenthesis characters for Scribe.
+These should match up with `scribe-open-parenthesis'.")
 
 (if (null scribe-mode-syntax-table)
     (let ((st (syntax-table)))
@@ -86,6 +97,7 @@ scribe-open-parenthesis.")
   (define-key scribe-mode-map "\^cb" 'scribe-bold-word)
   (define-key scribe-mode-map "\^cu" 'scribe-underline-word))
 
+;;;###autoload
 (defun scribe-mode ()
   "Major mode for editing files of Scribe (a text formatter) source.
 Scribe-mode is similar text-mode, with a few extra commands added.
@@ -144,9 +156,9 @@ scribe-electric-parenthesis
   (call-interactively 'compile))
 
 (defun scribe-envelop-word (string count)
-  "Surround current word with Scribe construct @STRING[...].  COUNT
-specifies how many words to surround.  A negative count means to skip 
-backward."
+  "Surround current word with Scribe construct @STRING[...].
+COUNT specifies how many words to surround.  A negative count means
+to skip backward."
   (let ((spos (point)) (epos (point)) (ccoun 0) noparens)
     (if (not (zerop count))
 	(progn (if (= (char-syntax (preceding-char)) ?w)
@@ -248,7 +260,8 @@ backward."
   (forward-char -1))
 
 (defun scribe-insert-quote (count)
-  "If scribe-electric-quote is non-NIL, insert ``, '' or \" according
+  "Insert ``, '' or \" according to preceding character.
+If `scribe-electric-quote' is non-NIL, insert ``, '' or \" according
 to preceding character.  With numeric arg N, always insert N \" characters.
 Else just insert \"."
   (interactive "P")
@@ -305,3 +318,5 @@ preceding text is of the form @Command."
 				   scribe-open-parentheses)))
 	  (save-excursion
 	    (insert (aref scribe-close-parentheses paren-char)))))))
+
+;;; scribe.el ends here

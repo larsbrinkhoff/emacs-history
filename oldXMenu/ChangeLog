@@ -1,3 +1,79 @@
+Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+        * Version 19.7 released.
+
+Sat May 15 17:26:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in: Renamed from Makefile, so that the top-level
+	makefile can edit it.
+
+Tue Apr 13 02:38:44 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* XLookAssoc.c, XMakeAssoc: VMS needs <X11/Xresource.h>, not
+	<X11/Xos.h>.
+
+	* XCrAssoc.c: #include <errno.h>, not "errno.h".
+	(XCreateAssocTable): Doc fix.
+
+Wed Mar 24 20:49:08 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile (.c.o): Include C_SWITCH_SITE and C_SWITCH_SYSTEM in
+	the options to the C compiler.
+
+	* compile.com, descrip.mms: New files for VMS from Richard
+	Levitte.
+	* XCrAssoc.c, XLookAssoc.c, XDestAssoc.c, XDelAssoc.c: Use <angle
+	brackets> around the names of the X Windows #include files; VMS
+	needs this.
+	* XLookAssoc.c, XMakeAssoc.c: #include <X11/Xos.h>.  VMS needs
+	this.
+	* Create.c: On VMS, we have to look for the bitmap files in
+	`./src/bitmaps', not <X11/bitmaps>.
+
+Sun Mar 14 13:47:06 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile (.c.o): Don't rm the .o files.
+
+Sat Mar 13 16:11:48 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Activate.c (XMenuActivate): If `active' field is negative,
+	don't allow selecting a string.
+
+Tue Mar  9 12:52:13 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* Create.c (XMenuCreate): New variable `root', holding the
+	display's default root window, so we don't have to write out
+	"RootWindow (display, DefaultScreen (display))" a jillion times.
+
+	* Create.c (XMenuCreate): Don't assume that all the
+	<X11/bitmaps/foo> patterns are 16x16.  Instead of building a
+	bitmap and then converting it to a pixmap of the appropriate
+	depth if necessary, build a pixmap of the appropriate depth
+	directly, using XCreatePixmapFromBitmapData.
+
+	* Imakefile: Include XCrAssoc.c, XDelAssoc.c, XDestAssoc.c,
+	XLookAssoc.c, and XMakeAssoc.c in SRCS.  Similarly for OBJS.
+
+	* XMenuInt.h: #include <stdio.h> before <X11/Xlib.h>, to avoid
+	warnings about redefining NULL.
+
+	* XMakeAssoc.c, XLookAssoc.c, XDestAssoc.c, XDelAssoc.c,
+	XCrAssoc.c: #include X11/Xlib.h instead of X11/Xlibint.h.
+
+	* XMakeAssoc.c, XLookAssoc.c, XCrAssoc.c: If NULL isn't defined by
+	any of the `.h' files, define it.
+
+	* XMakeAssoc.c, XCrAssoc.c: #include <errno.h>.
+	Add an extern declaration for errno.
+
+	* XMakeAssoc.c: Add an extern declaration for _XIOErrorFunction.
+	(XMakeAssoc): Use malloc instead of Xmalloc to allocate new
+	parts of the assoc table.
+	* XCrAssoc.c (XCreateAssocTable): Same.
+
+	* XDestAssoc.c (XDestroyAssocTable): Use free instead of Xfree.
+	* XDelAssoc.c (XDeleteAssoc): Same.
+
 Sun Oct 18 17:46:43 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
 
 	* XMakeAssoc.c (XMakeAssoc): Use malloc, not Xmalloc.

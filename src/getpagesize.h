@@ -7,18 +7,22 @@
 #ifndef HAVE_GETPAGESIZE
 
 #ifdef VMS
-#include "param.h"
-#else
-#include <sys/param.h>
+#define getpagesize() 512
 #endif
 
-#ifdef POSIX
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#define getpagesize() sysconf (_SC_PAGESIZE)
-#else /* not POSIX */
+#endif
+
+#ifdef _SC_PAGESIZE
+#define getpagesize() sysconf(_SC_PAGESIZE)
+#else
+
+#include <sys/param.h>
+
 #ifdef EXEC_PAGESIZE
 #define getpagesize() EXEC_PAGESIZE
-#else /* no EXEC_PAGESIZE */
+#else
 #ifdef NBPG
 #define getpagesize() NBPG * CLSIZE
 #ifndef CLSIZE
@@ -28,7 +32,7 @@
 #define getpagesize() NBPC
 #endif /* no NBPG */
 #endif /* no EXEC_PAGESIZE */
-#endif /* not POSIX */
+#endif /* no _SC_PAGESIZE */
 
 #endif /* not HAVE_GETPAGESIZE */
 

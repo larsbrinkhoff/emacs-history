@@ -1,11 +1,15 @@
-;; Handling of disabled commands ("novice mode") for Emacs.
+;;; novice.el --- handling of disabled commands ("novice mode") for Emacs.
+
 ;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: internal, help
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,12 +21,23 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; This mode provides a hook which is, by default, attached to various
+;; putatively dangerous commands in a (probably futile) attempt to
+;; prevent lusers from shooting themselves in the feet.
+
+;;; Code:
 
 ;; This function is called (by autoloading)
 ;; to handle any disabled command.
 ;; The command is found in this-command
 ;; and the keys are returned by (this-command-keys).
 
+;;;###autoload
+(setq disabled-command-hook 'disabled-command-hook)
+
+;;;###autoload
 (defun disabled-command-hook (&rest ignore)
   (let (char)
     (save-window-excursion
@@ -67,6 +82,7 @@ N to do nothing (command remains disabled)."))
     (if (/= char ?n)
 	(call-interactively this-command))))
 
+;;;###autoload
 (defun enable-command (command)
   "Allow COMMAND to be executed without special confirmation from now on.
 The user's .emacs file is altered so that this will apply
@@ -83,9 +99,9 @@ to future sessions."
      ;; Must have been disabled by default.
      (goto-char (point-max))
      (insert "\n(put '" (symbol-name command) " 'disabled nil)\n"))
-   (setq foo (buffer-modified-p))
    (save-buffer)))
 
+;;;###autoload
 (defun disable-command (command)
   "Require special confirmation to execute COMMAND from now on.
 The user's .emacs file is altered so that this will apply
@@ -103,3 +119,4 @@ to future sessions."
    (insert "(put '" (symbol-name command) " 'disabled t)\n")
    (save-buffer)))
 
+;;; novice.el ends here

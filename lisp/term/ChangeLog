@@ -1,0 +1,327 @@
+Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+        * Version 19.7 released.
+
+Wed May 12 12:13:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el: Require menu-bar.el.
+
+Sat May  8 22:42:26 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* x-win.el: Since we require faces.el, there's no point in setting
+	frame-creation-function to x-create-frame - just set it directly
+	to x-create-frame-with-faces.
+
+Fri May  7 03:02:55 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* x-win.el: (require 'faces), too.  Move (require 'select) to top,
+	with the other requires.
+
+Mon Apr 12 21:36:20 1993  Jim Blandy  (jimb@totoro.cs.oberlin.edu)
+
+	* sun-mouse.el (suspend-emacstool): Run suspend-hook, not
+	suspend-hooks.
+
+Wed Mar 24 23:38:53 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* x-win.el (x-defined-colors): Use x-color-defined-p instead of
+	x-defined-color.
+	(x-handle-geometry): Use x-parse-geometry instead of x-geometry.
+
+Wed Mar 24 02:59:21 1993  Richard Stallman  (rms@wookumz.gnu.ai.mit.edu)
+
+	* x-win.el: Bind M-next to an alias scroll-other-window-1
+	to get better doc string output.
+
+Mon Mar 22 17:35:29 1993  Richard Stallman  (rms@wookumz.gnu.ai.mit.edu)
+
+	* x-win.el (x-win-suspend-error):
+	suspend-hook renamed from suspend-hooks.
+
+Fri Mar 19 21:21:39 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
+
+	* README: Info added on the terminal-package-finding algorithm.
+
+Thu Mar 18 03:38:31 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* README: revised per RMS's suggestions.  There's more work
+	to be done on this yet.
+
+	* wyse50.el: (function-key-map) Nuke code no longer bound to keys.
+
+	* tvi970.el: (function-key-map)
+	As many key cookies as possible renamed to fit the new conventions
+	documented in lisp/term/README.
+
+	* vt100.el, news.el: (function-key-map)
+	Fix things so that bindings are added to the keymap already created by
+	terminal initialization.
+
+Fri Mar 12 19:53:22 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* x-win.el: Added library headers.
+
+Thu Mar 11 18:50:04 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el: Cancel previous change, since it discarded
+	earlier necessary changes.
+
+Thu Mar 11 09:00:25 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* vt100.el:
+	Added headers, commented out code the duplicates startup effects.
+
+	* x-win.el: Added headers, removed function bindings.
+
+	* wyse50.el: Added headers, changed some keycap names.
+
+	* tvi970.el: Added headers, changes some keycap names.
+
+	* sun.el: Added headers, removed function-key bindings.
+
+	* news.el: Added headers, changed a few cookie names.
+
+	* keyswap.el: Initial revision
+
+Thu Mar 11 07:01:17 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: Disable suspending under X windows by setting
+	suspend-hooks, not suspend-hook.  The latter is an obsolete name.
+	Use add-hook instead of setting suspend-hooks directly.
+
+Wed Mar 10 06:31:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el (function-key-map):
+	Map key symbols backspace, return... into ASCII chars.
+	Likewise their Meta versions.
+	Also add `ascii-character' properties.
+
+Sun Mar  7 04:22:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el (function-key-map):
+	Map key symbols backspace, return... into ASCII chars.
+
+Tue Mar  2 07:35:52 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el:
+		* term/x-win.el (x-switch-definitons): Use the proper names for
+		the scroll bar parameters.
+	
+		Use the term `scroll bar', instead of `scrollbar'.
+		* term/x-win.el, frame.el, mouse.el: Terminology changed.
+		* scrollbar.el: Renamed to scroll-bar.el.
+
+	* x-win.el: 	* term/x-win.el: Require `scroll-bar', not `scrollbar'.
+
+Thu Feb 25 00:38:55 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el:
+		* term/x-win.el (scroll-bar-mode, scroll-bar-mode): Move these
+		functions to scrolbar.el.
+		* scrollbar.el (scroll-bar-mode, scroll-bar-mode): Here they are.
+		Make scroll-bar-mode set the {vertical,horizontal}-scrollbars
+		parameters in default-frame-alist, and modify all extant screens
+		using the correct parameter names.
+
+Tue Jan 26 01:26:58 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: 	x-selection-value has been renamed to x-selection.
+		x-own-selection has been renamed to x-set-selection, and the order
+		of its arguments has been reversed, for consistency with other
+		lisp functions like put and aset.
+		* term/x-win.el (x-select-text): Adjusted.
+		(x-cut-buffer-or-selection-value): Check the primary selection,
+		using x-selection, instead of checking the cut buffer again.
+	
+		* term/x-win.el: Doc fix.
+
+Thu Jan 14 14:52:32 1993  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: 	* scrollbar.el: New file.
+		* term/x-win.el: Require 'scrollbar.
+
+Thu Nov  5 05:00:28 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* x-win.el: (command-switch-alist, x-switch-definitions):
+	-ib was used for two things.  Use -itype for icon type.
+
+Thu Nov  5 04:28:10 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Tue Sep 29 17:43:45 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Sep 16 00:08:26 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Sat Sep 12 01:20:58 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Aug 12 12:54:18 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Sat Jul 25 00:33:38 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Jul 15 03:24:58 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el, wyse50.el, vt200.el, vt100.el: *** empty log message ***
+
+Wed Jun 24 05:07:15 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Jun 10 02:25:47 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Tue May 12 05:26:53 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Tue Feb  4 02:27:43 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* tvi970.el: *** empty log message ***
+
+	* tvi970.el: Initial revision
+
+Thu Jan 16 22:42:10 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el, wyse50.el: *** empty log message ***
+
+Wed Jan 15 21:36:18 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* sun.el, vt100.el, news.el: *** empty log message ***
+
+Tue Jan 14 01:46:33 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Mon Jan 13 06:37:58 1992  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* bobcat.el: *** empty log message ***
+
+	* bobcat.el: Initial revision
+
+	* apollo.el: *** empty log message ***
+
+	* apollo.el: Initial revision
+
+Fri Dec 20 08:26:25 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el, sun.el: *** empty log message ***
+
+	* sun.el: Initial revision
+
+	* vt100.el: *** empty log message ***
+
+	* vt100.el: Initial revision
+
+	* news.el: *** empty log message ***
+
+Fri Aug 16 04:13:50 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Tue Aug 13 08:41:57 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Mon Aug 12 12:12:28 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Sun Aug 11 01:03:47 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Fri Aug  9 00:38:03 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Tue Aug  6 03:23:04 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Mon Aug  5 22:46:55 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Mon Jul 15 22:33:41 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Thu Jul 11 22:55:55 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Fri Jun 28 17:24:57 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Jun 26 16:26:52 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Thu May 23 00:42:33 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed May 22 20:01:19 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Thu May 16 23:42:18 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Feb 20 12:14:49 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Wed Jan 30 01:10:20 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* wyse50.el: *** empty log message ***
+
+Sat Jan 26 05:11:01 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Fri Jan 25 22:33:45 1991  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* wyse50.el: *** empty log message ***
+
+	* wyse50.el: Initial revision
+
+Fri Sep 14 19:07:14 1990  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* vt200.el: *** empty log message ***
+
+	* vt200.el: Initial revision
+
+Thu Aug 16 17:48:19 1990  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Sat Aug 11 19:50:23 1990  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Sun May 13 17:16:36 1990  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: *** empty log message ***
+
+Thu Mar 22 20:46:04 1990  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* x-win.el: Initial revision
+
+Wed Jul 19 15:43:15 1989  Jim Blandy  (jimb@mole.gnu.ai.mit.edu)
+
+	* news.el: Initial revision
+

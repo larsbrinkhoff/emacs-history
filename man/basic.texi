@@ -1,0 +1,558 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Basic, Undo, Exiting, Top
+@chapter Basic Editing Commands
+
+@kindex C-h t
+@findex help-with-tutorial
+  We now give the basics of how to enter text, make corrections, and
+save the text in a file.  If this material is new to you, you might
+learn it more easily by running the Emacs learn-by-doing tutorial.  To
+start the tutorial, type @kbd{Control-h t} (@code{help-with-tutorial}).
+
+  To clear the screen and redisplay, type @kbd{C-l} (@code{recenter}).
+
+@menu
+* Inserting Text::     Inserting text by simply typing it.
+* Moving Point::       How to move the cursor to the place where you want to
+		       change something.
+* Erasing::	       Deleting and killing text.
+* Files: Basic Files.  Visiting, creating, and saving files.
+* Help: Basic Help.    Asking what a character does.
+* Blank Lines::        Commands to make or delete blank lines.
+* Continuation Lines:: Lines too wide for the screen.
+* Position Info::      What page, line, row, or column is point on?
+* Arguments::	       Numeric arguments for repeating a command.
+@end menu
+
+@node Inserting Text
+@section Inserting Text
+
+@cindex insertion
+@cindex graphic characters
+  To insert printing characters into the text you are editing, just type
+them.  This inserts the characters you type into the buffer at the
+cursor (that is, at @dfn{point}; @pxref{Point}).  The cursor moves
+forward, and any text after the cursor moves forward too.  If the text
+in the buffer is @samp{FOOBAR}, with the cursor before the @samp{B},
+then if you type @kbd{XX}, you get @samp{FOOXXBAR}, with the cursor
+still before the @samp{B}.
+
+@kindex DEL
+   To @dfn{delete} text you have just inserted, use @key{DEL}.  @key{DEL}
+deletes the character @emph{before} the cursor (not the one that the cursor
+is on top of or under; that is the character @var{after} the cursor).  The
+cursor and all characters after it move backwards.  Therefore, if you type
+a printing character and then type @key{DEL}, they cancel out.
+
+@kindex RET
+@cindex newline
+   To end a line and start typing a new one, type @key{RET}.  This
+inserts a newline character in the buffer.  If point is in the middle of
+a line, @key{RET} splits the line.  Typing @key{DEL} when the cursor is
+at the beginning of a line deletes the preceding newline, thus joining
+the line with the preceding line.
+
+  Emacs can split lines automatically when they become too long, if you
+turn on a special mode called @dfn{Auto Fill} mode.  @xref{Filling}, for
+how to use Auto Fill mode.
+
+@findex delete-backward-char
+@findex newline
+@findex self-insert
+  Customization information: @key{DEL} in most modes runs the command
+@code{delete-backward-char}; @key{RET} runs the command @code{newline}, and
+self-inserting printing characters run the command @code{self-insert},
+which inserts whatever character was typed to invoke it.  Some major modes
+rebind @key{DEL} to other commands.
+
+@cindex quoting
+@kindex C-q
+@findex quoted-insert
+  Direct insertion works for printing characters and @key{SPC}, but other
+characters act as editing commands and do not insert themselves.  If you
+need to insert a control character or a character whose code is above 200
+octal, you must @dfn{quote} it by typing the character @kbd{Control-q}
+(@code{quoted-insert}) first.  (This character's name is normally written
+@kbd{C-q} for short.)  There are two ways to use @kbd{C-q}:@refill
+
+@itemize @bullet
+@item
+@kbd{C-q} followed by any non-graphic character (even @kbd{C-g})
+inserts that character.
+@item
+@kbd{C-q} followed by three octal digits inserts the character
+with the specified character code.
+@end itemize
+
+@noindent
+A numeric argument to @kbd{C-q} specifies how many copies of the
+quoted character should be inserted (@pxref{Arguments}).
+
+  If you prefer to have text characters replace (overwrite) existing
+text rather than shove it to the right, you can enable Overwrite mode,
+a minor mode.  @xref{Minor Modes}.
+
+@node Moving Point
+@section Changing the Location of Point
+
+@cindex arrow keys
+@kindex @key{LEFT}
+@kindex @key{RIGHT}
+@kindex @key{TOP}
+@kindex @key{BOTTOM}
+  To do more than insert characters, you have to know how to move
+point (@pxref{Point}).  The simplest way to do this is with arrow
+keys or the left mouse button.
+
+  There are also control and meta characters for cursor motion.  Some
+are equivalent to the arrow keys (these date back to the days before
+terminals had arrow keys, and are usable on terminals which don't have
+them).  Others do more sophisticated things.
+
+@kindex C-a
+@kindex C-e
+@kindex C-f
+@kindex C-b
+@kindex C-n
+@kindex C-p
+@kindex C-t
+@kindex M->
+@kindex M-<
+@kindex M-r
+@findex beginning-of-line
+@findex end-of-line
+@findex forward-char
+@findex backward-char
+@findex next-line
+@findex previous-line
+@findex beginning-of-buffer
+@findex end-of-buffer
+@findex goto-char
+@findex goto-line
+@findex move-to-window-line
+@table @kbd
+@item C-a
+Move to the beginning of the line (@code{beginning-of-line}).
+@item C-e
+Move to the end of the line (@code{end-of-line}).
+@item C-f
+Move forward one character (@code{forward-char}).
+@item C-b
+Move backward one character (@code{backward-char}).
+@item M-f
+Move forward one word (@code{forward-word}).
+@item M-b
+Move backward one word (@code{backward-word}).
+@item C-n
+Move down one line, vertically (@code{next-line}).  This command
+attempts to keep the horizontal position unchanged, so if you start in
+the middle of one line, you end in the middle of the next.  When on
+the last line of text, @kbd{C-n} creates a new line and moves onto it.
+@item C-p
+Move up one line, vertically (@code{previous-line}).
+@item M-r
+Move point to left margin, vertically centered in the window
+(@code{move-to-window-line}).  Text does not move on the screen.  A
+numeric argument says how many screen lines down from the top of the
+window (zero for the top line).  A negative argument counts lines from
+the bottom (@minus{}1 for the bottom line).
+@item M-<
+Move to the top of the buffer (@code{beginning-of-buffer}).  With
+numeric argument @var{n}, move to @var{n}/10 of the way from the top.
+@xref{Arguments}, for more information on numeric arguments.@refill
+@item M->
+Move to the end of the buffer (@code{end-of-buffer}).
+@item M-x goto-char
+Read a number @var{n} and move cursor to character number @var{n}.
+Position 1 is the beginning of the buffer.
+@item M-x goto-line
+Read a number @var{n} and move cursor to line number @var{n}.  Line 1
+is the beginning of the buffer.
+@item C-x C-n
+@findex set-goal-column
+@kindex C-x C-n
+Use the current column of point as the @dfn{semipermanent goal column} for
+@kbd{C-n} and @kbd{C-p} (@code{set-goal-column}).  Henceforth, those
+commands always move to this column in each line moved into, or as
+close as possible given the contents of the line.  This goal column remains
+in effect until canceled.
+@item C-u C-x C-n
+Cancel the goal column.  Henceforth, @kbd{C-n} and @kbd{C-p} once
+again try to avoid changing the horizontal position, as usual.
+@end table
+
+@vindex track-eol
+  If you set the variable @code{track-eol} to a non-@code{nil} value,
+then @kbd{C-n} and @kbd{C-p} when at the end of the starting line move
+to the end of another line.  Normally, @code{track-eol} is @code{nil}.
+@xref{Variables}, for how to set variables such as @code{track-eol}.
+
+@vindex next-line-add-newlines
+  Normally, @kbd{C-n} on the last line of a buffer appends a newline to
+it.  If the variable @code{next-line-add-newlines} is @code{nil}, then
+@kbd{C-n} gets an error instead (like @kbd{C-p} on the first line).
+
+@node Erasing	
+@section Erasing Text
+
+@table @kbd
+@item @key{DEL}
+Delete the character before the cursor (@code{delete-backward-char}).
+@item C-d
+Delete the character after the cursor (@code{delete-char}).
+@item C-k
+Kill to the end of the line (@code{kill-line}).
+@item M-d
+Kill forward to the end of the next word (@code{kill-word}).
+@item M-@key{DEL}
+Kill back to the beginning of the previous word
+(@code{backward-kill-word}).
+@end table
+
+  You already know about the @key{DEL} key which deletes the character
+before the cursor.  Another key, @kbd{Control-d} (@kbd{C-d} for short),
+deletes the character after the cursor, causing the rest of the text on the
+line to shift left.  If @kbd{C-d} is typed at the end of a line, that line
+and the next line are joined together.
+
+  To erase a larger amount of text, use the @kbd{C-k} key, which kills a
+line at a time.  If @kbd{C-k} is done at the beginning or middle of a line,
+it kills all the text up to the end of the line.  If @kbd{C-k} is done at
+the end of a line, it joins that line and the next line.
+
+  If you delete or kill text by mistake, you can use the undo command to
+get it back.  @xref{Undo}.
+
+  @xref{Killing}, for more flexible ways of killing text.
+
+@node Basic Files
+@section Files
+
+@cindex files
+  The commands above are sufficient for creating and altering text in an
+Emacs buffer; the more advanced Emacs commands just make things easier.
+But to keep any text permanently you must put it in a @dfn{file}.  Files
+are named units of text which are stored by the operating system for you to
+retrieve later by name.  To look at or use the contents of a file in any
+way, including editing the file with Emacs, you must specify the file name.
+
+  Consider a file named @file{/usr/rms/foo.c}.  In Emacs, to begin editing
+this file, type
+
+@example
+C-x C-f /usr/rms/foo.c @key{RET}
+@end example
+
+@noindent
+Here the file name is given as an @dfn{argument} to the command @kbd{C-x
+C-f} (@code{find-file}).  That command uses the @dfn{minibuffer} to
+read the argument, and you type @key{RET} to terminate the argument
+(@pxref{Minibuffer}).@refill
+
+  Emacs obeys the command by @dfn{visiting} the file: creating a buffer,
+copying the contents of the file into the buffer, and then displaying
+the buffer for you to edit.  Then you can make changes, and @dfn{save}
+the file by typing @kbd{C-x C-s} (@code{save-buffer}).  This makes the
+changes permanent by copying the altered contents of the buffer back
+into the file @file{/usr/rms/foo.c}.  Until you save, the changes exist
+only inside Emacs, and the file @file{foo.c} is unaltered.
+
+  To create a file, just visit the file with @kbd{C-x C-f} as if it
+already existed.  This creates an empty buffer in which you can insert
+the text you want to put in the file.  The file is actually created when
+you save this buffer with @kbd{C-x C-s}.
+
+  Of course, there is a lot more to learn about using files.  @xref{Files}.
+
+@node Basic Help
+@section Help
+
+  If you forget what a key does, you can find out with the Help character,
+which is @kbd{C-h}.  Type @kbd{C-h k} followed by the key you want to know
+about; for example, @kbd{C-h k C-n} tells you all about what @kbd{C-n}
+does.  @kbd{C-h} is a prefix key; @kbd{C-h k} is just one of its
+subcommands (the command @code{describe-key}).  The other subcommands of
+@kbd{C-h} provide different kinds of help.  Type @kbd{C-h} three times
+to get a description of all the help facilities.  @xref{Help}.@refill
+
+@node Blank Lines
+@section Blank Lines
+
+  Here are special commands and techniques for putting in and taking out
+blank lines.
+
+@c widecommands
+@table @kbd
+@item C-o
+Insert one or more blank lines after the cursor (@code{open-line}).
+@item C-x C-o
+Delete all but one of many consecutive blank lines
+(@code{delete-blank-lines}).
+@end table
+
+@kindex C-o
+@kindex C-x C-o
+@cindex blank lines
+@findex open-line
+@findex delete-blank-lines
+  When you want to insert a new line of text before an existing line, you
+can do it by typing the new line of text, followed by @key{RET}.  However,
+it may be easier to see what you are doing if you first make a blank line
+and then insert the desired text into it.  This is easy to do using the key
+@kbd{C-o} (@code{open-line}), which inserts a newline after point but leaves
+point in front of the newline.  After @kbd{C-o}, type the text for the new
+line.  @kbd{C-o F O O} has the same effect as @kbd{F O O @key{RET}}, except for
+the final location of point.
+
+  You can make several blank lines by typing @kbd{C-o} several times, or
+by giving it a numeric argument to tell it how many blank lines to
+make.  @xref{Arguments}, for how.
+
+  If you have a fill prefix, then @kbd{C-o} command inserts the fill
+prefix on the new line, when you use it at the beginning of a line.
+@xref{Fill Prefix}.
+
+  The easy way to get rid of extra blank lines is with the command
+@kbd{C-x C-o} (@code{delete-blank-lines}).  @kbd{C-x C-o} in a run of
+several blank lines deletes all but one of them.  @kbd{C-x C-o} on a
+solitary blank line deletes that blank line.  When point is on a
+nonblank line, @kbd{C-x C-o} deletes any blank lines following that
+nonblank line.
+
+@node Continuation Lines
+@section Continuation Lines
+
+@cindex continuation line
+@cindex wrapping
+@cindex line wrapping
+  If you add too many characters to one line, without breaking it with
+@key{RET}, the line will grow to occupy two (or more) lines on the screen,
+with a @samp{\} at the extreme right margin of all but the last of them.
+The @samp{\} says that the following screen line is not really a distinct
+line in the text, but just the @dfn{continuation} of a line too long to fit
+the screen.  Continuation is also called @dfn{line wrapping}.
+
+  Sometimes it is nice to have Emacs insert newlines automatically when
+a line gets too long.  Continuation on the screen does not do that.  Use
+Auto Fill mode (@pxref{Filling}) if that's what you want.
+
+@vindex truncate-lines
+@cindex truncation
+  Instead of continuation, you can display long lines by
+@dfn{truncation}.  This means that all the characters that do not fit in
+the width of the screen or window do not appear at all.  They remain in
+the buffer, temporarily invisible.  @samp{$} is used in the last column
+instead of @samp{\} to inform you that truncation is in effect.
+
+  You can turn off continuation for a particular buffer by setting the
+variable @code{truncate-lines} to non-@code{nil} in that buffer.
+(@xref{Variables}.)  Truncation instead of continuation also happens
+whenever horizontal scrolling is in use, and optionally whenever
+side-by-side windows are in use (@pxref{Windows}).  Altering the value
+of @code{truncate-lines} makes it local to the current buffer; until
+that time, the default value is in effect.  The default is initially
+@code{nil}.  @xref{Locals}.@refill
+
+  @xref{Display Vars}, for additional variables that affect how text is
+displayed.
+
+@node Position Info
+@section Cursor Position Information
+
+  Here are commands to get information about the size and position of
+parts of the buffer, and to count lines.
+
+@table @kbd
+@item M-x what-page
+Print page number of point, and line number within page.
+@item M-x what-line
+Print line number of point in the buffer.
+@item M-x line-number-mode
+Toggle automatic display of current line number.
+@item M-=
+Print number of lines in the current region (@code{count-lines-region}).
+@item C-x =
+Print character code of character after point, character position of
+point, and column of point (@code{what-cursor-position}).
+@end table
+
+@findex what-page
+@findex what-line
+@cindex line number commands
+  There are two commands for printing the current line number.  @kbd{M-x
+what-line} computes the current line number and displays it in the echo
+area.  @kbd{M-x line-number-mode} enables display of the current line
+number in the mode line; once you turn this on, the number updates as
+you move point, so it remains valid all the time.  @xref{Mode Line}.
+
+  Line numbers count from one at the beginning of the buffer.  To go to
+a given line by number, use @kbd{M-x goto-line}; it prompts you for the
+line number.
+
+  By contrast, @kbd{M-x what-page} counts pages from the beginning of
+the file, and counts lines within the page, printing both numbers.
+@xref{Pages}.
+
+@kindex M-=
+@findex count-lines-region
+  While on this subject, we might as well mention @kbd{M-=} (@code{count-lines-region}),
+which prints the number of lines in the region (@pxref{Mark}).
+@xref{Pages}, for the command @kbd{C-x l} which counts the lines in the
+current page.
+
+@kindex C-x =
+@findex what-cursor-position
+  The command @kbd{C-x =} (@code{what-cursor-position}) can be used to find out
+the column that the cursor is in, and other miscellaneous information about
+point.  It prints a line in the echo area that looks like this:
+
+@example
+Char: x (0170)  point=65986 of 563027(12%)  x=44
+@end example
+
+@noindent
+(In fact, this is the output produced when point is before the @samp{x=44}
+in the example.)
+
+  The two values after @samp{Char:} describe the character following point,
+first by showing it and second by giving its octal character code.
+
+  @samp{point=} is followed by the position of point expressed as a character
+count.  The front of the buffer counts as position 1, one character later
+as 2, and so on.  The next, larger number is the total number of characters
+in the buffer.  Afterward in parentheses comes the position expressed as a
+percentage of the total size.
+
+  @samp{x=} is followed by the horizontal position of point, in columns from the
+left edge of the window.
+
+  If the buffer has been narrowed, making some of the text at the
+beginning and the end temporarily off limits, @kbd{C-x =} prints
+additional text describing the currently accessible range.  For example, it
+might display this:
+
+@smallexample
+Char: x (0170)  point=65986 of 563025(12%) <65102 - 68533>  x=44
+@end smallexample
+
+@noindent
+where the two extra numbers give the smallest and largest character
+position that point is allowed to assume.  The characters between those
+two positions are the accessible ones.  @xref{Narrowing}.
+
+  If point is at the end of the buffer (or the end of the accessible
+part), @kbd{C-x =} omits any description of the character after point.
+The output looks like this:
+
+@smallexample
+point=563026 of 563025(100%)  x=0
+@end smallexample
+
+@node Arguments
+@section Numeric Arguments
+@cindex numeric arguments
+@cindex prefix arguments
+@cindex arguments, numeric
+@cindex arguments, prefix
+
+  Any Emacs command can be given a @dfn{numeric argument} (also called a
+@dfn{prefix argument}).  Some commands interpret the argument as a
+repetition count.  For example, giving an argument of ten to the key
+@kbd{C-f} moves forward ten characters instead of one.  With these
+commands, no argument is equivalent to an argument of one.  Negative
+arguments tell most such commands to move or act in the opposite direction.
+
+@kindex M-1
+@kindex M-@t{-}
+@findex digit-argument
+@findex negative-argument
+  If your terminal keyboard has a @key{META} key, the easiest way to
+specify a numeric argument is to type digits and/or a minus sign while
+holding down the the @key{META} key.  For example,
+@example
+M-5 C-n
+@end example
+@noindent
+would move down five lines.  The characters @kbd{Meta-1}, @kbd{Meta-2}, and
+so on, as well as @kbd{Meta--}, do this because they are keys bound to
+commands (@code{digit-argument} and @code{negative-argument}) that are
+defined to contribute to an argument for the next command.
+
+@kindex C-u
+@findex universal-argument
+  Another way of specifying an argument is to use the @kbd{C-u}
+(@code{universal-argument}) command followed by the digits of the argument.
+With @kbd{C-u}, you can type the argument digits without holding
+down shift keys.  To type a negative argument, start with a minus sign.
+Just a minus sign normally means @minus{}1.  @kbd{C-u} works on all terminals.
+
+  @kbd{C-u} followed by a character which is neither a digit nor a minus
+sign has the special meaning of ``multiply by four''.  It multiplies the
+argument for the next command by four.  @kbd{C-u} twice multiplies it by
+sixteen.  Thus, @kbd{C-u C-u C-f} moves forward sixteen characters.  This
+is a good way to move forward ``fast'', since it moves about 1/5 of a line
+in the usual size screen.  Other useful combinations are @kbd{C-u C-n},
+@kbd{C-u C-u C-n} (move down a good fraction of a screen), @kbd{C-u C-u
+C-o} (make ``a lot'' of blank lines), and @kbd{C-u C-k} (kill four
+lines).@refill
+
+  Some commands care only about whether there is an argument, and not about
+its value.  For example, the command @kbd{M-q} (@code{fill-paragraph}) with
+no argument fills text; with an argument, it justifies the text as well.
+(@xref{Filling}, for more information on @kbd{M-q}.)  Just @kbd{C-u} is a
+handy way of providing an argument for such commands.
+
+  Some commands use the value of the argument as a repeat count, but do
+something peculiar when there is no argument.  For example, the command
+@kbd{C-k} (@code{kill-line}) with argument @var{n} kills @var{n} lines,
+including their terminating newlines.  But @kbd{C-k} with no argument is
+special: it kills the text up to the next newline, or, if point is right at
+the end of the line, it kills the newline itself.  Thus, two @kbd{C-k}
+commands with no arguments can kill a nonblank line, just like @kbd{C-k}
+with an argument of one.  (@xref{Killing}, for more information on
+@kbd{C-k}.)@refill
+
+  A few commands treat a plain @kbd{C-u} differently from an ordinary
+argument.  A few others may treat an argument of just a minus sign
+differently from an argument of @minus{}1.  These unusual cases will be described
+when they come up; they are always for reasons of convenience of use of the
+individual command.
+
+  You can use a numeric argument to insert multiple copies of a
+character.  This is straightforward unless the character is a digit.  To
+prevent the digit from becoming part of the argument, type another
+@kbd{C-u}.  That terminates the argument.  If you then type another
+digit, then the digit acts as a self-inserting character and uses the
+argument as a repeat count.
+
+  We use the term ``prefix argument'' as well as ``numeric argument'' to
+emphasize that you type the argument before the command, and to
+distinguish these arguments from minibuffer arguments that come after
+the command.
+
+@c section Autoarg Mode
+@ignore
+@cindex Autoarg mode
+@cindex mode, autoarg
+  Users of ASCII keyboards may prefer to use Autoarg mode.  Autoarg mode
+means that you don't need to type C-U to specify a numeric argument.
+Instead, you type just the digits.  Digits followed by an ordinary
+inserting character are themselves inserted, but digits followed by an
+Escape or Control character serve as an argument to it and are not
+inserted.  A minus sign can also be part of an argument, but only at the
+beginning.  If you type a minus sign following some digits, both the digits
+and the minus sign are inserted.
+
+  To use Autoarg mode, set the variable Autoarg Mode nonzero.
+@xref{Variables}.
+
+  Autoargument digits echo at the bottom of the screen; the first nondigit
+causes them to be inserted or uses them as an argument.  To insert some
+digits and nothing else, you must follow them with a Space and then rub it
+out.  C-G cancels the digits, while Delete inserts them all and then rubs
+out the last.
+@end ignore
+
+

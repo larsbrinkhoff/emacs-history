@@ -35,8 +35,8 @@ key).
 >>  Try typing M-v and then C-v to move back and forth a few times.
 
 
-SUMMARY
--------
+* SUMMARY
+---------
 
 The following commands are useful for viewing screenfuls:
 
@@ -52,8 +52,8 @@ The following commands are useful for viewing screenfuls:
    Find the cursor again and see what text is near it now.
 
 
-BASIC CURSOR CONTROL
---------------------
+* BASIC CURSOR CONTROL
+----------------------
 
 Getting from screenful to screenful is useful, but how do you
 reposition yourself within a given screen to a specific place?
@@ -180,9 +180,21 @@ much more useful.
 Did it scroll the screen up by 8 lines?  If you would like to
 scroll it down you can give an argument to M-v.
 
+If you are using X Windows, there is probably a rectangular area
+called a scroll bar at the right hand side of the Emacs window.  You
+can scroll the text by clicking the mouse in the scroll bar.
 
-WHEN EMACS IS HUNG
------------------
+>> Try pressing the middle button at the top of the highlighted area
+within the scroll bar, then moving the mouse while holding that button
+down.
+
+>> Move the mouse to a point in the scroll bar about three lines from
+the top, and click the left button a couple of times.  Then try the
+right button a couple of times.
+
+
+* WHEN EMACS IS HUNG
+--------------------
 
 If Emacs gets into an infinite (or simply very long) computation which
 you don't want to finish, you can stop it safely by typing C-g.
@@ -207,8 +219,8 @@ not want to execute M-ESC, you would type "n" to answer the question.
 >> Type <ESC> <ESC>, then type n.
 
 
-WINDOWS
--------
+* WINDOWS
+---------
 
 Emacs can have several windows, each displaying its own text.
 At this stage it is better not to go into the techniques of
@@ -230,8 +242,8 @@ the full screen, by getting rid of any other windows.
 >> Type C-x 1 and see the documentation listing window disappear.
 
 
-INSERTING AND DELETING
-----------------------
+* INSERTING AND DELETING
+------------------------
 
 If you want to insert text, just type it.  Characters which you can
 see, such as A, 7, *, etc. are taken by Emacs as text and inserted
@@ -296,7 +308,7 @@ commands that can destroy a lot of text save it, while the ones that
 attack only one character, or nothing but blank lines and spaces, do
 not save.
 
-For instance, type C-n a couple times to postion the cursor
+For instance, type C-n a couple times to position the cursor
 at some line on this screen.
 
 >> Do this now, move the cursor and kill that line with C-k.
@@ -343,8 +355,8 @@ starting point (the most recent kill).
    arguments.
 
 
-UNDO
-----
+* UNDO
+------
 
 Any time you make a change to the text and wish you had not done so,
 you can undo the change (return the text to its previous state)
@@ -368,8 +380,8 @@ Giving a numeric argument to C-_ or C-x u is equivalent to repeating
 it as many times as the argument says.
 
 
-FILES
------
+* FILES
+-------
 
 In order to make the text you edit permanent, you must put it in a
 file.  Otherwise, it will go away when your invocation of Emacs goes
@@ -437,8 +449,8 @@ From then on, you can consider yourself to be editing an already
 existing file.
 
 
-BUFFERS
--------
+* BUFFERS
+---------
 
 If you find a second file with C-x C-f, the first file remains
 inside Emacs.  You can switch back to it by finding it again with
@@ -476,8 +488,8 @@ and finds the ones that contain files you have changed.
 For each such buffer, C-x s asks you whether to save it.
 
 
-EXTENDING THE COMMAND SET
--------------------------
+* EXTENDING THE COMMAND SET
+---------------------------
 
 There are many, many more Emacs commands than could possibly be put
 on all the control and meta characters.  Emacs gets around this with
@@ -533,19 +545,19 @@ to replace it with--each one ended with a Return.
    Then type M-x repl s<Return>changed<Return>altered<Return>.
 
    Notice how this line has changed: you've replaced
-   the word c-h-a-n-g-e-d with "altered" wherever it occured
+   the word c-h-a-n-g-e-d with "altered" wherever it occurred
    after the cursor.
 
 
-MODE LINE
----------
+* MODE LINE
+-----------
 
 If Emacs sees that you are typing commands slowly it shows them to you
 at the bottom of the screen in an area called the "echo area."  The echo
 area contains the bottom line of the screen.  The line immediately above
 it is called the MODE LINE.  The mode line says something like
 
---**--Emacs: TUTORIAL		    (Fundamental)----58%-------------
+----**--Emacs: TUTORIAL		    (Fundamental)----58%-------------
 
 This is a very useful "information" line.
 
@@ -578,10 +590,10 @@ should probably use Text Mode.
 >> Type M-x text-mode<Return>.
 
 Don't worry, none of the commands you have learned changes Emacs in
-any great way.  But you can now observe that periods are no longer
-part of words when you do M-f or M-b!  Major modes are usually like
-that: commands don't change into completely unrelated things, but they
-work a little bit differently.
+any great way.  But you can observe that apostrophes are now part of
+words when you do M-f or M-b.  Major modes are usually like that:
+commands don't change into completely unrelated things, but they work
+a little bit differently.
 
 To get documentation on your current major mode, type C-h m.
 
@@ -624,8 +636,8 @@ that paragraph.
 
 >> Move the cursor into the previous paragraph and type M-q.
 
-SEARCHING
----------
+* SEARCHING
+-----------
 
 Emacs can do searches for strings (these are groups of contiguous
 characters or words) either forward through the file or backward
@@ -675,8 +687,60 @@ Reverse search.  Everything that applies to C-s applies to C-r except
 that the direction of the search is reversed.
 
 
-RECURSIVE EDITING LEVELS
-------------------------
+* MULTIPLE WINDOWS
+------------------
+
+One of the nice features of Emacs is that you can display more than one
+window on the screen at the same time.
+
+>> Move the cursor to this line and type C-u 0 C-l.
+
+>> Now type C-x 2 which splits the screen into two windows.
+   Both windows display this tutorial.  The cursor stays in the top window.
+
+>> Type C-M-v to scroll the bottom window.
+
+>> Type C-x o ("o" for "other") to move the cursor to the bottom window.
+>> Use C-v and M-v in the bottom window to scroll it.
+   Keep reading these directions in the top window.
+
+>> Type C-x o again to move the cursor back to the top window.
+   The cursor is still just where it was in the top window before.
+
+You can keep using C-x o to switch between the windows.  Each
+window has its own cursor position, but only one window actually
+shows the cursor.  All the ordinary editing commands apply to the
+window that the cursor is in.
+
+The command C-M-v is very useful when you are editing text in one
+window and using the other window just for reference.  You can keep
+the cursor always in the window where you are editing, and edit
+there as you advance through the other window.
+
+>> Type C-x 1 (in the top window) to get rid of the bottom window.
+
+(If you had typed C-x 1 in the bottom window, that would get rid
+of the top one.  Think of this command as "Keep just one
+window--the window I am already in.")
+
+You don't have to display the same buffer in both windows.  If
+you use C-x C-f to find a file in one window, the other window
+doesn't change.  You can pick a file in each window
+independently.
+
+Here is another way to use two windows to display two different
+things:
+
+>> Type C-x 4 C-f followed by the name of one of your files.
+   End with <RETURN>.  See the specified file appear in the bottom
+   window.  The cursor goes there, too.
+
+>> Type C-x o to go back to the top window, and C-x 1 to delete
+   the bottom window.
+
+
+* RECURSIVE EDITING LEVELS
+--------------------------
 
 Sometimes you will get into what is called a "recursive editing
 level".  This is indicated by square brackets in the mode line,
@@ -699,8 +763,8 @@ is used for discarding numeric arguments and partially typed commands
 WITHIN the recursive editing level.
 
 
-GETTING MORE HELP
------------------
+* GETTING MORE HELP
+-------------------
 
 In this tutorial we have tried to supply just enough information to
 get you started using Emacs.  There is so much available in Emacs that
@@ -738,11 +802,11 @@ To get more information on the command, use C-h k instead of C-h c.
 
 >> Type C-h k Control-p.
 
-This displays the documentation of the function, as well as its name,
-in an Emacs window.  When you are finished reading the output, type
-C-x 1 to get rid of the help text.  You do not have to do this right
-away.  You can do some editing based on the help text before you type
-C-x 1.
+This displays the documentation of the function, as well as its
+name, in an Emacs window.  When you are finished reading the
+output, type C-x 1 to get rid of the help text.  You do not have
+to do this right away.  You can do some editing while referring
+to the help text and then type C-x 1.
 
 Here are some other useful C-h options:
 
@@ -759,14 +823,20 @@ Here are some other useful C-h options:
 		For some commands, Command Apropos will also list a one
 		or two character sequence which has the same effect.
 
->> Type C-h a file<Return>.  You will see a list of all M-x commands
-with "file" in their names.  You will also see commands
-like C-x C-f and C-x C-w, listed beside the command names
-find-file and write-file.
+>> Type C-h a file<Return>.
+
+This displays in another window a list of all M-x commands with
+"file" in their names.  You will also see commands like C-x C-f
+and C-x C-w, listed beside the command names find-file and
+write-file.
+
+>> Type C-M-v to scroll the help window.  Do this a few times.
+
+>> Type C-x 1 to delete the help window.
 
 
-CONCLUSION
-----------
+* CONCLUSION
+------------
 
 Remember, to exit Emacs permanently use C-x C-c.  To exit to a shell
 temporarily, so that you can come back in, use C-z.

@@ -1,12 +1,15 @@
-;; Scheme mode, and its idiosyncratic commands.
-;; Copyright (C) 1986, 1987, 1988, 1990 Free Software Foundation, Inc.
-;; Adapted from Lisp mode by Bill Rozas, jinx@prep.
+;;; scheme.el --- Scheme mode, and its idiosyncratic commands.
+
+;; Copyright (C) 1986, 1987, 1988 Free Software Foundation, Inc.
+
+;; Author: Bill Rozas <jinz@prep.ai.mit.edu>
+;; Keywords: languages, lisp
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -18,14 +21,14 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
+;; Adapted from Lisp mode by Bill Rozas, jinx@prep.
 ;; Initially a query replace of Lisp mode, except for the indentation 
 ;; of special forms.  Probably the code should be merged at some point 
 ;; so that there is sharing between both libraries.
 
-;;; $Header: scheme.el,v 1.7 88/07/15 20:20:00 GMT cph Exp $
-
-(provide 'scheme)
+;;; Code:
 
 (defvar scheme-mode-syntax-table nil "")
 (if (not scheme-mode-syntax-table)
@@ -65,20 +68,20 @@
       (modify-syntax-entry ?] ")[  ")
       (modify-syntax-entry ?{ "(}  ")
       (modify-syntax-entry ?} "){  ")
-      (modify-syntax-entry ?\| "    ")
+      (modify-syntax-entry ?\| "  23")
 
       ;; Other atom delimiters
       (modify-syntax-entry ?\( "()  ")
       (modify-syntax-entry ?\) ")(  ")
       (modify-syntax-entry ?\; "<   ")
       (modify-syntax-entry ?\" "\"    ")
-      (modify-syntax-entry ?' "'   ")
-      (modify-syntax-entry ?` "'   ")
+      (modify-syntax-entry ?' "  p")
+      (modify-syntax-entry ?` "  p")
 
       ;; Special characters
-      (modify-syntax-entry ?, "'   ")
-      (modify-syntax-entry ?@ "'   ")
-      (modify-syntax-entry ?# "'   ")
+      (modify-syntax-entry ?, "_ p")
+      (modify-syntax-entry ?@ "_ p")
+      (modify-syntax-entry ?# "_ p14")
       (modify-syntax-entry ?\\ "\\   ")))
 
 (defvar scheme-mode-abbrev-table nil "")
@@ -101,8 +104,8 @@
   (setq comment-start-skip ";+[ \t]*")
   (make-local-variable 'comment-column)
   (setq comment-column 40)
-  (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'scheme-comment-indent)
+  (make-local-variable 'comment-indent-function)
+  (setq comment-indent-function 'scheme-comment-indent)
   (setq mode-line-process '("" scheme-mode-line-process)))
 
 (defvar scheme-mode-line-process "")
@@ -118,6 +121,7 @@
       (setq scheme-mode-map (make-sparse-keymap))
       (scheme-mode-commands scheme-mode-map)))
 
+;;;###autoload
 (defun scheme-mode ()
   "Major mode for editing Scheme code.
 Editing commands are similar to those of lisp-mode.
@@ -163,7 +167,7 @@ Set this to nil if you normally use another dialect.")
 		comment-column)))))
 
 (defvar scheme-indent-offset nil "")
-(defvar scheme-indent-hook 'scheme-indent-hook "")
+(defvar scheme-indent-function 'scheme-indent-function "")
 
 (defun scheme-indent-line (&optional whole-exp)
   "Indent current line as Scheme code.
@@ -276,17 +280,17 @@ of the start of the containing expression."
 	     (goto-char containing-sexp)
 	     (setq desired-indent (+ scheme-indent-offset (current-column))))
 	    ((not (or desired-indent
-		      (and (boundp 'scheme-indent-hook)
-			   scheme-indent-hook
+		      (and (boundp 'scheme-indent-function)
+			   scheme-indent-function
 			   (not retry)
 			   (setq desired-indent
-				 (funcall scheme-indent-hook
+				 (funcall scheme-indent-function
 					  indent-point state)))))
 	     ;; Use default indentation if not computed yet
 	     (setq desired-indent (current-column))))
       desired-indent)))
 
-(defun scheme-indent-hook (indent-point state)
+(defun scheme-indent-function (indent-point state)
   (let ((normal-indent (current-column)))
     (save-excursion
       (goto-char (1+ (car (cdr state))))
@@ -298,7 +302,7 @@ of the start of the containing expression."
 	    ;; Who cares about this, really?
 	    ;(if (not (string-match "\\\\\\||" function)))
 	    (setq function (downcase function))
-	    (setq method (get (intern-soft function) 'scheme-indent-hook))
+	    (setq method (get (intern-soft function) 'scheme-indent-function))
 	    (cond ((integerp method)
 		   (scheme-indent-specform method state indent-point))
 		  (method
@@ -314,7 +318,7 @@ of the start of the containing expression."
 	body-indent containing-form-column)
     ;; Move to the start of containing form, calculate indentation
     ;; to use for non-distinguished forms (> count), and move past the
-    ;; function symbol.  scheme-indent-hook guarantees that there is at
+    ;; function symbol.  scheme-indent-function guarantees that there is at
     ;; least one word or symbol character following open paren of containing
     ;; form.
     (goto-char containing-form-start)
@@ -381,70 +385,70 @@ of the start of the containing expression."
       (scheme-indent-specform 2 state indent-point)
       (scheme-indent-specform 1 state indent-point)))
 
-;; (put 'begin 'scheme-indent-hook 0), say, causes begin to be indented
+;; (put 'begin 'scheme-indent-function 0), say, causes begin to be indented
 ;; like defun if the first form is placed on the next line, otherwise
 ;; it is indented like any other form (i.e. forms line up under first).
 
-(put 'begin 'scheme-indent-hook 0)
-(put 'case 'scheme-indent-hook 1)
-(put 'delay 'scheme-indent-hook 0)
-(put 'do 'scheme-indent-hook 2)
-(put 'lambda 'scheme-indent-hook 1)
-(put 'let 'scheme-indent-hook 'scheme-let-indent)
-(put 'let* 'scheme-indent-hook 1)
-(put 'letrec 'scheme-indent-hook 1)
-(put 'sequence 'scheme-indent-hook 0)
+(put 'begin 'scheme-indent-function 0)
+(put 'case 'scheme-indent-function 1)
+(put 'delay 'scheme-indent-function 0)
+(put 'do 'scheme-indent-function 2)
+(put 'lambda 'scheme-indent-function 1)
+(put 'let 'scheme-indent-function 'scheme-let-indent)
+(put 'let* 'scheme-indent-function 1)
+(put 'letrec 'scheme-indent-function 1)
+(put 'sequence 'scheme-indent-function 0)
 
-(put 'call-with-input-file 'scheme-indent-hook 1)
-(put 'with-input-from-file 'scheme-indent-hook 1)
-(put 'with-input-from-port 'scheme-indent-hook 1)
-(put 'call-with-output-file 'scheme-indent-hook 1)
-(put 'with-output-to-file 'scheme-indent-hook 1)
-(put 'with-output-to-port 'scheme-indent-hook 1)
+(put 'call-with-input-file 'scheme-indent-function 1)
+(put 'with-input-from-file 'scheme-indent-function 1)
+(put 'with-input-from-port 'scheme-indent-function 1)
+(put 'call-with-output-file 'scheme-indent-function 1)
+(put 'with-output-to-file 'scheme-indent-function 1)
+(put 'with-output-to-port 'scheme-indent-function 1)
 
 ;;;; MIT Scheme specific indentation.
 
 (if scheme-mit-dialect
     (progn
-      (put 'fluid-let 'scheme-indent-hook 1)
-      (put 'in-package 'scheme-indent-hook 1)
-      (put 'let-syntax 'scheme-indent-hook 1)
-      (put 'local-declare 'scheme-indent-hook 1)
-      (put 'macro 'scheme-indent-hook 1)
-      (put 'make-environment 'scheme-indent-hook 0)
-      (put 'named-lambda 'scheme-indent-hook 1)
-      (put 'using-syntax 'scheme-indent-hook 1)
+      (put 'fluid-let 'scheme-indent-function 1)
+      (put 'in-package 'scheme-indent-function 1)
+      (put 'let-syntax 'scheme-indent-function 1)
+      (put 'local-declare 'scheme-indent-function 1)
+      (put 'macro 'scheme-indent-function 1)
+      (put 'make-environment 'scheme-indent-function 0)
+      (put 'named-lambda 'scheme-indent-function 1)
+      (put 'using-syntax 'scheme-indent-function 1)
 
-      (put 'with-input-from-string 'scheme-indent-hook 1)
-      (put 'with-output-to-string 'scheme-indent-hook 0)
-      (put 'with-values 'scheme-indent-hook 1)
+      (put 'with-input-from-string 'scheme-indent-function 1)
+      (put 'with-output-to-string 'scheme-indent-function 0)
+      (put 'with-values 'scheme-indent-function 1)
 
-      (put 'syntax-table-define 'scheme-indent-hook 2)
-      (put 'list-transform-positive 'scheme-indent-hook 1)
-      (put 'list-transform-negative 'scheme-indent-hook 1)
-      (put 'list-search-positive 'scheme-indent-hook 1)
-      (put 'list-search-negative 'scheme-indent-hook 1)
+      (put 'syntax-table-define 'scheme-indent-function 2)
+      (put 'list-transform-positive 'scheme-indent-function 1)
+      (put 'list-transform-negative 'scheme-indent-function 1)
+      (put 'list-search-positive 'scheme-indent-function 1)
+      (put 'list-search-negative 'scheme-indent-function 1)
 
-      (put 'access-components 'scheme-indent-hook 1)
-      (put 'assignment-components 'scheme-indent-hook 1)
-      (put 'combination-components 'scheme-indent-hook 1)
-      (put 'comment-components 'scheme-indent-hook 1)
-      (put 'conditional-components 'scheme-indent-hook 1)
-      (put 'disjunction-components 'scheme-indent-hook 1)
-      (put 'declaration-components 'scheme-indent-hook 1)
-      (put 'definition-components 'scheme-indent-hook 1)
-      (put 'delay-components 'scheme-indent-hook 1)
-      (put 'in-package-components 'scheme-indent-hook 1)
-      (put 'lambda-components 'scheme-indent-hook 1)
-      (put 'lambda-components* 'scheme-indent-hook 1)
-      (put 'lambda-components** 'scheme-indent-hook 1)
-      (put 'open-block-components 'scheme-indent-hook 1)
-      (put 'pathname-components 'scheme-indent-hook 1)
-      (put 'procedure-components 'scheme-indent-hook 1)
-      (put 'sequence-components 'scheme-indent-hook 1)
-      (put 'unassigned\?-components 'scheme-indent-hook 1)
-      (put 'unbound\?-components 'scheme-indent-hook 1)
-      (put 'variable-components 'scheme-indent-hook 1)))
+      (put 'access-components 'scheme-indent-function 1)
+      (put 'assignment-components 'scheme-indent-function 1)
+      (put 'combination-components 'scheme-indent-function 1)
+      (put 'comment-components 'scheme-indent-function 1)
+      (put 'conditional-components 'scheme-indent-function 1)
+      (put 'disjunction-components 'scheme-indent-function 1)
+      (put 'declaration-components 'scheme-indent-function 1)
+      (put 'definition-components 'scheme-indent-function 1)
+      (put 'delay-components 'scheme-indent-function 1)
+      (put 'in-package-components 'scheme-indent-function 1)
+      (put 'lambda-components 'scheme-indent-function 1)
+      (put 'lambda-components* 'scheme-indent-function 1)
+      (put 'lambda-components** 'scheme-indent-function 1)
+      (put 'open-block-components 'scheme-indent-function 1)
+      (put 'pathname-components 'scheme-indent-function 1)
+      (put 'procedure-components 'scheme-indent-function 1)
+      (put 'sequence-components 'scheme-indent-function 1)
+      (put 'unassigned\?-components 'scheme-indent-function 1)
+      (put 'unbound\?-components 'scheme-indent-function 1)
+      (put 'variable-components 'scheme-indent-function 1)))
 
 (defun scheme-indent-sexp ()
   "Indent each line of the list starting just after point."
@@ -497,3 +501,7 @@ of the start of the containing expression."
 	    (if (/= (current-column) this-indent)
 		(progn (delete-region bol (point))
 		       (indent-to this-indent)))))))))
+
+(provide 'scheme)
+
+;;; scheme.el ends here

@@ -1,6 +1,6 @@
 #include "copyright.h"
 
-/* $Header: SetPane.c,v 1.4 87/12/20 12:06:03 rws Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/SetPane.c,v 1.1 1992/04/11 22:10:21 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 /*

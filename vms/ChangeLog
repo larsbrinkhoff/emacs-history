@@ -1,0 +1,8 @@
+Sat May 22 19:37:01 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+        * Version 19.7 released.
+
+Sat Sep 19 16:15:54 1992  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* mailemacs.com, logout.com: New files.
+	* kepteditor.com: Total rewrite by roberts@nsrl.rochester.edu.

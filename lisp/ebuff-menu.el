@@ -1,15 +1,14 @@
-; buggestions to mly@ai.ai.mit.edu
-
-;; who says one can't have typeout windows in gnu emacs?
-;; like ^r select buffer from its emacs lunar or tmacs libraries.
+;;; ebuff-menu.el --- electric-buffer-list mode
 
 ;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+
+;; Author: Richard Mlynarik <mly@ai.mit.edu>
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -21,6 +20,13 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; Who says one can't have typeout windows in GNU Emacs?   The entry
+;; point, `electric-buffer-list' works like ^r select buffer from the
+;; ITS Emacs lunar or tmacs libraries.
+
+;;; Code:
 
 (require 'electric)
 
@@ -28,23 +34,22 @@
 ;; on stuff in lisp/buff-menu.el
 
 (defvar electric-buffer-menu-mode-map nil)
+
+;;;###autoload
 (defun electric-buffer-list (arg)
-  "Vaguely like ITS lunar select buffer;
-combining typeoutoid buffer listing with menuoid buffer selection.
+  "Pops up a buffer describing the set of Emacs buffers.
+Vaguely like ITS lunar select buffer; combining typeoutoid buffer
+listing with menuoid buffer selection.
 
-This pops up a buffer describing the set of emacs buffers.
 If the very next character typed is a space then the buffer list
- window disappears.
+window disappears.  Otherwise, one may move around in the buffer list
+window, marking buffers to be selected, saved or deleted.
 
-Otherwise, one may move around in the buffer list window, marking
- buffers to be selected, saved or deleted.
+To exit and select a new buffer, type a space when the cursor is on
+the appropriate line of the buffer-list window.  Other commands are
+much like those of buffer-menu-mode.
 
-To exit and select a new buffer, type Space when the cursor is on the
- appropriate line of the buffer-list window.
-
-Other commands are much like those of buffer-menu-mode.
-
-Calls value of  electric-buffer-menu-mode-hook  on entry if non-nil.
+Calls value of `electric-buffer-menu-mode-hook' on entry if non-nil.
 
 \\{electric-buffer-menu-mode-map}" 
   (interactive "P")
@@ -59,8 +64,9 @@ Calls value of  electric-buffer-menu-mode-hook  on entry if non-nil.
 	    (setq select
 		  (catch 'electric-buffer-menu-select
 		    (message "<<< Press Space to bury the buffer list >>>")
-		    (if (= (setq unread-command-char (read-char)) ?\ )
-			(progn (setq unread-command-char -1)
+		    (if (eq (setq unread-command-events (list (read-event)))
+			    ?\ )
+			(progn (setq unread-command-events nil)
 			       (throw 'electric-buffer-menu-select nil)))
 		    (let ((first (progn (goto-char (point-min))
 					(forward-line 2)
@@ -109,32 +115,29 @@ Calls value of  electric-buffer-menu-mode-hook  on entry if non-nil.
   "Major mode for editing a list of buffers.
 Each line describes one of the buffers in Emacs.
 Letters do not insert themselves; instead, they are commands.
-\\{electric-buffer-menu-mode-map}
-
-C-g or C-c C-c -- exit buffer menu, returning to previous window and buffer
+\\<electric-buffer-menu-mode-map>
+\\[keyboard-quit] or \\[Electric-buffer-menu-quit] -- exit buffer menu, returning to previous window and buffer
   configuration.  If the very first character typed is a space, it
   also has this effect.
-Space -- select buffer of line point is on.
+\\[Electric-buffer-menu-select] -- select buffer of line point is on.
   Also show buffers marked with m in other windows,
   deletes buffers marked with \"D\", and saves those marked with \"S\".
-m -- mark buffer to be displayed.
-~ -- clear modified-flag on that buffer.
-s -- mark that buffer to be saved.
-d or C-d -- mark that buffer to be deleted.
-u -- remove all kinds of marks from current line.
-v -- view buffer, returning when done.
-Delete -- back up a line and remove marks.
+\\[Buffer-menu-mark] -- mark buffer to be displayed.
+\\[Buffer-menu-not-modified] -- clear modified-flag on that buffer.
+\\[Buffer-menu-save] -- mark that buffer to be saved.
+\\[Buffer-menu-delete] or \\[Buffer-menu-delete-backwards] -- mark that buffer to be deleted.
+\\[Buffer-menu-unmark] -- remove all kinds of marks from current line.
+\\[Electric-buffer-menu-mode-view-buffer] -- view buffer, returning when done.
+\\[Buffer-menu-backup-unmark] -- back up a line and remove marks.
 
+\\{electric-buffer-menu-mode-map}
 
-Entry to this mode via command \\[electric-buffer-list] calls the value of
+Entry to this mode via command electric-buffer-list calls the value of
 electric-buffer-menu-mode-hook if it is non-nil."
   (kill-all-local-variables)
   (use-local-map electric-buffer-menu-mode-map)
   (setq mode-name "Electric Buffer Menu")
   (setq mode-line-buffer-identification "Electric Buffer List")
-  (if (memq 'mode-name mode-line-format)
-      (progn (setq mode-line-format (copy-sequence mode-line-format))
-	     (setcar (memq 'mode-name mode-line-format) "Buffers")))
   (make-local-variable 'Helper-return-blurb)
   (setq Helper-return-blurb "return to buffer editing")
   (setq truncate-lines t)
@@ -149,19 +152,19 @@ electric-buffer-menu-mode-hook if it is non-nil."
 (put 'Electric-buffer-menu-undefined 'suppress-keymap t)
 (if electric-buffer-menu-mode-map
     nil
-  (let ((map (make-keymap)))
-    (fillarray map 'Electric-buffer-menu-undefined)
-    (define-key map "\e" (make-keymap))
-    (fillarray (lookup-key map "\e") 'Electric-buffer-menu-undefined)
+  (let ((map (make-keymap)) (submap (make-keymap)))
+    (fillarray (car (cdr map)) 'Electric-buffer-menu-undefined)
+    (define-key map "\e" submap)
+    (fillarray (car (cdr submap)) 'Electric-buffer-menu-undefined)
     (define-key map "\C-z" 'suspend-emacs)
     (define-key map "v" 'Electric-buffer-menu-mode-view-buffer)
-    (define-key map "\C-h" 'Helper-help)
+    (define-key map (char-to-string help-char) 'Helper-help)
     (define-key map "?" 'Helper-describe-bindings)
     (define-key map "\C-c" nil)
     (define-key map "\C-c\C-c" 'Electric-buffer-menu-quit)
     (define-key map "\C-]" 'Electric-buffer-menu-quit)
     (define-key map "q" 'Electric-buffer-menu-quit)
-    (define-key map " " 'Electric-buffer-menu-select)  
+    (define-key map " " 'Electric-buffer-menu-select)
     (define-key map "\C-l" 'recenter)
     (define-key map "s" 'Buffer-menu-save)
     (define-key map "d" 'Buffer-menu-delete)
@@ -186,6 +189,8 @@ electric-buffer-menu-mode-hook if it is non-nil."
     (define-key map "n" 'next-line)
     (define-key map "\C-v" 'scroll-up)
     (define-key map "\ev" 'scroll-down)
+    (define-key map ">" 'scroll-right)
+    (define-key map "<" 'scroll-left)
     (define-key map "\e\C-v" 'scroll-other-window)
     (define-key map "\e>" 'end-of-buffer)
     (define-key map "\e<" 'beginning-of-buffer)
@@ -193,7 +198,7 @@ electric-buffer-menu-mode-hook if it is non-nil."
  
 (defun Electric-buffer-menu-exit ()
   (interactive)
-  (setq unread-command-char last-input-char)
+  (setq unread-command-events (listify-key-sequence (this-command-keys)))
   ;; for robustness
   (condition-case ()
       (throw 'electric-buffer-menu-select nil)
@@ -203,8 +208,7 @@ electric-buffer-menu-mode-hook if it is non-nil."
 (defun Electric-buffer-menu-select ()
   "Leave Electric Buffer Menu, selecting buffers and executing changes.
 Saves buffers marked \"S\".  Deletes buffers marked \"K\".
-Selects buffer at point and displays buffers marked \">\" in other
-windows."
+Selects buffer at point and displays buffers marked \">\" in other windows."
   (interactive)
   (throw 'electric-buffer-menu-select (point)))
 
@@ -219,9 +223,9 @@ Does not execute select, save, or delete commands."
   (ding)
   (message (if (and (eq (key-binding "\C-c\C-c") 'Electric-buffer-menu-quit)
 		    (eq (key-binding " ") 'Electric-buffer-menu-select)
-		    (eq (key-binding "\C-h") 'Helper-help)
+		    (eq (key-binding (char-to-string help-char)) 'Helper-help)
 		    (eq (key-binding "?") 'Helper-describe-bindings))
-	       "Type C-c C-c to exit, Space to select, C-h for help, ? for commands"
+	       (substitute-command-keys "Type C-c C-c to exit, Space to select, \\[Helper-help] for help, ? for commands")
 	     (substitute-command-keys "\
 Type \\[Electric-buffer-menu-quit] to exit, \
 \\[Electric-buffer-menu-select] to select, \
@@ -239,6 +243,4 @@ Returns to Electric Buffer Menu when done."
       (message "Buffer %s does not exist!" bufnam)
       (sit-for 4))))
 
-
-
-
+;;; ebuff-menu.el ends here

@@ -1,0 +1,12 @@
+The file `emacs.com' in this directory is for VMS.  It defines logical
+names and commands such as `emacs', so you must edit it to specify the
+file and directory names used on your machine.  This file must be
+executed in each session to enable you to run the installed Emacs.  It
+should be executed by your `login.com' file, or else perhaps it can be
+executed once at system boot time.
+
+The file `kepteditor.com' in this directory is also for VMS.  When a
+user says to run Emacs, it really runs this command file.
+
+See the files VMSINSTALL, VMSNOTES, and VMSBUILD for more information
+on VMS use.

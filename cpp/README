@@ -1,0 +1,9 @@
+This directory contains source code for the GNU Project's C
+preprocessor.  
+
+Unlike this preprocessor, the compilers bundled with some systems have
+arbitrary limits on the number of significant characters in
+identifiers which make them unable to compile GNU Emacs.  The Emacs
+build process tries to detect when it is running on such a system; if
+it is, it builds this C preprocessor, and then uses it to edit the
+Emacs source code into a form that the system's compiler can handle.

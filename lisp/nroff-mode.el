@@ -1,11 +1,15 @@
-;; GNU Emacs major mode for editing nroff source
+;;; nroff-mode.el --- GNU Emacs major mode for editing nroff source
+
 ;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: wp
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,13 +21,21 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
+;; This package is a major mode for editing nroff source code.  It knows
+;; about various nroff constructs, ms, mm, and me macros, and will fill
+;; and indent paragraphs properly in their presence.  It also includes
+;; a command to count text lines (excluding nroff constructs), a command
+;; to center a line, and movement commands that know how to skip macros.
+
+;;; Code:
 
 (defvar nroff-mode-abbrev-table nil
   "Abbrev table used while in nroff mode.")
 
 (defvar nroff-mode-map nil
-     "Major mode keymap for nroff-mode buffers")
+     "Major mode keymap for nroff mode.")
 (if (not nroff-mode-map)
     (progn
       (setq nroff-mode-map (make-sparse-keymap))
@@ -34,11 +46,12 @@
       (define-key nroff-mode-map "\en" 'forward-text-line)
       (define-key nroff-mode-map "\ep" 'backward-text-line)))
 
+;;;###autoload
 (defun nroff-mode ()
   "Major mode for editing text intended for nroff to format.
 \\{nroff-mode-map}
-Turning on Nroff mode runs text-mode-hook, then nroff-mode-hook.
-Also, try nroff-electric-mode, for automatically inserting
+Turning on Nroff mode runs `text-mode-hook', then `nroff-mode-hook'.
+Also, try `nroff-electric-mode', for automatically inserting
 closing requests for requests that are used in matched pairs."
   (interactive)
   (kill-all-local-variables)
@@ -62,8 +75,8 @@ closing requests for requests that are used in matched pairs."
   (setq comment-start-skip "\\\\\"[ \t]*")
   (make-local-variable 'comment-column)
   (setq comment-column 24)
-  (make-local-variable 'comment-indent-hook)
-  (setq comment-indent-hook 'nroff-comment-indent)
+  (make-local-variable 'comment-indent-function)
+  (setq comment-indent-function 'nroff-comment-indent)
   (run-hooks 'text-mode-hook 'nroff-mode-hook))
 
 ;;; Compute how much to indent a comment in nroff/troff source.
@@ -165,7 +178,7 @@ An argument is a repeat count; negative means move forward."
 
 (defun electric-nroff-newline (arg)
   "Insert newline for nroff mode; special if electric-nroff mode.
-In electric-nroff-mode, if ending a line containing an nroff opening request,
+In `electric-nroff-mode', if ending a line containing an nroff opening request,
 automatically inserts the matching closing request after point."
   (interactive "P")
   (let ((completion (save-excursion
@@ -185,12 +198,11 @@ automatically inserts the matching closing request after point."
       (forward-char 1))))
 
 (defun electric-nroff-mode (&optional arg)
-  "Toggle nroff-electric-newline minor mode
-Nroff-electric-newline forces emacs to check for an nroff
-request at the beginning of the line, and insert the
-matching closing request if necessary.  
-This command toggles that mode (off->on, on->off), 
-with an argument, turns it on iff arg is positive, otherwise off."
+  "Toggle `nroff-electric-newline' minor mode.
+`nroff-electric-newline' forces Emacs to check for an nroff request at the
+beginning of the line, and insert the matching closing request if necessary.
+This command toggles that mode (off->on, on->off), with an argument,
+turns it on iff arg is positive, otherwise off."
   (interactive "P")
   (or (eq major-mode 'nroff-mode) (error "Must be in nroff mode"))
   (or (assq 'nroff-electric-mode minor-mode-alist)
@@ -201,3 +213,4 @@ with an argument, turns it on iff arg is positive, otherwise off."
 	(cond ((null arg) (null nroff-electric-mode))
 	      (t (> (prefix-numeric-value arg) 0)))))
 
+;;; nroff-mode.el ends here

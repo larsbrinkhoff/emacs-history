@@ -1,18 +1,15 @@
-;;;
-;;; Support (cleanly) for Sun function keys.  Provides help facilities,
-;;; better diagnostics, etc.
-;;;
-;;; To use: make sure your .ttyswrc binds 'F1' to <ESC> * F1 <CR> and so on.
-;;;         load this lot from your start_up
-;;;
-;;; 
-;;;    Copyright (C) 1986 Free Software Foundation, Inc.
-;;; 
-;; This file is part of GNU Emacs.
+;;; sun-keys.el --- support for Sun function keys
+
+;;; Copyright (C) 1986 Free Software Foundation, Inc.
+
+;; Author: Ian G. Batten <batten@uk.ac.bham.multics>
+;; Keywords: terminals
+
+;;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -24,9 +21,15 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;;; Support (cleanly) for Sun function keys.  Provides help facilities,
+;;; better diagnostics, etc.
 ;;;
-;;; Batten@uk.ac.bham.multics (Ian G. Batten)
-;;;
+;;; To use: make sure your .ttyswrc binds 'F1' to <ESC> * F1 <CR> and so on.
+;;;         load this lot from your start_up
+
+;;; Code:
 
 (defun sun-function-keys-dispatch (arg)
   "Dispatcher for function keys."
@@ -70,3 +73,5 @@ CCommand To Use:")
 (global-set-key "\e*" 'sun-function-keys-dispatch)
 
 (make-variable-buffer-local 'sun-function-keys-command-list)
+
+;;; sun-keys.el ends here

@@ -1,12 +1,14 @@
-;; Abbrev mode commands for Emacs
+;;; abbrev.el --- abbrev mode commands for Emacs
 
-;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+;; Copyright (C) 1985, 1986, 1987, 1992 Free Software Foundation, Inc.
+
+;; Keywords: abbrev
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -18,10 +20,19 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; This facility is documented in the Emacs Manual.
+
+;;; Code:
+
+(defconst only-global-abbrevs nil "\
+*t means user plans to use global abbrevs only.
+Makes the commands to define mode-specific abbrevs define global ones instead.")
 
 (defun abbrev-mode (arg)
   "Toggle abbrev mode.
-With arg, turn abbrev mode on iff arg is positive.
+With argument ARG, turn abbrev mode on iff ARG is positive.
 In abbrev mode, inserting an abbreviation causes it to expand
 and be replaced by its expansion."
   (interactive "P")
@@ -87,7 +98,7 @@ Mark is set after the inserted text."
 (defun edit-abbrevs ()
   "Alter abbrev definitions by editing a list of them.
 Selects a buffer containing a list of abbrev definitions.
-You can edit them and type C-c C-c to redefine abbrevs
+You can edit them and type \\<edit-abbrevs-map>\\[edit-abbrevs-redefine] to redefine abbrevs
 according to your editing.
 Buffer contains a header line for each abbrev table,
  which is the abbrev table name in parentheses.
@@ -107,7 +118,7 @@ or may be omitted (it is usually omitted)."
 
 (defun define-abbrevs (&optional arg)
   "Define abbrevs according to current visible buffer contents.
-See documentation of edit-abbrevs for info on the format of the
+See documentation of `edit-abbrevs' for info on the format of the
 text you must have in the buffer.
 With argument, eliminate all abbrev definitions except
 the ones defined from the buffer now."
@@ -118,7 +129,7 @@ the ones defined from the buffer now."
    (while (and (not (eobp)) (re-search-forward "^(" nil t))
      (let* ((buf (current-buffer))
 	    (table (read buf))
-	    abbrevs)
+	    abbrevs name hook exp count)
        (forward-line 1)
        (while (progn (forward-line 1)
 		     (not (eolp)))
@@ -129,25 +140,33 @@ the ones defined from the buffer now."
 	 (setq abbrevs (cons (list name exp hook count) abbrevs)))
        (define-abbrev-table table abbrevs)))))
 
-(defun read-abbrev-file (file &optional quietly)
-  "Read abbrev definitions from file written with write-abbrev-file.
-Takes file name as argument.
-Optional second argument non-nil means don't print anything."
+(defun read-abbrev-file (&optional file quietly)
+  "Read abbrev definitions from file written with `write-abbrev-file'.
+Optional argument FILE is the name of the file to read;
+it defaults to the value of `abbrev-file-name'.
+Optional second argument QUIETLY non-nil means don't print anything."
   (interactive "fRead abbrev file: ")
   (load (if (and file (> (length file) 0)) file abbrev-file-name)
 	nil quietly)
   (setq save-abbrevs t abbrevs-changed nil))
 
-(defun quietly-read-abbrev-file (file)
+(defun quietly-read-abbrev-file (&optional file)
   "Read abbrev definitions from file written with write-abbrev-file.
-Takes file name as argument.  Does not print anything."
+Optional argument FILE is the name of the file to read;
+it defaults to the value of `abbrev-file-name'.
+Does not print anything."
   ;(interactive "fRead abbrev file: ")
   (read-abbrev-file file t))
 
 (defun write-abbrev-file (file)
-  "Write all abbrev definitions to file of Lisp code.
-The file can be loaded to define the same abbrevs."
-  (interactive "FWrite abbrev file: ")
+  "Write all abbrev definitions to a file of Lisp code.
+The file written can be loaded in another session to define the same abbrevs.
+The argument FILE is the file name to write."
+  (interactive
+   (list
+    (read-file-name "Write abbrev file: "
+		    (file-name-directory (expand-file-name abbrev-file-name))
+		    abbrev-file-name)))
   (or (and file (> (length file) 0))
       (setq file abbrev-file-name))
   (save-excursion
@@ -165,21 +184,25 @@ The file can be loaded to define the same abbrevs."
 Argument is how many words before point form the expansion;
 or zero means the region is the expansion.
 A negative argument means to undefine the specified abbrev.
-Reads the abbreviation in the minibuffer."
+Reads the abbreviation in the minibuffer.
+
+Don't use this function in a Lisp program; use `define-abbrev' instead."
   (interactive "p")
   (add-abbrev
    (if only-global-abbrevs
        global-abbrev-table 
      (or local-abbrev-table
-	 (error "No per-mode abbrev table.")))
+	 (error "No per-mode abbrev table")))
    "Mode" arg))
 
 (defun add-global-abbrev (arg)
   "Define global (all modes) abbrev for last word(s) before point.
-Argument is how many words before point form the expansion;
-or zero means the region is the expansion.
+The prefix argument specifies the number of words before point that form the
+expansion; or zero means the region is the expansion.
 A negative argument means to undefine the specified abbrev.
-Reads the abbreviation in the minibuffer."
+This command uses the minibuffer to read the abbreviation.
+
+Don't use this function in a Lisp program; use `define-abbrev' instead."
   (interactive "p")
   (add-abbrev global-abbrev-table "Global" arg))
 
@@ -190,8 +213,10 @@ Reads the abbreviation in the minibuffer."
 		   (if (= arg 0) (mark)
 		     (save-excursion (forward-word (- arg)) (point))))))
 	name)
-    (setq name (read-string (format "%s abbrev for \"%s\": "
-				    type exp)))
+    (setq name
+	  (read-string (format (if exp "%s abbrev for \"%s\": "
+				 "Undefine %s abbrev: ")
+			       type exp)))
     (if (or (null exp)
 	    (not (abbrev-expansion name table))
 	    (y-or-n-p (format "%s expands to \"%s\"; redefine? "
@@ -200,21 +225,21 @@ Reads the abbreviation in the minibuffer."
 	
 (defun inverse-add-mode-abbrev (arg)
   "Define last word before point as a mode-specific abbrev.
-With argument N, defines the Nth word before point.
-Reads the expansion in the minibuffer.
+With prefix argument N, defines the Nth word before point.
+This command uses the minibuffer to read the expansion.
 Expands the abbreviation after defining it."
   (interactive "p")
   (inverse-add-abbrev
    (if only-global-abbrevs
        global-abbrev-table 
      (or local-abbrev-table
-	 (error "No per-mode abbrev table.")))
+	 (error "No per-mode abbrev table")))
    "Mode" arg))
 
 (defun inverse-add-global-abbrev (arg)
   "Define last word before point as a global (mode-independent) abbrev.
-With argument N, defines the Nth word before point.
-Reads the expansion in the minibuffer.
+With prefix argument N, defines the Nth word before point.
+This command uses the minibuffer to read the expansion.
 Expands the abbreviation after defining it."
   (interactive "p")
   (inverse-add-abbrev global-abbrev-table "Global" arg))
@@ -238,10 +263,9 @@ Expands the abbreviation after defining it."
 
 (defun abbrev-prefix-mark (&optional arg)
   "Mark current point as the beginning of an abbrev.
-Abbrev to be expanded starts here rather than at
-beginning of word.  This way, you can expand an abbrev
-with a prefix: insert the prefix, use this command,
-then insert the abbrev."
+Abbrev to be expanded starts here rather than at beginning of word.
+This way, you can expand an abbrev with a prefix: insert the prefix,
+use this command, then insert the abbrev."
   (interactive "P")
   (or arg (expand-abbrev))
   (setq abbrev-start-location (point-marker)
@@ -251,19 +275,22 @@ then insert the abbrev."
 (defun expand-region-abbrevs (start end &optional noquery)
   "For abbrev occurrence in the region, offer to expand it.
 The user is asked to type y or n for each occurrence.
-A numeric argument means don't query; expand all abbrevs.
-Calling from a program, arguments are START END &optional NOQUERY."
-  (interactive "r")
+A prefix argument means don't query; expand all abbrevs.
+If called from a Lisp program, arguments are START END &optional NOQUERY."
+  (interactive "r\nP")
   (save-excursion
-    (goto-char (min start end))
-    (let ((lim (- (point-max) (max start end))))
+    (goto-char start)
+    (let ((lim (- (point-max) end))
+	  pnt string)
       (while (and (not (eobp))
 		  (progn (forward-word 1)
-			 (<= (point) (- (point-max) lim))))
-	(let ((modp (buffer-modified-p)))
-	  (if (expand-abbrev)
-	      (progn
-	       (set-buffer-modified-p modp)
-	       (unexpand-abbrev)
-	       (if (or noquery (y-or-n-p "Expand this? "))
-		   (expand-abbrev)))))))))
+			 (<= (setq pnt (point)) (- (point-max) lim))))
+	(if (abbrev-expansion
+	     (setq string
+		   (buffer-substring
+		    (save-excursion (forward-word -1) (point))
+		    pnt)))
+	    (if (or noquery (y-or-n-p (format "Expand `%s'? " string)))
+		(expand-abbrev)))))))
+
+;;; abbrev.el ends here

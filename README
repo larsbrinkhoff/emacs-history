@@ -1,42 +1,65 @@
-This directory holds the latest distribution version of GNU Emacs.
- The subdirectory `src' holds the C code,
- `lisp' holds the Lisp code for the editing commands,
- `etc' holds various associated documentation files
-    and programs that Emacs runs,
- `info' holds the Info documentation tree.
- `man' holds the source of the Emacs manual.
- `cpp' holds a C preprocessor for use instead of the installed one
-   when the installed one fails to distinguish more than 8 characters
-   in a symbol name.
- `shortnames' holds programs and data files for creating files of #define's
-   used to convert long symbol names to distinct short ones
-   for C compiles that cannot distinguish more than 8 characters.
+This directory tree holds version 19.7 of GNU Emacs, the extensible,
+customizable, self-documenting real-time display editor.
 
-The file INSTALL in this directory says how to bring up
- GNU Emacs on Unix, once you have loaded the entire subtree of this
- directory.
+See the files `etc/NEWS' and `etc/news.texi' for information on new
+features and other user-visible changes since the last version of
+Emacs.
 
-The files `build-install' and `Makefile' help automate the process of
- building and installing emacs.  The former is a shell script.  See
- INSTALL for more info.
+The file INSTALL in this directory says how to bring up GNU Emacs on
+Unix, once you have loaded the entire subtree of this directory.
 
-The file PROBLEMS contains information on many common
- problems that occur in building, installing and running Emacs.
+Note that the Emacs installation procedure has changed since version
+18; you will probably want to read the file INSTALL even if you have
+installed Emacs before.  The new procedure is intended to simplify
+Emacs installation, and make it easier to have several versions of
+Emacs for several architectures installed simultaneously.
 
-The `etc' subdirectory contains several other files,
- named in capital letters, which you should look at
- when installing GNU Emacs.
+The file PROBLEMS contains information on many common problems that
+occur in building, installing and running Emacs.
 
-The file 'emacs.com' in this directory is for VMS.  It defines
- logical names and commands such as `emacs', so you must edit
- it to specify the file and directory names used on your machine.
- This file must be executed in each session to enable you to run
- the installed Emacs.  It should be executed by your `login.com' file,
- or else perhaps it can be executed once at system boot time.
+The `etc' subdirectory contains several other files, named in
+capital letters, which you should look at when installing GNU Emacs.
 
-The file `kepteditor.com' in this directory is also for VMS.
- When a user says to run Emacs, it really runs this command file.
+The file `configure' is a shell script to acclimate Emacs to the
+oddities of your processor and operating system.  It will create two
+files named `build-install' (a shell script) and `Makefile' (a script
+for the `make' program), which help automate the process of building
+and installing emacs.  See INSTALL for more detailed information.
 
-See the files VMSINSTALL and VMSNOTES for more information on VMS use.
+The file `configure.in' is the input used by the autoconf program to
+construct the `configure' script.  Since Emacs has configuration
+requirements that autoconf can't meet, `configure.in' uses an unholy
+marriage of custom-baked configuration code and autoconf macros; it
+may be wise to avoid rebuilding `configure' from `configure.in' when
+possible.
 
+The files `Makefile.in' and `build-install.in' are templates used by
+`configure' to create `Makefile' and `build-install'.
 
+The file `make-dist' is a shell script to build a distribution tar
+file from the current Emacs tree, containing only those files
+appropriate for distribution.  If you make extensive changes to Emacs,
+this script will help you distribute your version to others.
+
+There are several subdirectories:
+
+`src' holds the C code for Emacs (the Emacs Lisp interpreter and its
+    primitives, the redisplay code, and some basic editing functions).
+`lisp' holds the Emacs Lisp code for Emacs (most everything else).
+`lib-src' holds the source code for some utility programs for use by
+    or with Emacs, like movemail and etags.
+`etc' holds miscellaneous architecture-independent data files
+    Emacs uses, like the tutorial text and the Zippy the Pinhead quote
+    database.  The contents of the `lisp', `info' and `man'
+    subdirectories are architecture-independent too.
+
+`info' holds the Info documentation tree for Emacs.
+`man' holds the source code for the Emacs manual.
+
+`cpp' holds a C preprocessor for use instead of the installed one when
+    the installed one fails to distinguish more than 8 characters in a
+    symbol name.
+`shortnames' holds programs and data files for creating files of
+    #define's used to convert long symbol names to distinct sort ones
+    for C compiles that cannot distinguish more than 8 characters.
+`vms' holds instructions and useful files for running Emacs under VMS.

@@ -1,6 +1,6 @@
 #include "copyright.h"
 
-/* $Header: Internal.c,v 1.12 87/12/20 12:05:22 rws Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/Internal.c,v 1.1 1992/04/11 22:10:20 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 /*

@@ -1,11 +1,11 @@
 /* Execution of byte code produced by bytecomp.el.
-   Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+   Copyright (C) 1985, 1986, 1987, 1988, 1993 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
 GNU Emacs is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
+the Free Software Foundation; either version 2, or (at your option)
 any later version.
 
 GNU Emacs is distributed in the hope that it will be useful,
@@ -15,12 +15,67 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+hacked on by jwz@lucid.com 17-jun-91
+  o  added a compile-time switch to turn on simple sanity checking;
+  o  put back the obsolete byte-codes for error-detection;
+  o  added a new instruction, unbind_all, which I will use for 
+     tail-recursion elimination;
+  o  made temp_output_buffer_show be called with the right number
+     of args;
+  o  made the new bytecodes be called with args in the right order;
+  o  added metering support.
+
+by Hallvard:
+  o  added relative jump instructions;
+  o  all conditionals now only do QUIT if they jump.
+ */
 
 #include "config.h"
 #include "lisp.h"
 #include "buffer.h"
+#include "syntax.h"
+
+/*
+ * define BYTE_CODE_SAFE to enable some minor sanity checking (useful for 
+ * debugging the byte compiler...)
+ *
+ * define BYTE_CODE_METER to enable generation of a byte-op usage histogram. 
+ */
+/* #define BYTE_CODE_SAFE */
+/* #define BYTE_CODE_METER */
+
+
+#ifdef BYTE_CODE_METER
+
+Lisp_Object Vbyte_code_meter, Qbyte_code_meter;
+int byte_metering_on;
+
+#define METER_2(code1, code2) \
+  XFASTINT (XVECTOR (XVECTOR (Vbyte_code_meter)->contents[(code1)]) \
+	    ->contents[(code2)])
+
+#define METER_1(code) METER_2 (0, (code))
+
+#define METER_CODE(last_code, this_code)			\
+{								\
+  if (byte_metering_on)						\
+    {								\
+      if (METER_1 (this_code) != ((1<<VALBITS)-1))		\
+        METER_1 (this_code)++;					\
+      if (last_code						\
+	  && METER_2 (last_code, this_code) != ((1<<VALBITS)-1))\
+        METER_2 (last_code, this_code)++;			\
+    }								\
+}
+
+#else /* no BYTE_CODE_METER */
+
+#define METER_CODE(last_code, this_code)
+
+#endif /* no BYTE_CODE_METER */
+
 
 Lisp_Object Qbytecode;
 
@@ -71,6 +126,7 @@ Lisp_Object Qbytecode;
 #define Bplus 0134
 #define Bmax 0135
 #define Bmin 0136
+#define Bmult 0137
 
 #define Bpoint 0140
 #define Bmark 0141 /* no longer generated as of v18 */
@@ -90,9 +146,21 @@ Lisp_Object Qbytecode;
 #define Bbobp 0157
 #define Bcurrent_buffer 0160
 #define Bset_buffer 0161
-#define Bread_char 0162
+#define Bread_char 0162 /* No longer generated as of v19 */
 #define Bset_mark 0163 /* this loser is no longer generated as of v18 */
 #define Binteractive_p 0164 /* Needed since interactive-p takes unevalled args */
+
+#define Bforward_char 0165
+#define Bforward_word 0166
+#define Bskip_chars_forward 0167
+#define Bskip_chars_backward 0170
+#define Bforward_line 0171
+#define Bchar_syntax 0172
+#define Bbuffer_substring 0173
+#define Bdelete_region 0174
+#define Bnarrow_to_region 0175
+#define Bwiden 0176
+#define Bend_of_line 0177
 
 #define Bconstant2 0201
 #define Bgoto 0202
@@ -114,12 +182,48 @@ Lisp_Object Qbytecode;
 #define Btemp_output_buffer_setup 0220
 #define Btemp_output_buffer_show 0221
 
+#define Bunbind_all 0222
+
+#define Bset_marker 0223
+#define Bmatch_beginning 0224
+#define Bmatch_end 0225
+#define Bupcase 0226
+#define Bdowncase 0227
+
+#define Bstringeqlsign 0230
+#define Bstringlss 0231
+#define Bequal 0232
+#define Bnthcdr 0233
+#define Belt 0234
+#define Bmember 0235
+#define Bassq 0236
+#define Bnreverse 0237
+#define Bsetcar 0240
+#define Bsetcdr 0241
+#define Bcar_safe 0242
+#define Bcdr_safe 0243
+#define Bnconc 0244
+#define Bquo 0245
+#define Brem 0246
+#define Bnumberp 0247
+#define Bintegerp 0250
+
+#define BRgoto 0252
+#define BRgotoifnil 0253
+#define BRgotoifnonnil 0254
+#define BRgotoifnilelsepop 0255
+#define BRgotoifnonnilelsepop 0256
+
+#define BlistN 0257
+#define BconcatN 0260
+#define BinsertN 0261
+
 #define Bconstant 0300
 #define CONSTANTLIM 0100
 
 /* Fetch the next byte from the bytecode stream */
 
-#define FETCH ((unsigned char *)XSTRING (bytestr)->data)[pc++]
+#define FETCH *pc++
 
 /* Fetch two bytes from the bytecode stream
  and make a 16-bit number out of them */
@@ -128,7 +232,10 @@ Lisp_Object Qbytecode;
 
 /* Push x onto the execution stack. */
 
-#define PUSH(x) (*++stackp = (x))
+/* This used to be #define PUSH(x) (*++stackp = (x))
+   This oddity is necessary because Alliant can't be bothered to
+   compile the preincrement operator properly, as of 4/91.  -JimB  */
+#define PUSH(x) (stackp++, *stackp = (x))
 
 /* Pop a value off the execution stack.  */
 
@@ -142,21 +249,35 @@ Lisp_Object Qbytecode;
 
 #define TOP (*stackp)
 
-
 DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
-  "")
+  "Function used internally in byte-compiled code.\n\
+The first argument is a string of byte code; the second, a vector of constants;\n\
+the third, the maximum stack depth used in this function.\n\
+If the third argument is incorrect, Emacs may crash.")
   (bytestr, vector, maxdepth)
      Lisp_Object bytestr, vector, maxdepth;
 {
   struct gcpro gcpro1, gcpro2, gcpro3;
   int count = specpdl_ptr - specpdl;
-  register int pc = 0;
+#ifdef BYTE_CODE_METER
+  int this_op = 0;
+  int prev_op;
+#endif
   register int op;
+  unsigned char *pc;
   Lisp_Object *stack;
   register Lisp_Object *stackp;
   Lisp_Object *stacke;
   register Lisp_Object v1, v2;
   register Lisp_Object *vectorp = XVECTOR (vector)->contents;
+#ifdef BYTE_CODE_SAFE
+  register int const_length = XVECTOR (vector)->size;
+#endif
+  /* Copy of BYTESTR, saved so we can tell if BYTESTR was relocated.  */
+  Lisp_Object string_saved;
+  /* Cached address of beginning of string,
+     valid if BYTESTR equals STRING_SAVED.  */
+  register unsigned char *strbeg;
 
   CHECK_STRING (bytestr, 0);
   if (XTYPE (vector) != Lisp_Vector)
@@ -172,13 +293,35 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
   stack = stackp;
   stacke = stackp + XFASTINT (maxdepth);
 
+  /* Initialize the saved pc-pointer for fetching from the string.  */
+  string_saved = bytestr;
+  pc = XSTRING (string_saved)->data;
+
   while (1)
     {
+#ifdef BYTE_CODE_SAFE
       if (stackp > stacke)
-	error ("Stack overflow in byte code (byte compiler bug), pc = %d", pc);
+	error ("Byte code stack overflow (byte compiler bug), pc %d, depth %d",
+	       pc - XSTRING (string_saved)->data, stacke - stackp);
       if (stackp < stack)
-	error ("Stack underflow in byte code (byte compiler bug), pc = %d", pc);
+	error ("Byte code stack underflow (byte compiler bug), pc %d",
+	       pc - XSTRING (string_saved)->data);
+#endif
+
+      if (! EQ (string_saved, bytestr))
+	{
+	  pc = pc - XSTRING (string_saved)->data + XSTRING (bytestr)->data;
+	  string_saved = bytestr;
+	}
+
+#ifdef BYTE_CODE_METER
+      prev_op = this_op;
+      this_op = op = FETCH;
+      METER_CODE (prev_op, op);
+      switch (op)
+#else
       switch (op = FETCH)
+#endif
 	{
 	case Bvarref+6:
 	  op = FETCH;
@@ -262,19 +405,21 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	case Bcall+4: case Bcall+5:
 	  op -= Bcall;
 	docall:
-	  DISCARD(op);
-	  /* Ffuncall now follows the standard convention that a
-	     function with MANY args relies on the caller to protect.  */
-#if 0
-	  /* Remove protection from the args we are giving to Ffuncall.
-	     FFuncall will protect them, and double protection would
-	     cause disasters.  */
-	  gcpro3.nvars = &TOP - stack - 1;
+	  DISCARD (op);
+#ifdef BYTE_CODE_METER
+	  if (byte_metering_on && XTYPE (TOP) == Lisp_Symbol)
+	    {
+	      v1 = TOP;
+	      v2 = Fget (v1, Qbyte_code_meter);
+	      if (XTYPE (v2) == Lisp_Int
+		  && XINT (v2) != ((1<<VALBITS)-1))
+		{
+		  XSETINT (v2, XINT (v2) + 1);
+		  Fput (v1, Qbyte_code_meter, v2);
+		}
+	    }
 #endif
 	  TOP = Ffuncall (op + 1, &TOP);
-#if 0
-	  gcpro3.nvars = XFASTINT (maxdepth);
-#endif
 	  break;
 
 	case Bunbind+6:
@@ -289,47 +434,100 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	case Bunbind+4: case Bunbind+5:
 	  op -= Bunbind;
 	dounbind:
-	  unbind_to (specpdl_ptr - specpdl - op);
+	  unbind_to (specpdl_ptr - specpdl - op, Qnil);
+	  break;
+
+	case Bunbind_all:
+	  /* To unbind back to the beginning of this frame.  Not used yet,
+	     but will be needed for tail-recursion elimination.  */
+	  unbind_to (count, Qnil);
 	  break;
 
 	case Bgoto:
 	  QUIT;
 	  op = FETCH2;    /* pc = FETCH2 loses since FETCH2 contains pc++ */
-	  /* A loop always uses a plain goto to jump back.
-	     So this makes sure we consider GC in each loop.  */
-	  if (op < pc && consing_since_gc > gc_cons_threshold)
-	    Fgarbage_collect ();
-	  pc = op;
+	  pc = XSTRING (string_saved)->data + op;
 	  break;
 
 	case Bgotoifnil:
-	  QUIT;
 	  op = FETCH2;
-	  if (NULL (POP))
-	    pc = op;
+	  if (NILP (POP))
+	    {
+	      QUIT;
+	      pc = XSTRING (string_saved)->data + op;
+	    }
 	  break;
 
 	case Bgotoifnonnil:
-	  QUIT;
 	  op = FETCH2;
-	  if (!NULL (POP))
-	    pc = op;
+	  if (!NILP (POP))
+	    {
+	      QUIT;
+	      pc = XSTRING (string_saved)->data + op;
+	    }
 	  break;
 
 	case Bgotoifnilelsepop:
-	  QUIT;
 	  op = FETCH2;
-	  if (NULL (TOP))
-	    pc = op;
-	  else DISCARD(1);
+	  if (NILP (TOP))
+	    {
+	      QUIT;
+	      pc = XSTRING (string_saved)->data + op;
+	    }
+	  else DISCARD (1);
 	  break;
 
 	case Bgotoifnonnilelsepop:
-	  QUIT;
 	  op = FETCH2;
-	  if (!NULL (TOP))
-	    pc = op;
-	  else DISCARD(1);
+	  if (!NILP (TOP))
+	    {
+	      QUIT;
+	      pc = XSTRING (string_saved)->data + op;
+	    }
+	  else DISCARD (1);
+	  break;
+
+	case BRgoto:
+	  QUIT;
+	  pc += *pc - 127;
+	  break;
+
+	case BRgotoifnil:
+	  if (NILP (POP))
+	    {
+	      QUIT;
+	      pc += *pc - 128;
+	    }
+	  pc++;
+	  break;
+
+	case BRgotoifnonnil:
+	  if (!NILP (POP))
+	    {
+	      QUIT;
+	      pc += *pc - 128;
+	    }
+	  pc++;
+	  break;
+
+	case BRgotoifnilelsepop:
+	  op = *pc++;
+	  if (NILP (TOP))
+	    {
+	      QUIT;
+	      pc += op - 128;
+	    }
+	  else DISCARD (1);
+	  break;
+
+	case BRgotoifnonnilelsepop:
+	  op = *pc++;
+	  if (!NILP (TOP))
+	    {
+	      QUIT;
+	      pc += op - 128;
+	    }
+	  else DISCARD (1);
 	  break;
 
 	case Breturn:
@@ -337,7 +535,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  goto exit;
 
 	case Bdiscard:
-	  DISCARD(1);
+	  DISCARD (1);
 	  break;
 
 	case Bdup:
@@ -387,12 +585,13 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  temp_output_buffer_show (TOP);
 	  TOP = v1;
 	  /* pop binding of standard-output */
-	  unbind_to (specpdl_ptr - specpdl - 1);
+	  unbind_to (specpdl_ptr - specpdl - 1, Qnil);
 	  break;
 
 	case Bnth:
 	  v1 = POP;
 	  v2 = TOP;
+	nth_entry:
 	  CHECK_NUMBER (v2, 0);
 	  op = XINT (v2);
 	  immediate_quit = 1;
@@ -400,7 +599,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	    {
 	      if (CONSP (v1))
 		v1 = XCONS (v1)->cdr;
-	      else if (!NULL (v1))
+	      else if (!NILP (v1))
 		{
 		  immediate_quit = 0;
 		  v1 = wrong_type_argument (Qlistp, v1);
@@ -424,7 +623,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Blistp:
-	  TOP = CONSP (TOP) || NULL (TOP) ? Qt : Qnil;
+	  TOP = CONSP (TOP) || NILP (TOP) ? Qt : Qnil;
 	  break;
 
 	case Beq:
@@ -438,21 +637,21 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bnot:
-	  TOP = NULL (TOP) ? Qt : Qnil;
+	  TOP = NILP (TOP) ? Qt : Qnil;
 	  break;
 
 	case Bcar:
 	  v1 = TOP;
 	docar:
 	  if (CONSP (v1)) TOP = XCONS (v1)->car;
-	  else if (NULL (v1)) TOP = Qnil;
+	  else if (NILP (v1)) TOP = Qnil;
 	  else Fcar (wrong_type_argument (Qlistp, v1));
 	  break;
 
 	case Bcdr:
 	  v1 = TOP;
 	  if (CONSP (v1)) TOP = XCONS (v1)->cdr;
-	  else if (NULL (v1)) TOP = Qnil;
+	  else if (NILP (v1)) TOP = Qnil;
 	  else Fcdr (wrong_type_argument (Qlistp, v1));
 	  break;
 
@@ -471,13 +670,19 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Blist3:
-	  DISCARD(2);
+	  DISCARD (2);
 	  TOP = Flist (3, &TOP);
 	  break;
 
 	case Blist4:
-	  DISCARD(3);
+	  DISCARD (3);
 	  TOP = Flist (4, &TOP);
+	  break;
+
+	case BlistN:
+	  op = FETCH;
+	  DISCARD (op - 1);
+	  TOP = Flist (op, &TOP);
 	  break;
 
 	case Blength:
@@ -485,7 +690,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Baref:
-	  v1 = POP;
+    	  v1 = POP;
 	  TOP = Faref (TOP, v1);
 	  break;
 
@@ -523,18 +728,24 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bconcat2:
-	  DISCARD(1);
+	  DISCARD (1);
 	  TOP = Fconcat (2, &TOP);
 	  break;
 
 	case Bconcat3:
-	  DISCARD(2);
+	  DISCARD (2);
 	  TOP = Fconcat (3, &TOP);
 	  break;
 
 	case Bconcat4:
-	  DISCARD(3);
+	  DISCARD (3);
 	  TOP = Fconcat (4, &TOP);
+	  break;
+
+	case BconcatN:
+	  op = FETCH;
+	  DISCARD (op - 1);
+	  TOP = Fconcat (op, &TOP);
 	  break;
 
 	case Bsub1:
@@ -561,9 +772,9 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 
 	case Beqlsign:
 	  v2 = POP; v1 = TOP;
-	  CHECK_NUMBER_COERCE_MARKER (v1, 0);
-	  CHECK_NUMBER_COERCE_MARKER (v2, 0);
-	  TOP = XINT (v1) == XINT (v2) ? Qt : Qnil;
+	  CHECK_NUMBER_OR_FLOAT_COERCE_MARKER (v1, 0);
+	  CHECK_NUMBER_OR_FLOAT_COERCE_MARKER (v2, 0);
+	  TOP = (XFLOATINT (v1) == XFLOATINT (v2)) ? Qt : Qnil;
 	  break;
 
 	case Bgtr:
@@ -587,7 +798,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bdiff:
-	  DISCARD(1);
+	  DISCARD (1);
 	  TOP = Fminus (2, &TOP);
 	  break;
 
@@ -603,27 +814,38 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bplus:
-	  DISCARD(1);
+	  DISCARD (1);
 	  TOP = Fplus (2, &TOP);
 	  break;
 
 	case Bmax:
-	  DISCARD(1);
+	  DISCARD (1);
 	  TOP = Fmax (2, &TOP);
 	  break;
 
 	case Bmin:
-	  DISCARD(1);
+	  DISCARD (1);
 	  TOP = Fmin (2, &TOP);
+	  break;
+
+	case Bmult:
+	  DISCARD (1);
+	  TOP = Ftimes (2, &TOP);
+	  break;
+
+	case Bquo:
+	  DISCARD (1);
+	  TOP = Fquo (2, &TOP);
+	  break;
+
+	case Brem:
+	  v1 = POP;
+	  TOP = Frem (TOP, v1);
 	  break;
 
 	case Bpoint:
 	  XFASTINT (v1) = point;
 	  PUSH (v1);
-	  break;
-
-	case Bmark:		/* this loser is no longer generated as of v18 */
-	  PUSH (Fmarker_position (current_buffer->mark));
 	  break;
 
 	case Bgoto_char:
@@ -632,6 +854,12 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 
 	case Binsert:
 	  TOP = Finsert (1, &TOP);
+	  break;
+
+	case BinsertN:
+	  op = FETCH;
+	  DISCARD (op - 1);
+	  TOP = Finsert (op, &TOP);
 	  break;
 
 	case Bpoint_max:
@@ -654,7 +882,7 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  break;
 
 	case Bpreceding_char:
-	  XFASTINT (v1) = point == BEGV ? 0 : FETCH_CHAR (point - 1);
+	  XFASTINT (v1) = point <= BEGV ? 0 : FETCH_CHAR (point - 1);
 	  PUSH (v1);
 	  break;
 
@@ -665,11 +893,6 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 
 	case Bindent_to:
 	  TOP = Findent_to (TOP, Qnil);
-	  break;
-
-	case Bscan_buffer:
-	  /* Get an appropriate error.  */
-	  Fsymbol_function (intern ("scan-buffer"));
 	  break;
 
 	case Beolp:
@@ -701,18 +924,189 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
 	  QUIT;
 	  break;
 
-	case Bset_mark:		/* this loser is no longer generated as of v18 */
-	  /* TOP = Fset_mark (TOP); */
-	  TOP = Fset_marker (current_buffer->mark, TOP, Fcurrent_buffer ());
-	  break;
-
 	case Binteractive_p:
 	  PUSH (Finteractive_p ());
 	  break;
 
+	case Bforward_char:
+	  TOP = Fforward_char (TOP);
+	  break;
+
+	case Bforward_word:
+	  TOP = Fforward_word (TOP);
+	  break;
+
+	case Bskip_chars_forward:
+	  v1 = POP;
+	  TOP = Fskip_chars_forward (TOP, v1);
+	  break;
+
+	case Bskip_chars_backward:
+	  v1 = POP;
+	  TOP = Fskip_chars_backward (TOP, v1);
+	  break;
+
+	case Bforward_line:
+	  TOP = Fforward_line (TOP);
+	  break;
+
+	case Bchar_syntax:
+	  CHECK_NUMBER (TOP, 0);
+	  XFASTINT (TOP) = syntax_code_spec[(int) SYNTAX (0xFF & XINT (TOP))];
+	  break;
+
+	case Bbuffer_substring:
+	  v1 = POP;
+	  TOP = Fbuffer_substring (TOP, v1);
+	  break;
+
+	case Bdelete_region:
+	  v1 = POP;
+	  TOP = Fdelete_region (TOP, v1);
+	  break;
+
+	case Bnarrow_to_region:
+	  v1 = POP;
+	  TOP = Fnarrow_to_region (TOP, v1);
+	  break;
+
+	case Bwiden:
+	  PUSH (Fwiden ());
+	  break;
+
+	case Bend_of_line:
+	  TOP = Fend_of_line (TOP);
+	  break;
+
+	case Bset_marker:
+	  v1 = POP;
+	  v2 = POP;
+	  TOP = Fset_marker (TOP, v2, v1);
+	  break;
+
+	case Bmatch_beginning:
+	  TOP = Fmatch_beginning (TOP);
+	  break;
+
+	case Bmatch_end:
+	  TOP = Fmatch_end (TOP);
+	  break;
+
+	case Bupcase:
+	  TOP = Fupcase (TOP);
+	  break;
+
+	case Bdowncase:
+	  TOP = Fdowncase (TOP);
+	break;
+
+	case Bstringeqlsign:
+	  v1 = POP;
+	  TOP = Fstring_equal (TOP, v1);
+	  break;
+
+	case Bstringlss:
+	  v1 = POP;
+	  TOP = Fstring_lessp (TOP, v1);
+	  break;
+
+	case Bequal:
+	  v1 = POP;
+	  TOP = Fequal (TOP, v1);
+	  break;
+
+	case Bnthcdr:
+	  v1 = POP;
+	  TOP = Fnthcdr (TOP, v1);
+	  break;
+
+	case Belt:
+	  if (XTYPE (TOP) == Lisp_Cons)
+	    {
+	      /* Exchange args and then do nth.  */
+	      v2 = POP;
+	      v1 = TOP;
+	      goto nth_entry;
+	    }
+	  v1 = POP;
+	  TOP = Felt (TOP, v1);
+	  break;
+
+	case Bmember:
+	  v1 = POP;
+	  TOP = Fmember (TOP, v1);
+	  break;
+
+	case Bassq:
+	  v1 = POP;
+	  TOP = Fassq (TOP, v1);
+	  break;
+
+	case Bnreverse:
+	  TOP = Fnreverse (TOP);
+	  break;
+
+	case Bsetcar:
+	  v1 = POP;
+	  TOP = Fsetcar (TOP, v1);
+	  break;
+
+	case Bsetcdr:
+	  v1 = POP;
+	  TOP = Fsetcdr (TOP, v1);
+	  break;
+
+	case Bcar_safe:
+	  v1 = TOP;
+	  if (XTYPE (v1) == Lisp_Cons)
+	    TOP = XCONS (v1)->car;
+	  else
+	    TOP = Qnil;
+	  break;
+
+	case Bcdr_safe:
+	  v1 = TOP;
+	  if (XTYPE (v1) == Lisp_Cons)
+	    TOP = XCONS (v1)->cdr;
+	  else
+	    TOP = Qnil;
+	  break;
+
+	case Bnconc:
+	  DISCARD (1);
+	  TOP = Fnconc (2, &TOP);
+	  break;
+
+	case Bnumberp:
+	  TOP = (NUMBERP (TOP) ? Qt : Qnil);
+	  break;
+
+	case Bintegerp:
+	  TOP = XTYPE (TOP) == Lisp_Int ? Qt : Qnil;
+	  break;
+
+#ifdef BYTE_CODE_SAFE
+	case Bset_mark:
+	  error ("set-mark is an obsolete bytecode");
+	  break;
+	case Bscan_buffer:
+	  error ("scan-buffer is an obsolete bytecode");
+	  break;
+	case Bmark:
+	  error ("mark is an obsolete bytecode");
+	  break;
+#endif
+
 	default:
-	  if ((op -= Bconstant) < (unsigned)CONSTANTLIM)
-	    PUSH (vectorp[op]);
+#ifdef BYTE_CODE_SAFE
+	  if (op < Bconstant)
+	    error ("unknown bytecode %d (byte compiler bug)", op);
+	  if ((op -= Bconstant) >= const_length)
+	    error ("no constant number %d (byte compiler bug)", op);
+	  PUSH (vectorp[op]);
+#else
+	  PUSH (vectorp[op - Bconstant]);
+#endif
 	}
     }
 
@@ -720,7 +1114,11 @@ DEFUN ("byte-code", Fbyte_code, Sbyte_code, 3, 3, 0,
   UNGCPRO;
   /* Binds and unbinds are supposed to be compiled balanced.  */
   if (specpdl_ptr - specpdl != count)
+#ifdef BYTE_CODE_SAFE
+    error ("binding stack not balanced (serious byte compiler bug)");
+#else
     abort ();
+#endif
   return v1;
 }
 
@@ -730,5 +1128,31 @@ syms_of_bytecode ()
   staticpro (&Qbytecode);
 
   defsubr (&Sbyte_code);
-}
 
+#ifdef BYTE_CODE_METER
+
+  DEFVAR_LISP ("byte-code-meter", &Vbyte_code_meter,
+   "A vector of vectors which holds a histogram of byte-code usage.\n\
+(aref (aref byte-code-meter 0) CODE) indicates how many times the byte\n\
+opcode CODE has been executed.\n\
+(aref (aref byte-code-meter CODE1) CODE2), where CODE1 is not 0,\n\
+indicates how many times the byte opcodes CODE1 and CODE2 have been\n\
+executed in succession.");
+  DEFVAR_BOOL ("byte-metering-on", &byte_metering_on,
+   "If non-nil, keep profiling information on byte code usage.\n\
+The variable byte-code-meter indicates how often each byte opcode is used.\n\
+If a symbol has a property named `byte-code-meter' whose value is an\n\
+integer, it is incremented each time that symbol's function is called.");
+
+  byte_metering_on = 0;
+  Vbyte_code_meter = Fmake_vector (make_number (256), make_number (0));
+  Qbyte_code_meter = intern ("byte-code-meter");
+  staticpro (&Qbyte_code_meter);
+  {
+    int i = 256;
+    while (i--)
+      XVECTOR (Vbyte_code_meter)->contents[i] =
+	Fmake_vector (make_number (256), make_number (0));
+  }
+#endif
+}

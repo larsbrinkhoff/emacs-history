@@ -1,21 +1,30 @@
-;;
-;; P O S T . E L
-;;
+;;; mailpost.el --- RMAIL coupler to /usr/uci/post mailer
+
+;; This is in the public domain
+;; since Delp distributed it without a copyright notice in 1986.
+
+;; Author: Gary Delp <delp@huey.Udel.Edu>
+;; Maintainer: FSF
+;; Created: 13 Jan 1986
+;; Keywords: mail
+
+;;; Commentary:
+
 ;; Yet another mail interface.  this for the rmail system to provide
 ;;  the missing sendmail interface on systems without /usr/lib/sendmail,
 ;;   but with /usr/uci/post.
-;;
-;; created by: Gary Delp <delp at huey.Udel.Edu>
-;;             Mon Jan 13 14:45:12 1986
-;;
-;;
+
+;;; Code:
+
+(require 'mailalias)
+(require 'sendmail)
 
 ;; (setq send-mail-function 'post-mail-send-it)
 
 (defun post-mail-send-it ()
-  "\
-the MH -post interface for rmail-mail to call.
-to use it, include (setq send-mail-function 'post-mail-send-it) in site-init."
+  "The MH -post interface for `rmail-mail' to call.
+To use it, include \"(setq send-mail-function 'post-mail-send-it)\" in
+site-init."
   (let ((errbuf (if mail-interactive
 		    (generate-new-buffer " post-mail errors")
 		  0))
@@ -90,3 +99,5 @@ to use it, include (setq send-mail-function 'post-mail-send-it) in site-init."
       (kill-buffer tembuf)
       (if (bufferp errbuf)
 	  (switch-to-buffer errbuf)))))
+
+;;; mailpost.el ends here

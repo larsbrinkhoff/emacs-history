@@ -4,19 +4,20 @@
 
 This file is part of GNU Emacs.
 
-GNU Emacs is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 1, or (at your option)
-any later version.
-
 GNU Emacs is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
+but WITHOUT ANY WARRANTY.  No author or distributor
+accepts responsibility to anyone for the consequences of using it
+or for whether it serves any particular purpose or works at all,
+unless he says so in writing.  Refer to the GNU Emacs General Public
+License for full details.
 
-You should have received a copy of the GNU General Public License
-along with GNU Emacs; see the file COPYING.  If not, write to
-the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
+Everyone is granted permission to copy, modify and redistribute
+GNU Emacs, but only under the conditions described in the
+GNU Emacs General Public License.   A copy of this license is
+supposed to have been given to you along with GNU Emacs so you
+can know your rights and responsibilities.  It should be in a
+file named COPYING.  Among other things, the copyright notice
+and this notice must be preserved on all copies.  */
 
 
 /* Both 68000 systems I have run this on have had broken versions of alloca.
@@ -45,21 +46,15 @@ lose!!
 #endif /* ATT3B5 */
 #endif /* pyramid */
 #endif /* sequent */
-#endif /* ns32000 */
 #endif /* ns16000 */
+#endif /* ns32000 */
 #endif /* WICAT */
 #endif /* m68000 */
 #endif /* m68k */
 #endif /* hp9000s300 */
 
 
-#if defined (hp9000s300) || defined (mot_delta)
-#ifdef mot_delta
-	file "alloca.s"
-; This syntax is what pot@fly.cnuce.cnr.it says we should use.
-	global	alloca
-alloca:
-#endif
+#ifdef hp9000s300
 #ifdef OLD_HP_ASSEMBLER
 	data
 	text
@@ -115,6 +110,35 @@ copy_regs_loop:			/* save caller's saved registers */
 	file	"alloca.s"
 	global	alloca
 alloca:
+#ifdef MOTOROLA_DELTA
+/* slightly modified version of alloca to motorola sysV/68 pcc - based
+   compiler. 
+   this compiler saves used regfisters relative to %sp instead of %fp.
+   alright, just make new copy of saved register set whenever we allocate
+   new space from stack..
+   this is true at last until SVR3V5.1 . bug has reported to Motorola. */
+	set	MAXREG,10	# max no of registers to save (d2-d7, a2-a5)
+        mov.l   (%sp)+,%a1	# pop return addr from top of stack
+        mov.l   (%sp)+,%d0	# pop size in bytes from top of stack
+	mov.l	%sp,%a0		# save stack pointer for register copy
+        addq.l  &3,%d0		# round size up to long word
+        andi.l  &-4,%d0		# mask out lower two bits of size
+	mov.l	%sp,%d1		# compute new value of sp to d1
+        sub.l	%d0,%d1		# pseudo-allocate by moving stack pointer
+	sub.l	&MAXREG*4,%d1	# allocate more space for saved regs.
+	mov.l	%d1,%sp		# actual alloaction.
+	move.w	&MAXREG-1,%d0	# d0 counts saved regs.
+	mov.l	%a2,%d1		# preserve a2.
+	mov.l	%sp,%a2		# make pointer to new reg save area.
+copy_regs_loop: 		# copy stuff from old save area.
+	mov.l	(%a0)+,(%a2)+	# save saved register
+	dbra	%d0,copy_regs_loop
+        mov.l   %a2,%a0		# now a2 is start of allocated space.
+	mov.l	%a2,%d0		# return it in both a0 and d0 to play safe.
+	mov.l	%d1,%a2		# restore a2.
+        subq.l  &4,%sp		# new top of stack
+        jmp     (%a1)		# far below normal return
+#else /* not MOTOROLA_DELTA */
 	mov.l	(%sp)+,%a1	# pop return addr from top of stack
 	mov.l	(%sp)+,%d0	# pop size in bytes from top of stack
 	add.l	&R%1,%d0	# round size up to long word
@@ -128,6 +152,7 @@ alloca:
 	set	S%1,64		# safety factor for C compiler scratch
 	set	R%1,3+S%1	# add to size for rounding
 	set	P%1,-132	# probe this far below current top of stack
+#endif /* not MOTOROLA_DELTA */
 
 #else /* not m68k */
 
@@ -211,8 +236,13 @@ alloca:
 #define IM
 #define REGISTER(x) x
 #else
+#ifdef NS5   /* ns SysV assembler */
+#define IM $
+#define REGISTER(x) x
+#else
 #define IM $
 #define REGISTER(x) 0(x)
+#endif
 #endif
 
 /*
@@ -241,7 +271,7 @@ alloca:
 	movmd	0(r2),4(sp),IM/**/4	/*  copy regs */
 	movmd	0x10(r2),0x14(sp),IM/**/4
 	jump	REGISTER(r1)	/* funky return */
-#endif /* ns16000 or ns32000. */
+#endif /* ns16000 or ns32000 */
 
 #ifdef pyramid
 

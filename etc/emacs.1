@@ -103,8 +103,9 @@ The following options are useful when running
 .I Emacs
 as a batch editor:
 .TP 8
-.BI \-batch
-Edit in batch mode according to the other command line arguments.
+.BI \-batch " commandfile"
+Edit in batch mode using the commands found in
+.I commandfile.
 The editor will send messages to stdout.
 This option must be the first in the argument list.
 .TP
@@ -377,15 +378,13 @@ other windows.  Same as typing CTRL-x 1.
 .PP
 .SH MANUALS
 You can order printed copies of the GNU Emacs Manual for $20.00/copy
-postpaid from the Free Software Foundation, which develops GNU software.
-Their address is:
+postpaid from the Free Software Foundation, which develops GNU software
+(contact them for quantity prices on the manual).  Their address is:
 .nf
     Free Software Foundation
     675 Mass Ave.
     Cambridge, MA 02139
 .fi
-See the file etc/DISTRIB in the Emacs distribution
-for full ordering information.
 Your local Emacs maintainer might also have copies available.  As
 with all software and publications from FSF, everyone is permitted to
 make and distribute copies of the Emacs manual.  The TeX source to the
@@ -408,10 +407,6 @@ strings for the Lisp primitives and preloaded Lisp functions
 of GNU Emacs.  They are stored here to reduce the size of
 Emacs proper.
 
-/usr/local/emacs/etc/DISTRIB discusses GNU Emacs distribution and
-contains an order form for all of the software and manuals available
-from the Free Software Foundation.
-
 /usr/local/emacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
 .br
 /usr/local/emacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
@@ -423,8 +418,8 @@ to assist users of GNU Emacs, including education, troubleshooting,
 porting and customization.
 .br
 These files also have information useful to anyone wishing to write
-programs in the Emacs Lisp extension language, which is
-documented in the GNU Emacs Lisp Manual.
+programs in the Emacs Lisp extension language, which has not yet been fully
+documented.
 
 /usr/local/emacs/info - files for the Info documentation browser
 (a subsystem of Emacs) to refer to.  Currently not much of Unix

@@ -1,5 +1,5 @@
 /* Definitions for asynchronous process control in GNU Emacs.
-   Copyright (C) 1985, 1990 Free Software Foundation, Inc.
+   Copyright (C) 1985 Free Software Foundation, Inc.
 
 This file is part of GNU Emacs.
 
@@ -74,3 +74,31 @@ struct Lisp_Process
 };
 
 #define ChannelMask(n) (1<<(n))
+
+/* True iff we are about to fork off a synchronous process or if we
+   are waiting for it.  */
+extern int synch_process_alive;
+
+/* Communicate exit status of synch process to from sigchld_handler
+   to Fcall_process.  */
+extern int synch_process_retcode;
+extern char *synch_process_death;
+
+/* Nonzero => this is a string explaining death of synchronous subprocess.  */
+extern char *synch_process_death;
+
+/* If synch_process_death is zero,
+   this is exit code of synchronous subprocess.  */
+extern int synch_process_retcode;
+
+/* The name of the file open to get a null file, or a data sink.
+   VMS, MS-DOS, and OS/2 redefine this.  */
+#ifndef NULL_DEVICE
+#define NULL_DEVICE "/dev/null"
+#endif
+
+/* A string listing the possible suffixes used for executable files,
+   separated by colons.  VMS, MS-DOS, and OS/2 redefine this.  */
+#ifndef EXEC_SUFFIXES
+#define EXEC_SUFFIXES ""
+#endif

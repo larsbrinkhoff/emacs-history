@@ -1,11 +1,15 @@
-;;; USENET news poster/mailer for GNU Emacs
+;;; rnewspost.el --- USENET news poster/mailer for GNU Emacs
+
 ;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: mail, news
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -16,6 +20,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+;; Change Log:
 
 ;; moved posting and mail code from rnews.el
 ;;	tower@prep.ai.mit.edu Wed Oct 29 1986
@@ -31,8 +37,6 @@
 ;;	tower@prep 28 Apr 87
 ;; commented out Posting-Front-End to save USENET bytes tower@prep Jul 31 87
 ;; commented out -n and -t args in news-inews     tower@prep 15 Oct 87
-(require 'sendmail)
-(require 'rnews)
 
 ;Now in paths.el.
 ;(defvar news-inews-program "inews"
@@ -46,6 +50,11 @@
 ;;
 ;;; >> Nuked by Mly to autoload those functions again, as the duplication of
 ;;; >>  code was making maintenance too difficult.
+
+;;; Code:
+
+(require 'sendmail)
+(require 'rnews)
 
 (defvar news-reply-mode-map () "Mode map used by news-reply.")
 
@@ -116,8 +125,13 @@ and don't delete any header fields."
   (interactive "P")
   (mail-yank-original arg)
   (exchange-point-and-mark)
-  (insert "In article " news-reply-yank-message-id
-	  " " news-reply-yank-from " writes:\n\n"))
+  (run-hooks 'news-reply-header-hook))
+
+(defvar news-reply-header-hook
+  '(lambda ()
+	 (insert "In article " news-reply-yank-message-id
+			 " " news-reply-yank-from " writes:\n\n"))
+  "Hook for inserting a header at the top of a yanked message.")
 
 (defun news-reply-newsgroups ()
   "Move point to end of Newsgroups: field.
@@ -187,11 +201,11 @@ news-reply-mode."
 	;; the fcc: and bcc: fields
 	(let ((mail-self-blind nil)
 	      (mail-archive-file-name nil))
-	  (mail-setup to subject in-reply-to nil replybuffer)
+	  (mail-setup to subject in-reply-to nil replybuffer nil)
 	  (beginning-of-line)
 	  (delete-region (point) (progn (forward-line 1) (point)))
 	  (goto-char (point-max)))
-      (mail-setup to subject in-reply-to nil replybuffer))
+      (mail-setup to subject in-reply-to nil replybuffer nil))
     ;;;(mail-position-on-field "Posting-Front-End")
     ;;;(insert (emacs-version))
     (goto-char (point-max))
@@ -383,3 +397,5 @@ While composing the message, use \\[news-reply-yank-original] to yank the
 original message into it."
   (interactive)
   (mail-other-window nil nil nil nil nil (current-buffer)))
+
+;;; rnewspost.el ends here

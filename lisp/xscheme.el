@@ -1,11 +1,15 @@
-;; Run Scheme under Emacs
-;; Copyright (C) 1986, 1987, 1989 Free Software Foundation, Inc.
+;;; xscheme.el --- run Scheme under Emacs
+
+;; Copyright (C) 1986, 1987, 1989, 1990 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: languages lisp
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,10 +21,14 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;;; Requires C-Scheme release 5 or later
-;;; Changes to Control-G handler require runtime version 13.85 or later
+;;; Commentary:
 
-;;; $Header: xscheme.el,v 1.23 89/04/28 22:59:40 GMT cph Rel $
+;; A major mode for editing Scheme and interacting with MIT's C-Scheme.
+;;
+;; Requires C-Scheme release 5 or later
+;; Changes to Control-G handler require runtime version 13.85 or later
+
+;;; Code:
 
 (require 'scheme)
 
@@ -69,6 +77,7 @@ Is processed with `substitute-command-keys' first.")
 (xscheme-evaluation-commands scheme-mode-map)
 (xscheme-interrupt-commands scheme-mode-map)
 
+;;;###autoload
 (defun run-scheme (command-line)
   "Run an inferior Scheme process.
 Output goes to the buffer `*scheme*'.
@@ -176,13 +185,15 @@ Blank lines separate paragraphs.  Semicolons start comments.
 \\{scheme-interaction-mode-map}
 
 Entry to this mode calls the value of scheme-interaction-mode-hook
-with no args, if that value is non-nil."
+with no args, if that value is non-nil.
+ Likewise with the value of scheme-mode-hook.
+ scheme-interaction-mode-hook is called after scheme-mode-hook."
   (interactive)
   (kill-all-local-variables)
   (scheme-interaction-mode-initialize)
   (scheme-mode-variables)
   (make-local-variable 'xscheme-previous-send)
-  (run-hooks 'scheme-interaction-mode-hook))
+  (run-hooks 'scheme-mode-hook 'scheme-interaction-mode-hook))
 
 (defun scheme-interaction-mode-initialize ()
   (use-local-map scheme-interaction-mode-map)
@@ -676,6 +687,8 @@ When called, the current buffer will be the Scheme process-buffer.")
 (defvar xscheme-process-filter-alist
   '((?D xscheme-enter-debugger-mode
 	xscheme-process-filter:string-action)
+    (?E xscheme-eval
+	xscheme-process-filter:string-action)
     (?P xscheme-set-prompt-variable
 	xscheme-process-filter:string-action)
     (?R xscheme-enter-interaction-mode
@@ -770,6 +783,9 @@ the remaining input.")
 (defun xscheme-unsolicited-read-char ()
   nil)
 
+(defun xscheme-eval (string)
+  (eval (car (read-from-string string))))
+
 (defun xscheme-message (string)
   (if (not (zerop (length string)))
       (xscheme-write-message-1 string (format ";%s" string))))
@@ -861,3 +877,5 @@ the remaining input.")
 		   (let ((state (parse-partial-sexp start (nth 2 state))))
 		     (if (nth 2 state) 'many 'one)))))
 	(set-syntax-table old-syntax-table)))))
+
+;;; xscheme.el ends here

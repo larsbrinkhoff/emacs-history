@@ -1,4 +1,4 @@
-/* $Header: Activate.c,v 1.16 88/02/02 19:08:46 jim Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/Activate.c,v 1.1 1992/04/11 22:10:17 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 #include "copyright.h"
@@ -313,7 +313,7 @@ XMenuActivate(display, menu, p_num, s_num, x_pos, y_pos, event_mask, data)
 		 * selection entered is active then activate
 		 * the selection.
 		 */
-		if (cur_p->active && cur_s->active) {
+		if (cur_p->active && cur_s->active > 0) {
 		    cur_s->activated = 1;
 		    _XMRefreshSelection(display, menu, cur_s);
 		}

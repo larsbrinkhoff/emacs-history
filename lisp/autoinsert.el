@@ -1,11 +1,15 @@
-;; Automatic mode-dependent insertion of text into new files.
+;;; autoinsert.el --- automatic mode-dependent insertion of text into new files
+
 ;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+
+;; Author: Charlie Martin <crm@cs.duke.edu>
+;; Created: 01 Jul 1988
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,7 +21,7 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;;; autoinsert.el
+;;; Commentary:
 
 ;;;  Abstract:
 ;;;
@@ -45,22 +49,22 @@
 ;;;           Duke University Medical Center
 ;;;           Durham, NC 27710
 ;;;	      (crm@cs.duke.edu,mcnc!duke!crm) 
-;;;
-;;;  Date: Fri Jul  1 16:15:31 EDT 1988
+
+;;; Code:
 
 (defvar auto-insert-alist '(("\\.tex$" . "tex-insert.tex")
 			    ("\\.c$" . "c-insert.c")
 			    ("\\.h$" . "h-insert.c")
 			    ("[Mm]akefile" . "makefile.inc")
 			    ("\\.bib$" . "tex-insert.tex"))
-  "Alist specifying text to insert by default into a new file.
+  "A list specifying text to insert by default into a new file.
 Elements look like (REGEXP . FILENAME); if the new file's name
 matches REGEXP, then the file FILENAME is inserted into the buffer.
 Only the first matching element is effective.")
 
 ;;; Establish a default value for auto-insert-directory
 (defvar auto-insert-directory "~/insert/"
-  "Directory from which auto-inserted files are taken.")
+  "*Directory from which auto-inserted files are taken.")
 
 (defun insert-auto-insert-files ()
   "Insert default contents into a new file.
@@ -80,7 +84,9 @@ Matches the visited file name against the elements of `auto-insert-alist'."
     (if insert-file
         (let ((file (concat auto-insert-directory insert-file)))
           (if (file-readable-p file)
-              (insert-file-contents file)
+	      (progn
+		(insert-file-contents file)
+		(set-buffer-modified-p nil))
             (message "Auto-insert: file %s not found" file)
 	    (sleep-for 1))))))
 
@@ -88,3 +94,5 @@ Matches the visited file name against the elements of `auto-insert-alist'."
 (setq find-file-not-found-hooks
       (cons 'insert-auto-insert-files
 	    find-file-not-found-hooks))
+
+;;; autoinsert.el ends here

@@ -1,14 +1,16 @@
-;; helper - utility help package for modes which want to provide help
-;; without relinquishing control, e.g. `electric' modes.
+;;; helper.el --- utility help package supporting help in electric modes
 
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
-;; Principal author K. Shane Hartman
+
+;; Author: K. Shane Hartman
+;; Maintainer: FSF
+;; Keywords: help
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -20,8 +22,9 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
 
-(provide 'helper)			; hey, here's a helping hand.
+; hey, here's a helping hand.
 
 ;; Bind this to a string for <blank> in "... Other keys <blank>".
 ;; Helper-help uses this to construct help string when scrolling.
@@ -87,13 +90,13 @@
   (sit-for 4))
 
 (defun Helper-describe-key-briefly (key)
-  "Briefly describe binding of KEYS."
+  "Briefly describe binding of KEY."
   (interactive "kDescribe key briefly: ")
   (describe-key-briefly key)
   (sit-for 4))
 
 (defun Helper-describe-key (key)
-  "Describe binding of KEYS."
+  "Describe binding of KEY."
   (interactive "kDescribe key: ")
   (save-window-excursion (describe-key key))
   (Helper-help-scroller))
@@ -121,6 +124,7 @@
       (insert name " Mode\n" documentation)))
   (Helper-help-scroller))
 
+;;;###autoload
 (defun Helper-describe-bindings ()
   "Describe local key bindings of current mode."
   (interactive)
@@ -128,6 +132,7 @@
   (save-window-excursion (describe-bindings))
   (Helper-help-scroller))
 
+;;;###autoload
 (defun Helper-help ()
   "Provide help for current mode."
   (interactive)
@@ -145,3 +150,6 @@
 	     (ding)
 	     (setq continue nil))))))
 
+(provide 'helper)
+
+;;; helper.el ends here

@@ -1,10 +1,12 @@
+;;; x-menu.el --- menu support for X 
+
 ;; Copyright (C) 1986 Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -16,6 +18,7 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Code:
 
 (defmacro caar (conscell)
   (list 'car (list 'car conscell)))
@@ -101,7 +104,7 @@ This also creates the menu itself."
   (let ((buf (current-buffer)))
     (pop-to-buffer menu)
     (let (buffer-read-only)
-      (setq x-menu-max-width (1- (screen-width)))
+      (setq x-menu-max-width (1- (frame-width)))
       (setq x-menu-item-width 0)
       (let (items-head
 	    (items-tail x-menu-items-alist))
@@ -143,3 +146,5 @@ This also creates the menu itself."
 	 (litem (cdr (nth item x-menu-items-alist))))
     (and litem (funcall litem event)))
   (pop-to-buffer x-menu-assoc-buffer))
+
+;;; x-menu.el ends here

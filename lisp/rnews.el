@@ -1,11 +1,15 @@
-;;; USENET news reader for gnu emacs
+;;; rnews.el --- USENET news reader for gnu emacs
+
 ;; Copyright (C) 1985, 1986, 1987 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: news
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -16,6 +20,8 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+;;; Change Log:
 
 ;; Created Sun Mar 10,1985 at 21:35:01 ads and sundar@hernes.ai.mit.edu
 ;; Should do the point pdl stuff sometime
@@ -42,8 +48,10 @@
 ;;	tower@prep Oct 29 1986
 ;; added caesar-region, rename news-caesar-buffer-body, hacked accordingly
 ;;	tower@prep Nov 21 1986
-;; added (provide 'rnews)	tower@prep 22 Apr 87
-(provide 'rnews)
+;; added tower@prep 22 Apr 87
+
+;;; Code:
+
 (require 'mail-utils)
 
 (autoload 'rmail-output "rmailout"
@@ -71,6 +79,11 @@ original message into it."
 While composing the reply, use \\[mail-yank-original] to yank the original
 message into it."
   t)
+
+(defvar news-group-hook-alist nil
+  "Alist of (GROUP-REGEXP . HOOK) pairs.
+Just before displaying a message, each HOOK is called
+if its GROUP-REGEXP matches the current newsgroup name.")
 
 (defvar rmail-last-file (expand-file-name "~/mbox.news"))
 
@@ -495,7 +508,7 @@ to a list (a . b)"
 (defun news-select-news-group (gp)
   (let ((grp (assoc gp news-group-article-assoc)))
     (if (null grp)
- 	(error "Group not subscribed to in file %s." news-startup-file)
+ 	(error "Group %s not subscribed to" gp)
       (progn
 	(news-update-message-read news-current-news-group
 				  (news-cdar news-point-pdl))
@@ -514,16 +527,15 @@ to a list (a . b)"
   (let ((file (concat news-path
 		      (string-subst-char ?/ ?. news-current-news-group)
 		      "/" arg)))
-    (if (= arg
-  	   (or (news-cadr (memq (news-cdar news-point-pdl) news-list-of-files))
-  	       0))
-  	(setcdr (car news-point-pdl) arg))
-    (setq news-current-message-number arg)
     (if (file-exists-p file)
-  	(let ((buffer-read-only nil))
-  	  (news-read-in-file file)
-  	  (news-set-mode-line))
-      (news-set-mode-line)
+	(let ((buffer-read-only ()))
+	  (if (= arg 
+		 (or (news-cadr (memq (news-cdar news-point-pdl) news-list-of-files))
+		     0))
+	      (setcdr (car news-point-pdl) arg))
+	  (setq news-current-message-number arg)
+	  (news-read-in-file file)
+	  (news-set-mode-line))
       (error "Article %d nonexistent" arg))))
 
 (defun news-force-update ()
@@ -609,6 +621,13 @@ one for moving forward and one for moving backward."
   (let ((start (point)))
   (insert-file-contents filename)
   (news-convert-format)
+  ;; Run each hook that applies to the current newsgroup.
+  (let ((hooks news-group-hook-alist))
+    (while hooks
+      (goto-char start)
+      (if (string-match (car (car hooks)) news-group-name)
+	  (funcall (cdr (car hooks))))
+      (setq hooks (cdr hooks))))
   (goto-char start)
   (forward-line 1)
   (if (eobp)
@@ -680,11 +699,10 @@ one for moving forward and one for moving backward."
     (save-excursion
       (if (not (null news-current-news-group))
 	  (news-update-message-read news-current-news-group
-				(news-cdar news-point-pdl)))
-      (switch-to-buffer newsrcbuf)
+				    (news-cdar news-point-pdl)))
+      (set-buffer newsrcbuf)
       (while tem
-	(setq group (assoc (car tem)
-			   news-group-article-assoc))
+	(setq group (assoc (car tem) news-group-article-assoc))
 	(if (= (news-cadr (news-cadr group)) (news-caddr (news-cadr group)))
 	    nil
 	  (goto-char 0)
@@ -967,3 +985,7 @@ Mail and USENET news headers are not rotated."
       (goto-char (point-max))
       (caesar-region rotnum)
       (setq buffer-read-only buffer-status))))
+
+(provide 'rnews)
+
+;;; rnews.el ends here

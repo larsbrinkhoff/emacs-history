@@ -1,11 +1,15 @@
-;; "RMAIL" mail reader for Emacs.
+;;; undigest.el --- digest-cracking support for the RMAIL mail reader
+
 ;; Copyright (C) 1985, 1986 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: mail
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,7 +21,11 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-;; note Interent RFP934
+;;; Commentary:
+
+;; See Internet RFC 934
+
+;;; Code:
 
 (defun undigestify-rmail-message ()
   "Break up a digest message into its constituent messages.
@@ -53,7 +61,8 @@ Leaves original message, deleted, before the undigestified messages."
 			   (goto-char (point-max))
 			   (or (mail-fetch-field "Reply-To")
 			       (mail-fetch-field "To")
-			       (mail-fetch-field "Apparently-To")))
+			       (mail-fetch-field "Apparently-To")
+			       (mail-fetch-field "From")))
 			 (error "Message is not a digest")))))
 	      (save-excursion
 		(goto-char (point-max))
@@ -102,3 +111,4 @@ Leaves original message, deleted, before the undigestified messages."
 	     (delete-region (point-min) (point-max))
 	     (rmail-show-message rmail-current-message))))))
 
+;;; undigest.el ends here

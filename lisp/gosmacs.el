@@ -1,11 +1,15 @@
-;; Rebindings to imitate Gosmacs.
+;;; gosmacs.el --- rebindings to imitate Gosmacs.
+
 ;; Copyright (C) 1986 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
+;; Keywords: emulations
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,9 +21,18 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
+
+;; Make GNU Emacs look like Gosling Emacs.  `M-x set-gosmacs-bindings'
+;; does this change; `M-x set-gnu-bindings' undoes it.
+
+;;; Code:
+
+(require 'mlsupport)
 
 (defvar non-gosmacs-binding-alist nil)
 
+;;;###autoload
 (defun set-gosmacs-bindings ()
   "Rebind some keys globally to make GNU Emacs resemble Gosling Emacs.
 Use \\[set-gnu-bindings] to restore previous global bindings."
@@ -56,8 +69,8 @@ Use \\[set-gnu-bindings] to restore previous global bindings."
 
 (defun rebind-and-record (bindings)
   "Establish many new global bindings and record the bindings replaced.
-Arg is an alist whose elements are (KEY DEFINITION).
-Value is a similar alist whose elements describe the same KEYs
+Arg BINDINGS is an alist whose elements are (KEY DEFINITION).
+Returns a similar alist whose elements describe the same KEYs
 but each with the old definition that was replaced,"
   (let (old)
     (while bindings
@@ -100,3 +113,5 @@ From the window at the lower right corner, select the one at the upper left."
   "Scroll the selected window up so that the current line is at the top."
   (interactive)
   (recenter 0))
+
+;;; gosmacs.el ends here

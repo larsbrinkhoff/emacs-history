@@ -1,11 +1,15 @@
+;;; backquote.el --- backquoting for Emacs Lisp macros
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
-;; Written by Dick King (king@kestrel).
+
+;; Author: Dick King (king@kestrel).
+;; Keywords: extensions
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,8 +21,9 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
-;;; This is a rudimentry backquote package written by D. King,
+ ;;; This is a rudimentry backquote package written by D. King,
  ;;; king@kestrel, on 8/31/85.  (` x) is a macro
  ;;; that expands to a form that produces x.  (` (a b ..)) is
  ;;; a macro that expands into a form that produces a list of what a b
@@ -56,8 +61,7 @@
  ;;; This is so crunchy that I am considering including a check for
  ;;; this or changing the syntax to ... ,(<form>).  RMS: opinion?
 
-
-(provide 'backquote)
+;;; Code:
 
 ;;; a raft of general-purpose macros follows.  See the nearest
  ;;; Commonlisp manual.
@@ -90,9 +94,45 @@ a list-value atom"
 
 
 ;;; This is the interface 
+;;;###autoload
 (defmacro ` (form)
-  "(` FORM) Expands to a form that will generate FORM.
-FORM is `almost quoted' -- see backquote.el for a description."
+  "(` FORM)  is a macro that expands to code to construct FORM.
+Note that this is very slow in interpreted code, but fast if you compile.
+FORM is one or more nested lists, which are `almost quoted':
+They are copied recursively, with non-lists used unchanged in the copy.
+ (` a b) == (list 'a 'b)  constructs a new list with two elements, `a' and `b'.
+ (` a (b c)) == (list 'a (list 'b 'c))  constructs two nested new lists.
+
+However, certain special lists are not copied.  They specify substitution.
+Lists that look like (, EXP) are evaluated and the result is substituted.
+ (` a (, (+ x 5))) == (list 'a (+ x 5))
+
+Elements of the form (,@ EXP) are evaluated and then all the elements
+of the result are substituted.  This result must be a list; it may
+be `nil'.
+
+As an example, a simple macro `push' could be written:
+   (defmacro push (v l)
+        (` (setq (, l) (cons (,@ (list v l))))))
+or as
+   (defmacro push (v l)
+        (` (setq (, l) (cons (, v) (, l)))))
+
+LIMITATIONS: \"dotted lists\" are not allowed in FORM.
+The ultimate cdr of each list scanned by ` must be `nil'.
+\(This does not apply to constants inside expressions to be substituted.)
+
+Substitution elements are not allowed as the cdr
+of a cons cell.  For example, (` (A . (, B))) does not work.
+Instead, write (` (A (,@ B))).
+
+You cannot construct vectors, only lists.  Vectors are treated as
+constants.
+
+BEWARE BEWARE BEWARE
+Inclusion of (,ATOM) rather than (, ATOM)
+or of (,@ATOM) rather than (,@ ATOM)
+will result in errors that will show up very late."
   (bq-make-maker form))
 
 ;;; We develop the method for building the desired list from
@@ -109,13 +149,13 @@ FORM is `almost quoted' -- see backquote.el for a description."
  ;;; glue what I've already done to the end, than to to prepare that
  ;;; something and go back to put things together.
 (defun bq-make-maker (form)
-  "Given one argument, a `mostly quoted' object, produces a maker.
+  "Given argument FORM, a `mostly quoted' object, produces a maker.
 See backquote.el for details"
   (let ((tailmaker (quote nil)) (qc 0) (ec 0) (state nil))
     (mapcar 'bq-iterative-list-builder (reverse form))
     (and state
 	 (cond ((eq state 'quote)
-		(list state tailmaker))
+		(list state (if (equal form tailmaker) form tailmaker)))
 	       ((= (length tailmaker) 1)
 		(funcall (bq-cadr (assq state bq-singles)) tailmaker))
 	       (t (cons state tailmaker))))))
@@ -155,9 +195,6 @@ See backquote.el for details"
 ;;; This maintains the invariant that (cons state tailmaker) is the
  ;;; maker for the elements of the tail we've eaten so far.
 (defun bq-iterative-list-builder (form)
-  "Called by bq-make-maker.  Adds a new item form to tailmaker, 
-changing state if need be, so tailmaker and state constitute a recipie
-for making the list so far."
   (cond ((atom form)
 	 (funcall (bq-cadr (assq state bq-quotefns)) form))
 	((memq (car form) backquote-unquote)
@@ -286,13 +323,13 @@ for making the list so far."
 	 (rplacd (car tailmaker)
 		 (cons form (bq-cdar tailmaker))))
 	((= (length tailmaker) 1)
-	 (setq tailmaker (cons form tailmaker))
-	 (setq state 'cons))
+	 (setq tailmaker (cons form tailmaker)
+	       state 'cons))
 	(t (bq-push (list 'list form) tailmaker))))
 
 (defun bq-evalnil (form)
-  (setq tailmaker (list form))
-  (setq state 'list))
+  (setq tailmaker (list form)
+	state 'list))
 
 ;;; (if (matches (X Y))  ; it must
  ;;;    (progn (setq state 'append)
@@ -300,23 +337,24 @@ for making the list so far."
 (defun bq-splicecons (form)
   (setq tailmaker
 	(list form
-	      (list 'cons (car tailmaker) (bq-cadr tailmaker))))
-  (setq state 'append))
+	      (list 'cons (car tailmaker) (bq-cadr tailmaker)))
+	state 'append))
 
 (defun bq-splicequote (form)
-  (setq tailmaker (list form (list 'quote (list tailmaker))))
-  (setq state 'append))
+  (setq tailmaker (list form (list 'quote tailmaker))
+	state 'append))
 
 (defun bq-splicelist (form)
-  (setq tailmaker (list form (cons 'list tailmaker)))
-  (setq state 'append))
+  (setq tailmaker (list form (cons 'list tailmaker))
+	state 'append))
 
 (defun bq-spliceappend (form)
   (bq-push form tailmaker))
 
 (defun bq-splicenil (form)
-  (setq state 'append)
-  (setq tailmaker (list form)))
+  (setq state 'append
+	tailmaker (list form)))
 
+(provide 'backquote)
 
-
+;;; backquote.el ends here

@@ -1,11 +1,14 @@
-;; Edit Options command for Emacs.
+;;; options.el --- edit Options command for Emacs.
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,7 +20,17 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
+;; This code provides functions to list and edit the values of all global
+;; option variables known to loaded Emacs Lisp code.  There are two entry
+;; points, `list-options' and `edit' options'.  The latter enters a major
+;; mode specifically for editing option values.  Do `M-x describe-mode' in
+;; that context for more details.
+
+;;; Code:
+
+;;;###autoload
 (defun list-options ()
   "Display a list of Emacs user options, with values and documentation."
   (interactive)
@@ -42,6 +55,7 @@
 	  (princ "\n;;\n"))
 	(setq vars (cdr vars))))))
 
+;;;###autoload
 (defun edit-options ()
   "Edit a list of Emacs user option values.
 Selects a buffer containing such a list,
@@ -67,14 +81,17 @@ Type \\[describe-mode] in that buffer for a list of commands."
 (put 'Edit-options-mode 'mode-class 'special)
 
 (defun Edit-options-mode ()
-  "Major mode for editing Emacs user option settings.
+  "\\<Edit-options-mode-map>\
+Major mode for editing Emacs user option settings.
 Special commands are:
-s -- set variable point points at.  New value read using minibuffer.
-x -- toggle variable, t -> nil, nil -> t.
-1 -- set variable to t.
-0 -- set variable to nil.
+\\[Edit-options-set] -- set variable point points at.  New value read using minibuffer.
+\\[Edit-options-toggle] -- toggle variable, t -> nil, nil -> t.
+\\[Edit-options-t] -- set variable to t.
+\\[Edit-options-nil] -- set variable to nil.
+Changed values made by these commands take effect immediately.
+
 Each variable description is a paragraph.
-For convenience, the characters p and n move back and forward by paragraphs."
+For convenience, the characters \\[backward-paragraph] and \\[forward-paragraph] move back and forward by paragraphs."
   (kill-all-local-variables)
   (set-syntax-table emacs-lisp-mode-syntax-table)
   (use-local-map Edit-options-mode-map)
@@ -84,7 +101,8 @@ For convenience, the characters p and n move back and forward by paragraphs."
   (setq paragraph-start "^\t")
   (setq truncate-lines t)
   (setq major-mode 'Edit-options-mode)
-  (setq mode-name "Options"))
+  (setq mode-name "Options")
+  (run-hooks 'Edit-options-mode-hook))
 
 (defun Edit-options-set () (interactive)
   (Edit-options-modify
@@ -102,18 +120,19 @@ For convenience, the characters p and n move back and forward by paragraphs."
 (defun Edit-options-modify (modfun)
   (save-excursion
    (let (var pos)
-     (re-search-backward "^;; ")
+     (re-search-backward "^;; \\|\\`")
      (forward-char 3)
      (setq pos (point))
      (save-restriction
-      (narrow-to-region pos (progn (end-of-line) (1- (point))))
-      (goto-char pos)
-      (setq var (read (current-buffer))))
+       (narrow-to-region pos (progn (end-of-line) (1- (point))))
+       (goto-char pos)
+       (setq var (read (current-buffer))))
      (goto-char pos)
      (forward-line 1)
      (forward-char 1)
      (save-excursion
-      (set var (funcall modfun var)))
+       (set var (funcall modfun var)))
      (kill-sexp 1)
      (prin1 (symbol-value var) (current-buffer)))))
 
+;;; options.el ends here

@@ -22,7 +22,7 @@ Common Lisp inside Emacs Lisp.
 * con: Conditionals.           When, unless, case, ecase.
 * ite: Iterations.             Do, do*, dolist, dotimes, @dots{}
 * mul: Multiple Values.        Values, values-list, @dots{}
-* ari: Integer Arithmetic.     Floor, ceiling, round, truncate, @dots{}
+* ari: Integer Arithmetic.     cl-floor, cl-ceiling, cl-round, cl-truncate, @dots{}
 * stf: Generalized Variables.  Setf and friends.
 * str: Structures.             Like Pascal records or C structs.
 * mis: Miscellanea.            Odds and ends that didn't fit elsewhere.
@@ -559,10 +559,10 @@ prime number sieve.
 @itemx minusp
 A few predicates that use to come handy.
 
-@item ceiling
-@itemx floor
-@itemx round
-@itemx truncate
+@item cl-ceiling
+@itemx cl-floor
+@itemx cl-round
+@itemx cl-truncate
 @itemx mod
 @itemx rem
 The intention is to give everybody his preferred way to divide integers.

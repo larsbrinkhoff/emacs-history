@@ -1,11 +1,14 @@
-;; Indentation commands for Emacs
+;;; indent.el --- indentation commands for Emacs
+
 ;; Copyright (C) 1985 Free Software Foundation, Inc.
+
+;; Maintainer: FSF
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -17,11 +20,15 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
+;;; Commentary:
 
-;Now in loaddefs.el
-;(defvar indent-line-function
-;  'indent-to-left-margin
-;  "Function to indent current line.")
+;; Commands for making and changing indentation in text.  These are
+;; described in the Emacs manual.
+
+;;; Code:
+
+(defvar indent-line-function 'indent-to-left-margin "\
+Function to indent current line.")
 
 (defun indent-according-to-mode ()
   "Indent line in proper way for current major mode."
@@ -75,39 +82,50 @@ Called from a program, takes three arguments, START, END and ARG."
 	    (goto-char epos)))))
 
 (defvar indent-region-function nil
-  "Function which is short cut to indent each line in region with Tab.
-nil means really call Tab on each line.")
+  "Function which is short cut to indent region using indent-according-to-mode.
+A value of nil means really run indent-according-to-mode on each line.")
 
 (defun indent-region (start end arg)
   "Indent each nonblank line in the region.
-With no argument, indent each line with Tab.
+With no argument, indent each line using indent-according-to-mode.
+\(If there is a fill prefix, make each line start with the fill prefix.)
 With argument COLUMN, indent each line to that column.
 Called from a program, takes three args: START, END and COLUMN."
   (interactive "r\nP")
   (if (null arg)
-      (if indent-region-function
-	  (funcall indent-region-function start end)
-	(save-excursion
-	 (goto-char end)
-	 (setq end (point-marker))
-	 (goto-char start)
-	 (or (bolp) (forward-line 1))
-	 (while (< (point) end)
-	   (funcall indent-line-function)
-	   (forward-line 1))
-	 (move-marker end nil)))
+      (if fill-prefix
+	  (save-excursion
+	    (goto-char end)
+	    (setq end (point-marker))
+	    (goto-char start)
+	    (let ((regexp (regexp-quote fill-prefix)))
+	    (while (< (point) end)
+	      (or (looking-at regexp)
+		  (insert fill-prefix))
+	      (forward-line 1))))
+	(if indent-region-function
+	    (funcall indent-region-function start end)
+	  (save-excursion
+	  (goto-char end)
+	  (setq end (point-marker))
+	  (goto-char start)
+	  (or (bolp) (forward-line 1))
+	  (while (< (point) end)
+	    (funcall indent-line-function)
+	    (forward-line 1))
+	  (move-marker end nil))))
     (setq arg (prefix-numeric-value arg))
-  (save-excursion
-   (goto-char end)
-   (setq end (point-marker))
-   (goto-char start)
-   (or (bolp) (forward-line 1))
-   (while (< (point) end)
-     (delete-region (point) (progn (skip-chars-forward " \t") (point)))
-     (or (eolp)
-	 (indent-to arg 0))
-     (forward-line 1))
-   (move-marker end nil))))
+    (save-excursion
+      (goto-char end)
+      (setq end (point-marker))
+      (goto-char start)
+      (or (bolp) (forward-line 1))
+      (while (< (point) end)
+	(delete-region (point) (progn (skip-chars-forward " \t") (point)))
+	(or (eolp)
+	(indent-to arg 0))
+	(forward-line 1))
+      (move-marker end nil))))
 
 (defun indent-relative-maybe ()
   "Indent a new line like previous nonblank line."
@@ -117,8 +135,8 @@ Called from a program, takes three args: START, END and COLUMN."
 (defun indent-relative (&optional unindented-ok)
   "Space out to under next indent point in previous nonblank line.
 An indent point is a non-whitespace character following whitespace.
-If the previous nonblank line has no indent points beyond
-the column point starts at,  tab-to-tab-stop  is done instead."
+If the previous nonblank line has no indent points beyond the
+column point starts at, `tab-to-tab-stop' is done instead."
   (interactive "P")
   (if abbrev-mode (expand-abbrev))
   (let ((start-column (current-column))
@@ -147,9 +165,9 @@ the column point starts at,  tab-to-tab-stop  is done instead."
 
 (defvar tab-stop-list
   '(8 16 24 32 40 48 56 64 72 80 88 96 104 112 120)
-  "*List of tab stop positions used by tab-to-tab-stops.")
+  "*List of tab stop positions used by `tab-to-tab-stops'.")
 
-(defvar edit-tab-stops-map nil "Keymap used in edit-tab-stops.")
+(defvar edit-tab-stops-map nil "Keymap used in `edit-tab-stops'.")
 (if edit-tab-stops-map
     nil
   (setq edit-tab-stops-map (make-sparse-keymap))
@@ -158,13 +176,13 @@ the column point starts at,  tab-to-tab-stop  is done instead."
 
 (defvar edit-tab-stops-buffer nil
   "Buffer whose tab stops are being edited--in case
-the variable tab-stop-list is local in that buffer.")
+the variable `tab-stop-list' is local in that buffer.")
 
 (defun edit-tab-stops ()
-  "Edit the tab stops used by tab-to-tab-stop.
+  "Edit the tab stops used by `tab-to-tab-stop'.
 Creates a buffer *Tab Stops* containing text describing the tab stops.
 A colon indicates a column where there is a tab stop.
-You can add or remove colons and then do C-c C-c to make changes take effect."
+You can add or remove colons and then do \\<edit-tab-stops-map>\\[edit-tab-stops-note-changes] to make changes take effect."
   (interactive)
   (setq edit-tab-stops-buffer (current-buffer))
   (switch-to-buffer (get-buffer-create "*Tab Stops*"))
@@ -208,7 +226,7 @@ You can add or remove colons and then do C-c C-c to make changes take effect."
 
 (defun tab-to-tab-stop ()
   "Insert spaces or tabs to next defined tab-stop column.
-The variable tab-stop-list is a list of columns at which there are tab stops.
+The variable `tab-stop-list' is a list of columns at which there are tab stops.
 Use \\[edit-tab-stops] to edit them interactively."
   (interactive)
   (if abbrev-mode (expand-abbrev))
@@ -217,9 +235,22 @@ Use \\[edit-tab-stops] to edit them interactively."
       (setq tabs (cdr tabs)))
     (if tabs
 	(indent-to (car tabs))
-      (insert ? ))))
+      (insert ?\ ))))
+
+(defun move-to-tab-stop ()
+  "Move point to next defined tab-stop column.
+The variable `tab-stop-list' is a list of columns at which there are tab stops.
+Use \\[edit-tab-stops] to edit them interactively."
+  (interactive)
+  (let ((tabs tab-stop-list))
+    (while (and tabs (>= (current-column) (car tabs)))
+      (setq tabs (cdr tabs)))
+    (if tabs
+	(move-to-column (car tabs) t))))
 
 (define-key global-map "\t" 'indent-for-tab-command)
 (define-key esc-map "\034" 'indent-region)
 (define-key ctl-x-map "\t" 'indent-rigidly)
 (define-key esc-map "i" 'tab-to-tab-stop)
+
+;;; indent.el ends here

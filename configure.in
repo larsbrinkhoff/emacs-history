@@ -1,0 +1,1068 @@
+[
+### The above line is deliberately left blank.  If it starts with a #,
+### some CSH's will think this is a csh script.
+
+#### Configuration script for GNU Emacs
+#### Copyright (C) 1992 Free Software Foundation, Inc.
+
+### This file is part of GNU Emacs.
+
+### GNU Emacs is free software; you can redistribute it and/or modify
+### it under the terms of the GNU General Public License as published by
+### the Free Software Foundation; either version 1, or (at your option)
+### any later version.
+
+### GNU Emacs is distributed in the hope that it will be useful,
+### but WITHOUT ANY WARRANTY; without even the implied warranty of
+### MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+### GNU General Public License for more details.
+
+### You should have received a copy of the GNU General Public License
+### along with GNU Emacs; see the file COPYING.  If not, write to
+### the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+
+### Since Emacs has configuration requirements that autoconf can't
+### meet, this file is an unholy marriage of custom-baked
+### configuration code and autoconf macros.  New versions of autoconf
+### could very well break this arrangement.
+###
+### We omit the invocation of autoconf's initialization function,
+### because it produces Bourne shell code to parse arguments, but we
+### need to parse our own arguments.
+###
+### We use the m4 quoting characters [ ] (as established by the
+### autoconf system) to include large sections of raw sewage - Oops, I
+### mean, shell code - in the final configuration script.
+###
+### Usage: configure config_name
+###
+### If configure succeeds, it leaves its status in config.status.
+### If configure fails after disturbing the status quo,
+### 	config.status is removed.
+
+
+### Remove any more than one leading "." element from the path name.
+### If we don't remove them, then another "./" will be prepended to
+### the file name each time we use config.status, and the program name
+### will get larger and larger.  This wouldn't be a problem, except
+### that since progname gets recorded in all the Makefiles this script
+### produces, move-if-change thinks they're different when they're
+### not.
+###
+### It would be nice if we could put the ./ in a \( \) group and then
+### apply the * operator to that, so we remove as many leading ./././'s
+### as are present, but some seds (like Ultrix's sed) don't allow you to
+### apply * to a \( \) group.  Bleah.
+progname="`echo $0 | sed 's:^\./\./:\./:'`"
+
+
+#### Usage messages.
+
+short_usage="Type \`${progname} --usage' for more information about options."
+
+long_usage="Usage: ${progname} CONFIGURATION [-OPTION[=VALUE] ...]
+
+Set compilation and installation parameters for GNU Emacs, and report.
+CONFIGURATION specifies the machine and operating system to build for.
+For example:
+        ${progname} sparc-sun-sunos4.1
+configures Emacs to build on a Sun Sparc machine running SunOS 4.1, and 
+        ${progname} decstation
+configures Emacs to run on a DECstation running Ultrix.  See \`etc/MACHINES'.
+
+The --with-x, --with-x11 and --with-x10 options specify what window
+	system to use; if all are omitted, use X11 if present.  If you
+	don't want X, specify \`--with-x=no'.
+
+The --x-includes=DIR option tells the build process where to search
+	for the X Windows header files.  DIR should have a
+	subdirectory called \`X11' which contains \`X.h', \`Xlib.h', and
+	the rest of the header files; DIR should not contain \`X11'
+	itself.  If this option is omitted, the build process assumes
+	they exist in a directory the compiler checks by default.
+
+The --x-libraries=DIR option tells the build process where to look for
+	the X windows libraries.  If this option is omitted, the build
+	process assumes they are in a directory the compiler checks by
+	default.
+
+The --with-gcc option says that the build process should use GCC to
+	compile Emacs.  If you have GCC but don't want to use it,
+	specify \`--with-gcc=no'.  \`configure' tries to guess whether
+	or not you have GCC by searching your executable path, but if
+	it guesses incorrectly, you may need to use this.
+
+The --run-in-place option sets up default values for the path
+	variables in \`./Makefile' so that Emacs will expect to find
+	its data files (lisp libraries, runnable programs, and the
+	like) in the same locations they occupy while Emacs builds.
+	This means that you don't have to install Emacs in order to
+	run it; it uses its data files as they were unpacked.
+
+The --srcdir=DIR option specifies that the configuration and build
+	processes should look for the Emacs source code in DIR, when
+	DIR is not the current directory.
+
+If successful, ${progname} leaves its status in config.status.  If
+unsuccessful after disturbing the status quo, it removes config.status."
+
+
+#### Option processing.
+
+### Record all the arguments, so we can save them in config.status.
+arguments="$@"
+
+### These values are used to comment and uncomment different values
+### for the path variables in the Makefile, to choose the installed
+### configuration or the run-in-place configuration.
+rip_paths='#disabled# '
+inst_paths=''
+
+while [ $# != 0 ]; do
+  arg="$1"
+  case "${arg}" in
+
+    ## Anything starting with a hyphen we assume is an option.
+    -* )
+
+      ## Separate the switch name from the value it's being given.
+      case "${arg}" in
+        -*=*)
+	  opt=`echo ${arg} | sed 's:^-*\([^=]*\)=.*$:\1:'`
+	  val=`echo ${arg} | sed 's:^-*[^=]*=\(.*\)$:\1:'`
+	  valomitted=no
+	;;
+        -*)
+          ## If FOO is a boolean argument, --FOO is equivalent to
+          ## --FOO=yes.  Otherwise, the value comes from the next
+          ## argument - see below.
+	  opt=`echo ${arg} | sed 's:^-*\(.*\)$:\1:'`
+          val="yes"
+          valomitted=yes
+        ;;
+      esac
+
+      ## Change `-' in the option name to `_'.
+      optname="${opt}"
+      opt="`echo ${opt} | tr - _`"
+
+      ## Process the option.
+      case "${opt}" in
+
+        ## Has the user specified which window systems they want to support?
+        "with_x" | "with_x11" | "with_x10" )
+	  ## Make sure the value given was either "yes" or "no".
+	  case "${val}" in
+	    y | ye | yes )	val=yes ;;
+	    n | no )		val=no  ;;
+	    * )
+	      (echo "${progname}: the \`--${optname}' option is supposed to have a boolean value.
+Set it to either \`yes' or \`no'."
+	       echo "${short_usage}") >&2
+	      exit 1
+	    ;;
+	  esac
+          eval "${opt}=\"${val}\""
+        ;;
+
+	## Has the user specified whether or not they want GCC?
+	"with_gcc" )
+	  ## Make sure the value given was either "yes" or "no".
+	  case "${val}" in
+	    y | ye | yes )	val=yes ;;
+	    n | no )		val=no  ;;
+	    * )
+	      (echo "${progname}: the \`--${optname}' option is supposed to have a boolean value.
+Set it to either \`yes' or \`no'."
+	       echo "${short_usage}") >&2
+	      exit 1
+	    ;;
+	  esac
+          eval "${opt}=\"${val}\""
+        ;;
+
+        ## Has the user specified a source directory?
+	"srcdir" )
+	  ## If the value was omitted, get it from the next argument.
+	  if [ "${valomitted}" = "yes" ]; then
+	    ## Get the next argument from the argument list, if there is one.
+            if [ $# = 1 ]; then
+	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
+    \`--${optname}=FOO'."
+	       echo "${short_usage}") >&2
+	      exit 1
+	    fi
+	    shift; val="$1"
+	  fi
+          srcdir="${val}"
+	;;
+
+	## Has the user tried to tell us where the X files are?
+	## I think these are dopey, but no less than three alpha
+	## testers, at large sites, have said they have their X files
+	## installed in odd places.
+	"x_includes" )
+	  ## If the value was omitted, get it from the next argument.
+	  if [ "${valomitted}" = "yes" ]; then
+	    ## Get the next argument from the argument list, if there is one.
+            if [ $# = 1 ]; then
+	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
+    \`--${optname}=FOO'."
+	       echo "${short_usage}") >&2
+	      exit 1
+	    fi
+	    shift; val="$1"
+	  fi
+	  x_includes="${val}"
+	  C_SWITCH_X_SITE="-I${x_includes}"
+        ;;
+	"x_libraries" )
+	  ## If the value was omitted, get it from the next argument.
+	  if [ "${valomitted}" = "yes" ]; then
+	    ## Get the next argument from the argument list, if there is one.
+            if [ $# = 1 ]; then
+	      (echo "${progname}: You must give a value for the \`--${optname}' option, as in
+    \`--${optname}=FOO'."
+	       echo "${short_usage}") >&2
+	      exit 1
+	    fi
+	    shift; val="$1"
+	  fi
+	  x_libraries="${val}"
+	  LD_SWITCH_X_SITE="-L${x_libraries}"
+        ;;
+
+	## Should this use the "development configuration"?
+	"run_in_place" )
+	  rip_paths=''
+	  inst_paths='#disabled# '
+	;;
+
+	## Has the user asked for some help?
+	"usage" | "help" )
+	  echo "${long_usage}" | more
+	  exit
+	;;
+
+        ## We ignore all other options silently.
+      esac
+    ;;
+
+    ## Anything not starting with a hyphen we assume is a
+    ## configuration name.
+    *)
+      configuration=${arg}
+    ;;
+
+  esac
+  shift
+done
+
+if [ "${configuration}" = "" ]; then
+  (echo "${progname}: You must specify a configuration name as an argument."
+   echo "${short_usage}") >&2
+  exit 1
+fi
+
+
+#### Decide where the source is.
+case "${srcdir}" in
+
+  ## If it's not specified, see if  `.' or `..' might work.
+  "" )
+    if [ -f "./src/lisp.h" -a -f "./lisp/version.el" ]; then
+      srcdir=`pwd`
+    else
+      if [ -f "../src/lisp.h" -a -f "../lisp/version.el" ]; then
+	srcdir=`(cd .. ; pwd)`
+      else
+	(echo "\
+${progname}: Neither the current directory nor its parent seem to
+contain the Emacs sources.  If you do not want to build Emacs in its
+source tree, you should run \`${progname}' in the directory in which
+you wish to build Emacs, using its \`--srcdir' option to say where the
+sources may be found."
+	 echo "${short_usage}") >&2
+	exit 1
+      fi
+    fi
+  ;;
+
+  ## Otherwise, check if the directory they specified is okay.
+  * )
+    if [ ! -d "${srcdir}" -o ! -f "${srcdir}/src/lisp.h" -o ! -f "${srcdir}/lisp/version.el" ]; then
+      (echo "\
+${progname}: The directory specified with the \`--srcdir' option,
+\`${srcdir}', doesn't seem to contain the Emacs sources.  You should
+either run the \`${progname}' script at the top of the Emacs source
+tree, or use the \`--srcdir' option to specify where the Emacs sources
+are."
+       echo "${short_usage}") >&2
+      exit 1
+    fi
+  ;;
+
+esac
+
+### Make the necessary directories, if they don't exist.
+if [ ! -d ./src ]; then
+  mkdir ./src
+fi
+if [ ! -d ./lib-src ]; then
+  mkdir ./lib-src
+fi
+if [ ! -d ./cpp ]; then
+  mkdir ./cpp
+fi
+if [ ! -d ./oldXMenu ]; then
+  mkdir ./oldXMenu
+fi
+if [ ! -d ./etc ]; then
+  mkdir ./etc
+fi
+
+#### Given the configuration name, set machfile and opsysfile to the
+#### names of the m/*.h and s/*.h files we should use.
+
+### Canonicalize the configuration name.
+echo "Checking the configuration name."
+if configuration=`${srcdir}/config.sub "${configuration}"` ; then : ; else
+  exit $?
+fi
+
+### If you add support for a new configuration, add code to this
+### switch statement to recognize your configuration name and select
+### the appropriate operating system and machine description files.
+
+### You would hope that you could choose an m/*.h file pretty much
+### based on the machine portion of the configuration name, and an s-
+### file based on the operating system portion.  However, it turns out
+### that each m/*.h file is pretty manufacturer-specific - for
+### example, apollo.h, hp9000s300.h, mega68k, news.h, and tad68k are
+### all 68000 machines; mips.h, pmax.h, and news-risc are all MIPS
+### machines.  So we basically have to have a special case for each
+### configuration name.
+###
+### As far as handling version numbers on operating systems is
+### concerned, make sure things will fail in a fixable way.  If
+### /etc/MACHINES doesn't say anything about version numbers, be
+### prepared to handle anything reasonably.  If version numbers
+### matter, be sure /etc/MACHINES says something about it.
+###
+### Eric Raymond says we should accept strings like "sysvr4" to mean
+### "System V Release 4"; he writes, "The old convention encouraged
+### confusion between `system' and `release' levels'."
+
+machine='' opsys='' unported='false'
+case "${configuration}" in
+
+  ## Alliant machines
+  ## Strictly speaking, we need the version of the alliant operating
+  ## system to choose the right machine file, but currently the
+  ## configuration name doesn't tell us enough to choose the right
+  ## one; we need to give alliants their own operating system name to
+  ## do this right.  When someone cares, they can help us.
+  fx80-alliant-* )
+    machine=alliant4 opsys=bsd4-2
+  ;;
+  i860-alliant-* )
+    machine=alliant-2800 opsys=bsd4-3
+  ;;
+
+  ## Altos 3068
+  m68*-altos-sysv* )
+    machine=altos opsys=usg5-2
+  ;;
+    
+  ## Amdahl UTS
+  580-amdahl-sysv* )
+    machine=amdahl opsys=usg5-2-2
+  ;;
+
+  ## Appallings - I mean, Apollos - running Domain
+  m68*-apollo* )
+    machine=apollo opsys=bsd4-2
+  ;;
+
+  ## AT&T 3b2, 3b5, 3b15, 3b20
+  we32k-att-sysv* )
+    machine=att3b opsys=usg5-2-2
+  ;;
+
+  ## AT&T 3b1 - The Mighty Unix PC!
+  m68*-att-sysv* )
+    machine=7300 opsys=usg5-2-2
+  ;;
+
+  ## Bull sps7
+  m68*-bull-sysv* )
+    machine=sps7 opsys=usg5-2
+  ;;
+
+  ## CCI 5/32, 6/32 -- see "Tahoe".
+
+  ## Celerity
+  ## I don't know what configuration name to use for this; config.sub
+  ## doesn't seem to know anything about it.  Hey, Celerity users, get
+  ## in touch with us!
+  celerity-celerity-bsd* )
+    machine=celerity opsys=bsd4-2
+  ;;
+
+  ## Clipper
+  ## What operating systems does this chip run that Emacs has been
+  ## tested on?
+  clipper-* )
+    machine=clipper
+    ## We'll use the catch-all code at the bottom to guess the
+    ## operating system.
+  ;;
+
+  ## Convex
+  *-convex-bsd* )
+    machine=convex opsys=bsd4-3
+  ;;
+
+  ## Cubix QBx/386
+  i386-cubix-sysv* )
+    machine=intel386 opsys=usg5-3
+  ;;
+
+  ## Cydra 5
+  cydra*-cydrome-sysv* )
+    machine=cydra5 opsys=usg5-3
+  ;;
+
+  ## DECstations
+  mips-dec-ultrix[0-3].* | mips-dec-ultrix4.0 | mips-dec-bsd4.2 )
+    machine=pmax opsys=bsd4-2
+  ;;
+  mips-dec-ultrix* | mips-dec-bsd* )
+    machine=pmax opsys=bsd4-3
+  ;;
+  mips-dec-osf* )
+    machine=pmax opsys=osf1
+  ;;
+
+  ## Motorola Delta machines
+  m68*-motorola-sysv* )
+    machine=delta opsys=usg5-3
+  ;;
+  m88k-motorola-sysv* | m88k-motorola-m88kbcs* )
+    machine=delta88k opsys=usg5-3
+  ;;
+
+  ## Dual machines
+  m68*-dual-sysv* )
+    machine=dual opsys=usg5-2
+  ;;
+  m68*-dual-uniplus* )
+    machine=dual opsys=unipl5-2
+  ;;
+
+  ## Elxsi 6400
+  elxsi-elxsi-sysv* )
+    machine=elxsi opsys=usg5-2
+  ;;
+
+  ## Encore machines
+  ns16k-encore-bsd* )
+    machine=ns16000 opsys=umax
+  ;;
+
+  ## The GEC 93 - apparently, this port isn't really finished yet.
+
+  ## Gould Power Node and NP1
+  pn-gould-bsd4.2 )
+    machine=gould opsys=bsd4-2
+  ;;
+  pn-gould-bsd4.3 )
+    machine=gould opsys=bsd4-3
+  ;;
+  np1-gould-bsd* )
+    machine=gould-np1 opsys=bsd4-3
+  ;;
+
+  ## Honeywell XPS100
+  xps*-honeywell-sysv* )
+    machine=xps100 opsys=usg5-2
+  ;;
+
+  ## HP 9000 series 200 or 300
+  m68*-hp-bsd* )
+    machine=hp9000s300 opsys=bsd4-3
+  ;;
+  ## HP/UX 8 doesn't run on these machines, so use HP/UX 7.
+  m68*-hp-hpux* )
+    machine=hp9000s300 opsys=hpux
+  ;;
+
+  ## HP 9000 series 800, running HP/UX
+  hppa1.0-hp-hpux* )
+    machine=hp9000s800 opsys=hpux
+  ;;
+
+  ## Orion machines
+  orion-orion-bsd* )
+    machine=orion opsys=bsd4-2
+  ;;
+  clipper-orion-bsd* )
+    machine=orion105 opsys=bsd4-2
+  ;;
+
+  ## IBM machines
+  i386-ibm-aix1.1 )
+    machine=ibmps2-aix opsys=usg5-2-2
+  ;;
+  i386-ibm-aix1.2 )
+    machine=ibmps2-aix opsys=usg5-3
+  ;;
+  rs6000-ibm-aix3.1 )
+    machine=ibmrs6000 opsys=aix3-1
+  ;;
+  rs6000-ibm-aix3.2 | rs6000-ibm-aix* )
+    machine=ibmrs6000 opsys=aix3-2
+  ;;
+  romp-ibm-bsd* )
+    machine=ibmrt opsys=bsd4-2
+  ;;
+  romp-ibm-aix* )
+    machine=ibmrt-aix opsys=usg5-2-2
+  ;;
+
+  ## Integrated Solutions `Optimum V'
+  m68*-isi-bsd4.2 )
+    machine=isi-ov opsys=bsd4-2
+  ;;
+  m68*-isi-bsd4.3 )
+    machine=isi-ov opsys=bsd4-3
+  ;;
+
+  ## Intel 386 machines where we do care about the manufacturer
+  i[34]86-intsys-sysv* )
+    machine=is386 opsys=usg5-2-2
+  ;;
+  ## Intel 386 machines where we don't care about the manufacturer
+  i[34]86-* )
+    machine=intel386
+    case "${configuration}" in
+      *-isc1.* | *-isc2.[01]* )	opsys=386-ix ;;
+      *-isc2.2 )		opsys=isc2-2 ;;
+      *-isc* )			opsys=isc3-0 ;;
+      *-esix* )			opsys=esix ;;
+      *-xenix* )		opsys=xenix ;;
+      *-linux* )		opsys=linux ;;
+      *-sco3.2v4* )		opsys=sco4 ;;
+      ## Otherwise, we'll fall through to the generic opsys code at the bottom.
+    esac
+  ;;
+
+  ## Silicon Graphics machines
+  ## Iris 2500 and Iris 2500 Turbo (aka the Iris 3030)
+  m68*-sgi-iris3.5 )
+    machine=irist opsys=iris3-5
+  ;;
+  m68*-sgi-iris3.6 | m68*-sgi-iris*)
+    machine=irist opsys=iris3-6
+  ;;
+  ## Iris 4D
+  mips-sgi-irix3.* )
+    machine=iris4d opsys=irix3-3
+  ;;
+  mips-sgi-irix4.* | mips-sgi-irix* )
+    machine=iris4d opsys=irix4-0
+  ;;
+
+  ## Masscomp machines
+  m68*-masscomp-rtu )
+    machine=masscomp opsys=rtu
+  ;;
+
+  ## Megatest machines
+  m68*-megatest-bsd* )
+    machine=mega68 opsys=bsd4-2
+  ;;
+
+  ## Workstations sold by MIPS
+  ## This is not necessarily all workstations using the MIPS processor -
+  ## Irises are produced by SGI, and DECstations by DEC.
+
+  ## etc/MACHINES lists mips.h and mips4.h as possible machine files,
+  ## and usg5-2-2 and bsd4-3 as possible OS files.  The only guidance
+  ## it gives for choosing between the alternatives seems to be "Use
+  ## -machine=mips4 for RISCOS version 4; use -opsystem=bsd4-3 with
+  ## the BSD world."  I'll assume that these are instructions for
+  ## handling two odd situations, and that every other situation
+  ## should use mips.h and usg5-2-2, they being listed first.
+  mips-mips-riscos4* )
+    machine=mips4 opsys=usg5-2-2
+  ;;
+  mips-mips-bsd* )
+    machine=mips opsys=bsd4-3
+  ;;
+  mips-mips-* )
+    machine=mips opsys=usg5-2-2
+  ;;
+
+  ## NeXT
+  m68*-next-mach* | m68*-next-bsd* )
+    machine=next opsys=mach2
+  ;;
+
+  ## The complete machine from National Semiconductor
+  ns32k-ns-genix* )
+    machine=ns32000 opsys=usg5-2
+  ;;
+
+  ## NCR machines
+  m68*-ncr-sysv2* | m68*-ncr-sysvr2* )
+    machine=tower32 opsys=usg5-2-2
+  ;;
+  m68*-ncr-sysv3* | m68*-ncr-sysvr3* )
+    machine=tower32v3 opsys=usg5-3
+  ;;
+
+  ## Nixdorf Targon 31
+  m68*-nixdorf-sysv* )
+    machine=targon31 opsys=usg5-2-2
+  ;;
+
+  ## Nu (TI or LMI)
+  m68*-nu-sysv* )
+    machine=nu opsys=usg5-2
+  ;;
+
+  ## Plexus
+  m68*-plexus-sysv* )
+    machine=plexus opsys=usg5-2
+  ;;
+
+  ## Prime EXL
+  i386-prime-sysv* )
+    machine=i386 opsys=usg5-3
+  ;;
+
+  ## Pyramid machines
+  ## I don't really have any idea what sort of processor the Pyramid has,
+  ## so I'm assuming it is its own architecture.
+  pyramid-pyramid-bsd* )
+    machine=pyramid opsys=bsd4-2
+  ;;
+
+  ## Sequent Balance
+  ns32k-sequent-bsd4.2 )
+    machine=sequent opsys=bsd4-2
+  ;;
+  ns32k-sequent-bsd4.3 )
+    machine=sequent opsys=bsd4-3
+  ;;
+  ## Sequent Symmetry
+  i386-sequent-bsd* )
+    machine=symmetry opsys=bsd4-3
+  ;;
+
+  ## SONY machines
+  m68*-sony-bsd4.2 )
+    machine=news opsys=bsd4-2
+  ;;
+  m68*-sony-bsd4.3 )
+    machine=news opsys=bsd4-3
+  ;;
+  mips-sony-bsd* )
+    machine=news-risc opsys=bsd4-3
+  ;;
+
+  ## Stride
+  m68*-stride-sysv* )
+    machine=stride opsys=usg5-2
+  ;;
+
+  ## Suns
+  *-sun-sunos* | *-sun-bsd* | *-sun-solaris* )
+    case "${configuration}" in
+      m68*-sunos1* )	machine=sun1 ;;
+      m68*-sunos2* )	machine=sun2 ;;
+      m68* )		machine=sun3 ;;
+      i[34]86* )	machine=sun386 ;;
+      sparc* )		machine=sparc ;;
+      * )		unported=true ;;
+    esac
+    case "${configuration}" in
+      *-sunos4.0*	  ) opsys=sunos4-0 ;;
+      *-sunos4* | *-sunos ) opsys=sunos4-1 ;;
+      *-sunos5* | *-solaris* ) opsys=sol2 ;;
+      *			  ) opsys=bsd4-2   ;;
+    esac
+  ;;
+
+  ## Tadpole 68k
+  m68*-tadpole-sysv* )
+    machine=tad68k opsys=usg5-3
+  ;;
+
+  ## Tahoe machines
+  tahoe-tahoe-bsd4.2 )
+    machine=tahoe opsys=bsd4-2
+  ;;
+  tahoe-tahoe-bsd4.3 )
+    machine=tahoe opsys=bsd4-3
+  ;;
+
+  ## Tandem Integrity S2
+  mips-tandem-sysv* )
+    machine=tandem-s2 opsys=usg5-3
+  ;;
+
+  ## Tektronix 16000 box (6130?)
+  ns16k-tektronix-bsd* )
+    machine=ns16000 opsys=bsd4-2
+  ;;
+  ## Tektronix 4300
+  ## src/m/tek4300.h hints that this is a m68k machine.
+  m68*-tektronix-bsd* )
+    machine=tex4300 opsys=bsd4-3
+  ;;
+
+  ## Titan P2 or P3
+  ## We seem to have lost the machine-description file titan.h!
+  titan-titan-sysv* )
+    machine=titan opsys=usg5-3
+  ;;
+  
+  ## Ustation E30 (SS5E)
+  m68*-unisys-uniplus* )
+    machine=ustation opsystem=unipl5-2
+  ;;
+
+  ## Vaxen.
+  vax-dec-* )
+    machine=vax
+    case "${configuration}" in
+      *-bsd4.1 ) 					opsys=bsd4-1 ;;
+      *-bsd4.2 | *-ultrix[0-3].* | *-ultrix4.0 )	opsys=bsd4-2 ;;
+      *-bsd4.3 | *-ultrix* ) 				opsys=bsd4-3 ;;
+      *-sysv[01]* | *-sysvr[01]* ) 			opsys=usg5-0 ;;
+      *-sysv2* | *-sysvr2* )				opsys=usg5-2 ;;
+      *-vms* ) 						opsys=vms ;;
+      * ) 						unported=true
+    esac
+  ;;
+
+  ## Whitechapel MG1
+  ns16k-whitechapel-* )
+    machine=mg1
+    ## We don't know what sort of OS runs on these; we'll let the
+    ## operating system guessing code below try.
+  ;;
+
+  ## Wicat
+  m68*-wicat-sysv* )
+    machine=wicat opsys=usg5-2
+  ;;
+
+  * )
+    unported=true
+  ;;
+esac
+
+### If the code above didn't choose an operating system, just choose
+### an operating system based on the configuration name.  You really
+### only want to use this when you have no idea what the right
+### operating system is; if you know what operating systems a machine
+### runs, it's cleaner to make it explicit in the case statement
+### above.
+if [ ! "${opsys}" ]; then
+  case "${configuration}" in
+    *-bsd4.[01] )	opsys=bsd4-1 ;;
+    *-bsd4.2 )		opsys=bsd4-2 ;;
+    *-bsd4.3 )		opsys=bsd4-3 ;;
+    *-sysv0 | *-sysvr0 )		opsys=usg5-0 ;;
+    *-sysv2 | *-sysvr2 )		opsys=usg5-2 ;;
+    *-sysv2.2 | *-sysvr2.2 )		opsys=usg5-2-2 ;;
+    *-sysv3 | *-sysvr3 )		opsys=usg5-3 ;;
+    *-sysv4 | *-sysvr4 )		opsys=usg5-4 ;;
+    * )
+      unported=true
+    ;;
+  esac
+fi
+
+if $unported ; then
+  (echo "${progname}: Emacs hasn't been ported to \`${configuration}' systems."
+   echo "${progname}: Check \`etc/MACHINES' for recognized configuration names."
+  ) >&2
+  exit 1
+fi
+
+machfile="m/${machine}.h"
+opsysfile="s/${opsys}.h"
+
+]
+AC_PREPARE(lisp)
+AC_CONFIG_HEADER(src/config.h)
+[
+
+#### Choose a compiler.
+case ${with_gcc} in
+  "yes" ) CC="gcc" GCC=1 ;;
+  "no"  ) CC="cc"        ;;
+  * )
+    ] AC_PROG_CC [
+esac
+
+CFLAGS='-g'
+if test -n "${GCC}"; then
+  CFLAGS='-g -O'
+fi
+
+#### Some other nice autoconf tests.  If you add a test here which
+#### should make an entry in src/config.h, don't forget to add an
+#### #undef clause to src/config.h.in for autoconf to modify.
+]
+dnl checks for programs
+AC_LN_S
+AC_PROG_CPP
+
+dnl checks for UNIX variants that set `DEFS'
+
+dnl checks for header files
+AC_HAVE_HEADERS(sys/timeb.h sys/time.h)
+AC_STDC_HEADERS
+AC_TIME_WITH_SYS_TIME
+
+dnl checks for typedefs
+AC_RETSIGTYPE
+
+dnl checks for functions
+AC_ALLOCA
+AC_HAVE_FUNCS(gettimeofday gethostname dup2)
+
+dnl checks for structure members
+AC_STRUCT_TM
+AC_TIMEZONE
+
+dnl checks for compiler characteristics
+AC_CONST
+
+dnl checks for operating system services
+
+dnl other checks for UNIX variants
+[
+
+
+#### Choose a window system.
+echo "Checking window system."
+
+window_system=''
+case "${with_x}" in
+  yes )
+    window_system=${window_system}x11
+  ;;
+  no )
+    window_system=${window_system}none
+esac
+case "${with_x11}" in
+  yes )
+    window_system=${window_system}x11
+  ;;
+esac
+case "${with_x10}" in
+  yes )
+    window_system=${window_system}x10
+  ;;
+esac
+
+case "${window_system}" in
+  "none" | "x11" | "x10" ) ;;
+  "" )
+    echo "  No window system specifed.  Looking for X Windows."
+    window_system=none
+    if [ -r /usr/lib/libX11.a \
+	 -o -d /usr/include/X11 \
+         -o -d /usr/X386/include \
+	 -o -d ${x_includes}/X11 ]; then
+      window_system=x11
+    fi
+  ;;
+  * )
+    echo "Don\'t specify the window system more than once." >&2
+    exit 1
+  ;;
+esac
+
+case "${window_system}" in
+  x11 )
+    HAVE_X_WINDOWS=yes
+    HAVE_X11=yes
+    echo "  Using X11."
+  ;;
+  x10 )
+    HAVE_X_WINDOWS=yes
+    HAVE_X11=no
+    echo "  Using X10."
+  ;;
+  none )
+    HAVE_X_WINDOWS=no
+    HAVE_X11=no
+    echo "  Using no window system."
+  ;;
+esac
+
+### If we're using X11, we should use the X menu package.
+HAVE_X_MENU=no
+case ${HAVE_X11} in
+  yes )
+    HAVE_X_MENU=yes
+  ;;
+esac
+
+### Check for XFree386.  It needs special hacks.
+lib_havexbsd=no
+]
+AC_HAVE_LIBRARY( Xbsd , have_libxbsd=yes , have_libxbsd=no )
+[
+if [ -n "${x_libraries}" ] && [ -f ${x_libraries}/libXbsd.a ]; then
+  have_libxbsd=yes
+fi
+
+case ${window_system} in
+  x11 )
+    if [ -d /usr/X386/include ] && [ "${have_libxbsd}" = "yes" ]; then
+      HAVE_XFREE386=yes
+      if [ "${C_SWITCH_X_SITE}" = "" ]; then
+	C_SWITCH_X_SITE="-I/usr/X386/include"
+      fi
+    fi
+  ;;
+esac
+
+#### Extract some information from the operating system and machine files.
+
+echo "Examining the machine- and system-dependent files to find out"
+echo " - which libraries the lib-src programs will want, and"
+echo " - whether the GNU malloc routines are usable."
+
+### It's not important that this name contain the PID; you can't run
+### two configures in the same directory and have anything work
+### anyway.
+tempcname="conftest.c"
+
+echo '
+#include "'${srcdir}'/src/'${opsysfile}'"
+#include "'${srcdir}'/src/'${machfile}'"
+#ifndef LIBS_MACHINE
+#define LIBS_MACHINE
+#endif
+#ifndef LIBS_SYSTEM
+#define LIBS_SYSTEM
+#endif
+#ifndef C_SWITCH_SYSTEM
+#define C_SWITCH_SYSTEM
+#endif
+@configure@ libsrc_libs=LIBS_MACHINE LIBS_SYSTEM
+@configure@ c_switch_system=C_SWITCH_SYSTEM
+#ifdef SYSTEM_MALLOC
+@configure@ system_malloc=yes
+#else
+@configure@ system_malloc=no
+#endif
+' > ${tempcname}
+# The value of CPP is a quoted variable reference, so we need to do this
+# to get its actual value...
+foo=`eval "echo $CPP"`
+eval `${foo} ${tempcname} \
+       | grep '@configure@' \
+       | sed -e 's/^@configure@ \([^=]*=\)\(.*\)$/\1"\2"/'`
+rm ${tempcname}
+
+
+# Do the opsystem or machine files prohibit the use of the GNU malloc?
+# Assume not, until told otherwise.
+GNU_MALLOC=yes
+if [ "${system_malloc}" = "yes" ]; then
+  GNU_MALLOC=no
+  GNU_MALLOC_reason="
+  (The GNU allocators don't work with this system configuration.)"
+fi
+
+if [ ! "${REL_ALLOC}" ]; then
+  REL_ALLOC=${GNU_MALLOC}
+fi
+
+LISP_FLOAT_TYPE=yes
+
+
+#### Find out which version of Emacs this is.
+version=`grep 'defconst[	 ]*emacs-version' ${srcdir}/lisp/version.el \
+	 | sed -e 's/^.*"\([0-9][0-9]*\.[0-9][0-9]*\)\..*$/\1/'`
+if [ ! "${version}" ]; then
+  echo "${progname}: can't find current emacs version in
+	\`${srcdir}/lisp/version.el'." >&2
+  exit 1
+fi
+
+
+#### Specify what sort of things we'll be editing into Makefile and config.h.
+]
+AC_SUBST(configuration)
+AC_SUBST(version)
+AC_SUBST(srcdir)
+AC_SUBST(c_switch_system)
+AC_SUBST(libsrc_libs)
+AC_SUBST(rip_paths)
+AC_SUBST(inst_paths)
+AC_SUBST(LD_SWITCH_X_SITE)
+AC_SUBST(C_SWITCH_X_SITE)
+AC_SUBST(CFLAGS)
+
+AC_DEFINE_UNQUOTED(config_machfile,  "\"${machfile}\"")
+AC_DEFINE_UNQUOTED(config_opsysfile, "\"${opsysfile}\"")
+AC_DEFINE_UNQUOTED(LD_SWITCH_X_SITE, ${LD_SWITCH_X_SITE})
+AC_DEFINE_UNQUOTED(C_SWITCH_X_SITE,  ${C_SWITCH_X_SITE})
+
+[
+if [ "${HAVE_X_WINDOWS}" = "yes" ] ; then
+  ] AC_DEFINE(HAVE_X_WINDOWS) [
+fi
+if [ "${HAVE_X11}" = "yes" ] ; then
+  ] AC_DEFINE(HAVE_X11) [
+fi
+if [ "${HAVE_XFREE386}" = "yes" ] ; then
+  ] AC_DEFINE(HAVE_XFREE386) [
+fi
+if [ "${HAVE_X_MENU}" = "yes" ] ; then
+  ] AC_DEFINE(HAVE_X_MENU) [
+fi
+if [ "${GNU_MALLOC}" = "yes" ] ; then
+  ] AC_DEFINE(GNU_MALLOC) [
+fi
+if [ "${REL_ALLOC}" = "yes" ] ; then
+  ] AC_DEFINE(REL_ALLOC) [
+fi
+if [ "${LISP_FLOAT_TYPE}" = "yes" ] ; then
+  ] AC_DEFINE(LISP_FLOAT_TYPE) [
+fi
+
+
+#### Report on what we decided to do.
+echo "
+
+Configured for \`${configuration}'.
+
+  What operating system and machine description files should Emacs use?
+        \`${opsysfile}' and \`${machfile}'
+  What compiler should emacs be built with?               ${CC} ${CFLAGS}
+  Should Emacs use the GNU version of malloc?             ${GNU_MALLOC}${GNU_MALLOC_reason}
+  Should Emacs use the relocating allocator for buffers?  ${REL_ALLOC}
+  What window system should Emacs use?                    ${window_system}${x_includes+
+  Where do we find X Windows header files?                }${x_includes}${x_libraries+
+  Where do we find X Windows libraries?                   }${x_libraries}
+
+"
+
+### Restore the arguments to this script, so autoconf can record them
+### in the config.status file.
+set - ${arguments}
+]
+AC_OUTPUT(Makefile)

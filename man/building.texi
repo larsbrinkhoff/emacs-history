@@ -1,0 +1,670 @@
+@c This is part of the Emacs manual.
+@c Copyright (C) 1985, 1986, 1987, 1993 Free Software Foundation, Inc.
+@c See file emacs.texi for copying conditions.
+@node Building, Abbrevs, Programs, Top
+@chapter Compiling and Testing Programs
+@cindex building programs
+@cindex program building
+@cindex running Lisp functions
+
+  The previous chapter discusses the Emacs commands that are useful for
+making changes in programs.  This chapter deals with commands that assist
+in the larger process of developing and maintaining programs.
+
+@menu
+* Compilation::       Compiling programs in languages other than Lisp
+                        (C, Pascal, etc.)
+* Debuggers::	      Running symbolic debuggers for non-Lisp programs.
+* Executing Lisp::    Various modes for editing Lisp programs, with
+                        different facilities for running the Lisp programs.
+* Libraries: Lisp Libraries.      Creating Lisp programs to run in Emacs.
+* Interaction: Lisp Interaction.  Executing Lisp in an Emacs buffer.
+* Eval: Lisp Eval.    Executing a single Lisp expression in Emacs.
+* External Lisp::     Communicating through Emacs with a separate Lisp.
+@end menu
+
+@node Compilation
+@section Running `make', or Compilers Generally
+@cindex inferior process
+@cindex make
+@cindex compilation errors
+@cindex error log
+
+  Emacs can run compilers for noninteractive languages such as C and
+Fortran as inferior processes, feeding the error log into an Emacs buffer.
+It can also parse the error messages and show you the source lines where
+compilation errors occurred.
+
+@table @kbd
+@item M-x compile
+Run a compiler asynchronously under Emacs, with error messages to
+@samp{*compilation*} buffer.
+@item M-x grep
+Run @code{grep} asynchronously under Emacs, with matching lines
+listed in the buffer named @samp{*grep*}.
+@item M-x kill-compilation
+@itemx M-x kill-grep
+Kill the running compilation or @code{grep} subprocess.
+@item C-x `
+Visit the locus of the next compiler error message or @code{grep} match.
+@end table
+
+@findex compile
+  To run @code{make} or another compilation command, do @kbd{M-x
+compile}.  This command reads a shell command line using the minibuffer,
+and then executes the command in an inferior shell, putting output in
+the buffer named @samp{*compilation*}.  The current buffer's default
+directory is used as the working directory for the execution of the
+command; normally, therefore, the compilation happens in this
+directory.
+
+@vindex compile-command
+  When the shell command line is read, the minibuffer appears containing
+a default command line, which is the command you used the last time you
+did @kbd{M-x compile}.  If you type just @key{RET}, the same command
+line is used again.  For the first @kbd{M-x compile}, the default is
+@samp{make -k}.
+
+  The default compilation command comes from the variable
+@code{compile-command}; if the appropriate compilation command for a
+file is something other than @samp{make -k}, it can be useful for the
+file to specify a local value for @code{compile-command} (@pxref{File
+Variables}).
+
+  Starting a compilation displays the buffer @samp{*compilation*} in
+another window but does not select it.  The buffer's mode line tells you
+whether compilation is finished, with the word @samp{run} or @samp{exit}
+inside the parentheses.  You do not have to keep this buffer visible;
+compilation continues in any case.  While a compilation is going on, the
+string @samp{Compiling} appears in the mode lines of all windows.  When
+this string disappears, the compilation is finished.
+
+@findex kill-compilation
+  To kill the compilation process, do @kbd{M-x kill-compilation}.  When
+the compiler process terminates, the mode line of the
+@samp{*compilation*} buffer changes to say @samp{signal} instead of
+@samp{run}.  Starting a new compilation also kills any running
+compilation, as only one can exist at any time.  However, @kbd{M-x
+compile} asks for confirmation before actually killing a compilation
+that is running.
+
+
+@findex compile-goto-error
+  The @samp{*compilation*} buffer uses a special major mode, Compilation
+mode.  This mode provides the keys @key{SPC} and @key{DEL} to scroll by
+screenfuls, and @kbd{M-n} and @kbd{M-p} to move to the next or previous
+error message.  You can also use @kbd{M-@{} and @kbd{M-@}} to move up or
+down to an error message for a different source file.
+You can visit the source for any particular error message by moving
+point in @samp{*compilation*} to that error message and typing @kbd{C-c C-c}
+(@code{compile-goto-error}).
+
+@kindex C-x `
+@findex next-error
+  To parse the compiler error messages sequentially, type @kbd{C-x `}
+(@code{next-error}).  The character following the @kbd{C-x} is the
+backquote or ``grave accent,'' not the single-quote.  This command is
+available in all buffers, not just in @samp{*compilation*}.  It displays
+the next error message at the top of one window and source location of
+the error in another window.
+
+  The first time @kbd{C-x `} is used after the start of a compilation,
+it moves to the first error's location.  Subsequent uses of @kbd{C-x `}
+advance down the data set up by the first use.  When the preparsed error
+messages are exhausted, the next @kbd{C-x `} checks for any more error
+messages that have come in; this is useful if you start editing the
+compilation errors while the compilation is still going on.  If no more
+error messages have come in, @kbd{C-x `} reports an error.
+
+  @kbd{C-u C-x `} discards the preparsed error message data and parses the
+@samp{*compilation*} buffer over again, then displaying the first error.
+This way, you can process the same set of errors again.
+
+@findex grep
+  Instead of running a compiler, you can run @code{grep} and see the lines
+on which matches were found.  To do this, type @kbd{M-x grep} with an argument
+line that contains the same arguments you would give @code{grep} when running
+it normally: a @code{grep}-style regexp (usually in single-quotes to quote
+the shell's special characters) followed by file names which may use wildcards.
+The output from @code{grep} goes in the @samp{*grep*} buffer and the
+lines that matched can be found with @kbd{C-x `} as if they were compilation
+errors.
+
+  Note: a shell is used to run the compile command, but the shell is told
+that it should be noninteractive.  This means in particular that the shell
+starts up with no prompt.  If you find your usual shell prompt making an
+unsightly appearance in the @samp{*compilation*} buffer, it means you have
+made a mistake in your shell's init file (@file{.cshrc} or @file{.shrc} or
+@dots{}) by setting the prompt unconditionally.  The shell init file should
+set the prompt only if there already is a prompt.  In @code{csh}, here is
+how to do it:
+
+@example
+if ($?prompt) set prompt = ...
+@end example
+
+@node Debuggers
+@section Running Debuggers Under Emacs
+@cindex debuggers
+@cindex GDB
+@cindex DBX
+@cindex SDB
+
+@c Do you believe in GUD?
+The GUD (Grand Unified Debugger) library provides an interface to various
+symbolic debuggers from within Emacs.  We recommend the debugger GDB,
+which is free software, but you can also run DBX or SDB if you have them.
+
+@menu
+* Starting GUD::	How to start a debugger subprocess.
+* Debugger Operation::	Connection between the debugger and source buffers.
+* Commands of GUD::	Keybindings for common commands.
+* GUD Customization::	Defining your own commands for GUD.
+@end menu
+
+@node Starting GUD
+@subsection Starting GUD
+
+  There are three commands for starting a debugger, each corresponding
+to a particular debugger program.
+
+@table @kbd
+@item M-x gdb @key{RET} @var{file} @key{RET}
+@findex gdb
+Run GDB as a subprocess of Emacs.  This command creates a buffer for
+input and output to GDB, and switches to it.  If a GDB buffer already
+exists, it just switches to that buffer.
+
+@item M-x dbx @key{RET} @var{file} @key{RET}
+@findex dbx
+Similar, but run DBX instead of GDB.
+
+@item M-x sdb @key{RET} @var{file} @key{RET}
+@findex sdb
+Similar, but run SDB instead of GDB.
+
+  Some versions of SDB do not mention source file names in their
+messages.  When you use them, you need to have a valid tags table
+(@pxref{Tags}) in order for GUD to find functions in the source code.
+If you have not visited a tags table or the tags table doesn't list one
+of the functions, you get a message saying @samp{The sdb support
+requires a valid tags table to work}.  If this happens, generate a valid
+tags table in the working directory and try again.
+@end table
+
+  You can only run one debugger process at a time.
+
+  Each of these commands takes one argument: a command line to invoke
+the debugger.  In the simplest case, specify just the name of the
+executable file you want to debug.  You may also use options that the
+debugger supports.  However, shell wild cards and variables are not
+allowed.  GUD assumes that the first argument not preceded by a @samp{-}
+is the executable file name.
+
+@node Debugger Operation
+@subsection Debugger Operation
+
+  When you run a debugger with GUD, the debugger uses an Emacs buffer
+for its ordinary input and output.  This is called the GUD buffer.  The
+debugger uses other Emacs buffers to display the source files of the
+program.  An arrow (@samp{=>}) in one of these buffers indicates the
+current execution line.  Moving point in this buffer does not move the
+arrow.
+
+  You can start editing these source files at any time in the buffers
+that were made to display them.  The arrow is not part of the file's
+text; it appears only on the screen.  If you do modify a source file,
+keep in mind that inserting or deleting lines will throw off the arrow's
+positioning; GUD has no way of figuring out which line corresponded
+before your changes to the line number in a debugger message.  Also,
+you'll typically have to recompile and restart the program for your
+changes to be reflected in the debugger's tables.
+
+If you wish, you can control your debugger process entirely through the
+debugger buffer, which uses a variant of Shell mode.  All the usual
+commands for your debugger are available, and you can use the Shell mode
+history commands to repeat them.
+
+@node Commands of GUD
+@subsection Commands of GUD
+
+  GUD provides a command available in all buffers for setting
+breakpoints.  This command is defined globally because you need to use
+it in the source files' buffers.
+
+@table @kbd
+@item C-x @key{SPC}
+@kindex C-x @key{SPC}
+Set a breakpoint on the line that point is on.
+@end table
+
+@kindex C-x C-a @r{(GUD)}
+  Here are the other commands provided by GUD.  The keys starting with
+@kbd{C-c} are available only in the GUD interaction buffer.  The
+bindings that start with @kbd{C-x C-a} are available in the GUD buffer
+and also in source files.
+
+@table @kbd
+@item C-c C-l
+@kindex C-c C-l @r{(GUD)}
+@itemx C-x C-a C-l
+@findex gud-refresh
+Display in another window the last line referred to in the GUD
+buffer (that is, the line indicated in the last location message).
+This runs the command @code{gud-refresh}.
+
+@item C-c C-s
+@kindex C-c C-s @r{(GUD)}
+@itemx C-x C-a C-s
+@findex gud-step
+Execute a single line of code (@code{gud-step}).  If the code contains
+a function call, execution stops after entering the called function.
+
+@item C-c C-n
+@kindex C-c C-n @r{(GUD)}
+@itemx C-x C-a C-n
+@findex gud-next
+Execute a single line of code, stepping across entire function calls
+at full speed (@code{gud-next}).
+
+@item C-c C-i
+@kindex C-c C-i @r{(GUD)}
+@itemx C-x C-a C-i
+@findex gud-stepi
+Execute a single machine instruction (@code{gud-stepi}).
+
+@item C-c C-c
+@kindex C-c C-c @r{(GUD)}
+@itemx C-x C-a C-c
+@findex gud-cont
+Continue execution until the next breakpoint, or other event that would
+normally stop the program (@code{gud-cont}).
+
+@item C-c C-d
+@kindex C-c C-d @r{(GUD)}
+@itemx C-x C-a C-d
+@findex gud-remove
+Delete the breakpoint(s) on the current source line, if any
+(@code{gud-remove}).  If you use this command in the GUD interaction
+buffer, it applies to the line where the program last stopped.
+
+@item C-c C-t
+@kindex C-c C-t @r{(GUD)}
+@itemx C-x C-a C-t
+@findex gud-tbreak
+Set a temporary breakpoint on the current source line, if any.
+If you use this command in the GUD interaction buffer,
+it applies to the line where the program last stopped.
+@end table
+
+  The above commands are common to all supported debuggers.  If you are
+using GDB or (some versions of) DBX, these additional commands are available:
+
+@table @kbd
+@item C-c <
+@kindex C-c < @r{(GUD)}
+@itemx C-x C-a <
+@findex gud-up
+Select the next enclosing stack frame (@code{gud-up}).  This is
+equivalent to the @samp{up} command.
+
+@item C-c >
+@kindex C-c > @r{(GUD)}
+@itemx C-x C-a >
+@findex gud-down
+Select the next inner stack frame (@code{gud-down}).  This is
+equivalent to the @samp{down} command.
+@end table
+
+  If you are using GDB, two additional keybindings are available:
+
+@table @kbd
+@item C-c C-f
+@kindex C-c C-f @r{(GUD)}
+@itemx C-x C-a C-f
+@findex gud-finish
+Run the program until the selected stack frame returns (or until it
+stops for some other reason).
+@end table
+
+  These commands interpret a prefix argument as a repeat count, when that
+makes sense.
+
+@node GUD Customization
+@subsection GUD Customization
+
+@vindex gdb-mode-hook
+@vindex dbx-mode-hook
+@vindex sdb-mode-hook
+  On startup, GUD runs one of the following hooks:
+@code{gdb-mode-hook}, if you are using GDB; @code{dbx-mode-hook}, if you
+are using DBX; and @code{sdb-mode-hook}, if you are using SDB.  You can
+use these hooks to define custom keybindings for the debugger
+interaction buffer.  @xref{Hooks}.
+
+  Here is a convenient way to define a command that sends a particular
+command string to the debugger, and set up a key binding for it in the
+debugger interaction buffer:
+
+@findex gud-def
+@example
+(gud-def @var{function} @var{cmdstring} @var{binding} @var{docstring})
+@end example
+
+  This defines a command named @var{function} which sends
+@var{cmdstring} to the debugger process, with documentation string
+@var{docstring}.  You can use the command thus defined in any buffer.
+If @var{binding} is non-@code{nil}, @code{gud-def} also binds the
+command to @kbd{C-c @var{binding}} in the GUD buffer's mode and to
+@kbd{C-x C-a @var{binding}} generally.
+
+  The command string @var{cmdstring} may contain certain escape
+sequences that are filled in with varying data at the time
+@var{function} is called:
+
+@table @samp
+@item %f
+Name of the current source file.  If the current buffer is the GUD buffer,
+then the ``current source file'' is the file that the program stopped in.
+@c This said, ``the name of the file the program counter was in at the last breakpoint.''
+@c But I suspect it is really the last stop file.
+
+@item %l
+Number of the current source line.  If the current buffer is the GUD
+buffer, then the ``current source line'' is the line that the program
+stopped in.
+
+@item %e
+Text of the C lvalue or function-call expression surrounding point.
+
+@item %a
+Text of the hexadecimal address surrounding point.
+
+@item %p
+Prefix (numeric) argument of the called function (if any) as a number.
+(If you don't use @samp{%p} in the command string, the command you
+define ignores any prefix argument.)
+@end table
+
+@node Executing Lisp
+@section Executing Lisp Expressions
+
+  Emacs has several different major modes for Lisp and Scheme.  They are
+the same in terms of editing commands, but differ in the commands for
+executing Lisp expressions.
+
+@table @asis
+@item Emacs-Lisp mode
+The mode for editing source files of programs to run in Emacs Lisp.
+This mode defines @kbd{C-M-x} to evaluate the current defun.
+@xref{Lisp Libraries}.
+@item Lisp Interaction mode
+The mode for an interactive session with Emacs Lisp.  It defines
+@key{LFD} to evaluate the sexp before point and insert its value in the
+buffer.  @xref{Lisp Interaction}.
+@item Lisp mode
+The mode for editing source files of programs that run in Lisps other
+than Emacs Lisp.  This mode defines @kbd{C-M-x} to send the current defun
+to an inferior Lisp process.  @xref{External Lisp}.
+@item Inferior Lisp mode
+The mode for an interactive session with an inferior Lisp process.
+This mode combines the special features of Lisp mode and Shell mode
+(@pxref{Shell Mode}).
+@item Scheme mode
+Like Lisp mode but for Scheme programs.
+@item Inferior Scheme mode
+The mode for an interactive session with an inferior Scheme process.
+@end table
+
+@iftex
+  The editing commands for working with Lisp programs are in fact
+available globally.  @xref{Programs}.
+@end iftex
+@menu
+These subnodes of the chapter on editing programs describe the editing
+commands for working with Lisp programs, which are in fact available
+globally.
+
+* Lists::               Expressions with balanced parentheses.
+* List Commands::       The commands for working with list and sexps.
+* Defuns::              Each program is made up of separate functions.
+                         There are editing commands to operate on them.
+* Program Indent::      Adjusting indentation to show the nesting.
+* Matching::            Insertion of a close-delimiter flashes matching open.
+* Comments::            Inserting, killing, and aligning comments.
+@end menu
+
+@node Lisp Libraries
+@section Libraries of Lisp Code for Emacs
+@cindex libraries
+@cindex loading Lisp code
+
+  Lisp code for Emacs editing commands is stored in files whose names
+conventionally end in @file{.el}.  This ending tells Emacs to edit them in
+Emacs-Lisp mode (@pxref{Executing Lisp}).
+
+@findex load-file
+  To execute a file of Emacs Lisp code, use @kbd{M-x load-file}.  This
+command reads a file name using the minibuffer and then executes the
+contents of that file as Lisp code.  It is not necessary to visit the
+file first; in any case, this command reads the file as found on disk,
+not text in an Emacs buffer.
+
+@findex load
+@findex load-library
+  Once a file of Lisp code is installed in the Emacs Lisp library
+directories, users can load it using @kbd{M-x load-library}.  Programs can
+load it by calling @code{load-library}, or with @code{load}, a more primitive
+function that is similar but accepts some additional arguments.
+
+  @kbd{M-x load-library} differs from @kbd{M-x load-file} in that it
+searches a sequence of directories and tries three file names in each
+directory.  Suppose your argument is @var{lib}; the three names are
+@file{@var{lib}.elc}, @file{@var{lib}.el}, and lastly just
+@file{@var{lib}}.  If @file{@var{lib}.elc} exists, it is by convention
+the result of compiling @file{@var{lib}.el}; it is better to load the
+compiled file, since it will load and run faster.
+
+  If @code{load-library} finds that @file{@var{lib}.el} is newer than
+@file{@var{lib}.elc} file, it prints a warning, because it's likely that
+somebody made changes to the @file{.el} file and forgot to recompile
+it.
+
+  Because the argument to @code{load-library} is usually not in itself
+a valid file name, file name completion is not available.  Indeed, when
+using this command, you usually do not know exactly what file name
+will be used.
+
+@vindex load-path
+  The sequence of directories searched by @kbd{M-x load-library} is
+specified by the variable @code{load-path}, a list of strings that are
+directory names.  The default value of the list contains the directory where
+the Lisp code for Emacs itself is stored.  If you have libraries of
+your own, put them in a single directory and add that directory
+to @code{load-path}.  @code{nil} in this list stands for the current default
+directory, but it is probably not a good idea to put @code{nil} in the
+list.  If you find yourself wishing that @code{nil} were in the list,
+most likely what you really want to do is use @kbd{M-x load-file}
+this once.
+
+@cindex autoload
+  Often you do not have to give any command to load a library, because the
+commands defined in the library are set up to @dfn{autoload} that library.
+Running any of those commands causes @code{load} to be called to load the
+library; this replaces the autoload definitions with the real ones from the
+library.
+
+  If autoloading a file does not finish, either because of an error or
+because of a @kbd{C-g} quit, all function definitions made by the file are
+undone automatically.  So are any calls to @code{provide}.  As a consequence,
+if you use one of the autoloadable commands again, the entire file will be
+loaded a second time.  This prevents problems where the command is no
+longer autoloading but it works wrong because not all the file was loaded.
+Function definitions are undone only for autoloading; explicit calls to
+@code{load} do not undo anything if loading is not completed.
+
+@cindex byte code
+  Emacs Lisp code can be compiled into byte-code which loads faster,
+takes up less space when loaded, and executes faster.  @xref{Byte
+Compilation,, Byte Compilation, elisp, the Emacs Lisp Reference
+Manual}.
+
+  By convention, the compiled code for a library goes in a separate file
+whose name consists of the library source file with @samp{c} appended.
+Thus, the compiled code for @file{foo.el} goes in @file{foo.elc}.
+That's why @code{load-library} searches for @samp{.elc} files first.
+
+@node Lisp Eval
+@section Evaluating Emacs-Lisp Expressions
+@cindex Emacs-Lisp mode
+@cindex mode, Emacs-Lisp
+
+@findex emacs-lisp-mode
+  Lisp programs intended to be run in Emacs should be edited in
+Emacs-Lisp mode; this happens automatically for file names ending in
+@file{.el}.  By contrast, Lisp mode itself is used for editing Lisp
+programs intended for other Lisp systems.  To switch to Emacs-Lisp mode
+explicitly, use the command @kbd{M-x emacs-lisp-mode}.
+
+  For testing of Lisp programs to run in Emacs, it is often useful to
+evaluate part of the program as it is found in the Emacs buffer.  For
+example, after changing the text of a Lisp function definition,
+evaluating the definition installs the change for future calls to the
+function.  Evaluation of Lisp expressions is also useful in any kind of
+editing, for invoking noninteractive functions (functions that are
+not commands).
+
+@table @kbd
+@item M-@key{ESC}
+Read a single Lisp expression in the minibuffer, evaluate it, and print
+the value in the echo area (@code{eval-expression}).
+@item C-x C-e
+Evaluate the Lisp expression before point, and print the value in the
+echo area (@code{eval-last-sexp}).
+@item C-M-x
+Evaluate the defun containing or after point, and print the value in
+the echo area (@code{eval-defun}).
+@item M-x eval-region
+Evaluate all the Lisp expressions in the region.
+@item M-x eval-current-buffer
+Evaluate all the Lisp expressions in the buffer.
+@end table
+
+@kindex M-ESC
+@findex eval-expression
+  @kbd{M-@key{ESC}} (@code{eval-expression}) is the most basic command for evaluating
+a Lisp expression interactively.  It reads the expression using the
+minibuffer, so you can execute any expression on a buffer regardless of
+what the buffer contains.  When the expression is evaluated, the current
+buffer is once again the buffer that was current when @kbd{M-@key{ESC}} was
+typed.
+
+  @kbd{M-@key{ESC}} can easily confuse users who do not understand it,
+especially on keyboards with autorepeat where it can result from holding
+down the @key{ESC} key for too long.  Therefore, @code{eval-expression} is
+normally a disabled command.  Attempting to use this command asks for
+confirmation and gives you the option of enabling it; once you enable the
+command, confirmation will no longer be required for it.
+@xref{Disabling}.@refill
+
+@kindex C-M-x @r{(Emacs-Lisp mode)}
+@findex eval-defun
+  In Emacs-Lisp mode, the key @kbd{C-M-x} is bound to the command
+@code{eval-defun}, which parses the defun containing or following point
+as a Lisp expression and evaluates it.  The value is printed in the echo
+area.  This command is convenient for installing in the Lisp environment
+changes that you have just made in the text of a function definition.
+
+@kindex C-x C-e
+@findex eval-last-sexp
+  The command @kbd{C-x C-e} (@code{eval-last-sexp}) performs a similar job
+but is available in all major modes, not just Emacs-Lisp mode.  It finds
+the sexp before point, reads it as a Lisp expression, evaluates it, and
+prints the value in the echo area.  It is sometimes useful to type in an
+expression and then, with point still after it, type @kbd{C-x C-e}.
+
+  If @kbd{C-M-x} or @kbd{C-x C-e} is given a numeric argument, it prints the value
+by insertion into the current buffer at point, rather than in the echo
+area.  The argument value does not matter.
+
+@findex eval-region
+@findex eval-current-buffer
+  The most general command for evaluating Lisp expressions from a buffer
+is @code{eval-region}.  @kbd{M-x eval-region} parses the text of the
+region as one or more Lisp expressions, evaluating them one by one.
+@kbd{M-x eval-current-buffer} is similar but evaluates the entire
+buffer.  This is a reasonable way to install the contents of a file of
+Lisp code that you are just ready to test.  After finding and fixing a
+bug, use @kbd{C-M-x} on each function that you change, to keep the Lisp
+world in step with the source file.
+
+@node Lisp Interaction
+@section Lisp Interaction Buffers
+
+  The buffer @samp{*scratch*} which is selected when Emacs starts up is
+provided for evaluating Lisp expressions interactively inside Emacs.
+
+  Thus, the way to use the @samp{*scratch*} buffer is to insert Lisp
+expressions at the end, ending each one with @key{LFD} so that it will
+be evaluated.  This command reads the Lisp expression before point,
+evaluates it, and inserts the value in printed representation before
+point.  The result is a complete typescript of the expressions you have
+evaluated and their values.
+
+  The @samp{*scratch*} buffer's major mode is Lisp Interaction mode, which
+is the same as Emacs-Lisp mode except for the binding of @key{LFD}.
+
+@findex lisp-interaction-mode
+  The rationale for this feature is that Emacs must have a buffer when
+it starts up, but that buffer is not useful for editing files since a
+new buffer is made for every file that you visit.  The Lisp interpreter
+typescript is the most useful thing I can think of for the initial
+buffer to do.  Type @kbd{M-x lisp-interaction-mode} to put the current
+buffer in Lisp Interaction mode.
+
+@node External Lisp
+@section Running an External Lisp
+
+  Emacs has facilities for running programs in other Lisp systems.  You can
+run a Lisp process as an inferior of Emacs, and pass expressions to it to
+be evaluated.  You can also pass changed function definitions directly from
+the Emacs buffers in which you edit the Lisp programs to the inferior Lisp
+process.
+
+@findex run-lisp
+@vindex inferior-lisp-program
+  To run an inferior Lisp process, type @kbd{M-x run-lisp}.  This runs
+the program named @code{lisp}, the same program you would run by typing
+@code{lisp} as a shell command, with both input and output going through
+an Emacs buffer named @samp{*lisp*}.  That is to say, any ``terminal
+output'' from Lisp will go into the buffer, advancing point, and any
+``terminal input'' for Lisp comes from text in the buffer.  (You can
+change the name of the Lisp executable file by setting the variable
+@code{inferior-lisp-program}.)
+
+  To give input to Lisp, go to the end of the buffer and type the input,
+terminated by @key{RET}.  The @samp{*lisp*} buffer is in Inferior Lisp
+mode, which combines the special characteristics of Lisp mode and Shell
+mode (@pxref{Shell Mode}).@refill
+
+@findex lisp-mode
+  For the source files of programs to run in external Lisps, use Lisp mode.
+This mode can be selected with @kbd{M-x lisp-mode}, and is used automatically
+for files whose names end in @file{.l} or @file{.lisp}, as most Lisp
+systems usually expect.
+
+@kindex C-M-x @r{(Lisp mode)}
+@findex lisp-send-defun
+  When you edit a function in a Lisp program you are running, the easiest
+way to send the changed definition to the inferior Lisp process is the key
+@kbd{C-M-x}.  In Lisp mode, this runs the function @code{lisp-send-defun},
+which finds the defun around or following point and sends it as input to
+the Lisp process.  (Emacs can send input to any inferior process regardless
+of what buffer is current.)
+
+  Contrast the meanings of @kbd{C-M-x} in Lisp mode (for editing programs
+to be run in another Lisp system) and Emacs-Lisp mode (for editing Lisp
+programs to be run in Emacs): in both modes it has the effect of installing
+the function definition that point is in, but the way of doing so is
+different according to where the relevant Lisp environment is found.
+@xref{Executing Lisp}.

@@ -3,10 +3,14 @@ Nothing in this directory is needed for using Emacs once it is built
 and installed, if the dumped Emacs (on Unix systems) or the Emacs
 executable and map files (on VMS systems) are copied elsewhere.
 
-On Unix, building is controlled by a makefile called `xmakefile'
-that is generated with machine-dependent contents from `ymakefile'
-using `cpp'.  `Makefile' just invokes `cpp' to produce `xmakefile'
-and then runs `make' on `xmakefile'.
+See the files ../README and then ../INSTALL for installation instructions.
+
+Under Unix, the file `Makefile.in' is used as a template by the script
+`../configure' to produce `Makefile'.  The `Makefile' then uses `cpp'
+to produce the machine-dependent `ymakefile' from `xmakefile';
+`ymakefile' is the file which actually controlls the compilation of
+Emacs.  Most of this should work transparently to the user; you should
+only need to run `../configure', and then type `make'.
 
 See the file VMSBUILD in this directory for instructions on compiling,
 linking and building Emacs on VMS.

@@ -1,6 +1,6 @@
 #include "copyright.h"
 
-/* $Header: SetAEQ.c,v 1.2 87/12/20 12:05:51 rws Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/SetAEQ.c,v 1.1 1992/04/11 22:10:20 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 /*

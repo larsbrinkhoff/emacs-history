@@ -1,5 +1,5 @@
 
-/* $Header: XMenuInt.h,v 1.1 87/08/04 10:29:03 toddb Exp $ */
+/* $Header: /u/src/emacs/19.0/oldXMenu/RCS/XMenuInt.h,v 1.3 1992/10/10 16:05:10 jimb Exp $ */
 /* Copyright    Massachusetts Institute of Technology    1985	*/
 
 /*
@@ -16,9 +16,12 @@
 #ifndef _XMenuInternal_h_
 #define _XMenuInternal_h_
 
+/* Avoid warnings about redefining NULL by including <stdio.h> first;
+   the other file which wants to define it (<stddef.h> on Ultrix
+   systems) can deal if NULL is already defined, but <stdio.h> can't.  */
+#include <stdio.h>
 #include <X11/Xlib.h>
 #include "X10.h"
-#include <stdio.h>
 #include "XMenu.h"
 
 #define min(x, y)	((x) <= (y) ? (x) : (y))

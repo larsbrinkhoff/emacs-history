@@ -35,9 +35,4 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
  coming from libraries.
 */
 
-#ifdef VMS
-/* Prevent the file from being totally empty.  */
-static dummy () {}
-#endif
-
 char my_edata = 0;

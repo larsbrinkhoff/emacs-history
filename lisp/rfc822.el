@@ -1,12 +1,16 @@
-;; Hairy rfc822 parser for mail and news and suchlike
-;; Copyright (C) 1986, 1987 Free Software Foundation, Inc.
-;; Author Richard Mlynarik.
+;;; rfc822.el --- hairy rfc822 parser for mail and news and suchlike
+
+;; Copyright (C) 1986, 87, 1990 Free Software Foundation, Inc.
+
+;; Author: Richard Mlynarik <mly@eddie.mit.edu>
+;; Maintainer: FSF
+;; Keywords: mail
 
 ;; This file is part of GNU Emacs.
 
 ;; GNU Emacs is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 1, or (at your option)
+;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
 ;; GNU Emacs is distributed in the hope that it will be useful,
@@ -18,7 +22,12 @@
 ;; along with GNU Emacs; see the file COPYING.  If not, write to
 ;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
-(provide 'rfc822)
+;;; Commentary:
+
+;; Support functions for parsing RFC-822 headers, used by mail and news
+;; modes.  
+
+;;; Code:
 
 ;; uses address-start free, throws to address
 (defun rfc822-bad-address (reason)
@@ -303,3 +312,7 @@
 		     (setq list (nconc (nreverse tem) list)))))
 	    (nreverse list)))
       (and buf (kill-buffer buf))))))
+
+(provide 'rfc822)
+
+;;; rfc822.el ends here

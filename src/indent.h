@@ -29,3 +29,6 @@ struct position
 
 struct position *compute_motion ();
 struct position *vmotion ();
+
+/* Value of point when current_column was called */
+extern int last_known_column_point;

@@ -103,7 +103,6 @@ typedef unsigned char U_CHAR;
 #endif
 #ifdef open
 #undef open
-#undef close
 #undef read
 #undef write
 #endif /* open */
@@ -690,7 +689,7 @@ hashcollision:
 	    
       /* If we just processed an identifier at end of input,
 	 return right away.  */
-      if (c == -1)
+      if (c == (U_CHAR) -1)
 	return;
 
       /* count the newline, if it was one.  The reason this is

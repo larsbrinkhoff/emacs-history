@@ -1,7 +1,71 @@
-;  Blackbox game in Emacs Lisp
+;;; blackbox.el --- blackbox game in Emacs Lisp
 
-;  by F. Thomas May
-;  uw-nsr!uw-warp!tom@beaver.cs.washington.edu
+;; Copyright (C) 1985, 1986, 1987, 1992 Free Software Foundation, Inc.
+
+;; Author: F. Thomas May <uw-nsr!uw-warp!tom@beaver.cs.washington.edu>
+;; Adapted-By: ESR
+;; Keywords: games
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation; either version 2, or (at your option)
+;; any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs; see the file COPYING.  If not, write to
+;; the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+
+;;; Commentary:
+
+; by F. Thomas May <uw-nsr!uw-warp!tom@beaver.cs.washington.edu>
+; doc comment by Root Boy Jim <rbj@dsys.icst.nbs.gov>, 27 Apr 89
+; interface improvements by ESR, Dec 5 1991.
+
+; The object of the game is to find four hidden balls by shooting rays
+; into the black box.  There are four possibilities: 1) the ray will
+; pass thru the box undisturbed, 2) it will hit a ball and be absorbed,
+; 3) it will be deflected and exit the box, or 4) be deflected immediately,
+; not even being allowed entry into the box.
+; 
+; The strange part is the method of deflection.  It seems that rays will
+; not pass next to a ball, and change direction at right angles to avoid it.
+; 
+; 		             R   3   
+; 		 1 - - - - - - - - 1 
+; 		   - - - - - - - -   
+; 		   - O - - - - - - 3 
+; 		 2 - - - - O - O -   
+; 		 4 - - - - - - - - 
+; 		 5 - - - - - - - - 5 
+; 		   - - - - - - - - R 
+; 		 H - - - - - - - O   
+; 		   2   H 4       H   
+; 
+; Rays which enter and exit are numbered.  You can see that rays 1 & 5 pass
+; thru the box undisturbed. Ray 2 is deflected by the northwesternmost
+; ball.  Likewise rays 3 and 4. Rays which hit balls and are absorbed are
+; marked with H.  The bottom of the left and the right of the bottom hit
+; the southeastern ball directly.  Rays may also hit balls after being
+; reflected. Consider the H on the bottom next to the 4.  It bounces off
+; the NW-ern most ball and hits the central ball.  A ray shot from above
+; the right side 5 would hit the SE-ern most ball.  The R beneath the 5
+; is because the ball is returned instantly.  It is not allowed into
+; the box if it would reflect immediately.  The R on the top is a more
+; leisurely return.  Both central balls would tend to deflect it east
+; or west, but it cannot go either way, so it just retreats.
+;
+; At the end of the game, if you've placed guesses for as many balls as
+; there are in the box, the true board position will be revealed.  Each
+; `x' is an incorrect guess of yours; `o' is the true location of a ball.
+
+;;; Code:
 
 (defvar blackbox-mode-map nil "")
 
@@ -16,19 +80,34 @@
   (define-key blackbox-mode-map "\C-e" 'bb-eol)
   (define-key blackbox-mode-map "\C-a" 'bb-bol)
   (define-key blackbox-mode-map " " 'bb-romp)
-  (define-key blackbox-mode-map "\C-m" 'bb-done))
+  (define-key blackbox-mode-map [insert] 'bb-romp)
+  (define-key blackbox-mode-map "\C-m" 'bb-done)
+  (define-key blackbox-mode-map [kp-enter] 'bb-done)
 
+  ;; This is a kluge.  What we really want is a general
+  ;; feature for reminding terminal keys to the functions
+  ;; corresponding to them in local maps.
+  (mapcar (function
+	   (lambda (funk)
+	     (mapcar (function
+		      (lambda (key)
+			(define-key blackbox-mode-map key funk)))
+		     (where-is-internal funk))))
+	  '(previous-line next-line backward-character forward-character)))
 
 ;; Blackbox mode is suitable only for specially formatted data.
 (put 'blackbox-mode 'mode-class 'special)
 
 (defun blackbox-mode ()
-  "Major mode for playing blackbox.
+  "Major mode for playing blackbox.  To learn how to play blackbox,
+see the documentation for function `blackbox'.
 
-SPC -- send in a ray from point, or toggle a ball
-RET -- end game and get score
+The usual mnemonic keys move the cursor around the box.
+\\<blackbox-mode-map>\\[bb-bol] and \\[bb-eol] move to the beginning and end of line, respectively.
 
-Precisely,\\{blackbox-mode-map}"
+\\[bb-romp] -- send in a ray from point, or toggle a ball at point
+\\[bb-done] -- end game and get score
+"
   (interactive)
   (kill-all-local-variables)
   (use-local-map blackbox-mode-map)
@@ -36,13 +115,124 @@ Precisely,\\{blackbox-mode-map}"
   (setq major-mode 'blackbox-mode)
   (setq mode-name "Blackbox"))
 
+;;;###autoload
 (defun blackbox (num)
-  "Play blackbox.  Arg is number of balls."
+  "Play blackbox.  Optional prefix argument is the number of balls;
+the default is 4.
+
+What is blackbox?
+
+Blackbox is a game of hide and seek played on an 8 by 8 grid (the
+Blackbox).  Your opponent (Emacs, in this case) has hidden several
+balls (usually 4) within this box.  By shooting rays into the box and
+observing where they emerge it is possible to deduce the positions of
+the hidden balls.  The fewer rays you use to find the balls, the lower
+your score.
+
+Overview of play:
+
+\\<blackbox-mode-map>\
+To play blackbox, type \\[blackbox].  An optional prefix argument
+specifies the number of balls to be hidden in the box; the default is
+four.
+
+The cursor can be moved around the box with the standard cursor
+movement keys.
+
+To shoot a ray, move the cursor to the edge of the box and press SPC.
+The result will be determined and the playfield updated.
+
+You may place or remove balls in the box by moving the cursor into the
+box and pressing \\[bb-romp].
+
+When you think the configuration of balls you have placed is correct,
+press \\[bb-done].  You will be informed whether you are correct or
+not, and be given your score.  Your score is the number of letters and
+numbers around the outside of the box plus five for each incorrectly
+placed ball.  If you placed any balls incorrectly, they will be
+indicated with `x', and their actual positions indicated with `o'.
+
+Details:
+
+There are three possible outcomes for each ray you send into the box:
+
+	Detour: the ray is deflected and emerges somewhere other than
+		where you sent it in.  On the playfield, detours are
+		denoted by matching pairs of numbers -- one where the
+		ray went in, and the other where it came out.
+
+	Reflection: the ray is reflected and emerges in the same place
+		it was sent in.  On the playfield, reflections are
+		denoted by the letter `R'.
+
+	Hit:	the ray strikes a ball directly and is absorbed.  It does
+		not emerge from the box.  On the playfield, hits are
+		denoted by the letter `H'.
+
+The rules for how balls deflect rays are simple and are best shown by
+example.
+
+As a ray approaches a ball it is deflected ninety degrees.  Rays can
+be deflected multiple times.  In the diagrams below, the dashes
+represent empty box locations and the letter `O' represents a ball.
+The entrance and exit points of each ray are marked with numbers as
+described under \"Detour\" above.  Note that the entrance and exit
+points are always interchangeable.  `*' denotes the path taken by the
+ray.
+
+Note carefully the relative positions of the ball and the ninety
+degree deflection it causes.
+
+    1                                            
+  - * - - - - - -         - - - - - - - -         - - - - - - - -       
+  - * - - - - - -         - - - - - - - -         - - - - - - - -       
+1 * * - - - - - -         - - - - - - - -         - O - - - - O -       
+  - - O - - - - -         - - O - - - - -         - - * * * * - -
+  - - - - - - - -         - - - * * * * * 2     3 * * * - - * - -
+  - - - - - - - -         - - - * - - - -         - - - O - * - -      
+  - - - - - - - -         - - - * - - - -         - - - - * * - -       
+  - - - - - - - -         - - - * - - - -         - - - - * - O -       
+                                2                         3
+
+As mentioned above, a reflection occurs when a ray emerges from the same point
+it was sent in.  This can happen in several ways:
+
+                                                                           
+  - - - - - - - -         - - - - - - - -          - - - - - - - -
+  - - - - O - - -         - - O - O - - -          - - - - - - - -
+R * * * * - - - -         - - - * - - - -          O - - - - - - -
+  - - - - O - - -         - - - * - - - -        R - - - - - - - -
+  - - - - - - - -         - - - * - - - -          - - - - - - - -
+  - - - - - - - -         - - - * - - - -          - - - - - - - -
+  - - - - - - - -       R * * * * - - - -          - - - - - - - -
+  - - - - - - - -         - - - - O - - -          - - - - - - - -
+
+In the first example, the ray is deflected downwards by the upper
+ball, then left by the lower ball, and finally retraces its path to
+its point of origin.  The second example is similar.  The third
+example is a bit anomalous but can be rationalized by realizing the
+ray never gets a chance to get into the box.  Alternatively, the ray
+can be thought of as being deflected downwards and immediately
+emerging from the box.
+
+A hit occurs when a ray runs straight into a ball:
+
+  - - - - - - - -         - - - - - - - -          - - - - - - - -
+  - - - - - - - -         - - - - - - - -          - - - - O - - -
+  - - - - - - - -         - - - - O - - -        H * * * * - - - -
+  - - - - - - - -       H * * * * O - - -          - - - * - - - -
+  - - - - - - - -         - - - - O - - -          - - - O - - - -
+H * * * O - - - -         - - - - - - - -          - - - - - - - -
+  - - - - - - - -         - - - - - - - -          - - - - - - - -
+  - - - - - - - -         - - - - - - - -          - - - - - - - -
+
+Be sure to compare the second example of a hit with the first example of
+a reflection."
   (interactive "P")
   (switch-to-buffer "*Blackbox*")
   (blackbox-mode)
   (setq buffer-read-only t)
-  (buffer-flush-undo (current-buffer))
+  (buffer-disable-undo (current-buffer))
   (setq bb-board (bb-init-board (or num 4)))
   (setq bb-balls-placed nil)
   (setq bb-x -1)
@@ -58,7 +248,7 @@ Precisely,\\{blackbox-mode-map}"
     (while (>= (setq num-balls (1- num-balls)) 0)
       (while
 	  (progn
-	    (setq pos (cons (logand (random) 7) (logand (random) 7)))
+	    (setq pos (cons (random 8) (random 8)))
 	    (bb-member pos board)))
       (setq board (cons pos board)))
     board))
@@ -70,7 +260,9 @@ Precisely,\\{blackbox-mode-map}"
     (setq i 8)
     (while (>= (setq i (1- i)) 0)
       (insert "   - - - - - - - -   \n"))
-    (insert "                     \n")))
+    (insert "                     \n")
+    (insert (format "\nThere are %d balls in the box" (length bb-board)))
+    ))
 
 (defun bb-right ()
   (interactive)
@@ -174,18 +366,25 @@ Precisely,\\{blackbox-mode-map}"
     (bb-trace-ray-2 nil (+ x dx) dx (+ y dy) dy))))
 
 (defun bb-done ()
+  "Finish the game and report score."
   (interactive)
   (let (bogus-balls)
-    (if (not (= (length bb-balls-placed) (length bb-board)))
-	(message "Spud!  You have only %d balls in the box."
-		 (length bb-balls-placed))
+    (cond
+     ((not (= (length bb-balls-placed) (length bb-board)))
+      (message "There %s %d hidden ball%s; you have placed %d."
+	       (if (= (length bb-board) 1) "is" "are")
+	       (length bb-board)
+	       (if (= (length bb-board) 1) "" "s")
+	       (length bb-balls-placed)))
+     (t
       (setq bogus-balls (bb-show-bogus-balls bb-balls-placed bb-board))
       (if (= bogus-balls 0)
 	  (message "Right!  Your score is %d." bb-score)
-	(setq bb-score (+ bb-score (* 5 bogus-balls)))
-	(message "Veg!  You missed %d balls.  Your score is %d."
-		 bogus-balls bb-score))
-      (bb-goto '(-1 . -1)))))
+	(message "Oops!  You missed %d ball%s.  Your score is %d."
+		 bogus-balls
+		 (if (= bogus-balls 1) "" "s")
+		 (+ bb-score (* 5 bogus-balls))))
+      (bb-goto '(-1 . -1))))))
 
 (defun bb-show-bogus-balls (balls-placed board)
   (bb-show-bogus-balls-2 balls-placed board "x")
@@ -216,7 +415,7 @@ Precisely,\\{blackbox-mode-map}"
     (backward-char 1)))
   
 (defun bb-member (elt list)
-  "Returns non-nil if ELT is an element of LIST.  Comparison done with equal."
+  "Returns non-nil if ELT is an element of LIST."
   (eval (cons 'or (mapcar (function (lambda (x) (equal x elt))) list))))
 
 (defun bb-delete (item list)
@@ -225,5 +424,4 @@ Precisely,\\{blackbox-mode-map}"
    ((equal item (car list)) (cdr list))
    (t (cons (car list) (bb-delete item (cdr list))))))
 
-
-
+;;; blackbox.el ends here

@@ -20,13 +20,17 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define Ctl(c) ((c)&037)
 
-/* Define the names of keymaps, just so people can refer to them in calls to defkey */
+/* Define the names of keymaps, just so people can refer to
+   them in calls to initial_define_key */
 
-extern Lisp_Object Vglobal_map;
+extern Lisp_Object global_map;
 
-extern Lisp_Object Vesc_map;
+extern Lisp_Object meta_map;
 
-extern Lisp_Object Vctl_x_map;
+extern Lisp_Object control_x_map;
+
+/* Keymap for mouse commands.  */
+extern Lisp_Object Vglobal_mouse_map;
 
 extern Lisp_Object Vminibuffer_local_map;
 
@@ -39,10 +43,23 @@ extern Lisp_Object Vminibuffer_local_completion_map;
 extern Lisp_Object Vminibuffer_local_must_match_map;
 
 /* Last character of last key sequence.  */
-extern int last_command_char;
+extern Lisp_Object last_command_char;
 
-/* Command character to be re-read, or -1 */
-extern int unread_command_char;
+/* Last input character read as a command, not counting menus
+   reached by the mouse.  */
+extern Lisp_Object last_nonmenu_event;
+
+/* List of command events to be re-read, or Qnil.  */
+extern Lisp_Object unread_command_events;
+
+/* If not Qnil, this is a switch-frame event which we decided to put
+   off until the end of a key sequence.  This should be read as the
+   next command input, after any unread_command_events.
+
+   read_key_sequence uses this to delay switch-frame events until the
+   end of the key sequence; Fread_char uses it to put off switch-frame
+   events until a non-ASCII event is acceptable as input.  */
+extern Lisp_Object unread_switch_frame;
 
 /* Previous command symbol found here for comparison */
 extern Lisp_Object last_command;
@@ -50,13 +67,11 @@ extern Lisp_Object last_command;
 /* Nonzero means ^G can quit instantly */
 extern int immediate_quit;
 
-/* Character that causes a quit.  Normally C-g.  */
-extern int quit_char;
-
 extern Lisp_Object Vexecuting_macro;
 
 /* Nonzero if input is coming from the keyboard */
-#define FROM_KBD (NULL (Vexecuting_macro) && !noninteractive)
+
+#define INTERACTIVE (NILP (Vexecuting_macro) && !noninteractive)
 
 /* Set this nonzero to force reconsideration of mode line. */
 

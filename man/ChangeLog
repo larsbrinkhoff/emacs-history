@@ -1,14 +1,65 @@
-Sun Oct  6 12:07:49 1991  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+Sat May 22 17:41:18 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
-	* texindex.c: Include types.h, fcntl.h.
+	* Version 19.7 released.
 
-Fri Feb 22 12:39:44 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+	* emacs.texi: Add a sentence to the top menu mentioning the
+	specific version of Emacs this manual applies to.
 
-	* getopt.c, getopt1.c, getopt.h, Makefile: New files.
+Sun Apr 25 18:39:22 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
 
-Thu Jan 24 12:41:33 1991  Richard Stallman  (rms at mole.ai.mit.edu)
+	* basic.texi: Documented next-line-add-lines variable used to
+	implement down-arrow.
 
-	* texinfo.tex: Delete spurious character at beginning.
+	* killing.texi: Documented kill-whole-line.
+
+Sun Apr 18 22:32:14 1993  Noah Friedman  (friedman@nutrimat.gnu.ai.mit.edu)
+
+        * text.texi: Updated unix TeX ordering information.
+
+Fri Mar 26 21:18:12 1993  Eric S. Raymond  (eric@geech.gnu.ai.mit.edu)
+
+	* news.texi: Mentioned fill-rectangle in keybinding list.
+
+	* killing.texi: Documented fill-rectangle.
+
+Wed Mar 17 09:45:41 1993  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* vc.texi: Brought the docs up to date with VC 5.2.
+
+Fri Jan 10 16:31:13 1992  Eric S. Raymond  (eric@mole.gnu.ai.mit.edu)
+
+	* emacs.tex: Mentioned blackbox and gomoku under Amusements.
+		     Assembler mode is now mentioned and appropriately
+		     indexed under Programming Modes.
+
+Fri Feb 15 10:42:56 1991  Robert J. Chassell  (bob at wookumz.ai.mit.edu)
+
+        * emacs.tex: Updated TeX ordering information.
+
+Thu Aug 30 06:00:05 1990  David Lawrence  (tale at pogo.ai.mit.edu)
+
+	* gnus.texinfo:  New file.  Removed installation instructions.
+
+Tue Jun 26 09:40:28 1990  David Lawrence  (tale at geech)
+
+	* emacs.tex:  Noted that completion-ignored-extensions is not used
+	to filter out names when all completions are displayed in
+	*Completions*.
+
+Fri May 25 17:42:02 1990  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
+
+	* texindex.tex: If USG, include sys/types.h and sys/fcntl.h.
+
+Wed Mar 21 21:24:18 1990  Jim Kingdon  (kingdon at pogo.ai.mit.edu)
+
+	* emacs.tex: Add @findex grep.
+
+Tue Jan 17 17:01:20 1989  Robert J. Chassell  (bob at rice-chex.ai.mit.edu)
+
+	* texinfo.tex:  Changed spelling of `\sc' font to `\smallcaps' and
+	then defined `\sc' as the command for smallcaps in Texinfo.  This
+	measns that the @sc command will produce small caps.  bfox has
+	made the corresponding change to makeinfo and texinfm.el.
 
 Tue Aug 16 13:09:12 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
 
@@ -27,17 +78,6 @@ Tue Aug 16 13:09:12 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
 Mon Jul 25 17:47:38 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
 
 	* texinfo.texinfo: Three typos corrected.
-
-Mon Jul 11 18:02:29 1988  Chris Hanson  (cph at kleph)
-
-	* texindex.c (indexify): when comparing to initial strings to
-	decide whether to change the header, must use `strncmp' to avoid
-	comparing entire strings of which initials are a substring.
-
-Sun Jun 26 18:46:16 1988  Richard Stallman  (rms at sugar-bombs.ai.mit.edu)
-
-	* texindex.c (sort_in_core, sort_offline, parsefile):
-	Give up on input file if any line doesn't start with backslash.
 
 Mon May 23 10:41:35 1988  Robert J. Chassell (bob at frosted-flakes.ai.mit.edu)
 

@@ -1,11 +1,10 @@
                        GNU Emacs FAQ: Introduction
 
-[To find what has changed, see the "diff" posting.]
+[To find what has changed, see the "Changes" posting.]
 
-[Joe Wells plans to quit soon as FAQ coordinator.  Steven Byrnes says he can
- take over this portion of the FAQ responsibility.  We still need more
- volunteers to help by taking charge of a section of the FAQ list.  Send e-mail
- if you are interested.]
+[The FAQ post date slipped big-time this time.  Now that school is over
+ with and I can get on with the rest of my life, posting should become a
+ lot more regular. - sbyrnes]
 
 This is the introduction to a list of frequently asked questions (FAQ) about
 GNU Emacs with answers.  This article contains a listing of the questions;
@@ -46,9 +45,9 @@ implement them:
     recently.
 
 -- 
-Joe Wells <jbw@cs.bu.edu> and Steven Byrnes <sbyrnes@rice.edu>
+Steven Byrnes <sbyrnes@rice.edu> (and Joe Wells <jbw@cs.bu.edu>)
 
-E-mail jbw@cs.bu.edu for details about the League for Programming Freedom.
+E-mail lpf@uunet.uu.net for details about the League for Programming Freedom.
 
 ----------------------------------------------------------------------
 
@@ -279,6 +278,7 @@ Mail and News
 176: Why do I get "Cannot open load file" "nntp" when compiling GNUS?
 177: How do I kill all articles in GNUS but those matching a pattern?
 
+	
                GNU Emacs FAQ: Notation/General/Help/Status
 
 If you are viewing this text in a GNU Emacs Buffer, you can type "M-2 C-x $" to
@@ -411,24 +411,24 @@ General Questions
   The LPF opposes the expanding danger of software patents and look-and-feel
   copyrights.  To get more information, feel free to contact the LPF via
   e-mail or otherwise.  {You may also contact me, jbw@cs.bu.edu; I will be
-  happy to talk with you about the LPF.}  Here is the contact information:   !
+  happy to talk with you about the LPF.}  Here is the contact information:
   
     E-mail address: league@prep.ai.mit.edu
-    Phone number: (617) 243-4091                                             !
+    Phone number: (617) 243-4091
     Postal address:
       League for Programming Freedom
       1 Kendall Square, Number 143
       Post Office Box 9171
       Cambridge, MA 02139, USA
   
-  Papers describing the LPF's views are available on the internet and also   !
-  from the LPF:                                                              !
+  Papers describing the LPF's views are available on the internet and also
+  from the LPF:
   
     Anonymous FTP:
-      /prep.ai.mit.edu:/pub/lpf/                                             +
-      /archive.cis.ohio-state.edu:pub/lpf/                                   !
+      /prep.ai.mit.edu:/pub/lpf/
+      /archive.cis.ohio-state.edu:pub/lpf/
     Anonymous UUCP:
-      osu-cis!~/lpf/*                                                        -
+      osu-cis!~/lpf/*
   
 7:   What is the real legal meaning of the GNU copyleft?
   
@@ -484,11 +484,10 @@ General Questions
   postings from, but pretty much everything is there.
   
     Anonymous FTP:
-      /prep.ai.mit.edu:/pub/gnu/emacs/MailingListArchives/                   !
+      /prep.ai.mit.edu:/pub/gnu/MailingListArchives/
   
-  {There was a WAIS database named `comp-emacs' on lambada.oit.unc.edu that
-  makes available the last 10 days of articles in comp.emacs.  It appears to
-  have died.  Anyone know if it moved?}
+  There is a WAIS database named `comp.emacs' on wais.oit.unc.edu that
+  makes available the last few days of articles in comp.emacs.
   
 10:  Where should I report bugs and other problems with GNU Emacs?
   
@@ -535,12 +534,12 @@ General Questions
   
 12:  What is the current address of the FSF?
   
-  E-mail address: gnu@prep.ai.mit.edu                                        +
-  Phone number: (617) 876-3296                                               +
+  E-mail address: gnu@prep.ai.mit.edu
+  Phone number: (617) 876-3296
   Postal address:
     Free Software Foundation, Inc.
     675 Massachusetts Avenue
-    Cambridge, MA 02139, USA                                                 -
+    Cambridge, MA 02139, USA
   
 
 
@@ -595,29 +594,29 @@ On-line Help, Printed Manuals, Other Sources of Help
 15:  How do I get a printed copy of the GNU Emacs manual?
   
   You can order a printed copy of the GNU Emacs manual from the FSF for
-  $20.  For 6 or more manuals the price is $13 each.  The price may be       -
-  tax-deductible as a business expense.                                      -
+  $20.  For 6 or more manuals the price is $13 each.  The price may be
+  tax-deductible as a business expense.
   
   The full TeX source for the manual also comes in the `man' directory of
   the Emacs distribution, if you're daring enough to try to print out this
   300 page manual yourself (see question 18).
   
   If you absolutely have to print your own copy, and you don't have TeX, you
-  can get a PostScript version via anonymous FTP:                            !
-                                                                             !
-    /cs.ubc.ca:src/gnu/manuals_ps/emacs-18.57.ps.Z                           !
+  can get a PostScript version via anonymous FTP:
+  
+    /cs.ubc.ca:pub/archive/gnu/manuals_ps/emacs-18.57.ps.Z                   !
   
   which site requests that you please CONFINE ANY MAJOR FTPING TO LATE
   EVENINGS OR EARLY MORNINGS OUR TIME (pacific time zone, GMT-8)).  A DVI
-  version is also available via FTP:                                         !
-                                                                             !
-    /prep.ai.mit.edu:pub/gnu/emacs-manual-6.0.dvi.Z                          !
+  version is also available via FTP:
+  
+    /prep.ai.mit.edu:pub/gnu/emacs-manual-6.0.dvi.Z
   
   If you don't have TeX you can convert the Texinfo sources into
   {t,n,ps}roff format with the `texi2roff' program, which is available via
-  anonymous FTP:                                                             !
-                                                                             !
-    /archive.cis.ohio-state.edu:pub/gnu/texi2roff/texi2roff.shar.Z           !
+  anonymous FTP:
+  
+    /archive.cis.ohio-state.edu:pub/gnu/texi2roff/texi2roff.shar.Z
   
   See also question 14 for how to view the manual online.
   
@@ -631,10 +630,10 @@ On-line Help, Printed Manuals, Other Sources of Help
   latest revision available for FTP is edition 1.03 dated 28 January 1991.
   
   For online use, a set of pregenerated Info files is available with the
-  Texinfo source for the Emacs Lisp manual via anonymous FTP:                !
-                                                                             !
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/                               !
-    /prep.ai.mit.edu:pub/gnu/elisp-manual-1.03.tar.Z                         !
+  Texinfo source for the Emacs Lisp manual via anonymous FTP:
+  
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/
+    /prep.ai.mit.edu:pub/gnu/elisp-manual-1.03.tar.Z
   
   (You can also create the Info files from the Texinfo source.)  See
   question 17 for details on how to install these files online.
@@ -647,9 +646,9 @@ On-line Help, Printed Manuals, Other Sources of Help
 17:  How do I install a piece of Texinfo documentation?
   
   First create Info files from the Texinfo files with the `makeinfo'
-  program.  makeinfo is available as part of the latest Texinfo package:     !
-                                                                             !
-    /prep.ai.mit.edu:pub/gnu/texinfo-2.14.tar.Z                              !
+  program.  makeinfo is available as part of the latest Texinfo package:
+  
+    /prep.ai.mit.edu:pub/gnu/texinfo-2.14.tar.Z
   
   For information about the Texinfo format, read the Texinfo manual which
   comes with Emacs.  This manual also comes installed in Info format, so you
@@ -700,8 +699,8 @@ On-line Help, Printed Manuals, Other Sources of Help
     files.
   
     Anonymous FTP:
-      /archive.cis.ohio-state.edu:modes/info.el.Z                            !
-      /cs.umn.edu:pub/gnu/emacs/info.el.Z                                    +
+      /archive.cis.ohio-state.edu:modes/info.el.Z
+      /ftp.uu.net:languages/emacs-lisp/modes/info.el.Z                       !
   
     According to Jay Bourland <jayb@math.stanford.edu>, a version of Dave's
     info.el comes with `xinfo' (see question 19).
@@ -738,10 +737,10 @@ On-line Help, Printed Manuals, Other Sources of Help
   Yes, the `info', `xinfo', and `ivinfo' programs do this.  info uses
   curses, xinfo uses standard X11 libraries, and ivinfo uses InterViews.
   You can get info as part of the latest Texinfo package (see question
-  17).  xinfo is available separately:                                       !
-                                                                             !
-    /prep.ai.mit.edu:pub/gnu/xinfo-1.01.01.tar.Z                             !
-    /export.lcs.mit.edu:                                                     !
+  17).  xinfo is available separately:
+  
+    /prep.ai.mit.edu:pub/gnu/xinfo-1.01.01.tar.Z
+    /export.lcs.mit.edu:
   
   ivinfo is available in a comp.sources.misc archive or from Tom Horsley
   <tom@ssd.csd.harris.com>.  For ivinfo, you need Stanford's InterViews C++
@@ -826,9 +825,9 @@ On-line Help, Printed Manuals, Other Sources of Help
   * Legal issues about contributing code to GNU
   * GNU Project Status Report
   
-  A collection of past GNU's Bulletins is available via anonymous FTP:       +
-                                                                             +
-    /ftp.funet.fi:pub/gnu/Bulletins/                                         +
+  A collection of past GNU's Bulletins is available via anonymous FTP:
+  
+    /ftp.funet.fi:pub/gnu/Bulletins/
   
 21:  Where can I get help in installing GNU Emacs?
   
@@ -855,12 +854,12 @@ On-line Help, Printed Manuals, Other Sources of Help
   
     The FAQ articles' message IDs are:
   
-      <GNU-Emacs-FAQ-0.1992.09.22.011020@bigbird.bu.edu>                     !
-      <GNU-Emacs-FAQ-1.1992.09.22.011020@bigbird.bu.edu>                     !
-      <GNU-Emacs-FAQ-2.1992.09.22.011020@bigbird.bu.edu>                     !
-      <GNU-Emacs-FAQ-3.1992.09.22.011020@bigbird.bu.edu>                     !
-      <GNU-Emacs-FAQ-4.1992.09.22.011020@bigbird.bu.edu>                     !
-      <GNU-Emacs-FAQ-5.1992.09.22.011020@bigbird.bu.edu>                     !
+      <GNU-Emacs-FAQ-0.1993.05.04.025218@rice.edu>                           !
+      <GNU-Emacs-FAQ-1.1993.05.04.025218@rice.edu>                           !
+      <GNU-Emacs-FAQ-2.1993.05.04.025218@rice.edu>                           !
+      <GNU-Emacs-FAQ-3.1993.05.04.025218@rice.edu>                           !
+      <GNU-Emacs-FAQ-4.1993.05.04.025218@rice.edu>                           !
+      <GNU-Emacs-FAQ-5.1993.05.04.025218@rice.edu>                           !
   
     If you are viewing this in the GNUS *Article* buffer, you can move point
     within one of the above message IDs and type "r" to fetch the referenced
@@ -871,11 +870,11 @@ On-line Help, Printed Manuals, Other Sources of Help
     If the FAQ articles have expired and been deleted from your news spool,
     it might (or might not) do some good to complain to your news
     administrator, because the most recent FAQ should not expire before
-    November 21, 1992.                                                       !
+    July 3, 1993.                                                            !
   
   * Via anonymous FTP.  You can fetch the FAQ articles via anonymous FTP
   
-      /rtfm.mit.edu:pub/usenet/news.answers/GNU-Emacs-FAQ/ part*             !
+      /rtfm.mit.edu:pub/usenet/news.answers/GNU-Emacs-FAQ/ part*
   
   * Via e-mail.  You can send the following magical incantation in the body
     of a message to mail-server@rtfm.mit.edu:
@@ -901,15 +900,15 @@ On-line Help, Printed Manuals, Other Sources of Help
   
   * In the GNU Emacs distribution.  Since GNU Emacs 18.56, the latest
     available version of the FAQ at the time of release has been part of the
-    GNU Emacs distribution as file etc/FAQ.  18.58 is the latest version,
-    and it was released in February 1992.
+    GNU Emacs distribution as file etc/FAQ.  18.59 is the latest version,
+    and it was released in October 1992.
   
-  * There is an old version of the FAQ list available for FTP in the GNU     +
-    archives at MIT:                                                         +
-                                                                             +
-      /prep.ai.mit.edu:pub/gnu/GNUinfo/FAQ.emacs                             +
-                                                                             +
-  * As the very last resort, you can e-mail a request to                     +
+  * There is an old version of the FAQ list available for FTP in the GNU
+    archives at MIT:
+  
+      /prep.ai.mit.edu:pub/gnu/GNUinfo/FAQ.emacs
+  
+  * As the very last resort, you can e-mail a request to
     gnu-emacs-faq-maintainers@bigbird.bu.edu.  Don't do this unless you have
     made a serious effort to obtain the FAQ list via one of the methods
     listed above.
@@ -931,12 +930,12 @@ Status of Emacs
   
   Many people have told me that TECO code looks a lot like line noise.  See
   alt.lang.teco if you are interested.  I think someone has written a TECO
-  implementation in Emacs Lisp.  It would be an interesting project to run
+   implementation in Emacs Lisp.  It would be an interesting project to run
   the original TECO Emacs inside of GNU Emacs.
   
 24:  What is the latest version of GNU Emacs?
   
-  GNU Emacs 18.58 is the current version.  Fixes from 18.57 include better
+  GNU Emacs 18.59 is the current version.  Fixes from 18.57 include better
   mail address parsing, an X visual bell speedup, a call-process
   enhancement, a regexp matching change, the ability to apply a numeric
   argument to a self-inserting digit, getting X resource values from the
@@ -953,11 +952,32 @@ Status of Emacs
   
 25:  When will GNU Emacs 19 be available?
   
-  There are strong indications that Emacs 19 will be available in 1992.  The
-  FSF has recently gone through a spate of copyright disclaimer checking,
-  which is a good sign.
-  
-  Lucid has released Lucid GNU Emacs 19.2, which is based on an early
+  Richard Stallman recently (February 19, 1993) posted in gnu.emacs.help     !
+  the following:                                                             !
+                                                                             !
+    People should keep in mind that the successor of Emacs 18 does not       !
+    come from Lucid.  Its is GNU Emacs 19.  I still can't say exactly when   !
+    public release is going to be, but we are about to start testing at a    !
+    number of sites.                                                         !
+                                                                             !
+    GNU Emacs 19 will support a broad spectrum of machines, like Emacs       !
+    18.  Ensuring this is the purpose of the testing we are about to do.     !
+                                                                             !
+    (Please don't volunteer; we have enough pretesters, and if more people   !
+    offer, dealing with those messages will slow things down.)               !
+                                                                             !
+    Once we make sure it is indeed working reliably on various different     !
+    systems, we will have a public beta test release.                        !
+                                                                             !
+    Emacs 19 does support adding properties to ranges of text, and using     !
+    these to switch fonts.  In the future, the Epoch people will help        !
+    merge support for variable-width fonts.                                  !
+                                                                             !
+    Meanwhile, I have almost finished updating the Emacs Lisp manual.  Its   !
+    next edition will describe Emacs 19.  There will be an announcement      !
+    when we know when this edition will be available.                        !
+
+  Lucid has released Lucid GNU Emacs 19.6, which is based on an early        !
   unreleased version of GNU Emacs 19.  This will be similar to Emacs 19 when
   it finally arrives, but they are not the same.  See question 121.
   
@@ -1010,7 +1030,7 @@ Status of Emacs
   
 27:  What variants of GNU Emacs exist?
   
-  * Nemacs (Nihongo Emacs), which can handle Japanese text, is derived from  +
+  * Nemacs (Nihongo Emacs), which can handle Japanese text, is derived from
     GNU Emacs 18.55.  See question 149.
   
   * Demacs, which can run under MS-DOS on 386 machines, is derived from
@@ -1019,18 +1039,20 @@ Status of Emacs
   * Epoch, which has better X support, is derived from GNU Emacs 18.58.
     See question 120 and 92.
   
-  * Nepoch (Nihongo Epoch), which can handle Japanese text, is derived from  +
-    Epoch.                                                                   +
-                                                                             +
-  * Mule (the MULtilingual Enhancement of GNU Emacs) can handle many         +
-    character sets simultaneously.  It is derived from Emacs 18.58.  It is   +
-    available for FTP:                                                       +
-                                                                             +
-      /sh.wide.ad.jp:/JAPAN/mule/                                            +
-      /etlport.etl.go.jp:/pub/mule/                                          +
-                                                                             +
-  * Lucid GNU Emacs is derived from an early unreleased version of GNU Emacs +
+  * Nepoch (Nihongo Epoch), which can handle Japanese text, is derived from
+    Epoch.
+  
+  * Mule (the MULtilingual Enhancement of GNU Emacs) can handle many
+    character sets simultaneously.  It is derived from Emacs 18.58.  It is
+    available for FTP:
+  
+      /sh.wide.ad.jp:/JAPAN/mule/
+      /etlport.etl.go.jp:/pub/mule/
+  
+  * Lucid GNU Emacs is derived from an early unreleased version of GNU Emacs
     19.  See question 121 and 92.
+  
+
 
                  GNU Emacs FAQ: Common Requests/Problems
 
@@ -1197,19 +1219,20 @@ Common Things People Want To Do
 35:  How can I highlight a region of text in Emacs?
   
   There are ways to get highlighting (reverse video, inverse video) in GNU
-  Emacs 18.58, but either they require patching the C code of Emacs and
+  Emacs 18.59, but either they require patching the C code of Emacs and
   rebuilding, or they are slow and the highlighting disappears if you scroll
   or redraw the screen and it can not follow the point.  Howard Gayle's
   patches for 8-bit output appear to allow highlighting (see question
   ^8-bit-output).  Another patch for highlighting is by Kenichi Handa
   <handa@etl.go.jp>.  There is a patch for use with X by Andy Norman
   <ange@hplb.hpl.hp.com> (and modified for 18.57 by Matthieu Herrb
-  <matthieu@laas.fr>), which is available for FTP:                           !
-                                                                             !
-    /laas.laas.fr:pub/emacs/patch-X11-18.5{5,7}                              !
+  <matthieu@laas.fr>), which is available for FTP:
+  
+    /laas.laas.fr:pub/emacs/patch-X11-18.55
+    /laas.laas.fr:pub/emacs/patch-X11-18.57
   
   You can highlight regions in a variety of ways in Epoch and Lucid Emacs.
-  GNU Emacs 19 may not be able to just temporarily highlight a region.       !
+  GNU Emacs 19 may not be able to just temporarily highlight a region.
   
   Similar comments apply to displaying text in different fonts, except that
   it is even harder.
@@ -1251,14 +1274,14 @@ Common Things People Want To Do
   different programs named `detex', all with incompatible options, and a
   very old pair of programs named `detex' and `delatex', which should
   probably be avoided.  The most useful one for Ispell is `detex' by Daniel
-  Trinkle.  A more recent version is available via FTP:                      !
-                                                                             !
-    /arthur.cs.purdue.edu:pub/trinkle/detex-2.3.tar.Z                        !
+  Trinkle.  A more recent version is available via FTP:
   
-  Raphael Cerf <cerf@clipper.ens.fr> recently released a program for this    +
-  named `xetal':                                                             !
-                                                                             !
-    /spi.ens.fr:pub/unix/tex/                                                !
+    /arthur.cs.purdue.edu:pub/trinkle/detex-2.4.tar
+  
+  Raphael Cerf <cerf@clipper.ens.fr> recently released a program for this
+  named `xetal':
+  
+    /spi.ens.fr:pub/unix/tex/
   
   There is a program that comes with Unix named `deroff' for stripping
   formatting commands from *roff files.
@@ -1377,9 +1400,9 @@ Common Things People Want To Do
   path.
   
   Keith Moore <moore@cs.utk.edu> wrote one such for a C compiler under AIX.
-  Available via FTP:                                                         !
-                                                                             !
-    /cs.utk.edu:readonly/aixcc.lex                                           !
+  Available via FTP:
+  
+    /cs.utk.edu:readonly/aixcc.lex
   
   Jim Frost <jimf@saber.com> wrote another for the IBM xlc compiler on the
   RS/6000.  (I don't know if these are both for the same compiler.)
@@ -1412,11 +1435,11 @@ Common Things People Want To Do
   
 44:  How can I make Emacs automatically scroll horizontally?
   
-  There is no completely correct way of doing this that does not involve     !
-  rewriting all commands or writing your own top-level command loop (not a   !
-  completely bad idea).  Wayne Mesard <wmesard@pescadero.stanford.edu> has   !
-  written a particularly advanced kludge called `hscroll.el' that checks     !
-  once a second to make sure point is visible.                               !
+  There is no completely correct way of doing this that does not involve
+  rewriting all commands or writing your own top-level command loop (not a
+  completely bad idea).  Wayne Mesard <wmesard@pescadero.stanford.edu> has
+  written a particularly advanced kludge called `hscroll.el' that checks
+  once a second to make sure point is visible.
   
 45:  How do I make Emacs "typeover" or "overwrite" instead of inserting?
   
@@ -1440,9 +1463,10 @@ Common Things People Want To Do
 47:  How do I turn down the bell volume in Emacs running under X Windows?
   
   Under versions of Emacs before 18.58, the bell volume was annoying loud
-  and difficult to turn off.  So upgrading to 18.58 will reduce the volume.
-  If you want to turn it off completely, use `xset'.  There is no way to
-  turn the bell off just for Emacs without affecting all other programs.
+  and difficult to turn off.  So upgrading to 18.58 or higher will reduce
+  the volume.  If you want to turn it off completely, use `xset'.  There is
+  no way to turn the bell off just for Emacs without affecting all other
+  programs.
   
   Under Epoch you can do:
   
@@ -1597,9 +1621,9 @@ Common Things People Want To Do
   these patches work together.
   
   Anonymous FTP:
-    /csi.jpl.nasa.gov:pub/emacs.patch1  (Matt Wette)                         +
-    /ftp.eu.net:gnu/emacs/FP-Xfun.Z  (Johan Vromans)                         +
-    /ftp.urc.tue.nl:pub/tex/emacs/FP-Xfun  (Johan Vromans)                   +
+    /csi.jpl.nasa.gov:pub/emax.patch1  (Matt Wette)
+    /ftp.eu.net:gnu/emacs/FP-Xfun.Z  (Johan Vromans)
+    /ftp.urc.tue.nl:/pub/tex/emacs/FP-Xfun  (Johan Vromans)
   
 60:  How do I use regexps (regular expressions) in Emacs?
   
@@ -1627,16 +1651,45 @@ Common Things People Want To Do
   In addition, Martin Boyer has written a package named global-replace which
   will perform a query-replace across all the files mentioned in the
   *compilation* buffer (usually done after a `grep'), which is available via
-  anonymous FTP:                                                             !
-                                                                             !
-    /ireq-robot.hydro.qc.ca:pub/emacs/lisp/compile.el.Z                      !
-    /ireq-robot.hydro.qc.ca:pub/emacs/lisp/global-replace.el.Z               !
-    /ireq-robot.hydro.qc.ca:pub/emacs/lisp/query.el.Z                        !
+  anonymous FTP:
+  
+    /ireq-robot.hydro.qc.ca:pub/emacs/lisp/compile.el.Z
+    /ireq-robot.hydro.qc.ca:pub/emacs/lisp/global-replace.el.Z
+    /ireq-robot.hydro.qc.ca:pub/emacs/lisp/query.el.Z
   
 62:  Where is the documentation for `etags'?
   
   `etags' takes options just like a prior version of ctags, so your ctags
-  manual (if any) may be useful.  {Can someone send me the details on this?}
+  manual (if any) may be useful.  Eoin Woods, in comp.emacs, writes the      !
+  following:                                                                 !
+                                                                             !
+    From reading the source (!) the way I use it is:                         !
+                                                                             !
+      for f in `find <args>`                                                 !
+      do                                                                     !
+         etags -at -f ETAGS $f                                               !
+      done                                                                   !
+                                                                             !
+    The "-t" option means to create tags for typedefs as well as functions.  !
+    The "-a" option tells it to append to the output file. If you have a     !
+    small number of files (up to a few hundred I think) you can use it       !
+    direct as:                                                               !
+                                                                             !
+      etags -f ETAGS file1 file2 file3 ... filen                             !
+                                                                             !
+    The option list is:                                                      !
+                                                                             !
+            -f file -  Specify the output file name (Default is "TAGS")      !
+            -a      -  Append to the output file. (Default is to rewrite it) !
+            -t      -  Create tags for typedefs (default is just functions)  !
+            -u      -  Update the output file. Do not re-create it.          !
+            -w      -  Suppress warnings                                     !
+            -v      -  Create vgrind style indexed output (What is vgrind??) !
+            -x      -  Create cxref style output (default is Emacs Tags)     !
+            -e      -  Emacs tags style output (the default the way I        !
+                       compile it)                                           !
+                                                                             !
+    Having got it working, it works fine!                                    !
   
 
 
@@ -1676,14 +1729,18 @@ Bugs/Problems
   
 64:  Why can't Emacs find files in current directory on startup?
   
+  The PWD bug has been fixed as of GNU Emacs 18.59.  Read on if you are
+  running an older version of Emacs.
+
   Most likely, you have an environment variable named PWD that is set to a
   value other than the name of your current directory.  This is most
   likely caused by using two different shell programs.  `ksh' and (some
   versions of) `csh' set and maintain the value of the PWD environment
   variable, but `sh' doesn't.  If you start sh from ksh, change your
   current directory inside sh, and then start Emacs from inside sh, PWD
-  will have the wrong value but Emacs will use this value.  See the
-  etc/OPTIONS file for more details.
+  will have the wrong value but Emacs will use this value.  An invalid
+  setting for PWD can also be a problem if you use X Windows and csh on an
+  RS/6000.  See the etc/OPTIONS file for more details.
   
   Perhaps an easier solution is not to use two shells.  The `chsh' program
   can often be used to change one's default login shell.
@@ -1782,7 +1839,7 @@ Bugs/Problems
   that won't store cut text in the cut buffers or look in the cut buffers
   for text to paste (for backwards compatibility with obsolete applications
   like Emacs :-).  The best workaround is to use the `xcutsel' program as an
-  intermediary.                                                              -
+  intermediary.
   
   This problem does not exist for Epoch or Lucid Emacs.
   
@@ -2005,9 +2062,9 @@ Bugs/Problems
   
   You need to update the version of Ispell to 2.0.02.  (Or you can switch to
   version 3.0 which is still in beta-testing.)  A patch is available via
-  anonymous FTP:                                                             !
-                                                                             !
-    /archive.cis.ohio-state.edu:pub/gnu/ispell/patch2.Z                      !
+  anonymous FTP:
+
+    /archive.cis.ohio-state.edu:pub/gnu/ispell/patch2.Z
   
   You also need to change a line in ispell.el from:
   
@@ -2091,8 +2148,8 @@ Bugs/Problems
     narrowing the time window when hostile users would have access, but DOES
     NOT ELIMINATE THE RISK.
   
-    Lucid GNU Emacs does not accept synthetic X events unless you set a      +
-    variable.                                                                +
+    Lucid GNU Emacs does not accept synthetic X events unless you set a
+    variable.
   
   * autosave file permissions (Yes, a risk, hard to work around.)
   
@@ -2125,28 +2182,28 @@ Difficulties Building/Installing/Porting Emacs
   and RS/6000 machines.  Scott Henry <scotth@hoshi.corp.SGi.COM> posted a
   patch that fixes the problem for Irix.
   
-85:  Why does linking Emacs with -lX11 fail?                                 !
-                                                                             !
-  Emacs needs to be linked with the static version of the X11 library,       !
-  libX11.a.  This may be missing.                                            !
-                                                                             !
-  Under OpenWindows, you may need to use `add_services' to add the           !
-  `OpenWindows Programmers' optional software category from the CD-ROM.      -
+85:  Why does linking Emacs with -lX11 fail?
   
-  Under HP-UX 8.0, you may need to run `update' again to load the            -
+  Emacs needs to be linked with the static version of the X11 library,
+  libX11.a.  This may be missing.
+  
+  Under OpenWindows, you may need to use `add_services' to add the
+  `OpenWindows Programmers' optional software category from the CD-ROM.
+  
+  Under HP-UX 8.0, you may need to run `update' again to load the
   X11-PRG `fileset'.  This may be missing even if you specified `all
   filesets' the first time.  If libcurses.a is missing, you may need to load
   the `Berkeley Development Option' {???}.
   
-  If you are building the MIT X11 sources, you may need to modify your       +
-  `site.cf' file to get static versions of the libraries.  (Info from David  +
-  Zuhn <zoo@cygnus.com>.)                                                    +
-                                                                             +
-  Other systems may have similar problems.  You can always define            +
+  If you are building the MIT X11 sources, you may need to modify your
+  `site.cf' file to get static versions of the libraries.  (Info from David
+  Zuhn <zoo@cygnus.com>.)
+  
+  Other systems may have similar problems.  You can always define
   CANNOT_DUMP and link with the shared libraries instead.
   
-  To get the Xmenu stuff to work, you need to find a copy of MIT's           +
-  liboldX.a.                                                                 +
+  To get the Xmenu stuff to work, you need to find a copy of MIT's
+  liboldX.a.
   
 86:  Why does Emacs 18.55 say `Fatal error (6).Abort' under SunOS 4.1?
   
@@ -2157,7 +2214,9 @@ Difficulties Building/Installing/Porting Emacs
   (finally!) fixed in SunOS 4.1.2.  If you actually need the full
   explanation, send me e-mail.  If you absolutely must compile Emacs 18.55
   (eg., you are compiling Nemacs), the easiest workaround was to put
-  `#define SYSTEM_MALLOC' in src/config.h.                                   -
+  `#define SYSTEM_MALLOC' in src/config.h.
+  
+
 
                   GNU Emacs FAQ: Getting Emacs/Packages
 
@@ -2187,9 +2246,9 @@ Finding/Getting Emacs and Related Packages
   archive sites.  If you don't already have GNU Emacs, see question 20
   for how to get these two files.
   
-  The latest version is always available via anonymous FTP at MIT:           !
-                                                                             !
-    /prep.ai.mit.edu:pub/gnu/emacs-18.58.tar.Z                               !
+  The latest version is always available via anonymous FTP at MIT:
+  
+    /prep.ai.mit.edu:pub/gnu/emacs-18.59.tar.Z
   
   See question 91.
   
@@ -2224,9 +2283,9 @@ Finding/Getting Emacs and Related Packages
   you still haven't found it, you can send e-mail to the author asking for
   a copy.
   
-  You can access the Emacs Lisp Archive via anonymous FTP:                   !
-                                                                             !
-    /archive.cis.ohio-state.edu:/pub/gnu/emacs/elisp-archive/                !
+  You can access the Emacs Lisp Archive via anonymous FTP:
+  
+    /archive.cis.ohio-state.edu:/pub/gnu/emacs/elisp-archive/
   
   Fetch the file README first.
   
@@ -2269,7 +2328,7 @@ Finding/Getting Emacs and Related Packages
     ;; LCD Archive Entry:
     ;; tex-complete|Sebastian Kremer|sk@thp.Uni-Koeln.DE
     ;; |Minibuffer name completion for editing [La]TeX.
-    ;; |91-03-26|$Revision: 1.12 $|~/packages/tex-complete.el.Z
+    ;; |91-03-26|$Revision: 1.4 $|~/packages/tex-complete.el.Z              !
   
   Dave Brennan has software which automatically looks for data in this
   format.  The format is fairly flexible.  The entry ends when a line is
@@ -2289,12 +2348,12 @@ Finding/Getting Emacs and Related Packages
   
   The following sites are all mirror images of the GNU distribution area:
   
-    /prep.ai.mit.edu:pub/gnu/                                                +
-    /ftp.uu.net:packages/gnu/                                                +
-    /src.doc.ic.ac.uk:gnu/ (available via FTP, NIFTP, FTAM)                  +
-    /ftp.win.tue.nl:pub/gnu/                                                 !
-    /utsun.s.u-tokyo.ac.jp:ftpsync/prep/                                     +
-    /nic.funet.fi:pub/gnu/                                                   +
+    /prep.ai.mit.edu:pub/gnu/
+    /ftp.uu.net:packages/gnu/
+    /src.doc.ic.ac.uk:gnu/ (available via FTP, NIFTP, FTAM)
+    /ftp.win.tue.nl:pub/gnu/
+    /utsun.s.u-tokyo.ac.jp:ftpsync/prep/
+    /nic.funet.fi:pub/gnu/
   
   The directory at ftp.uu.net is a mirror of prep.ai.mit.edu:pub/gnu,
   except that files larger than 1 megabyte {right?} are automatically
@@ -2307,7 +2366,7 @@ Finding/Getting Emacs and Related Packages
   check this out?  Thanks!}
   
   Information was provided by Lee McLoughlin <lmjm@doc.ic.ac.uk>, Jonathan
-  R. Ferro <jf41+@ANDREW.CMU.EDU>, Arjan de Vet <devet@win.tue.nl>, and      -
+  R. Ferro <jf41+@ANDREW.CMU.EDU>, Arjan de Vet <devet@win.tue.nl>, and
   Simon Marshall <S.Marshall@sequent.cc.hull.ac.uk>.
   
 92:  Where can I get an Emacs with better mouse and X window support?
@@ -2327,9 +2386,9 @@ Finding/Getting Emacs and Related Packages
   patches to the C code to provide enhanced capabilities.  Look up `mouse'
   in the Lisp Code Directory (see question 88).
   
-  There is a package called BAM (Born Again Menus) which provides menus for  +
-  GNU Emacs via an external C program.  It does not provide mouse support in +
-  the Emacs window such as scrollbars, cut-and-paste, etc.                   +
+  There is a package called BAM (Born Again Menus) which provides menus for
+  GNU Emacs via an external C program.  It does not provide mouse support in
+  the Emacs window such as scrollbars, cut-and-paste, etc.
   
   NOTE: Epoch only works with the X Window System; it works on ordinary
   terminals by invoking regular GNU Emacs.  Lucid Emacs does not currently
@@ -2368,10 +2427,9 @@ Finding/Getting Emacs and Related Packages
   
 95:  Where can I get the "unofficial HP GNU Emacs"?
   
-  The unofficial HP GNU Emacs is available via anonymous FTP:                !
-                                                                             !
-    /me10.lbl.gov:pub/interex/HUGE/                                          !
-    /ee.utah.edu:HUGE/  (PLEASE FTP DURING NON-WORK HOURS!!!)                !
+  The unofficial HP GNU Emacs is available via anonymous FTP:
+  
+    /ee.utah.edu:HUGE/  (PLEASE FTP DURING NON-WORK HOURS!!!)
   
   and takes about 35 megabytes of disk space to build.  It is useful for
   non-HP machines, but some of the added features will only work under
@@ -2438,28 +2496,24 @@ Finding/Getting Emacs and Related Packages
   
     MicroEmacs is a descendant of Microemacs {originally by Dave Conroy?}.
     It is programmable in a BASIC-like language.  Many of the keybindings
-    are different from GNU Emacs.  It is rumored that MicroEmacs can not
-    correctly edit files larger than memory.  The author is Daniel Lawrence
-    <dan@mdbs.uucp, dan@midas.mgmt.purdue.edu, nwd@j.cc.purdue.edu>.  The
-    latest version is 3.10 and it is available via anonymous FTP:            !
+    are different from GNU Emacs.  The author is Daniel Lawrence             -
+    <dan@mdbs.uucp, mdbs!dan@ee.ecn.purdue.edu>.  The latest version is 3.12 !
+    and it is available via anonymous FTP:
+  
+      /midas.mgmt.purdue.edu:dist/uemacs312/   (outside business hours)      !
                                                                              !
-      /midas.mgmt.purdue.edu:  (non-working hours only)                      !
-      /durer.cme.nist.gov:                                                   !
-      /wuarchive.wustl.edu:/mirrors/msdos/memacs/                            !
-  
-    Version 3.11 is in beta test.
-  
+    Version 3.12 includes Windows and Windows NT versions and a DOS          !
+    protected mode (DMPI) version.                                           !
+
   * JOVE
   
     Another Emacs for small machines is JOVE (Jonathan's Own Version of
     Emacs).  The latest official version is 4.14.  There appears to be a
     newer version.  People rumored to be working on JOVE include Mark Moraes
     <moraes@cs.toronto.edu> and Bill Marsh <bmarsh@cod.nosc.mil>.  It is
-    available via anonymous FTP:                                             !
-                                                                             !
-      /cs.rochester.edu:/pub/jove.tar.4.14.Z                                 !
-      /cs.toronto.edu:/pub/moraes/jove4.14.3.tar.Z                           !
-      /ftp.uu.net:                                                           !
+    available via anonymous FTP:
+  
+      /cs.toronto.edu:/pub/moraes/jove4.14.7.tar.Z
   
   * MG
   
@@ -2468,11 +2522,11 @@ Finding/Getting Emacs and Related Packages
     intended to be close to that of GNU Emacs.  It is rumored that MG can
     not correctly edit files larger than memory.  The current version is
     rumored to be 2.  There is a version 3 in beta which works on the Amiga.
-    It is also available via anonymous FTP:                                  !
-                                                                             !
-      /ftp.white.toronto.edu:pub/mg/                                         !
-      /wuarchive.wustl.edu:/mirrors/unix-c/editors/                          !
-      /procyon.cis.ksu.edu:  (source and executable)                         !
+    It is also available via anonymous FTP:
+  
+      /ftp.white.toronto.edu:pub/mg/
+      /wuarchive.wustl.edu:/mirrors/unix-c/editors/
+      /procyon.cis.ksu.edu:  (source and executable)
   
 97:  Where can I get Emacs for my PC running Windows?
   
@@ -2480,30 +2534,30 @@ Finding/Getting Emacs and Related Packages
   <pap@myths.az05.bull.com> has ported MicroEMACS 3.11c to Windows.
   
   Anonymous FTP:
-    /ftp.cica.indiana.edu:pub/pc/win3/util/mewin10.zip                       !
-    /ftp.cica.indiana.edu:pub/pc/win3/util/mewin10s.zip                      !
-    /ftp.cica.indiana.edu:pub/pc/win3/util/mewri.zip                         !
+    /ftp.cica.indiana.edu:pub/pc/win3/util/mewin10.zip
+    /ftp.cica.indiana.edu:pub/pc/win3/util/mewin10s.zip
+    /ftp.cica.indiana.edu:pub/pc/win3/util/mewri.zip
   
 98:  Where can I get Emacs for my PC running OS/2?
   
-  From the OS/2 Programmer's FAQ:                                            !
-                                                                             !
-    GNU Emacs 18.58 is available.  It requires you to have EMX installed     !
-    on your machine, but it comes with all the EMX files you will need.      !
-    Emacs is available on ftp-os2 in /pub/os2/2.0/gnu/emacs.  (If you want   !
-    to recompile emacs, you will need the full EMX distribution see          !
-    question 1.2.)                                                           !
-                                                                             !
-  The above quote may be out of date.  See the latest OS/2 Programmer's FAQ  !
-  {perhaps in comp.os.os2.misc?} for the latest news.  Anonymous FTP info:   !
-                                                                             !
-    /ftp-os2.nmsu.edu:pub/os2/2.0/gnu/emacs/                                 !
-      ("ftp-os2" was formerly named "hobbes")                                !
-                                                                             !
-  Thanks go to Stephen Simpson <simpson@symcom.math.uiuc.edu>, Jonathan      !
-  Miller <jem+@andrew.cmu.edu>, Terry Kane <terryk@cc.gatech.edu>, J. D.     !
-  Baldwin <baldwin@csservera.usna.navy.mil>, and Ken Bass                    !
-  <kbass@gmuvax2.gmu.edu>.                                                   !
+  From the OS/2 Programmer's FAQ:
+  
+    GNU Emacs 18.58 is available.  It requires you to have EMX installed
+    on your machine, but it comes with all the EMX files you will need.
+    Emacs is available on ftp-os2 in /pub/os2/2.0/gnu/emacs.  (If you want
+    to recompile emacs, you will need the full EMX distribution see
+    question 1.2.)
+  
+  The above quote may be out of date.  See the latest OS/2 Programmer's FAQ
+  {perhaps in comp.os.os2.misc?} for the latest news.  Anonymous FTP info:
+  
+    /ftp-os2.nmsu.edu:pub/os2/2.0/gnu/emacs/
+      ("ftp-os2" was formerly named "hobbes")
+  
+  Thanks go to Stephen Simpson <simpson@symcom.math.uiuc.edu>, Jonathan
+  Miller <jem+@andrew.cmu.edu>, Terry Kane <terryk@cc.gatech.edu>, J. D.
+  Baldwin <baldwin@csservera.usna.navy.mil>, and Ken Bass
+  <kbass@gmuvax2.gmu.edu>.
   
 99:  Where can I get Emacs for my Atari ST?
   
@@ -2515,19 +2569,19 @@ Finding/Getting Emacs and Related Packages
     port was done by Erling Henanger <erlingh@idt.unit.no>.
   
   Anonymous FTP:
-    /atari.archive.umich.edu:atari/gnustuff/tos/  (TOS Emacs 18.57)          +
-    /atari.archive.umich.edu:atari/new/mntemacs.zoo  (MiNT Emacs)            +
-    /cs.uni-sb.de:/pub/atari/emacs/                                          +
+    /atari.archive.umich.edu:atari/gnustuff/tos/  (TOS Emacs 18.57)
+    /atari.archive.umich.edu:atari/new/mntemacs.zoo  (MiNT Emacs)
+    /cs.uni-sb.de:/pub/atari/emacs/
   
 100: Where can I get Emacs for my Amiga?
   
   All of the files are lharc-ed.
   
   Anonymous FTP:
-    /oes.orst.edu:/pub/almanac/comp/amiga/software/gnuemacs-1.10/            !
+    /oes.orst.edu:/pub/almanac/comp/amiga/software/gnuemacs-1.10/
   
   Via e-mail:
-    To: almanac@oes.orst.edu                                                 -
+    To: almanac@oes.orst.edu
     body:
       mode uuencode
       send computer amiga software gnuemacs <file>
@@ -2553,15 +2607,15 @@ Finding/Getting Emacs and Related Packages
 102: Where can I get Emacs with NeWS support?
   
   Chris Maio's NeWS support package for GNU Emacs is available via anonymous
-  FTP:                                                                       !
-                                                                             !
-    /columbia.edu:pub/ps-emacs.tar.Z                                         !
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/ps-emacs.tar.Z                 !
+  FTP:
   
-  and via e-mail:                                                            !
+    /columbia.edu:pub/ps-emacs.tar.Z
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/ps-emacs.tar.Z
+  
+  and via e-mail:
   
     To: archive-server@columbia.edu
-    body: send NeWS emacs-support                                            !
+    body: send NeWS emacs-support
   
 103: Where do I get Emacs that runs on VMS under DECwindows?
   
@@ -2584,13 +2638,20 @@ Finding/Getting Emacs and Related Packages
     The set of changes have been posted a number of times three times the
     last 12 months, so they should be widely available.
   
-  Richard Levitte <levitte@e.kth.se> tells us that there are patches for     +
-  Emacs 18.57 and 18.58 available via e-mail:                                +
-                                                                             +
-    To: fileserv@ttt.kth.se                                                  +
-    body: SEND EMACS-1857-PATCHES                                            +
-      or: SEND EMACS-1858-PATCHES                                            +
+  Richard Levitte <levitte@e.kth.se> tells us that there are patches for
+  Emacs 18.57, 18.58, and 18.59 available via e-mail:                        !
   
+    To: EMACS-FILESERV@e.kth.se                                              !
+    body: SEND EMACS-1857-PATCHES
+      or: SEND EMACS-1858-PATCHES
+      or: SEND EMACS-1859-PATCHES                                            +
+                                                                             +
+  or via anonymous ftp at:                                                   +
+                                                                             +
+      /lucy.merrimack.edu:emacs-1859-patches.share                           +
+                                                                             +
+  The set of patches weighs in at around 2.7 MB.                             +
+
 104: Where can I get modes for Lex, Yacc/Bison, Bourne Shell, Csh, C++,
  Objective C, Pascal, Awk?
   
@@ -2603,12 +2664,12 @@ Finding/Getting Emacs and Related Packages
   
   If you are at a site with a deficient nameserver, you may need to know
   the IP address of a host to FTP files from it.  You can get this
-  information in two ways:                                                   -
+  information in two ways:
   
   * By telnet:
   
       telnet nic.ddn.mil hostnames (or `telnet 192.112.36.5 101')
-      hname XXX.YYY.ZZZ                                                      -
+      hname XXX.YYY.ZZZ
   
   * By e-mail:
   
@@ -2617,12 +2678,12 @@ Finding/Getting Emacs and Related Packages
            or: whois XXX.YYY.ZZZ
            or: help
   
-    or:                                                                      +
-                                                                             +
-      To: resolve@cs.widener.edu                                             +
-      body: site XXX.YYY.ZZZ                                                 +
-                                                                             +
-    Information from Brendan Kehoe <brendan@cs.widener.edu>.                 +
+    or:
+  
+      To: resolve@cs.widener.edu
+      body: site XXX.YYY.ZZZ
+  
+    Information from Brendan Kehoe <brendan@cs.widener.edu>.
   
 
 
@@ -2644,10 +2705,10 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Latest released version: 4.41
   Beta test version: 5.32
   Anonymous FTP:
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/vm-4.41.tar.Z !
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/as-is/timer.shar.Z !
-    /ftp.uu.net:mail/vm-4.41.tar.Z                                           !
-    /ftp.uu.net:mail/vm-5.32beta.tar.Z                                       +
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/vm-4.41.tar.Z
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/as-is/timer.shar.Z
+    /ftp.uu.net:mail/vm-4.41.tar.Z
+    /ftp.uu.net:mail/vm-5.32beta.tar.Z
   Newsgroups and mailing lists:
     Info-VM:
       gnu.emacs.vm.info
@@ -2663,10 +2724,10 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Author: Barry Warsaw <bwarsaw@cen.com>
   Mailing list: supercite-request@anthem.nlm.nih.gov (for subscriptions)
                 supercite@anthem.nlm.nih.gov (for submissions)
-  Latest version: 2.2
+  Latest version: 2.3                                                        !
   Anonymous FTP:
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/sc-2.2.tar.Z !
-    /ftp.cme.nist.gov:pub/gnu/sc2.2.tar.Z                                    +
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/sc-2.3.tar.Z !
+    /ftp.cme.nist.gov:pub/gnu/sc2.3.tar.Z                                    !
   Via e-mail:
     To: library@cme.nist.gov
     Subject: help
@@ -2678,14 +2739,13 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Latest official version: 3.13
   Unofficial test version: 3.14.1
   Anonymous FTP:
-    /cs.umn.edu:pub/gnu/emacs/gnus-3.14.1.tar.Z.                             +
-    /aun.uninett.no:pub/gnus-3.14.1.tar.Z                                    +
-    /wnoc-fuk.wide.ad.jp:pub/GNU/etc/gnus-3.14.1.tar.Z                       +
-    /liasun3.epfl.ch:pub/gnu/emacs/gnus-3.14.1.tar.Z                         +
-    /aix370.rrz.uni-koeln.de:/pub/gnu/emacs/gnus-3.14.1.tar.Z                +
-    /funet.fi:/networking/news/gnus-3.14.1.tar.Z                             +
-    /src.doc.ic.ac.uk:/gnu/EmacsBits/gnus/gnus-3.14.1.tar.Z                  +
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/gnus-3.13.tar.Z !
+    /aun.uninett.no:pub/gnus-3.14.1.tar.Z                                    -
+    /wnoc-fuk.wide.ad.jp:pub/GNU/etc/gnus-3.14.1.tar.Z
+    /liasun3.epfl.ch:pub/gnu/emacs/gnus-3.14.1.tar.Z
+    /aix370.rrz.uni-koeln.de:/pub/gnu/emacs/gnus-3.14.1.tar.Z
+    /funet.fi:/networking/news/gnus-3.14.1.tar.Z
+    /src.doc.ic.ac.uk:/gnu/EmacsBits/gnus/gnus-3.14.1.tar.Z
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/gnus-3.13.tar.Z
   Newsgroups and mailing lists:
     English-only:    
       gnu.emacs.gnus
@@ -2700,8 +2760,8 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Author: Dave Gillespie <daveg@csvax.cs.caltech.edu>
   Latest released version: 2.02
   Anonymous FTP:
-    /csvax.cs.caltech.edu:pub/calc-2.02.tar.Z                                +
-    /prep.ai.mit.edu:pub/gnu/calc-2.02.tar.Z                                 +
+    /csvax.cs.caltech.edu:pub/calc-2.02.tar.Z
+    /prep.ai.mit.edu:pub/gnu/calc-2.02.tar.Z
   NOTE: Unlike Wolfram Research, Dave has never threatened to sue anyone
     for having a program with a similar command language to Calc.  :-)
   
@@ -2710,7 +2770,7 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Author: Edward M. Reingold <reingold@cs.uiuc.edu>
   Latest version: 4.02
   Anonymous FTP:
-    /emr.cs.uiuc.edu:pub/emacs/calendar {???}                                +
+    /emr.cs.uiuc.edu:pub/emacs/calendar {???}
   Via e-mail:
     To: reingold@cs.uiuc.edu
     Subject: send-emacs-cal
@@ -2719,16 +2779,16 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
 111: Ange-FTP -- transparent FTP access for Emacs's file access routines
   
   Author: Andy Norman <ange@hplb.hpl.hp.com>
-  Latest official version: 4.20                                              !
+  Latest official version: 4.20
   Anonymous FTP:
-    /alpha.gnu.ai.mit.edu:ange-ftp/ange-ftp.tar.Z                            !
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/ange-ftp.tar.Z !
-    ugle.unit.no:pub/gnu/emacs-lisp/ange-ftp.tar.Z                           -
+    /alpha.gnu.ai.mit.edu:ange-ftp/ange-ftp.tar.Z
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/ange-ftp.tar.Z
+    /ugle.unit.no:pub/gnu/emacs-lisp/ange-ftp.tar.Z
   Mailing lists:
     ange-ftp-lovers-request@anorman.hpl.hp.com (for subscriptions)
     Ange-FTP Lovers:
       ange-ftp-lovers@anorman.hpl.hp.com (for submissions)
-      /ftp.reed.edu:pub/mailing-lists/ange-ftp/ (archives)                   !
+      /ftp.reed.edu:pub/mailing-lists/ange-ftp/ (archives)
     Ange-FTP Announcements:
       ange-ftp-lovers-announce@anorman.hpl.hp.com
   NOTE: now with support for accessing VMS, CMS, and MTS systems
@@ -2738,8 +2798,8 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Author: Aamod Sane <sane@cs.uiuc.edu>
   Latest released version: 4.3
   Anonymous FTP:
-    /cs.uiuc.edu:pub/vip4.3.tar.Z                                            +
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/modes/vip-mode.tar.Z !
+    /cs.uiuc.edu:pub/vip4.3.tar.Z
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/modes/vip-mode.tar.Z
   NOTE: This version much more closely emulates vi than the one
     distributed with Emacs.
   
@@ -2747,18 +2807,18 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   
   Author: Sebastian Kremer <sk@thp.uni-koeln.de>
   Latest released version: 5.239
-  Anonymous FTP: /ftp.cs.buffalo.edu:pub/Emacs/diredall.tar.Z                +
-                 /ftp.uni-koeln.de:pub/gnu/emacs/diredall.tar.Z              +
+  Anonymous FTP: /ftp.cs.buffalo.edu:pub/Emacs/diredall.tar.Z
+                 /ftp.uni-koeln.de:pub/gnu/emacs/diredall.tar.Z
   NOTE: This is a huge improvement over the Dired distributed with Emacs.
     This version will be in Emacs 19.
   
 114: AUC TeX -- enhanced LaTeX mode with debugging facilities
   
   Author: Kresten Krab Thorup <krab@iesd.auc.dk>
-  Latest released version: 6.1 {???}                                         !
+  Latest released version: 6.1 {???}
   Anonymous FTP:
-    /iesd.auc.dk:pub/emacs-lisp/auctex_5_6e.tar.Z  {wrong}                   !
-    /iesd.auc.dk:pub/emacs-lisp/auc-tex.tar.Z                                !
+    /iesd.auc.dk:pub/emacs-lisp/auctex_6_1d.tar.Z
+    /iesd.auc.dk:pub/emacs-lisp/auctex.tar.Z
   Mailing list:
     auc-tex-request@iesd.auc.dk (for subscriptions)
     auc-tex@iesd.auc.dk (for submissions)
@@ -2768,7 +2828,7 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   
   Author: Bob Weiner <rsw@cs.brown.edu>
   Anonymous FTP:
-    /wilma.cs.brown.edu:pub/hyperbole/ h*.tar.Z                              +
+    /wilma.cs.brown.edu:pub/hyperbole/ h*.tar.Z
   Mailing lists:
     hyperbole-announce -- Hyperbole release announcements only.
       Subscriptions:
@@ -2789,15 +2849,15 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Author: Jamie Zawinski <jwz@lucid.com>,
           Hallvard B. Furuseth <hallvard@ifi.uio.no>
   Anonymous FTP:
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/bytecomp.tar.Z !
-    /ftp.uu.net:languages/elisp/packages/bytecomp.tar.Z                      +
-    /src.doc.ic.ac.uk:gnu/EmacsBits/elisp-archive/packages/bytecomp.tar.Z    +
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/bytecomp.tar.Z
+    /ftp.uu.net:languages/elisp/packages/bytecomp.tar.Z
+    /src.doc.ic.ac.uk:gnu/EmacsBits/elisp-archive/packages/bytecomp.tar.Z
   
 117: comint -- hugely enhanced shell mode and other derived modes
   
   Author: Olin Shivers <Olin.Shivers@cs.cmu.edu>
   Anonymous FTP:
-    /cs.cmu.edu:/afs/cs.cmu.edu/user/shivers/lib/emacs/                      +
+    /cs.cmu.edu:/afs/cs.cmu.edu/user/shivers/lib/emacs/
       {comint,cmu{tex,shell,scheme,lisp},ml}.el
       (anonymous password must contain `@',
        cannot cd to intermediate directories)
@@ -2805,15 +2865,15 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
 118: BBDB -- personal info rolodex integrated with mail/news readers
   
   Author: Jamie Zawinski <jwz@lucid.com>
-  Latest released version: 1.47                                              !
+  Latest released version: 1.47
   Anonymous FTP:
-    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/bbdb.tar.Z !
+    /archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive/packages/bbdb.tar.Z
   Mailing list:
     info-bbdb-request@lucid.com (for subscriptions)
-    info-bbdb@lucid.com                                                      -
+    info-bbdb@lucid.com
     bbdb-announce-request@lucid.com (to be informed of new releases)
-  Note: BBDB does not work with VM 4.  It does work with VM 5, RMAIL, GNUS,  !
-    and MH-E.                                                                !
+  Note: BBDB does not work with VM 4.  It does work with VM 5, RMAIL, GNUS,
+    and MH-E.
   
 119: Ispell -- spell checker in C with interface for Emacs
   
@@ -2821,21 +2881,21 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Latest released version: 2.0.02
   Beta test version: 3.0 (9 patches)
   Anonymous FTP:
-    /archive.cis.ohio-state.edu:/pub/gnu/ispell/ (version 2.0.02)            !
-    /ftp.cs.ucla.edu:/pub/ispell/ (version 3.0, patches, dictionaries)       !
-    /argus.math.orst.edu:pub/ispell/ (version 3.0, patches, dictionaries)    !
-    /ftp.th-darmstadt.de:pub/dicts/ispell/ (mirror of argus)                 !
+    /archive.cis.ohio-state.edu:/pub/gnu/ispell/ (version 2.0.02)
+    /ftp.cs.ucla.edu:/pub/ispell/ (version 3.0, patches, dictionaries)
+    /argus.math.orst.edu:pub/ispell/ (version 3.0, patches, dictionaries) 
+    /ftp.th-darmstadt.de:pub/dicts/ispell/ (mirror of argus)
   NOTE: Do not send mail to Geoff asking him to send you the latest
     version of Ispell.  He does not have free e-mail.
   
 120: Epoch -- enhanced GNU Emacs with better X interface
   
-  Latest released version: 4.2                                               !
+  Latest released version: 4.2
   Anonymous FTP:
-    /cs.uiuc.edu:pub/epoch-files/epoch/epoch-4.2.tar.Z                       !
-    /cs.uiuc.edu:pub/epoch-files/epoch/epoch-diff-4.1-4.2.tar.Z              +
-    /src.doc.ic.ac.uk:gnu/epoch/                                             +
-    /aix370.rrz.uni-koeln.de:gnu/emacs/epoch/                                +
+    /cs.uiuc.edu:pub/epoch-files/epoch/epoch-4.2.tar.Z
+    /cs.uiuc.edu:pub/epoch-files/epoch/epoch-diff-4.1-4.2.tar.Z
+    /src.doc.ic.ac.uk:gnu/epoch/
+    /aix370.rrz.uni-koeln.de:gnu/emacs/epoch/
   Newsgroup and mailing lists:
     Epoch:
       gnu.emacs.epoch
@@ -2847,24 +2907,26 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   FAQ list:
     Maintainer: Marc Andreessen <marca@ncsa.uiuc.edu>
     Anonymous FTP:
-      /rtfm.mit.edu:pub/usenet/news.answers/epoch-faq                        +
-      /ftp.ncsa.uiuc.edu:outgoing/marca/epoch/Epoch.FAQ                      +
+      /rtfm.mit.edu:pub/usenet/news.answers/epoch-faq
+      /ftp.ncsa.uiuc.edu:outgoing/marca/epoch/Epoch.FAQ
   
 121: Lucid GNU Emacs -- alternative Emacs 19 with better X interface
   
-  Primary Maintainer: Jamie Zawinski <jwz@lucid.com>                         +
-  Other Developers: Eric Benson <eb@lucid.com>                               !
-                    Matthieu Devin <devin@lucid.com>                         !
-                    Harlan Sexton <hbs@lucid.com>                            !
-  Latest released version: 19.3                                              !
+  Primary Maintainer: Jamie Zawinski <jwz@lucid.com>
+  Other Developers: Eric Benson <eb@lucid.com>
+                    Matthieu Devin <devin@lucid.com>
+                    Harlan Sexton <hbs@lucid.com>
+  Latest released version: 19.6                                              !
   Anonymous FTP:
-    /labrea.stanford.edu:pub/gnu/lucid/lemacs-19.3.tar.Z  (source)           !
-    /labrea.stanford.edu:pub/gnu/lucid/lemacs-19.3-sun4.tar.Z (Sun4binaries) !
+    /labrea.stanford.edu:pub/gnu/lucid/lemacs-19.6.tar.Z  (source)           !
+    /labrea.stanford.edu:pub/gnu/lucid/lemacs-19.6-sun4.tar.Z (Sun4binaries) !
   Newsgroup and mailing lists:
     Bugs:
+      alt.lucid-emacs.bug                                                    +
       bug-lucid-emacs-request@lucid.com (for subscriptions)
       bug-lucid-emacs@lucid.com (for submissions)
     Help:
+      alt.lucid-emacs.help                                                   +
       help-lucid-emacs-request@lucid.com (for subscriptions)
       help-lucid-emacs@lucid.com (for submissions)
   
@@ -2874,27 +2936,27 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
            HIRANO Satoshi <hirano@tkl.iis.u-tokyo.ac.jp>
   Latest released version: 1.2.0
   Anonymous FTP:
-    /utsun.s.u-tokyo.ac.jp:GNU/demacs/ (nearest to U.S.A.)                   !
-    /ftp.sigmath.osaka-u.ac.jp:pub/Msdos/Demacs/                             +
-    /wnoc-fuk.wide.ad.jp:pub/msdos/Demacs/                                   !
-    /ftp.3com.com:pub/gnu/msdos/demacs/                                      !
-    /mindseye.berkeley.edu:pub/kanji/demacs/                                 !
-    /ftp.hawaii.edu:pub/editors/demacs.tar.Z                                 !
-    /ftp.math.ksu.edu:pub/pc/demacs/                                         +
-    /wsmr-simtel20.army.mil:pd1:<msdos.demacs> {ange-ftp syntax?}            !
-    /ftp.uni-koeln.de:msdos/gnuprogs/dem120e.zip (executables, lisp-code, doc) !
-      (PLEASE USE ONLY OUTSIDE WORKING HOURS!)                               +
-    /ftp.uni-koeln.de:msdos/gnuprogs/dem120s.zip (sources, diffs)            +
-      (PLEASE USE ONLY OUTSIDE WORKING HOURS!)                               +
-    /ftp.lysator.liu.se:pub/msdos/gnu/emacs/                                 +
-    /mizar.docs.uu.se:pub/gnu/demacs/                                        !
-    /iamsun.unibe.ch:PC/demacs/                                              !
-    /flop.informatik.tu-muenchen.de:outgoing/demacs.tar                      !
-    /ftp.funet.fi:pub/gnu/emacs/demacs/                                      +
-    /garbo.uwasa.fi:pc/editor/dem120e.zip                                    !
-    /garbo.uwasa.fi:pc/editor/dem120s.zip                                    !
-    /ftp.win.tue.nl:pub/gnu/demacs/                                          !
-    /ugle.unit.no:pub/gnu/Demacs/                                            !
+    /utsun.s.u-tokyo.ac.jp:GNU/demacs/ (nearest to U.S.A.)
+    /ftp.sigmath.osaka-u.ac.jp:pub/Msdos/Demacs/
+    /wnoc-fuk.wide.ad.jp:pub/msdos/Demacs/
+    /ftp.3com.com:pub/gnu/msdos/demacs/
+    /mindseye.berkeley.edu:pub/kanji/demacs/
+    /ftp.hawaii.edu:pub/editors/demacs.tar.Z
+    /ftp.math.ksu.edu:pub/pc/demacs/
+    /wsmr-simtel20.army.mil:pd1:<msdos.demacs> {ange-ftp syntax?}
+    /ftp.uni-koeln.de:msdos/gnuprogs/dem120e.zip (executables, lisp-code, doc)
+      (PLEASE USE ONLY OUTSIDE WORKING HOURS!)
+    /ftp.uni-koeln.de:msdos/gnuprogs/dem120s.zip (sources, diffs)
+      (PLEASE USE ONLY OUTSIDE WORKING HOURS!)
+    /ftp.lysator.liu.se:pub/msdos/gnu/emacs/
+    /mizar.docs.uu.se:pub/gnu/demacs/
+    /iamsun.unibe.ch:PC/demacs/
+    /flop.informatik.tu-muenchen.de:outgoing/demacs.tar
+    /ftp.funet.fi:pub/gnu/emacs/demacs/
+    /garbo.uwasa.fi:pc/editor/dem120e.zip
+    /garbo.uwasa.fi:pc/editor/dem120s.zip
+    /ftp.win.tue.nl:pub/gnu/demacs/
+    /ugle.unit.no:pub/gnu/Demacs/
     {Does anyone know which sites have the Kanji version?}
   Via e-mail:
     From garbo.uwasa.fi:
@@ -2910,10 +2972,10 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
     Channel 1 (Cambridge, MA) 617-345-8873 (9600 bps)
       in the New Uploads file area, named GNUEMACS.ZIP
   NOTE: Use the -d option of [pk]unzip for all .zip archives.  Some sites
-    have Demacs lharc'ed.  If you need to find programs to unpack lharc and  -
+    have Demacs lharc'ed.  If you need to find programs to unpack lharc and
     zip format archives, Chris Dean <ctdean@talaris.com> points out that you
-    should see the comp.compression FAQ, available for FTP:                  !
-       /rtfm.mit.edu:pub/usenet/comp.compression/                            !
+    should see the comp.compression FAQ, available for FTP:
+       /rtfm.mit.edu:pub/usenet/comp.compression/
   Mailing list:
     NOTE: There is no mailing list for Demacs.  However, there is a list
       for DJGPP, which is the environment that Demacs runs in.  Many
@@ -2935,8 +2997,8 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
   Author: Russ Nelson <nelson@sun.soe.clarkson.edu>
   Latest released version: 1.6a
   Anonymous FTP:
-    /simtel20.army.mil:PD:<MSDOS.FREEMACS> {ange-ftp syntax?}                !
-    /grape.ecs.clarkson.edu:pub/msdos/freemacs/                              !
+    /simtel20.army.mil:PD:<MSDOS.FREEMACS> {ange-ftp syntax?}
+    /grape.ecs.clarkson.edu:pub/msdos/freemacs/
   Via e-mail:
     To: archive-server@sun.soe.clarkson.edu
     body: help
@@ -2957,11 +3019,13 @@ Major Emacs Lisp Packages, Emacs Extensions, and Related Programs
 124: Patch -- program to apply "diffs" for updating files
   
   Author: Larry Wall <lwall@netlabs.com>
-  Latest version: 2.0 patchlevel 12u8                                        !
+  Latest version: 2.0 patchlevel 12u8
     (This is the version that supports the new unified diff format.)
   Anonymous FTP:
-    /prep.ai.mit.edu:pub/gnu/patch-2.0.12u8.tar.Z                            !
-    /prep.ai.mit.edu:pub/gnu/patch-2.0.12g8.tar.Z  (GNU version)             +
+    /prep.ai.mit.edu:pub/gnu/patch-2.0.12u8.tar.Z
+    /prep.ai.mit.edu:pub/gnu/patch-2.0.12g8.tar.Z  (GNU version)
+  
+
 
                     GNU Emacs FAQ: Keybindings/Output
 
@@ -3027,10 +3091,10 @@ Changing Key Bindings and Handling Key Binding Problems
   
   See `Key Bindings' and `Rebinding' in the online manual.
   
-  In Emacs 19 (including Lucid Emacs), you can bind function key F24 like    +
-  this:                                                                      +
-                                                                             +
-    (global-set-key 'f24 'some-command)                                      +
+  In Emacs 19 (including Lucid Emacs), you can bind function key F24 like
+  this:
+  
+    (global-set-key 'f24 'some-command)
   
 126: Why does Emacs say `Key sequence XXX uses invalid prefix characters'?
   
@@ -3197,8 +3261,8 @@ Changing Key Bindings and Handling Key Binding Problems
   well.
   
   Anonymous FTP:
-    /ftp.eu.net:gnu/emacs/FP-Xfun.Z                                          +
-    /ftp.urc.tue.nl:pub/tex/emacs/FP-Xfun                                    +
+    /ftp.eu.net:gnu/emacs/FP-Xfun.Z
+    /ftp.urc.tue.nl:pub/tex/emacs/FP-Xfun
   
   Johan Vromans explains what this buys for you:
   
@@ -3416,7 +3480,7 @@ Changing Key Bindings and Handling Key Binding Problems
       Other popular key bindings for help are M-? and "C-x ?".
   
       WARNING: Don't try to bind DEL to help-command, because there are many
-      modes that have local bindings of DEL that will interfere.             -
+      modes that have local bindings of DEL that will interfere.
   
 134: Why doesn't Emacs look at the stty settings for Backspace vs. Delete?
   
@@ -3680,9 +3744,9 @@ Changing Key Bindings and Handling Key Binding Problems
   
 142: How do I bind a combination of modifier key and function key?
   
-  Unless you're using Emacs under emacstool (or xvetool?), have a working    !
-  version of x-rebind-key (see question 128), or are using Emacs 19 (Lucid   +
-  Emacs), you can't do this with Emacs alone.                                +
+  Unless you're using Emacs under emacstool (or xvetool?), have a working
+  version of x-rebind-key (see question 128), or are using Emacs 19 (Lucid
+  Emacs), you can't do this with Emacs alone.
   
   If you are using emacstool, Emacs sees different character sequences for
   the combination of a modifier and a function key from what it sees for the
@@ -3704,20 +3768,20 @@ Changing Key Bindings and Handling Key Binding Problems
   translation mapping for xterm that does this.  {Does this have an FTP
   site?}
   
-  If you have x-rebind-key, you can have any arbitrary combination of        +
-  modifiers with a key replaced by any sequence of "normal" characters.  For +
-  example, this makes Shift-Return behave as though you had typed "C-x C-e"  +
-  (example from Jerry Graves):                                               +
-                                                                             +
-    (x-rebind-key "Return" 'shift "\C-x\C-e")                                +
-                                                                             +
-  In Emacs 19 (Lucid Emacs), you can bind Meta-Left-Arrow like this (example +
-  from Jamie Zawinski):                                                      +
-                                                                             +
-    (global-set-key '(meta left) 'backward-word)                             +
-                                                                             +
-  With the last two methods, use `xmodmap' and `xev' to discover the keysym  +
-  and modifier names.                                                        +
+  If you have x-rebind-key, you can have any arbitrary combination of
+  modifiers with a key replaced by any sequence of "normal" characters.  For
+  example, this makes Shift-Return behave as though you had typed "C-x C-e"
+  (example from Jerry Graves):
+  
+    (x-rebind-key "Return" 'shift "\C-x\C-e")
+  
+  In Emacs 19 (Lucid Emacs), you can bind Meta-Left-Arrow like this (example
+  from Jamie Zawinski):
+  
+    (global-set-key '(meta left) 'backward-word)
+  
+  With the last two methods, use `xmodmap' and `xev' to discover the keysym
+  and modifier names.
   
 143: Why doesn't my Meta key work in an xterm window?
   
@@ -3796,41 +3860,56 @@ Using Emacs with Alternate Character Sets
   patch for Emacs 18.58 along with some other 8-bit improvements.
   
   Anonymous FTP:
-    /ftp.eu.net:gnu/emacs/FP-EightBit.Z                                      +
-    /ftp.urc.tue.nl:pub/tex/emacs/FP-EightBit                                +
-    /cs.purdue.edu:pub/ygz/cemacs.tar.Z:cemacs/8bit-patch-18.57              +
-    /sics.se:archive/emacs-18.55-8bit-diff                                   +
-    /laas.laas.fr:pub/emacs/patch-8bit-18.55                                 !
-    /laas.laas.fr:pub/emacs/patch-8bit-18.57                                 !
+    /ftp.eu.net:gnu/emacs/FP-EightBit.Z
+    /ftp.urc.tue.nl:/pub/tex/emacs/FP-EightBit
+    /cs.purdue.edu:pub/ygz/cemacs.tar.Z:cemacs/8bit-patch-18.57
+    /sics.se:archive/emacs-18.55-8bit-diff
+    /laas.laas.fr:pub/emacs/patch-8bit-18.55
+    /laas.laas.fr:pub/emacs/patch-8bit-18.57
   
   Via e-mail:
     To: mail-server@sics.se
     body: send emacs-18.55-8bit-diff
   
   Anders Edenbrandt <anderse@dna.lth.se> has produced a more comprehensive
-  patch for Emacs 18.57 that allows for 8-bit input and output.
+  patch for Emacs 18.59 that allows for 8-bit input and output.
   
   Anonymous FTP:
-    /sics.se:archive/emacs-8bit-diff-lth                                     +
-    /gatekeeper.dec.com:pub/GNU/DS-emacs-18.57-8bit-diff-lth                 +
-  
+    /ftp.efd.lth.se:pub/gnu/emacs_8-bit.patch
+
+  In the words of the author:
+
+    With these patches, Emacs becomes fully 8-bit operational.  There is
+    support for displaying 8-bit characters, as well as for entering such
+    characters from the keyboard.  In addition, upcase/lowcase tranlatsion
+    is supported, accented characters are recognized as "letters" (important
+    when doing 'forward-word', for example), and text with 8-bit characters
+    can be sorted correctly.
+
+    A Meta-shift key can still be used, provided that you run in an
+    environment where it is possible to distinguish between a character
+    entered using the Meta-shift key and one entered directly. The diffs
+    include patches to make this work under SunView (with emacstool) as
+    well as under X.  If you can't use a Meta-shift key, you have to enter
+    Meta-commands with the ESC-prefix.
+
   The most comprehensive patches for 8-bit output are by Howard Gayle
   (originally for Emacs 18.55.  These patches allow displaying any arbitrary
   string for a given 8-bit character (except TAB and C-j).  Also supported
   is defining the sorting order and the uppercase and lowercase
   translations.  It is reported that the 8-bit character support in Emacs 19
   is largely based on these patches.  Thomas Bellman
-  <Bellman@lysator.liu.se> has updated these patches for Emacs 18.57.
+  <Bellman@lysator.liu.se> has updated these patches for Emacs 18.59.
   
   Anonymous FTP:
-    /sics.se:archive/emacs-gayle.tar.Z  (patches for 18.55)                  +
-    /ftp.lysator.liu.se:pub/emacs/gayle-18.57.diff.tar.Z  (patches)          +
-    /ftp.lysator.liu.se:pub/emacs/emacs-18.57-gayle.tar.Z  (patched Emacs)   +
+    /sics.se:archive/emacs-gayle.tar.Z  (patches for 18.55)
+    /ftp.lysator.liu.se:pub/emacs/gayle-18.58.diff.tar.Z  (patches)
+    /ftp.lysator.liu.se:pub/emacs/emacs-18.59-gayle.tar.Z  (patched Emacs)
   
-  I am not sure if Epoch can display 8-bit characters as is.  Lucid Emacs
-  has the ctl-arrow patch installed.  Nemacs displays 8-bit characters, and
-  it may be useful for displaying the 8-bit ISO-8859 alphabet, but I don't
-  know for sure (see question 149).
+  Epoch's 8-bit character support is based on Anders Edenbrandt's patches.
+  Lucid Emacs has the ctl-arrow patch installed.  Nemacs displays 8-bit
+  characters, and it may be useful for displaying the 8-bit ISO-8859
+  alphabet, but I don't know for sure (see question 149).
   
 148: How do I input 8-bit characters?
   
@@ -3853,20 +3932,19 @@ Using Emacs with Alternate Character Sets
   Epoch comes with a patch that allows it to input 8-bit characters, but it
   is not enabled by default.  {Is this right?}
   
-  Jamie Zawinski says:                                                       +
-                                                                             +
-    Lucid GNU Emacs allows the input of any ISO-8859/1 keysyms that your     +
-    keyboard generates (see xmodmap), and contains a package that implements +
-    a DEC/OpenWindows-like "Compose" key for systems which don't have one.   +
+  Jamie Zawinski says:
+  
+    Lucid GNU Emacs allows the input of any ISO-8859/1 keysyms that your
+    keyboard generates (see xmodmap), and contains a package that implements
+    a DEC/OpenWindows-like "Compose" key for systems which don't have one.
   
 149: Where can I get an Emacs that can handle kanji characters?
   
   Nemacs 3.3.2 (Nihongo GNU Emacs) is a modified version of GNU Emacs 18.55
-  that handles kanji characters.  It is available via anonymous FTP:         !
-                                                                             !
-    /crl.nmsu.edu:pub/misc/nemacs-3.3.2.tar.Z                                !
-    /uhccux.uhcc.hawaii.edu:editors/Nemacs-3.3.2/                            !
-    /miki.cs.titech.ac.jp:JAPAN/nemacs/nemacs-3.3.2.tar.Z                    !
+  that handles kanji characters.  It is available via anonymous FTP:
+  
+    /crl.nmsu.edu:pub/misc/nemacs-3.3.2.tar.Z
+    /miki.cs.titech.ac.jp:JAPAN/nemacs/nemacs-3.3.2.tar.Z
   
   You might also need files for "wnn", a kanji input method
   (wnn-4.0.3{-README,.tar.Z} {on which machine?}).  You need a terminal (or
@@ -3879,14 +3957,14 @@ Using Emacs with Alternate Character Sets
   `cemacs' by Stephen G. Simpson <simpson@math.psu.edu> is a patch to Emacs
   18.57 (the ctl-arrow patch) and some Emacs Lisp code that combined with
   Cxterm allows using Chinese characters.  It is available via anonymous
-  FTP:                                                                       !
-                                                                             !
-    /crl.nmsu.edu:pub/chinese/cemacs.tar.Z                                   !
-    /cs.purdue.edu:pub/ygz/cemacs.tar.Z                                      !
+  FTP:
   
-  Cxterm is available from the same place:                                   !
-                                                                             !
-    /cs.purdue.edu:pub/ygz/cxterm-11.5.1.tar.Z                               !
+    /crl.nmsu.edu:pub/chinese/cemacs.tar.Z
+    /cs.purdue.edu:pub/ygz/cemacs.tar.Z
+  
+  Cxterm is available from the same place:
+  
+    /cs.purdue.edu:pub/ygz/cxterm-11.5.1.tar.Z
   
 151: Where is an Emacs that can handle Semitic (right-to-left) alphabets?
   
@@ -3922,8 +4000,8 @@ Using Emacs with Alternate Character Sets
     required.  You will need an EGA Hebrew font to use Ibelbe with Hebrew.
   
   Anonymous FTP:
-    /israel.nysernet.org:israel/msdos/ibelbe.zip                             !
-    /israel.nysernet.org:israel/msdos/hebfont.zip                            !
+    /israel.nysernet.org:israel/msdos/ibelbe.zip
+    /israel.nysernet.org:israel/msdos/hebfont.zip
   
   Joseph Friedman <yossi@deshaw.com, yossi@Neon.Stanford.EDU> has written
   patches for Emacs 18.55 and 18.58 that provide Semitic language support
@@ -3934,7 +4012,6 @@ Using Emacs with Alternate Character Sets
   
   A good suggestion is to query archie for files named with `hebrew'.
   
-
                        GNU Emacs FAQ: Mail and News
 
 This portion of the GNU Emacs FAQ list is cross-posted to `gnu.emacs.gnus'
@@ -3993,8 +4070,8 @@ Mail and News
      question 155.
   
      WARNING: If you are visiting the file ~/outgoing at the time you send
-     the mail, this can cause a variety of horrible problems.  Jamie         +
-     Zawinski has written a solution for this.                               +
+     the mail, this can cause a variety of horrible problems.  Jamie
+     Zawinski has written a solution for this.
   
   It does not work to put `set record filename' in the .mailrc file.
   
@@ -4070,8 +4147,8 @@ Mail and News
   Users who just want to try RMAIL out to see how it works end up trapped
   using it because saved mail in their `mbox' file has been converted into
   an incompatible format (BABYL) that only RMAIL understands.  RMAIL
-  provides no obvious way to reverse this transformation.  Kyle Jones has    +
-  aptly named this "the great Emacs Mail Eating Monster".  To convert a mail +
+  provides no obvious way to reverse this transformation.  Kyle Jones has
+  aptly named this "the great Emacs Mail Eating Monster".  To convert a mail
   file back to standard Unix format, there are several methods:
   
   * Use the rmail-output ("C-o") command within RMAIL on each message in the
@@ -4186,7 +4263,7 @@ Mail and News
 164: When I try to post a long article in GNUS (about 10K or longer), I get
  the error, "Writing to process: no more processes, nntpd"
   
-  Upgrade to Emacs 18.58.
+  Upgrade to Emacs 18.58 or higher.
   
 165: How do I save all the items of a multi-part posting in GNUS?
   
@@ -4227,8 +4304,8 @@ Mail and News
   
   Of course, GNUS will run faster if you make sure it is byte-compiled.
   
-  Felix Lee wrote some enhancements called `gnus-speedups.el' that fix some  +
-  of the problems.  See the Emacs Lisp Archive.                              +
+  Felix Lee wrote some enhancements called `gnus-speedups.el' that fix some
+  of the problems.  See the Emacs Lisp Archive.
   
 168: How do I catch up all newsgroups in GNUS?
   
@@ -4271,30 +4348,30 @@ Mail and News
   
 172: Why does GNUS hang for a long time when posting?
   
-  David Lawrence <tale@uunet.uu.net> explains:                               !
-                                                                             !
-    The problem is almost always interaction between NNTP and C News.  NNTP  !
-    POST asks C News's inews to not background itself but rather hang around !
-    and give its exit status so it knows whether the post was successful.    !
-    (That wait will on some systems not return the exit status of the        !
-    waited for job is a different sort of problem.)  It ends up taking a     !
-    long time because inews is calling relaynews, which often waits for      !
-    another relaynews to free the lock on the news system so it can file the !
-    article.                                                                 !
-                                                                             !
-    My preferred solution is to change inews to not call relaynews, but      !
-    rather use newsspool.  This loses some error-catching functionality, but !
-    is for the most part safe as inews will detect a lot of the errors on    !
-    its own.  The C News folks have sped up inews, too, so speed should look !
-    better to most folks as that update propagates around.                   !
+  David Lawrence <tale@uunet.uu.net> explains:
+  
+    The problem is almost always interaction between NNTP and C News.  NNTP
+    POST asks C News's inews to not background itself but rather hang around
+    and give its exit status so it knows whether the post was successful.
+    (That wait will on some systems not return the exit status of the
+    waited for job is a different sort of problem.)  It ends up taking a
+    long time because inews is calling relaynews, which often waits for
+    another relaynews to free the lock on the news system so it can file the
+    article.
+  
+    My preferred solution is to change inews to not call relaynews, but
+    rather use newsspool.  This loses some error-catching functionality, but
+    is for the most part safe as inews will detect a lot of the errors on
+    its own.  The C News folks have sped up inews, too, so speed should look
+    better to most folks as that update propagates around.
   
 173: Why don't my news postings in GNUS get past the local machine?
   
   Three possible reasons: local distribution, C News date problem (see
-  question 174, and the path problem.  This piece of code may fix the path   !
-  problem for you:                                                           !
-                                                                             !
-    (setq gnus-use-generic-path t)                                           !
+  question 174, and the path problem.  This piece of code may fix the path
+  problem for you:
+  
+    (setq gnus-use-generic-path t)
   
 174: Why is the GNUS-generated `Date:' header invalid?
   
@@ -4305,8 +4382,7 @@ Mail and News
   
     (defun gnus-inews-date () nil)
   
-  I think this is fixed in GNUS 3.14.1 if you set gnus-news-system {?} to    +
-  Cnews.                                                                     +
+  This is not fixed as of GNUS 3.14.1.
   
 175: Why doesn't GNUS generate the `Lines:' header?
   
@@ -4332,8 +4408,8 @@ Mail and News
   calculate the `Lines:' header for incoming articles when necessary that
   works for sites with local news spools.
   
-  David Lawrence <tale@uunet.uu.net> says that GNUS 3.14.1 generates Lines   +
-  if gnus-news-system is Cnews.                                              +
+  David Lawrence <tale@uunet.uu.net> says that GNUS 3.14.1 generates Lines
+  if gnus-news-system is Cnews.
   
 176: Why do I get "Cannot open load file" "nntp" when compiling GNUS?
   
@@ -4375,3 +4451,19 @@ Mail and News
                t)
   
 
+
+----------------------------------------------------------------------
+Copyright (C) 1990, 1991, 1992 Joseph Brian Wells
+Copyright (C) 1992, 1993 Steven Byrnes
+
+This list of frequently asked questions about GNU Emacs with answers
+("FAQ") may be translated into other languages, transformed into other
+formats (e.g. Texinfo, Info, WWW, WAIS, etc.), and updated with new
+information.  The same conditions apply to any derivative of the FAQ as
+apply to the FAQ itself.  Every copy of the FAQ must include this notice
+or an approved translation, information on who is currently maintaining
+the FAQ and how to contact them (including their e-mail address), and
+information on where the latest version of the FAQ is archived (including
+FTP information).  The FAQ may be copied and redistributed under these
+conditions, except that the FAQ may not be embedded in a larger literary
+work unless that work itself allows free copying and redistribution.

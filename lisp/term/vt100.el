@@ -1,66 +1,101 @@
-;; Map VT100 function key escape sequences
-;; into the standard slots in function-keymap.
+;;; vt100.el --- define VT100 function key sequences in function-key-map
 
-(require 'keypad)
+;; Author: FSF
+;; Keywords: terminals
 
-(defvar CSI-map nil
-  "The CSI-map maps the CSI function keys on the VT100 keyboard.
-The CSI keys are the arrow keys.")
+;; Copyright (C) 1989 Free Software Foundation, Inc.
 
-(if (not CSI-map)
-    (progn
-     (setq CSI-map (lookup-key global-map "\e["))
-     (if (not (keymapp CSI-map))
-	 (setq CSI-map (make-sparse-keymap)))  ;; <ESC>[ commands
+;; This file is part of GNU Emacs.
 
-     (setup-terminal-keymap CSI-map
-	    '(("A" . ?u)	   ; up arrow
-	      ("B" . ?d)	   ; down-arrow
-	      ("C" . ?r)	   ; right-arrow
-	      ("D" . ?l)))))	   ; left-arrow
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY.  No author or distributor
+;; accepts responsibility to anyone for the consequences of using it
+;; or for whether it serves any particular purpose or works at all,
+;; unless he says so in writing.  Refer to the GNU Emacs General Public
+;; License for full details.
 
-(defun enable-arrow-keys ()
-  "Enable the use of the VT100 arrow keys for cursor motion.
-Because of the nature of the VT100, this unavoidably breaks
-the standard Emacs command ESC [; therefore, it is not done by default,
-but only if you give this command."
-  (interactive)
-  (global-set-key "\e[" CSI-map))
+;; Everyone is granted permission to copy, modify and redistribute
+;; GNU Emacs, but only under the conditions described in the
+;; GNU Emacs General Public License.   A copy of this license is
+;; supposed to have been given to you along with GNU Emacs so you
+;; can know your rights and responsibilities.  It should be in a
+;; file named COPYING.  Among other things, the copyright notice
+;; and this notice must be preserved on all copies.
 
-(defvar SS3-map nil
-  "SS3-map maps the SS3 function keys on the VT100 keyboard.
-The SS3 keys are the numeric keypad keys in keypad application mode
-\(DECKPAM).  SS3 is DEC's name for the sequence <ESC>O which is
-the common prefix of what these keys transmit.")
+;;; Commentary:
 
-(if (not SS3-map)
-    (progn
+;; Uses the Emacs 19 terminal initialization features --- won't work with 18.
 
-     (setq SS3-map (lookup-key global-map "\eO"))
-     (if (not (keymapp SS3-map))
-	 (setq SS3-map (make-keymap)))  ;; <ESC>O commands
-     (setup-terminal-keymap SS3-map
-	    '(("A" . ?u)	   ; up arrow
-	      ("B" . ?d)	   ; down-arrow
-	      ("C" . ?r)	   ; right-arrow
-	      ("D" . ?l)	   ; left-arrow
-	      ("M" . ?e)	   ; Enter
-	      ("P" . ?\C-a)	   ; PF1
-	      ("Q" . ?\C-b)	   ; PF2
-	      ("R" . ?\C-c)	   ; PF3
-	      ("S" . ?\C-d)	   ; PF4
-	      ("l" . ?,)	   ; ,
-	      ("m" . ?-)	   ; -
-	      ("n" . ?.)	   ; .
-	      ("p" . ?0)	   ; 0
-	      ("q" . ?1)	   ; 1
-	      ("r" . ?2)	   ; 2
-	      ("s" . ?3)	   ; 3
-	      ("t" . ?4)	   ; 4
-	      ("u" . ?5)	   ; 5
-	      ("v" . ?6)	   ; 6
-	      ("w" . ?7)	   ; 7
-	      ("x" . ?8)	   ; 8
-	      ("y" . ?9)))	   ; 9
+;; Handles all VT100 clones, including the Apollo terminal.  Also handles
+;; the VT200 --- its PF- and arrow- keys are different, but all those
+;; are really set up by the terminal initialization code, which mines them
+;; out of termcap.  This package is here to define the keypad comma, dash
+;; and period (which aren't in termcap's repertoire) and the function for
+;; changing from 80 to 132 columns & vv.
 
-     (define-key global-map "\eO" SS3-map)))
+;;; Code:
+
+;; CSI sequences - those that start with "\e[".
+;; Termcap or terminfo should set these up automatically
+;; (if (boundp 'vt100-CSI-prefix)
+;;     nil
+;;   (define-prefix-command 'vt100-CSI-prefix)
+;;   (define-key function-key-map "\e[" 'vt100-CSI-prefix)
+;; 
+;;   (define-key vt100-CSI-prefix "A" [up])
+;;   (define-key vt100-CSI-prefix "B" [down])
+;;   (define-key vt100-CSI-prefix "C" [right])
+;;   (define-key vt100-CSI-prefix "D" [left])
+;;   )
+
+;; SS3 sequences - those that start with "\eO".
+(if (boundp 'vt100-SS3-prefix)
+    nil
+  ;; The terminal initialization should already have set up some keys
+  (setq vt100-SS3-prefix (lookup-key function-key-map "\eO"))
+  (if (not (keymapp vt100-SS3-prefix))
+      (error "What?  Your VT100 termcap/terminfo has no keycaps in it."))
+
+  ;; These will typically be set up automatically by termcap or terminfo
+  ;;   (define-key vt100-SS3-prefix "A" [up]) ; up-arrow
+  ;;   (define-key vt100-SS3-prefix "B" [down]) ; down-arrow
+  ;;   (define-key vt100-SS3-prefix "C" [right]) ; right-arrow
+  ;;   (define-key vt100-SS3-prefix "D" [left]) ; left-arrow
+  ;;   (define-key vt100-SS3-prefix "P" [kp-f1]) ; PF1  
+  ;;   (define-key vt100-SS3-prefix "Q" [kp-f2]) ; PF2  
+  ;;   (define-key vt100-SS3-prefix "R" [kp-f3]) ; PF3  
+  ;;   (define-key vt100-SS3-prefix "S" [kp-f4]) ; PF4  
+
+  ;; Terminfo might set these
+  (define-key vt100-SS3-prefix "M" [kp-enter]) ; Enter
+  (define-key vt100-SS3-prefix "p" [kp-0]) ; 0
+  (define-key vt100-SS3-prefix "q" [kp-1]) ; 1
+  (define-key vt100-SS3-prefix "r" [kp-2]) ; 2
+  (define-key vt100-SS3-prefix "s" [kp-3]) ; 3
+  (define-key vt100-SS3-prefix "t" [kp-4]) ; 4
+  (define-key vt100-SS3-prefix "u" [kp-5]) ; 5
+  (define-key vt100-SS3-prefix "v" [kp-6]) ; 6
+  (define-key vt100-SS3-prefix "w" [kp-7]) ; 7
+  (define-key vt100-SS3-prefix "x" [kp-8]) ; 8
+  (define-key vt100-SS3-prefix "y" [kp-9]) ; 9
+
+  ;; Neither termcap nor terminfo will set these
+  (define-key vt100-SS3-prefix "l" [kp-separator]) ; ,
+  (define-key vt100-SS3-prefix "m" [kp-subtract]) ; -
+  (define-key vt100-SS3-prefix "n" [kp-period])	; .
+  )
+
+;;; Controlling the screen width.
+(defconst vt100-wide-mode (= (frame-width) 132)
+  "t if vt100 is in 132-column mode.")
+
+(defun vt100-wide-mode (&optional arg)
+  "Toggle 132/80 column mode for vt100s."
+ (interactive "P")
+ (setq vt100-wide-mode 
+	(if (null arg) (not vt100-wide-mode)
+	  (> (prefix-numeric-value arg) 0)))
+ (send-string-to-terminal (if vt100-wide-mode "\e[?3h" "\e[?3l"))
+ (set-frame-width (if vt100-wide-mode 132 80)))
+
+;;; vt100.el ends here

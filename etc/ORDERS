@@ -1,0 +1,495 @@
+The actual order form follows the descriptions of media contents
+
+Please send suggestions for improvements to gnu@prep.ai.mit.edu or the postal
+address at the end of the order form.  Thank You.
+
+Contents of CD-ROM, Deluxe Distribution, and Each Tape on the FSF Order Form
+****************************************************************************
+
+      PRICE AND CONTENTS MAY CHANGE WITHOUT NOTICE AFTER January 31, 1994.
+
+GNU Source Code CD-ROM
+
+The 2nd edition of the GNU Source Code CD-ROM contains sources to the
+distribution of the GNU Project including: Emacs 18 and 19, GCC, G++, GDB,
+Bison, GAS, Make, GAWK, Texinfo, the GNU Utilities, RCS and CVS, f2c,
+Ghostscript, tar, gnuplot, diff, and BASH, as well as the MIT X Window
+System required components.
+
+This CD includes everything on our Emacs, Languages, Utilities, Experimental,
+and X11 Required tapes as of May 1993.	Note that the contents of the
+BSD-Net2, X11 Optional and MIT Scheme tapes are not on the CD.
+
+The CD also contains some packages ported to Intel 80386 and 80486-based
+machines running MS-DOS: Demacs, DJGPP, and MIT Scheme.	 In addition, it
+contains Mtools, which is a public domain collection of programs to allow Unix
+systems to read, write, and manipulate files on an MS-DOS file system
+(typically a diskette).
+
+The CD is in ISO 9660 format with Rockridge extensions, and can be mounted as
+a read-only file system on most operating systems.  You can build most of this
+software without needing to copy the sources off the CD.  It requires only
+enough free disk space for the object files and the intermediate build
+targets.  Except for several of the MS-DOS packages and GCC for Sun's Solaris
+2, there are no precompiled programs on this CD.  You will need a C compiler
+(programs which need some other interpreter or compiler normally provide the C
+source for a bootstrapping program).
+
+
+Deluxe Distribution
+
+The Deluxe Distribution Package includes executables and source for all GNU
+software in a choice of formats, as well as a printed copy of each of GNU
+manuals and an ISO 9660 CD-ROM that contains sources of GNU software.
+
+You may choose one of the following machines and operating systems: HP 9000
+series 200, 300, 700, or 800 (4.3 BSD or HPUX); RS/6000 (AIX); Sony NEWS 68k
+(4.3 BSD or NewsOS 4); Sun 3, 4, or SPARC (SunOS 4 or Solaris).	 If your
+machine or system is not listed, or if a specific program has not been ported
+to that machine, please call the FSF office.
+
+We will supply the software on one of the following media in Unix tar format:
+1600 or 6250 bpi, 1/2 inch, reel to reel tape; Sun DC300XLP 1/4 inch
+cartridge, QIC-24; HP 16 track DC600HC 1/4 inch cartridge; IBM RS/6000 1/4
+inch cartridge, QIC-150; and Exabyte 8mm tape.	If your computer cannot read
+any of these, please call us.
+
+The manuals included are one each of the Bison, Calc, Gawk, GNU C Compiler,
+GNU C Library Reference, GNU Debugger, Flex, GNU Emacs Lisp Reference, Make,
+Texinfo, and Termcap manuals; six copies of the GNU Emacs manual; and a packet
+of reference cards for GNU Emacs, Calc, the GNU Debugger, Bison, and Flex.
+
+
+GNU Emacs Tape
+
+The tape includes source code for:
+* GNU Emacs 18 and 19 (the extensible, customizable, self-documenting,
+  real-time display editor)
+* The GNU Emacs Manual, as Texinfo source
+* The GNU Emacs Lisp Reference Manual, as Texinfo source
+* Calc (the extensible, advanced desk calculator and mathematical tool that
+  runs as part of GNU Emacs)
+* The Calc Manual, as Texinfo source
+* CLISP (a Common Lisp implementation)
+* Xerox's PCL (a large subset of CLOS, the Common Lisp Object System)
+* gzip (GNU's data compression program to uncompress source on the tape)
+* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
+  documentation system, included with GNU Emacs.  Texinfo is used to produce
+  both on-line and printed documents.)
+* The Texinfo Manual, as Texinfo source
+* GNU make
+* The GNU Make Manual, as Texinfo source
+
+
+GNU Languages Tape
+
+The tape includes source code for:
+* GCC 1 (the GNU C Compiler, including COFF support)
+* The Manual `Using and Porting GNU CC 1', as Texinfo source
+* G++ 1 (the C++ front end to GCC)
+* The GNU G++ Users Guide, as Texinfo source (not yet published on paper)
+* libg++ 1 (the G++ class library)
+* NIH Class Library (formerly known as OOPS)
+* BFD (Binary File Descriptor Library)
+* GDB 4 (The GNU source-level C and C++ debugger)
+* The manual, Debugging with GDB, as Texinfo source
+* ae (works with GCC to produce more complete profiling information)
+* GNU binary file utilities (ar, gprof, ld, nm, ranlib, size, & strip)
+* Bison (a free, compatible replacement for yacc)
+* The Bison Manual, as Texinfo source
+* COFF support for GNU software tools
+* dld (a dynamic linker)
+* f2c  (a FORTRAN-77 to C translator)
+* Flex (Vern Paxson's fast rewrite of lex)
+* The Flex Manual, as Texinfo source
+* Gas (the GNU Assembler)
+* Gawk (the GNU implementation of the AWK programming language)
+* The Gawk Manual, as Texinfo source
+* gdbm library (GNU implementation of the standard dbm & ndbm libraries)
+* gmp library (arbitrary precision arithmetic on signed integers & rationals)
+* gperf (a perfect hash-table generator)
+* GNU indent
+* p2c
+* Perl (a programming language interpreter)
+* GNU Smalltalk (the GNU implementation of this programming language system)
+* regexp library (GNU implementation of the regular expression library)
+* superopt (optimal function sequence generator)
+* Tile Forth (an implementation of the Forth language)
+* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
+  documentation system, included with GNU Emacs.  Texinfo is used to produce
+  both on-line and printed documents.)
+* The Texinfo Manual, as Texinfo source
+* gzip (GNU's data compression program to uncompress source on the tape)
+* GNU make
+* The GNU Make Manual, as Texinfo source
+
+
+GNU Utilities Tape
+
+The tape includes source code for:
+* acm
+* autoconf (produces shell scripts to automatically configure software builds)
+* Bash (GNU's Bourne Again SHell)
+* GNU bc, dc & cpio
+* CVS (Concurrent Version System)
+* GNU diffutils (cmp, diff, diff3 & sdiff)
+* doschk (checks if file names are under 15 characters and in MS-DOS format)
+* elvis (a clone of the vi/ex Unix editor)
+* es (a new shell with closure and other lisp-like features)
+* Fax (a fax spooling system)
+* GNU find & finger
+* GNU fontutils (create and support fonts for use with Ghostscript or TeX)
+* ms (MandelSpawn, a parallel Mandelbrot program for the X window system)
+* GNU Chess (a chess playing program with an interface to X)
+* GNU Shogi (plays Shogi, a japanese game similar to chess, with a X interface)
+* Nethack (a rogue-like game)
+* GNU GO (the GNU implementation of the game of GO)
+* GNU hello (produces a familiar, friendly greeting)
+* hp2xx
+* Ghostscript (a Postscript interpreter)
+* Ghostview (an X11 user interface for the Ghostscript interpreter)
+* gnuplot (an interactive mathematical plotting program)
+* GNU gptx (a permuted index generator, including KWIC)
+* GNU grep, egrep & fgrep
+* groff & mgm macros (GNU troff & pic, eqn, tbl, refer; -man, -ms, -mm macros;
+  drivers for Postscript and typewriter-like devices; & xditview previewer)
+* less (display paginator similar to more & pg with better features)
+* GNU m4
+* mtools (allows Unix systems to manipulate files on an MS-DOS file system)
+* patch
+* rc (a new minimalist shell)
+* RCS (Revision Control System)
+* recode (converts files between character sets and usages)
+* screen (a terminal multiplexor that allows you to handle several independent
+  ``screens'' (ttys) on a single physical terminal)
+* GNU sed & tar
+* GNU Termcap library
+* The GNU Termcap Manual, as Texinfo source
+* GNU time
+* GNU tput (a portable way to allow shell scripts to use special terminal
+  capabilities)
+* Taylor UUCP (the GNU implemetation of the UUCP communication suite)
+* wdiff (report diffs on a word by word basis)
+* GNU fileutils (chgrp, chmod, chown, cp, dd, df, du, install, ln, ls, mkdir,
+  mkfifo, mknod, mktime, mv, mvdir, rm, rmdir, touch & vdir)
+* GNU shellutils (basename, date, dirname, echo, env, expr, false, groups, id,
+  logname, nice, nohup, pathchk, printenv, printf, sleep, stty, su, tee, test,
+  true, tty, uname, who, whoami, & yes)
+* GNU textutils (cat, cksum, comm, csplit, cut, expand, fold, head, join, nl,
+  od, paste, pr, sort, split, sum, tac, tail, tr, unexpand, uniq, & wc)
+* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
+  documentation system, included with GNU Emacs.  Texinfo is used to produce
+  both on-line and printed documents.)
+* The Texinfo Manual, as Texinfo source
+* GNU make
+* The GNU Make Manual, as Texinfo source
+* gzip (GNU's data compression program to uncompress source on the tape)
+
+
+GNU Experimental Tape
+
+The tape includes source code for:
+* GCC 2 (the GNU C/C++/Objective-C Compiler with many new features)
+* The Manual `Using and Porting GNU CC 2', as Texinfo source
+* GNU binary file utilities 2 (ar, gprof, ld, nm, ranlib, size, & strip -
+  completely rewritten to use the BFD library)
+* BFD (Binary File Descriptor Library)
+* GNU C Library (POSIX.1 compliant, upward compatible with 4.3 BSD & System V)
+* The GNU C Library Reference Manual
+* libg++ 2 (the G++ class library)
+* Oleo (a spreadsheet program)
+* GNU Graphics (graph, plot, xplot, plot2ps, spline, et al.)
+* Texinfo (beta-test of an enhanced Texinfo.  Texinfo is GNU's structured
+  documentation system, included with GNU Emacs.  Texinfo is used to produce
+  both on-line and printed documents.)
+* The Texinfo Manual, as Texinfo source
+* GNU make
+* The GNU Make Manual, as Texinfo source
+* gzip (GNU's data compression program to uncompress source on the tape)
+
+
+Berkeley Networking 2 Tape
+
+The Berkeley "Net2" release contains the second 4.3 BSD distribution and is
+newer than both 4.3BSD-Tahoe and 4.3BSD-Reno.  It includes nearly the entire
+BSD software system except for a few utilities, some parts of the kernel, and
+some library routines which your own C library is likely to provide.  This
+release contains much more software than the older releases, including third
+party software like Kerberos and some GNU software (for example, GCC, now the
+standard BSD compiler).	 Except for kernel sources, the GNU Project has
+replacements on other tapes for many of the missing programs.
+
+
+MIT Scheme tape
+
+The tape contains sources, and binaries for various machines, for MIT Scheme
+(a dialect of Lisp).
+
+
+X11r5 Required Tape
+
+This tape has source code for the required MIT X Window System X11r5,
+including core software and documentation, and contributed client software.
+
+
+X11r5 Optional Tape
+
+This tape has source code for the optional MIT X Window System X11r5,
+including contributed software, libraries, games, Andrew and toolkits.
+
+Free Software Foundation Order Form
+***********************************
+
+Price and contents may change without notice after January 31, 1994.  All items
+are distributed with permission to copy and to redistribute.  Texinfo source
+for each manual is on the appropriate tape, diskette, or CD-ROM; the prices
+for these magnetic media do not include printed manuals.  All items are
+provided on an "as is" basis, with no warranty of any kind.  Please allow six
+weeks for delivery (though it won't usually take that long).
+
+
+      PRICE AND CONTENTS MAY CHANGE WITHOUT NOTICE AFTER January 31, 1994.
+
+The following tapes in the formats indicated:
+
+		     Please circle the dollar amount for each tape you order.
+
+			Reel to	  Sun (1)    HP	      IBM (2)	Exabyte
+			reel			      RS/6000
+(c.t. = cartridge tape) Unix tar  Unix tar  Unix tar  Unix tar	Unix tar
+(n/a = not available)	9-track	  QIC-24    16-track  QIC-150
+			1600 bpi  DC300XLP  DC600HC   DC600A
+Tape contents above.	1/2" reel 1/4" c.t. 1/4" c.t. 1/4" c.t. 8mm c.t.
+
+Emacs			$200	  $210	    $230      $215 (3)	$205
+Languages		$200	  $210	    $230       n/a	$205
+Experimental		$200	  $210	    $230      $215	$205
+Utilities		$200	  $210	    $230      $215	$205
+BSD-Net2		$200	  $210	    $230      $215	$205
+Scheme			$200	  $210	    $230      $215	$205
+X11r5-Required		$200	  $210	    $230      $215	$205
+X11r5-Optional		$200	  $210	    $230      $215	$205
+
+	 (1) Sun tapes can be read on some other Unix systems.
+	 (2) IBM RS/6000 tapes can be read on some other Unix systems.
+	 (3) The IBM Emacs tape also has binaries for GNU Emacs.
+
+
+Subscriptions, 4 updates for one year:
+
+FSF's Subscription Service provides four new versions of the tape of your
+choice.	 It is offered only for tapes that change frequently.
+
+Emacs			$600	  $630	    $690      $645	$615
+Languages		$600	  $630	    $690       n/a	$615
+Experimental		$600	  $630	    $690      $645	$615
+Utilities		$600	  $630	    $690      $645	$615
+X11r5-Required		$600	  $630	    $690      $645	$615
+
+      Subtotal $ ______	 Please put total of the above circled amounts here.
+
+The following, on 1600 bpi reel-to-reel 9 track 1/2" tapes, in VMS BACKUP
+format (aka interchange format):
+
+____ @ $195  = $ ______	  VMS Emacs, GNU Emacs source & executables only.
+			  None of the other software on the GNU Emacs Tape,
+			  described above, is included
+____ @ $195  = $ ______	  VMS Languages, GCC, GAS, and Bison source and
+			  executables only.  None of the other software on the
+			  GNU Languages Tape, described above, is included.
+
+
+FSF Deluxe Distribution (contents described above):
+
+Machine: _____________________________________________________________________
+
+Operating system: ____________________________________________________________
+
+Media type: __________________________________________________________________
+
+____ @ $5000 = $ ______	  Deluxe Distribution, with manuals and executables.
+
+
+The following source and executables for MS-DOS, on 3.5" 1.44MB diskettes:
+
+____ @ $ 90  = $ ______	  Demacs (a port of GNU Emacs) on diskettes, for 80386
+			  and up.  Two versions are included.  One handles
+			  8-bit characters sets.  The other, based on Nemacs,
+			  handles 16-bit character sets, including Kanji.
+____ @ $ 80  = $ ______	  DJGPP on diskettes, GCC version 2, for 80386
+			  and up.  DJGPP is a complete port of GCC, libraries,
+			  development utilities, and a symbolic debugger, for
+			  Intel 80386 and 80486--based machines running
+			  MS-DOS.  DJGPP requires at least 5MB of hard disk
+			  space to install, and 512K of RAM to use.  It is
+			  compatible with XMS memory managers and VCPI, but
+			  not with Microsoft Windows extended mode or other
+			  DPMI managers.  It cannot emulate multitasking (e.g.
+			  fork(2)) or signals.
+____ @ $ 85  = $ ______	  Selected Utilities from the GNUish MS-DOS Project on
+			  diskettes, 8086 and up.  The utilities include:
+			  RCS, flex, GAWK, cpio, diff, MicroEmacs, find,
+			  some file utilities, gdbm, grep, libc, ptx,
+			  indent, less, m4, make, sed, shar, sort, and
+			  Texinfo.  Some of these utilities are necessarily
+			  missing features.
+____ @ $ 40  = $ ______	  Windows diskette, GNU Chess and gnuplot for
+			  Microsoft Windows.
+
+
+CD-ROM, in ISO 9660 format (CD-ROM described above):
+
+____ @ $400  = $ ______	  GNU Source Code CD-ROM for corporations and
+			  other organizations.
+____ @ $100  = $ ______	  GNU Source Code CD-ROM for individuals.
+
+
+The following manuals, 6 by 9.25 inches, soft cover with an illustration,
+offset printed, "lay-flat" binding:
+
+  *** NEW !!! ***
+
+____ @ $ 25  = $ ______	  GNU Emacs manual, unit price for 1 to 5 copies,
+			  430 pages, new 8th edition with a reference card.
+____ @ $ 17  = $ ______	  GNU Emacs manuals, unit price for 6 or more.
+
+____ @ $ 50  = $ ______	  GNU Emacs Lisp Reference manual, 614 pages in
+			  2 volumes.
+____ @ $200  = $ ______	  A box of 5 GNU Emacs Lisp Reference manuals.
+
+____ @ $ 20  = $ ______	  Debugging with GDB, 182 pages, with a reference
+			  card.
+____ @ $ 20  = $ ______	  Texinfo manual, 248 pages.  Texinfo is GNU's
+			  structured documentation system, included with GNU
+			  Emacs.  Texinfo is used to produce both on-line and
+			  printed documents.  This manual describes how to
+			  write Texinfo documents.
+____ @ $ 20  = $ ______	  Gawk manual, 191 pages.
+
+____ @ $ 20  = $ ______	  Make manual, 164 pages.
+
+____ @ $ 15  = $ ______	  Bison manual, 98 pages, with a reference card.
+
+____ @ $ 15  = $ ______	  Flex manual, 120 pages, with a reference card.
+
+
+The following manuals, 8.5 by 11 inches, soft cover, photocopied, GBC binding:
+
+____ @ $ 50  = $ ______	  Using and Porting GNU CC version 2.4, 388 pages.
+
+____ @ $ 20  = $ ______	  Using and Porting GNU CC version 1.42, 206 pages.
+
+  *** NEW !!! ***
+
+____ @ $ 50  = $ ______	  GNU C Library Reference Manual, 698 pages. NEW!
+
+____ @ $ 50  = $ ______	  GNU Emacs Calc manual, 596 pages, with a reference
+			  card.	 Calc is an extensible, advanced mathematical
+			  tool and desk calculator that runs under GNU Emacs.
+
+The following manual, 6 by 9.25 inches, soft cover, photocopied, GBC binding:
+
+____ @ $ 15  = $ ______	  Termcap manual, 68 pages.  Documents the termcap
+			  library and GNU's extensions to it.  The GNU termcap
+			  library is included with GNU Emacs.
+
+The following reference cards, unit price, without the manuals:
+
+____ @ $  2  = $ ______	  GNU Emacs reference card.
+
+____ @ $  2  = $ ______	  GNU Emacs Calc reference card.
+
+____ @ $  2  = $ ______	  GDB reference card.
+
+____ @ $  2  = $ ______	  Bison reference card.
+
+____ @ $  2  = $ ______	  Flex reference card.
+
+
+The following reference cards, in packets of ten:
+
+____ @ $ 10  = $ ______	  GNU Emacs reference cards.
+
+____ @ $ 10  = $ ______	  GNU Emacs Calc reference cards.
+
+____ @ $ 10  = $ ______	  GDB reference cards.
+
+____ @ $ 10  = $ ______	  Bison reference cards.
+
+____ @ $ 10  = $ ______	  Flex reference cards.
+
+
+GNU/FSF T-shirts, thick 100% cotton:
+
+The front of the t-shirt has an image of a GNU hacking at a workstation with
+the text "GNU's Not Unix" above and the text "Free Software Foundation below.
+Natural is an off-white, unbleached, undyed, environmentally friendly cotton,
+printed with black ink.	 Black is printed with white ink.
+
+____ @ $ 15  = $ ______	  Size M,    ____ natural, ____ black.
+
+____ @ $ 15  = $ ______	  Size L,    ____ natural, ____ black.
+
+____ @ $ 15  = $ ______	  Size XL,   ____ natural, ____ black.
+
+____ @ $ 15  = $ ______	  Size XXL,  ____ natural, ____ black.
+		 ------
+
+      Subtotal $ ______
+
+	     + $ ______	  In  Massachusetts:  add 5% sales tax, or give tax
+			  exempt number.
+	     + $ ______	  In Alaska, Hawaii, or Puerto Rico for shipping:
+			  for GNU Emacs Lisp Reference and GNU Emacs Calc
+			  manuals, add $5 each, or $20 per box.	 For all other
+			  items, add $5 base charge, then $1 per item except
+			  reference cards.
+	     + $ ______	  Outside of U.S., Canada, and Puerto Rico for
+			  shipping: for each box of GNU Emacs Lisp Reference
+			  manuals, add $60.  For all other items, add $20 base
+			  charge, and then add $10 more for each item (except
+			  reference cards) in the order; i.e.,
+			  total = $20 + $10 * n.
+	     + $ ______	  Optional (tax-deductible in the U.S.) donation.
+		 ------
+
+	 TOTAL $ ______	  We pay for shipping via UPS ground transportation in
+			  the contiguous 48 states and Canada.
+
+Orders filled only upon receipt of check or money order in U.S. dollars.
+We do not have the staff to handle the billing of unpaid orders.
+Please help keep our lives simple by including your payment with your order.
+
+
+Please make checks payable to the Free Software Foundation.
+
+
+Name: ________________________________________________________________________
+
+Mail Stop/Dept. Name: ________________________________________________________
+
+Organization: ________________________________________________________________
+
+Street Address: ______________________________________________________________
+
+City/State/Province: _________________________________________________________
+
+Zip Code/Postal Code/Country: ________________________________________________
+
+Telephone number in case of a problem with your order.
+Overseas orders, please put FAX numbers. _____________________________________
+
+For orders from outside the U.S.: Orders must be paid in U.S. dollars. You
+are responsible for paying all duties, tariffs, and taxes.  If you refuse
+to pay the charges, the shipper will return or abandon the order.
+
+			 Please mail orders to: Free Software Foundation
+						675 Massachusetts Avenue
+PRICES AND CONTENTS MAY CHANGE			Cambridge, MA  02139  USA
+WITHOUT NOTICE AFTER January 31, 1994.		+1 617 876 3296
+
+----------------------------------------------------------------------
+local variables:
+mode: text
+fill-column: 78
+end:
