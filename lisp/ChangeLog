@@ -1,3 +1,107 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
+Sat May 29 00:33:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* startup.el (command-line-1): Pass arg to other-window.
+
+	* files.el (find-file-run-dired): Doc fix.
+	(find-file-read-only): Return the buffer.
+	(find-file-read-only-other-window): Likewise.
+	(find-file-read-only-other-frame): Likewise.
+
+	* timer.el (cancel-function-timers): Renamed from spurious duplicate
+	definition of cancel-timer.
+
+	* add-log.el (find-change-log): Use file-chase-links.
+
+	* files.el (file-chase-links): New function.
+	(backup-buffer): Use file-chase-links.
+	(file-chase-links): Handle leading .. in symlink target.
+
+	* c-mode.el (c-up-conditional): Handle commented-out #-cmds properly.
+
+	* window.el (split-window-vertically): Return the new window.
+
+	* paths.el (gnus-local-organization): Initially nil.
+
+	* isearch.el (isearch-search): Take note of isearch-case-fold-search
+	initial value.
+
+	* lisp-mode.el (indent-sexp): Even if outer-loop-done is t,
+	still move down one line.
+
+	* files.el (auto-mode-alist): Fix syntax for sgml mode.
+
+	* man.el (Man-mode-map): Bind m to manual-entry.
+	(Man-notify-when-ready): Make arg name consistent.
+	Use delete-other-window.
+	(Man-mode): Use buffer-disable-undo, not old name.
+
+	* faces.el (x-resolve-font-name): Allow symbol as FACE arg.
+	Allow t as FRAME arg.
+
+	* sendmail.el (send-mail-function): Use defvar. not defconst.
+
+	* mouse.el (x-fixed-font-alist): Specify field 7, not field 6.
+
+Fri May 28 00:43:24 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* iso8859-1.el: File deleted.
+	* superyank.el: File deleted.
+
+	* vc.el (vc-steal-lock, vc-insert-headers): Fix question whitespace.
+	(vc-finish-logentry): Use delete-windows-on.
+
+	* add-log.el (find-log-file): Use source file's truename dir.
+
+	* mh-e.el: Version 3.8.1 from Gildea.
+
+	* loaddefs.el (-key): repeat-complex-command moved to C-x ESC ESC.
+
+	* hexl.el: Doc fixes.
+	(hexl-char-after-point): Get rid of mistakenly free variables.
+
+	* info.el (Info-insert-dir): Ignore duplicate directories.
+
+	* paths.el (Info-default-directory-list): Take out ../../info.
+	Avoid duplication.
+	(manual-formatted-dirlist, manual-formatted-dir-prefix): Deleted.
+
+	* subr.el (baud-rate): Doc fix.
+
+	* add-log.el (find-change-log): Chase symlinks multiple levels.
+
+	* rmailsum.el (rmail-new-summary): Set rmail-summary-buffer
+	to nil at beginning; set it for real after summary is set up.
+
+Thu May 27 20:58:51 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* files.el (find-alternate-file): Hide truename and inode number
+	temporarily, like the visited file name.
+
+	* iso8859-1.el: Pass just the downcase table to set-case-...
+
+Thu May 28 20:58:08 1993  Roland McGrath  (roland@churchy.gnu.ai.mit.edu)
+
+	* find-dired.el (find-dired-sentinel): Write a line describing death.
+	Set mode-line-process to record exit status.
+	Delete the process.
+
+Thu May 27 08:43:08 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* frame.el (frame-initialize): Handle reverseVideo resource.
+	* faces.el (x-create-frame-with-faces): Handle reverseVideo resource.
+
+	* iso-insert.el, iso-ascii.el, iso-swed.el: Provide same name as file.
+
+	* ange-ftp.el (ange-ftp-dired-compress-file):
+	Use dired-compress-file, not dired-compress-filename.
+
+	* completion.el: Pervasive changes to use Emacs 19 features
+	and conform to Emacs conventions.
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.

@@ -70,8 +70,8 @@ extern char *_XMErrorList[];
 typedef enum _xmwintype {PANE, SELECTION, PL_HEADER, SL_HEADER} XMWType;
 
 typedef struct _xmwindow {
-    struct _xmwindow *next;	/* Next obj pointer (for insque). */
-    struct _xmwindow *prev;	/* Prev obj pointer (for insque). */
+    struct _xmwindow *next;	/* Next obj pointer (for emacs_insque). */
+    struct _xmwindow *prev;	/* Prev obj pointer (for emacs_insque). */
     XMWType type;		/* Type of window. */
     Window window;		/* X Window Id. */
     int window_x;		/* Window upper left X coordinate. */
@@ -94,8 +94,8 @@ typedef struct _xmwindow {
 } XMWindow;
 
 typedef struct _xmpane {
-    struct _xmpane *next;	/* Next obj pointer (for insque). */
-    struct _xmpane *prev;	/* Prev obj pointer (for insque). */
+    struct _xmpane *next;	/* Next obj pointer (for emacs_insque). */
+    struct _xmpane *prev;	/* Prev obj pointer (for emacs_insque). */
     XMWType type;		/* Type of window. */
     Window window;		/* X Window Id. */
     int window_x;		/* Window upper left X coordinate. */
@@ -118,8 +118,8 @@ typedef struct _xmpane {
 } XMPane;
 
 typedef struct _xmselect {
-    struct _xmselect *next;	/* Next obj pointer (for insque). */
-    struct _xmselect *prev;	/* Prev obj pointer (for insque). */
+    struct _xmselect *next;	/* Next obj pointer (for emacs_insque). */
+    struct _xmselect *prev;	/* Prev obj pointer (for emacs_insque). */
     XMWType type;		/* Type of window. */
     Window window;		/* X Window Id. */
     Window parent;		/* X Window id of parent window. */

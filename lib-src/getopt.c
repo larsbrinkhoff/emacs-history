@@ -3,42 +3,66 @@
    "Keep this file name-space clean" means, talk to roland@gnu.ai.mit.edu
    before changing it!
 
-   Copyright (C) 1987, 88, 89, 90, 91, 1992 Free Software Foundation, Inc.
+   Copyright (C) 1987, 88, 89, 90, 91, 92, 1993
+   	Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify it
    under the terms of the GNU General Public License as published by the
    Free Software Foundation; either version 2, or (at your option) any
    later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
    Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-/* AIX requires this to be the first thing in the file.  */
+/* NOTE!!!  AIX requires this to be the first thing in the file.
+   Do not put ANYTHING before it!  */
+#if !defined (__GNUC__) && defined (_AIX)
+ #pragma alloca
+#endif
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef __GNUC__
 #define alloca __builtin_alloca
 #else /* not __GNUC__ */
-#if defined (HAVE_ALLOCA_H) || (defined(sparc) && (defined(sun) || (!defined(USG) && !defined(SVR4) && !defined(__svr4__))))
+#if defined (HAVE_ALLOCA_H) || (defined(sparc) && (defined(sun) || (!defined(USG) && !defined(SVR4) && !defined(__svr4__)))) || defined(__sgi)
 #include <alloca.h>
 #else
-#ifdef _AIX
- #pragma alloca
-#else
+#ifndef _AIX
 char *alloca ();
 #endif
 #endif /* alloca.h */
 #endif /* not __GNUC__ */
 
+#if !__STDC__ && !defined(const) && IN_GCC
+#define const
+#endif
+
+/* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.  */
+#ifndef _NO_PROTO
+#define _NO_PROTO
+#endif
+
 #include <stdio.h>
 
-#if defined(USG) || defined(STDC_HEADERS) || defined(__GNU_LIBRARY__)
-#include <string.h>
-#endif
+/* Comment out all this code if we are using the GNU C Library, and are not
+   actually compiling the library itself.  This code is part of the GNU C
+   Library, but also included in many other GNU distributions.  Compiling
+   and linking in this code is a waste when using the GNU C library
+   (especially if it is a shared library).  Rather than having every GNU
+   program understand `configure --with-gnu-libc' and omit the object files,
+   it is simpler to just do this in the source for each such file.  */
+
+#if defined (_LIBC) || !defined (__GNU_LIBRARY__)
+
 
 /* This needs to come after some library #include
    to get __GNU_LIBRARY__ defined.  */
@@ -51,14 +75,10 @@ char *alloca ();
 #define	__alloca	alloca
 #endif	/* GNU C library.  */
 
-#if !__STDC__
-#define const
-#endif
-
 /* If GETOPT_COMPAT is defined, `+' as well as `--' can introduce a
    long-named option.  Because this is not POSIX.2 compliant, it is
    being phased out.  */
-#define GETOPT_COMPAT
+/* #define GETOPT_COMPAT */
 
 /* This version of `getopt' appears to the caller like standard Unix `getopt'
    but it behaves differently for the user, since it allows the user
@@ -96,6 +116,7 @@ char *optarg = 0;
    Otherwise, `optind' communicates from one call to the next
    how much of ARGV has been scanned so far.  */
 
+/* XXX 1003.2 says this must be 1 before any call.  */
 int optind = 0;
 
 /* The next char to be scanned in the option-element
@@ -111,6 +132,12 @@ static char *nextchar;
    for unrecognized options.  */
 
 int opterr = 1;
+
+/* Set to an option character which was unrecognized.
+   This must be initialized on some systems to avoid linking in the
+   system's own getopt implementation.  */
+
+int optopt = '?';
 
 /* Describe how to deal with options that follow non-option ARGV-elements.
 
@@ -147,6 +174,10 @@ static enum
 } ordering;
 
 #ifdef	__GNU_LIBRARY__
+/* We want to avoid inclusion of string.h with non-GNU libraries
+   because there are many ways it can cause trouble.
+   On some systems, it contains special magic macros that don't work
+   in GCC.  */
 #include <string.h>
 #define	my_index	strchr
 #define	my_bcopy(src, dst, n)	memcpy ((dst), (src), (n))
@@ -158,22 +189,23 @@ static enum
 char *getenv ();
 
 static char *
-my_index (string, chr)
-     char *string;
+my_index (str, chr)
+     const char *str;
      int chr;
 {
-  while (*string)
+  while (*str)
     {
-      if (*string == chr)
-	return string;
-      string++;
+      if (*str == chr)
+	return (char *) str;
+      str++;
     }
   return 0;
 }
 
 static void
 my_bcopy (from, to, size)
-     char *from, *to;
+     const char *from;
+     char *to;
      int size;
 {
   int i;
@@ -490,7 +522,7 @@ _getopt_internal (argc, argv, optstring, longopts, longind, long_only)
 		    fprintf (stderr, "%s: option `%s' requires an argument\n",
 			     argv[0], argv[optind - 1]);
 		  nextchar += strlen (nextchar);
-		  return '?';
+		  return optstring[0] == ':' ? ':' : '?';
 		}
 	    }
 	  nextchar += strlen (nextchar);
@@ -544,12 +576,18 @@ _getopt_internal (argc, argv, optstring, longopts, longind, long_only)
       {
 	if (opterr)
 	  {
+#if 0
 	    if (c < 040 || c >= 0177)
 	      fprintf (stderr, "%s: unrecognized option, character code 0%o\n",
 		       argv[0], c);
 	    else
 	      fprintf (stderr, "%s: unrecognized option `-%c'\n", argv[0], c);
+#else
+	    /* 1003.2 specifies the format of this message.  */
+	    fprintf (stderr, "%s: illegal option -- %c\n", argv[0], c);
+#endif
 	  }
+	optopt = c;
 	return '?';
       }
     if (temp[1] == ':')
@@ -579,9 +617,21 @@ _getopt_internal (argc, argv, optstring, longopts, longind, long_only)
 	    else if (optind == argc)
 	      {
 		if (opterr)
-		  fprintf (stderr, "%s: option `-%c' requires an argument\n",
-			   argv[0], c);
-		c = '?';
+		  {
+#if 0
+		    fprintf (stderr, "%s: option `-%c' requires an argument\n",
+			     argv[0], c);
+#else
+		    /* 1003.2 specifies the format of this message.  */
+		    fprintf (stderr, "%s: option requires an argument -- %c\n",
+			     argv[0], c);
+#endif
+		  }
+		optopt = c;
+		if (optstring[0] == ':')
+		  c = ':';
+		else
+		  c = '?';
 	      }
 	    else
 	      /* We already incremented `optind' once;
@@ -605,6 +655,8 @@ getopt (argc, argv, optstring)
 			   (int *) 0,
 			   0);
 }
+
+#endif	/* _LIBC or not __GNU_LIBRARY__.  */
 
 #ifdef TEST
 

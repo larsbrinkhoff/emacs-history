@@ -1,3 +1,28 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
+Sat May 29 02:18:00 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Create.c: Handle EMACS_BITMAP_FILES.
+	Use new names of renamed bitmap files.
+
+Fri May 28 01:56:50 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* AddPane.c, AddSel.c, DelPane.c, DelSel.c, InsPane.c, InsSel.c,
+	XDelAssoc.c, XMakeAssoc.c, XMenu.h, insque.c: Changed all uses of
+	insque and remque to emacs_insque and emacs_remque, so we can
+	safely include insque.c in the library on all systems.
+
+Thu May 27 23:34:44 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in (.c.o): Use $< instead of ${srcdir}/$*.c; the latter
+	only works with GNU Make.
+
+Thu May 27 09:22:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Create.c (XMenuCreate): Use classes PaneFont and SelectionFont.
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.

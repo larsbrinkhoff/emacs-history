@@ -163,7 +163,7 @@ Normally auto-save files are written under other names.")
 Loading an abbrev file sets this to t.")
 
 (defconst find-file-run-dired t
-  "*Non-nil says run dired if find-file is given the name of a directory.")
+  "*Non-nil says run dired if `find-file' is given the name of a directory.")
 
 ;;;It is not useful to make this a local variable.
 ;;;(put 'find-file-not-found-hooks 'permanent-local t)
@@ -343,6 +343,31 @@ containing it, until no links are left at any level."
 	  ;; No, we are done!
 	  filename)))))
 
+(defun file-chase-links (filename)
+  "Chase links in FILENAME until a name that is not a link.
+Does not examine containing directories for links,
+unlike `file-truename'."
+  (let (tem (count 100) (newname filename))
+    (while (setq tem (file-symlink-p newname))
+      (if (= count 0)
+	  (error "Apparent cycle of symbolic links for %s" filename))
+      ;; Handle `..' by hand, since it needs to work in the
+      ;; target of any directory symlink.
+      ;; This code is not quite complete; it does not handle
+      ;; embedded .. in some cases such as ./../foo and foo/bar/../../../lose.
+      (while (string-match "\\.\\./" tem)
+	(setq tem (substring tem 3))
+	(setq newname (file-name-as-directory
+		       ;; Do the .. by hand.
+		       (directory-file-name
+			(file-name-directory
+			 ;; Chase links in the default dir of the symlink.
+			 (file-chase-links
+			  (directory-file-name
+			   (file-name-directory newname))))))))
+      (setq newname (expand-file-name tem (file-name-directory newname)))
+      (setq count (1- count)))
+    newname))
 
 (defun switch-to-buffer-other-window (buffer)
   "Select buffer BUFFER in another window."
@@ -383,7 +408,8 @@ Like \\[find-file] but marks buffer as read-only.
 Use \\[toggle-read-only] to permit editing."
   (interactive "fFind file read-only: ")
   (find-file filename)
-  (setq buffer-read-only t))
+  (setq buffer-read-only t)
+  (current-buffer))
 
 (defun find-file-read-only-other-window (filename)
   "Edit file FILENAME in another window but don't allow changes.
@@ -391,7 +417,8 @@ Like \\[find-file-other-window] but marks buffer as read-only.
 Use \\[toggle-read-only] to permit editing."
   (interactive "fFind file read-only other window: ")
   (find-file-other-window filename)
-  (setq buffer-read-only t))
+  (setq buffer-read-only t)
+  (current-buffer))
 
 (defun find-file-read-only-other-frame (filename)
   "Edit file FILENAME in another frame but don't allow changes.
@@ -399,7 +426,8 @@ Like \\[find-file-other-frame] but marks buffer as read-only.
 Use \\[toggle-read-only] to permit editing."
   (interactive "fFind file read-only other frame: ")
   (find-file-other-frame filename)
-  (setq buffer-read-only t))
+  (setq buffer-read-only t)
+  (current-buffer))
 
 (defun find-alternate-file (filename)
   "Find file FILENAME, select its buffer, kill previous buffer.
@@ -421,15 +449,21 @@ If the current buffer now contains an empty file that you just visited
        (error "Aborted"))
   (let ((obuf (current-buffer))
 	(ofile buffer-file-name)
+	(onum buffer-file-number)
+	(otrue buffer-file-truename)
 	(oname (buffer-name)))
     (rename-buffer " **lose**")
     (setq buffer-file-name nil)
+    (setq buffer-file-number nil)
+    (setq buffer-file-truename nil)
     (unwind-protect
 	(progn
 	  (unlock-buffer)
 	  (find-file filename))
       (cond ((eq obuf (current-buffer))
 	     (setq buffer-file-name ofile)
+	     (setq buffer-file-number onum)
+	     (setq buffer-file-truename otrue)
 	     (lock-buffer)
 	     (rename-buffer oname))))
     (or (eq (current-buffer) obuf)
@@ -744,9 +778,9 @@ run `normal-mode' explicitly."
 				  ("\\.lex\\'" . c-mode)
 				  ("\\.oak\\'" . scheme-mode)
 				  ("\\.scm.[0-9]*\\'" . scheme-mode)
-				  ("\\.sgm\\'" sgml-mode)
-				  ("\\.sgml\\'" sgml-mode)
-				  ("\\.dtd\\'" sgml-mode)
+				  ("\\.sgm\\'" . sgml-mode)
+				  ("\\.sgml\\'" . sgml-mode)
+				  ("\\.dtd\\'" . sgml-mode)
 				  ;; .emacs following a directory delimiter
 				  ;; in either Unix or VMS syntax.
 				  ("[]>:/]\\..*emacs\\'" . emacs-lisp-mode)
@@ -1086,12 +1120,7 @@ the modes of the new file to agree with the old modes."
 	    backup-info backupname targets setmodes)
 	;; If specified name is a symbolic link, chase it to the target.
 	;; Thus we make the backups in the directory where the real file is.
-	(while (let ((tem (file-symlink-p real-file-name)))
-		 (if tem
-		     (setq real-file-name
-			   (expand-file-name tem
-					     (file-name-directory real-file-name))))
-		 tem))
+	(setq real-file-name (file-chase-links real-file-name))
 	(setq backup-info (find-backup-file-name real-file-name)
 	      backupname (car backup-info)
 	      targets (cdr backup-info))

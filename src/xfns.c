@@ -331,12 +331,8 @@ x_set_frame_parameters (f, alist)
 
   /* Same here.  */
   Lisp_Object left, top;
-  
-  XSET (width,  Lisp_Int, FRAME_WIDTH  (f));
-  XSET (height, Lisp_Int, FRAME_HEIGHT (f));
 
-  XSET (top, Lisp_Int, f->display.x->top_pos);
-  XSET (left, Lisp_Int, f->display.x->left_pos);
+  width = height = top = left = Qnil;
 
   for (tail = alist; CONSP (tail); tail = Fcdr (tail))
     {
@@ -346,13 +342,16 @@ x_set_frame_parameters (f, alist)
       prop = Fcar (elt);
       val = Fcdr (elt);
 
-      if (EQ (prop, Qwidth))
+      /* Ignore all but the first set presented.  You're supposed to
+	 be able to append two parameter lists and have the first
+	 shadow the second.  */
+      if (EQ (prop, Qwidth) && NILP (width))
 	width = val;
-      else if (EQ (prop, Qheight))
+      else if (EQ (prop, Qheight) && NILP (height))
 	height = val;
-      else if (EQ (prop, Qtop))
+      else if (EQ (prop, Qtop) && NILP (top))
 	top = val;
-      else if (EQ (prop, Qleft))
+      else if (EQ (prop, Qleft) && NILP (left))
 	left = val;
       else
 	{
@@ -372,6 +371,12 @@ x_set_frame_parameters (f, alist)
      exist yet.  */
   {
     Lisp_Object frame;
+
+    if (NILP (width))  XSET (width,  Lisp_Int, FRAME_WIDTH  (f));
+    if (NILP (height)) XSET (height, Lisp_Int, FRAME_HEIGHT (f));
+
+    if (NILP (top))    XSET (top, Lisp_Int, f->display.x->top_pos);
+    if (NILP (left))   XSET (left, Lisp_Int, f->display.x->left_pos);
 
     XSET (frame, Lisp_Frame, f);
     if (XINT (width) != FRAME_WIDTH (f)
@@ -1410,10 +1415,10 @@ x_figure_window_size (f, parms)
   else if (! EQ (tem0, Qunbound) || ! EQ (tem1, Qunbound))
     error ("Must specify *both* height and width");
 
-  f->display.x->vertical_scroll_bar_extra =
-    (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
-     ? VERTICAL_SCROLL_BAR_PIXEL_WIDTH (f)
-     : 0);
+  f->display.x->vertical_scroll_bar_extra
+    = (FRAME_HAS_VERTICAL_SCROLL_BARS (f)
+       ? VERTICAL_SCROLL_BAR_PIXEL_WIDTH (f)
+       : 0);
   f->display.x->pixel_width = CHAR_TO_PIXEL_WIDTH (f, f->width);
   f->display.x->pixel_height = CHAR_TO_PIXEL_HEIGHT (f, f->height);
 
@@ -1431,6 +1436,9 @@ x_figure_window_size (f, parms)
   else if (! EQ (tem0, Qunbound) || ! EQ (tem1, Qunbound))
     error ("Must specify *both* top and left corners");
 
+#if 0 /* PPosition and PSize mean "specified explicitly,
+	 by the program rather than by the user".  So it is wrong to
+	 set them if nothing was specified.  */
   switch (window_prompting)
     {
     case USSize | USPosition:
@@ -1457,6 +1465,8 @@ x_figure_window_size (f, parms)
 	 put there.  */
       abort ();
     }
+#endif
+  return window_prompting;
 }
 
 static void
@@ -2165,7 +2175,7 @@ fonts), even if they match PATTERN and FACE.")
   if (!NILP (face))
     CHECK_SYMBOL (face, 1);
   if (!NILP (frame))
-    CHECK_SYMBOL (frame, 2);
+    CHECK_LIVE_FRAME (frame, 2);
 
   if (NILP (face))
     size_ref = 0;
@@ -3501,6 +3511,7 @@ DEFUN ("x-close-current-connection", Fx_close_current_connection,
       BLOCK_INPUT;
       XSetCloseDownMode (x_current_display, DestroyAll);
       XCloseDisplay (x_current_display);
+      x_current_display = 0;
     }
   else
     fatal ("No current X display connection to close\n");

@@ -8,6 +8,9 @@
 
 #define HPUX8
 
+/* dob@inel.gov says HPUX 8.07 needs this.  He was using X11R5, I think.  */
+#define LIBX11_SYSTEM -lXext
+
 #define LIB_X11_LIB -L/usr/lib/X11R5 -L/usr/lib/X11R4 -lX11
 #define C_SWITCH_SYSTEM -I/usr/lib/X11R5 -I/usr/include/X11R4
 
@@ -24,10 +27,12 @@
 #endif
 
 /* Specify compiler options for compiling oldXMenu.  */
-#define OLDXMENU_OPTIONS CFLAGS=-I/usr/include/X11R5 -I/usr/include/X11R4
+#define OLDXMENU_OPTIONS CFLAGS="-I/usr/include/X11R5 -I/usr/include/X11R4"
 
 /* Some hpux 8 machines seem to have TIOCGWINSZ,
    and none have sioctl.h, so might as well define this.  */
 #define NO_SIOCTL_H
 
-#define HAVE_RANDOM
+/* If you use X11R4 you must define this.  If you use
+   X11R5 you must comment this out */
+/* #define HAVE_RANDOM */

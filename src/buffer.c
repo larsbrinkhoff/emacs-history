@@ -279,6 +279,7 @@ reset_buffer (b)
   b->overlays_before = Qnil;
   b->overlays_after = Qnil;
   XFASTINT (b->overlay_center) = 1;
+  b->mark_active = Qnil;
 
   /* Only defined if Emacs is compiled with USE_TEXT_PROPERTIES */
   INITIALIZE_INTERVAL (b, NULL_INTERVAL);
@@ -304,7 +305,6 @@ reset_buffer_local_variables (b)
   b->upcase_table = Vascii_upcase_table;
   b->case_canon_table = Vascii_downcase_table;
   b->case_eqv_table = Vascii_upcase_table;
-  b->mark_active = Qnil;
 #if 0
   b->sort_table = XSTRING (Vascii_sort_table);
   b->folding_sort_table = XSTRING (Vascii_folding_sort_table);
@@ -331,13 +331,16 @@ reset_buffer_local_variables (b)
    rename the buffer properly.  */
 
 DEFUN ("generate-new-buffer-name", Fgenerate_new_buffer_name, Sgenerate_new_buffer_name,
-  1, 1, 0,
+  1, 2, 0,
   "Return a string that is the name of no existing buffer based on NAME.\n\
 If there is no live buffer named NAME, then return NAME.\n\
 Otherwise modify name by appending `<NUMBER>', incrementing NUMBER\n\
-until an unused name is found, and then return that name.")
- (name)
-     register Lisp_Object name;
+until an unused name is found, and then return that name.\n\
+Optional second argument ignore specifies a name that is okay to use\n\
+\(if it is in the sequence to be tried)\n\
+even if a buffer with that name exists.")
+ (name, ignore)
+     register Lisp_Object name, ignore;
 {
   register Lisp_Object gentemp, tem;
   int count;
@@ -354,6 +357,9 @@ until an unused name is found, and then return that name.")
     {
       sprintf (number, "<%d>", ++count);
       gentemp = concat2 (name, build_string (number));
+      tem = Fstring_equal (name, ignore);
+      if (!NILP (tem))
+	return gentemp;
       tem = Fget_buffer (gentemp);
       if (NILP (tem))
 	return gentemp;
@@ -536,7 +542,7 @@ This does not change the name of the visited file (if any).")
   if (!NILP (tem))
     {
       if (!NILP (unique))
-	name = Fgenerate_new_buffer_name (name);
+	name = Fgenerate_new_buffer_name (name, current_buffer->name);
       else
 	error ("Buffer name \"%s\" is in use", XSTRING (name)->data);
     }
@@ -825,7 +831,7 @@ the window-buffer correspondences.")
 		      : selected_window,
 		      buf);
 
-  return Qnil;
+  return buf;
 }
 
 DEFUN ("pop-to-buffer", Fpop_to_buffer, Spop_to_buffer, 1, 2, 0,
@@ -845,7 +851,7 @@ window even if BUFFER is already visible in the selected window.")
   Fset_buffer (buf);
   record_buffer (buf);
   Fselect_window (Fdisplay_buffer (buf, other));
-  return Qnil;
+  return buf;
 }
 
 DEFUN ("current-buffer", Fcurrent_buffer, Scurrent_buffer, 0, 0, 0,
@@ -1566,26 +1572,30 @@ buffer.")
 
   b = XBUFFER (buffer);
 
-  /* Redisplay the area the overlay has just left, or just enclosed.  */
-  {
-    Lisp_Object o_beg = OVERLAY_START (overlay);
-    Lisp_Object o_end = OVERLAY_END   (overlay);
-    int change_beg, change_end;
+  /* If the overlay has changed buffers, do a thorough redisplay.  */
+  if (b != XMARKER (OVERLAY_START (overlay))->buffer)
+    windows_or_buffers_changed = 1;
+  else
+    /* Redisplay the area the overlay has just left, or just enclosed.  */
+    {
+      Lisp_Object o_beg = OVERLAY_START (overlay);
+      Lisp_Object o_end = OVERLAY_END   (overlay);
+      int change_beg, change_end;
 
-    o_beg = OVERLAY_POSITION (o_beg);
-    o_end = OVERLAY_POSITION (o_end);
+      o_beg = OVERLAY_POSITION (o_beg);
+      o_end = OVERLAY_POSITION (o_end);
 
-    if (XINT (o_beg) == XINT (beg))
-      redisplay_region (b, XINT (o_end), XINT (end));
-    else if (XINT (o_end) == XINT (end))
-      redisplay_region (b, XINT (o_beg), XINT (beg));
-    else
-      {
-	if (XINT (beg) < XINT (o_beg)) o_beg = beg;
-	if (XINT (end) > XINT (o_end)) o_end = end;
-	redisplay_region (b, XINT (o_beg), XINT (o_end));
-      }
-  }
+      if (XINT (o_beg) == XINT (beg))
+	redisplay_region (b, XINT (o_end), XINT (end));
+      else if (XINT (o_end) == XINT (end))
+	redisplay_region (b, XINT (o_beg), XINT (beg));
+      else
+	{
+	  if (XINT (beg) < XINT (o_beg)) o_beg = beg;
+	  if (XINT (end) > XINT (o_end)) o_end = end;
+	  redisplay_region (b, XINT (o_beg), XINT (o_end));
+	}
+    }
 
   b->overlays_before = Fdelq (overlay, b->overlays_before);
   b->overlays_after  = Fdelq (overlay, b->overlays_after);

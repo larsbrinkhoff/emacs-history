@@ -73,7 +73,7 @@ XMenuAddSelection(display, menu, p_num, data, label, active)
     /*
      * Insert the selection at the end of the selection list.
      */
-    insque(select, pane->s_list->prev);
+    emacs_insque(select, pane->s_list->prev);
 
     /*
      * Update the selection count.

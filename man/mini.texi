@@ -374,38 +374,39 @@ to read the command name.
 @findex list-command-history
 @c widecommands
 @table @kbd
-@item C-x @key{ESC}
+@item C-x @key{ESC} @key{ESC}
 Re-execute a recent minibuffer command @*(@code{repeat-complex-command}).
 @item M-x list-command-history
 Display the entire command history, showing all the commands
-@kbd{C-x @key{ESC}} can repeat, most recent first.
+@kbd{C-x @key{ESC} @key{ESC}} can repeat, most recent first.
 @end table
 
-@kindex C-x ESC
+@kindex C-x ESC ESC
 @findex repeat-complex-command
-  @kbd{C-x @key{ESC}} is used to re-execute a recent minibuffer-using
-command.  With no argument, it repeats the last such command.  A numeric
-argument specifies which command to repeat; one means the last one, and
-larger numbers specify earlier ones.
+  @kbd{C-x @key{ESC} @key{ESC}} is used to re-execute a recent
+minibuffer-using command.  With no argument, it repeats the last such
+command.  A numeric argument specifies which command to repeat; one
+means the last one, and larger numbers specify earlier ones.
 
-  @kbd{C-x @key{ESC}} works by turning the previous command into a Lisp
-expression and then entering a minibuffer initialized with the text for
-that expression.  If you type just @key{RET}, the command is repeated as
-before.  You can also change the command by editing the Lisp expression.
-Whatever expression you finally submit is what will be executed.  The
-repeated command is added to the front of the command history unless it is
-identical to the most recently executed command already there.
+  @kbd{C-x @key{ESC} @key{ESC}} works by turning the previous command
+into a Lisp expression and then entering a minibuffer initialized with
+the text for that expression.  If you type just @key{RET}, the command
+is repeated as before.  You can also change the command by editing the
+Lisp expression.  Whatever expression you finally submit is what will be
+executed.  The repeated command is added to the front of the command
+history unless it is identical to the most recently executed command
+already there.
 
   Even if you don't understand Lisp syntax, it will probably be obvious
 which command is displayed for repetition.  If you do not change the
 text, it will repeat exactly as before.
 
-  Once inside the minibuffer for @kbd{C-x @key{ESC}}, you can use the
-minibuffer history commands (@kbd{M-p}, @kbd{M-n}, @kbd{M-r}, @kbd{M-s};
-@pxref{Minibuffer History}) to move through the history list of saved
-entire commands.  After finding the desired previous command, you can
-edit its expression as usual and then resubmit it by typing @key{RET} as
-usual.
+  Once inside the minibuffer for @kbd{C-x @key{ESC} @key{ESC}}, you can
+use the minibuffer history commands (@kbd{M-p}, @kbd{M-n}, @kbd{M-r},
+@kbd{M-s}; @pxref{Minibuffer History}) to move through the history list
+of saved entire commands.  After finding the desired previous command,
+you can edit its expression as usual and then resubmit it by typing
+@key{RET} as usual.
 
 @vindex command-history
   The list of previous minibuffer-using commands is stored as a Lisp

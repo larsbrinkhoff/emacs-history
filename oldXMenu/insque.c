@@ -1,8 +1,8 @@
-/* This file implements the insque and remque functions of BSD.
-   It is not compiled by default, because that change would be too risky
-   to install right now.  If you find that HAVE_X_MENU leads to linker errors
-   because these functions are undefined, then compile this file
-   and arrange to link it in.  */
+/* This file implements the emacs_insque and emacs_remque functions,
+   copies of the insque and remque functions of BSD.  They and all
+   their callers have been renamed to emacs_mumble to allow us to
+   include this file in the menu library on all systems.  */
+
 
 struct qelem {
   struct    qelem *q_forw;
@@ -13,7 +13,7 @@ struct qelem {
 /* Insert ELEM into a doubly-linked list, after PREV.  */
 
 void
-insque (elem, prev) 
+emacs_insque (elem, prev) 
      struct qelem *elem, *prev;
 {
   struct qelem *next = prev->q_forw;
@@ -26,7 +26,7 @@ insque (elem, prev)
 
 /* Unlink ELEM from the doubly-linked list that it is in.  */
 
-remque (elem)
+emacs_remque (elem)
      struct qelem *elem;
 {
   struct qelem *next = elem->q_forw;

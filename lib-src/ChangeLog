@@ -1,3 +1,36 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
+Sat May 29 05:17:56 1993  Paul Eggert  (eggert@twinsun.com)
+
+	* rcs2log: When given no file arguments, inspect RCS/.* as well
+	as RCS/*.  Don't report an error if RCS is empty or nonexistent.
+
+Sat May 29 01:00:37 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (timer): Link with $(LOADLIBES).
+
+Fri May 28 17:21:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* fakemail.c (put_line): Don't output \n\t unless more text follows.
+
+Fri May 28 03:57:16 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* etags.c: Replace the CPP tangle for alloca with the one from the
+	autoconf documentation, since that's working elsewhere.
+
+Thu May 27 23:32:46 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* Makefile.in (ALL_CFLAGS): Add "-I.", so the system and machine
+	description files can find their ancestors.
+
+Thu May 27 20:54:49 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (install): Get the scripts from ${srcdir},
+	unlike the executables.
+	(ALL_CFLAGS): Add -I../src
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.

@@ -114,13 +114,6 @@ srcdir=@srcdir@
 @inst_paths@# themselves in separate directories.
 @inst_paths@lispdir=${datadir}/emacs/${version}/lisp
 
-@inst_paths@# Where to install the lisp files which are distributed
-@inst_paths@# with Emacs but not maintained by the FSF.  This
-@inst_paths@# includes the Emacs version, so that the lisp files for
-@inst_paths@# different versions of Emacs will install themselves in
-@inst_paths@# separate directories.
-@inst_paths@externallispdir=${datadir}/emacs/${version}/external-lisp
-
 @inst_paths@# Directories Emacs should search for lisp files specific
 @inst_paths@# to this site (i.e. customizations), before consulting
 @inst_paths@# ${lispdir}.  This should be a colon-separated list of
@@ -173,7 +166,7 @@ buildlisppath=${srcdir}/lisp
 
 @rip_paths@lispdir=${srcdir}/lisp
 @rip_paths@externallispdir=${srcdir}/externallisp
-@rip_paths@locallisppath=${datadir}/emacs/site-lisp
+@rip_paths@locallisppath=${srcdir}/site-lisp:${datadir}/emacs/site-lisp
 @rip_paths@etcdir=${srcdir}/etc
 @rip_paths@lockdir=${srcdir}/lock
 @rip_paths@archlibdir=${srcdir}/lib-src
@@ -204,8 +197,8 @@ SUBDIR_MAKEFILES = lib-src/Makefile src/Makefile oldXMenu/Makefile
 # When installing the info files, we need to do special things to
 # avoid nuking an existing dir file, so we don't do that here;
 # instead, we have written out explicit code in the `install' targets.
-COPYDIR = ${srcdir}/etc ${srcdir}/lisp ${srcdir}/external-lisp
-COPYDESTS = ${etcdir} ${lispdir} ${externallispdir}
+COPYDIR = ${srcdir}/etc ${srcdir}/lisp
+COPYDESTS = ${etcdir} ${lispdir}
 
 all:	src/paths.h ${SUBDIR}
 
@@ -217,7 +210,7 @@ removenullpaths=sed -e 's/^://' -e 's/:$$//' -e 's/::/:/'
 # something notable, so the only unnecessary work we do is in building
 # src/paths.h.tmp, which isn't much.
 # Note that sed is not in /bin on 386bsd.
-src/paths.h: Makefile ${srcdir}/src/paths.h.in FRC
+src/paths.h: Makefile ${srcdir}/src/paths.h.in FRC.src.paths.h
 	@echo "Producing \`src/paths.h' from \`src/paths.h.in'."
 	@(lisppath=`echo ${lisppath} | ${removenullpaths}` ;		\
 	  buildlisppath=`echo ${buildlisppath} | ${removenullpaths}` ;	\
@@ -230,7 +223,8 @@ src/paths.h: Makefile ${srcdir}/src/paths.h.in FRC
 	  -e 's;\(#.*PATH_LOCK\).*$$;\1 "${lockdir}/";')
 	@${srcdir}/move-if-change src/paths.h.tmp src/paths.h
 
-src:	lib-src
+src:	lib-src FRC.src
+lib-src: FRC.lib-src
 
 .RECURSIVE: ${SUBDIR}
 
@@ -332,8 +326,9 @@ do-install: mkdir
 	-set ${COPYDESTS} ; \
 	 for dir in ${COPYDIR} ; do \
 	   if [ `(cd $$1 ; pwd)` != `(cd $${dir} ; pwd)` ] ; then \
-	     rm -rf $${dir} ; \
+	     rm -rf $$1 ; \
 	   fi ; \
+	   shift ; \
 	 done
 	-set ${COPYDESTS} ; \
 	 mkdir ${COPYDESTS} ; \
@@ -350,15 +345,6 @@ do-install: mkdir
 		 rm -f  $${subdir}/*~ ; \
 	       done) ; \
 	 done
-	-[ `(cd etc; /bin/pwd)` != `(cd ${etcdir}; /bin/pwd)` ] \
-	 && (echo "Copying ./etc..." ; \
-	       (cd ./etc; tar cf - . )|(cd ${etcdir}; umask 0; tar xvf - ); \
-	       for subdir in `find ${etcdir} -type d ! -name RCS -print` ; do \
-		 rm -rf $${subdir}/RCS ; \
-		 rm -rf $${subdir}/CVS ; \
-		 rm -f  $${subdir}/\#* ; \
-		 rm -f  $${subdir}/*~ ; \
-	       done)
 	-[ `(cd ${srcdir}/info; /bin/pwd)` != `(cd ${infodir}; /bin/pwd)` ] \
 	 && (cd ${srcdir}/info ; \
 	     if [ ! -f ${infodir}/dir ] && [ -f dir ]; then \
@@ -379,13 +365,15 @@ do-install: mkdir
 ### we may be creating several layers of directories (for example,
 ### /usr/local/lib/emacs/19.0/mips-dec-ultrix4.2), we use make-path
 ### instead of mkdir.  Not all systems' mkdirs have the `-p' flag.
-mkdir: FRC
+mkdir: FRC.mkdir
 	./lib-src/make-path ${COPYDESTS} ${lockdir} ${infodir} ${mandir} \
 	  ${bindir} ${datadir} ${libdir} \
 	  `echo ${locallisppath} | sed 's/:/ /'`
 	chmod 777 ${COPYDESTS} ${lockdir}
 
-FRC:
+### Some makes seem to remember that they've built something called FRC,
+### so you can only use a given FRC once per makefile.
+FRC FRC.src.paths.h FRC.src FRC.lib-src FRC.mkdir:
 
 
 # ==================== Cleaning up and miscellanea ====================

@@ -54,6 +54,11 @@ Once a file is found, `change-log-default-name' is set locally in the
 current buffer to the complete file name."
   (or file-name
       (setq file-name (or change-log-default-name
+			  ;; Chase links in the source file
+			  ;; and use the change log in the dir where it points.
+			  (and buffer-file-name
+			       (file-name-directory
+				(file-chase-links buffer-file-name)))
 			  default-directory)))
   (if (and (eq file-name change-log-default-name)
 	   (assq 'change-log-default-name (buffer-local-variables)))
@@ -65,8 +70,8 @@ current buffer to the complete file name."
     ;; Chase links before visiting the file.
     ;; This makes it easier to use a single change log file
     ;; for several related directories.
-    (setq file-name
-	  (expand-file-name (or (file-symlink-p file-name) file-name)))
+    (setq file-name (file-chase-links file-name))
+    (setq file-name (expand-file-name file-name))
     ;; Move up in the dir hierarchy till we find a change log file.
     (let ((file1 file-name)
 	  parent-dir)

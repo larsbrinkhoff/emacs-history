@@ -1,3 +1,7 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.
@@ -758,11 +762,3 @@ Sun Mar 20 13:17:13 1988  Richard M. Stallman  (rms at wilson)
 	* server.c [not BSD and not HAVE_SYSVIPC]: fix error message.
 
 	* loadst.c (main) [XENIX]: use /usr/spool/mail, not /usr/mail.
-
-Local Variables:
-mode: indented-text
-eval: (auto-fill-mode 1)
-left-margin: 8
-fill-column: 74
-version-control: never
-End:

@@ -42,8 +42,7 @@ the special commands of Dired are available.
 
   The variable @code{dired-listing-switches} specifies the options to
 give to @code{ls} for listing directory; this string @emph{must} contain
-@samp{-l} and @emph{must not} contain the options @samp{F}, @samp{s} or
-@samp{i}.  If you use a numeric prefix argument with the @code{dired}
+@samp{-l}.  If you use a numeric prefix argument with the @code{dired}
 command, you can specify the @code{ls} switches with the minibuffer
 after you finish entering the directory specification.
 

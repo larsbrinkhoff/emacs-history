@@ -3072,6 +3072,16 @@ menu_bar_items ()
   Lisp_Object result;
 
   int mapno;
+  Lisp_Object oquit;
+
+  /* In order to build the menus, we need to call the keymap
+     accessors.  They all call QUIT.  But this function is called
+     during redisplay, during which a quit is fatal.  So inhibit
+     quitting while building the menus.
+     We do this instead of specbind because (1) errors will clear it anyway
+     and (2) this avoids risk of specpdl overflow.  */
+  oquit = Vinhibit_quit;
+  Vinhibit_quit = Qt; 
 
   /* Build our list of keymaps.
      If we recognize a function key and replace its escape sequence in
@@ -3108,7 +3118,9 @@ menu_bar_items ()
 	result = menu_bar_one_keymap (def, result);
     }
 
-  return Fnreverse (result);
+  result = Fnreverse (result);
+  Vinhibit_quit = oquit;
+  return result;
 }
 
 /* Scan one map KEYMAP, accumulating any menu items it defines
@@ -3585,18 +3597,24 @@ read_key_sequence (keybuf, bufsize, prompt)
      recognized a function key, to avoid searching for the function
      key's again in Vfunction_key_map.  */
   int fkey_start = 0, fkey_end = 0;
-  Lisp_Object fkey_map = Vfunction_key_map;
+  Lisp_Object fkey_map;
 
   /* If we receive a ``switch-frame'' event in the middle of a key sequence,
      we put it off for later.  While we're reading, we keep the event here.  */
-  Lisp_Object delayed_switch_frame = Qnil;
+  Lisp_Object delayed_switch_frame;
 
+  Lisp_Object first_event;
+
+  int junk;
+
+  last_nonmenu_event = Qnil;
+
+  delayed_switch_frame = Qnil;
+  fkey_map = Vfunction_key_map;
 
   /* If there is no function key map, turn off function key scanning.  */
   if (NILP (Fkeymapp (Vfunction_key_map)))
     fkey_start = fkey_end = bufsize + 1;
-
-  last_nonmenu_event = Qnil;
 
   if (INTERACTIVE)
     {
@@ -3613,6 +3631,15 @@ read_key_sequence (keybuf, bufsize, prompt)
   if (INTERACTIVE)
     echo_start = echo_length ();
   keys_start = this_command_key_count;
+
+#if 0 /* This doesn't quite work, because some of the things
+	 that read_char does cannot safely be bypassed.
+	 It seems too risky to try to make this work right.  */ 
+  /* Read the first char of the sequence specially, before setting
+     up any keymaps, in case a filter runs and switches buffers on us.  */
+  first_event = read_char (!prompt, 0, submaps, last_nonmenu_event,
+			   &junk);
+#endif
 
   /* We jump here when the key sequence has been thoroughly changed, and
      we need to rescan it starting from the beginning.  When we jump here,
@@ -3710,6 +3737,8 @@ read_key_sequence (keybuf, bufsize, prompt)
       /* If not, we should actually read a character.  */
       else
 	{
+	  struct buffer *buf = current_buffer;
+
 	  last_real_key_start = t;
 
 	  key = read_char (!prompt, nmaps, submaps, last_nonmenu_event,
@@ -3789,6 +3818,10 @@ read_key_sequence (keybuf, bufsize, prompt)
 		      keybuf[t+1] = key;
 		      mock_input = t + 2;
 
+		      /* If we switched buffers while reading the first event,
+			 replay in case we switched keymaps too.  */
+		      if (buf != current_buffer && t == 0)
+			goto replay_sequence;
 		      goto replay_key;
 		    }
 		}
@@ -3825,6 +3858,15 @@ read_key_sequence (keybuf, bufsize, prompt)
 		      goto replay_sequence;
 		    }
 		}
+	    }
+
+	  /* If we switched buffers while reading the first event,
+	     replay in case we switched keymaps too.  */
+	  if (buf != current_buffer && t == 0)
+	    {
+	      keybuf[t++] = key;
+	      mock_input = t;
+	      goto replay_sequence;
 	    }
 	}
 

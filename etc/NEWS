@@ -1,10 +1,22 @@
-GNU Emacs NEWS -- history of user-visible changes.  21 May 1993
+GNU Emacs NEWS -- history of user-visible changes.  28 May 1993
 Copyright (C) 1993 Free Software Foundation, Inc.
 See the end for copying conditions.
 
 Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
 For older news, see the file ONEWS.  For Lisp changes in Emacs 19,
 see the file LNEWS.
+
+Changes in version 19.10.
+
+* The command `repeat-complex-command' is now on C-x ESC ESC.
+It used to be bound to C-x ESC.
+
+The reason for this change is to make function keys work after C-x.
+
+* The variable `highlight-nonselected-windows' now controls whether
+the region is highlighted in windows other than the selected window
+(in Transient Mark mode only, of course, and currently only when
+using X).
 
 Changes in version 19.8.
 
@@ -232,6 +244,10 @@ latest selection set by other applications, and add the text to the
 kill ring.  The Emacs commands for selecting and inserting text with
 the mouse now use the kill ring in the same way the keyboard killing
 and yanking commands do.
+
+The option to specify the title for the initial frame is now `-name NAME'.
+There is currently no way to specify an icon title; perhaps we will add
+one in the future.
 
 * Undoing a deletion now puts point back where it was before the
 deletion.

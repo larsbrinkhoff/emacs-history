@@ -46,7 +46,7 @@ XMenuDeleteSelection(display, menu, p_num, s_num)
      * Remove the selection from the parent pane's selection
      * list and update the selection count.
      */
-    remque(s_ptr);
+    emacs_remque(s_ptr);
     p_ptr->s_count--;
 
     /*

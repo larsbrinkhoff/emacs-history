@@ -97,6 +97,13 @@ if [ "${bogosities}" != "" ]; then
 fi
 rm -f /tmp/el /tmp/elc
 
+### Make sure configure is newer than configure.in.
+if [ "x`ls -t configure configure.in | head -1`" != "xconfigure" ]; then
+  echo "`./configure.in' seems to be newer than `./configure.'" >&2
+  echo "Attempting to run autoconf." >&2
+  autoconf
+fi
+
 echo "Creating staging directory: \`${tempparent}'"
 mkdir ${tempparent}
 emacsname="emacs-${version}${new_extension}"
@@ -134,7 +141,7 @@ echo "Updating version number in README."
 echo "Creating subdirectories."
 # I think we're not going to distribute anything in external-lisp, so
 # I've removed it from this list.
-for subdir in lisp lisp/term local-lisp \
+for subdir in lisp lisp/term site-lisp \
 	      src src/m src/s src/bitmaps lib-src oldXMenu \
 	      etc lock cpp info man shortnames vms; do
   mkdir ${tempdir}/${subdir}

@@ -91,7 +91,7 @@ XMenuInsertPane(menu, p_num, label, active)
      * number one less than the desired number for the
      * new pane.
      */
-    insque(pane, p_ptr);
+    emacs_insque(pane, p_ptr);
 
     /*
      * Update the pane count. 

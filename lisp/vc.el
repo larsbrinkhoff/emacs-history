@@ -99,7 +99,7 @@ The value is only computed when needed to avoid an expensive search.")
 
 (defvar vc-header-alist
   '((SCCS "\%W\%") (RCS "\$Id\$"))
-  "*Header keywords to be inserted when `vc-insert-header' is executed.")
+  "*Header keywords to be inserted when `vc-insert-headers' is executed.")
 (defconst vc-static-header-alist
   '(("\\.c$" .
      "\n#ifndef lint\nstatic char vcid[] = \"\%s\";\n#endif /* lint */\n"))
@@ -553,7 +553,7 @@ level to check it in under.  COMMENT, if specified, is the checkin comment."
   (interactive)
   (if (not owner)
       (setq owner (vc-locking-user file)))
-  (if (not (y-or-n-p (format "Take the lock on %s:%s from %s?" file rev owner)))
+  (if (not (y-or-n-p (format "Take the lock on %s:%s from %s? " file rev owner)))
       (error "Steal cancelled."))
   (pop-to-buffer (get-buffer-create "*VC-mail*"))
   (setq default-directory (expand-file-name "~/"))
@@ -622,8 +622,7 @@ See `vc-update-change-log'."
     (error "No log operation is pending."))
   ;; Return to "parent" buffer of this checkin and remove checkin window
   (pop-to-buffer vc-parent-buffer)
-  (vc-error-occurred
-   (delete-window (get-buffer-window "*VC-log*")))
+  (delete-windows-on (get-buffer "*VC-log*"))
   (kill-buffer "*VC-log*")
   ;; Now make sure we see the expanded headers
   (if buffer-file-name
@@ -790,7 +789,7 @@ the variable `vc-header-alist'."
     (save-restriction
       (widen)
       (if (or (not (vc-check-headers))
-	      (y-or-n-p "Version headers already exist.  Insert another set?"))
+	      (y-or-n-p "Version headers already exist.  Insert another set? "))
 	  (progn
 	    (let* ((delims (cdr (assq major-mode vc-comment-alist)))
 		   (comment-start-vc (or (car delims) comment-start "#"))

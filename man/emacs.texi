@@ -75,7 +75,7 @@ The Emacs Editor
 Emacs is the extensible, customizable, self-documenting real-time
 display editor.  This Info file describes how to edit with Emacs
 and some of how to customize it, but not how to extend it.  It
-corresponds to GNU Emacs version 19.9.
+corresponds to GNU Emacs version 19.10.
 
 @end ifinfo
 @menu

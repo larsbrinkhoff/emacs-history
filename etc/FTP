@@ -18,9 +18,17 @@ is out of date.  If you plan to FTP files from prep.ai.mit.edu, you
 might as well start by FTPing the current version of this file, which
 is `/pub/gnu/GNUinfo/FTP'.
 
+* How to FTP
+
+Use the ftp program on your system (ask locally if you can't find it)
+to connect to the host you are ftping from.  Unless indicated
+otherwise, login in as user "anonymous", with password: "your e-mail
+address" and set "binary" mode (to transfer all eight bits in each
+byte).
+
 * FTPing GNU Software
 
-** GNU Emacs and How To FTP It
+** How to FTP GNU Emacs
 
 If you are on the Internet (see also "** Alternative Internet FTP
 Sources" below), you can at present copy the latest distribution

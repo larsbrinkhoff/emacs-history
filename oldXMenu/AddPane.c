@@ -83,7 +83,7 @@ XMenuAddPane(display, menu, label, active)
     /*
      * Insert the pane at the end of the pane list.
      */
-    insque(pane, menu->p_list->prev);
+    emacs_insque(pane, menu->p_list->prev);
 
     /*
      * Update the pane count. 

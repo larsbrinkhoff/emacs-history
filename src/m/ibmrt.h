@@ -125,10 +125,18 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 /* Special switches to give the C compiler.  */
 
+#ifndef __GNUC__
 #define C_SWITCH_MACHINE -Dalloca=_Alloca
+#endif
 
 /* Don't attempt to relabel some of the data as text when dumping.
    It does not work because their virtual addresses are not consecutive.
    This enables us to use the standard crt0.o.  */
 
 #define NO_REMAP
+
+/* rocky@watson.ibm.com says this is needed.  */
+#define HAVE_FTIME
+
+/* Use the bitmap files that come with Emacs.  */
+#define EMACS_BITMAP_FILES

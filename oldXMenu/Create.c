@@ -16,6 +16,22 @@
 #include "XMenuInt.h"
 
 
+#ifdef EMACS_BITMAP_FILES
+#include "../src/bitmaps/dimple1.xbm"
+#include "../src/bitmaps/dimple3.xbm"
+#include "../src/bitmaps/gray1.xbm"
+#include "../src/bitmaps/gray3.xbm"
+#include "../src/bitmaps/crosswv.xbm"
+
+#include "../src/bitmaps/leftptr.xbm"
+#include "../src/bitmaps/leftpmsk.xbm"
+#include "../src/bitmaps/rtptr.xbm"
+#include "../src/bitmaps/rtpmsk.xbm"
+#include "../src/bitmaps/cntrptr.xbm"
+#include "../src/bitmaps/cntrpmsk.xbm"
+#include "../src/bitmaps/stipple.xbm"
+
+#else
 #ifndef VMS
 
 #include <X11/bitmaps/dimple1>
@@ -38,18 +54,18 @@
 #include "[-.src.bitmaps]dimple3.xbm"
 #include "[-.src.bitmaps]gray1.xbm"
 #include "[-.src.bitmaps]gray3.xbm"
-#include "[-.src.bitmaps]cross_weave.xbm"
+#include "[-.src.bitmaps]crosswv.xbm"
 
-#include "[-.src.bitmaps]left_ptr.xbm"
-#include "[-.src.bitmaps]left_ptrmsk.xbm"
-#include "[-.src.bitmaps]right_ptr.xbm"
-#include "[-.src.bitmaps]right_ptrmsk.xbm"
-#include "[-.src.bitmaps]cntr_ptr.xbm"
-#include "[-.src.bitmaps]cntr_ptrmsk.xbm"
+#include "[-.src.bitmaps]leftptr.xbm"
+#include "[-.src.bitmaps]leftpmsk.xbm"
+#include "[-.src.bitmaps]rtptr.xbm"
+#include "[-.src.bitmaps]rtpmsk.xbm"
+#include "[-.src.bitmaps]cntrptr.xbm"
+#include "[-.src.bitmaps]cntrpmsk.xbm"
 #include "[-.src.bitmaps]stipple.xbm"
 
-#endif
-
+#endif /* VMS */
+#endif /* not EMACS_BITMAP_FILES */
 
 #define DEF_FREEZE		0
 #define DEF_REVERSE		0
@@ -296,7 +312,7 @@ XMenuCreate(display, parent, def_env)
     else if (strcmp(def_val, "center") == 0) p_style = CENTER;
   }
 
-  def_val = x_get_resource_string ("paneFont", "Font");
+  def_val = x_get_resource_string ("paneFont", "PaneFont");
   if (def_val != NULL) p_fnt_name = def_val;
 
   def_val = x_get_resource_string ("paneForeground", "PaneForeground");
@@ -352,7 +368,7 @@ XMenuCreate(display, parent, def_env)
     else if (strcmp(def_val, "center") == 0) s_style = CENTER;
   }
 
-  def_val = x_get_resource_string ("selectionFont", "Font");
+  def_val = x_get_resource_string ("selectionFont", "SelectionFont");
   if (def_val != NULL) s_fnt_name = def_val;
 
   def_val = x_get_resource_string ("selectionForeground", "SelectionForeground");

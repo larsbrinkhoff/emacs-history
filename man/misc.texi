@@ -993,10 +993,11 @@ in the existing Emacs process.
 programs like @code{mail} by using the Emacs client and Emacs server
 programs.  Here is how.
 
-  First, the preparation.  Load the @file{server} library into your
-principal Emacs process.  (Your @file{.emacs} file can do this
-automatically if you add the expression @code{(load "server")} to it.)
-Then set the @code{EDITOR} environment variable to @samp{emacsclient}.
+  First, the preparation.  Within Emacs, call the function
+@code{server-start}.  (Your @file{.emacs} file can do this automatically
+if you add the expression @code{(server-start)} to it.)  Then, outside
+Emacs, set the @code{EDITOR} environment variable to
+@samp{emacsclient}.
 
 @kindex C-x #
 @findex server-edit

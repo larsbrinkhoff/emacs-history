@@ -1,3 +1,21 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
+Sat May 29 00:40:17 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* bobcat.el: Just load keyswap.el.
+
+	* vt200.el: Just load vt100.el.
+	* apollo.el: Just load vt100.el.
+	* vt102.el, vt125.el, vt201.el, vt220.el, vt240.el, vt300.el,
+	* vt320.el, vt400.el, vt420.el: New files.  Just load vt100.el.
+
+	* lk201.el: New file.
+	* vt100.el: Use lk201.el.
+
+	* vt100.el (vt100-wide-mode): Add missing arg in set-frame-width.
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.

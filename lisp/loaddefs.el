@@ -173,8 +173,13 @@ for \\[find-tag] (which see)."
 (define-key esc-map "z" 'zap-to-char)
 (define-key esc-map "=" 'count-lines-region)
 (define-key ctl-x-map "=" 'what-cursor-position)
+;; This key sequence might cause a certain amount of trouble with function
+;; keys.  Namely, it means you can't bind ESC followed by a function key.
+;; However, people might not mind that too terribly much.
+;; So I will leave this alone for now.
 (define-key esc-map "\e" 'eval-expression)
-(define-key ctl-x-map "\e" 'repeat-complex-command)
+;; Changed from C-x ESC so that function keys work following C-x.
+(define-key ctl-x-map "\e\e" 'repeat-complex-command)
 (define-key ctl-x-map "u" 'advertised-undo)
 ;; Many people are used to typing C-/ on X terminals and getting C-_.
 (define-key global-map [?\C-/] 'undo)

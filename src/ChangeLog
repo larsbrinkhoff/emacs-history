@@ -1,3 +1,142 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
+Sat May 29 20:50:06 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* keyboard.c (read_key_sequence): If we changed buffers during
+	read_char, go to replay_sequence.
+
+	* frame.c (Ficonify_frame, Fmake_frame_invisible): 
+	Select some other frame.  Move minibuffer off this frame.
+
+	* frame.c (Fhandle_switch_frame): Don't call Ffocus_frame.
+	(Fredirect_frame_focus): Call Ffocus_frame here.
+
+	* xterm.c (x_bitmap_icon): Don't free icon_bitmap;
+	create it if it hasn't been created before.
+
+	* xterm.c (XTread_socket): For UnmapNotify, if frame was visible,
+	mark it now as iconified.
+	(x_make_frame_invisible): If async_iconic, work does need to be done.
+	Don't let this frame stay highlighted.
+	(x_iconify_frame): Don't let this frame stay highlighted.
+
+	* s/usg5-4-2.h (sigsetmask): #undef this.
+
+	* sysdep.c (sys_signal): Use 0, not NULL, to set sa_flags.
+
+Sat May 29 16:47:12 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* linux.h (C_OPTIMIZE_SWITCH): Set this to the empty string;
+	configure guesses just fine.
+
+	* tekXD88.h: New file, from Kaveh Ghazi.
+
+	* systty.h (CDISABLE): #undef it before re-#defining it.
+
+	* sysdep.c (sys_siglist): Comment out #endif trailer.
+	* xmenu.c (TRUE, FALSE): Same.
+	* xterm.c (dumprectangle): Same.
+
+	* emacs.c: Don't include termios.h directly--let systty.h do it.
+
+Sat May 29 00:26:39 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* xfaces.c [HPUX]: Include time.h and define __TIMEVAL__.
+
+	* emacs.c (shut_down_emacs): Maybe close X connection.  New arg NO_X.
+	(Fkill_emacs): Don't close it here.  Pass new arg.
+	(fatal_error_signal): Pass new arg.
+	* xterm.c (x_connection_closed): Pass new arg.
+
+	* xdisp.c (syms_of_xdisp): Make highlight-nonselected-windows Lisp var.
+	(display_text_line): Obey it.
+	(display_text_line): Really check for just the selected window.
+
+	* s/usg5-4-2.h: New file.
+
+	* keyboard.c (menu_bar_items): Save Vinhibit_quit by hand
+	instead of using specbind.
+	(menu_bar_items): Call Fnreverse before restoring Vinhibit_quit.
+
+	* s/hpux8.h (OLDXMENU_OPTIONS): Add quotations.
+
+	* m/ibmrt.h (C_SWITCH_MACHINE): Define only if not __GNUC__.
+	(HAVE_FTIME): Defined.
+	(EMACS_BITMAP_FILES): Defined.
+
+	* xfns.c (Fx_close_current_connection): Clear x_current_display.
+	* xterm.c (XTring_bell): Do nothing if x_current_connection is 0.
+
+	* buffer.c (reset_buffer): Clear mark_active field here.
+	(reset_buffer_local_variables): Not here.
+	(Fswitch_to_buffer, Fpop_to_buffer): Return the buffer.
+	(Fmove_overlay): Fix data types in last change.
+
+	* sysdep.c (gettimeofday): Don't store in *tzp if tzp is 0.
+
+	* process.c (MAXDESC): Get it from FD_SETSIZE if that exists.
+
+	* s/sco4.h (PTY_ITERATION, PTY_NAME_SPRINTF, PTY_TTY_NAME_SPRINTF): 
+	Redefined.
+	(SIGNALS_VIA_CHARACTERS): Defined.
+	[HAVE_SOCKETS] (HAVE_GETTIMEOFDAY): Defined.
+	(MAIL_PROGRAM_NAME): Defined (two alternate definitions).
+
+	* xfns.c (Fx_list_fonts): Use CHECK_LIVE_FRAME on the frame arg.
+
+Fri May 28 16:07:01 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* s/hpux8.h (LIBX11_SYSTEM): Defined.
+
+	* ymakefile: Replace config.h as dep with $(config_h).
+	(really-oldXMenu): Use two make vars to pass values
+	of C_SWITCH_... within doublequotes.
+
+	* xfns.c (x_figure_window_size): Never set PPosition or PSize.
+
+	* keymap.c (syms_of_keymap): Create global_map 256 slots long.
+	* cmds.c (keys_of_cmds): Predefined 0240-0376 as self-insert.
+
+	* xterm.c (XTread_socket, case KeyPress) [HPUX]:
+	Recognize the extended function keys.
+
+	* buffer.c (Fgenerate_new_buffer_name): New arg IGNORE.
+	(Frename_buffer): Pass new arg.
+
+Fri May 28 00:33:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* keyboard.c (menu_bar_items): Bind Qinhibit_quit to Qt while we
+	call the keymap accessors; this gets called during redisplay.
+
+	* ymakefile (alloca.o): Call $(CC), not cc.
+
+	* s/linux.h (SIGNALS_VIA_CHARACTERS): Try this out for a bit.
+
+	* buffer.c (Fmove_overlay): If the overlay is changing buffers,
+	do a thorough redisplay.
+
+	* xfns.c (x_set_frame_parameters): Use the first
+	position/size parameter we find, not the last.
+
+	* s/hpux8.h: Don't define HAVE_RANDOM.
+
+	* config.h.in (UNEXEC_SRC): New macro, set by the configure
+	script.
+	* ymakefile (UNEXEC_SRC): Give it a default value here, and make
+	UNEXEC depend on it.
+
+	* ymakefile (lispdir): Set this in terms of ${srcdir}.
+
+Thu May 27 19:47:45 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* dispnew.c (Fsleep_for): Don't return without waiting when SEC is 0.
+
+	* emacs.c (syms_of_emacs) [CANNOT_DUMP]: Don't defsubr Sdump_emacs*.
+
+	* alloc.c (mark_object): Add debugging code to check for ptr clobbered.
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.

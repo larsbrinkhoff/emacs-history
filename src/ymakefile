@@ -21,7 +21,7 @@ srcdir=@srcdir@/src
 VPATH=@srcdir@/src
 dot = .
 /* On Xenix and the IBM RS6000, double-dot gets screwed up.  */
-lispdir = $(dot)$(dot)/lisp/
+lispdir = ${srcdir}/$(dot)$(dot)/lisp/
 libsrc = $(dot)$(dot)/lib-src/
 etc = $(dot)$(dot)/etc/
 shortnamesdir = $(dot)$(dot)/shortnames/
@@ -362,6 +362,9 @@ LDFLAGS = LD_SWITCH_SYSTEM LD_SWITCH_MACHINE LD_SWITCH_SITE
 #ifndef UNEXEC
 #define UNEXEC unexec.o
 #endif
+#ifndef UNEXEC_SRC
+#define UNEXEC_SRC unexec.c
+#endif
 
 #ifdef USE_TEXT_PROPERTIES
 #define INTERVAL_SRC intervals.h
@@ -579,8 +582,12 @@ $(OLDXMENU): really-oldXMenu
 	-rm -f $(OLDXMENU) /* We might have a link to an old version.  */
 	${LN_S} ${oldXMenudir}libXMenu11.a $(OLDXMENU)
 
+/* Encode the values of these two macros in Make variables,
+   so we can use $(...) to substitute their values within "...".  */
+C_SWITCH_SYSTEM_1 = C_SWITCH_SYSTEM
+C_SWITCH_X_SITE_1 = C_SWITCH_X_SITE
 really-oldXMenu:
-	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS "C_SWITCH_SITE"=C_SWITCH_X_SITE "C_SWITCH_SYSTEM"=C_SWITCH_SYSTEM
+	cd ${oldXMenudir}; ${MAKE} ${MFLAGS} OLDXMENU_OPTIONS "C_SWITCH_SITE=$(C_SWITCH_X_SITE_1)" "C_SWITCH_SYSTEM=$(C_SWITCH_SYSTEM_1)"
 	@true  /* make -t should not create really-oldXMenu.  */
 #endif /* ! defined (HAVE_X11) */
 #endif /* ! defined (HAVE_X_MENU) */
@@ -618,12 +625,12 @@ alloca.o : alloca.s config.h
 	cp ${srcdir}/alloca.s allocatem.c
 /* remove any ^L, blank lines, and preprocessor comments,
    since some assemblers barf on them */
-	$(CPP) allocatem.c | \
+	$(CPP) $(CPPFLAGS) $(ALL_CFLAGS) allocatem.c | \
 	sed -e 's///' -e 's/^#.*//' | \
 	sed -n -e '/^..*$$/p' > allocatem.s
 	-rm -f alloca.o
 /* Xenix, in particular, needs to run assembler via cc.  */
-	cc -c allocatem.s
+	$(CC) -c allocatem.s
 	mv allocatem.o alloca.o
 	rm allocatem.s allocatem.c
 #endif /* HAVE_ALLOCA */
@@ -634,100 +641,100 @@ alloca.o : alloca.s config.h
    it is so often changed in ways that do not require any recompilation
    and so rarely changed in ways that do require any.  */
 
-abbrev.o : abbrev.c buffer.h commands.h config.h 
+abbrev.o : abbrev.c buffer.h commands.h $(config_h) 
 buffer.o : buffer.c syntax.h buffer.h commands.h window.h \
-   INTERVAL_SRC blockinput.h config.h 
+   INTERVAL_SRC blockinput.h $(config_h) 
 callint.o : callint.c window.h commands.h buffer.h mocklisp.h \
-   keyboard.h config.h
-callproc.o : callproc.c paths.h buffer.h commands.h config.h process.h
-casefiddle.o : casefiddle.c syntax.h commands.h buffer.h config.h 
-casetab.o : casetab.c buffer.h config.h
-cm.o : cm.c cm.h termhooks.h config.h
-cmds.o : cmds.c syntax.h buffer.h commands.h config.h 
-crt0.o : crt0.c config.h
+   keyboard.h $(config_h)
+callproc.o : callproc.c paths.h buffer.h commands.h $(config_h) process.h
+casefiddle.o : casefiddle.c syntax.h commands.h buffer.h $(config_h) 
+casetab.o : casetab.c buffer.h $(config_h)
+cm.o : cm.c cm.h termhooks.h $(config_h)
+cmds.o : cmds.c syntax.h buffer.h commands.h $(config_h) 
+crt0.o : crt0.c $(config_h)
 	$(CC) -c $(ALL_CFLAGS) C_SWITCH_ASM ${srcdir}/crt0.c
-dired.o : dired.c commands.h buffer.h config.h regex.h
+dired.o : dired.c commands.h buffer.h $(config_h) regex.h
 dispnew.o : dispnew.c commands.h frame.h window.h buffer.h dispextern.h \
-   termchar.h termopts.h termhooks.h cm.h disptab.h systty.h systime.h config.h
-doc.o : doc.c config.h paths.h buffer.h keyboard.h
+   termchar.h termopts.h termhooks.h cm.h disptab.h systty.h systime.h $(config_h)
+doc.o : doc.c $(config_h) paths.h buffer.h keyboard.h
 doprnt.o : doprnt.c
-editfns.o : editfns.c window.h buffer.h systime.h INTERVAL_SRC config.h 
-emacs.o : emacs.c commands.h systty.h INTERVAL_SRC config.h 
-fileio.o : fileio.c window.h buffer.h systime.h INTERVAL_SRC config.h 
-filelock.o : filelock.c buffer.h paths.h config.h
+editfns.o : editfns.c window.h buffer.h systime.h INTERVAL_SRC $(config_h) 
+emacs.o : emacs.c commands.h systty.h INTERVAL_SRC $(config_h) 
+fileio.o : fileio.c window.h buffer.h systime.h INTERVAL_SRC $(config_h) 
+filelock.o : filelock.c buffer.h paths.h $(config_h)
 filemode.o : filemode.c 
-getloadavg.o : getloadavg.c config.h
-indent.o : indent.c frame.h window.h indent.h buffer.h config.h termchar.h \
+getloadavg.o : getloadavg.c $(config_h)
+indent.o : indent.c frame.h window.h indent.h buffer.h $(config_h) termchar.h \
    termopts.h disptab.h
-insdel.o : insdel.c window.h buffer.h INTERVAL_SRC blockinput.h config.h
+insdel.o : insdel.c window.h buffer.h INTERVAL_SRC blockinput.h $(config_h)
 keyboard.o : keyboard.c termchar.h termhooks.h termopts.h buffer.h \
    commands.h frame.h window.h macros.h disptab.h keyboard.h syssignal.h \
-   systty.h systime.h dispextern.h intervals.h blockinput.h config.h 
+   systty.h systime.h dispextern.h intervals.h blockinput.h $(config_h) 
 keymap.o : keymap.c buffer.h commands.h keyboard.h termhooks.h blockinput.h \
-   config.h 
+   $(config_h) 
 lastfile.o : lastfile.c 
-macros.o : macros.c window.h buffer.h commands.h macros.h config.h
-malloc.o : malloc.c config.h
-gmalloc.o : gmalloc.c config.h
-ralloc.o : ralloc.c config.h
-vm-limit.o : vm-limit.c mem-limits.h config.h 
-marker.o : marker.c buffer.h config.h 
+macros.o : macros.c window.h buffer.h commands.h macros.h $(config_h)
+malloc.o : malloc.c $(config_h)
+gmalloc.o : gmalloc.c $(config_h)
+ralloc.o : ralloc.c $(config_h)
+vm-limit.o : vm-limit.c mem-limits.h $(config_h) 
+marker.o : marker.c buffer.h $(config_h) 
 minibuf.o : minibuf.c syntax.h dispextern.h frame.h window.h \
-   buffer.h commands.h config.h 
-mocklisp.o : mocklisp.c buffer.h config.h
+   buffer.h commands.h $(config_h) 
+mocklisp.o : mocklisp.c buffer.h $(config_h)
 process.o : process.c process.h buffer.h window.h termhooks.h termopts.h \
-   commands.h syssignal.h systime.h systty.h frame.h config.h 
-regex.o : regex.c syntax.h buffer.h config.h regex.h 
+   commands.h syssignal.h systime.h systty.h frame.h $(config_h) 
+regex.o : regex.c syntax.h buffer.h $(config_h) regex.h 
 frame.o : frame.c xterm.h window.h frame.h termhooks.h commands.h keyboard.h \
-   buffer.h config.h
-scroll.o : scroll.c termchar.h config.h dispextern.h frame.h
-search.o : search.c regex.h commands.h buffer.h syntax.h blockinput.h config.h 
-syntax.o : syntax.c syntax.h buffer.h commands.h config.h 
-sysdep.o : sysdep.c config.h dispextern.h termhooks.h termchar.h termopts.h \
+   buffer.h $(config_h)
+scroll.o : scroll.c termchar.h $(config_h) dispextern.h frame.h
+search.o : search.c regex.h commands.h buffer.h syntax.h blockinput.h $(config_h) 
+syntax.o : syntax.c syntax.h buffer.h commands.h $(config_h) 
+sysdep.o : sysdep.c $(config_h) dispextern.h termhooks.h termchar.h termopts.h \
    frame.h syssignal.h systty.h systime.h blockinput.h window.h
-term.o : term.c termchar.h termhooks.h termopts.h config.h cm.h frame.h \
+term.o : term.c termchar.h termhooks.h termopts.h $(config_h) cm.h frame.h \
    disptab.h
-termcap.o : termcap.c config.h
-terminfo.o : terminfo.c config.h
-tparam.o : tparam.c config.h
-undo.o : undo.c buffer.h commands.h config.h 
-UNEXEC : config.h
+termcap.o : termcap.c $(config_h)
+terminfo.o : terminfo.c $(config_h)
+tparam.o : tparam.c $(config_h)
+undo.o : undo.c buffer.h commands.h $(config_h) 
+UNEXEC : UNEXEC_SRC $(config_h)
 window.o : window.c indent.h commands.h frame.h window.h buffer.h termchar.h \
-   termhooks.h disptab.h keyboard.h config.h
+   termhooks.h disptab.h keyboard.h $(config_h)
 xdisp.o : xdisp.c macros.h commands.h indent.h buffer.h dispextern.h \
-   termchar.h frame.h window.h disptab.h termhooks.h config.h 
+   termchar.h frame.h window.h disptab.h termhooks.h $(config_h) 
 xfaces.o : xfaces.c dispextern.h frame.h xterm.h buffer.h blockinput.h \
-   window.h config.h 
+   window.h $(config_h) 
 xfns.o : xfns.c buffer.h frame.h window.h keyboard.h xterm.h \
-   blockinput.h config.h
-xmenu.o : xmenu.c xterm.h window.h frame.h keyboard.h blockinput.h config.h
+   blockinput.h $(config_h)
+xmenu.o : xmenu.c xterm.h window.h frame.h keyboard.h blockinput.h $(config_h)
 xterm.o : xterm.c xterm.h termhooks.h termopts.h termchar.h window.h \
   dispextern.h frame.h disptab.h blockinput.h systime.h \
-  gnu.h sink.h sinkmask.h config.h
-xselect.o : xselect.c dispextern.h frame.h xterm.h blockinput.h config.h 
-xrdb.o : xrdb.c config.h
+  gnu.h sink.h sinkmask.h $(config_h)
+xselect.o : xselect.c dispextern.h frame.h xterm.h blockinput.h $(config_h) 
+xrdb.o : xrdb.c $(config_h)
 
 /* The files of Lisp proper */
 
 alloc.o : alloc.c frame.h window.h buffer.h  puresize.h syssignal.h \
- blockinput.h config.h INTERVAL_SRC
-bytecode.o : bytecode.c buffer.h config.h 
-data.o : data.c buffer.h puresize.h syssignal.h config.h
-eval.o : eval.c commands.h keyboard.h blockinput.h config.h
-floatfns.o : floatfns.c config.h
-fns.o : fns.c commands.h config.h frame.h buffer.h keyboard.h
-print.o : print.c process.h frame.h window.h buffer.h config.h 
-lread.o : lread.c commands.h keyboard.h buffer.h paths.h config.h termhooks.h
+ blockinput.h $(config_h) INTERVAL_SRC
+bytecode.o : bytecode.c buffer.h $(config_h) 
+data.o : data.c buffer.h puresize.h syssignal.h $(config_h)
+eval.o : eval.c commands.h keyboard.h blockinput.h $(config_h)
+floatfns.o : floatfns.c $(config_h)
+fns.o : fns.c commands.h $(config_h) frame.h buffer.h keyboard.h
+print.o : print.c process.h frame.h window.h buffer.h $(config_h) 
+lread.o : lread.c commands.h keyboard.h buffer.h paths.h $(config_h) termhooks.h
 
 /* Text properties support */
-textprop.o : textprop.c buffer.h intervals.h config.h
-intervals.o : intervals.c buffer.h intervals.h config.h
+textprop.o : textprop.c buffer.h intervals.h $(config_h)
+intervals.o : intervals.c buffer.h intervals.h $(config_h)
 
 /* System-specific programs to be made.
    OTHER_FILES, OBJECTS_SYSTEM and OBJECTS_MACHINE
    select which of these should be compiled.  */
 
-sunfns.o  : sunfns.c buffer.h config.h
+sunfns.o  : sunfns.c buffer.h $(config_h)
 
 ${libsrc}emacstool: ${libsrc}emacstool.c
 	cd ${libsrc}; ${MAKE} ${MFLAGS} emacstool

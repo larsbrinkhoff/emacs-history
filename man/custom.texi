@@ -878,7 +878,6 @@ works, but it's good enough for understanding ordinary circumstances.
 @vindex minibuffer-local-ns-map
 @vindex minibuffer-local-completion-map
 @vindex minibuffer-local-must-match-map
-@vindex repeat-complex-command-map
   The minibuffer has its own set of local keymaps; they contain various
 completion and exit commands.
 

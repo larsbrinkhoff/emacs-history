@@ -52,7 +52,7 @@
 
 (defvar hexl-program "hexl"
   "The program that will hexlify and de-hexlify its stdin.
-`hexl-program' will always be concated with `hexl-options'
+`hexl-program' will always be concatenated with `hexl-options'
 and \"-de\" when dehexlfying a buffer.")
 
 (defvar hexl-iso ""
@@ -64,13 +64,11 @@ and \"-de\" when dehexlfying a buffer.")
 
 (defvar hexlify-command
   (format "%s%s %s" exec-directory hexl-program hexl-options)
-  "The command to use to hexlify a buffer.  It is the concatination of
-`hexl-program' and `hexl-options'.")
+  "The command to use to hexlify a buffer.")
 
 (defvar dehexlify-command
   (format "%s%s -de %s" exec-directory hexl-program hexl-options)
-  "The command to use to unhexlify a buffer.  It is the concatination of
-`hexl-program', the option \"-de\", and `hexl-options'.")
+  "The command to use to unhexlify a buffer.")
 
 (defvar hexl-max-address 0
   "Maximum offset into hexl buffer.")
@@ -502,9 +500,8 @@ You may also type up to 3 octal digits, to insert a character with that code"
 
 (defun hexl-char-after-point ()
   "Return char for ASCII hex digits at point."
-  (setq lh (char-after (point)))
-  (setq rh (char-after (1+ (point))))
-  (hexl-htoi lh rh))
+  (hexl-htoi (char-after (point))
+	     (char-after (1+ (point)))))
 
 (defun hexl-htoi (lh rh)
   "Hex (char) LH (char) RH to integer."

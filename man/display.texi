@@ -39,6 +39,7 @@ moves in the window.  Thus, the command to scrolling forward is called
 * Horizontal Scrolling::   Moving text left and right in a window.
 * Selective Display::      Hiding lines with lots of indentation.
 * Optional Display::       Optional display features.
+* European Display::	   Displaying (and inputting) European characters.
 * Display Vars::           Information on variables for customizing display.
 @end menu
 
@@ -203,24 +204,44 @@ the three dots.
 
   To make everything visible again, type @kbd{C-x $} with no argument.
 
-@node Optional Display
-@section Optional Display Features
+@node European Display
+@section European Character Set Display
 
-@cindex European character sets
+@cindex European character set
 @cindex accented characters
-@cindex ISO Latin-1 character sets
+@cindex ISO Latin-1 character set
 @findex standard-display-european
-
+@cindex @code{iso-syntax} library
   Emacs can display accented characters, assuming the font in use
 supports them.  The @kbd{M-x standard-display-european} command toggles
 European character display.  When enabled, Emacs displays characters
 according to the ISO 8859 Latin-1 encoding for European languages; when
 disabled, Emacs uses octal notation for all characters not specified by
-the ordinary ASCII standard.
+the ordinary ASCII standard.  Load the library @code{iso-syntax} to specify
+the correct syntactic properties for the character codes 128 and above.
 
-With a prefix argument, @kbd{M-x standard-display-european} enables
-European character display iff the argument is positive.
+  With a prefix argument, @kbd{M-x standard-display-european} enables
+European character display if and only if the argument is positive.
 
+  If your terminal can send character codes 128 and up to represent
+ISO Latin-1 characters, execute the following expression to
+enable Emacs to understand them:
+
+@example
+(set-input-mode (car (current-input-mode))
+                (nth 1 (current-input-mode))
+                0)
+@end example
+
+@noindent
+@kindex C-x 8
+@cindex @code{iso-insert} library
+Otherwise, you can load the library @code{iso-insert} to turn the
+key @kbd{C-x 8} into a ``compose character'' prefix for insertion
+of the extra ISO Latin-1 printing characters.
+
+@node Optional Display
+@section Optional Display Features
 
 @cindex Line Number mode
 @cindex mode, Line Number
@@ -344,3 +365,12 @@ the value of @code{truncate-lines}.  For information about side-by-side
 windows, see @ref{Split Window}.  See also @ref{Display,, Display,
 elisp, The Emacs Lisp Reference Manual}.
 
+@vindex baud-rate
+  The variable @code{baud-rate} holds the the output speed of the
+terminal, as far as Emacs knows.  Setting this variable does not change
+the speed of actual data transmission, but the value is used for
+calculations such as padding.  It also affects decisions about whether
+to scroll part of the screen or redraw it instead---even when using a
+window system, (We designed it this way, despite the fact that a window
+system has no true ``output speed'', to give you a way to tune these
+decisions.)

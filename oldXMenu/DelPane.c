@@ -40,7 +40,7 @@ XMenuDeletePane(display, menu, p_num)
      * Remove the pane from the pane list and update
      * the pane count.
      */
-    remque(p_ptr);
+    emacs_remque(p_ptr);
     menu->p_count--;
 
     /*

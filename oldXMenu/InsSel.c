@@ -85,7 +85,7 @@ XMenuInsertSelection(menu, p_num, s_num, data, label, active)
      * Insert the selection after the selection with the selection
      * number one less than the desired number for the new selection.
      */
-    insque(select, s_ptr);
+    emacs_insque(select, s_ptr);
 
     /*
      * Update the selection count.

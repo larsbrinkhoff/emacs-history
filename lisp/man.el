@@ -233,7 +233,7 @@ This regular expression should start with a `^' character.")
   (define-key Man-mode-map "g"    'Man-goto-section)
   (define-key Man-mode-map "s"    'Man-goto-see-also-section)
   (define-key Man-mode-map "q"    'Man-quit)
-  (define-key Man-mode-map "m"    'Man-manual-entry)
+  (define-key Man-mode-map "m"    'manual-entry)
   (define-key Man-mode-map "v"    'Man-version)
   (define-key Man-mode-map "?"    'describe-mode)
   )
@@ -447,19 +447,19 @@ Man-reuse-okay-p is non-nil."
   "Notify the user when MAN-BUFFER is ready.
 See the variable Man-notify for the different notification behaviors."
   (cond
-   ((eq Man-notify 'bully)
-    (pop-to-buffer Man-buffer)
-    (delete-other-windows-quietly))
-   ((eq Man-notify 'aggressive)
-    (pop-to-buffer Man-buffer))
-   ((eq Man-notify 'friendly)
-    (display-buffer Man-buffer 'not-this-window))
-   ((eq Man-notify 'polite)
+   ((eq man-notify 'bully)
+    (pop-to-buffer man-buffer)
+    (delete-other-windows))
+   ((eq man-notify 'aggressive)
+    (pop-to-buffer man-buffer))
+   ((eq man-notify 'friendly)
+    (display-buffer man-buffer 'not-this-window))
+   ((eq man-notify 'polite)
     (beep)
-    (message "Manual buffer %s is ready." (buffer-name Man-buffer)))
-   ((eq Man-notify 'quiet)
-    (message "Manual buffer %s is ready." (buffer-name Man-buffer)))
-   ((or (eq Man-notify 'meek)
+    (message "Manual buffer %s is ready." (buffer-name man-buffer)))
+   ((eq man-notify 'quiet)
+    (message "Manual buffer %s is ready." (buffer-name man-buffer)))
+   ((or (eq man-notify 'meek)
 	t)
     (message ""))
    ))
@@ -513,7 +513,7 @@ See the variable Man-notify for the different notification behaviors."
 The following man commands are available in the buffer. Try
 \"\\[describe-key] <key> RET\" for more information:
 
-\\[Man-manual-entry]       Prompt to retrieve a new manpage.
+\\[manual-entry]       Prompt to retrieve a new manpage.
 \\[Man-follow-manual-reference]       Retrieve reference in SEE ALSO section.
 \\[Man-next-manpage]   Jump to next manpage in circular list.
 \\[Man-previous-manpage]   Jump to previous manpage in circular list.
@@ -554,7 +554,7 @@ The following key bindings are currently in effect in the buffer:
 	mode-line-format Man-mode-line-format
 	truncate-lines t
 	buffer-read-only t)
-  (buffer-flush-undo (current-buffer))
+  (buffer-disable-undo (current-buffer))
   (auto-fill-mode -1)
   (use-local-map Man-mode-map)
   (goto-char (point-min))

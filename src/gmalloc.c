@@ -47,11 +47,12 @@ extern "C"
 #define	__P(args)	args
 #undef	__ptr_t
 #define	__ptr_t		void *
+#define CONST const
 #else /* Not C++ or ANSI C.  */
 #undef	__P
 #define	__P(args)	()
-#undef	const
-#define	const
+#undef	CONST
+#define	CONST
 #undef	__ptr_t
 #define	__ptr_t		char *
 #endif /* C++ or ANSI C.  */
@@ -248,7 +249,7 @@ extern struct mstats mstats __P ((void));
 
 /* Call WARNFUN with a warning message when memory usage is high.  */
 extern void memory_warnings __P ((__ptr_t __start,
-				  void (*__warnfun) __P ((__const char *))));
+				  void (*__warnfun) __P ((CONST char *))));
 
 
 /* Relocating allocator.  */
@@ -425,8 +426,15 @@ malloc (size)
   register size_t i;
   struct list *next;
 
+#ifdef emacs
+  /* Library fns that call malloc need this
+     on some systems, such as rpc on Ultrix on Decstation.  */
+  if (size == 0)
+    size = 1;
+#else
   if (size == 0)
     return NULL;
+#endif
 
   if (__malloc_hook != NULL)
     return (*__malloc_hook) (size);

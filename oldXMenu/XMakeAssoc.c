@@ -26,7 +26,7 @@ extern int errno;
 
 extern int (*_XIOErrorFunction)();	/* X system error reporting routine. */
 
-void insque();
+void emacs_insque();
 struct qelem {
 	struct    qelem *q_forw;
 	struct    qelem *q_back;
@@ -103,6 +103,6 @@ XMakeAssoc(dpy, table, x_id, data)
 	new_entry->data = data;
 
 	/* Insert the new entry. */
-	insque((struct qelem *)new_entry, (struct qelem *)Entry->prev);
+	emacs_insque((struct qelem *)new_entry, (struct qelem *)Entry->prev);
 }
 

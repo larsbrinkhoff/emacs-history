@@ -103,7 +103,8 @@ SOURCES = COPYING ChangeLog Makefile.in README aixcc.lex emacs.csh \
 ### Some other files - those shared with other GNU utilities - need
 ### HAVE_CONFIG_H #defined before they know they can take advantage of
 ### the information in ../src/config.h.
-ALL_CFLAGS = ${C_SWITCH_SYSTEM} -Demacs -DHAVE_CONFIG_H -I${srcdir} -I${srcdir}/../src ${CFLAGS}
+ALL_CFLAGS = ${C_SWITCH_SYSTEM} -Demacs -DHAVE_CONFIG_H \
+   -I${srcdir} -I${srcdir}/../src -I. -I../src ${CFLAGS}
 .c.o:
 	${CC} -c ${CPPFLAGS} ${ALL_CFLAGS} $<
 
@@ -138,8 +139,12 @@ ${archlibdir}: all
 install: ${archlibdir}
 	@echo
 	@echo "Installing utilities for users to run."
-	for file in ${INSTALLABLES}  ${INSTALLABLE_SCRIPTS}; do \
+	for file in ${INSTALLABLES} ; do \
 	  cp $${file} ${bindir}/$${file}.new ; \
+	  chmod 755 ${bindir}/$${file}.new ; \
+        done
+	for file in ${INSTALLABLE_SCRIPTS} ; do \
+	  cp ${srcdir}/$${file} ${bindir}/$${file}.new ; \
 	  chmod 755 ${bindir}/$${file}.new ; \
         done
 	@echo
@@ -243,7 +248,7 @@ getdate.o: ${srcdir}/getdate.y ../src/config.h
 timer.o: ${srcdir}/timer.c ../src/config.h
 	$(CC) -c -I${srcdir}/../src $(ALL_CFLAGS) ${srcdir}/timer.c
 timer: ${TIMEROBJS}
-	$(CC) -I${srcdir}/../src $(ALL_CFLAGS) ${TIMEROBJS} -o timer
+	$(CC) -I${srcdir}/../src $(ALL_CFLAGS) ${TIMEROBJS} $(LOADLIBES) -o timer
 
 make-path: ${srcdir}/make-path.c
 	$(CC) $(ALL_CFLAGS) ${srcdir}/make-path.c -o make-path

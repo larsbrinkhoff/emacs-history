@@ -2113,7 +2113,7 @@ sys_signal (int signal_number, signal_handler_t action)
 #else
   sigemptyset (&new_action.sa_mask);
   new_action.sa_handler = action;
-  new_action.sa_flags = NULL;
+  new_action.sa_flags = 0;
   sigaction (signal_number, &new_action, &old_action);
   return (old_action.sa_handler);
 #endif /* DGUX */
@@ -2533,7 +2533,7 @@ char *sys_siglist[NSIG + 1] =
 #endif /* not AIX */
   0
   };
-#endif HAVE_SYS_SIGLIST
+#endif /* HAVE_SYS_SIGLIST */
 
 /*
  *	Warning, this function may not duplicate 4.2 action properly
@@ -2704,7 +2704,8 @@ gettimeofday (tp, tzp)
 
   tp->tv_sec = time ((long *)0);    
   tp->tv_usec = 0;
-  tzp->tz_minuteswest = -1;
+  if (tzp != 0)
+    tzp->tz_minuteswest = -1;
 }
  
 #endif

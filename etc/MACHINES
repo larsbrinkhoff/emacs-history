@@ -392,9 +392,11 @@ Intel 386 (i386-unknown-isc, 		i386-unknown-esix,
 
   If you are using Xenix, see notes at end under Xenix.
   If you are using Esix, see notes at end under Esix.
+  If you are using SCO Unix, see notes at end under SCO.
   
-  Note that use with Linux requires the experimental "net 2" network
-  software (no relation to Berkeley Net 2).
+  Note that use on Linux with GCC 2.4 and the DLL 4.4 libraries
+  requires the experimental "net 2" network patches (no relation to
+  Berkeley Net 2).
 
   Some sysV.3 systems seem to have bugs in `opendir';
   for them, alter `config.h' to define NONSYSTEM_DIR_LIBRARY
@@ -778,6 +780,18 @@ Esix
 Microport
 
   See under "Intel 386".
+
+SCO Unix
+  If you have TCP but not X, you need to edit src/s/sco4.h
+  to define HAVE_SOCKETS.
+
+  If you are using MMDF instead of sendmail, you need to remove
+  /usr/lib/sendmail or modify lisp/paths.el before compiling.
+  lisp/paths.el (which is loaded during the build) will attent to use
+  sendmail if it exists.
+
+  If you are using SMAIL, you need to define the macro
+  SMAIL in config.h.
 
 System V rel 0 (usg5.0)
 

@@ -830,6 +830,9 @@ XTflash (f)
 
 XTring_bell ()
 {
+  if (x_current_display == 0)
+    return;
+
 #if defined (HAVE_TIMEVAL) && defined (HAVE_SELECT)
   if (visible_bell)
     XTflash (selected_frame);
@@ -1077,7 +1080,7 @@ dumprectangle (f, left, top, cols, rows)
 	|| right > intborder + f->width * FONT_WIDTH (f->display.x->font))
       dumpborder (f, 0);
   }
-#endif /* HAVE_X11		/* Window manger does this for X11. */ */
+#endif /* HAVE_X11		Window manger does this for X11. */
   
   /* Convert rectangle edges in pixels to edges in chars.
      Round down for left and top, up for right and bottom.  */
@@ -2810,6 +2813,12 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		 disabled; you don't want to spend time updating a
 		 display that won't ever be seen.  */
 	      f->async_visible = 0;
+	      /* The window manager never makes a window invisible
+		 ("withdrawn"); all it does is switch between visible
+		 and iconified.  Frames get into the invisible state
+		 only through x_make_frame_invisible.
+	      if (FRAME_VISIBLE_P (f) || FRAME_ICONIFIED_P (f))
+		f->async_iconified = 1;
 	    }
 	  break;
 
@@ -2874,6 +2883,12 @@ XTread_socket (sd, bufp, numchars, waitp, expected)
 		      || keysym == XK_Delete
 		      || IsCursorKey (keysym)       /* 0xff50 <= x < 0xff60 */
 		      || IsMiscFunctionKey (keysym) /* 0xff60 <= x < 0xff80 */
+#ifdef HPUX
+		      /* This recognizes the "extended function keys".
+			 It seems there's no cleaner way.  */
+		      || ((unsigned) (keysym) >= XK_Select
+			  && (unsigned)(keysym) < XK_KP_Space)
+#endif
 		      || IsKeypadKey (keysym)       /* 0xff80 <= x < 0xffbe */
 		      || IsFunctionKey (keysym))    /* 0xffbe <= x < 0xffe1 */
 		    {
@@ -3622,12 +3637,10 @@ x_bitmap_icon (f)
     return 1;
 
 #ifdef HAVE_X11
-  if (icon_bitmap)
-    XFreePixmap (x_current_display, icon_bitmap);
-  
-  icon_bitmap =
-    XCreateBitmapFromData (x_current_display, FRAME_X_WINDOW (f),
-			   gnu_bits, gnu_width, gnu_height);
+  if (! icon_bitmap)
+    icon_bitmap =
+      XCreateBitmapFromData (x_current_display, FRAME_X_WINDOW (f),
+			     gnu_bits, gnu_width, gnu_height);
   x_wm_set_icon_pixmap (f, icon_bitmap);
   f->display.x->icon_bitmap_flag = 1;
 #else /* ! defined (HAVE_X11) */
@@ -3750,7 +3763,7 @@ x_connection_closed ()
   if (_Xdebug)
     abort ();
 
-  shut_down_emacs (0);
+  shut_down_emacs (0, 1);
 
   exit (70);
 }
@@ -4273,7 +4286,11 @@ x_make_frame_invisible (f)
 {
   int mask;
 
-  if (! f->async_visible)
+  /* Don't keep the highlight on an invisible frame.  */
+  if (x_highlight_frame == f)
+    x_highlight_frame = 0;
+
+  if (! f->async_visible && ! f->async_iconified)
     return;
 
   BLOCK_INPUT;
@@ -4333,6 +4350,10 @@ x_iconify_frame (f)
      struct frame *f;
 {
   int mask;
+
+  /* Don't keep the highlight on an invisible frame.  */
+  if (x_highlight_frame == f)
+    x_highlight_frame = 0;
 
   if (f->async_iconified)
     return;

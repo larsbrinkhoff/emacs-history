@@ -1,3 +1,75 @@
+Sun May 30 00:15:27 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Version 19.10 released.
+
+Sat May 29 16:52:24 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* Makefile.in: Use Makefile comments, not C comments.
+
+	* configure.in: Add case for the Tektronix XD88.
+
+Sat May 29 16:30:13 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Handle sysv4.2 and sysvr4.2.
+
+Sat May 29 15:30:00 1993  Jim Blandy  (jimb@wookumz.gnu.ai.mit.edu)
+
+	* configure.in: Traverse the argument list without destroying it;
+	don't use shift.  It turns out that "set - ${saved_arguments}"
+	doesn't work portably.
+
+	* configure.in: Add missing "fi".
+
+	* make-dist: Rebuild configure if configure.in is newer.
+
+	* Makefile.in (src:, lib-src:, FRC:): force the src and lib-src
+	targets to be executed even if make remembers that it has already
+	stisfied FRC.
+
+Sat May 29 02:09:15 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (do-install): Delete redundant code to copy etc twice.
+
+	* configure.in (romp): Handle various version numbers with aos and bsd.
+
+Fri May 28 17:02:59 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* configure.in: Fix message text.
+
+Fri May 28 00:31:48 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* make-dist: Make a `site-lisp' directory in the distribution,
+	instead of a `local-lisp' directory, which hasn't been the
+	appropriate name for a long time.
+	* Makefile.in (@rip_paths@locallisppath): Use site-lisp directory
+	from the distribution first, then /usr/local/lib/emacs/site-lisp.
+
+	* Makefile.in (do-install): Correctly detect if ./etc and
+	${srcdir}/etc are the same.
+
+	* configure.in: Extract UNEXEC from the system configuration
+	files, compute the name of the source file corresponding to the
+	object file, and #define it as UNEXEC_SRC in config.h.
+
+	* configure.in: If srcdir is '.', then try using PWD to make it
+	absolute.
+
+	* configure.in: Include ${srcdir} in the printed report, to help
+	people notice if it's an automounter path.
+
+Thu May 27 23:23:58 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
+
+	* configure.in (prefix): Don't run pwd on srcdir unnecessarily.
+
+Thu May 27 18:01:54 1993  Richard Stallman  (rms@mole.gnu.ai.mit.edu)
+
+	* Makefile.in (do-install): Delete the dest dir, not the source dir,
+	when they are different.  Add  `shift' command.
+	(COPYDESTS, COPYDIR): Delete external-lisp dir.
+	(externallispdir): Var deleted.
+
+	* configure.in: Delete spurious paren outputting short_usage.
+
 Thu May 27 02:35:32 1993  Jim Blandy  (jimb@geech.gnu.ai.mit.edu)
 
 	* Version 19.9 released.

@@ -319,6 +319,12 @@ decode_command (argc, argv)
 	}
     }
 
+  while (optind < argc)
+    {
+      *ip++ = argv[optind++];
+      *op++ = NULL;
+    }
+
   /* Record number of keyfields and terminate list of filenames. */
   num_infiles = ip - infiles;
   *ip = 0;

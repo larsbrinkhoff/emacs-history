@@ -859,7 +859,7 @@ SIZE, if supplied, should be a prime number."
 ;;;; Internal variables.
 ;;;; ------------------------------------------------------------
 
-(defconst ange-ftp-version "$Revision: 1.18 $")
+(defconst ange-ftp-version "$Revision: 1.19 $")
 
 (defvar ange-ftp-data-buffer-name " *ftp data*"
   "Buffer name to hold directory listing data received from ftp process.")
@@ -3658,7 +3658,7 @@ NEWNAME should be the name to give the new compressed or uncompressed file.")
 	      (ange-ftp-compress name newfile)
 	    (ange-ftp-uncompress name newfile)))
       (let (file-name-handler-alist)
-	(dired-compress-filename name)))))
+	(dired-compress-file name)))))
 
 ;; Copy FILE to this machine, compress it, and copy out to NFILE.
 (defun ange-ftp-compress (file nfile)
