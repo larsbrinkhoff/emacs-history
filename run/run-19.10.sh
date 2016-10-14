@@ -1,0 +1,12 @@
+rm etc/xmouse.doc
+rm lisp/iso8859-1.el
+rm lisp/superyank.el
+rmdir local-lisp
+rm src/bitmaps/cntr_ptr.xbm
+rm src/bitmaps/cntr_ptrmsk.xbm
+rm src/bitmaps/cross_weave.xbm
+rm src/bitmaps/left_ptr.xbm
+rm src/bitmaps/left_ptrmsk.xbm
+rm src/bitmaps/right_ptr.xbm
+rm src/bitmaps/right_ptrmsk.xbm
+rm src/fields.c
