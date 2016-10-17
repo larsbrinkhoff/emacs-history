@@ -1,0 +1,1502 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Terminal Output, Prev: Terminal Input, Up: Operating System Interface, Next: Flow Control
+
+Terminal Output
+===============
+
+  (intro!!)
+
+
+* Function: baud-rate
+
+       This function returns the output baud rate of the terminal.
+
+          (baud-rate)
+          => 9600
+
+
+* Function: send-string-to-terminal STRING
+
+       This function sends STRING to the terminal without alteration.
+     Control characters in STRING will have terminal-dependent effects.
+     A typical use would be defining function keys on terminals that
+     have down-loadable function key definitions.
+
+       The example below might define function key 4 to move forward
+     four characters (`C-u C-f').
+
+          (send-string-to-terminal "\eF4\^U\^F")
+          => nil
+
+          Another example??
+
+
+
+* Command: open-termscript FILENAME
+
+     After this function is called, Emacs copies all terminal output
+     characters to FILENAME as well to the terminal.  It returns `nil'.
+     This function is normally only called interactively to debug Emacs
+     output.
+
+     Also `open-dribble-file' in *Note Terminal Input::.
+
+          (open-termscript "../junk/termscript")
+          => nil
+
+
+
+
+
+File: elisp  Node: Flow Control, Prev: Terminal Output, Up: Operating System Interface
+
+Flow Control
+============
+
+
+This section attempts to answer the question "Why does Emacs choose to
+use flow-control characters in its command character set?"  For another
+view, please read the comments on flow control in `emacs/INSTALL' from
+the distribution; for help with termcaps and DEC terminal concentrators
+see `emacs/etc/TERMS'.
+
+Flow control was not necessary for most terminals once upon a time, so
+use of `C-s' and `C-Q' for command characters was reasonable.  Emacs,
+for economy of keystrokes and portability, chose to use the control
+characters in the ASCII character set for its functions, and tried to
+use mnemonic assignments (S for search, Q for quote).  There are other
+(albeit less common in practice) ways to do flow control that preserve
+transparency of the character stream.
+
+Once Emacs' precedent was established, it was too hard to undo.  One
+might even argue that Emacs' use of these control characters predates
+their use by terminals and front-ends for flow control.  Notice also
+that the latter use is ONLY a de-facto standard.  In fact, on the model
+33 teletype with a paper tape punch (which is VERY old), they were used
+for the host to turn the punch on and off!
+
+So which usage is "right", emacs' or the terminal/front-end
+manufacturer's?  This is a rhetorical (or religious) question; it has no
+simple answer.
+
+GNU Emacs (version 18.48 and later) provides several options for coping
+with terminals or front-ends that insist on using flow control
+characters.  Listed in estimated order of preference.
+
+1.
+      Have Emacs run in CBREAK mode with the kernel handling flow
+     control.  Issue `(set-input-mode nil t)' from `.emacs'.  It is now
+     necessary to find other keys to bind to the commands
+     `isearch-forward' and `quoted-insert'.  Traditional nominees are
+     `C-^' and `C-\'.  There are two ways to get this effect:
+
+     1a.
+            Use the `keyboard-translate-table' to cause `C-^' and `C-\'
+          to be received by Emacs as though `C-s' and `C-q' were typed.
+          Emacs (except at its very lowest level) never knows that the
+          characters typed were anything but `C-s' and `C-q', so the use
+          of these keys inside `isearch-forward' still works - typing
+          `C-^' while incremental searching will move the cursor to the
+          next match, etc.  Here's some code for this:
+
+               (setq keyboard-translate-table (make-string 128 0))
+               (let ((i 0))
+                 (while (< i 128)
+                   (aset keyboard-translate-table i i)
+                   (setq i (1+ i))))
+
+                 (aset keyboard-translate-table ?\^\\ ?\^s)
+                 (aset keyboard-translate-table ?\^^ ?\^q)
+                 ))
+
+     1b.
+            Simply rebind the keys `C-^' and `C-\' to `isearch-forward'
+          and `quoted-insert'.  To get continued searches inside isearch
+          it is also necessary to set `search-repeat-char' to `C-^'.
+
+
+2.
+       Don't use CBREAK mode, and cause `C-s' and `C-q' to be bound to a
+     null command.  The problem with this is that whatever sent the flow
+     control characters is apt to be falling behind the characters being
+     sent to it, and so what finds its way to the terminal screen will
+     not in general be what is intended.  It will be still be necessary
+     to find other keys to bind to `isearch-forward' and
+     `quoted-insert'; see 1a and 1b above.
+
+     Here is a suitable null command:
+
+          (defun noop ()
+            "Do nothing; return nil."
+            (interactive))
+
+3.
+       Don't use CBREAK mode, and `global-unset-key' the keys `C-s' and
+     `C-Q'.  This is similar to 2 above, except that the flow control
+     characters will probably cause beeps or visible bells.
+
+     Note that, if the terminal is the source of flow control characters
+     and kernel flow control handling is enabled, it will not in general
+     be necessary to send padding characters as specified in a termcap
+     or terminfo entry.  It may be possible to customize a termcap entry
+     to provide better Emacs performance on the assumption that flow
+     control is in use.  This effect can also be simulated by announcing
+     (with stty(1) or its equivalent) that the terminal is running at a
+     very slow speed, provided the terminal is not directly wired to the
+     host.
+
+
+
+
+File: elisp  Node: Emacs Display, Prev: Operating System Interface, Up: Top, Next: Miscellaneous Modes
+
+Emacs Display
+*************
+
+This chapter describes a number of features related to the display that
+Emacs presents to the user.
+
+* Menu:
+
+* Window Systems::      Which window system is being used
+* Screen Attributes::   How big is the Emacs screen
+* Truncation::          Folding or wrapping long text lines     
+* Selective Display::   Hiding part of the buffer text
+* Overlay Arrow::       Display of an arrow to indicate position
+* Temporary Displays::  Displays that go away automatically
+* Sitting::             Forcing display update and waiting for user
+* Beeping::             Audible signal to user
+* Blinking::            Bouncing the cursor
+* Miscellaneous Display Variables::     
+
+
+* Command: redraw-display
+
+       This function clears the screen and redraws what is supposed to
+     appear on it.
+
+
+
+File: elisp  Node: Window Systems, Up: Emacs Display, Next: Screen Attributes
+
+Window Systems
+==============
+
+Also see `window-setup-hook' in *Note Terminal-specific
+Initialization::.
+
+
+* Variable: window-system
+
+       This global variable tells Emacs what window system it is running
+     under.  Its value should be a symbol such as `x' (if Emacs is
+     running under X) or `nil' (if emacs is running on an ordinary
+     terminal).
+
+
+* Variable: window-system-version
+
+       This variable will either be `10' or `11' when using the X window
+     system.
+
+
+
+File: elisp  Node: Screen Attributes, Prev: Window Systems, Up: Emacs Display, Next: Truncation
+
+Screen Attributes
+=================
+
+  (intro!!)
+
+
+* Function: screen-height
+
+       This function returns number of lines on screen available for
+     display.
+
+          (screen-height)
+          => 50
+
+
+* Function: set-screen-height LINES &optional NOT-ACTUAL-SIZE
+
+       This function declares that the terminal can display LINES lines.
+     When called, the display routines will size windows to fit, and
+     will not attempt to draw on any other portion of the screen, no
+     matter what the actual physical dimensions of the terminal are.
+
+       If NOT-ACTUAL-SIZE is non-`nil', then Emacs should use LINES for
+     display, but it will still know about the actual size of the
+     screen.  (Emacs may be able to preform more efficient cursor
+     positioning if it knows the actual size of the physical screen.)
+
+       If LINES is different from what it was previously, Emacs will
+     redisplay the screen using the new size.
+
+       It returns `nil'.
+
+
+
+* Function: screen-width
+
+       This function returns number of columns on screen available for
+     display.
+
+          (screen-width)
+          => 80
+
+
+* Function: set-screen-width COLUMNS &optional NOT-ACTUAL-SIZE
+
+       This function declares that the terminal can display COLUMNS
+     columns.  When called, the display routines will size windows to
+     fit, and will not attempt to draw on any other portion of the
+     screen, no matter what the actual physical dimensions of the
+     terminal are.
+
+       NOT-ACTUAL-SIZE is the same as in `set-screen-height'.
+
+       If COLUMNS is different from what it was previously, Emacs will
+     redisplay the screen using the new size.
+
+       It returns `nil'.
+
+
+
+
+File: elisp  Node: Truncation, Prev: Screen Attributes, Up: Emacs Display, Next: Selective Display
+
+Truncation
+==========
+
+  (intro!!)
+
+
+* User Option: truncate-lines
+
+        This per-buffer-local variable controls how Emacs displays lines
+     that extend beyond the right edge of the window.  If it is
+     non-`nil', then Emacs will not display continuation lines; but
+     rather each line of text will take exactly one screen line and a
+     dollar sign will be shown at the edge of any line that extends to
+     or beyond the edge of the window.
+
+      This variable is overridden by the variable
+     `truncate-partial-width-windows' if that variable is non-`nil' and
+     the window for the buffer in question is not the full width of the
+     screen.
+
+
+* Variable: default-truncate-lines
+
+       This variable is the default value for `truncate-lines' in
+     buffers that do not override it.
+
+
+* User Option: truncate-partial-width-windows
+
+       This variable determines how lines that are too wide to fit on
+     the screen are displayed in a horizontally split window (*Note
+     Splitting Windows::).  If it is non-`nil', then wide lines will be
+     truncated (with a `$' at the end of the line), otherwise they will
+     be wrapped (with a `\' at the end of the line).
+
+
+
+
+
+File: elisp  Node: Selective Display, Prev: Truncation, Up: Emacs Display, Next: Overlay Arrow
+
+Selective Display
+=================
+  
+  (intro!!)
+
+
+* Variable: selective-display
+
+       This buffer-local variable enables selective display.  This means
+     that lines, or portions of lines, may be made invisible.  If
+     `selective-display' is `t', then any portion of a line that follows
+     a `C-m' will not be displayed.  If it is a positive integer, then
+     lines that start with whitespace in more than `selective-display'
+     columns will not be displayed.
+
+       When some portion of a buffer is invisible, the vertical movement
+     commands operate as if that portion did not exist, allowing a
+     single `next-line' command to skip a hundred lines.  Character
+     movement commands (`forward-char', etc.) will not skip the
+     invisible portion however, and it is possible, if inadvisable, to
+     insert or delete sections of an invisible portion.
+
+       In the examples below, what is shown is the *display* of the
+     buffer `foo', which changes with the value of `selective-display'.
+     The *contents* of the buffer does not change.
+
+          (setq selective-display nil)
+          => nil
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column
+            3n this column
+            3n this column
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+          (setq selective-display-ellipses t)
+          => t
+          (setq selective-display 2)
+          => 2
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column ...
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+          (setq selective-display-ellipses nil)
+          => nil
+
+          ---------- Buffer: foo ----------
+          1 on this column
+           2on this column
+           2on this column
+          1 on this column
+          ---------- Buffer: foo ----------
+
+
+* Variable: selective-display-ellipses
+
+       This buffer-local variable means display `...' on the previous
+     line when a line is made invisible due to `selective-display' being
+     non-`nil'.
+
+
+
+
+File: elisp  Node: Overlay Arrow, Prev: Selective Display, Up: Emacs Display, Next: Temporary Displays
+
+Overlay Arrow
+=============
+
+The "overlay arrow" is useful for directing the user's attention to a
+particular line in a buffer.  For example, in a debugger mode, the
+overlay arrow might point to the current line of code about to be
+executed.
+
+
+* Variable: overlay-arrow-string
+
+     The string to display as an arrow.
+
+
+
+* Variable: overlay-arrow-position
+
+     Marker for where to display `overlay-arrow-string' on top of the
+     buffer text.  This must be a marker at the beginning of some line.
+     The overlay string will only display over text on that line up to
+     the end of line.
+
+     The overlay string will only be displayed in the current buffer,
+     but it may remain in the display of some other buffer until an
+     update is required.
+
+
+
+
+File: elisp  Node: Temporary Displays, Prev: Overlay Arrow, Up: Emacs Display, Next: Sitting
+
+Temporary Displays
+==================
+
+  (intro!!)
+
+* Variable: temp-buffer-show-hook
+
+     Non-`nil' means call as function to display a help buffer.  Used by
+     `with-output-to-temp-buffer' (but could it be used elsewhere??).
+
+
+* Special form: with-output-to-temp-buffer NAME FORMS*
+
+       This function arranges for all output done to `standard-output'
+     by FORMS, to be inserted into a buffer.  The buffer is then popped
+     up into some window for viewing.
+
+       The buffer is named by the string NAME, and it need not exist.
+     NAME must be a string, not a buffer.  The buffer is initially
+     erased (no questions asked), then it is marked as unmodified after
+     `with-output-to-temp-buffer' exits.
+
+       `with-output-to-temp-buffer' first binds `standard-output' to the
+     buffer, then it evaluates the forms in FORMS.  With
+     `standard-output' rebound, any output directed there will naturally
+     be inserted into the buffer.
+
+       The value of the last form in FORMS is returned.
+
+          ---------- Buffer: foo ----------
+           This is the contents of foo.
+          ---------- Buffer: foo ----------
+
+          (with-output-to-temp-buffer "foo"
+              (print 20)
+              (print standard-output))
+          => #<buffer foo>
+
+          ---------- Buffer: foo ----------
+          20
+
+          #<buffer foo>
+
+          ---------- Buffer: foo ----------
+
+
+
+* Function: momentary-string-display STRING POSITION &optional CHAR MESSAGE
+
+       This function momentarily displays STRING in the current buffer
+     at POSITION (which is a character offset from the beginning of the
+     buffer).  The display remains until the next character is typed.
+
+       If the next character the user types is CHAR, then Emacs ignores
+     it.  Otherwise it is then the first character in the next input.
+     Thus, typing CHAR will simply remove the string from the display,
+     while typing say, `C-f' will remove the string from the display and
+     move the point forward.  CHAR is SPC by default.
+
+     Note that the result of `momentary-string-display' is the character
+     typed rather than `t' if that character is not CHAR.
+
+       If MESSAGE is non-`nil', it is displayed in the echo area.  If it
+     is `nil', then instructions to type CHAR are displayed there, e.g.,
+     `Type RET to continue editing'.
+
+       In the example, the point in foo is located at the beginning of
+     the second line.
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo.
+          This is the contents of foo.
+          ---------- Buffer: foo ----------
+
+          (momentary-string-display
+             "******* Important Message! *******" (point) ?\r
+             "Type RET when done reading")
+
+          => t
+
+          ---------- Buffer: foo ----------
+          This is the contents of foo.
+          ******* Important Message! *******This is the contents of foo.
+          ---------- Buffer: foo ----------
+
+          ---------- Echo Area ----------
+          Type RET when done reading
+
+
+
+File: elisp  Node: Sitting, Prev: Temporary Displays, Up: Emacs Display, Next: Beeping
+
+Sitting
+=======
+
+You may wish to pause in the middle of computation to allow the user
+time to view the display.  `sit-for' performs a pause with update, while
+`sleep-for' performs a pause without update.
+
+
+* Function: sit-for SECONDS
+
+       This function performs redisplay (if there is no pending input
+     from the user), then waits SECONDS seconds, or until input is
+     available.  The result is `t' if `sit-for' waited the full time
+     with no input arriving (see `input-pending-p' in *Note Command
+     Keys::).  Otherwise, `nil' is returned.
+
+     Redisplay is always preempted if input arrives, and does not happen
+     at all if input is available before it starts.  Thus there is no
+     way to force an update if there is pending input.  But if there is
+     no input pending, you can force an update with no delay by using
+     `(sit-for 0)'.
+
+
+* Function: sleep-for SECONDS
+
+       This function simply pauses, without updating the display,
+     SECONDS.  It pays no attention to available input.  It returns
+     `nil'.  (What is this useful for??  Got an example??)
+
+
+
+File: elisp  Node: Beeping, Prev: Sitting, Up: Emacs Display, Next: Blinking
+
+Beeping
+=======
+
+  (intro!!)
+
+* Function: ding &optional DONT-TERMINATE
+
+       This function beeps, or flashes the screen (see `visible-bell'
+     below).  It also terminates any keyboard macro currently executing
+     unless DONT-TERMINATE is non-`nil'.
+
+
+* Function: beep &optional DONT-TERMINATE
+
+     Synonym of `ding'.
+
+
+* Variable: visible-bell
+
+       This global variable determines whether Emacs will try to flash
+     the screen to represent a bell.  `t' means do, `nil' means don't.
+     This is only effective if the termcap entry for the present
+     terminal type has the visible bell flag (vb) set.
+
+
+
+
+File: elisp  Node: Blinking, Prev: Beeping, Up: Emacs Display, Next: Miscellaneous Display Variables
+
+Blinking
+========
+
+  (intro!!)
+
+* Variable: blink-paren-hook
+
+       The value of this variable should be a function (of no arguments)
+     to be called whenever a char with close parenthesis syntax (`)') is
+     self-inserted.  It may be `nil', in which case nothing is done.
+
+
+* Variable: blink-matching-paren
+
+     Non-`nil' means show matching open-paren when close-paren is
+     inserted.
+
+
+* Function: blink-matching-open
+
+     Move cursor momentarily to the beginning of the sexp before point.
+
+          (defun interactive-blink-matching-open ()
+            "Move cursor momentarily to the beginning of the sexp before point."
+            (interactive)
+            (let ((blink-matching-paren t))
+              (blink-matching-open)))
+
+
+
+File: elisp  Node: Miscellaneous Display Variables, Prev: Blinking, Up: Emacs Display
+
+Miscellaneous Display Variables
+===============================
+
+  (intro!!)
+
+* Variable: no-redraw-on-reenter
+
+       This global variable determines if Emacs should redraw the entire
+     screen after it has been suspended and resumed.  `t' means do,
+     `nil' means don't.  This is useful if the terminal can remember and
+     restore the Emacs screen.
+
+
+* Variable: inverse-video
+
+       This global variable determines if Emacs will use inverse video.
+     `t' means do, `nil' means don't.
+
+
+* User Option: mode-line-inverse-video
+
+       This variable determines how the mode line(s) will be displayed.
+     If it is non-`nil', then the mode line will use inverse video (or
+     another suitable display mode).  Otherwise the mode line will be in
+     normal display, just like the rest of the screen.
+
+
+
+
+* User Option: ctl-arrow
+
+       This buffer-local variable controls how control characters are
+     displayed.  If it is non-`nil', then they are displayed as an
+     uparrow followed by the character: `^A'.  If it is `nil', then they
+     are displayed as a backslash followed by three octal digits.
+
+
+* Variable: default-ctl-arrow
+
+       The value of this variable is the default value for `ctl-arrow'
+     in buffers that do not override it.  This is the same as
+     `(default-value 'ctl-arrow)'.
+
+
+
+File: elisp  Node: Miscellaneous Modes, Prev: Emacs Display, Up: Top, Next: GNU Emacs Lisp for the Non-Hacker
+
+Miscellaneous Modes
+*******************
+
+
+These should be in the user manual!!
+
+* Menu:
+
+* Emacs Server::	
+* Telnet::	
+* Terminal Emulator::	
+* Editing Files on Remote Machines::	
+
+
+
+File: elisp  Node: Emacs Server, Up: Miscellaneous Modes, Next: Telnet
+
+Emacs Server
+============
+
+
+* Command: server-start &optional LEAVE-DEAD
+
+     Allow this Emacs process to be a server for client processes.  This
+     starts a server communications subprocess through which client
+     "editors" can send your editing commands to this Emacs job.  To use
+     the server, set up the program `etc/emacsclient' in the Emacs
+     distribution as your standard "editor".
+
+     If LEAVE-DEAD is non-`nil' (or interactive prefix arg), means just
+     kill any existing server communications subprocess.
+
+
+* Command: server-edit &optional ARG
+
+     Switch to next server editing buffer; say "Done" for current
+     buffer.  If a server buffer is current, it is marked "done" and
+     optionally saved.  MH <draft> files are always saved and backed up,
+     no questions asked.  When all of a client's buffers are marked as
+     "done", the client is notified.
+
+     If invoked with a prefix argument (ARG), or if there is no server
+     process running, starts server process and that is all.  Invoked by
+     `C-x #'.
+
+
+
+File: elisp  Node: Telnet, Prev: Emacs Server, Up: Miscellaneous Modes, Next: Terminal Emulator
+
+Telnet
+======
+
+
+* Command: telnet HOST
+
+     Open a network login connection to host named HOST (a string).
+     Communication with HOST is recorded in a buffer `*HOST-telnet*'.
+     Normally input is edited in Emacs and sent a line at a time.
+
+
+
+File: elisp  Node: Terminal Emulator, Prev: Telnet, Up: Miscellaneous Modes, Next: Editing Files on Remote Machines
+
+Terminal Emulator
+=================
+
+
+* Command: terminal-emulator BUFFER PROGRAM ARGS &optional WIDTH HEIGHT
+
+     Under a display-terminal emulator in BUFFER, run PROGRAM on
+     arguments ARGS.  BUFFER's contents are made an image of the display
+     generated by that program, and any input typed when BUFFER is the
+     current Emacs buffer is sent to that program an keyboard input.
+     Interactively, BUFFER defaults to "*terminal*" and PROGRAM and ARGS
+     are parsed from an input-string using `sh' (which means that the
+     `~user' filename-naming convention doesn't work.  Isn't Unix
+     wonderful?)
+
+     WIDTH and HEIGHT are determined from the size of the current window
+     -- WIDTH will be one less than the window's width, HEIGHT will be
+     its height.
+
+     To switch buffers and leave the emulator, or to give commands to
+     the emulator itself (as opposed to the program running under it),
+     type Control-^.  The following character is an emulator command.
+     Type Control-^ twice to send it to the subprogram.  This escape
+     character may be changed using the variable `terminal-escape-char'.
+
+     Meta characters may not currently be sent through the terminal
+     emulator.
+
+     Here is a list of some of the variables which control the behavior
+     of the emulator -- see their documentation for more information:
+     `terminal-escape-char', `terminal-scrolling',
+     `terminal-more-processing', `terminal-redisplay-interval'.
+
+     This function calls the value of `terminal-mode-hook' if that
+     exists and is non-`nil' after the terminal buffer has been set up
+     and the subprocess started.
+
+     Presently works with `termcap' only; if somebody sends us code to
+     make this work with `terminfo' we will try to use it.
+
+Other chars following `C-^' are interpreted as follows:
+
+`C-  '
+     `te-escape-help'
+
+`C-l'
+     `redraw-display'
+
+`C-o'
+     `te-flush-pending-output'
+
+`0 .. 9'
+     `digit-argument'
+
+`?'
+     `te-escape-help'
+
+`b'
+     `switch-to-buffer'
+
+`e'
+     `te-set-escape-char'
+
+`m'
+     `te-toggle-more-processing'
+
+`o'
+     `other-window'
+
+`x'
+     `te-escape-extended-command'
+
+
+
+Subcommands of `x' (`te-escape-extended-command')
+
+`Disable More Processing:'
+          Disable ** MORE ** processing
+
+`Enable More Processing:'
+          Enable ** MORE ** processing
+
+`Flush Pending Output:'
+          Discard any as-yet-unprocessed output which has been received
+     by
+
+`Help:'
+          Provide help on commands available after terminal-escape-char
+     is typed.
+
+`Kill Buffer:'
+          One arg, a string or a buffer.  Get rid of the specified
+     buffer.
+
+`Other Window:'
+          Select the ARG'th different window.
+
+`Photo:'
+          Record output from the terminal emulator in a buffer.
+
+`Record Output:'
+          Record output from the terminal emulator in a buffer.
+
+`Refresh:'
+          Clear the screen and output again what is supposed to appear
+     on it.
+
+`Scroll at end of page:'
+          Scroll at end of page (yuck)
+
+`Set Escape Character:'
+          Change the terminal-emulator escape character.
+
+`Set Redisplay Interval:'
+          Set the maximum interval (in output characters) between screen
+     updates.
+
+`Stuff Input:'
+          Read a string to send to through the terminal emulator
+
+`Switch To Buffer:'
+          Select buffer BUFFER in the current window.
+
+`Tofu:'
+          Discontinue output log.
+
+`Wrap at end of page:'
+          Wrap to top of window at end of page
+
+
+
+
+
+File: elisp  Node: Editing Files on Remote Machines, Prev: Terminal Emulator, Up: Miscellaneous Modes
+
+Editing Files on Remote Machines
+================================
+ ..prose..
+
+
+
+* Command: ftp-find-file HOST FILENAME &optional USER PASSWORD
+
+       This function ftps to HOST to get FILENAME.  It logs in as USER
+     with PASSWORD.  As it often takes some time to ftp a file, this
+     function does not wait for the file to be copied, but rather
+     returns immediately.  The buffer is not selected, instead a message
+     is placed in the echo area announcing when the copy has been
+     completed.
+
+
+     USER and PASSWORD are defaulted to the values used when
+     last FTP'ing from HOST (unless password-remembering is disabled).
+      Supply a password of the symbol `t' to override this default
+      (interactively, this is done by giving a prefix arg)
+
+       When called interactively, FILENAME, HOST, USER, and PASSWORD are
+     prompted for in the minibuffer.
+
+          (ftp-find-file "rocky" "/etc/passwd" "lewis" "lewis")
+          => #<process ftp>
+
+          ---------- Echo Area ----------
+          FTP Logging in as lewis@rocky
+          Logged in
+          Opening file rocky:junk/foo...
+          Retrieving rocky:junk/foo in background.  Bye!
+          ftp read rocky:junk/foo done: 19272 bytes received in 4.2 seconds
+          ---------- Echo Area ----------
+
+
+* Variable: ftp-password-alist
+
+        This variable will either be an association list keeping track
+     of all passwords on machines which you have ftp'd to (allowing you
+     to ftp a second time without having to type your password again),
+     or a symbol, in which case Emacs will not remember passwords.
+
+
+* Command: ftp-list-directory HOST DIRECTORY &optional USER PASSWD
+
+       This function ftps to HOST to obtain a listing of DIRECTORY.  It
+     then creates a buffer and puts the listing into that buffer.
+
+          (ftp-list-directory "rocky" "junk")
+          => #<process ftp>
+
+          ---------- Buffer: /tmp/rocky:junk (ftp) ----------
+          total 2
+          -rw-r-----  1 lewis    faculty        28 Jul 20 15:54 .emacs_398
+          drwxr-x---  2 lewis    faculty       512 Oct 22 11:47 bach
+          -rw-r--r--  1 lewis    faculty         0 Oct 23 13:24 foo
+          ---------- Buffer: /tmp/rocky:junk (ftp) ----------
+
+
+
+
+* Command: ftp-write-file HOST FILENAME &optional USERNAME PASSWORD
+
+       This function ftps to HOST to write FILENAME.  It is the exact
+     analog of `ftp-find-file'.
+
+* Function: sysnetunam PATH LOGIN
+
+     Open a network connection to PATH using LOGIN as the login string.
+
+
+
+
+
+File: elisp  Node: GNU Emacs Lisp for the Non-Hacker, Prev: Miscellaneous Modes, Up: Top, Next: GNU Emacs Internals
+
+GNU Emacs Lisp for the Non-Hacker
+*********************************
+
+This section is intended to give people familiar with editing in Emacs
+enough of an understanding of Lisp to allow them to write their own
+Emacs commands.
+
+* Menu:
+
+* Lisp History::        
+* Starting with Lisp::  
+* Names and Symbols::     
+* Binding Variables Locally::   
+* Writing Simple Functions::    
+* Functions That Work on Text:: 
+* Writing Simple Commands::     
+* Functions that Evaluate Several Expressions:: 
+* Real Functions Evaluate their Arguments::     
+
+
+
+File: elisp  Node: Lisp History, Up: GNU Emacs Lisp for the Non-Hacker, Next: Starting with Lisp
+
+Lisp History
+============
+
+Lisp (LISt Processing language) was first developed in the late '50s at
+MIT for use in Artificial Intelligence.  Much later, programmers
+discovered that the great power of the Lisp language made it superior
+for other purposes as well, such as writing editor commands.
+
+Dozens of Lisp implementations have been built over the years, each with
+its own idiosyncrasies.  Many of them were inspired by MacLisp, which
+was written in the 60's at MIT's Project MAC.  Eventually the
+implementors of the descendents of MacLisp got together and developed a
+standard for Lisp systems, called Common Lisp.
+
+GNU Emacs Lisp is largely inspired by MacLisp, and a little by Common
+Lisp.  If you know Common Lisp, you will notice many similarities.  But
+most of the features of Common Lisp have been omitted or simplified in
+order to reduce the memory requirements of GNU Emacs.  Sometimes the
+simplifications are so drastic that a Common Lisp user might be very
+confused.  We will occasionally point out how GNU Emacs Lisp differs
+from Common Lisp.  If you don't know Common Lisp, don't worry about it;
+this manual is self-contained.
+
+
+File: elisp  Node: Starting with Lisp, Prev: Lisp History, Up: GNU Emacs Lisp for the Non-Hacker, Next: Names and Symbols
+
+Starting with Lisp
+==================
+
+Now to Lisp.  I will assume that while reading this, you have a terminal
+at your disposal and that you have called GNU Emacs with no arguments:
+
+     % emacs
+
+When Emacs starts up, the buffer `*scratch*' will be selected.  This
+buffer is in Lisp Interaction mode, a major mode designed especially for
+you to type simple Lisp programs and execute them.
+
+
+
+File: elisp  Node: Names and Symbols, Prev: Starting with Lisp, Up: GNU Emacs Lisp for the Non-Hacker, Next: Binding Variables Locally
+
+Names and Symbols
+=================
+
+Ignoring the nasty details and exceptions, a symbol in Lisp is something
+that has a name.  Normal symbols have names made up of letters, digits,
+and a few other characters (most often: `-*&^%$@!~_+=/').  Here, each
+line is a single symbol name:
+
+     foo1
+     foobar
+     foo-bar
+     +
+     foo+=_.bar!!!
+     FOO
+     lose,win
+
+(Upper case characters are different from lower case ones, so `foo' and
+`FOO' are different symbols.)
+
+Spaces (or tabs or newlines), parentheses and quote marks are among the
+punctuation characters of Lisp.  They are not part of a symbol name.
+
+We will often talk about the names of symbols as if they *were* the
+symbols.  In reality a symbol is not its name any more than I am the
+three letters `bil'.  We do talk about me as being ``Bil'', and we will
+talk about the symbol named `foo' as if it were `foo'.  The distinction
+can be ignored for the most part.
+
+Symbols can have values associated with them.  To demonstrate this, type
+this into your `*scratch*' buffer
+
+     fill-column
+
+and terminate it with a linefeed (typically a key labeled LF or LFD).
+On terminals that don't have an linefeed key, you can always type `C-j',
+which is transmitted to the computer as the same character.
+
+Lisp will then print the value associated with the symbol.  Typically
+`fill-column' has the value 70.  (`fill-column' is a variable used by
+the fill commands as the maximum allowable length for a line).
+
+Lisp likes to receive its input in well-defined chunks.  We call these
+chunks "expressions".  When you type LFD in the `*scratch*' buffer, Lisp
+looks backwards to find the previous expression, and then prints the
+value of that.  (Look at the key binding for LFD, type `C-h k LFD'.)  At
+the moment, the only kind of expression we know about is a symbol, but
+we'll see more soon.
+
+*From now on, after each example of an expression, there will be a line
+that starts with @samp{@Arrow}.* This line shows the value that would
+result, in that example, from the expression immediately above.
+
+Here are a few more symbols and their values:
+
+     c-indent-level
+     => 2                ;How far to indent each new block of C code
+     tab-width
+     => 8                ;The normal width of a TAB
+     left-margin
+     => 0                ;The location of the left margin
+
+When we use a symbol for its value, we refer to the symbol as a
+"variable".  The values of variables aren't fixed; that's why we call
+them ``variables''.  `c-indent-level', `tab-width', and `left-margin'
+are all variables and can be changed.
+
+
+To change the value of `tab-width', we use the Lisp construct `setq'
+like this:
+
+     (setq tab-width 20)
+     => 20
+
+(terminating with LFD of course).
+
+`(setq tab-width 20)' is an expression, so it has a value: 20.  It also
+has the effect of changing the value of `tab-width'.
+
+Now when you insert a tab character into this buffer, it will display as
+20 columns wide.  Try it!  (In Lisp Interaction mode, the TAB key is
+redefined to indent Lisp code properly; to insert an actual tab
+character, you must type `C-q TAB'.)
+
+We have already seen that an expression may be a symbol or a constant.
+`(setq tab-width 20)' illustrates another form an expression can take:
+symbols or constants enclosed in a pair of parentheses.
+
+
+Let's set the value of some new symbol we think up, say the symbol named
+`foo':
+
+     (setq foo 2)
+     => 2
+
+Now if we ask Lisp to show us the value of foo:
+
+     foo
+     => 2
+
+the value is 2, obeying our previous command.
+
+Just changing the value of a variable and then looking at that value is
+not terribly interesting.  We'd like to be able to do something with
+those values.  "Functions" are constructs in Lisp that do things with
+values.  We tell a function to do its thing by writing a parenthesized
+expression with the function name following the open-parenthesis.
+
+(Once again, a symbol can be used to name a function, but the symbol is
+not the function, just as it isn't the value even though it may be used
+as a variable.  A symbol is purely a name.  We will often ignore the
+distinction when it isn't important.)
+
+There are a number of functions in Lisp that are probably quite
+familiar; for example, the basic functions of arithmetic:
+
+     (+ 5 5)
+     => 10
+     (- 10 2)
+     => 8
+     (* 5 foo)
+     => 10
+     (/ 10 foo)
+     => 5
+
+The values that the function operates on are called "arguments".  In the
+examples above, `5' and `5' are the arguments to the function `+', and
+`10' and `2' are the arguments to the function `-'.  In the third
+example, `5' and the value of `foo' are the arguments to `*'.
+
+Notice that when we write `foo' as an argument to `*' (the
+multiplication function), the actual argument is the `value' of the
+variable `foo'.  This means that if we change the value of `foo', we'll
+get a different answer:
+
+     (setq foo 10)
+     => 10
+     foo
+     => 10
+     (* 5 foo)
+     => 50
+
+When Lisp looks up the value of a symbol, we say that Lisp is
+"evaluating" that symbol.  When Lisp figures out the value of any
+expression, we say that Lisp is "evaluating" that expression.  *All*
+expressions evaluate to some value (if they don't cause an error).  When
+we get a value from evaluating an expression, we can also say that the
+expression "returns" that value, or that the function returns the value.
+
+Thus, to speak proper Lisp, we say: ``Lisp evaluated the expression `(+
+5 5)' and returned the value `10','' or, ``When given the arguments 5
+and 5, the function `+' returns the value 10.''
+
+Complex Lisp expressions are made up of simpler expressions.  For
+example, `(* 5 foo)' is a complex expression; Lisp evaluated it and got
+the value 50.  In order to do so, Lisp evaluated each of the arguments
+to `*' first.  Each argument is an expression.  Lisp evaluated `5' and
+got 5.  It evaluated `foo' and got 10.  Then the function `*' multiplied
+5 by 10 to get 50.
+
+If Lisp evaluates the arguments to a function, then we should be able to
+use any kind of expression as an argument, as long as it evaluates to a
+suitable value, right?  Of course!
+
+In particular, we can use one complex expression as an argument to
+another complex expression.  Below `(* 2 4)' is the second argument to
+the function `+':
+
+     (+ 5 (* 2 4))
+     => 13
+     (* (+ 1 2) (- 10 8))
+     => 6
+     (+ (+ foo foo) (+ (+ foo foo) (+ foo foo)))
+     => 60
+
+That last example might be a bit difficult to read, just because there
+are so many parentheses.  We can't get rid of parentheses, but we can
+make them easier to read by adding whitespace.  Lisp considers the
+characters space, newline and tab to be essentially the same: they serve
+to separate symbols from one another.  So we can use them any way we
+like to make expressions more readable.
+
+Here are some examples which are identical Lisp expressions:
+
+     (+ (+ foo foo) (+ (+ foo foo) (+ foo foo)))
+     => 60
+
+     (+ (+ foo foo)
+        (+ (+ foo foo) (+ foo foo)))
+     => 60
+
+     (+ (+ foo foo)
+        (+ (+ foo foo)
+           (+ foo foo)))
+     => 60
+
+     (+      (+        foo      foo)   (+ (+ foo
+              foo)
+        (+ foo      foo)))
+     => 60
+
+Lisp programmers generally prefer the style used in the second and third
+expression above.  We recommend that you keep all Lisp expressions
+properly formatted.  The TAB command in Lisp Mode is defined to indent
+lines this way.  (Look at the binding for the key TAB.)
+
+
+File: elisp  Node: Binding Variables Locally, Prev: Names and Symbols, Up: GNU Emacs Lisp for the Non-Hacker, Next: Writing Simple Functions
+
+Binding Variables Locally
+=========================
+
+Let's say that I wish to find the area of some geometric figures, say
+the sum of the areas of a square 10 by 10 and a circle with a radius of
+10.
+
+I know that the area of a square is the length of one side times itself.
+The expression for this is `(* 10 10)'.  I also know that the area of a
+circle is pi (which is about 3) times the radius squared.  The
+expression for this is `(* 3 (* 10 10))'.  Using Emacs Lisp, I could
+calculate the desired area as follows:
+
+     (setq square (* 10 10))
+     => 100
+     (setq circle (* 3 square))
+     => 300
+     (+ square circle)
+     => 400
+
+If I were the only one to program Emacs, then all would be fine.
+However, I use programs that other people have written and one of them
+may use the variable `square'.  I'd really rather do my calculations in
+such a way that I don't have to worry about disturbing `any' variables.
+
+The way we accomplish this in Lisp is to make what we call a "local
+binding" for a variable.  Having a local binding for a variable means
+that we can give a variable a value that is only in effect within a
+certain section of code.  When we exit that expression, the ``local''
+value will disappear, and the variable will regain its previous value.
+
+Imagine doing these calculations on paper. There is one sheet of paper
+that the other person's program uses.  I have another sheet of paper
+that I use for doing my own calculations.
+
+When the other person's program runs, it uses its sheet of paper.  It
+might ``write'' `square = 55' on its paper.  When I do my calculations,
+I put my sheet of paper on top of that one and write `square = 100' on
+it.  When I finish, I'll toss out my sheet of paper.  When the other
+program ``looks'' at the desk again, it will see the first sheet of
+paper with `square = 55' written on it---as if nothing had happened.
+
+To make a local binding in Lisp, we use a construct named `let'.  We
+follow it with a list of the variables we want to use locally, and then
+all of the expressions we want to evaluate using those local bindings.
+
+When the `let' is finished being evaluated, it returns the value of the
+very last expression in it (in the example below: `(+ square circle)'.
+Then all the local values established by the `let' disappear.
+
+Here's the area calculation done inside of a `let'.  (When you evaluate
+this expression, type the LFD only after the final closing parenthesis)
+
+     (let (square circle)
+        (setq square (* 10 10))
+        (setq circle (* 3 square))
+        (+ square circle))
+     => 400
+
+If `square' or `circle' previously had a value, that value remains
+unchanged afterward:
+
+     (setq square 1)
+     => 1
+     (let (square circle)
+        (setq square (* 10 10))  ;square is now 100
+        (setq circle (* 3 square))
+        (+ square circle))
+     => 400  ;square is 1 once again
+     square
+     => 1
+
+We say: ``The `let' binds the variable `square' locally.''
+
+Just as one `let' protects the value we give a variable at the top
+level, a `let' *inside* of a `let' will protect the value we give to a
+variable of the first `let':
+
+     (setq number 6)
+     => 6
+     (let (number)           ;first `let'.
+       (setq number 7)       ;number is 7.
+       (let (number)         ;second `let'.
+         (setq number 73)    ;number is 73.
+         (setq x 8))
+                             ;number is 7 again.
+       number)
+                             ;number is 6 again.
+     => 7
+     number
+     => 6
+     x
+     => 8
+
+
+File: elisp  Node: Writing Simple Functions, Prev: Binding Variables Locally, Up: GNU Emacs Lisp for the Non-Hacker, Next: Functions That Work on Text
+
+Writing Simple Functions
+========================
+
+For calculating the areas of many squares and circles, it would be
+useful to have Lisp functions named `square' and `circle' that could be
+used like this:
+
+     (square 10)
+     => 100
+     (square (+ 3 4))
+     => 49
+     (circle 10)
+     => 300
+
+The function `square' takes one argument, the length of a side, and it
+returns the area of a square with a side of that length.  The function
+`circle' takes one argument, the length of the radius, and returns the
+area of a circle.
+
+Emacs Lisp does not come with functions `square' and `circle'.  But it
+does let you create them.  Creating a function is called "defining" it.
+The Lisp construct `defun' is used for this purpose.  Here's the
+definition of a new function `square':
+
+     (defun square (length)
+       (* length length))
+     => square
+
+Because we have no idea of what the argument to `square' is going to be
+(it certainly won't always be 10), we need a name for it in order to
+talk about it.  In Lisp, we use a variable for this; here, the variable
+is called `length', but any name would do equally well.  The variables
+used for the function's arguments are called the "parameters" of the
+function.  In a `defun' construct, the parameters always appear in
+parentheses following the function name.  (Some functions need no
+parameters; for them, you must write just a pair of parentheses with no
+variables in between.)
+
+When the function is called, the parameter variables receive local
+bindings just like the variables in a `let'.  They also receive local
+values, which are the function's arguments.  Thus, when `square' is
+called, the variable `length' gets a local binding and its local value
+is the number to be squared.
+
+`(* length length)' is the calculation that the function will perform.
+We call such a calculation the "body" of the function.  (We can also
+speak of the body of a `let'.)  The value returned by a function is
+always the result of evaluating the body.
+
+In the first example (`(square 10)'), the parameter `length' becomes
+bound to the value 10.  In the body of the function `square', `length'
+is multiplied by itself and `square' returns the value 100.
+
+In the second example (`(square (+ 3 4))'), exactly the same thing
+happens with a different argument.  First, Lisp evaluates the argument
+`(+ 3 4)', getting 7; then it calls the function `square' with that
+value.  (The function `square' never ``sees'' the argument as `(+ 3 4)',
+it only ``sees'' the result of evaluating it.)  The parameter `length'
+becomes bound to 7, and the body of the function (`(* length length)')
+is evaluated inside of that binding, returning the value 49.
+
+The function `circle' is quite similar.  We know the argument (the
+radius), and we know the formula to use (3 times the square of the
+radius).  The function can be written as:
+
+     (defun circle (radius)
+       (* 3 (* radius radius)))
+     => circle
+
+Trying it out:
+
+     (circle 10)
+     => 300
+     (circle (+ 3 4))
+     => 147
+
+In the body of `circle' we multiplied `radius' by itself: we squared
+`radius'.  We already have a function `square' to square a number.  We
+can, if we wish, use it in defining `circle'.
+
+Here is an alternate definition of `circle' that uses `square':
+
+     (defun circle (radius)
+       (* 3 (square radius)))
+     => circle
+
+     (circle 10)
+     => 300
+     (circle (+ 3 4))
+     => 147
+
+Which definition is better?  Which ever one you find clearest and
+easiest to write.  There are other considerations that we might like to
+take into account later on (which is fastest, which takes up more
+memory), but right now the most important thing is writing one that's
+clear.
+
+The parameter of `circle' is `radius', and the parameter of `square' is
+`length'.  Would it have made any difference if we'd used different
+names for the parameters?  Would it have made any difference if we'd
+used the *same* name for both parameters?
+
+No.  Each function has its own idea of what its parameters have for
+values, and they don't interfere.  Just as in `let' statements, each
+bound variable is protected from all other variables with the same name.
+Each function ``has its own sheet of paper'' to work on.
+
+Here are our two functions, each redefined to use the parameter name
+`x'.  This change has no effect on what the functions do.
+
+     (defun circle (x)
+       (* 3 (square x)))
+     => circle
+     (defun square (x)
+       (* x x))
+     => square
+     (square 10)
+     => 100
+     (circle 10)
+     => 300
+
+
+File: elisp  Node: Functions That Work on Text, Prev: Writing Simple Functions, Up: GNU Emacs Lisp for the Non-Hacker, Next: Writing Simple Commands
+
+Functions That Work on Text
+===========================
+
+Because GNU Emacs is a text editor, not just a calculator, functions
+that change the text in an editor buffer are very important.
+
+But you can't conveniently try out these functions in the `*scratch*'
+buffer, the way you can try out arithmetic, because these functions
+typically operate on the current buffer.  If you use the `*scratch*'
+buffer to call them, they will always operate on the `*scratch*' buffer.
+(And if they do so while LFD is trying to read and evaluate expressions
+from that buffer, LFD will get confused!)
+
+What you would really like to do is evaluate an expression while
+operating on the buffer of your choice.
+
+To do this, use the command `M-ESC' (`eval-expression').  This command
+is available in all buffers.  It reads an expression in the minibuffer,
+evaluates it, and prints the returned value in the minibuffer.  If the
+expression operates on the current buffer, it will operate on whatever
+buffer you were in when you typed the `M-ESC' command.  Try it: Evaluate
+the expression `(+ 1 2)' by typing: `M-ESC (+ 1 2) RET'.
+
+
+File: elisp  Node: Writing Simple Commands, Prev: Functions That Work on Text, Up: GNU Emacs Lisp for the Non-Hacker, Next: Functions that Evaluate Several Expressions
+
+Writing Simple Commands
+=======================
+
+You already know that you can execute commands in Emacs by typing
+pre-defined key sequences.  `C-b', for example, executes the command
+`backward-char', and moves the point backward one character.  As it
+turns out, `backward-char' is just another function.  Therefore, we can
+execute the command `backward-char' by evaluating the function.
+
+Move the point backwards two characters by typing: `M-ESC (backward-char
+2) RET'.
+
+Now we have all the building blocks we need to create our own commands.
+To do so, we just write our own functions which we can then evaluate.
+Here's the definition of a very simple function:
+
+     (defun backward-2 ()
+       (backward-char 2))
+     => backward-2
+
+Evaluating this function in the minibuffer (`M-ESC (backward-2) RET')
+will move the point in the current buffer (`not' the minibuffer)
+backwards two characters and return the value `nil', which will be
+printed in the echo area.
+
+`backward-2' is not a very useful function, and we're quite happy to let
+it disappear at the end of this editing session.  In general, though, we
+want to keep the functions we write around in a file for future use.
+
+Let's create a new file which we'll keep all of our soon-to-be-created
+functions in.  Choose a name with an extension of `.el' (I'll choose the
+name `myfuns.el').  Emacs recognizes the `.el' ending and automatically
+enters Emacs-Lisp mode.
+
+Now type in the definition for another very simple function:
+
+     (defun forward-word-2 ()
+       (forward-word 2))
+
+The command LFD is not available here, because it is a special feature
+of Lisp Interaction mode.  The recommended way to evaluate this
+expression is to position point anywhere within the expression (or even
+at the end of its last line) and type `M-C-x' (`eval-defun').
+
+So, position the point somewhere within the function definition and type
+`M-C-x'.  `forward-word-2' should appear in the echo area.  Then
+position the point at the top of the buffer and execute the function
+`forward-word-2' using `M-ESC (forward-word-2) RET', and you will see
+that the function does its job.
+
+

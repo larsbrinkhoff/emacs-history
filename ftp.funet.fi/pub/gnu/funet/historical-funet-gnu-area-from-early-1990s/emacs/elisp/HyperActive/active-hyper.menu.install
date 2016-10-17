@@ -1,0 +1,69 @@
+HyperActiveFTP Installation Menu     <(Return to HyperActiveFTP dired)>
+--------------------------------     
+
+NOTE: 	Those who have had previous versions of HyperActiveFTP just do
+	steps 0, 1 and 2 to update their system.
+
+-*-	0 
+	
+Everyone must <(Load in the Installation Code)>. Even if you have this file 
+locally, click this button as I update the Installation Code off and on.
+
+-*-	1 
+
+1.1 
+HyperActiveFTP should be installed in its own directory. If you want
+to use the default installation directory, proceed to 1.4. If you want
+to change the default directory, follow the directions in 1.2-1.4 carefully.
+
+1.2
+It should not be installed in or below the Hyperbole directory because it
+will be tedious for you to separate the HyperActiveFTP files from the 
+Hyperbole files when a new distribution of Hyperbole comes out.
+
+1.3 
+It is suggested that you place the directory for HyperActiveFTP just below 
+the directory where you keep all of your emacs lisp code. For example, if 
+all of your emacs lisp code is in ~/gnu, then when prompted for the 
+HyperActive directory name, enter ~/gnu/HyperActive/. DO NOT FORGET
+THE SLASH.	
+
+1.4 
+The default installation directory is ~/emacs/active-hyper/
+Click here if you want to <(Change Default Installation Directory)>
+or click here to <(Make Hyper-Installation Directory)>
+
+-*-	2
+
+IF	
+you already have a previous version of HyperActiveFTP
+then click here and I will just install <(updated files)>
+
+ELSE
+We will copy all the files from the home site at
+archive.cis.ohio-state.edu into the Hyper-Installation Directory. 
+To overwrite old files in the Hyper-Installation Directory or to get
+your very first distribution of HyperActiveFTP, click here and I will
+<(Install the Latest Version of HyperActiveFTP)>
+
+-*-	3
+
+ASSUMING you have these two commands in your .emacs file:
+
+(require 'ange-ftp)
+(load "hsite")
+
+Click here to <(find-file ~/.emacs)> and then add the following line
+anywhere in the file:
+
+(load-file "~/emacs/active-hyper/active-hyper.requirements.el")
+
+-*-	4
+Now re-evaluate the .emacs file.
+And save it.
+
+-*-	5
+Type M-x active-hyper:get-hyper to bring up the main menu.
+
+-*-	6
+Problems, questions, suggestions to brannon@jove.cs.caltech.edu

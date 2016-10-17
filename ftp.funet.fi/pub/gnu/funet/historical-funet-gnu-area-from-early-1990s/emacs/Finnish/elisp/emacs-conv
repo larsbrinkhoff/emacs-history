@@ -1,0 +1,40 @@
+Newsgroups: sfnet.atk.amiga
+From: Kimmo.Ketolainen@utu.fi (Kimble)
+Subject: Re: ISO-skandit (was: Re: Ei-asiaa (resoluutioita))
+Message-ID: <KIMMO.KETOLAINEN.93Jan12221827@euroni.utu.fi>
+Organization: The Royal Imperial Mutual Alliance Consolidated Insurance Co Ltd
+References: <harry.041d@elfuerte.fipnet.fi> <1iubsqINNd07@vttux1.vtt.fi> <ML85920.93Jan12181319@bekkerel.ee.tut.fi>
+Distribution: sfnet
+Date: 12 Jan 93 22:18:27
+Lines: 30
+
+ml85920@ee.tut.fi (Laiho Mikko Tapio) kirjoitti:
+
+> [l{ kysy mink{ emacs-version kanssa toi toimii, muista vaihtaa vt100 
+> mieleiseksesi. Tuo on kohtuu usein liikkunut netiss{, viel{ kun saisi
+> sellaisen joka piilottaisi ne IBM-y|kk|set.
+
+;;; IBM PC Finnish characters will be shown as ISO 8859 Latin/1 characters
+;;;
+(defun gnus-pc-8to7 ()
+  (interactive)
+  (set-buffer gnus-Article-buffer)
+  (let ((buffer-read-only nil))
+    (subst-char-in-region (point-min) (point-max) ?\204 ?\344 t)
+    (subst-char-in-region (point-min) (point-max) ?\216 ?\304 t)
+    (subst-char-in-region (point-min) (point-max) ?\206 ?\345 t)
+    (subst-char-in-region (point-min) (point-max) ?\217 ?\305 t)
+    (subst-char-in-region (point-min) (point-max) ?\224 ?\366 t)
+    (subst-char-in-region (point-min) (point-max) ?\231 ?\326 t)))
+(setq gnus-Article-prepare-hook 
+      '(lambda ()
+	 (gnus-pc-8to7)
+	 )
+      )
+
+> Mikko Laiho
+
+      ....................................................       .  ___ o
+      Kimble "Kimmo.Ketolainen@utu.fi" at 602750N, 221912E       |\/""o\ o
+      Independent signature designer and Amiga enthusiast.       |/\_~_/
+      ````````````````````````````````````````````````````       '   '

@@ -1,0 +1,1188 @@
+
+
+
+
+		   Demacs version 1.2.0 (1991/12/12)
+
+		       386/486 DOS 版 GNU Emacs
+
+
+
+				東田 学
+
+			    Manabu Higashida
+
+		      manabu@sigmath.osaka-u.ac.jp
+
+			Osaka University, JAPAN
+
+
+				  and
+
+
+				平野 聡
+
+			     HIRANO Satoshi
+
+		      hirano@tkl.iis.u-tokyo.ac.jp
+
+		       University of Tokyo, Japan
+
+
+
+Copyright (C) 1991  Halca Computer Science Laboratory TM
+Copyright (C) 1991  Manabu Higashida, SOUM Corporation
+
+Demacs はフリー・ソフトウェアです. Free Software Foundation が公表し
+た GNU 一般公有使用許諾の「バージョン 1」が定める条項に従って本プロ
+グラムを再頒布または変更することができます.
+
+本プログラムは有用とは思いますが, 頒布にあたっては, 市場性及び特定目
+的適合性についての暗黙の保証を含めて, いかなる保証も行ないません. 詳
+細については GNU 一般公有使用許諾書 (パッケージに添付したファイル 
+copying または copying.sj) をお読み下さい.
+
+
+
+Demacs について
+***************
+
+Demacs は 386/486 を搭載した DOS マシン上で稼動するフルセットの 
+GNU Emacs です.
+
+
+
+バージョン
+==========
+
+Demacs は GNU Emacs version 18.55 (一部 18.57) と Nemacs version 3.3.2 
+を元に作成しました.
+
+Demacs 自身のバージョンは 1.2.0 (91/12/12) です.
+
+## Command: demacs-version
+     Demacs のバージョンを表示する.
+
+
+
+プラットフォーム
+================
+
+ハードウェア
+     386/486 DOS マシン---IBM PC またはその互換機 (AX, J-3100 を含む), 
+     または NEC PC-9801, 高解像度 PC-98 とその互換機 EPSON PC-386
+
+ソフトウェア
+     MS-DOS 3.0 以降
+
+     XMS メモリ・マネージャ (`HIMEM.SYS') と VCPI 規格のメモリ・マネージャ 
+     (`EMM386.EXE', `MELEMM', `QEMM' 等) に対応しています. XMS, VCPI な
+     しでも利用できます.
+
+     DPMI 規格には対応していませんので, Windows の拡張モードでは使用でき
+     ません.
+
+
+
+バグ・レポート
+==============
+
+Demacs を使っていてわからないこと／気になることがありましたら, まずドキュ
+メントを良く読んでください. 何かよい解決法を発見できるかもしれません. ま
+たは既知のバグかもしれません.
+
+Demacs に関する貢献／バグ・レポートは次のアドレス宛へ送って下さい.
+
+     demacs-bugs@sigmath.osaka-u.ac.jp
+
+また
+
+     demacs@sigmath.osaka-u.ac.jp
+
+宛へ空のメールを送ると, 最新情報がメールで返信されます. 
+
+
+
+インストール
+************
+
+
+
+ファイル・リスト
+================
+
+この配布パッケージは `dem120j.lzh' と `dem120s.lzh' の 2 つのアーカイブ
+からなります. アーカイブからファイルを取出すには LHarc か LHa が必要です. 
+ファイルを取出す際には
+
+     lharc x /mx dem120j.lzh
+     lharc x /mx dem120s.lzh
+
+のように `/mx' スィッチを指定して下さい. これらのファイルが含むアーカイ
+ブを展開する時も同様にこのスィッチを指定して下さい.
+
+各アーカイブは次のファイルを含んでいます. 
+
+`dem120j.lzh' (実行に必要なファイル)
+
+     readme            このファイルの英語版
+     readme.sj         このファイル
+     demacs.tex        texinfo 形式の `readme'
+     demacs.dvi        `demacs.tex' を TeX で処理したもの
+     demacsj.tex       texinfo 形式の `readme.sj'
+     demacsj.dvi       `demacsj.tex' を ASCII 版 TeX で処理したもの
+     copying           GNU 一般公有使用許諾
+     copying.sj        GNU 一般公有使用許諾 (日本語版)
+     copying.dj        DJGCC copyright notice
+     termcap           `termcap' ファイルのサンプル
+     _emacs            スタートアップ・ファイルのサンプル
+     bin\demacs98.exe  PC-9801, PC-386 シリーズ用の DOS イクステンダ
+     bin\demacspc.exe  IBM PC とその互換機用の DOS イクステンダ
+     bin\demacs        demacs オブジェクト・ファイル (stripped)
+     bin\temacs        `plain' demacs オブジェクト・ファイル (stripped)
+     etc.lzh           ドキュメント・ストリングなど
+     lisp.lzh          実行時に参照される lisp ファイルのオリジナルとの差分
+     edired.lzh        機能拡張版 dired
+
+
+
+`dem120s.lzh'  (ソース・ファイル)
+
+     src\diffs.lzh       ソース・ファイルのオリジナルとの差分
+     lisp\diffs.lzh      ロード済みの lisp ファイルのオリジナルとの差分
+     go32_98\source.lzh  PC-9801 版 go32 DOS イクステンダ from DJGCC
+     go32_pc\source.lzh  IBM PC 版 go32 DOS イクステンダ from DJGCC
+
+
+注意: 
+
+この配布パッケージは Demacs 用に変更を加えた lisp ファイルしか含んでいま
+せん. オリジナル, そしてそれ以外の有用な lisp ファイルはお近くの 
+anonymous ftp サイト (例えば `ftp.sigmath.osaka-u.ac.jp') または
+
+     Free Software Foundation, Inc.
+     675 Mass Ave, Cambridge, MA 02139, USA
+
+から入手できるでしょう.
+
+
+
+インストールの手順
+==================
+
+Demacs を実行するには専用の DOS イクステンダが必要です. この配布パッケー
+ジに `bin\demacspc.exe' または `bin\demacs98.exe' という名前で含まれてい
+ますので `demacs.exe' と名前を変えて使ってください.
+
+`demacs.exe' はオリジナルの `go32.exe' (DJ's GCC/G++ 1.05 に付属の DOS 
+イクステンダ) から
+
+   * `Ctrl-C' のハンドリング (オリジナルでは `Ctrl-C' で中断してしまう)
+
+   * いくつかの DOS ファンクション・コールへの対応
+
+   * 拡張メモリ・マネジメント (詳細は `demacs.exe' のオプションの章を参照)
+
+   * 致命的エラーへの対応 (準備のできてないドライブへアクセスした時など)
+
+   * FEP コントロールへ・ライブラリへの対応
+
+   * バグ・フィクス (ファイル・ディスクリプタ関係 etc.)
+
+などの変更が加えられています.
+
+インストールは簡単です. 次の手順で行ってください. 
+
+  1. NEC PC-9801 または EPSON PC-386 シリーズをお使いの方は 
+     `bin\demacs98.exe' を環境変数 PATH で設定されているディレクトリに 
+     `demacs.exe' という名前でコピーしてください.
+
+     IBM PC またはその互換機 (AX, J-3100 シリーズを含む) をお使いの方は 
+     `bin\demacspc.exe' を環境変数 PATH で設定されているディレクトリに 
+     `demacs.exe' という名前でコピーしてください.
+
+  2. `bin\demacs' を `demacs.exe' と同じディレクトリにコピーしてください.
+
+  3. `\lib\emacs' ディレクトリを作成し, さらに `\lib\emacs\lisp',
+     `\lib\emacs\etc' を作成してください.
+
+  4. 必要ならばオリジナルの lisp ファイルを入手して `\lib\emacs\lisp' に
+     コピーした後, `lisp.lzh' を `\lib\emacs' で展開してください.
+
+  5. `etc.lzh' を `\lib\emacs' で展開してください. 
+
+  6. 環境変数 TERM をシステムに合わせて設定してください (次の作業例を参
+     照).
+
+  7. `\etc' ディレクトリ以外に `termcap' ファイルをおく場合は環境変数 
+     TERMCAP でディレクトリを設定してください.
+
+  8. スタートアップ・ファイルは環境変数 HOME で設定されたディレクトリに 
+     `_emacs' という名前で作成してください.
+
+
+
+インストール作業例
+==================
+
+     C> copy bin\demacspc.exe \tools\bin\demacs.exe (IBM PC, AX, J-3100)
+        copy bin\demacs \tools\bin
+          or
+        copy bin\demacs98.exe \tools\bin\demacs.exe (PC-9801, PC-386)
+        copy bin\demacs \tools\bin
+
+     C> mkdir \lib\emacs
+     C> mkdir \lib\emacs\lisp
+     C> mkdir \lib\emacs\etc
+     C> copy lisp.lzh \lib\emacs
+     C> copy etc.lzh \lib\emacs
+     C> cd \lib\emacs
+     C> lharc x /mx lisp.lzh
+     C> lharc x /mx etc.lzh
+     C> del lisp.lzh
+     C> del etc.lzh
+
+     C> set TERM=ibmpc  (IBM PC)
+           or
+        set TERM=j3100  (J-3100)
+           or
+        set TERM=pc98   (PC-9801, PC-386)
+
+     C> set TERMCAP=c:\etc\termcap   (IBM PC, J-3100)
+           or
+        set TERMCAP=a:\etc\termcap   (PC-9801, PC-386)
+
+     C> set HOME=c:\home (your startup file '_emacs' is placed)
+
+
+
+起動
+****
+
+
+
+環境変数
+========
+
+`C>set GO32TMP=c:/tmp'
+     スワップ・ファイルが作成されるディレクトリ.
+
+`C>set TERM=pc98'
+     `termcap' のエントリ名 (`pc98', `j3100', `ibmpc' など).
+
+`C>set TERMCAP=c:/etc/termcap'
+     `termcap' ファイルを置くディレクトリ.
+
+`C>set HOME=c:/home'
+     スタート・アップファイル `_emacs' を置くディレクトリ.
+
+`C>set TZ=JST-9'
+     タイム・ゾーン.
+
+`C>set USER=manabu'
+     あなたの名前. 8 文字までが有効.
+
+`C>set EMACSLOADPATH=d:/emacs/lisp'
+     `/lib/emacs/lisp' 以外に lisp ファイルを置く場合にディレクトリ名を
+     設定.
+
+`C>set EMACSEXECPATH=d:/emacs/etc'
+     `/lib/emacs/etc' 以外に etc ファイルを置く場合にディレクトリ名を設
+     定.
+
+`C>set DEMACS_KEEP=1024'
+     確保する拡張メモリ量 (詳細は `demacs.exe' のオプションの章を参照).
+
+`C>set ROWS=24'
+     ディスプレイの行数. `termcap' で指定された値を上書きする.
+
+`C>set SHELL=c:\command.com'
+     子プロセスを起動する時に起動されるコマンド・インタプリタ.
+
+
+
+DOS イクステンダ `demacs.exe' のオプション
+==========================================
+
+`-keep [NUM]'
+     子プロセスを起動する時に拡張メモリの内容をスワップアウトしません. 
+     NUM を指定すると使用する拡張メモリの量を NUM キロバイトに制限します.
+
+     このオプションを指定したときの動作は, XMS または VCPI 規格対応のメ
+     モリ・マネージャが組み込まれていないと保証されません.
+
+`-keep' オプションの解説:
+
+`demacs.exe' はディスクをメモリの一部として使用する仮想メモリ機能を備え
+ています. 仮想メモリ機能により, アプリケーション (Demacs) が使用するメモ
+リよりも少ない実メモリしか搭載していなくてもアプリケーションを動作させる
+ことができます.
+
+`demacs.exe' は実メモリが足りなくなると実メモリ中の適当な領域をディスク
+に書き出し (これをスワップするという), 実メモリの空きを作ってアプリケー
+ションに割り当てます. スワップは実メモリが足りなくなった時だけではなく, 
+子プロセスを起動するときにも発生します. すなわち `demacs.exe' が子プロセ
+スを呼ぶときには, 確保したメモリをすべてディスクにスワップ (退避) してか
+ら子プロセスを起動します. しかし Demacs は非常に多くのメモリを使用するた
+め, スワップに長い時間がかかります.
+
+このスワップ時間を短縮するために `demacs.exe' に `-keep' というオプショ
+ンを付けることができます. `-keep' オプションを付けるとMS-DOS が管理する 
+640KB までの内部メモリに確保したメモリの内容はスワップしますが, 拡張メモ
+リに確保したメモリの内容はスワップしません.
+
+拡張メモリのドライバとして `himem.sys' のような XMS のドライバを使用して
+いる場合, `demacs.exe' は起動時に空いている拡張メモリをすべて確保します
+ので, `-keep' オプションを指定すると子プロセスは拡張メモリを使用すること
+ができません (GCC や G++ は拡張メモリがないと動作しませんから, これらの
+プログラムは Demacs からは起動できないことになります).
+
+子プロセスが拡張メモリを使えるようにするには ``-keep NUM'' のように 
+`-keep' オプションに数値を付加します. NUM はキロバイト単位の数値で,
+`demacs.exe' が使用する拡張メモリの量を NUM に制限します. もし起動時の拡
+張メモリの量が NUM よりも少ない場合は空いている拡張メモリをすべて使用し
+ます.
+
+拡張メモリのドライバとして `QEMM' や `EMM386' のような VCPI のドライバを
+使用している場合, `demacs.exe' は空きメモリをすべて確保するのではなく必
+要に応じて確保します. `-keep' オプションに ``-keep NUM'' のように数値を
+付加すると, 確保する拡張メモリの量を NUM キロバイトに制限することができ
+ます.
+
+XMS の場合も VCPI の場合も `-keep NUM' オプションは実質上同じ働きをしま
+す. ただひとつ違うのは, XMS の場合は起動時に拡張メモリをあらかじめ確保し
+ておくのに対し, VCPI の場合は必要に応じて確保するため, 子プロセスを起動
+したときに子プロセスが使える拡張メモリの量が XMS の場合よりも多いかもし
+れないということです.
+
+以上を表にまとめると次のようになります. 
+
+                 | 子プロセス    |
+                 | 起動時に      |
+                 | 拡張メモリを  |  子プロセスが使える拡張メモリ
+                 | スワップするか|
+     ------------+---------------------------------------------------
+     -keep なし  | する          |  起動時の空き拡張メモリすべて
+     -keep       | しない        |  なし
+     -keep <num> | しない        |  起動時の空き拡張メモリ - <num> キロバイト
+
+
+NUM が小さいと Demacs の動作中に頻繁にスワップが起きて, 動作が遅くなって
+しまいます (これをスラッシングという). できれば 512 キロバイト以上を指定
+するようにしてください.
+
+例 (Demacs に拡張メモリを 1024 キロバイト割り当てる):
+
+     demacs -keep 1024
+
+割り当てる拡張メモリの量は環境変数 DEMACS_KEEP でも同様に指定できます. 
+環境変数とオプションが両方指定された時はオプションが優先されます.
+
+     C>set DEMACS_KEEP=0
+
+とすると `-keep' オプションのみ (NUM を指定しない) の設定になります.
+
+
+
+Demacs のオプション
+===================
+
+`demacs [-keep [NUM]] [オプション]' と起動してください. オプションの詳細
+は GNU Emacs マニュアルを参照して下さい.
+
+
+
+機能
+****
+
+
+
+ファイル・タイプの設定
+======================
+
+
+
+トランスレート・モード
+----------------------
+
+MS-DOS のファイル・システムでは, ファイルの行末コードは CR (0x0d)/LF
+(0x0a), ファイル末尾コードは `Ctrl-Z' (0x1a) と規定されています 
+(`Ctrl-Z' を末尾以外にも含むファイルをバイナリ・ファイルという). 一方 
+UNIX のファイル・システムでは, ファイルの行末コードは LF のみ, ファイル
+末尾コードは規定されておらずデータの終端がファイルの末尾であるとされてい
+ます.
+
+バイナリ・ファイルを扱ったり, UNIX のファイル・システムとの互換性をとる
+ため, MS-DOS 上の C ライブラリの入出力には, トランスレート・モードと呼ば
+れるコントロール・キャラクタ制御のためのモードが存在します. トランスレー
+ト・モードには次の 2 つのモードがあります.
+
+   * テキスト・モード
+   * バイナリ・モード
+
+テキスト・モードでは, 入力においては, CR/LF は CR に変換され, `Ctrl-Z' 
+を読み込んだ時点で (たとえデータが続いていても) 入力は打ち切られます. ま
+た出力においては, CR コードに LF コードが付加され, ファイル末尾に 
+`Ctrl-Z' が出力されます.
+
+一方のバイナリ・モードでは, このようなコード変換は一切行なわれません. 
+
+Demacs はこの 2 つのトランスレート・モードをサポートしており, バッファご
+とに管理しています. バッファがどのモードに設定されているかはモードライン
+のファイル・タイプ・ニーモニック表示から知ることができます.
+
+     --**-NEmacs: demacs.tex (SSS-T:Texinfo)--52%---------------
+                                  ^
+
+ファイル・タイプ・ニーモニックは
+
+`T'
+     テキスト・モード
+`B'
+     バイナリ・モード
+
+を表します.
+
+以下ではバッファが管理しているトランスレート・モードをバッファの「ファイ
+ル・タイプ」と呼びます.
+
+
+
+Demacs のバッファ管理の仕組み
+-----------------------------
+
+
+
+バッファのファイル・タイプ
+..........................
+
+バッファごとのファイル・タイプ (トランスレート・モード) はバッファのロー
+カル変数 `file-type' に保持されます.  変数 `file-type' の値はコマンド 
+`set-file-type' で設定できます.  変数 `file-type' のデフォルト値は変数 
+`default-file-type' に保持され, 関数 `set-default-file-type' で設定でき
+ます.
+
+## Local Variable: file-type
+     `0'
+          テキスト・モードでファイル入出力を行う.
+     `1'
+          バイナリ・モードでファイル入出力を行う.
+
+## Command: set-file-type TYPE &optional BUFFER
+     バッファ BUFFER のローカル変数 `file-type' の値を TYPE に設定する. 
+     BUFFER のデフォルトはカレント・バッファ. TYPE は次のいずれか.
+     `0' または `'text' または `"text"'
+          テキスト・モードに設定.
+     `1' または `'binary' または `"binary"'
+          バイナリ・モードに設定.
+
+## Global Variable: default-file-type
+     変数 `file-type' のデフォルト値.
+
+## Function: set-default-file-type TYPE
+     変数 `default-file-type' の値を TYPE に設定する. TYPE は次のいずれ
+     か.
+     `0' または `'text' または `"text"'
+          テキスト・モードに設定.
+     `1' または `'binary' または `"binary"'
+          バイナリ・モードに設定.
+
+
+
+バッファの生成
+..............
+
+新規バッファ生成時には, Demacs はバッファのローカル変数 `file-type' に 
+変数 `default-file-type' の値を設定します.
+
+
+
+ファイル入力
+------------
+
+関数 `define-file-name-file-type' でファイル名に対するファイル入力時のト
+ランスレート・モードを宣言できます.
+
+例えば
+
+     (define-file-name-file-type "\\.mem$" 'binary)
+
+を評価すると, 拡張子が `.mem' のファイルはバイナリ・モードでバッファに読
+み込まれるように設定されます.
+
+拡張子が `.elc', `.obj', `.exe', `.com', `.lib', `.sys' (`config.sys' は
+除く), `.chk', `.o', `.a' そして `.out' のファイルはデフォルトでバイナリ・
+ファイルとして扱うように `demacs.el' で設定されています.
+
+## Function: define-file-name-file-type FILENAME TYPE
+     FILENAME は正規表現か `nil'. `nil' は任意のストリングとマッチする. 
+     TYPE はファイル・タイプ.  関数 `find-file-type-from-file-name' が 
+     FILENAME を引数として呼ばれた場合に, ファイル・タイプを決定する 
+     TYPE を定義する.
+
+## Function: find-file-type-from-file-name FILENAME
+     ファイル名 FILENAME に対し関数 `define-file-name-file-type' で定義
+     されたファイル・タイプを返す. 未定義の場合は変数 
+     `default-file-type' の値を返す.
+
+
+
+ファイルの挿入
+..............
+
+既存のバッファにファイルをコマンド `insert-file' などで挿入する時には,
+Demacs は関数 `find-file-type-from-file-name' に挿入するファイルのファイ
+ル名を引数として渡し, その戻り値をバッファのファイル・タイプに設定し, そ
+のトランスレート・モードでファイルを挿入します.
+
+
+
+ファイルの読込
+..............
+
+ファイルをコマンド `find-file' などで読み込む時には, Demacs は関数 
+`find-file-type-from-file-name' にファイル名を引数として渡し, その戻り値
+をバッファのファイル・タイプに設定し, そのトランスレート・モードでファイ
+ルを読み込みます.
+
+
+
+新規ファイルの作成
+..................
+
+関数 `find-file-not-found-set-file-type' が 変数 
+`find-file-not-found-hooks' に付け加えられており, 新規ファイル作成時に起
+動されます. この関数はバッファ名を引数として関数 
+`find-file-type-from-file-name' を内部で呼び出し, バッファのファイル・タ
+イプを設定しています.
+
+
+
+ファイル出力
+------------
+
+バッファをファイルに書き出す時には, Demacs はバッファのファイル・タイプ
+をファイル出力のトランスレート・モードに設定しファイルを書き出します.
+
+
+
+
+外部プロセスとの通信
+--------------------
+
+外部プロセス (子プロセス) との通信はテンポラリ・ファイルを使って行なわれ
+ます. 結果を取り込むバッファのファイル・タイプは変数 `default-file-type' 
+の値に設定されます.
+
+
+
+8086 ソフトウェア割り込み
+=========================
+
+関数 `int86' で 8086 ソフトウェア割込みを実行します. DOS イクステンダ 
+`demacs.exe' はすべての割込みをハンドルしていません. 例外割込みとして致
+命的エラーとなる場合があるので, 注意して使ってください.
+
+この関数は次のように使います. 例えばカレント・ドライブの番号を得る C の
+プログラムは
+
+     int
+     GetDisk ()
+     {
+       union REGS regs;
+       regs.h.ah = 0x19; /* 25 */
+       int86 (0x21 /* 33 */, &regs, &regs);
+       return regs.h.al;
+     }
+
+のように書けますが, これを Demacs では次のように書きます.
+
+     (defun get-disk ()
+       (let ((regs (make-register)))
+         (set-register-value regs 'ah 25)    ; 0x19
+         (int86 33 regs)                     ; 0x21
+         (register-value regs 'al)))
+
+## Function: make-register
+     関数 `int86' に渡すレジスタのインスタンスを生成する.
+
+## Function: register-value REGISTER NAME
+     レジスタ REGISTER の NAME の値を求める. NAME は次のいずれか.
+
+     `'ax'
+          `ax' レジスタ
+     `'bx'
+          `bx' レジスタ
+     `'cx'
+          `cx' レジスタ
+     `'dx'
+          `dx' レジスタ
+     `'si'
+          `si' レジスタ
+     `'di'
+          `di' レジスタ
+     `'cflag'
+          キャリー・フラグ
+     `'flags'
+          フラグ・レジスタ
+
+     または
+
+     `'al'
+          `ax' レジスタの下位バイト
+     `'ah'
+          `ax' レジスタの上位バイト
+     `'bl'
+          `bx' レジスタの下位バイト
+     `'bh'
+          `bx' レジスタの上位バイト
+     `'cl'
+          `cx' レジスタの下位バイト
+     `'ch'
+          `cx' レジスタの上位バイト
+     `'dl'
+          `dx' レジスタの下位バイト
+     `'dh'
+          `dx' レジスタの上位バイト
+
+## Function: set-register-value REGISTER NAME VALUE
+     レジスタ REGISTER の NAME に VALUE を設定する. VALUE は符号なし整数.
+
+## Function: int86 INTNO REGISTER
+     INTNO の 8086 ソフトウェア割込みを REGISTER をレジスタに設定してか
+     ら実行する. 割込み後のレジスタの値をコピーして返す.
+
+
+
+マシン・タイプの設定
+====================
+
+変数 `dos-machine-type' でマシンを指定してマシン固有の機能を使うことがで
+きます.
+
+## Global Variable: dos-machine-type
+     シンボル `ibmpc', `j3100', `pc98' のいずれかを設定すると, マシン固
+     有のコードを利用する.
+
+
+
+IBM PC
+------
+
+IBM PC を使っている場合, 変数 `dos-machine-type' にシンボル `ibmpc' をバ
+インドすると (リスプ式
+
+     (setq dos-machine-type 'ibmpc)
+
+を評価する), `Ctrl-SPACE' でヌル・コードが生成されます. さらに変数 
+`meta-flag' に `*Non-nil' をバインドすると Alt キーでメタ・モディファイ
+ヤが生成されます.
+
+
+
+Toshiba J-3100
+--------------
+
+J-3100 を使っている場合, 変数 `dos-machine-type' にシンボル `j3100' をバ
+インドすると (リスプ式
+
+     (setq dos-machine-type 'j3100)
+
+を評価する), 上の IBM PC の機能に加えて次の関数が有効になります.
+
+     get-cursor-mode
+     set-cursor-mode
+     get-screen-mode
+     set-screen-mode
+     set-keyclick
+
+## Function: get-cursor-mode
+     現在のカーソルの形状およびブリンク・モードを返す.
+
+## Function: set-cursor-mode
+     カーソルの形状およびブリンク・モードを設定する.
+
+## Function: get-screen-mode
+     現在のスクリーン・モードを返す.
+
+## Function: set-screen-mode
+     スクリーン・モードを設定する.
+
+## Function: set-keyclick
+     キー・クリックをオン／オフする.
+
+これらの関数の詳細な使い方はスタートアップ・ファイルのサンプルおよびリス
+プ・ファイル `dos-fns.el' を研究してください.
+
+
+
+NEC PC-9801, EPSON PC-386
+-------------------------
+
+PC-9801 または PC-386 を使っている場合, 変数 `dos-machine-type' にシンボ
+ル `pc98' をバインドすると (リスプ式
+
+     (setq dos-machine-type 'j3100)
+
+を評価する), 次の関数が有効になります.
+
+     pc98-assign-special-key
+     pc98-cancel-special-key
+
+## Function: pc98-assign-special-key
+     ファンクション・キーが生成するキー・コードを Demacs が認識できるも
+     のに変更する.
+
+## Function: pc98-cancel-special-key
+     ファンクション・キーが生成するキー・コードを元に戻す.
+
+これらの関数の詳細な使い方はスタートアップ・ファイルのサンプル, 端末の設
+定ファイル `lisp/term/pc98.el' および DOS イクステンダのソース 
+`go32_98\source.lzh' を研究してください.
+
+
+
+日本語入力 FEP の制御
+=====================
+
+Demacs は FEPCTRL ライブラリにより, 日本語入力フロントエンド・プロセッサ 
+(以下 FEP) を制御することができます. 制御可能な FEP の組み合わせについて
+は配布パッケージに添付したドキュメント `fepctrl.doc' を参照してください.
+
+配布パッケージに添付したスタートアップ・ファイルのサンプル `_emacs' 
+を使うと, 簡単に Demacs の FEP 制御機能を使うことができます.
+
+
+
+FEP 制御のための設定
+--------------------
+
+`_emacs' などで FEP 制御の設定をする場合, まず変数 `inhibit-fep-control' 
+に `nil' を設定して下さい. デフォルト値は `*Non-nil' で FEP 制御を禁止し
+ています.
+
+関数 `fep-init' を評価すると FEP 制御機能が有効になります. またこのとき
+変数 `fep-name' に FEP の名称が設定されます. 関数 `fep-term' を評価する
+と FEP 制御機能が無効になります.
+
+## Global Variable: inhibit-fep-control
+     `*Non-nil' のとき FEP 制御が抑制される. デフォルト値は `*Non-nil'.
+
+## Global Variable: fep-name
+     組み込まれている FEP の名称が `fep-init' により設定される.
+
+## Function: fep-init
+     組み込まれている FEP を識別し, 変換オンの状態であればオフにしてから, 
+     各 FEP に対応する文字列を返す. `fep-term' が呼ばれるまで FEP 制御が
+     有効になる.
+
+## Function: fep-term
+     FEP 制御を無効にして, `fep-init' が呼ばれたときの変換状態に戻す.
+
+スタートアップ・ファイルでの初期設定例:
+
+     ;;; FEP Control support
+     (if (boundp 'NEMACS)
+         (progn
+           (setq inhibit-fep-control nil)
+           (fep-init)
+           (global-set-key "\C-\\" 'toggle-fep-mode)
+           (setq suspend-hook (append (or suspend-hook '(lambda ()))
+                                      '((fep-term))))
+           (setq kill-emacs-hook (append (or kill-emacs-hook '(lambda ()))
+                                         '((fep-term))))
+           (setq suspend-resume-hook (append (or suspend-resume-hook '(lambda()))
+                                             '((fep-init) (fep-sync))))
+           ))
+
+
+
+Demacs のバッファにおける FEP制御
+---------------------------------
+
+FEP 制御機能が有効な場合, コマンド `fep-force-on', `fep-force-off' で 
+FEP の変換オン／オフを制御することができます. またコマンド 
+`toggle-fep-mode' で FEP 変換オン／オフをトグル制御できます. 
+`toggle-fep-mode' は
+
+     (global-set-key "\C-\\" 'toggle-fep-mode)
+
+のようにして C-\ に割り付けておくと良いでしょう.
+
+Demacs は, バッファのローカル変数 `fep-mode' により, バッファごとに FEP 
+の変換モードを管理しています. `fep-mode' には, 変換オフの状態では `nil' 
+が, 変換オンの状態では `*Non-nil' が設定されます. 新しいバッファを生成し
+たときのデフォルト値は `nil' で, FEP は変換オフの状態に設定されます.
+
+FEPCTRL 1.4 では FEP の変換モードを知ることができないので, 通常の変換キー
+で FEP の変換オン／オフを制御すると, つじつまが合わなくなることがありま
+す. このようなときは, コマンド `fep-sync' を使うと正常な状態に戻ります.
+
+## Local Variable: fep-mode
+     変換オンの状態では `*Non-nil' が, 変換オフの状態では `nil' が設定さ
+     れる.
+
+## Command: fep-force-on
+     FEP を強制的に変換オンの状態にする.
+
+## Command: fep-force-off
+     FEP を強制的に変換オフの状態にする.
+
+## Command: fep-sync
+     ローカル変数 `fep-mode' に合わせて FEP の変換モードを設定し直す.
+
+## Command: toggle-fep-mode
+     FEP の変換オン／オフの状態をトグル制御する. 
+
+
+また, 次のような状況では FEP の変換モードが適当なものに切り替わります.
+
+   * プレフィクス (ESC, `C-x', `C-c' など) で修飾されるキーを読み込むと
+     き
+
+   * 補完可能な入力 (ファイル名やバッファ名, コマンド名など) をミニ・バッ
+     ファから読み込むとき
+
+   * 関数 `read-char' でひと文字読み込むとき (コマンド `query-replace' 
+     の応答時など)
+
+
+
+リスプ・インタープリタからの FEP 制御
+-------------------------------------
+
+次のようにするとリスプ・プログラムで FEP の変換モードを制御できます.
+
+     (fep-off)
+     (unwind-protect
+         BODY-FORM
+       (fep-on))
+
+## Function: fep-off
+     FEP の現在の変換モードの状態を記憶し, 変換モードをオフにする.
+
+## Function: fep-on
+     FEP の変換モードを `fep-off' が呼ばれたときの状態に戻す.
+
+
+
+その他の機能
+============
+
+  1. ファイル名の補完
+
+     ドライブ名を含んだファイル名の補完機能が使えます. 
+
+     例えばカレント・ディレクトリが `c:/tools/emacs' でファイル 
+     `d:/config.sys' が存在したとします. このとき `C-x C-f' をタイプする
+     とコマンド `find-file' が起動され, ミニ・バッファに
+
+          Find file: c:/tools/emacs/
+
+     と表示されます. ここで `d:/confi' までタイプして TAB キーを押すとファ
+     イル名の補完が行なわれ
+
+          a:/tools/emacs/d:confi^I  -> d:/config.sys [sole complete]
+
+     となります. 
+
+
+  2. 子プロセスの起動
+
+     コマンド `suspend-emacs' でサブ・シェルを起動できます. 
+     `suspend-emacs' はあらかじめ `C-z' に設定されています.
+
+     関数 `call-process' で子プロセスの出力をバッファに取込むことができ
+     ます. `M-!' を試してみてください. ただしキーボードからの入力を待つ
+     ようなプログラムは起動しないでください. 起動したプログラムを Demacs 
+     側で中断することはできません.
+
+
+  3. Enhanced Dired モード
+
+     配布パッケージの `edired.lzh' に Sebastian Kremer による enhanced
+     dired モードとその DOS バージョンが含まれています. この dired は 
+     UNIX 互換の `ls.exe' がインストールされていなくても利用することがで
+     きます.
+
+     このモードを使うためには, `edired.lzh' を lisp ディレクトリに展開し, 
+     スタートアップ・ファイルに
+
+          (setq dired-mode-map nil)
+          (load "emacs-19")
+          (autoload 'dired "dired" nil t)
+
+     と付け加えて下さい. 
+
+     UNIX 互換の `ls.exe' をお持ちの場合は, スタートアップ・ファイルに
+
+          (setq dired-load-hook
+                '(lambda ()
+                   (setq dired-ls-program "ls")))
+
+     と設定すると `ls.exe' から出力を取り込むことができます. 
+
+     `demacs.exe' に `-keep' オプションを指定した場合は, 後者の設定の方
+     が高速に処理されます.
+
+     使い方の詳細は `dired.README' とドキュメント・ストリングをご覧下さ
+     い.
+
+
+
+制限
+****
+
+   * 非同期プロセスは実装されていません. 配布パッケージに附属の 
+     `compile.el', `dired.el' は非同期呼び出しをしないように書き換えてあ
+     ります.
+
+   * `Ctrl-G' でインタラプト・シグナルがかかりません. ですから 
+
+          (while t ()) 
+
+     のようなリスプ式を評価すると中断できないので注意してください. この式
+     の場合
+
+          (while (not (input-pending-p)) ())
+
+     のようにすれば中断できます.
+
+   * バックアップファイルは次のようなルールで作られます.
+
+          foo      ->  foo.~
+          foo.c    ->  foo.c~
+          foo.tex  ->  foo.te~
+
+     DOS のファイル名は幅が 8+3 しかないので, `foo.c.~1~', `foo.c.~2~' 
+     のような数字式バックアップは使用できません (あらかじめ `default.el' 
+     で
+
+          (setq version-control 'never)
+
+     としてバージョン・コントロール機能は殺してあります). 
+
+   * オート・セーブ・ファイルはファイル名の先頭と末尾にに `#' が付加され
+     ます. ファイル名が 8 文字の場合, また拡張子が 3 文字の場合, 末尾の
+     文字が省略されるので注意してください. 例えば次のようになります.
+
+          abcdefgh ->  #abcdefg.#
+          foo.c    ->  #foo.c#
+          foo.tex  ->  #foo.te#
+
+   * XMS または VCPI メモリマネージャが組み込まれていない場合に `-keep' 
+     オプションを使用すると, Demacs の子プロセスとして呼ばれた Demacs
+     (または `go32' のアプリケーション) は正しく動作しません.
+
+   * VCPI マネージャの元で Demacs に与えられる拡張メモリの量が 300KB よ
+     りも少ないと Demacs がハングアップしたり動作が非常に遅くなることが
+     あります.  十分な拡張メモリを与えて下さい.
+
+   * テキスト・ファイル・タイプで読み込んだバッファをコマンド 
+     `set-file-type' でバイナリ・ファイル・タイプに設定し直しても,
+     Demacs はファイルを読み直しません. 従って, バイナリ・ファイルをその
+     ままセーブすると `LF' (0x0d) のコード, または `Ctrl-Z' 移行のデータ
+     が失われます.
+
+   * 日本語のファイル名を扱うことはできません. 
+
+   * 半角仮名文字を扱うことはできません. 
+
+
+
+コンパイル
+**********
+
+Nemacs を作成する場合は `config.h' で `NEMACS' マクロを設定するか, また
+は `xmakefile' で `-DNEMACS' オプションを指定してコンパイルして下さい.
+
+作業の詳細は英語版 `readme' を参照して下さい.
+
+
+
+ファンクションキー／カーソルキーについて
+****************************************
+
+PC-9801, PC-386 では環境変数 TERM に `pc98' を設定しておくと, ファンクショ
+ン・キーとカーソル・キーが使えるようになります. ファンクション・キーの表
+示を消したい場合には `$HOME/_emacs' に次のプログラムを加えて下さい.
+
+     (setq dos-machine-type 'pc98)
+     (if (eq dos-machine-type 'pc98)
+         (progn
+           (send-string-to-terminal "\e[>1h") ; erase function key label
+           (setq kill-emacs-hook              ; recover functin key label
+                 '(lambda ()
+                    (send-string-to-terminal "\e[>1l")))
+           (setq suspend-hook
+                 '(lambda ()
+                    (send-string-to-terminal "\e[>1l")))
+           (setq suspend-resume-hook
+                 '(lambda ()
+                    (send-string-to-terminal "\e[>1h")))))
+
+IBM PC, J-3100 でも同様に環境変数 TERM に `ibmpc' または `j3100' を設定
+しておくと, ファンクション・キーとカーソル・キーが使えるようになります.
+
+
+割り当てられるキーの機能は以下の通りです.
+
+     PC-9801  IBM PC
+     ROLLUP   PgUp       scroll-up              次ページを表示
+     ROLLDN   PgDn       scroll-down            前ページを表示
+     INS      Ins        set-mark-command       マークを設定
+     DEL      Del        delete-backward        前文字を消去
+     up       UpArrow    previous-line          前行へ移動
+     left     LeftArrow  backward-char          前文字へ移動
+     right    RightArrow forward-char           次文字へ移動
+     down     DownArrow  next-line              次行へ移動
+     CLR/HOME            recenter               カーソルをウィンドウの中央へ
+     HELP                help-for-help          ヘルプの呼び出し
+     HOME     Home       beginning-of-buffer    バッファの先頭へ移動
+              End        end-of-buffer          バッファの終端へ移動
+
+
+     f.1     help-for-help           ヘルプの呼び出し
+     S-f.1   describe-mode           バッファのモードの説明
+     C-f.1   describe-key            キーの説明
+
+     f.2     other-window            次のウィンドウへ移動
+     S-f.2   switch-to-buffer        ウィンドウを指定して移動
+     C-f.2   list-buffers            バッファの一覧
+
+     f.3     delete-other-windows    ウィンドウを画面いっぱいに広げる
+     S-f.3   delete-window           ウィンドウを閉じる
+     C-f.3   scroll-other-window     他のウィンドウをスクロール
+
+     f.4     split-window-vertically ウィンドウを横に分割
+     S-f.4   enlarge-window          ウィンドウを拡大
+     C-f.4   shrink-window           ウィンドウを縮小
+
+     f.5     split-window-horizontally       ウィンドウを縦に分割
+     S-f.5   enlarge-window-horizontally     ウィンドウを拡大
+     C-f.5   shrink-window-horizontally      ウィンドウを縮小
+
+     f.6     copy-region         マークからカーソルまでをヤンクバッファにコピー
+     S-f.6   kill-region         マークからカーソルまでをヤンクバッファにカット
+     C-f.6   yank                ヤンクバッファをバッファに挿入
+
+     f.7     goto-line               指定した行に移動
+     S-f.7   isearch-forward         前向きに探索
+     C-f.7   query-replace           問い合わせつき文字列置換
+
+     f.8     find-file               ファイルをバッファに読み込む
+     S-f.8   save-buffer             バッファをセーブ
+     C-f.8   write-file              バッファを指定したファイルに書き出す
+
+     f.9     dired                   ディレクトリ・エディタ
+     S-f.9   compile                 プログラムのコンパイル
+     C-f.9   repeat-complex-command  コマンドのくり返し
+
+     f.10    shell-command           コマンドを実行
+     S-f.10  suspend-emacs           DOS のシェルを呼び出す
+     C-f.10  save-buffers-kill-emacs demacs の終了
+
+
+PC-9801, PC-386 では F.11 から F.15 までは機能が割り当てられていません 
+(追加は可能です).
+
+機能の追加, 変更は `lisp/term/pc98.el', `lisp/term/ibmpc.el',
+`lisp/term/j3100.el' を参考にして,変数 `term-setup-hook' を利用してくだ
+さい.
+
+ファンクションキー, カーソルキーが必要ない場合には `$HOME/_emacs' に次の
+一行を追加します.
+
+     (setq term-file-prefix nil)
+
+Demacs の起動が若干速くなります.
+
+おまけのファンクションキーラベル:
+
+ |  F.1  |  F.2  |  F.3  |  F.4  |  F.5  |  F.6  | F.7 |  F.8  | F.9 | F.10   |
+ |ヘルプ |窓移動 |全面化 |横分割 |縦分割 |コピー |移動 |リード |DIR  |コマンド|
+s|モード |窓指定 |窓閉鎖 |横拡大 |縦拡大 |カット |探索 |セーブ |MAKE |シェル  |
+c|鍵解説 |窓一覧 |他窓動 |横縮小 |縦縮小 |ヤンク |置換 |ライト |繰返 |終了    |
+
+その英語版:
+
+ | F.1 |  F.2  |  F.3  |  F.4   |  F.5   | F.6 |  F.7  | F.8  | F.9  | F.10   |
+ |help | nextW | delOW |splitWH |splitWV |copy | goto  | read |dired |command |
+s|mode |switchW| delW  |largeWH |largeWV |kill |search | save | make |suspend |
+c|key  |buffers|scrlOW |shrnkWH |shrnkWV |yank |replace|write |repeat| quit   |
+
+
+
+UNIX 版との違い
+***************
+
+
+
+Demacs に実装されていない関数一覧
+=================================
+
+     accept-process-output                   process-list
+     continue-process                        process-mark
+     delete-process                          process-name
+     file-locked-p                           process-send-eof
+     get-buffer-process                      process-send-region
+     get-process                             process-send-string
+     interrupt-process                       process-sentinel
+     kill-process                            process-status
+     list-processes                          processp
+     make-symbolic-link                      quit-process
+     open-network-stream                     set-process-buffer
+     process-buffer                          set-process-filter
+     process-command                         set-process-kanji-code
+     process-exit-status                     set-process-sentinel
+     process-filter                          start-process
+     process-id                              stop-process
+     process-kanji-code                      waiting-for-user-input-p
+     process-kill-without-query
+
+
+
+Demacs に実装されていない変数一覧
+=================================
+
+     delete-exited-processes                 process-connection-type      
+
+
+
+Demacs で付け加えられた関数一覧
+===============================
+
+     bdos                                    get-screen-mode
+     define-file-name-file-type              int86
+     demacs-version                          intdos
+     disk-free-space                         invoke-find-file-type
+     disk-total-space                        make-register
+     fep-force-off (*)                       pc98-assign-special-key
+     fep-force-on (*)                        pc98-cancel-special-key
+     fep-init (*)                            register-value
+     fep-off (*)                             set-cursor-mode
+     fep-on (*)                              set-default-file-type
+     fep-sync (*)                            set-file-type
+     fep-term (*)                            set-keyclick
+     file-type-internal                      set-register-value
+     file-type-p                             set-screen-mode
+     find-file-not-found-set-file-type       toggle-fep-mode (*)
+     find-file-type-from-file-name           toggle-pass8-mode
+     get-cursor-mode
+
+(*) は日本語版のみ
+
+
+Demacs で付け加えられた変数一覧
+===============================
+
+     default-file-type                       file-type
+     demacs-version                          file-type-alist
+     demacs-version-date                     find-file-type
+     dos-inhibit-setdisk                     inhibit-fep-control (*)
+     dos-machine-type                        pass8-mode
+     fep-mode (*)                            register-name-by-byte-alist
+     fep-name (*)                            register-name-by-word-alist
+     file-name-file-type-alist
+
+(*) は日本語版のみ

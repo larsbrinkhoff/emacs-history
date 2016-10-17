@@ -1,0 +1,1040 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+File: calc  Node: Reducing and Mapping, Prev: Vector and Matrix Arithmetic, Up: Matrix Functions, Next: Vector and Matrix Formats
+
+Reducing and Mapping Vectors
+============================
+
+The commands in this section allow for more general operations on the
+elements of vectors.
+
+The `V A' (`calc-apply') command applies a given operator to the
+elements of a vector.  For example, applying the hypothetical function
+`f' to the vector `[1, 2, 3]' would produce the function call `f(1, 2,
+3)'.  Applying the `+' function to the vector `[a, b]' produces `a + b'.
+Applying `+' to the vector `[a, b, c]' is an error, since the `+'
+function accepts exactly two arguments.  (While `calc-apply' is useful
+in some cases, you will usually find that `calc-reduce' or `calc-map',
+described below, are closer to what you want.)
+
+The `V A' command prompts you to press the key corresponding to the
+desired operator.  Press `?' for a list of all available operators.  Or,
+press `x' at the operator prompt to select any algebraic function by
+name to use as the operator.  This can include functions you have
+defined yourself using the `Z F' command.  (*Note Algebraic
+Definitions::.)  If you give a name for which no function has been
+defined, the result is left in symbolic form, as in `f(1, 2, 3)'.
+
+It is also possible to apply any formula to a vector by treating that
+formula as a function.  When prompted for the operator to use, press `''
+(the apostrophe) and type your formula as an algebraic entry.  You will
+then be prompted for the argument list, which defaults to a list of all
+variables that appear in the formula, sorted into alphabetic order.  For
+example, suppose you enter the formula `x + 2y^x'.  The default argument
+list would be `(x y)', which means that if this function is applied to
+the arguments `[3, 10]', the result would be `3 + 2*10^3'.  If you plan
+to use a certain formula in this way often, you might consider defining
+it as a function with `Z F'.
+
+If you press `$' at the operator prompt, the effect is similar to the
+apostrophe except that the relevant formula is taken from top-of-stack
+instead.  The actual vector argument of the `calc-apply' command is then
+taken from the second-to-top stack position.  You will still be prompted
+for an argument list.
+
+The algebraic notation for a "generic function" is `lambda(a1,a2,a3,x)'
+where the `a's are argument variables, and `x' is a formula involving
+those variables.  For example, when you use the apostrophe to enter the
+formula `x + 2y^x' as an operator with argument list `(x y)', Calc
+builds the generic function `lambda(x, y, x + 2y^x)' and gives that to
+the `apply' operation instead of a function name.  You can enter a
+lambda expression by hand if you wish, either directly with `'', or on
+the stack with `$'.  (The word `lambda' derives from Lisp notation and
+the theory of functions.  Note that there is no actual Calc function
+called `lambda'; the whole point is that the `lambda' expression is used
+in its symbolic form, not evaluated for an answer.)
+
+The `V R' (`calc-reduce') command applies a given binary operator across
+all the elements of a vector.  A binary operator is a function such as
+`+' or `max' which takes two arguments.  For example, reducing `+' over
+a vector computes the sum of the elements of the vector.  Reducing `-'
+computes the first element minus each of the remaining elements.
+Reducing `max' computes the maximum element, and so on.  In general,
+reducing `f' over the vector `[a, b, c, d]' produces `f(f(f(a, b), c),
+d)'.
+
+The `V M' (`calc-map') command applies a given operator elementwise to
+one or more vectors.  For example, mapping `A' [`abs'] produces a vector
+of the absolute values of the elements in the input vector.  Mapping `+'
+pops two vectors from the stack, which must be of equal length, and
+produces a vector of the pairwise sums of the elements.  If either
+argument is a non-vector, it is duplicated for each element of the other
+vector.  For example, `[1,2,3] 2 V M ^' squares the elements of the
+specified vector.  With the 2 listed first, it would have computed a
+vector of powers of two.  Mapping a user-defined function pops as many
+arguments from the stack as the function requires.  If you give an
+undefined name, you will be prompted for the number of arguments to use.
+
+In algebraic formulas, these operations can be expressed as `apply(OPER,
+VEC)', `reduce(OPER, VEC)', and `map(OPER, V1, V2, ...)'.  For example,
+`map(gcd, [10,20,30], x)'.  If VEC, or all of the V's, are non-vectors,
+the expression is left in symbolic form.  Here, OPER is any function
+name like `max' or `gcd', or a `lambda' expression as described above.
+Operators that are normally written as symbols have the names `add',
+`sub', `mul', `div', `pow', `neg', `mod', and `vconcat'.
+
+(Experts will notice that it's not quite proper to use a variable to
+name a function, since the name `gcd' corresponds to the Lisp variable
+`var-gcd' but to the function `calcFunc-gcd'.  Calc automatically makes
+this translation, so you don't have to worry about it.)
+
+* Menu:
+
+* Map/Reduce Examples::
+* Mapping Matrices::
+* Reducing Matrices::
+
+
+File: calc  Node: Map/Reduce Examples, Prev: Reducing and Mapping, Up: Reducing and Mapping, Next: Mapping Matrices
+
+Further Examples
+----------------
+
+Consider computing the mean and standard deviation of a list of values.
+To compute the mean, sum the values and divide by the length of the
+vector.  To automate this process, type the sequence `RET V R + TAB v l
+/' to duplicate the vector, compute its sum, bring the duplicate to the
+top of the stack and compute its length, then divide the sum by the
+length.
+
+To compute the standard deviation, duplicate twice, compute the mean as
+above, then type `V M - 2 V M ^ V R + TAB v l 1 - / Q'.  The steps are
+to subtract the mean from the elements of the vector, square the
+elements, sum the elements, compute the length, then divide the sum of
+squares by the length minus one to yield the variance; the standard
+deviation is the square root of this.  Note that some of these
+operations could be done more easily with other built-in commands; for
+example, plain `-' will subtract a number from a vector elementwise, and
+`A' will compute the square root of the sum of the squares of the
+elements of a vector.  *Note Keyboard Macros::, for a convenient way to
+program a key sequence like this into the Calculator for easy re-use.
+
+If you have a matrix and wish to compute the means and standard
+deviations of all the rows or columns at once, just use the appropriate
+mapping modes as described in the next two sections.
+
+As another example, suppose you wish to sum the function `x^1.5' over
+the integers from 5 to 20.  First, build a vector of index values with
+`v x 16 RET 4 +'.  Next, map the function `x^1.5' over this vector with
+`V M ' x^1.5'.  Finally, sum the vector with `V R +'.  This same
+technique can be used to compute any sum or product over a reasonably
+small set of index values.
+
+
+File: calc  Node: Mapping Matrices, Prev: Map/Reduce Examples, Up: Reducing and Mapping, Next: Reducing Matrices
+
+Mapping Matrices
+----------------
+
+When matrices are involved in a mapping operation, they can be
+interpreted in several ways.  The current "mapping mode" controls this
+interpretation; you set the mode by typing a two-letter combination
+starting with `m' when Calc asks which operator to use.  Once you have
+set a mapping mode, that mode stays in effect until you change it.  The
+default mode is map-by-elements.  The mapping mode is also used by the
+`calc-reduce' command, as described in the next section.  The mapping
+mode has no effect if the arguments are plain vectors.
+
+Use `m e' to select map-by-elements mode.  In this mode, the operator is
+applied to each element of the argument matrix, or to corresponding
+elements of the argument matrices.  For example, mapping by elements the
+sine function over a matrix replaces each matrix element by its sine.
+Mapping addition by elements adds corresponding matrix elements.  If
+either argument is a scalar, the same scalar is mapped with each element
+of the other matrix.
+
+Use `m r' to select map-by-rows mode.  In this mode, the operator is
+applied to each row of the argument matrix, or to corresponding rows of
+the argument matrices.  Rows are presented to the operator as plain
+vectors.  For example, mapping multiplication by rows computes a vector
+of dot products of the rows of the input matrices, since multiplying two
+plain vectors computes a dot product.  If either argument is scalar, or
+a plain vector of the same length as a row of the other matrix, it is
+mapped with every row of the matrix.
+
+Use `m c' to select map-by-columns mode.  Essentially, this transposes
+all matrix arguments, maps by rows, then transposes the result.
+
+Use `m a' to select map-across mode.  In this mode, the input is a
+single matrix with as many columns as the operator takes arguments.  The
+columns of the matrix are treated as arguments in a regular vector
+mapping operation.  For example, mapping multiplication across matrix
+`[[a, b], [c, d], [e, f]]' produces the vector `[a*b, c*d, e*f]'.
+
+Use `m d' to select map-down mode.  This mode is analogous to
+map-across, except that it treats the rows of the matrix as arguments to
+the mapping operation.
+
+As another example, you could concatenate two matrices horizontally by
+mapping `|' (vector concatenation) by rows.
+
+
+File: calc  Node: Reducing Matrices, Prev: Mapping Matrices, Up: Reducing and Mapping
+
+Reducing Matrices
+-----------------
+
+The current "mapping mode", as described in the previous section, also
+influences reduction operations when the argument is a matrix.
+
+Use `m e' to select reduce-by-elements mode.  In this mode, all the
+elements of the matrix are reduced into one scalar result.  For example,
+mapping addition by elements over a 3x4 matrix adds all 12 elements
+together.  Normal English left-to-right, top-to-bottom order is used;
+for example, reducing subtraction by elements over the matrix `[[a, b],
+[c, d]]' produces `(((a - b) - c) - d)'.
+
+Use `m r' to select reduce-by-rows mode.  In this mode, the rows of the
+matrix are treated as vectors; the operator is applied to these row
+vectors.  For example, mapping addition by rows produces a vector of the
+sums of the various columns of the matrix, because adding two vectors
+does a standard vector addition.  Reducing multiplication by rows is not
+very useful unless there are only two rows, in which case it computes
+the dot product of the two rows.
+
+Use `m c' to select reduce-by-columns mode.  In this mode, the columns
+of the matrix are treated as vectors; the operator is reduced along the
+column vectors.  In other words, it transposes the argument matrix and
+then reduces by rows.
+
+Use `m a' to select reduce-across mode.  In this mode, the rows of the
+matrix are treated as vectors; each row is reduced in the usual way, and
+the results are collected into a vector.  For example, reducing
+multiplication across a matrix produces a vector of the products of the
+various rows.  Reducing addition produces a vector of the sums of the
+various rows, producing the same result as reducing by columns but in a
+different way.
+
+Use `m d' to select reduce-down mode.  In this mode, the columns of the
+matrix are treated as vectors which are reduced individually.  This is
+the same as transposing the argument matrix and then reducing across.
+
+
+File: calc  Node: Vector and Matrix Formats, Prev: Reducing and Mapping, Up: Matrix Functions
+
+Vector and Matrix Display Formats
+=================================
+
+Commands for controlling vector and matrix display use the `v' prefix
+instead of the usual `d' prefix.
+
+The `v <' (`calc-matrix-left-justify'), `v >'
+(`calc-matrix-right-justify'), and `v =' (`calc-matrix-center-justify')
+commands control whether matrix elements are justified to the left,
+right, or center of their columns.
+
+The `v [' (`calc-vector-brackets') command turns the square brackets
+that surround vectors and matrices displayed in the stack on and off.
+The `v {' (`calc-vector-braces') and `v (' (`calc-vector-parens')
+commands use curly braces or parentheses, respectively, instead of
+square brackets.  For example, `v {' might be used in preparation for
+yanking a matrix into a buffer running Mathematica.  (In fact, the
+Mathematica language mode uses this mode; *Note Mathematica Language
+Mode::.  Note that, regardless of the display mode, either brackets and
+braces may be used to enter vectors, and parentheses may never be used
+for this purpose.
+
+The `v ,' (`calc-vector-commas') command turns commas on and off in
+vector and matrix display.
+
+
+File: calc  Node: Algebra, Prev: Matrix Functions, Up: Top, Next: Units
+
+Algebra
+*******
+
+The commands for operating on algebraic formulas use the `a' key prefix.
+*Note Editing Stack Entries::, to see how to manipulate formulas using
+regular Emacs editing commands.
+
+Many of these commands prompt for a variable name or formula.  If you
+answer the prompt with a blank line, the variable or formula is taken
+from top-of-stack, and the normal argument for the command is taken from
+second-to-top.
+
+When doing algebraic work, you may find several of the Calculator's
+modes to be helpful, including algebraic-simplification mode (`m A'),
+algebraic-entry mode (`m a'), fraction mode (`m f'), and symbolic mode
+(`m s').  *Note Mode Settings::, for discussions of these modes.  You
+may also wish to select "big" display mode (`d B').  *Note Normal
+Language Modes::.
+
+* Menu:
+
+* Algebraic Manipulation::
+* Rewrite Rules::
+* Logical Operations::
+* Calculus::
+
+
+File: calc  Node: Algebraic Manipulation, Prev: Algebra, Up: Algebra, Next: Rewrite Rules
+
+Algebraic Manipulation
+======================
+
+The `a s' (`calc-simplify') command applies various algebraic rules to
+simplify a formula.  This generally entails combining like terms of sums
+and products.  The result will be a formula which is mathematically
+equivalent to the original one, but somewhat simpler.
+
+The `a e' (`calc-simplify-extended') command is like `a s' except that
+it applies some additional simplifications which are not "safe" in all
+cases.  For example, powers are simplified according to the rule
+`(a^b)^c = a^(b c)', even though this is not always true (consider
+`sqrt(a^2)' for negative `a').  The symbolic integrator uses
+`calc-simplify-extended'; one effect of this is that the integrator's
+results must be used with caution.  Where an integral table will often
+attach conditions like "for positive `a' only," Calc (and most other
+symbolic integration programs) will simply produce an unqualified
+result.
+
+The `a x' (`calc-expand') command expands an expression by applying the
+distributive law.  It applies to products, quotients, and powers
+involving sums.  By default, it fully distributes all parts of the
+expression.  With the a numeric prefix argument, the distributive law is
+applied only the specified number of times, then the partially expanded
+expression is left on the stack.
+
+Calc's automatic simplifications will sometimes reverse a partial
+expansion.  For example, the first step in expanding `(x+1)^3' is to
+write `(x+1)*(x+1)^2'.  If `calc-expand' stops there and tries to put
+this formula onto the stack, though, Calc will automatically simplify it
+back to `(x+1)^3' form.  The solution is to turn simplification off
+first (*Note Simplification Modes::), or to run `a x' without a numeric
+prefix argument so that it expands all the way in one step.
+
+The `a c' (`calc-collect') command rearranges a formula as a polynomial
+in a given variable.  For example, expanding `(x+y)^3' with `a x'
+produces a sum of four terms, initially written in arbitrary order.  You
+can use `a c x' or `a c y' to arrange the terms in order of decreasing
+powers of `x' or `y', respectively.  You can also give any expression
+about which to collect: `a c ln(x+1)' will collect together all terms
+multiplied by `ln(x+1)' or integer powers thereof.
+
+The `a b' (`calc-substitute') command substitutes occurrences of some
+variable or sub-expression of an expression with a new sub-expression.
+For example, substituting `sin(x)' to `cos(y)' in `2 sin(x)^2 + x sin(x)
++ sin(2 x)' produces `2 cos(y)^2 + x cos(y) + sin(2 x)'.  Note that this
+is a purely structural substitution; the lone `x' and the `sin(2 x)'
+stayed the same because they did not look like `sin(x)'.  *Note Rewrite
+Rules::, for a more general method for doing substitutions.
+
+The `calc-substitute' command normally prompts for two formulas, the old
+one and the new one.  If you enter a blank line for the first prompt,
+all three arguments are taken from the stack (old, then new, then target
+expression).  If you type an old formula but then enter a blank line for
+the new one, the new formula is taken from top-of-stack and the target
+from second-to-top.  If you answer both prompts, the target is taken
+from top-of-stack as usual.
+
+
+File: calc  Node: Rewrite Rules, Prev: Algebraic Manipulation, Up: Algebra, Next: Logical Operations
+
+Rewrite Rules
+=============
+
+The `a r' (`calc-rewrite') command makes substitutions in a formula
+according to a specified pattern or patterns.  It is like a generalized
+version of `calc-substitute'.  You provide Calc with one or more
+"rewrite rules", which take the form of vectors of two or three
+elements: `[old, new]' or `[old, new, cond]'.  To specify a set of
+rules, make a vector of rule vectors.  (Calc will interpret this
+structure as a matrix as long as the rules either all include or all
+omit the `cond' part.  Whether or not this is true makes no difference
+to `calc-rewrite' itself.)
+
+When you are prompted to enter the rewrite rules, you can either type
+the vector directly (as an algebraic entry), or type the name of a Calc
+variable into which you have stored a rules vector, or enter a blank
+line in which case the rules vector will be taken from the top of the
+stack.  It is most convenient to store rules you use often in a variable
+and invoke them by naming the variable.  You may also wish to use `Z V'
+(`calc-permanent-variable') to save the rules permanently; *Note Storing
+Variables::.
+
+To match a particular formula `x' with a particular rule vector `[old,
+new]', Calc compares the structure of `x' with the structure of `old'.
+Variables that appear in `old' are treated as "meta-variables"; the
+corresponding positions in `x' may contain any sub-formulas.  For
+example, the pattern `f(x,y)' would match the expression `f(12, a+1)'
+with the meta-variable `x' corresponding to 12 and with `y'
+corresponding to `a+1'.  However, this pattern would not match `f(12)'
+or `g(12, a+1)', since there is no assignment of the meta-variables that
+will allow the pattern to match these expressions.  Notice that if the
+pattern is a single variable, it will match any expression.
+
+If a given meta-variable appears more than once in OLD, the
+corresponding sub-formulas of `x' must be identical.  Thus the pattern
+`f(x,x)' would match `f(12, 12)' and `f(a+1, a+1)' but not `f(12, a+1)'
+or `f(12, 12.0)'.
+
+Things other than variables must match exactly between the pattern and
+the target formula.  To match a particular variable, use the
+pseudo-function `quote(v)' in the pattern.  For example, the pattern
+`x+quote(y)' matches `x+y', `2+y', or `sin(x)+y'.
+
+Pattern-matching is completely structural, not taking the algebraic
+properties of formulas into account.  Thus `f(x+1)' matches the formula
+`f(a+1)' but not `f(a)', `f(a+2)', or `f(1+a)'.
+
+If the `old' pattern is found to match a given formula, that formula is
+replaced by `new', where any occurrences in `new' of meta-variables from
+the pattern are replaced with the sub-formulas that they matched.  Thus,
+applying the rule `[f(x,y), g(y+x,x)]' to `f(12, a+1)' would produce
+`g(a+13, 12)'.
+
+If a `cond' part is also present in the rule, this is an additional
+condition that must be satisfied before the rule is accepted.  Once
+`old' has been successfully matched to the target expression, `cond' is
+evaluated (with the meta-variables substituted for the values they
+matched) and simplified with `calc-simplify'.  If the result is a
+nonzero number, the rule is accepted.  If the result is zero or if it is
+still a symbolic formula, the rule is rejected.  *Note Logical
+Operations::, for a number of functions that return 1 or 0 according to
+the result of some test.  For example, the formula `n > 0' simplifies to
+1 or 0 if `n' is a replaced by a positive or nonpositive number,
+respectively.  Thus, the rule `[f(x,y), g(y+x,x), x+y > 0]' would be
+applied to `f(0, 4)' but not to `f(-3, 2)' or `f(12, a+1)'.  (In the
+former case, the condition can be shown not to be satisfied; in the
+latter case, the condition merely cannot be shown to be satisfied, but
+that is enough to reject the rule.)
+
+When `calc-rewrite' is used, it takes an expression from the top of the
+stack and attempts to match any of the specified rules to any part of
+the expression, starting with the whole expression and then, if that
+fails, trying deeper and deeper sub-expressions.  For each part of the
+expression, the rules are tried in the specified order.  The first rule
+to match the first sub-expression wins; it replaces the matched
+sub-expression according to the `new' part of the rule.  By default,
+only one substitution is made per `calc-rewrite' command.
+
+Given a positive numeric prefix argument, `calc-rewrite' will perform up
+to that many substitutions before stopping.  First, the top-level
+formula is matched and substituted repeatedly until it no longer matches
+the pattern; then, sub-formulas are tried, and so on.  If the limit
+still has not been reached, the top-level formula is check again (in
+case a substitution of one of its arguments causes it again to match).
+This continues until no further matches can be made, or until the limit
+is reached.
+
+Given a negative numeric prefix argument, `calc-rewrite' will match and
+substitute the top-level expression up to that many times, but will not
+attempt to match any sub-expressions.
+
+A prefix argument of zero is equivalent to a prefix of 25.  This is
+meant to be a convenient limit that is usually enough to finish the job,
+but not enough to be too slow in case the rule transformations get into
+an infinite loop.
+
+As a larger example, suppose we wish to substitute the pattern `sin(x)^2
++ cos(x)^2' with 1 in a given expression.  The rule `[sin(x)^2 +
+cos(x)^2, 1]' would work, but only for the most literal matches.  This
+would miss the formula `2 sin(a)^2 + 2 cos(a)^2', for example, because
+our pattern does not account for both terms being multiplied by an equal
+factor.  A more flexible solution would be to use the rule `[cos(x)^2, 1
+- sin(x)^2]', followed by algebraic simplification if necessary.
+
+Similarly, the pattern `[f(x, x+1), g(x)]' is not a very reliable rule
+since it fails to match in cases like `f(2, 3)'.  A better rule would be
+`[f(x,y), g(x), y=x+1]', since the algebraic simplifier is applied to
+conditions but not to patterns.
+
+As another example, we could define our own factorial function with the
+rules `[[f(0), 1], [f(n), n*f(n-1), n>0]]'.  Enter this rules vector and
+store it in a variable: `s factrules'.  Now, given a factorial formula
+like `f(5)' on the stack, type `C-u 0 a r factrules' to apply these
+rules repeatedly.  After six applications, `calc-rewrite' will stop with
+120 on the stack.  If we expect to use these rules often, we could
+define the above sequence of keystrokes as a keyboard macro.  We could
+then assign this macro to a single key sequence which effectively means,
+"simplify all calls to the function `f' on top-of-stack."  *Note
+Keyboard Macros::.
+
+
+File: calc  Node: Logical Operations, Prev: Rewrite Rules, Up: Algebra, Next: Calculus
+
+Logical Operations
+==================
+
+The following commands and algebraic functions return true/false values,
+where 1 represents "true" and 0 represents "false."  In cases where a
+truth value is required (such as for the condition part of a rewrite
+rule), any nonzero number is accepted to mean "true."
+
+The `a =' (`calc-equal-to') command, or `eq(a,b)' function (which can
+also be written `a = b' or `a == b' in an algebraic formula) is true if
+`a' and `b' are equal, either because they are identical expressions, or
+because they are numbers which are numerically equal.  (Thus the integer
+1 is considered equal to the float 1.0.)  If the equality of `a' and `b'
+cannot be determined, the comparison is left in symbolic form.  Note
+that as a command, this operation pops two values from the stack and
+pushes back either a 1 or a 0, or a formula `a = b' if the values'
+equality cannot be determined.
+
+Note that `C-u 3 a =' or `a = b = c' does not return true if `a', `b',
+and `c' are equal.  (It is interpreted as `(a = b) = c', and returns
+true if `c' is 1 when `a' and `b' are equal, or 0 when they are
+unequal.)  Only negative prefix arguments are likely to be useful with
+`a =' (*Note Prefix Arguments::).  The same is true of the other
+relational operators described below.
+
+The `a #' (`calc-not-equal-to') command, or `neq(a,b)' or `a != b'
+function, is true if `a' and `b' are not equal.
+
+The `a <' (`calc-less-than') [`lt(a,b)' or `a < b'] operation is true if
+`a' is less than `b'.  Similar functions are `a >' (`calc-greater-than')
+[`gt(a,b)' or `a > b'], `a [' (`calc-less-equal') [`leq(a,b)' or `a <=
+b'], and `a ]' (`calc-greater-equal') [`geq(a,b)' or `a >= b'].
+
+The `a &' (`calc-logical-and') [`land(a,b)' or `a && b'] function is
+true if both of its arguments are true, i.e., are non-zero numbers.  In
+this case, the result will be either `a' or `b', chosen arbitrarily.  If
+either argument is zero, the result is zero.  Otherwise, the formula is
+left in symbolic form.
+
+The `a |' (`calc-logical-or') [`lor(a,b)' or `a || b'] function is true
+if either of its arguments is true (nonzero).  The result is whichever
+argument was nonzero, choosing arbitrarily if both are nonzero.  If both
+`a' and `b' are zero, the result is zero.
+
+The `a !' (`calc-logical-not') [`lnot(a)' or `! a'] function is true if
+`a' is false (zero), or false if `a' is true (nonzero).  It is left in
+symbolic form if `a' is not a number.
+
+The `if(a,b,c)' or `a ? b : c' function is equal to either `b' or `c' if
+`a' is a nonzero number or zero, respectively.  If `a' is not a number,
+the test is left in symbolic form and neither `b' nor `c' is evaluated
+in any way.  This is the only Calc function whose arguments are not
+automatically evaluated when the function itself is evaluated.
+
+The `a {' (`calc-in-set') [`in(a,b)'] function is true if the number `a'
+is in the set of numbers represented by `b'.  If `b' is an interval
+form, `a' must be one of the values encompassed by the interval.  If `b'
+is a vector, `a' must be equal to one of the elements of the vector.
+(If any vector elements are intervals, `a' must be in any of the
+intervals.)  If `b' is a plain number, `a' must be numerically equal to
+`b'.
+
+The `typeof(a)' function produces an integer or variable which
+characterizes `a'.  If `a' is a number, vector, or variable, the result
+will be one of the following numbers:
+
+      1   Integer
+      2   Fraction
+      3   Floating-point number
+      4   HMS form
+      5   Rectangular complex number
+      6   Polar complex number
+      7   Error form
+      8   Interval form
+      9   Modulo form
+     100  Variable
+     101  Vector (but not a matrix)
+     102  Matrix
+
+Otherwise, `a' is a formula, and the result is a variable which
+represents name of the top-level function call.
+
+The `integer(a)' function returns true if `a' is an integer.  This is
+shorthand for `typeof(a) = 1'.  The `real(a)' function is true if `a' is
+a real number, either integer, fraction, or float.  The `constant(a)'
+function returns true if `a' is any of the objects for which `typeof'
+would produce an integer code result except for variables, and provided
+that the components of an object like a vector or error form are
+themselves constant.
+
+The `refers(a,b)' function is true if the variable (or sub-expression)
+`b' appears in `a', or false otherwise.  Unlike the other tests
+described here, this function returns a definite "no" answer even if its
+arguments are still in symbolic form.  The only case where `refers' will
+be left unevaluated is if `a' is a plain variable (different from `b').
+
+
+File: calc  Node: Calculus, Prev: Logical Operations, Up: Algebra
+
+Calculus
+========
+
+The following calculus commands do not automatically simplify their
+inputs or outputs using `calc-simplify'.  You may find it helps to do
+this by hand by typing `a s' or `a e'.  It may also help to use `a x'
+and/or `a c' to arrange a result in the most readable way.
+
+The `a d' (`calc-derivative') [`deriv'] command computes the derivative
+of the expression on the top of the stack with respect to some variable,
+which it will prompt you to enter.  Normally, variables in the formula
+other than the specified differentiation variable are considered
+constant, i.e., `deriv(y,x)' is reduced to zero.  With the Hyperbolic
+flag, the `tderiv' (total derivative) operation is used instead, in
+which derivatives of variables are not reduced to zero.
+
+If you use the `deriv' function directly in an algebraic formula, you
+can also write `deriv(f,x,x0)' which represents the derivative of `f'
+with respect to `x', evaluated at the point `x=x0'.
+
+If the formula being differentiated contains functions which Calc does
+not know, the derivatives of those functions are produced by adding
+primes (apostrophe characters).  For example, `deriv(f(2x), x)' produces
+`2 f'(2 x)', where the function `f'' represents the derivative of `f'.
+If you enter a definition for `f'', for example using the `Z F'
+(`calc-user-define-formula') command, the Calculator will use it.  *Note
+Algebraic Definitions::.
+
+For multi-argument functions `f(x,y,z)', the derivative with respect to
+the first argument is written `f'(x,y,z)'; derivatives with respect to
+the other arguments are `f'2(x,y,z)' and `f'3(x,y,z)'.  Various
+higher-order derivatives can be formed in the obvious way, e.g.,
+`f''(x)' (the second derivative of `f') or `f''2'3(x,y,z)' (`f'
+differentiated with respect to each argument once).
+
+The `a i' (`calc-integral') [`integ'] command computes the indefinite
+integral of the expression on the top of the stack with respect to a
+variable.  The integrator is not guaranteed to work for all integrable
+functions, but it will work for any polynomial and for most simple
+functions.
+
+If you use the `integ' function directly in an algebraic formula, you
+can also write `integ(f,x,v)' which expresses the resulting indefinite
+integral in terms of variable `v' instead of `x', or `integ(f,x,a,b)',
+which represents a definite integral from `a' to `b'.
+
+The Calculator remembers all the integrals it has done.  If conditions
+change in a way that would invalidate the old integrals, they will be
+thrown out.  If you suspect this is not happening when it should, use
+the `calc-flush-caches' command; *Note Caches::.
+
+The `a I' (`calc-integral-limit') command displays or, with a numeric
+prefix argument, sets the current "integration nesting limit."  This is
+the depth to which Calc will pursue integration by substitution or
+integration by parts before abandoning an approach as fruitless.  The
+default value is 3.  If the integrator is taking too long, you might
+consider lowering this limit.  However, the lower this limit is, the
+greater the chance that Calc will be unable to integrate a function it
+could otherwise handle.  Raising this limit allows the Calculator to
+solve more integrals, though the time it takes may grow exponentially.
+You can monitor the integrator's actions by creating an Emacs buffer
+called `*Trace*'.  If such a buffer exists, the `a i' command will write
+a log of its actions there.
+
+The `a t' (`calc-taylor') [`taylor'] command computes a power series
+expansion or Taylor series of a function.  You specify the variable and
+the desired number of terms.  You may give an expression of the form
+`VAR - A' to produce a Taylor expansion about the point A.  You may
+specify the number of terms with a numeric prefix argument; otherwise
+the command will prompt you for the number of terms.  Note that many
+series expansions have coefficients of zero for some terms, so you may
+appear to get fewer terms than you asked for.
+
+If the `a i' command is unable to find a symbolic integral for a
+function, you can get an approximation by integrating the function's
+Taylor series.
+
+The `a S' (`calc-solve-for') [`solve'] command rearranges an equation to
+solve for a specific variable.  An equation is an expression of the form
+`L = R'.  If the input is not an equation, it is treated like an
+equation of the form `X = 0'.  For example, the command `a S x' will
+rearrange `y = 3x + 6' to the form, `x = y/3 - 2'.
+
+Some equations have more than one solution.  The Hyperbolic flag (`H a
+S') [`fsolve'] tells the solver to report the fully general family of
+solutions.  It will invent variables `n1', `n2', ..., which represent
+independent arbitrary integers, and `s1', `s2', ..., which represent
+independent arbitrary signs (either `+1' or `-1').  If you don't use the
+Hyperbolic flag, Calc will use zero in place of all arbitrary integers,
+and plus one in place of all arbitrary signs.  Note that variables like
+`n1' and `s1' are not given any special interpretation in Calc except by
+`calc-solve-for' itself.  As usual, you can use the `calc-let' command
+to obtain solutions for various actual values of these variables.
+
+With the Inverse flag, `I a S' [`finv'] treats the expression on top of
+the stack as a function of the specified variable and solves to find the
+inverse function, written in terms of the same variable.  For example,
+`I a S x' inverts `2x + 6' to `x/2 - 3'.  You can use both Inverse and
+Hyperbolic [`ffinv'] to obtain a fully general inverse, as described
+above.
+
+
+File: calc  Node: Units, Prev: Algebra, Up: Top, Next: Store and Recall
+
+Operating on Units
+******************
+
+One special interpretation of formulas is as numbers with units.  For
+example, the formula `5 m / s^2' can be read "five meters per second
+squared."  The commands in this chapter help you manipulate units
+expressions in this form.  Units-related commands begin with the `u'
+prefix key.
+
+* Menu:
+
+* Basic Operations on Units::
+* The Units Table::
+* Predefined Units::
+* User-Defined Units::
+
+
+File: calc  Node: Basic Operations on Units, Prev: Units, Up: Units, Next: The Units Table
+
+Basic Operations on Units
+=========================
+
+A "units expression" is a formula which is basically a number multiplied
+and/or divided by one or more "unit names", which may optionally be
+raised to powers.  Actually, the value part need not be a number; any
+product or quotient involving unit names is a unit expression.  Many of
+the units commands will also accept any formula, where the command
+applies to all units expressions which appear in the formula.
+
+A unit name is a variable whose name appears in the "unit table", or a
+variable whose name is a prefix character like `k' (for "kilo") or `u'
+(for "micro") followed by a name from the unit table.  A substantial
+table of built-in units is provided with Calc; *Note Predefined Units::.
+You can also define your own unit names; *Note User-Defined Units::.
+
+Note that if the value part of a units expression is exactly `1', it
+will be removed by the Calculator's automatic algebra routines: The
+formula `1 mm' is "simplified" to `mm'.  This is only a display anomaly,
+however; `mm' will work just fine as a representation of one millimeter.
+
+You may find that Algebraic Mode (*Note Algebraic Entry::) makes working
+with units expressions easier.  Otherwise, you will have to remember to
+hit the apostrophe key every time you wish to enter units.
+
+The `u s' (`calc-simplify-units') command simplifies a units expression.
+It uses `a s' (`calc-simplify') to simplify the expression first as a
+regular algebraic formula; it then looks for features that can be
+further simplified by converting one object's units to be compatible
+with another's.  For example, `5 m + 23 mm' will simplify to `5.023 m'.
+When different but compatible units are added, the righthand term's
+units are converted to match those of the lefthand term.  *Note
+Simplification Modes::, for a way to have this done automatically at all
+times.
+
+Units simplification also handles quotients of two units with the same
+dimensionality, as in `2 in s/L cm' to `5.08 s/L'; fractional powers of
+unit expressions, as in `sqrt(9 mm^2)' to `3 mm' and `sqrt(9 acre)' to a
+quantity in meters; and `floor', `ceil', `round', `trunc', `float',
+`frac', `abs', and `clean' applied to units expressions, in which case
+the operation in question is applied only to the numeric part of the
+expression.  Finally, trigonometric functions of quantities with units
+of angle are evaluated, regardless of the current angular mode.
+
+The `u c' (`calc-convert-units') command converts a units expression to
+new, compatible units.  For example, given the units expression `55
+mph', typing `u c m/s RET' produces `24.5872 m/s'.  If the units you
+request are inconsistent with the original units, the number will be
+converted into your units times whatever "remainder" units are left
+over.  For example, converting `55 mph' into acres produces `6.08e-3
+acre / m s'.  (Recall that multiplication binds more strongly than
+division in Calc formulas, so the units here are acres per
+meter-second.)  Remainder units are expressed in terms of "fundamental"
+units like `m' and `s', regardless of the input units.
+
+You can use explicit unit conversion instead of the `u s' command to
+gain more control over the units of the result of an expression.  For
+example, given `5 m + 23 mm', you can type `u c m' or `u c mm' to
+express the result in either meters or millimeters.  (For that matter,
+you could type `u c fath' to express the result in fathoms, if you
+preferred!)
+
+In place of a specific set of units, you can also enter one of the units
+system names `si', `mks' (equivalent), or `cgs'.  For example, `u c si
+RET' converts the expression into International System of Units (SI)
+base units.  Also, `base' converts to Calc's base units, which are the
+same as `si' units except that `base' uses `g' as the fundamental unit
+of mass whereas `si' uses `kg'.
+
+If the value on the stack does not contain any units, `u c' will prompt
+first for the old units which this value should be considered to have,
+then for the new units.
+
+The `u b' (`calc-base-units') command is shorthand for `u c base'; it
+converts the units expression on the top of the stack into `base' units.
+If `u s' does not simplify a units expression as far as you would like,
+try `u b'.
+
+The `u c' and `u b' commands treat temperature units (like `degC' and
+`K') as relative temperatures.  For example, `u c' converts `10 degC' to
+`18 degF': A change of 10 degrees Celsius corresponds to a change of 18
+degrees Fahrenheit.
+
+The `u t' (`calc-convert-temperature') command converts absolute
+temperatures.  The value on the stack must be a simple units expression
+with units of temperature only.  This command would convert `10 degC' to
+`50 degF', the equivalent temperature on the Fahrenheit scale.
+
+The `u r' (`calc-remove-units') command removes units from the formula
+at the top of the stack.  The `u x' (`calc-extract-units') command
+extracts only the units portion of a formula.  These commands
+essentially replace every term of the formula that does or doesn't
+(respectively) look like a unit name by the constant 1, then resimplify
+the formula.
+
+
+File: calc  Node: The Units Table, Prev: Basic Operations on Units, Up: Units, Next: Predefined Units
+
+The Units Table
+===============
+
+The `u v' (`calc-enter-units-table') command displays the units table in
+another buffer called `*Units Table*'.  Each entry in this table gives
+the unit name as it would appear in an expression, the definition of the
+unit in terms of simpler units, and a full name or description of the
+unit.  Fundamental units are defined as themselves; these are the units
+produced by the `u b' command.  The fundamental units are meters,
+seconds, grams, kelvins, amperes, candelas, moles, radians, and
+steradians.
+
+The Units Table buffer also displays the Unit Prefix Table.  Note that
+two prefixes, "kilo" and "hecto," accept either upper- or lower-case
+prefix letters.  `Meg' is also accepted as a synonym for the `M' prefix.
+Whenever a unit name can be interpreted as either a built-in name or a
+prefix followed by another built-in name, the former interpretation
+wins.  For example, `2 pt' means two pints, not two pico-tons.
+
+The Units Table buffer, once created, is not rebuilt unless you define
+new units.  To force the buffer to be rebuilt, give any numeric prefix
+argument to `u v'.
+
+The `u V' (`calc-enter-units-table') command is like `u v' except that
+the cursor is not moved into the Units Table buffer.  To return from the
+Units Table buffer after a `u v', type `M-x calc' again or use the
+regular Emacs `C-x o' (`other-window') command.  You can also kill the
+buffer with `C-x k' if you wish; the actual units table is safely stored
+inside the Calculator.
+
+The `u g' (`calc-get-unit-definition') command retrieves a unit's
+defining expression and pushes it onto the Calculator stack.  For
+example, `u g in' will produce the expression `2.54 cm'.  This is the
+same definition for the unit that would appear in the Units Table
+buffer.  Note that this command works only for actual unit names; `u g
+km' will report that no such unit exists, for example, because `km' is
+really the unit `m' with a `k' ("kilo") prefix.  To see a definition of
+a unit in terms of base units, it is easier to push the unit name on the
+stack and then reduce it to base units with `u b'.
+
+The `u e' (`calc-explain-units') command displays an English description
+of the units of the expression on the stack.  For example, for the
+expression `62 km^2 g / s^2 mol K', the description is "Square-Kilometer
+Gram per (Second-squared Mole Degree-Kelvin)."  This command uses the
+English descriptions that appear in the righthand column of the Units
+Table.
+
+
+File: calc  Node: Predefined Units, Prev: The Units Table, Up: Units, Next: User-Defined Units
+
+Predefined Units
+================
+
+Since the exact definitions of many kinds of units have evolved over the
+years, and since certain countries sometimes have local differences in
+their definitions, it is a good idea to examine Calc's definition of a
+unit before depending on its exact value.  For example, there are three
+different units for gallons, corresponding to the US, Canadian, and
+British definitions.  Also, note that `oz' is a standard ounce of mass,
+`ozt' is a Troy ounce, and `ozfl' is a fluid ounce.
+
+The temperature units corresponding to degrees Kelvin and Centigrade
+(Celsius) are the same in this table, since most units commands treat
+temperatures as being relative.  The `calc-convert-temperature' command
+has special rules for handling the different absolute magnitudes of the
+various temperature scales.
+
+Some "units" are really physical constants; for example, `c' represents
+the speed of light, and `h' represents Planck's constant.  You can use
+these just like other units: converting `.5 c' to `m/s' expresses
+one-half the speed of light in meters per second.  You can also use this
+merely as a handy reference; the `u g' command gets the definition of
+one of these constants in its normal terms, and `u b' expresses the
+definition in base units.
+
+Two units, `pi' and `fsc' (the fine structure constant) are
+dimensionless.  The units simplification commands simply treat these
+names as equivalent to their corresponding values.  However you can, for
+example, use `u c' to convert a pure number into multiples of the fine
+structure constant, or `u b' to convert this back into a pure number.
+(When `u c' prompts for the "old units," just enter a blank line to
+signify that the value really is unitless.)
+
+
+
+File: calc  Node: User-Defined Units, Prev: Predefined Units, Up: Units
+
+User-Defined Units
+==================
+
+The `u d' (`calc-define-unit') command records the units expression on
+the top of the stack as the definition for a new, user-defined unit.
+For example, putting `16.5 ft' on the stack and typing `u d rod' defines
+the new unit `rod' to be equivalent to 16.5 feet.  The unit conversion
+and simplification commands will now treat `rod' just like any other
+unit of length.  You will also be prompted for an optional English
+description of the unit, which will appear in the Units Table.
+
+The `u u' (`calc-undefine-unit') command removes a user-defined unit.
+It is not possible to remove one of the predefined units, however.
+
+If you define a unit with an existing unit name, your new definition
+will replace the original definition of that unit.  If the unit was a
+predefined unit, the old definition will not be replaced, only
+"shadowed."  The built-in definition will reappear if you later use `u
+u' to remove the shadowing definition.
+
+To create a new fundamental unit, use either 1 or the unit name itself
+as the defining expression.  Otherwise the expression can involve any
+other units that you like.  The next unit operation like `u c' or `u v'
+will rebuild the internal unit table incorporating your modifications.
+Note that erroneous definitions (such as two units defined in terms of
+each other) will not be detected until the unit table is next rebuilt;
+`u v' is a convenient way to cause this to happen.
+
+Temperature units are treated specially inside the Calculator; it is not
+possible to create user-defined temperature units.
+
+The `u p' (`calc-permanent-units') command stores the user-defined units
+in your `.emacs' file, so that the units will still be available in
+subsequent Emacs sessions.  If there was already a set of user-defined
+units in your `.emacs' file, it is replaced by the new set.
+
+
+File: calc  Node: Store and Recall, Prev: Units, Up: Top, Next: Kill and Yank
+
+Storing and Recalling Variables
+*******************************
+
+Calculator variables are really just Lisp variables that contain numbers
+or formulas in a form that Calc can understand.  The commands in this
+section allow you to manipulate variables conveniently.
+
+* Menu:
+
+* Storing Variables::
+* Recalling Variables::
+* Let Command::
+
+
+File: calc  Node: Storing Variables, Prev: Store and Recall, Up: Store and Recall, Next: Recalling Variables
+
+Storing Variables
+=================
+
+The `s' (`calc-store') command stores the value at the top of the stack
+into a specified variable.  It prompts you to enter the name of the
+variable.  If you press a single digit, the value is stored immediately
+in one of the "quick" variables `var-0' through `var-9'.  Or you can
+enter any variable name.  The prefix `var-' is supplied for you; when a
+name appears in a formula (as in `a+b') the prefix `var-' is also
+supplied there, so normally you can simply forget about `var-'
+everywhere.  Its only purpose is to enable you to use Calc variables
+without fear of accidentally clobbering some variable in another
+program.  If you really want to store in an arbitrary Lisp variable,
+just backspace over the `var-'.
+
+The value stored generally replaces any old contents of the variable,
+and also remains on the stack.  (The DEL key can then be used to remove
+it from the stack if you wish.)  If you press one of the operator keys
+`+', `-', `*', `/', `^', or `|' before entering the variable name, the
+value on the top of the stack is added to, subtracted from, multiplied
+or divided into, used as a power for, or concatenated to the value
+already in the specified variable.  (The new value of the variable is
+reported in the `*Calc Trail*' buffer for your information.)
+
+Until you store a value in them, variables are "void," that is, they
+contain no value at all.  If they appear in an algebraic formula they
+will be left alone even if you press `=' (`calc-evaluate').  To return a
+variable to the void state, use `calc-unstore'.  An easy keyboard
+shortcut for this command is `s' (`calc-store') with any numeric prefix
+argument: `C-u s foo RET' This form does not use the value on the top of
+the stack; it simply removes any value that may already be defined for
+the specified variable.
+
+The shift-`Z V' (`calc-permanent-variable') command saves a variable's
+value permanently in your `.emacs' file, so that its value will still be
+available in future Emacs sessions.  You can re-execute `Z V' later on
+to update the saved value, but the only way to remove a saved variable
+is to edit your `.emacs' file by hand.  (The shift-`Z' prefix key is
+mainly for defining user commands; *Note Programming::.)
+
+The only variables with predefined values are the "special constants"
+`var-pi', `var-e', and `var-i'.  You are free to unstore these variables
+or to store a new value over them if you like, although some of the
+algebraic-manipulation functions may assume these variables represent
+their standard values.
+
+
+File: calc  Node: Recalling Variables, Prev: Storing Variables, Up: Store and Recall, Next: Let Command
+
+Recalling Variables
+===================
+
+The most straightforward way to extract the stored value from a variable
+is to use the `r' (`calc-recall') command.  This command prompts for a
+variable name (similarly to `calc-store'), looks up the value of the
+specified variable, and pushes that value onto the stack.  It is an
+error to try to recall a void variable.
+
+It is also possible to recall the value from a variable by evaluating a
+formula containing that variable.  For example, `' a RET =' is the same
+as `r a RET' except that if the variable is void, the former will simply
+leave the formula `a' on the stack whereas the latter will produce an
+error message.
+
+
+File: calc  Node: Let Command, Prev: Recalling Variables, Up: Store and Recall
+
+The Let Command
+===============
+
+If you have an expression like `a+b^2' on the stack and you wish to
+compute its value where `b=3', you can simply store 3 in `b' and then
+press `=' to reevaluate the formula.  This has the side-effect of
+storing the value 3 in `b' for future operations.
+
+The lowercase-`l' (`calc-let') command evaluates a formula under a
+*temporary* assignment of a variable.  It stores the value on the top of
+the stack into the specified variable, then evaluates the second-to-top
+stack entry, then restores the orginal value (or lack of one) in the
+variable.  Thus after `' a+b^2 RET 3 l b RET', the stack will contain
+the formula `a + 9'.  The subsequent command `5 l a RET' will replace
+this formula with the number 14.  The variables `a' and `b' are not
+permanently affected in any way by these commands.
+
+

@@ -1,0 +1,466 @@
+			 GNU Emacs Apollo GPR Support
+
+			      Leonard N. Zubkoff
+
+				 lnz@lucid.com
+			      Lucid, Incorporated
+				  1 May 1989
+
+
+This modified version of GNU Emacs 18.54 includes support for using the Apollo
+Domain Graphics Primitives (GPR) for display operations.
+
+This version of GNU Emacs only functions under Domain/OS SR10.1 or SR9.7 on
+680x0 machines and SR10.1 on PRISM machines; it also includes various bug fixes
+for the Apollo that are not in the GNU Emacs standard distribution.
+
+The included executable files are compound executables built for Domain/OS
+SR10.1 on 68020/68030 and PRISM machines.  If you received source only, or if
+the included executables are not suitable for your needs, here are instructions
+for rebuilding GNU Emacs:
+
+To produce 68020/68030 and	On a 68020/68030 node running SR10.1, type
+PRISM compound executables	"build-apollo-emacs".  After it completes,
+				move to a PRISM node running SR10.1 and
+				type "build-apollo-cmpexe".
+
+To produce just 68020/68030	On a 68020/68030 node running SR10.1, type
+executables			"build-apollo-emacs".
+
+To produce just PRISM		On a PRISM node running SR10.1, type
+executables			"build-apollo-emacs".
+
+To produce SR9.7 executables	Make sure the file "/sys/ins/gpr.ins.c"
+				has return types of gpr_$pixel_value_t
+				for the functions gpr_$inq_foreground and
+				gpr_$inq_background.  The version shipped with
+				SR9.7 incorrectly has the return types as void;
+				the version in SR9.7.1 is correct.  Then type
+				"source build-apollo-emacs" in a 4.2BSD csh on
+				a node running SR9.7.
+
+To produce executables to run	Remove "-A cpu,3000" and "-M3000" from
+on obsolete 68010 machines	"build-apollo-emacs" and "src/m-apollo.h"
+				and then build according to one of the above
+				recommendations.
+
+Note: There is a bug in alloca on SR10.0 on the PRISM.  If you need to build
+Emacs for use under SR10.0 on PRISM, change HAVE_ALLOCA to C_ALLOCA in
+"src/m-apollo.h" and rebuild.
+
+With the GPR support installed, GNU Emacs integrates well into the Apollo
+Domain environment.  GNU Emacs windows can be moved or resized using the
+appropriate Display Manager commands, and a Domain cursor is used for mouse
+operations in addition to GNU Emacs's own block cursor which is used for
+character operations.  GNU Emacs also correctly handles being obscured by other
+Domain windows.  On color nodes, Emacs uses red character and mouse cursors
+that, unlike the Domain cursor, do not obscure the underlying character.
+
+Commands have also been added to GNU Emacs to support the Apollo environment.
+See the "GNU Emacs Extensions" section below for a description of these
+extensions.
+
+On SR10.1, GNU Emacs state is dumped during the building process to produce a
+new COFF file, just as on most other UNIX systems.
+
+On SR9.7, GNU Emacs is dumped during the building process by creating a freeze
+file containing all of Emacs's impure state; the freeze file is called
+"emacs.dump" and is stored in the "etc" directory named by PATH_EXEC in
+"paths.h".
+
+To save space installing Emacs, while still allowing nodes to execute Emacs if
+the file server is down, I recommend installing Emacs as follows.  The file
+server, or other centralized repository, should have a copy of the entire
+"/gnuemacs" tree.  On user nodes, it is sufficient to create symbolic links
+from "/gnuemacs/info" to "//file_server/gnuemacs/info" and from
+"/gnuemacs/lisp" to "//file_server/gnuemacs/lisp" and to have local copies of
+the following files:
+
+	/gnuemacs/APOLLO.README		/gnuemacs/etc/movemail
+	/gnuemacs/emacs			/gnuemacs/etc/COPYING
+	/gnuemacs/etc/apollo.elc	/gnuemacs/etc/DISTRIB
+	/gnuemacs/etc/apollo.icons	/gnuemacs/etc/DOC-18.54.0
+	/gnuemacs/etc/env		/gnuemacs/etc/GNU
+	/gnuemacs/etc/etags		/gnuemacs/etc/NEWS
+	/gnuemacs/etc/loadst		/gnuemacs/etc/TUTORIAL
+
+Note: "/gnuemacs/etc/emacs.dump" is also needed on SR9.7 systems.
+
+By preloading a large number of libraries in "site-load.el", user nodes can run
+Emacs even if the file server goes down with little probability they will need
+to load a library that is not already present; loading many libraries increases
+the size of the freeze file by only a small amount.  With installation by this
+method, GNU Emacs only requires about 1.5mb of disk space on user nodes.
+
+Note that in order for dumped Emacs's to function properly on SR9.7, you must
+have the Domain csh variable "inprocess" unset, so that executing Emacs causes
+a fresh process to be created, and hence causes Emacs to be loaded at the same
+point in memory as when it was dumped.  For this reason, you must also have
+"inprocess" unset when you make Emacs.
+
+GNU Emacs cannot be suspended with C-Z or C-X C-Z.  Therefore, the low level
+suspension primitive has been redefined to make the window Emacs is in an icon.
+For this reason, I recommend using key definitions similar to the following to
+make using Emacs easier:
+
+    For SR10.1:
+
+    kd F2 CP /gnuemacs/emacs -N Emacs; WC -A ke
+    kd F3 WI Emacs -W; ICON Emacs -W; WP Emacs -T ke
+
+    For SR9.7:
+
+    kd F2 CP /bin/start_csh -N Emacs; WC -A; ES '/gnuemacs/emacs'; EN ke
+    kd F3 WI Emacs -W; ICON Emacs -W; WP Emacs -T ke
+
+This defines the F2 key to create a new Emacs in a window named Emacs and
+defines the F3 key to either un-ICONize the Emacs window, make the Emacs window
+visible, or POP the Emacs window, whichever is necessary.  On SR9.7, running
+Emacs in a 4.2BSD csh is necessary for proper operation; if your SYSTYPE is not
+set to "bsd4.2", you must change the above "start_csh" command from
+"/bin/start_csh" to "/bsd4.2/bin/start_csh".
+
+When Emacs is made into an icon, it will attempt to use the icon font in
+"etc/apollo.icons".  If the icon font does not exist, it will be created on
+demand from "etc/apollo.icons.u" is that file exists; this is done because
+SR9.7 Apollo font files are difficult to distribute via tar.
+
+For an annotated list of files changed or created at Lucid, see the file
+LUCID-FILES.  The original distributed versions of the changed files are also
+included under the name "foo-" (in case you have a different version of GNU
+Emacs).  As provided, GNU Emacs must be installed (or at least accessible via a
+link) as "/gnuemacs".  To install Emacs in a different directory, you must edit
+the "paths.h" file and re-make Emacs.
+
+
+				 Key Bindings
+
+There are three classes of key bindings made available by the Apollo support.
+The first class are direct translations made in the C code that handles input
+from the keyboard.  These translations cannot be overridden without recompiling
+Emacs, except for the choice of Meta Key:
+
+    Apollo Keystroke	    Emacs Keystroke
+
+    BS			    DEL
+    DELETE		    DEL
+    CR			    RET
+    TAB			    TAB
+    RIGHT BOX ARROW	    This key functions as a META KEY.  Pressing CTRL
+			    followed by RIGHT BOX ARROW does not give a C-M-
+			    command on the Low-Profile Keyboard Model I; it
+			    works correctly on a Low-Profile Keyboard Model
+			    II.  Pressing META first and then CTRL always
+			    works.  See below for instructions on changing
+			    the choice of META KEY.
+
+The second class of key bindings are bindings of function keys and mouse
+buttons that do not conflict with the uses of these keys by the Display
+Manager (i.e., the Display Manager definition would be meaningless within
+Emacs).
+
+Note that unlike the Display Manager, Emacs supports both a character cursor
+and a mouse cursor.  This means that commands below that refer to the "point"
+use the position of the character cursor, while those which refer to the "mouse
+cursor" use the position of the mouse cursor.  Unlike in the Display Manager,
+merely moving the mouse cursor in Emacs does not move the character cursor as
+well; you must click the left mouse button to move the character cursor.  For
+example, moving the mouse cursor and pressing Shift READ will not have the
+intended effect; you must first press the left mouse button to move the
+character cursor.
+
+    MOUSE LEFT DOWN	    Move point to the location of the mouse cursor
+			    Used in conjunction with MOUSE LEFT UP.
+    MOUSE LEFT UP	    Set the mark and move point to the location of
+			    the mouse cursor.  Used in conjunction with MOUSE
+			    LEFT DOWN so that pressing the left mouse button,
+			    moving the cursor, and releasing the left mouse
+			    button leaves the mark set to the initial position
+			    and the point set to the final position.  Useful
+			    for easily marking regions of text.  If the left
+			    mouse button is pressed and released at the same
+			    place, the mark is left at the original position
+			    of the character cursor.
+    MOUSE MIDDLE DOWN	    Move point to the location of the mouse cursor and
+			    cut the region to the default DM paste buffer.
+			    Used in conjunction with MOUSE MIDDLE UP.
+    MOUSE MIDDLE UP	    Move point to the location of the mouse cursor and
+			    paste in the default DM paste buffer.  Used in
+			    conjunction with MOUSE MIDDLE DOWN so that pressing
+			    the middle mouse button kills text and releasing
+			    the middle mouse button yanks the text into its new
+			    home.
+    MOUSE RIGHT DOWN	    Perform a find-file on the file name that the mouse
+			    cursor points at.  Trailing "*" and "@" characters
+			    are ignored so that "ls -F" output may be used
+			    easily.
+    Shift TAB		    TAB
+    Control TAB		    TAB
+    MARK		    Set the mark.
+    INS			    Toggle overwrite mode.
+    LINE DEL		    Kill the whole line containing point.
+    Shift LINE DEL	    Yank the last killed text.
+    CHAR DEL		    Delete the following character.
+    Shift CHAR DEL	    Delete the following character.
+    COPY		    Copy the region to the default Apollo paste buffer.
+    CUT			    Cut the region into the default Apollo paste buffer.
+    PASTE		    Paste in the default Apollo paste buffer.
+    UNDO		    Undo the last command.
+    GROW		    Grow Emacs's Apollo window with rubberbanding.
+    MOVE		    Move Emacs's Apollo window with rubberbanding.
+    LEFT BAR ARROW	    Move point to the beginning of the current line.
+    RIGHT BAR ARROW	    Move point to the end of the current line.
+    LEFT BOX ARROW	    (ignored)
+    UP ARROW		    Move point vertically up to the previous line.
+			    (This key always performs the same command as C-N).
+    Shift UP ARROW	    Scroll the window down one line.
+    RIGHT BOX ARROW	    (default META KEY; otherwise ignored)
+    LEFT ARROW		    Move point left one character.
+			    (This key always performs the same command as C-B).
+    Shift LEFT ARROW	    Move backward to the beginning of a word.
+    RIGHT ARROW		    Move point right one character.
+			    (This key always performs the same command as C-F).
+    Shift RIGHT ARROW	    Move forward to the end of a word.
+    UP BOX ARROW	    Scroll down.
+    Shift UP BOX ARROW	    Go to the beginning of the buffer.
+    DOWN ARROW		    Move point vertically down to the next line.
+			    (This key always performs the same command as C-N).
+    Shift DOWN ARROW	    Scroll the window up one line.
+    DOWN BOX ARROW	    Scroll up.
+    Shift DOWN BOX ARROW    Go to the end of the buffer.
+    AGAIN		    Copy the remainder of the current line to the end
+			    of the buffer.  This is particularly useful in
+			    Shell buffers.
+    Shift READ		    Perform a find-file on the file name where point
+			    is.  Trailing "*" and "@" characters are ignored so
+			    that "ls -F" output may be used easily.
+    SAVE		    Save the current buffer.
+    EXIT		    Kill current buffer after saving changes.
+    ABORT		    Kill current buffer without saving changes.
+    HOLD		    (ignored)
+
+The third class of key bindings are bindings of function keys and mouse
+buttons that do conflict with the uses of these keys by the Display
+Manager (i.e., the Display Manager definition is such that some users will want
+to have the Display Manager command available from within Emacs, and other
+users will want to have the function key preempt the Display Manager and invoke
+an Emacs command).  For this reason, this class of key bindings are only made
+if the variable *preempt-display-manager-bindings* is non-NIL.  Set this
+variable non-NIL in your ".emacs" file if you want these key bindings available
+in Emacs:
+
+    Shift LEFT BAR ARROW    Go to the beginning of the buffer.
+    CMD			    Execute Display Manager Command.
+    Shift RIGHT BAR ARROW   Go to the end of the buffer.
+    NEXT WINDOW		    Select other window.
+    Shift NEXT WINDOW	    Delete window.
+    SHELL		    Run an inferior Shell.
+    READ		    Edit File but mark file read-only.
+    EDIT		    Edit File.
+    HELP		    Prompt for topic and find the Apollo help file.
+
+Since users of GNU Emacs may desire similar key bindings when using the Display
+Manager, a simple set of Emacs-like key bindings for the DM is provided in the
+file "startup_dm.all" included with GNU Emacs.  It may be installed by causing
+one's normal startup_dm.<machine> file to execute it via the CMDF DM command.
+
+In addition to these Apollo-specific key bindings, there is TAB filename
+completion and a new command history for use in Shell Mode and Inferior Lisp
+Mode.  In Shell Mode and Inferior-Lisp Mode, a history of commands typed by the
+user is automatically maintained, and can be cycled through by M-P (backward)
+or M-N (forward).  Type a prefix of a previously typed command and M-P and the
+remainder of the command will be inserted.  Giving an argument to M-P will
+cause it to prompt for a regular expression, which will be used for searching
+the command history.  Only commands longer than two characters and less than
+*saved-commands-length-limit* will be kept.
+
+The Info system has also been extended with a command to create a new node.
+
+
+			     GNU Emacs Extensions
+
+The following functions and variables are extensions to the normal GNU Emacs
+primitives to support the Apollo environment (the functions below may be called
+either programatically as Lisp functions or interactively as commands):
+
+apollo-keyboard-type ()
+
+    This function returns as an integer the number of the keyboard type
+    attached to the node on which Emacs is running.  The keyboard type numbers
+    are: 1, for the High-Profile Keyboard; 2, for the Low-Profile Keyboard
+    Model I; and 3, for the Low-Profile Keyboard model II.
+
+bind-apollo-function-key (function-key binding &optional meta-binding)
+
+    This function enables the Apollo Function Key defined by the string
+    function-key and binds the normal keystroke to binding and the meta
+    keystroke to meta-binding.  If meta-binding is unspecified, binding is used
+    for both the normal and meta keystrokes.  See the variable
+    *apollo-function-keys* in "etc/apollo.el" for the legal function keys.
+
+unbind-apollo-function-key (function-key)
+
+    This function disables the Apollo Function Key defined by the string
+    function-key and returns control of the Function Key to the Display
+    Manager.  See the variable *apollo-function-keys* in "etc/apollo.el" for
+    the legal function keys.
+
+bind-apollo-mouse-button (mouse-button binding &optional meta-binding)
+
+    This function enables the Apollo Mouse Button defined by the string
+    mouse-button and binds the normal use of mouse-button to binding and the
+    meta use of mouse-button to meta-binding.  If meta-binding is unspecified,
+    binding is used for both the normal and meta mouse-buttons.  See the
+    variable *apollo-mouse-buttons* in "etc/apollo.el" for a list of all the
+    legal mouse buttons.
+
+unbind-apollo-mouse-button (mouse-button)
+
+    This function disables the Apollo Mouse Button defined by the string
+    mouse-button and returns control of the Mouse Button to the Display
+    Manager.  See the variable *apollo-mouse-buttons* in "etc/apollo.el" for a
+    list of all the legal mouse buttons.
+
+select-apollo-meta-key (meta-key)
+
+    This function allows you to select which key is used as a Meta Key for
+    Emacs.  The selection is made by specifying the name of the function key
+    for the down key transition.  See the variable *apollo-mouse-buttons* in
+    "etc/apollo.el" for a list of all the legal functions keys; any function
+    key that provides separate up and down transitions may be used as the Meta
+    Key.
+
+select-apollo-protection-style (protection-style)
+
+    This function causes Emacs to use Domain ACL protection if the
+    protection-style argument is non-NIL and UNIX Mode protection if the
+    protection-style argument is NIL.
+
+    GNU Emacs can either use UNIX file modes or Domain ACLs to control the
+    access rights to files it writes.  By default, UNIX modes are used just as
+    when Emacs runs on other UNIX systems.  If Domain ACL style protection is
+    enabled, Emacs will not use the chmod system call, and so files will be
+    written using the default ACL for the directory in which they are created.
+    Note that this command has little effect under SR10.1, since Domain ACL and
+    UNIX Mode protection are integrated in SR10.1.
+
+execute-dm-command (dm-command)
+
+    This function passes the string dm-command to the Display Manager for
+    execution.
+
+backup-by-copying-when-mismatch
+
+    This variable normally controls whether backup files should be created by
+    renaming or copying.  When non-NIL, if renaming to create a backup file
+    would cause the owner or group of the file to change, then the backup file
+    is created by copying so that the owner and group are preserved.
+
+    On the Apollo, this variable has another function as well.  Because
+    Domain/OS has a typed file system, setting this variable non-NIL causes
+    copying to also be done if the Domain/OS type of the file is not one of the
+    default types (unstruct or uasc).  Thus setting this variable non-NIL
+    guarantees that the Domain/OS type of a created backup file will match the
+    Domain/OS type of the parent file.
+
+*apollo-key-bindings-hook*
+
+    This variable, if set non-NIL in your ".emacs", should be a function to
+    call after the default Apollo key bindings are set up.  Because the file
+    "etc/apollo.el" is loaded after your ".emacs", this variable is needed so
+    that you can customize the Apollo key bindings.
+
+*preempt-display-manager-bindings*
+
+    This variable, which defaults to NIL, controls whether or not key bindings
+    are made which conflict with those of the Display Manager.  Set this
+    variable non-NIL in your ".emacs" to enable the key bindings described
+    above that conflich with Display Manager key bindings.
+
+The following low-level functions are used to implement the above functions.
+
+enable-apollo-function-key (function-key-code)
+
+    This function enables the Apollo Function Key Transition defined by the
+    integer argument function-key-code.  See "/usr/include/apollo/kbd.h"
+    (SR10.1) or "/sys/ins/kbd.ins.c" (SR9.7) for definitions of the key
+    transition codes; the function-key-code argument must be greater than or
+    equal to 0x80.  This is a low-level function whose primary purpose is to
+    implement bind-apollo-function-key.
+
+    When an Apollo Function Key Transition is enabled, Emacs takes control of
+    the function key away from the Display Manager, and subsequent uses of that
+    function key cause no Display Manager action to be taken, but do cause
+    Emacs to see the character sequence M-* <transition-code> as input (if the
+    Meta Key is also depressed, then the character sequence is M-+
+    <transition-code>).
+
+    Note that in order to use a function key within Emacs, two operations must
+    be performed: the key must be enabled for use by Emacs, and the M-* and M-+
+    keystroke sequences must be bound to Emacs functions.  The function
+    bind-apollo-meta-key encapsulates all three operations.
+
+disable-apollo-function-key (function-key-code)
+
+    This function disables the Apollo Function Key Transition defined by the
+    integer argument function-key-code.
+
+    When an Apollo Function Key Transition is disabled, Emacs returns control
+    of the key to the Display Manager, and subsequent uses of that function key
+    cause no Emacs input characters to be seen, but do cause any assigned
+    Display Manager action to be taken.
+
+enable-apollo-mouse-button (mouse-button-code)
+
+    This function enables the Apollo Mouse Button Transition defined by the
+    integer argument mouse-button-code.  The down key codes for the Left,
+    Middle, and Right mouse buttons are the ASCII codes for 'a', 'b', and 'c'.
+    The up transition key codes are the ASCII codes for 'A', 'B', and 'C'.  The
+    codes for 'd' and 'D' may be used if you have a four button mouse.  This is
+    a low-level function whose primary purpose is to implement
+    bind-apollo-mouse-button.
+
+    When a Mouse Button Transition is enabled, Emacs takes control of the mouse
+    button away from the Display Manager, and subsequent uses of that mouse
+    button cause no Display Manager action to be taken, but do cause Emacs to
+    see the character sequence M-* <transition-code> <x-position+8>
+    <y-position+8> as input (if the Meta Key is also depressed, then the
+    character sequence is M-+ <transition-code> <x-position+8> <y-position+8>).
+    The offset of 8 is necessary to avoid C-G characters as input.
+
+    Note that in order to use a mouse button within Emacs, two operations must
+    be performed: the mouse button must be enabled for use by Emacs, and the
+    M-* and M-+ keystroke sequences must be bound to Emacs functions.  The
+    function bind-apollo-mouse-button encapsulates all three operations.
+
+disable-apollo-mouse-button (mouse-button-code)
+
+    This function disables the Apollo Mouse Button Transition defined by the
+    integer argument mouse-button-code.
+
+    When an Apollo Mouse Button Transition is disabled, Emacs returns control
+    of the mouse button to the Display Manager, and subsequent uses of that
+    mouse button cause no Emacs input characters to be seen, but do cause any
+    assigned Display Manager action to be taken.
+
+set-apollo-meta-key (meta-key-code)
+
+    This function allows you to select which key is used as a Meta Key for
+    Emacs.  The selection is made by specifying the transition key code for the
+    down key transition; the necessary key codes for the shifted, control, and
+    up transitions are derived from the down key transition.  This is a
+    low-level function whose purpose is to implement define-apollo-meta-key.
+
+
+In addition to the functions described here, you should also consult the file
+"etc/apollo.el" for additional functions that may be useful.  This file is
+normally loaded automatically when Emacs is run on an Apollo; it defines the
+commands and key bindings that are not implemented directly by C code.
+
+
+			       Acknowledgements
+
+The following people have contributed ideas that have helped make this
+interface possible: Nathaniel Mishkin, Rob Stanzel, and Mark Weissman of Apollo
+Computer, Dave Holcomb of CAECO, Vincent Broman of NOSC, and J. W. Peterson of
+the University of Utah.

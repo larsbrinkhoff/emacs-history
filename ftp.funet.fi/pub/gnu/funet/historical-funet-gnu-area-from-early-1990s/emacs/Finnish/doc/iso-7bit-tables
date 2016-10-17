@@ -1,0 +1,287 @@
+From: unrza3@cd4680fs.rrze.uni-erlangen.de (Markus Kuhn)
+Newsgroups: comp.std.internat,soc.culture.nordic,soc.culture.german
+Subject: ISO Latin 1 to 7-bit ASCII conversion (final draft!)
+Date: 14 Dec 1992 14:23:03 +0100
+Organization: Regionales Rechenzentrum Erlangen
+Message-ID: <1gi1rnEINN1cg@uni-erlangen.de>
+Reply-To: mskuhn@immd4.informatik.uni-erlangen.de
+NNTP-Posting-Host: cd4680fs.rrze.uni-erlangen.de
+Lines: 276
+Keywords: character sets, ISO 8859-1, terminals, user interface
+
+I received quite a number of suggestions for improvement of the conversion
+tables which I posted to comp.std.internat a few weeks ago. Before I
+will send the following text to a number of public domain software
+authors, I'd like to ask you again for a final comment on these
+tables. Would you as a user who has still to live with an 7-bit
+terminal and who receives ISO Latin 1 textes be happy, if your
+favourite piece of networking software would be able to display
+the characters as described below? If not, what would you like
+to change?
+
+Markus
+
+------------------------------------------------------------------------
+Representation of ISO 8859-1 characters with 7-bit ASCII
+--------------------------------------------------------
+
+Markus Kuhn -- 1992-12-13
+
+SUMMARY: This text describes a technique of displaying the 8-bit
+character set, which is used today in many modern network services, on
+old 7-bit terminals. Authors of software dealing with text received
+from international networks are strongly encouraged to implement this
+or similar methods as options in their software for the convenience of
+users all over the world. Implementation is often trivial.
+
+
+
+The "Latin alphabet No. 1" defined in part 1 of the international
+standard
+
+  ISO 8859:1987   Information processing -- 8-bit single-byte
+                  coded graphic character sets
+
+is an increasingly popular 8-bit extension of the traditional 7-bit
+US-ASCII character set. It is already supported by many operating
+systems and its 191 graphic characters include those used in the
+following 14 languages:
+
+  Danish, Dutch, English, Faeroese, Finnish, French, German,
+  Icelandic, Irish, Italian, Norwegian, Portuguese, Spanish and
+  Swedish.
+
+ISO 8859-1 contains graphic characters used in at least 44 countries.
+Many people believe that ISO Latin 1 is already the de-facto
+replacement of the old 7-bit US-ASCII character set. In addition, the
+first 256 characters of the new 16-bit character set ISO 10646/Unicode,
+which contains nearly all characters used on this planet and is
+expected to be the final solution of most of today's character set
+troubles, are identical with ISO 8859-1.
+
+ISO 8859-1 uses only the codes 32-126 (which are identical with
+US-ASCII) and 160-255. The positions 0-31 and 127-159 are reserved for
+control codes and normally used in the same way in which they are used
+with ASCII.
+
+As this character set gains more and more popularity in international
+data communication (e.g. the Internet gopher service, the Internet
+MIME, parts of USENET), the need arises to extend existing software
+with the ability of displaying strings containing ISO 8859-1 characters
+on old hardware that is only capable of displaying 7-bit US-ASCII
+characters. Today, many users of old hardware suffer from getting the
+Latin 1 characters between 160 and 255 only displayed as the
+corresponding US-ASCII characters with the highest bit cleared. Then
+they see e.g. a ')' instead of the copyright symbol. Pessimists expect
+that these old 7-bit terminals will be in use at least for the next ten
+years.
+
+One approach for such a Latin 1 to ASCII conversion is to use the
+replacements, that people use traditionally, when they have to live
+with an US-ASCII keyboard. This seems to be the most natural method,
+which often won't even be noticed by users that use these traditional
+replacements already today on their old hardware.
+
+The disadvantages of this approach are often acceptable:
+
+  a) No one-to-one mapping between Latin 1 and ASCII strings possible
+  b) Text layout may be destroyed by multi-character substitutions
+  c) Different replacements may be in use for different languages
+
+There is no optimal solution possible for the problem of displaying
+text with ISO Latin 1 characters on old terminals apart from buying new
+hardware. The conversion tables proposed here are only intermediate
+solutions that are intended to make life easier for people who get
+Latin 1 characters currently displayed as the corresponding 7-bit
+US-ASCII symbols with the highest bit cleared, which is awful and
+frustrates the users of old hardware.
+
+Including the tables below in programs like mail user agents, news
+readers, gopher clients, file browsers, tty drivers etc. is often a
+trivial task. Users should be able to switch between the different
+tables and the 8-bit transparent normal mode. User defineable tables
+are always a nice possible extension.
+
+Users should know if the text they read has been converted from the 
+original Latin 1 text. This avoids confusion if e.g. someone asks for
+sending him a 3<fraction 1/2>" disk [3½"], which will be displayed
+after the conversion as 31/2" (= 15.25").
+
+I collected four tables based on information I received from many
+USENET readers from various countries in order to cope with the
+different needs of ISO Latin 1 users. First of all, a table with the
+real characters in the range 160 - 255 (0xa0 - 0xff):
+
+
+       ¡   ¢   £   ¤   ¥   ¦   §   ¨   ©   ª   «   ¬   ­   ®   ¯
+   °   ±   ²   ³   ´   µ   ¶   ·   ¸   ¹   º   »   ¼   ½   ¾   ¿
+   À   Á   Â   Ã   Ä   Å   Æ   Ç   È   É   Ê   Ë   Ì   Í   Î   Ï
+   Ð   Ñ   Ò   Ó   Ô   Õ   Ö   ×   Ø   Ù   Ú   Û   Ü   Ý   Þ   ß
+   à   á   â   ã   ä   å   æ   ç   è   é   ê   ë   ì   í   î   ï
+   ð   ñ   ò   ó   ô   õ   ö   ÷   ø   ù   ú   û   ü   ý   þ   ÿ
+
+Table 0 is a universal table that is expected to be suitable for many
+languages. The letters are simply the ASCII versions without the
+diacritics. The character '?' as a fallback substitution where no ASCII
+string is suitable is used as little as possible, as '?' carries no
+information and if we are pedantic, we have to replace nearly every
+Latin 1 character over 160 by question marks.
+
+       !   c   ?   ?   Y   |   ?   " (c)   a  <<   -   - (R)   ?
+   ? +/-   2   3   '  mu   P   .   ,   1   o  >> 1/4 1/2 3/4   ?
+   A   A   A   A   A   A  AE   C   E   E   E   E   I   I   I   I
+   D   N   O   O   O   O   O   x   O   U   U   U   U   Y  Th  ss
+   a   a   a   a   a   a  ae   c   e   e   e   e   i   i   i   i
+   d   n   o   o   o   o   o   :   o   u   u   u   u   y  th   y
+
+Table 1 replaces Latin 1 characters only with single ASCII characters.
+This won't destroy the layout of textes designed to be printed with
+monospaced fonts, but the replacements are often not very satisfactory:
+
+       !   c   ?   ?   Y   |   ?   "   c   a   <   -   -   R   ?
+   ?   ?   2   3   '   u   P   .   ,   1   o   >   ?   ?   ?   ?
+   A   A   A   A   A   A   A   C   E   E   E   E   I   I   I   I
+   D   N   O   O   O   O   O   x   O   U   U   U   U   Y   T   s
+   a   a   a   a   a   a   a   c   e   e   e   e   i   i   i   i
+   d   n   o   o   o   o   o   :   o   u   u   u   u   y   t   y
+
+In some languages, only removing the diacritics as in table 0 gives
+orthographically incorrect and unappropriate results. The following
+table 2 might be much more suitable that table 0 in Danish, Dutch,
+German, Norwegian and Swedish:
+
+       !   c   ?   ?   Y   |   ?   " (c)   a  <<   -   - (R)   ?
+   ? +/-   2   3   '  mu   P   .   ,   1   o  >> 1/4 1/2 3/4   ?
+   A   A   A   A  Ae  Aa  AE   C   E   E   E   E   I   I   I   I
+   D   N   O   O   O   O  Oe   x   O   U   U   U  Ue   Y  Th  ss
+   a   a   a   a  ae  aa  ae   c   e   e   e   e   i   i   i   i
+   d   n   o   o   o   o  oe   :   o   u   u   u  ue   y  th  ij
+
+In some north european languages, any US-ASCII replacement for the
+relevant Latin 1 characters is unacceptable for many people. In these
+countries, national variants of 7-bit ISO 646 are still very popular.
+These use the codes of []{}\|~^`$ for national characters. Table 2 has
+been designed for Danish, Finnish, Norwegian and Swedish users of ISO
+646 terminals:
+
+       !   c   ?   $   Y   |   ?   " (c)   a  <<   -   - (R)   ?
+   ? +/-   2   3   '  mu   P   .   ,   1   o  >> 1/4 1/2 3/4   ?
+   A   A   A   A   [   ]   [   C   E   @   E   E   I   I   I   I
+   D   N   O   O   O   O   \   x   \   U   U   U   ^   Y  Th  ss
+   a   a   a   a   {   }   {   c   e   `   e   e   i   i   i   i
+   d   n   o   o   o   o   |   :   |   u   u   u   ~   y  th   y
+
+
+For the convenience of C programmers, I included the code of these
+tables in this text. Just copy the following lines in your software:
+
+-----------------------------------------------------------------------
+/* Conversion tables for displaying the G1 set (0xa0-0xff) of
+   ISO Latin 1 (ISO 8859-1) with 7-bit ASCII characters.
+   Suggestions for improvement are welcome!
+
+   Table   Purpose
+     0     universal table for many languages
+     1     single-spacing universal table
+     2     table for Danish, Dutch, German, Norwegian and Swedish
+     3     table for Danish, Finnish, Norwegian and Swedish using ISO 646
+
+   Markus Kuhn <mskuhn@immd4.informatik.uni-erlangen.de>                 */
+
+#define SUB "?"        /* used if no reasonable ASCII string is possible */
+#define ISO_TABLES 4
+
+static unsigned char *iso2asc[ISO_TABLES][96] = {{
+  " ","!","c",SUB,SUB,"Y","|",SUB,"\"","(c)","a","<<","-","-","(R)",SUB,
+  SUB,"+/-","2","3","'","mu","P",".",",","1","o",">>","1/4","1/2","3/4","?",
+  "A","A","A","A","A","A","AE","C","E","E","E","E","I","I","I","I",
+  "D","N","O","O","O","O","O","x","O","U","U","U","U","Y","Th","ss",
+  "a","a","a","a","a","a","ae","c","e","e","e","e","i","i","i","i",
+  "d","n","o","o","o","o","o",":","o","u","u","u","u","y","th","y"
+},{
+  " ","!","c",SUB,SUB,"Y","|",SUB,"\"","c","a","<","-","-","R",SUB,
+  SUB,SUB,"2","3","'","u","P",".",",","1","o",">",SUB,SUB,SUB,"?",
+  "A","A","A","A","A","A","A","C","E","E","E","E","I","I","I","I",
+  "D","N","O","O","O","O","O","x","O","U","U","U","U","Y","T","s",
+  "a","a","a","a","a","a","a","c","e","e","e","e","i","i","i","i",
+  "d","n","o","o","o","o","o",":","o","u","u","u","u","y","t","y"
+},{
+  " ","!","c",SUB,SUB,"Y","|",SUB,"\"","(c)","a","<<","-","-","(R)",SUB,
+  SUB,"+/-","2","3","'","mu","P",".",",","1","o",">>","1/4","1/2","3/4","?",
+  "A","A","A","A","Ae","Aa","AE","C","E","E","E","E","I","I","I","I",
+  "D","N","O","O","O","O","Oe","x","O","U","U","U","Ue","Y","Th","ss",
+  "a","a","a","a","ae","aa","ae","c","e","e","e","e","i","i","i","i",
+  "d","n","o","o","o","o","oe",":","o","u","u","u","ue","y","th","ij"
+},{
+  " ","!","c",SUB,"$","Y","|",SUB,"\"","(c)","a","<<","-","-","(R)",SUB,
+  SUB,"+/-","2","3","'","mu","P",".",",","1","o",">>","1/4","1/2","3/4","?",
+  "A","A","A","A","[","]","[","C","E","@","E","E","I","I","I","I",
+  "D","N","O","O","O","O","\\","x","\\","U","U","U","^","Y","Th","ss",
+  "a","a","a","a","{","}","{","c","e","`","e","e","i","i","i","i",
+  "d","n","o","o","o","o","|",":","|","u","u","u","~","y","th","y"
+}};
+-----------------------------------------------------------------------
+
+One might perhaps replace the "?" in SUB with another code that will be
+displayed as a blinking question mark or something similar. Then the
+user will know that the software wants to tell him/her that it can't
+display this symbol and that it isn't a question mark. If your software
+runs on hardware that supports already another 8-bit characters set
+(e.g. IBM PC with code page 437, etc.) then it might be a much better
+idea to include only one single table that uses the supported symbols
+as well as possible and uses the strings suggested here only if no
+better alternative is available. (BTW: IBM code page 850 which is
+supported by MS-DOS and OS/2 contains ALL Latin 1 characters, but at
+other positions, in order to stay compatible with the old IBM PC
+character set.)
+
+The following string conversion routine uses these tables. It may
+easily be called before a text received from the network is sent to the
+terminal, if the user has selected one of the tables:
+
+-----------------------------------------------------------------------
+/*
+ *  Transform an 8-bit ISO Latin 1 string s1 in a 7-bit ASCII string s2
+ *  readable on old terminals using conversion table t.
+ *
+ *  worst case: strlen(s2) == 3*strlen(s1)
+ */
+  void
+Latin1toASCII(s1, s2, t)
+  unsigned char *s1, *s2;
+  int t;
+{
+  unsigned char *p, **tab;
+
+  if (s1==NULL || s2==NULL) return;
+
+  tab = iso2asc[t] - 0xa0;
+  do {
+    if (*s1 > 0x9f) {
+      p = tab[*(s1++)];
+      while (*p) *(s2++) = *(p++);
+    } else {
+      *(s2++) = *(s1++);
+    }
+  } while (*s1);
+
+  return;
+}
+-----------------------------------------------------------------------
+
+Many users all over the world are looking forward to your next software
+release that will allow them to participate without pain in the world
+of 8-bit character communication even before they get modern hardware
+with ISO 8859-1 (or even better ISO 10646) character sets.
+
+Feel free to contact me or experts in USENET group comp.std.internat if
+you have any questions about modern character sets. Many thanks to
+everyone who helped me to improve these tables!
+
+Markus
+
+-- 
+Markus Kuhn, Computer Science student -=-=- University of Erlangen, Germany
+Internet: mskuhn@immd4.informatik.uni-erlangen.de  |  X.500 entry available
+----- Anyone participating in the use of MS-DOS, Heroin or Cocaine is -----
+---- simply not getting the most out of life possible. (Brian Downing) ----

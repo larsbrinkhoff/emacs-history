@@ -1,0 +1,18 @@
+Mobal is a sophisticated system for developing operational models of
+application domains. It integrates a manual knowledge acquisition and 
+inspection environment, a powerful inference engine, machine learning 
+methods for automated knowledge acquisition, and a knowledge revision tool.
+
+By using Mobal's knowledge acquisition environment, you can
+incrementally develop a model of your domain in terms of logical facts
+and rules.  You can inspect the knowledge you have entered in text or
+graphics windows, augment the knowledge, or change it at any time.
+The built-in inference engine can immediately execute the rules you
+have entered to show you the consequences of your inputs, or answer
+queries about the current knowledge.  Mobal also builds a dynamic sort
+taxonomy from your inputs.  If you wish, you can use machine learning 
+methods to automatically discover additional rules based on the facts
+that you have entered, or to form new concepts.  If there are
+contradictions in the knowledge base due to incorrect rules or facts,
+there is a knowledge revision tool to help you locate the problem and fix
+it.

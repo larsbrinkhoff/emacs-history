@@ -1,0 +1,175 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+Indirect:
+calc-1: 1007
+calc-2: 50066
+calc-3: 100742
+calc-4: 152840
+calc-5: 203487
+calc-6: 254868
+calc-7: 314801
+calc-8: 366459
+
+Tag table:
+(Indirect)
+Node: Top1009
+Node: Copying2528
+Node: Introduction13080
+Node: Quick Overview18820
+Node: Stack Basics22940
+Node: Numeric Entry25382
+Node: Algebraic Entry26600
+Node: Quick Calculator29469
+Node: Prefix Arguments31048
+Node: Undo33326
+Node: Error Messages35246
+Node: Multiple Calculators36100
+Node: Troubleshooting Commands37304
+Node: Recursion Depth37600
+Node: Caches38493
+Node: Data Types39521
+Node: Integers40742
+Node: Fractions41912
+Node: Floats42755
+Node: Complex Numbers44886
+Node: Vectors and Matrices46218
+Node: Strings47674
+Node: HMS Forms48561
+Node: Modulo Forms50068
+Node: Error Forms52840
+Node: Interval Forms55960
+Node: Incomplete Objects58518
+Node: Variables60442
+Node: Formulas62737
+Node: Stack and Trail66672
+Node: Stack Manipulation67075
+Node: Trail Commands69706
+Node: Mode Settings73099
+Node: Precision74320
+Node: Inverse and Hyperbolic75471
+Node: Calculation Modes76632
+Node: Angular Modes77104
+Node: Polar Mode78275
+Node: Fraction Mode78910
+Node: Symbolic Mode79750
+Node: Working Message80920
+Node: Simplification Modes81780
+Node: Display Modes84785
+Node: Radix Modes85442
+Node: Grouping Digits87072
+Node: Float Formats88476
+Node: Complex Formats91336
+Node: Fraction Formats92380
+Node: HMS Formats93272
+Node: Truncating the Stack94587
+Node: Justification95945
+Node: Language Modes96704
+Node: Normal Language Modes98722
+Node: C Fortran Pascal100744
+Node: Tex Language Mode103202
+Node: Mathematica Language Mode105143
+Node: Arithmetic106010
+Node: Basic Arithmetic106894
+Node: Integer Truncation115428
+Node: Complex Number Functions117188
+Node: Conversions119028
+Node: Scientific Functions122709
+Node: Logarithmic Functions123947
+Node: Trigonometric and Hyperbolic Functions125544
+Node: Branch Cuts127659
+Node: Random Numbers129714
+Node: Combinatorial Functions131365
+Node: Binary Functions136399
+Node: Matrix Functions141231
+Node: Building Vectors141846
+Node: Extracting Elements148039
+Node: Vector and Matrix Arithmetic149677
+Node: Reducing and Mapping152842
+Node: Map/Reduce Examples157978
+Node: Mapping Matrices159822
+Node: Reducing Matrices162252
+Node: Vector and Matrix Formats164255
+Node: Algebra165483
+Node: Algebraic Manipulation166436
+Node: Rewrite Rules169746
+Node: Logical Operations176468
+Node: Calculus181143
+Node: Units186708
+Node: Basic Operations on Units187213
+Node: The Units Table192410
+Node: Predefined Units194975
+Node: User-Defined Units196804
+Node: Store and Recall198729
+Node: Storing Variables199147
+Node: Recalling Variables201805
+Node: Let Command202578
+Node: Kill and Yank203489
+Node: Killing From Stack203861
+Node: Yanking Into Stack205604
+Node: Grabbing From Buffers206587
+Node: Yanking Into Buffers208964
+Node: Editing Stack Entries210876
+Node: Programming211833
+Node: Creating User Keys213464
+Node: Keyboard Macros215768
+Node: Naming Keyboard Macros217569
+Node: Conditionals in Macros219481
+Node: Loops in Macros222262
+Node: Queries in Macros226550
+Node: Algebraic Definitions227746
+Node: Lisp Definitions232780
+Node: Defining Functions233889
+Node: Defining Simple Commands240427
+Node: Defining Stack Commands243320
+Node: Argument Qualifiers247208
+Node: Example Definitions249515
+Node: Sine Example249855
+Node: Internals253412
+Node: Data Type Formats254870
+Node: Interactive Lisp Functions261480
+Node: Stack Lisp Functions264121
+Node: Predicates270625
+Node: Computational Lisp Functions279905
+Node: Vector Lisp Functions292016
+Node: Symbolic Lisp Functions297025
+Node: Formatting Lisp Functions314803
+Node: Lisp Variables319876
+Node: Hooks320045
+Node: Installation320163
+Node: Reporting Bugs325235
+Node: Key Index326224
+Node: Command Index334550
+Node: Function Index346002
+Node: Concept Index350739
+Node: Lisp Function Index358329
+Node: Lisp Variable Index366461
+
+End tag table

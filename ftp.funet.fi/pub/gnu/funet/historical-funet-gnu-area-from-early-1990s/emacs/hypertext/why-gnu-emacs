@@ -1,0 +1,237 @@
+		     For What is GNU Emacs Useful?
+
+			       Bob Weiner
+			    Brown University
+
+				 1/6/91
+
+
+   Available for unrestricted use and distribution with attribution.
+
+[Up to date copies are available via anonymous ftp to:
+	       wilma.cs.brown.edu     (Internet Host ID = 128.148.31.66)
+ in the file:  pub/hyperbole/why-gnu-emacs.]
+
+
+* Introduction
+==============
+
+Although many people in business, technical and academic fields have
+heard about or even used GNU Emacs in recent years, there remain many
+misconceptions about what it is and for what tasks it may be used.  This
+document is meant as a brief outline of the salient points that
+distinguish GNU Emacs from many other related tools available.  It does
+not explain what GNU Emacs is to the wholly uninitiated.  For that,
+you should see the GNU Emacs Manual published by the Free Software
+Foundation of Cambridge, Massachusetts, USA.
+
+GNU Emacs is at heart an environment rather than a single tool.  The
+original emacs idea began as a way to support efficient text editing, but
+it has grown into much more than that, while still retaining its
+original goals of efficiency.  It can be readily customized to support
+any number of tasks.
+
+Here for example, is a summary of my own, long term GNU Emacs use.  My
+work is dominated by information-intensive activities, so that emphasis
+will be apparent in the summary.  I think this provides a good one page
+rationale that can be presented to management as to why you and your
+associates can improve your productivity through GNU Emacs usage.  Even
+if all of the facilities mentioned are not available at your site, since
+they do not all come as a part of GNU Emacs, the summary highlights the
+potential that is there and that can be realized with relatively minor
+investment.
+
+* Calendar and appointment manager - for personal use, no group scheduling
+* Command shell - provides convenient, editable access to the operating system
+* Electronic mail - reader and composer, 3 different readers to choose from
+* Editor - for text, programming, documentation languages; powerful facilities
+* Debugger interface - speeds program debugging and analysis
+* File manager - directory browsing and management
+* File filter - can apply complex filtering directives in a batch mode
+* Forms entry - entry and browsing of forms-based data
+* Hypertext management system - supports rapid information linkage and access
+* Info browser - Efficiently browses online manuals
+* Keyboard and Menu user interfaces - supports different user skill levels
+    and provides a common interface on terminals and window systems
+* Lisp interpreter - for learning and producing production quality code
+* Network news (bulletin boards) - reader and poster, 2 readers to choose from
+* Object-oriented code browser - aids software reuse and development
+* Outliner - for both text and program source code
+* Rolodex - flexible, fast lookup of record-based information
+* Scientific calculator - very advanced, can solve problems with no programming
+* Watch what I do automation - stores command sequences for later playback
+
+
+* Detailed Emacs Traits
+=======================
+
+Standard, sensible user interface
+
+  Think of all the programs and associated user interfaces you have had
+  to learn over the years to do each task.  Now look at what you can do
+  by mastering a single integrated environment with one reasonably
+  consistent user interface.
+
+Powerful, flexible text editor
+
+  interactive filling and justification
+  outlining
+  unlimited number of edit buffers
+  unlimited line lengths
+  displays EXACTLY what is in files, including all control and binary codes
+  multi-windowed
+  Extended UNIX regular expression capabilities
+  mode and buffer specific key bindings; full user control over what
+    each key does
+  Vi and EDT emulation modes
+  Edit on remote machines via ftp and rcp.  The editor works on the
+    files almost as if they were local.
+  Editor lock to prevent unauthorized usage.
+
+Programming language editor
+
+  Syntax-specific support for Lisp, C, C++, Pascal, Fortran, assembler,
+    Eiffel, Sather, Modula-2, Simula, etc.
+  Incremental search
+  Tags finding
+  Compiler error grep/pattern matching parsing for many language compilers
+  Debugger interface
+
+Document editing and formatting
+
+  Nroff, scribe, TeX, LaTex, Texinfo, Interleaf TPS support
+
+Context Saving
+
+  Each buffer maintains its own state.
+  A history of major edit locations within each buffer is kept so you
+    can quickly return to any one.
+  As buffers overlay one another in windows, it is simple to return to
+    any desired buffer set.  Entire buffer-window configurations
+    may be saved and recalled with a single key.
+  Quitting a special edit mode typically brings you back to where you
+    were before you started.
+  Editing history saved between sessions; each day you start where you
+    left off.  Usually, from day to day you tend to be working on the
+    same set of files so each time you start the editor, the files you
+    were editing last time you quit from the editor will be
+    automatically reloaded.
+
+Calendar
+
+  Schedule your own appointments
+  Look up any date
+
+Rolodex
+
+  Unlimited, free-form entries
+  Fast lookup.  (One basic workstation timing found all exact
+    matches to a string in over 7000 entries in a second or two.)
+
+E-Mail Reader/Composer
+
+  Very interactive
+  Reads, files, forwards, replies to, locates and summarizes groupings
+    of mail
+  Three mail readers for users with different backgrounds and tastes to
+    choose among
+
+Lisp Interpreter
+
+  Helps people learn the language
+  Contains an interactively steppable debugger
+
+News Reader/Composer
+
+  Powerful USENET net news readers, like the mail readers
+
+Menu control-based interface
+
+  An easy to use menu system (Smart Menus).
+  Provides an easy to use menu interface to the most used Emacs subsystems.
+  Not yet released.
+
+Directory Editing
+
+  Navigate through directory hierarchies, view files, rename, copy,
+    safely delete, and change permissions on files.
+
+OS Command Shell Interface
+
+  Directory editing
+  File name completion (essentially selection of files from a list)
+  Interactive history recall
+  Editable transcript pads of your command interactions even from terminals
+  Telnet, cross-system remote login mode
+
+Terminal-OS Interface
+
+  Quick UNIX manual page interface
+
+Linked Information Browser
+
+  Easy to use, point and click support available
+  Very fast to find information within an organized body of work
+  Manuals on a number of tools are available in this format
+
+Hypertext Management System  (Hyperbole)
+
+  Easy to construct targeted, interactive information access systems
+  Point and click hypertext buttons in e-mail, network news, and
+    any files
+  Menu based interface 
+
+Learning / Reference Aids
+
+  Online self-paced tutorial
+  Online complete reference manual
+
+  Printed manual and key binding summaries
+  Interactive regular expression searches are a superb way of working
+    out difficult regular expressions by trial and error, for use in
+    data formatting and operating system interaction tasks; immediate
+    feedback tells you whether you are right or wrong.
+
+Customizability
+
+  All source is provided so anything can be changed or rewritten.
+  'Watch what I do' type macros are used for simple user customizations.
+  Lisp is used for complex customization requirements.
+
+Platform Issues
+
+  HP Apollo compatibility
+
+    Native DM (Display Manager) and X window implementation; mouse and
+      DM key support
+    DM keys operate as expected so people can immediately be productive.
+    Many Emacs control key bindings can be made available in the
+      DM environment making them very compatible.
+    Works with BSD UNIX. 
+
+  SUN
+
+    SunView support including menus and special key bindings.
+    X window support also.
+
+  Other UNIX
+  
+    GNU Emacs runs on virtually all UNIX platforms under X and via
+      character terminals.
+
+  VAX VMS
+
+    Much of Emacs functionality works on VMS systems via terminals or
+      the X window system.
+
+  MS DOS
+
+    A recently released port allows GNU Emacs to run on 386 and 486,
+      DOS-based PCs.
+
+  Terminals
+
+    Emacs takes advantage of any UNIX supported display terminal
+      with virtually no change in interface or functionality
+      limitation.  Dial-in from home via modem and work almost as
+      well as you can with a direct connection.

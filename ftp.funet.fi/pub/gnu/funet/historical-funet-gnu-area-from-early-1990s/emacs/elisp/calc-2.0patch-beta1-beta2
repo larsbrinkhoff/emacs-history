@@ -1,0 +1,2643 @@
+The following patches convert Calc version 2.00beta1 into Calc
+version 2.00beta2.  To apply them automatically with Patch v2.0,
+first cd into your Calc distribution directory, then execute
+"patch -p0 <calc.patch", where "calc.patch" is the name of this file.
+
+A list of changes appears at the end of the README file.
+
+Patches and complete tar files are also available for anonymous FTP
+from csvax.cs.caltech.edu [131.215.131.131], in the "pub" subdirectory.
+
+Enjoy!
+                                                        -- Dave
+
+Dave Gillespie
+daveg@synaptics.com.edu (or daveg@csvax.cs.caltech.edu)
+
+
+
+*** README	Mon Sep 23 04:52:06 1991
+--- ../dist/README	Sat Sep 28 17:53:04 1991
+***************
+*** 1,5 ****
+  
+! This directory contains version 2.00beta1 of Calc, an advanced desk
+  calculator for GNU Emacs.
+  
+  "Calc"  Copyright 1990, 1991  Free Software Foundation, Inc.
+--- 1,5 ----
+  
+! This directory contains version 2.00beta2 of Calc, an advanced desk
+  calculator for GNU Emacs.
+  
+  "Calc"  Copyright 1990, 1991  Free Software Foundation, Inc.
+***************
+*** 50,62 ****
+  
+  To install Calc:
+  
+!   1. Type "uncompress calc-2.00beta1.tar.Z"
+  
+!   2. Type "tar xvf calc-2.00beta1.tar"
+  
+! 1,2. Alternatively: "zcat calc-2.00beta1.tar.Z | tar xvf -"
+  
+!   3. Note that the Calc tar file now creates a "calc-2.00beta1" subdirectory
+       of the current directory in which to place its files.
+  
+    4. Follow the instructions in the file "INSTALL".
+--- 50,62 ----
+  
+  To install Calc:
+  
+!   1. Type "uncompress calc-2.00beta2.tar.Z"
+  
+!   2. Type "tar xvf calc-2.00beta2.tar"
+  
+! 1,2. Alternatively: "zcat calc-2.00beta2.tar.Z | tar xvf -"
+  
+!   3. Note that the Calc tar file now creates a "calc-2.00beta2" subdirectory
+       of the current directory in which to place its files.
+  
+    4. Follow the instructions in the file "INSTALL".
+***************
+*** 101,106 ****
+--- 101,137 ----
+  ------- -- ------- --  ----
+  
+  
++ Version 2.00 beta 2:
++ 
++  * Changed "make info" to try "make texinfo" if "makeinfo" not found.
++ 
++  * Changed to "New for Calc 2.00"; texinfo.tex chokes on apostrophes.
++ 
++  * Added List Tutorial Exercise 14 (just in case there weren't enough!).
++ 
++  * Added a discussion of the `Z F' command to the Programming Tutorial.
++ 
++  * Improved `H a f' not to lose info if input is partially pre-factored.
++ 
++  * Improved simplification of expressions like sqrt(3) + 3^3:2.
++ 
++  * Changed Big mode to omit "*" in expressions like 2 sqrt(3) 5^3:4.
++ 
++  * Replaced European date format D/M/Y with D.M.Y.
++ 
++  * Changed `a N' and `a X' to consider the endpoints of the interval.
++ 
++  * Fixed a bug where TeX mode made c*(1+a/b) look like a function call.
++ 
++  * Fixed a bug formatting top-level evalto's while using selections.
++ 
++  * Fixed a bug that caused `z ?' to crash.
++ 
++  * Fixed a bug where `Z F' broke for argument names "t" and "nil".
++ 
++  * Fixed several bugs relating to autoloading.
++ 
++ 
+  Version 2.00 beta 1:
+  
+   * Added "What's new in Calc 2.00" to the manual (summary of info below).
+*** INSTALL	Mon Sep 23 04:52:06 1991
+--- ../dist/INSTALL	Sat Sep 28 17:53:04 1991
+***************
+*** 2,8 ****
+  Installation
+  ************
+  
+! Calc 2.00beta1 comes as a set of Emacs Lisp files, with names like
+  `calc.el' and `calc-ext.el', and also as a `calc.texinfo' file which
+  can be used to generate both on-line and printed documentation.
+  
+--- 2,8 ----
+  Installation
+  ************
+  
+! Calc 2.00beta2 comes as a set of Emacs Lisp files, with names like
+  `calc.el' and `calc-ext.el', and also as a `calc.texinfo' file which
+  can be used to generate both on-line and printed documentation.
+  
+***************
+*** 28,36 ****
+            `default.el' file, use Emacs or the Unix `touch' command to
+            create a zero-sized one first.)
+  
+!         * `make info' to format the on-line Calc manual.  If this
+!           fails because your system does not have the `makeinfo'
+!           program, type `make texinfo' instead.
+  
+            The Unix `make' utility looks in the file `Makefile' in the
+       current directory to see what Unix commands correspond to the
+--- 28,37 ----
+            `default.el' file, use Emacs or the Unix `touch' command to
+            create a zero-sized one first.)
+  
+!         * `make info' to format the on-line Calc manual.  This first
+!           tries to use the `makeinfo' program; if that program is not
+!           present, it uses the Emacs `texinfo-format-buffer' command
+!           instead.
+  
+            The Unix `make' utility looks in the file `Makefile' in the
+       current directory to see what Unix commands correspond to the
+***************
+*** 64,70 ****
+  `autoload' and `global-set-key' commands for Calc, since `make
+  public'/`make private' has added new, better ones.
+  
+!    *Note What's New in Calc 2.00::, for more information about what has
+  changed since version 1.07.
+  
+  
+--- 65,71 ----
+  `autoload' and `global-set-key' commands for Calc, since `make
+  public'/`make private' has added new, better ones.
+  
+!    *Note New for Calc 2.00::, for more information about what has
+  changed since version 1.07.
+  
+  
+***************
+*** 137,145 ****
+     Unless you have installed the Calc files in Emacs' main `lisp/'
+  directory, you will also have to add a command that looks like the
+  following to tell Emacs where to find them.  In this example, we have
+! put the files in directory `/usr/gnu/src/calc-2.00beta1'.
+  
+!      (setq load-path (append load-path (list "/usr/gnu/src/calc-2.00beta1")))
+  
+  The `make public' and `make private' commands also do this (they use
+  the then-current directory as the name to add to the path).  If you
+--- 138,146 ----
+     Unless you have installed the Calc files in Emacs' main `lisp/'
+  directory, you will also have to add a command that looks like the
+  following to tell Emacs where to find them.  In this example, we have
+! put the files in directory `/usr/gnu/src/calc-2.00beta2'.
+  
+!      (setq load-path (append load-path (list "/usr/gnu/src/calc-2.00beta2")))
+  
+  The `make public' and `make private' commands also do this (they use
+  the then-current directory as the name to add to the path).  If you
+***************
+*** 182,193 ****
+  `autoload' command for `calc-dispatch'.  If that name included
+  directory information, Calc adds that directory to the `load-path':
+  
+!      (autoload 'calc-dispatch "calc-2.00beta1/calc" "Calculator" t)
+  
+  Suppose the directory `/usr/gnu/src/emacs/lisp' is on the path, and
+  the above `autoload' allows Emacs to find Calc under the name
+! `/usr/gnu/src/emacs/lisp/calc-2.00beta1/calc.elc'.  Then when Calc
+! starts up it will add `/usr/gnu/src/emacs/lisp/calc-2.00beta1' to the
+  path so that it will later be able to find its component files.
+  
+     If the above strategy does not locate the component files, Calc
+--- 183,194 ----
+  `autoload' command for `calc-dispatch'.  If that name included
+  directory information, Calc adds that directory to the `load-path':
+  
+!      (autoload 'calc-dispatch "calc-2.00beta2/calc" "Calculator" t)
+  
+  Suppose the directory `/usr/gnu/src/emacs/lisp' is on the path, and
+  the above `autoload' allows Emacs to find Calc under the name
+! `/usr/gnu/src/emacs/lisp/calc-2.00beta2/calc.elc'.  Then when Calc
+! starts up it will add `/usr/gnu/src/emacs/lisp/calc-2.00beta2' to the
+  path so that it will later be able to find its component files.
+  
+     If the above strategy does not locate the component files, Calc
+*** Makefile	Mon Sep 23 04:52:06 1991
+--- ../dist/Makefile	Sat Sep 28 17:53:05 1991
+***************
+*** 1,4 ****
+! # Makefile for "Calc 2.00beta1", the GNU Emacs Calculator.
+  #  Copyright (C) 1991 Free Software Foundation.
+  #  Author: Dave Gillespie.
+  #  Author's address: daveg@csvax.caltech.edu; 256-80 Caltech/Pasadena CA 91125.
+--- 1,4 ----
+! # Makefile for "Calc 2.00beta2", the GNU Emacs Calculator.
+  #  Copyright (C) 1991 Free Software Foundation.
+  #  Author: Dave Gillespie.
+  #  Author's address: daveg@csvax.caltech.edu; 256-80 Caltech/Pasadena CA 91125.
+***************
+*** 25,30 ****
+--- 25,31 ----
+  #   First, any sub-targets after the `:' are made.
+  #   Then, the Unix commands on the following lines are executed.
+  #   `$(SYMBOL)' expands according to the `SYMBOL =' definition below.
++ #   `A || B' means "do B only if command A fails".
+  
+  
+  # Programs.
+***************
+*** 81,87 ****
+  # Format the Calc manual for the Info system using makeinfo.
+  info: calc.info
+  calc.info: calc.texinfo
+! 	$(MAKEINFO) calc.texinfo
+  	$(ECHO) "Please ignore warnings for Copying, Getting Started, and Interactive Tutorial."
+  
+  
+--- 82,88 ----
+  # Format the Calc manual for the Info system using makeinfo.
+  info: calc.info
+  calc.info: calc.texinfo
+! 	$(MAKEINFO) calc.texinfo || $(MAKE) texinfo
+  	$(ECHO) "Please ignore warnings for Copying, Getting Started, and Interactive Tutorial."
+  
+  
+*** calc-aent.el	Mon Sep 23 04:52:21 1991
+--- ../dist/calc-aent.el	Sat Sep 28 17:53:36 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1 [calc-aent.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2 [calc-aent.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-alg-2.el	Mon Sep 23 04:52:26 1991
+--- ../dist/calc-alg-2.el	Sat Sep 28 17:54:06 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-alg-2.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-alg-2.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 1642,1649 ****
+  		     rq))
+  	  (t
+  	   (setq rq (list 'calcFunc-sqrt q))
+! 	   (math-div (math-mul 2 (list 'calcFunc-arctan
+! 				       (math-div part rq)))
+  		     rq))))
+  )
+  
+--- 1642,1650 ----
+  		     rq))
+  	  (t
+  	   (setq rq (list 'calcFunc-sqrt q))
+! 	   (math-div (math-mul 2 (math-to-radians-2
+! 				  (list 'calcFunc-arctan
+! 					(math-div part rq))))
+  		     rq))))
+  )
+  
+*** calc-alg-3.el	Mon Sep 23 04:52:26 1991
+--- ../dist/calc-alg-3.el	Sat Sep 28 17:54:07 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-alg-3.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-alg-3.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 796,802 ****
+      (while (and (not done) (math-lessp-float vc vb))
+        (math-working "widen" (list 'intv 0 a c))
+        (if (= (setq iters (1- iters)) 0)
+! 	  (math-reject-arg nil "*Unable to find a minimum near the interval"))
+        (setq bc (math-sub-float b c)
+  	    ba (math-sub-float b a)
+  	    r (math-mul-float ba (math-sub-float vb vc))
+--- 796,803 ----
+      (while (and (not done) (math-lessp-float vc vb))
+        (math-working "widen" (list 'intv 0 a c))
+        (if (= (setq iters (1- iters)) 0)
+! 	  (math-reject-arg nil (format "*Unable to find a %s near the interval"
+! 				       math-min-or-max)))
+        (setq bc (math-sub-float b c)
+  	    ba (math-sub-float b a)
+  	    r (math-mul-float ba (math-sub-float vb vc))
+***************
+*** 844,850 ****
+        (list c vc b vb a va)))
+  )
+  
+! (defun math-narrow-min (expr a c)
+    (let ((xvals (list a c))
+  	(yvals (list (math-min-eval expr a)
+  		     (math-min-eval expr c)))
+--- 845,851 ----
+        (list c vc b vb a va)))
+  )
+  
+! (defun math-narrow-min (expr a c intv)
+    (let ((xvals (list a c))
+  	(yvals (list (math-min-eval expr a)
+  		     (math-min-eval expr c)))
+***************
+*** 877,883 ****
+  	(list (car xp) (car yp)
+  	      (nth 1 xp) (nth 1 yp)
+  	      (nth 2 xp) (nth 2 yp))
+!       (math-reject-arg nil "*Unable to find a minimum in the interval")))
+  )
+  
+  ;;; "brent"
+--- 878,899 ----
+  	(list (car xp) (car yp)
+  	      (nth 1 xp) (nth 1 yp)
+  	      (nth 2 xp) (nth 2 yp))
+!       (or (if (math-lessp-float (car yvals) (nth 1 yvals))
+! 	      (and (memq (nth 1 intv) '(2 3))
+! 		   (let ((min (car yvals)))
+! 		     (while (and (setq yvals (cdr yvals))
+! 				 (math-lessp-float min (car yvals))))
+! 		     (and (not yvals)
+! 			  (list (nth 2 intv) min))))
+! 	    (and (memq (nth 1 intv) '(1 3))
+! 		 (setq yvals (nreverse yvals))
+! 		 (let ((min (car yvals)))
+! 		   (while (and (setq yvals (cdr yvals))
+! 			       (math-lessp-float min (car yvals))))
+! 		   (and (not yvals)
+! 			(list (nth 3 intv) min)))))
+! 	  (math-reject-arg nil (format "*Unable to find a %s in the interval"
+! 				       math-min-or-max)))))
+  )
+  
+  ;;; "brent"
+***************
+*** 904,910 ****
+  						(math-sub-float b a)))
+  			       (math-abs (math-sub-float x xm))))
+        (if (= (setq iters (1- iters)) 0)
+! 	  (math-reject-arg nil "*Unable to converge on a minimum"))
+        (math-working "brent" x)
+        (if (math-lessp-float (math-abs e) tol1)
+  	  (setq e (if (math-lessp-float x xm)
+--- 920,927 ----
+  						(math-sub-float b a)))
+  			       (math-abs (math-sub-float x xm))))
+        (if (= (setq iters (1- iters)) 0)
+! 	  (math-reject-arg nil (format "*Unable to converge on a %s"
+! 				       math-min-or-max)))
+        (math-working "brent" x)
+        (if (math-lessp-float (math-abs e) tol1)
+  	  (setq e (if (math-lessp-float x xm)
+***************
+*** 1107,1113 ****
+  						   (nth 3 (car guess)))
+  					 '(float 5 -1))
+  					(math-float (nth 2 (car guess)))
+! 					(math-float (nth 3 (car guess))))
+  				(math-reject-arg (car guess) 'realp)))
+  			    guesses)
+  	      n (1+ n))))
+--- 1124,1131 ----
+  						   (nth 3 (car guess)))
+  					 '(float 5 -1))
+  					(math-float (nth 2 (car guess)))
+! 					(math-float (nth 3 (car guess)))
+! 					(car guess))
+  				(math-reject-arg (car guess) 'realp)))
+  			    guesses)
+  	      n (1+ n))))
+***************
+*** 1121,1133 ****
+  					       (nth 2 (car guesses)))
+  			     (math-narrow-min expr
+  					      (nth 1 (car guesses))
+! 					      (nth 2 (car guesses))))
+  			 (math-widen-min expr
+  					 (car (car guesses))
+  					 nil)))
+  	       (prec calc-internal-prec)
+! 	       (res (math-with-extra-prec (+ calc-internal-prec 2)
+! 		      (apply 'math-brent-min expr prec params))))
+  	  (if isvec
+  	      (list 'vec (list 'vec (nth 1 res)) (nth 2 res))
+  	    res))
+--- 1139,1154 ----
+  					       (nth 2 (car guesses)))
+  			     (math-narrow-min expr
+  					      (nth 1 (car guesses))
+! 					      (nth 2 (car guesses))
+! 					      (nth 3 (car guesses))))
+  			 (math-widen-min expr
+  					 (car (car guesses))
+  					 nil)))
+  	       (prec calc-internal-prec)
+! 	       (res (if (cdr (cdr params))
+! 			(math-with-extra-prec (+ calc-internal-prec 2)
+! 			  (apply 'math-brent-min expr prec params))
+! 		      (cons 'vec params))))
+  	  (if isvec
+  	      (list 'vec (list 'vec (nth 1 res)) (nth 2 res))
+  	    res))
+***************
+*** 1149,1157 ****
+  	    (list 'vec vec (nth 2 res))
+  	  (list 'vec (nth 1 vec) (nth 2 res))))))
+  )
+  
+  (defun calcFunc-minimize (expr var guess)
+!   (let ((calc-internal-prec (max (/ calc-internal-prec 2) 3)))
+      (math-find-minimum (math-normalize expr)
+  		       (math-normalize var)
+  		       (math-normalize guess) nil))
+--- 1170,1180 ----
+  	    (list 'vec vec (nth 2 res))
+  	  (list 'vec (nth 1 vec) (nth 2 res))))))
+  )
++ (setq math-min-or-max "minimum")
+  
+  (defun calcFunc-minimize (expr var guess)
+!   (let ((calc-internal-prec (max (/ calc-internal-prec 2) 3))
+! 	(math-min-or-max "minimum"))
+      (math-find-minimum (math-normalize expr)
+  		       (math-normalize var)
+  		       (math-normalize guess) nil))
+***************
+*** 1158,1164 ****
+  )
+  
+  (defun calcFunc-wminimize (expr var guess)
+!   (let ((calc-internal-prec (max (/ calc-internal-prec 2) 3)))
+      (math-find-minimum (math-normalize expr)
+  		       (math-normalize var)
+  		       (math-normalize guess) t))
+--- 1181,1188 ----
+  )
+  
+  (defun calcFunc-wminimize (expr var guess)
+!   (let ((calc-internal-prec (max (/ calc-internal-prec 2) 3))
+! 	(math-min-or-max "minimum"))
+      (math-find-minimum (math-normalize expr)
+  		       (math-normalize var)
+  		       (math-normalize guess) t))
+***************
+*** 1166,1171 ****
+--- 1190,1196 ----
+  
+  (defun calcFunc-maximize (expr var guess)
+    (let* ((calc-internal-prec (max (/ calc-internal-prec 2) 3))
++ 	 (math-min-or-max "maximum")
+  	 (res (math-find-minimum (math-normalize (math-neg expr))
+  				 (math-normalize var)
+  				 (math-normalize guess) nil)))
+***************
+*** 1174,1179 ****
+--- 1199,1205 ----
+  
+  (defun calcFunc-wmaximize (expr var guess)
+    (let* ((calc-internal-prec (max (/ calc-internal-prec 2) 3))
++ 	 (math-min-or-max "maximum")
+  	 (res (math-find-minimum (math-normalize (math-neg expr))
+  				 (math-normalize var)
+  				 (math-normalize guess) t)))
+*** calc-alg.el	Mon Sep 23 04:52:25 1991
+--- ../dist/calc-alg.el	Sat Sep 28 17:54:05 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-alg.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-alg.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 215,221 ****
+  	 (and (not (eq (car-safe res) (car expr)))
+  	      res)))
+  )
+- (setq math-expand-formulas nil)
+  
+  
+  
+--- 215,220 ----
+***************
+*** 1230,1239 ****
+  					(math-sqr
+  					 (list 'calcFunc-sinh
+  					       (nth 1 (nth 1 expr)))))))))
+        (and (eq (math-quarter-integer (nth 2 expr)) 2)
+  	   (let ((temp (math-simplify-sqrt)))
+  	     (and temp
+! 		  (math-pow temp (math-mul (nth 2 expr) 2))))))
+  )
+  
+  (math-defsimplify calcFunc-log10
+--- 1229,1248 ----
+  					(math-sqr
+  					 (list 'calcFunc-sinh
+  					       (nth 1 (nth 1 expr)))))))))
++       (and (eq (car-safe (nth 2 expr)) 'frac)
++ 	   (Math-ratp (nth 1 expr))
++ 	   (Math-posp (nth 1 expr))
++ 	   (if (equal (nth 2 expr) '(frac 1 2))
++ 	       (list 'calcFunc-sqrt (nth 1 expr))
++ 	     (let ((flr (math-floor (nth 2 expr))))
++ 	       (and (not (Math-zerop flr))
++ 		    (list '* (list '^ (nth 1 expr) flr)
++ 			  (list '^ (nth 1 expr)
++ 				(math-sub (nth 2 expr) flr)))))))
+        (and (eq (math-quarter-integer (nth 2 expr)) 2)
+  	   (let ((temp (math-simplify-sqrt)))
+  	     (and temp
+! 		  (list '^ temp (math-mul (nth 2 expr) 2))))))
+  )
+  
+  (math-defsimplify calcFunc-log10
+*** calc-arith.el	Mon Sep 23 04:52:23 1991
+--- ../dist/calc-arith.el	Sat Sep 28 17:54:00 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-arith.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-arith.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 1993,1999 ****
+  	       (let ((pow (math-pow (nth 1 a) (math-sub b 1))))
+  		 (math-make-sdev (math-mul pow (nth 1 a))
+  				 (math-mul pow (math-mul (nth 2 a) b)))))
+! 	   (math-make-sdev (math-mul (math-pow (nth 1 a) b))
+  			   (math-mul (math-pow (nth 1 a) (math-add b -1))
+  				     (math-mul (nth 2 a) b)))))
+  	((and (eq (car-safe b) 'sdev) (Math-numberp a))
+--- 1993,1999 ----
+  	       (let ((pow (math-pow (nth 1 a) (math-sub b 1))))
+  		 (math-make-sdev (math-mul pow (nth 1 a))
+  				 (math-mul pow (math-mul (nth 2 a) b)))))
+! 	   (math-make-sdev (math-pow (nth 1 a) b)
+  			   (math-mul (math-pow (nth 1 a) (math-add b -1))
+  				     (math-mul (nth 2 a) b)))))
+  	((and (eq (car-safe b) 'sdev) (Math-numberp a))
+***************
+*** 2799,2806 ****
+  		 (let ((sumpow (math-add apow bpow)))
+  		   (and (or (not (Math-integerp a))
+  			    (Math-zerop sumpow)
+! 			    (eq (equal apow '(frac 1 2))
+! 				(equal bpow '(frac 1 2))))
+  			(progn
+  			  (and (math-looks-negp sumpow)
+  			       (Math-ratp a) (Math-posp a)
+--- 2799,2806 ----
+  		 (let ((sumpow (math-add apow bpow)))
+  		   (and (or (not (Math-integerp a))
+  			    (Math-zerop sumpow)
+! 			    (eq (eq (car-safe apow) 'frac)
+! 				(eq (car-safe bpow) 'frac)))
+  			(progn
+  			  (and (math-looks-negp sumpow)
+  			       (Math-ratp a) (Math-posp a)
+*** calc-bin.el	Mon Sep 23 04:52:27 1991
+--- ../dist/calc-bin.el	Sat Sep 28 17:54:08 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-bin.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-bin.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-comb.el	Mon Sep 23 04:52:29 1991
+--- ../dist/calc-comb.el	Sat Sep 28 17:54:11 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-comb.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-comb.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-comp.el	Mon Sep 23 04:52:31 1991
+--- ../dist/calc-comp.el	Sat Sep 28 17:54:14 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-comp.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-comp.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 589,595 ****
+       ((and (eq (car a) 'calcFunc-evalto)
+  	   (setq calc-any-evaltos t)
+  	   (memq calc-language '(tex eqn))
+! 	   (= math-compose-level 1)
+  	   (= (length a) 3))
+        (list 'horiz
+  	    (if (eq calc-language 'tex) "\\evalto " "evalto ")
+--- 589,595 ----
+       ((and (eq (car a) 'calcFunc-evalto)
+  	   (setq calc-any-evaltos t)
+  	   (memq calc-language '(tex eqn))
+! 	   (= math-compose-level (if math-comp-tagged 2 1))
+  	   (= (length a) 3))
+        (list 'horiz
+  	    (if (eq calc-language 'tex) "\\evalto " "evalto ")
+***************
+*** 647,673 ****
+  		   (or (and (eq (car a) '*)
+  			    (or (null calc-language)
+  				(assoc "2x" math-expr-opers))
+! 			    (let ((prevt (math-prod-last-term (nth 1 a)))
+! 				  (nextt (math-prod-first-term (nth 2 a)))
+! 				  (prevc (or (math-comp-last-char lhs)
+! 					     (and (memq (car-safe (nth 1 a))
+! 							'(^ calcFunc-subscr
+! 							    frac))
+! 						  (eq calc-language 'big)
+! 						  ?0)))
+! 				  (nextc (or (math-comp-first-char rhs)
+! 					     (and (memq (car-safe (nth 2 a))
+! 							'(calcFunc-sqrt
+! 							  calcFunc-sum
+! 							  calcFunc-prod))
+! 						  (eq calc-language 'big)
+! 						  ?0))))
+  			      (and prevc nextc
+  				   (or (and (>= nextc ?a) (<= nextc ?z))
+  				       (and (>= nextc ?A) (<= nextc ?Z))
+  				       (and (>= nextc ?0) (<= nextc ?9))
+  				       (memq nextc '(?. ?_ ?#
+! 							?\( ?\[ ?\{ ?\\)))
+  				   (not (and (eq (car-safe prevt) 'var)
+  					     (eq nextc ?\()))
+  				   (list 'horiz
+--- 647,680 ----
+  		   (or (and (eq (car a) '*)
+  			    (or (null calc-language)
+  				(assoc "2x" math-expr-opers))
+! 			    (let* ((prevt (math-prod-last-term (nth 1 a)))
+! 				   (nextt (math-prod-first-term (nth 2 a)))
+! 				   (prevc (or (math-comp-last-char lhs)
+! 					      (and (memq (car-safe prevt)
+! 							 '(^ calcFunc-subscr
+! 							     calcFunc-sqrt
+! 							     frac))
+! 						   (eq calc-language 'big)
+! 						   ?0)))
+! 				   (nextc (or (math-comp-first-char rhs)
+! 					      (and (memq (car-safe nextt)
+! 							 '(calcFunc-sqrt
+! 							   calcFunc-sum
+! 							   calcFunc-prod
+! 							   calcFunc-integ))
+! 						   (eq calc-language 'big)
+! 						   ?0))))
+  			      (and prevc nextc
+  				   (or (and (>= nextc ?a) (<= nextc ?z))
+  				       (and (>= nextc ?A) (<= nextc ?Z))
+  				       (and (>= nextc ?0) (<= nextc ?9))
+  				       (memq nextc '(?. ?_ ?#
+! 							?\( ?\[ ?\{))
+! 				       (and (eq nextc ?\\)
+! 					    (not (string-match
+! 						  "\\`\\\\left("
+! 						  (math-comp-first-string
+! 						   rhs)))))
+  				   (not (and (eq (car-safe prevt) 'var)
+  					     (eq nextc ?\()))
+  				   (list 'horiz
+***************
+*** 1528,1533 ****
+--- 1535,1552 ----
+  	 (and c (math-comp-first-char (car c))))
+  	((eq (car c) 'tag)
+  	 (math-comp-first-char (nth 2 c))))
++ )
++ 
++ (defun math-comp-first-string (c)
++   (cond ((stringp c)
++ 	 (and (> (length c) 0)
++ 	      c))
++ 	((eq (car c) 'horiz)
++ 	 (while (and (setq c (cdr c))
++ 		     (math-comp-is-null (car c))))
++ 	 (and c (math-comp-first-string (car c))))
++ 	((eq (car c) 'tag)
++ 	 (math-comp-first-string (nth 2 c))))
+  )
+  
+  (defun math-comp-last-char (c)
+*** calc-cplx.el	Mon Sep 23 04:52:23 1991
+--- ../dist/calc-cplx.el	Sat Sep 28 17:54:01 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-cplx.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-cplx.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-embed.el	Mon Sep 23 04:52:28 1991
+--- ../dist/calc-embed.el	Sat Sep 28 17:54:10 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-embed.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-embed.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-ext.el	Mon Sep 23 04:52:08 1991
+--- ../dist/calc-ext.el	Sat Sep 28 17:53:57 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 893,902 ****
+  calcFunc-vdiff calcFunc-vec calcFunc-venum calcFunc-vexp
+  calcFunc-vfloor calcFunc-vint calcFunc-vlen calcFunc-vmask
+  calcFunc-vpack calcFunc-vspan calcFunc-vunion calcFunc-vunpack
+! calcFunc-vxor math-clean-set math-copy-matrix math-dimension-error
+! math-dot-product math-flatten-vector math-map-vec math-map-vec-2
+! math-mat-col math-mimic-ident math-prepare-set math-read-brackets
+! math-reduce-cols math-reduce-vec math-transpose)
+  
+   ("calc-yank" calc-Need-calc-yank calc-alg-edit calc-clean-newlines
+  calc-do-grab-rectangle calc-do-grab-region calc-force-refresh
+--- 893,902 ----
+  calcFunc-vdiff calcFunc-vec calcFunc-venum calcFunc-vexp
+  calcFunc-vfloor calcFunc-vint calcFunc-vlen calcFunc-vmask
+  calcFunc-vpack calcFunc-vspan calcFunc-vunion calcFunc-vunpack
+! calcFunc-vxor math-check-for-commas math-clean-set math-copy-matrix
+! math-dimension-error math-dot-product math-flatten-vector math-map-vec
+! math-map-vec-2 math-mat-col math-mimic-ident math-prepare-set
+! math-read-brackets math-reduce-cols math-reduce-vec math-transpose)
+  
+   ("calc-yank" calc-Need-calc-yank calc-alg-edit calc-clean-newlines
+  calc-do-grab-rectangle calc-do-grab-region calc-force-refresh
+***************
+*** 1471,1480 ****
+  	     (calc-undo-list nil) (calc-redo-list nil)
+  	     value new-val)
+  	 (while (> num 0)
+! 	   (setq value (calc-top num))
+! 	   (if (or (eq (car-safe value) 'calcFunc-evalto)
+! 		   (and (eq (car-safe value) 'vec)
+! 			(eq (car-safe (nth 1 value)) 'calcFunc-evalto)))
+  	       (progn
+  		 (setq new-val (math-normalize value))
+  		 (or (equal new-val value)
+--- 1471,1482 ----
+  	     (calc-undo-list nil) (calc-redo-list nil)
+  	     value new-val)
+  	 (while (> num 0)
+! 	   (setq value (calc-top num 'entry))
+! 	   (if (and (not (nth 2 value))
+! 		    (setq value (car value))
+! 		    (or (eq (car-safe value) 'calcFunc-evalto)
+! 			(and (eq (car-safe value) 'vec)
+! 			     (eq (car-safe (nth 1 value)) 'calcFunc-evalto))))
+  	       (progn
+  		 (setq new-val (math-normalize value))
+  		 (or (equal new-val value)
+***************
+*** 1718,1724 ****
+  ;;; User menu.
+  
+  (defun calc-user-key-map ()
+!   (cdr (elt calc-mode-map ?z))
+  )
+  
+  (defun calc-z-prefix-help ()
+--- 1720,1726 ----
+  ;;; User menu.
+  
+  (defun calc-user-key-map ()
+!   (cdr (cdr (elt calc-mode-map ?z)))
+  )
+  
+  (defun calc-z-prefix-help ()
+***************
+*** 2226,2231 ****
+--- 2228,2236 ----
+  	 (cons (car a) (mapcar 'math-normalize (cdr a)))))
+  )
+  
++ 
++ 
++ (setq math-expand-formulas nil)
+  
+  
+  ;;; Normalize a bignum digit list by trimming high-end zeros.  [L l]
+*** calc-fin.el	Mon Sep 23 04:52:27 1991
+--- ../dist/calc-fin.el	Sat Sep 28 17:54:08 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-fin.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-fin.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-forms.el	Mon Sep 23 04:52:22 1991
+--- ../dist/calc-forms.el	Sat Sep 28 17:53:59 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-forms.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-forms.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-frac.el	Mon Sep 23 04:52:23 1991
+--- ../dist/calc-frac.el	Sat Sep 28 17:54:01 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-frac.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-frac.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-funcs.el	Mon Sep 23 04:52:24 1991
+--- ../dist/calc-funcs.el	Sat Sep 28 17:54:02 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-funcs.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-funcs.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-graph.el	Mon Sep 23 04:52:29 1991
+--- ../dist/calc-graph.el	Sat Sep 28 17:54:11 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-graph.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-graph.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 940,946 ****
+        (if (or (equal calc-graph-last-device "x11")
+  	      (equal calc-graph-last-device "X11"))
+  	  (calc-gnuplot-command "set output"
+! 				(prin1-to-string calc-graph-last-output))
+  	(calc-gnuplot-command "clear")))
+  )
+  
+--- 940,948 ----
+        (if (or (equal calc-graph-last-device "x11")
+  	      (equal calc-graph-last-device "X11"))
+  	  (calc-gnuplot-command "set output"
+! 				(if (equal calc-graph-last-output "STDOUT")
+! 				    ""
+! 				  (prin1-to-string calc-graph-last-output)))
+  	(calc-gnuplot-command "clear")))
+  )
+  
+*** calc-help.el	Mon Sep 23 04:52:21 1991
+--- ../dist/calc-help.el	Sat Sep 28 17:53:58 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-help.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-help.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-incom.el	Mon Sep 23 04:52:22 1991
+--- ../dist/calc-incom.el	Sat Sep 28 17:53:59 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-incom.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-incom.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-keypd.el	Mon Sep 23 04:52:31 1991
+--- ../dist/calc-keypd.el	Sat Sep 28 17:54:15 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-keypd.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-keypd.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 207,213 ****
+  	  (delete-region (point-min) (point))
+  	  (if calc-keypad-input
+  	      (insert "Calc: " calc-keypad-input "\n")
+! 	    (insert "----+-----Calc 2.00beta1-----+----"
+  		    (int-to-string (1+ calc-keypad-menu))
+  		    "\n")))))
+    (setq calc-keypad-prev-input calc-keypad-input)
+--- 207,213 ----
+  	  (delete-region (point-min) (point))
+  	  (if calc-keypad-input
+  	      (insert "Calc: " calc-keypad-input "\n")
+! 	    (insert "----+-----Calc 2.00beta2-----+----"
+  		    (int-to-string (1+ calc-keypad-menu))
+  		    "\n")))))
+    (setq calc-keypad-prev-input calc-keypad-input)
+*** calc-lang.el	Mon Sep 23 04:52:28 1991
+--- ../dist/calc-lang.el	Sat Sep 28 17:54:10 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-lang.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-lang.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-macs.el	Mon Sep 23 04:52:08 1991
+--- ../dist/calc-macs.el	Sat Sep 28 17:53:17 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1 [calc-macs.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2 [calc-macs.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 27,33 ****
+  
+  (defmacro calc-record-compilation-date-macro ()
+    (` (setq calc-version (, (concat "Emacs Calculator"
+! 				   " v2.00beta1 by Dave Gillespie"
+  				   ", installed "
+  				   (current-time-string)
+  				   " by "
+--- 27,33 ----
+  
+  (defmacro calc-record-compilation-date-macro ()
+    (` (setq calc-version (, (concat "Emacs Calculator"
+! 				   " v2.00beta2 by Dave Gillespie"
+  				   ", installed "
+  				   (current-time-string)
+  				   " by "
+*** calc-maint.el	Mon Sep 23 19:00:15 1991
+--- ../dist/calc-maint.el	Sat Sep 28 17:53:17 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, maintenance routines
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, maintenance routines
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 27,32 ****
+--- 27,34 ----
+  Unix usage:
+       emacs -batch -l calc-maint -f calc-compile"
+    (interactive)
++   (if (equal (user-full-name) "David Gillespie")
++       (load "~/lisp/newbytecomp"))
+    (setq byte-compile-verbose t)
+    (if noninteractive
+        (let ((old-message (symbol-function 'message))
+*** calc-map.el	Mon Sep 23 04:52:30 1991
+--- ../dist/calc-map.el	Sat Sep 28 17:54:13 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-map.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-map.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-mat.el	Mon Sep 23 04:52:30 1991
+--- ../dist/calc-mat.el	Sat Sep 28 17:54:12 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-mat.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-mat.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-math.el	Mon Sep 23 04:52:23 1991
+--- ../dist/calc-math.el	Sat Sep 28 17:54:01 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-math.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-math.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-misc.el	Mon Sep 23 04:52:21 1991
+--- ../dist/calc-misc.el	Sat Sep 28 17:53:35 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1 [calc-misc.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2 [calc-misc.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 274,280 ****
+  	   "Prefix keys: Trail/time, Units/statistics, Vector/matrix"
+  	   "Prefix keys: Z (user), SHIFT + Z (define)"
+  	   "Prefix keys: prefix + ? gives further help for that prefix"
+! 	   "  Calc 2.00beta1 by Dave Gillespie, daveg@csvax.cs.caltech.edu")))
+      (if calc-full-help-flag
+  	msgs
+        (if (or calc-inverse-flag calc-hyperbolic-flag)
+--- 274,280 ----
+  	   "Prefix keys: Trail/time, Units/statistics, Vector/matrix"
+  	   "Prefix keys: Z (user), SHIFT + Z (define)"
+  	   "Prefix keys: prefix + ? gives further help for that prefix"
+! 	   "  Calc 2.00beta2 by Dave Gillespie, daveg@csvax.cs.caltech.edu")))
+      (if calc-full-help-flag
+  	msgs
+        (if (or calc-inverse-flag calc-hyperbolic-flag)
+***************
+*** 849,855 ****
+    (interactive "sBug Subject: ")
+    (mail nil calc-bug-address topic)
+    (goto-char (point-max))
+!   (insert "\nIn Calc 2.00beta1, Emacs " (emacs-version) "\n\n")
+    (message (substitute-command-keys "Type \\[mail-send] to send bug report."))
+  )
+  (fset 'calc-report-bug (symbol-function 'report-calc-bug))
+--- 849,855 ----
+    (interactive "sBug Subject: ")
+    (mail nil calc-bug-address topic)
+    (goto-char (point-max))
+!   (insert "\nIn Calc 2.00beta2, Emacs " (emacs-version) "\n\n")
+    (message (substitute-command-keys "Type \\[mail-send] to send bug report."))
+  )
+  (fset 'calc-report-bug (symbol-function 'report-calc-bug))
+*** calc-mode.el	Mon Sep 23 04:52:27 1991
+--- ../dist/calc-mode.el	Sat Sep 28 17:54:09 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-mode.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-mode.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-poly.el	Mon Sep 23 04:52:30 1991
+--- ../dist/calc-poly.el	Sat Sep 28 17:54:14 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-poly.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-poly.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 626,637 ****
+  )
+  
+  (defun math-factor-expr-try (x)
+!   (let* ((p (math-is-polynomial expr x 30 'gen))
+! 	 (math-poly-modulus (math-poly-modulus x))
+! 	 res)
+!     (and (cdr p)
+! 	 (setq res (math-factor-poly-coefs p))
+! 	 (throw 'factor res)))
+  )
+  
+  (defun math-accum-factors (fac pow facs)
+--- 626,645 ----
+  )
+  
+  (defun math-factor-expr-try (x)
+!   (if (eq (car-safe expr) '*)
+!       (let ((res1 (catch 'factor (let ((expr (nth 1 expr)))
+! 				   (math-factor-expr-try x))))
+! 	    (res2 (catch 'factor (let ((expr (nth 2 expr)))
+! 				   (math-factor-expr-try x)))))
+! 	(and (or res1 res2)
+! 	     (throw 'factor (math-accum-factors (or res1 (nth 1 expr)) 1
+! 						(or res2 (nth 2 expr))))))
+!     (let* ((p (math-is-polynomial expr x 30 'gen))
+! 	   (math-poly-modulus (math-poly-modulus expr))
+! 	   res)
+!       (and (cdr p)
+! 	   (setq res (math-factor-poly-coefs p))
+! 	   (throw 'factor res))))
+  )
+  
+  (defun math-accum-factors (fac pow facs)
+***************
+*** 656,662 ****
+  			(not (equal fac (nth 1 (car found))))))
+  	    (if found
+  		(progn
+! 		  (setcar (cdr (car found)) (+ pow (nth 1 (car found))))
+  		  facs)
+  	      ;; Put constant term first.
+  	      (if (and (cdr facs) (Math-ratp (nth 1 (nth 1 facs))))
+--- 664,670 ----
+  			(not (equal fac (nth 1 (car found))))))
+  	    (if found
+  		(progn
+! 		  (setcar (cdr (cdr (car found))) (+ pow (nth 2 (car found))))
+  		  facs)
+  	      ;; Put constant term first.
+  	      (if (and (cdr facs) (Math-ratp (nth 1 (nth 1 facs))))
+*** calc-prog.el	Mon Sep 23 04:52:27 1991
+--- ../dist/calc-prog.el	Sat Sep 28 17:54:07 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-prog.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-prog.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 263,268 ****
+--- 263,272 ----
+  			func
+  			(y-or-n-p
+  			 "Leave it symbolic for non-constant arguments? ")))
++      (setq alist (mapcar (function (lambda (x)
++ 				     (or (cdr (assq x '((nil . arg-nil)
++ 							(t . arg-t))))
++ 					 x))) alist))
+       (if cmd
+  	 (progn
+  	   (calc-need-macros)
+***************
+*** 328,352 ****
+  
+  (defun calc-fix-user-formula (f)
+    (if (consp f)
+!       (cond ((and (eq (car f) 'var)
+! 		  (memq (nth 1 f) alist))
+! 	     (nth 1 f))
+! 	    ((or (math-constp f) (eq (car f) 'var))
+! 	     (list 'quote f))
+! 	    ((and (eq (car f) 'calcFunc-eval)
+! 		  (= (length f) 2))
+! 	     (list 'let '((calc-simplify-mode nil))
+! 		   (list 'math-normalize (calc-fix-user-formula (nth 1 f)))))
+! 	    ((and (eq (car f) 'calcFunc-evalsimp)
+! 		  (= (length f) 2))
+! 	     (list 'math-simplify (calc-fix-user-formula (nth 1 f))))
+! 	    ((and (eq (car f) 'calcFunc-evalextsimp)
+! 		  (= (length f) 2))
+! 	     (list 'math-simplify-extended (calc-fix-user-formula (nth 1 f))))
+! 	    (t
+! 	     (cons 'list
+! 		   (cons (list 'quote (car f))
+! 			 (mapcar 'calc-fix-user-formula (cdr f))))))
+      f)
+  )
+  
+--- 332,361 ----
+  
+  (defun calc-fix-user-formula (f)
+    (if (consp f)
+!       (let (temp)
+! 	(cond ((and (eq (car f) 'var)
+! 		    (memq (setq temp (or (cdr (assq (nth 1 f) '((nil . arg-nil)
+! 								(t . arg-t))))
+! 					 (nth 1 f)))
+! 			  alist))
+! 	       temp)
+! 	      ((or (math-constp f) (eq (car f) 'var))
+! 	       (list 'quote f))
+! 	      ((and (eq (car f) 'calcFunc-eval)
+! 		    (= (length f) 2))
+! 	       (list 'let '((calc-simplify-mode nil))
+! 		     (list 'math-normalize (calc-fix-user-formula (nth 1 f)))))
+! 	      ((and (eq (car f) 'calcFunc-evalsimp)
+! 		    (= (length f) 2))
+! 	       (list 'math-simplify (calc-fix-user-formula (nth 1 f))))
+! 	      ((and (eq (car f) 'calcFunc-evalextsimp)
+! 		    (= (length f) 2))
+! 	       (list 'math-simplify-extended
+! 		     (calc-fix-user-formula (nth 1 f))))
+! 	      (t
+! 	       (cons 'list
+! 		     (cons (list 'quote (car f))
+! 			   (mapcar 'calc-fix-user-formula (cdr f)))))))
+      f)
+  )
+  
+***************
+*** 780,786 ****
+         (if (and fcmd
+  		(eq (car-safe fcmd) 'lambda)
+  		(get cmd 'calc-user-defn))
+! 	   (progn
+  	     (and (eq (car-safe (nth 3 fcmd)) 'calc-execute-kbd-macro)
+  		  (vectorp (nth 1 (nth 3 fcmd)))
+  		  (progn (and (fboundp 'edit-kbd-macro)
+--- 789,795 ----
+         (if (and fcmd
+  		(eq (car-safe fcmd) 'lambda)
+  		(get cmd 'calc-user-defn))
+! 	   (let ((pt (point)))
+  	     (and (eq (car-safe (nth 3 fcmd)) 'calc-execute-kbd-macro)
+  		  (vectorp (nth 1 (nth 3 fcmd)))
+  		  (progn (and (fboundp 'edit-kbd-macro)
+*** calc-rewr.el	Mon Sep 23 04:52:25 1991
+--- ../dist/calc-rewr.el	Sat Sep 28 17:54:04 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-rewr.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-rewr.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-rules.el	Mon Sep 23 04:52:24 1991
+--- ../dist/calc-rules.el	Sat Sep 28 17:54:04 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-rules.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-rules.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-sel-2.el	Mon Sep 23 04:52:24 1991
+--- ../dist/calc-sel-2.el	Sat Sep 28 17:54:03 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-sel-2.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-sel-2.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-sel.el	Mon Sep 23 04:52:24 1991
+--- ../dist/calc-sel.el	Sat Sep 28 17:54:03 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-sel.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-sel.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-stat.el	Mon Sep 23 04:52:30 1991
+--- ../dist/calc-stat.el	Sat Sep 28 17:54:13 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-stat.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-stat.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-store.el	Mon Sep 23 04:52:24 1991
+--- ../dist/calc-store.el	Sat Sep 28 17:54:02 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-store.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-store.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-stuff.el	Mon Sep 23 04:52:22 1991
+--- ../dist/calc-stuff.el	Sat Sep 28 17:53:58 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-stuff.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-stuff.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-trail.el	Mon Sep 23 04:52:29 1991
+--- ../dist/calc-trail.el	Sat Sep 28 17:54:11 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-trail.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-trail.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-undo.el	Mon Sep 23 04:52:22 1991
+--- ../dist/calc-undo.el	Sat Sep 28 17:53:59 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-undo.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-undo.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-units.el	Mon Sep 23 04:52:29 1991
+--- ../dist/calc-units.el	Sat Sep 28 17:54:12 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-units.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-units.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-vec.el	Mon Sep 23 04:52:28 1991
+--- ../dist/calc-vec.el	Sat Sep 28 17:54:09 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-vec.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-vec.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc-yank.el	Mon Sep 23 04:52:24 1991
+--- ../dist/calc-yank.el	Sat Sep 28 17:54:03 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1, part II [calc-yank.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2, part II [calc-yank.el]
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+*** calc.el	Mon Sep 23 04:52:07 1991
+--- ../dist/calc.el	Sat Sep 28 17:53:35 1991
+***************
+*** 1,4 ****
+! ;; Calculator for GNU Emacs version 2.00beta1
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+--- 1,4 ----
+! ;; Calculator for GNU Emacs version 2.00beta2
+  ;; Copyright (C) 1990, 1991 Free Software Foundation, Inc.
+  ;; Written by Dave Gillespie, daveg@csvax.cs.caltech.edu.
+  
+***************
+*** 512,518 ****
+  				 "D Mmm YYYY<, h:mm:SS>"
+  				 "Www Mmm BD< hh:mm:ss> YYYY"
+  				 "M/D/Y< H:mm:SSpp>"
+! 				 "D/M/Y< h:mm:SS>"
+  				 "M-D-Y< H:mm:SSpp>"
+  				 "D-M-Y< h:mm:SS>"
+  				 "j<, h:mm:SS>"
+--- 512,518 ----
+  				 "D Mmm YYYY<, h:mm:SS>"
+  				 "Www Mmm BD< hh:mm:ss> YYYY"
+  				 "M/D/Y< H:mm:SSpp>"
+! 				 "D.M.Y< h:mm:SS>"
+  				 "M-D-Y< H:mm:SSpp>"
+  				 "D-M-Y< h:mm:SS>"
+  				 "j<, h:mm:SS>"
+No differences encountered
+*** calc.texinfo	Mon Sep 23 04:52:21 1991
+--- ../dist/calc.texinfo	Sat Sep 28 17:53:31 1991
+***************
+*** 3,9 ****
+  @c smallbook
+  @setfilename calc.info
+  @c [title]
+! @settitle GNU Emacs Calc 2.00beta1 Manual
+  @setchapternewpage odd
+  @comment %**end of header (This is for running Texinfo on a region.)
+  
+--- 3,9 ----
+  @c smallbook
+  @setfilename calc.info
+  @c [title]
+! @settitle GNU Emacs Calc 2.00beta2 Manual
+  @setchapternewpage odd
+  @comment %**end of header (This is for running Texinfo on a region.)
+  
+***************
+*** 98,104 ****
+  @sp 6
+  @center @titlefont{Calc Manual}
+  @sp 4
+! @center GNU Emacs Calc Version 2.00beta1
+  @c [volume]
+  @sp 1
+  @center June 1991
+--- 98,104 ----
+  @sp 6
+  @center @titlefont{Calc Manual}
+  @sp 4
+! @center GNU Emacs Calc Version 2.00beta2
+  @c [volume]
+  @sp 1
+  @center June 1991
+***************
+*** 139,145 ****
+  @ichapter The GNU Emacs Calculator
+  
+  @noindent
+! @dfn{Calc 2.00beta1} is an advanced desk calculator and mathematical tool
+  that runs as part of the GNU Emacs environment.
+  
+  This manual is divided into three major parts: "Getting Started," the
+--- 139,145 ----
+  @ichapter The GNU Emacs Calculator
+  
+  @noindent
+! @dfn{Calc 2.00beta2} is an advanced desk calculator and mathematical tool
+  that runs as part of the GNU Emacs environment.
+  
+  This manual is divided into three major parts: "Getting Started," the
+***************
+*** 427,433 ****
+  * Notations Used in This Manual::
+  * Using Calc::
+  * Demonstration of Calc::
+! * What's New in Calc 2.00::
+  * History and Acknowledgements::
+  @end menu
+  
+--- 427,433 ----
+  * Notations Used in This Manual::
+  * Using Calc::
+  * Demonstration of Calc::
+! * New for Calc 2.00::
+  * History and Acknowledgements::
+  @end menu
+  
+***************
+*** 666,672 ****
+  
+  ...
+  --**-Emacs: myfile             (Fundamental)----All----------------------
+! --- Emacs Calculator Mode ---                   |Emacs Calc Mode v2.00beta1...
+  2:  17.3                                        |    17.3
+  1:  -5                                          |    3
+      .                                           |    2
+--- 666,672 ----
+  
+  ...
+  --**-Emacs: myfile             (Fundamental)----All----------------------
+! --- Emacs Calculator Mode ---                   |Emacs Calc Mode v2.00beta2...
+  2:  17.3                                        |    17.3
+  1:  -5                                          |    3
+      .                                           |    2
+***************
+*** 788,794 ****
+                                          |1:  -5
+                                          |    .
+                                          |--%%-Calc: 12 Deg       (Calcul
+!                                         |----+-----Calc 2.00beta1-----+----1
+                                          |FLR |CEIL|RND |TRNC|CLN2|FLT |
+                                          |----+----+----+----+----+----|
+                                          | LN |EXP |    |ABS |IDIV|MOD |
+--- 788,794 ----
+                                          |1:  -5
+                                          |    .
+                                          |--%%-Calc: 12 Deg       (Calcul
+!                                         |----+-----Calc 2.00beta2-----+----1
+                                          |FLR |CEIL|RND |TRNC|CLN2|FLT |
+                                          |----+----+----+----+----+----|
+                                          | LN |EXP |    |ABS |IDIV|MOD |
+***************
+*** 1168,1174 ****
+  @end table
+  @end group
+  
+! @node Demonstration of Calc, What's New in Calc 2.00, Using Calc, Getting Started
+  @section A Demonstration of Calc
+  
+  @noindent
+--- 1168,1174 ----
+  @end table
+  @end group
+  
+! @node Demonstration of Calc, New for Calc 2.00, Using Calc, Getting Started
+  @section A Demonstration of Calc
+  
+  @noindent
+***************
+*** 1306,1313 ****
+  
+  Press @kbd{DEL} repeatedly to remove any leftover results from the stack.
+  
+! @node What's New in Calc 2.00, History and Acknowledgements, Demonstration of Calc, Getting Started
+! @section What's New in Calc 2.00
+  
+  If you are upgrading from Calc 1.07, you will find many new features and
+  changes in this version of Calc.  This section is a summary of the major
+--- 1306,1313 ----
+  
+  Press @kbd{DEL} repeatedly to remove any leftover results from the stack.
+  
+! @node New for Calc 2.00, History and Acknowledgements, Demonstration of Calc, Getting Started
+! @section New for Calc 2.00
+  
+  If you are upgrading from Calc 1.07, you will find many new features and
+  changes in this version of Calc.  This section is a summary of the major
+***************
+*** 1404,1410 ****
+  were rearranged or rewritten, particularly the ``Getting Started''
+  chapter.  Minor improvements were made throughout the manual.
+  
+! @node History and Acknowledgements, , What's New in Calc 2.00, Getting Started
+  @section History and Acknowledgements
+  
+  @noindent
+--- 1404,1410 ----
+  were rearranged or rewritten, particularly the ``Getting Started''
+  chapter.  Minor improvements were made throughout the manual.
+  
+! @node History and Acknowledgements, , New for Calc 2.00, Getting Started
+  @section History and Acknowledgements
+  
+  @noindent
+***************
+*** 1473,1481 ****
+  eyes discovered many typographical and factual errors in the Calc manual;
+  Tim Kay, who drove the development of Embedded mode; Ove Ewerlid, who
+  made many suggestions relating the the algebra commands and contributed
+! some code for polynomial operations; Bob Chassell, who suggested the Calc
+! Tutorial and exercises; and Juha Sarlin, who first worked out how to split
+! Calc into quickly-loading parts.
+  
+  @c Should these be expanded into more complete references?
+  Among the books used in the development of Calc were Knuth's @emph{Art
+--- 1473,1482 ----
+  eyes discovered many typographical and factual errors in the Calc manual;
+  Tim Kay, who drove the development of Embedded mode; Ove Ewerlid, who
+  made many suggestions relating the the algebra commands and contributed
+! some code for polynomial operations; Randal Schwartz, who suggested the
+! @code{calc-eval} function; Bob Chassell, who suggested the Calc Tutorial
+! and exercises; and Juha Sarlin, who first worked out how to split Calc
+! into quickly-loading parts.
+  
+  @c Should these be expanded into more complete references?
+  Among the books used in the development of Calc were Knuth's @emph{Art
+***************
+*** 4258,4263 ****
+--- 4259,4280 ----
+  and @samp{$} would refer to the top stack entry, and @kbd{' $$-$ RET}
+  would act exactly like @kbd{-}.
+  
++ Notice that the @kbd{V M '} command has recorded two things in the
++ trail:  The result, as usual, and also a funny-looking thing marked
++ @samp{oper} that represents the operator function you typed in.
++ The function is enclosed in @samp{< >} brackets, and the argument is
++ denoted by a @samp{#} sign.  If there were several arguments, they
++ would be shown as @samp{#1}, @samp{#2}, and so on.  (For example,
++ @kbd{V M ' $$-$} will put the function @samp{<#1 - #2>} on the
++ trail.)  This object is a ``nameless function''; you can use nameless
++ @samp{< >} notation to answer the @kbd{V M '} prompt if you like.
++ Nameless function notation has the interesting, occasionally useful
++ property that a nameless function is not actually evaluated until
++ it is used.  For example, @kbd{V M ' $+random(2.0)} evaluates
++ @samp{random(2.0)} once and adds that random number to all elements
++ of the vector, but @kbd{V M ' <#+random(2.0)>} evaluates the
++ @samp{random(2.0)} separately for each vector element.
++ 
+  Another group of operators that are often useful with @kbd{V M} are
+  the relational operators:  @kbd{a =}, for example, compares two numbers
+  and gives the result 1 if they are equal, or 0 if not.  Similarly,
+***************
+*** 4405,4410 ****
+--- 4422,4440 ----
+  The hash code for @samp{"Testing, 1, 2, 3"} is 1960915098, which modulo
+  511 is 121.  @xref{List Answer 13, 13}. (@bullet{})
+  
++ (@bullet{}) @strong{Exercise 14.}  The @kbd{H V R} and @kbd{H V U}
++ commands do nested function evaluations.  @kbd{H V U} takes a starting
++ value and a number of steps @var{n} from the stack; it then applies the
++ function you give to the starting value 0, 1, 2, up to @var{n} times
++ and returns a vector of the results.  Use this command to create a
++ ``random walk'' of 50 steps.  Start with the two-dimensional point
++ @cite{(0,0)}; then take one step a random distance between @i{-1} and 1
++ in both @cite{x} and @cite{y}; then take another step, and so on.  Use the
++ @kbd{g f} command to display this random walk.  Now modify your random
++ walk to walk a unit distance, but in a random direction, at each step.
++ (Hint:  The @code{sincos} function returns a vector of the cosine and
++ sine of an angle.)  @xref{List Answer 14, 14}. (@bullet{})
++ 
+  @node Types Tutorial, Algebra Tutorial, Vector/Matrix Tutorial, Tutorial
+  @section Types Tutorial
+  
+***************
+*** 5879,5896 ****
+  The Calculator is written entirely in Emacs Lisp, a highly extensible
+  language.  If you know Lisp, you can program the Calculator to do
+  anything you like.  Rewrite rules also work as a powerful programming
+! system.  But learning all the details of Lisp or rewrite rules is too
+! much trouble for simple tasks, so we'll explore some of Calc's other,
+! more down-to-earth programming features here.
+  
+! The simplest way to ``program'' Emacs is to define a @dfn{keyboard macro}.
+! A keyboard macro is simply a sequence of keystrokes which Emacs has
+! stored away and can play back on demand.  For example, if you find
+! yourself typing @kbd{H a S x @key{RET}} often, you may wish to program
+! a keyboard macro to type this for you.
+  
+  @group
+  @smallexample
+  1:  y = sqrt(x)          1:  x = y^2
+      .                        .
+  
+--- 5909,5991 ----
+  The Calculator is written entirely in Emacs Lisp, a highly extensible
+  language.  If you know Lisp, you can program the Calculator to do
+  anything you like.  Rewrite rules also work as a powerful programming
+! system.  But Lisp and rewrite rules take a while to master, and often
+! all you want to do is define a new function or repeat a command a few
+! times.  Calc has features that allow you to do these things easily.
+  
+! One very limited form of programming is defining your own functions.
+! Calc's @kbd{Z F} command allows you to define a function name and
+! key sequence to correspond to any formula.  Programming commands use
+! the shift-@kbd{Z} prefix; the user commands they create use the lower
+! case @kbd{z} prefix.
+  
+  @group
+  @smallexample
++ 1:  1 + x + x^2 / 2 + x^3 / 6         1:  1 + x + x^2 / 2 + x^3 / 6
++     .                                     .
++ 
++     ' 1 + x + x^2/2! + x^3/3! RET         Z F e myexp RET RET RET y
++ @end smallexample
++ @end group
++ 
++ This polynomial is a Taylor series approximation to @samp{exp(x)}.
++ The @kbd{Z F} command asks a number of questions.  The above answers
++ say that the key sequence for our function should be @kbd{z e}; the
++ @kbd{M-x} equivalent should be @code{calc-myexp}; the name of the
++ function in algebraic formulas should be also be @code{myexp}; the
++ default argument list @samp{(x)} is acceptable; and finally @kbd{y}
++ answers the question ``leave it in symbolic form for non-constant
++ arguments?''
++ 
++ @group
++ @smallexample
++ 1:  1.3495     2:  1.3495     3:  1.3495
++     .          1:  1.34986    2:  1.34986
++                    .          1:  myexp(a + 1)
++                                   .
++ 
++     .3 z e         .3 E           ' a+1 RET z e
++ @end smallexample
++ @end group
++ 
++ First we call our new @code{exp} approximation with 0.3 as an
++ argument, and compare it with the true @code{exp} function.  Then
++ we note that, as requested, if we try to give @kbd{z e} an
++ argument that isn't a plain number, it leaves the @code{myexp}
++ function call in symbolic form.  If we had answered @kbd{n} to the
++ final question, @samp{myexp(a + 1)} would have evaluated by plugging
++ @samp{a + 1} in for @samp{x} in the defining formula.
++ 
++ @cindex Fresnel C(x) and S(x)
++ (@bullet{}) @strong{Exercise 1.}  Fresnel's function @cite{C(x)} is
++ defined by the integral of @samp{cos(pi t^2 / 2)} for @cite{t = 0} to
++ @cite{x} in radians.  (It was invented because this integral has no
++ solution in terms of basic functions; if you give it to Calc's @kbd{a i}
++ command, it will ponder it for a long time and then give up.)  We can use
++ the numerical integration command, however, which in algebraic notation
++ is written like @samp{ninteg(f(t), t, 0, x)} with any integrand
++ @samp{f(t)}.  Define a @kbd{z c} command and @code{fresC} function
++ that implements this.  You will need to edit the default argument list
++ a bit.  As a test, @samp{fresC(1)} should return 0.77989.  (Hint:
++ @code{ninteg} will run a lot faster if you reduce the precision to, say,
++ six digits beforehand.)  @xref{Programming Answer 1, 1}. (@bullet{})
++ 
++ (Calc doesn't have Fresnel functions built-in, but it does have the
++ ``error function'' @samp{erf(x)}.  It turns out Fresnel's @cite{C(x)}
++ and @cite{S(x)} (the same integral but with @code{sin} instead of
++ @code{cos}) can be written in terms of @code{erf} and complex numbers
++ as follows:  @samp{C(x) + i S(x) = (i+1) erf(sqrt(pi) (1-i) x / 2) / 2}.
++ If you are curious, you could implement an alternate @kbd{z c} command
++ that uses this method and compare the speeds of the two approaches.)
++ 
++ The simplest way to do real ``programming'' of Emacs is to define a
++ @dfn{keyboard macro}.  A keyboard macro is simply a sequence of
++ keystrokes which Emacs has stored away and can play back on demand.
++ For example, if you find yourself typing @kbd{H a S x @key{RET}} often,
++ you may wish to program a keyboard macro to type this for you.
++ 
++ @group
++ @smallexample
+  1:  y = sqrt(x)          1:  x = y^2
+      .                        .
+  
+***************
+*** 5936,5946 ****
+  @end smallexample
+  @end group
+  
+! (@bullet{}) @strong{Exercise 1.}  Define a keyboard macro to negate
+  the item in level 3 of the stack, without disturbing the rest of
+! the stack.  @xref{Programming Answer 1, 1}. (@bullet{})
+  
+! (@bullet{}) @strong{Exercise 2.}  Define keyboard macros to compute
+  the following functions:
+  
+  @enumerate
+--- 6031,6041 ----
+  @end smallexample
+  @end group
+  
+! (@bullet{}) @strong{Exercise 2.}  Define a keyboard macro to negate
+  the item in level 3 of the stack, without disturbing the rest of
+! the stack.  @xref{Programming Answer 2, 2}. (@bullet{})
+  
+! (@bullet{}) @strong{Exercise 3.}  Define keyboard macros to compute
+  the following functions:
+  
+  @enumerate
+***************
+*** 5958,5968 ****
+  the stack.
+  @end enumerate
+  @noindent
+! @xref{Programming Answer 2, 2}. (@bullet{})
+  
+! (@bullet{}) @strong{Exercise 3.}  Define a keyboard macro to compute
+  the average (mean) value of a list of numbers.
+! @xref{Programming Answer 3, 3}. (@bullet{})
+  
+  In many programs, some of the steps must execute several times.
+  Calc has @dfn{looping} commands that allow this.  Loops are useful
+--- 6053,6063 ----
+  the stack.
+  @end enumerate
+  @noindent
+! @xref{Programming Answer 3, 3}. (@bullet{})
+  
+! (@bullet{}) @strong{Exercise 4.}  Define a keyboard macro to compute
+  the average (mean) value of a list of numbers.
+! @xref{Programming Answer 4, 4}. (@bullet{})
+  
+  In many programs, some of the steps must execute several times.
+  Calc has @dfn{looping} commands that allow this.  Loops are useful
+***************
+*** 6028,6034 ****
+  @end group
+  
+  @cindex Continued fractions
+! (@bullet{}) @strong{Exercise 4.}  The @dfn{continued fraction}
+  representation of @c{$\phi$}
+  @cite{phi} is @c{$1 + 1/(1 + 1/(1 + 1/( \ldots )))$}
+  @cite{1 + 1/(1 + 1/(1 + 1/( ...@: )))}.
+--- 6123,6129 ----
+  @end group
+  
+  @cindex Continued fractions
+! (@bullet{}) @strong{Exercise 5.}  The @dfn{continued fraction}
+  representation of @c{$\phi$}
+  @cite{phi} is @c{$1 + 1/(1 + 1/(1 + 1/( \ldots )))$}
+  @cite{1 + 1/(1 + 1/(1 + 1/( ...@: )))}.
+***************
+*** 6037,6051 ****
+  @cite{1/( ...@: )} by 1.  Approximate
+  @c{$\phi$}
+  @cite{phi} using a twenty-term continued fraction.
+! @xref{Programming Answer 4, 4}. (@bullet{})
+  
+! (@bullet{}) @strong{Exercise 5.}  Linear recurrences like the one for
+  Fibonacci numbers can be expressed in terms of matrices.  Given a
+  vector @w{@cite{[a, b]}} determine a matrix which, when multiplied by this
+  vector, produces the vector @cite{[b, c]}, where @cite{a}, @cite{b} and
+  @cite{c} are three successive Fibonacci numbers.  Now write a program
+  that, given an integer @cite{n}, computes the @cite{n}th Fibonacci number
+! using matrix arithmetic.  @xref{Programming Answer 5, 5}. (@bullet{})
+  
+  @cindex Harmonic numbers
+  A more sophisticated kind of loop is the @dfn{for} loop.  Suppose
+--- 6132,6146 ----
+  @cite{1/( ...@: )} by 1.  Approximate
+  @c{$\phi$}
+  @cite{phi} using a twenty-term continued fraction.
+! @xref{Programming Answer 5, 5}. (@bullet{})
+  
+! (@bullet{}) @strong{Exercise 6.}  Linear recurrences like the one for
+  Fibonacci numbers can be expressed in terms of matrices.  Given a
+  vector @w{@cite{[a, b]}} determine a matrix which, when multiplied by this
+  vector, produces the vector @cite{[b, c]}, where @cite{a}, @cite{b} and
+  @cite{c} are three successive Fibonacci numbers.  Now write a program
+  that, given an integer @cite{n}, computes the @cite{n}th Fibonacci number
+! using matrix arithmetic.  @xref{Programming Answer 6, 6}. (@bullet{})
+  
+  @cindex Harmonic numbers
+  A more sophisticated kind of loop is the @dfn{for} loop.  Suppose
+***************
+*** 6098,6106 ****
+  probably easier than using loops.  However, there are some
+  situations where loops really are the way to go:
+  
+! (@bullet{}) @strong{Exercise 6.}  Use a ``for'' loop to find the first
+  harmonic number which is greater than 4.0.
+! @xref{Programming Answer 6, 6}. (@bullet{})
+  
+  Of course, if we're going to be using variables in our programs,
+  we have to worry about the programs clobbering values that the
+--- 6193,6201 ----
+  probably easier than using loops.  However, there are some
+  situations where loops really are the way to go:
+  
+! (@bullet{}) @strong{Exercise 7.}  Use a ``for'' loop to find the first
+  harmonic number which is greater than 4.0.
+! @xref{Programming Answer 7, 7}. (@bullet{})
+  
+  Of course, if we're going to be using variables in our programs,
+  we have to worry about the programs clobbering values that the
+***************
+*** 6287,6293 ****
+  @end example
+  @end group
+  
+! (@bullet{}) @strong{Exercise 7.}  A general algorithm for solving
+  equations numerically is @dfn{Newton's Method}.  Given the equation
+  @cite{f(x) = 0} for any function @cite{f}, and an initial guess
+  @cite{x_0} which is reasonably close to the desired solution, apply
+--- 6382,6388 ----
+  @end example
+  @end group
+  
+! (@bullet{}) @strong{Exercise 8.}  A general algorithm for solving
+  equations numerically is @dfn{Newton's Method}.  Given the equation
+  @cite{f(x) = 0} for any function @cite{f}, and an initial guess
+  @cite{x_0} which is reasonably close to the desired solution, apply
+***************
+*** 6314,6325 ****
+  @cite{sin(cos(x)) = 0.5}
+  near @cite{x = 4.5}.  (Use angles measured in radians.)  Note that
+  the built-in @w{@kbd{a R}} (@code{calc-find-root}) command uses Newton's
+! method when it is able.  @xref{Programming Answer 7, 7}. (@bullet{})
+  
+  @cindex Digamma function
+  @cindex Gamma constant, Euler's
+  @cindex Euler's gamma constant
+! (@bullet{}) @strong{Exercise 8.}  The @dfn{digamma} function @c{$\psi(z)$ (``psi'')}
+  @cite{psi(z)}
+  is defined as the derivative of @c{$\ln \Gamma(z)$}
+  @cite{ln(gamma(z))}.  For large
+--- 6409,6420 ----
+  @cite{sin(cos(x)) = 0.5}
+  near @cite{x = 4.5}.  (Use angles measured in radians.)  Note that
+  the built-in @w{@kbd{a R}} (@code{calc-find-root}) command uses Newton's
+! method when it is able.  @xref{Programming Answer 8, 8}. (@bullet{})
+  
+  @cindex Digamma function
+  @cindex Gamma constant, Euler's
+  @cindex Euler's gamma constant
+! (@bullet{}) @strong{Exercise 9.}  The @dfn{digamma} function @c{$\psi(z)$ (``psi'')}
+  @cite{psi(z)}
+  is defined as the derivative of @c{$\ln \Gamma(z)$}
+  @cite{ln(gamma(z))}.  For large
+***************
+*** 6360,6369 ****
+  to compute @c{$\gamma$}
+  @cite{gamma} to twelve decimal places.  (Calc has a built-in command
+  for Euler's constant, @kbd{I P}, which you can use to check your answer.)
+! @xref{Programming Answer 8, 8}. (@bullet{})
+  
+  @cindex Polynomial, list of coefficients
+! (@bullet{}) @strong{Exercise 9.}  Given a polynomial in @cite{x} and
+  a number @cite{m} on the stack, where the polynomial is of degree
+  @cite{m} or less (i.e., does not have any terms higher than @cite{x^m}),
+  write a program to convert the polynomial into a list-of-coefficients
+--- 6455,6464 ----
+  to compute @c{$\gamma$}
+  @cite{gamma} to twelve decimal places.  (Calc has a built-in command
+  for Euler's constant, @kbd{I P}, which you can use to check your answer.)
+! @xref{Programming Answer 9, 9}. (@bullet{})
+  
+  @cindex Polynomial, list of coefficients
+! (@bullet{}) @strong{Exercise 10.}  Given a polynomial in @cite{x} and
+  a number @cite{m} on the stack, where the polynomial is of degree
+  @cite{m} or less (i.e., does not have any terms higher than @cite{x^m}),
+  write a program to convert the polynomial into a list-of-coefficients
+***************
+*** 6370,6379 ****
+  notation.  For example, @cite{5 x^4 + (x + 1)^2} with @cite{m = 6}
+  should produce the list @cite{[1, 2, 1, 0, 5, 0, 0]}.  Also develop
+  a way to convert from this form back to the standard algebraic form.
+! @xref{Programming Answer 9, 9}. (@bullet{})
+  
+  @cindex Recursion
+! (@bullet{}) @strong{Exercise 10.}  The @dfn{Stirling numbers of the
+  first kind} are defined by the recurrences,
+  
+  @ifinfo
+--- 6465,6474 ----
+  notation.  For example, @cite{5 x^4 + (x + 1)^2} with @cite{m = 6}
+  should produce the list @cite{[1, 2, 1, 0, 5, 0, 0]}.  Also develop
+  a way to convert from this form back to the standard algebraic form.
+! @xref{Programming Answer 10, 10}. (@bullet{})
+  
+  @cindex Recursion
+! (@bullet{}) @strong{Exercise 11.}  The @dfn{Stirling numbers of the
+  first kind} are defined by the recurrences,
+  
+  @ifinfo
+***************
+*** 6411,6417 ****
+  @cite{m} on the stack.  Test it with @emph{small} inputs like
+  @cite{s(4,2)}.  (There is a built-in command for Stirling numbers,
+  @kbd{k s}, which you can use to check your answers.)
+! @xref{Programming Answer 10, 10}. (@bullet{})
+  
+  The programming commands we've seen in this part of the tutorial
+  are low-level, general-purpose operations.  Often you will find
+--- 6506,6512 ----
+  @cite{m} on the stack.  Test it with @emph{small} inputs like
+  @cite{s(4,2)}.  (There is a built-in command for Stirling numbers,
+  @kbd{k s}, which you can use to check your answers.)
+! @xref{Programming Answer 11, 11}. (@bullet{})
+  
+  The programming commands we've seen in this part of the tutorial
+  are low-level, general-purpose operations.  Often you will find
+***************
+*** 6419,6428 ****
+  rules, will do the job much more easily than a detailed, step-by-step
+  program can.
+  
+! (@bullet{}) @strong{Exercise 11.}  Write another program for
+  computing Stirling numbers of the first kind, this time using
+  rewrite rules.  Once again, @cite{n} and @cite{m} should be taken
+! from the stack.  @xref{Programming Answer 11, 11}. (@bullet{})
+  
+  @example
+  
+--- 6514,6523 ----
+  rules, will do the job much more easily than a detailed, step-by-step
+  program can.
+  
+! (@bullet{}) @strong{Exercise 12.}  Write another program for
+  computing Stirling numbers of the first kind, this time using
+  rewrite rules.  Once again, @cite{n} and @cite{m} should be taken
+! from the stack.  @xref{Programming Answer 12, 12}. (@bullet{})
+  
+  @example
+  
+***************
+*** 6474,6479 ****
+--- 6569,6575 ----
+  * List Answer 11::         Estimating pi with darts
+  * List Answer 12::         Estimating pi with matchsticks
+  * List Answer 13::         Hash codes
++ * List Answer 14::         Random walk
+  * Types Answer 1::         Square root of pi times rational
+  * Types Answer 2::         Infinities
+  * Types Answer 3::         What can "nan" be?
+***************
+*** 6499,6515 ****
+  * Rewrites Answer 4::      Sequence of integers
+  * Rewrites Answer 5::      Number of terms in sum
+  * Rewrites Answer 6::      Truncated Taylor series
+! * Programming Answer 1::   Negate third stack element
+! * Programming Answer 2::   Compute sin(x) / x, etc.
+! * Programming Answer 3::   Average value of a list
+! * Programming Answer 4::   Continued fraction phi
+! * Programming Answer 5::   Matrix Fibonacci numbers
+! * Programming Answer 6::   Harmonic number greater than 4
+! * Programming Answer 7::   Newton's method
+! * Programming Answer 8::   Digamma function
+! * Programming Answer 9::   Unpacking a polynomial
+! * Programming Answer 10::  Recursive Stirling numbers
+! * Programming Answer 11::  Stirling numbers with rewrites
+  @end menu
+  
+  @node RPN Answer 1, RPN Answer 2, Answers to Exercises, Answers to Exercises
+--- 6595,6612 ----
+  * Rewrites Answer 4::      Sequence of integers
+  * Rewrites Answer 5::      Number of terms in sum
+  * Rewrites Answer 6::      Truncated Taylor series
+! * Programming Answer 1::   Fresnel's C(x)
+! * Programming Answer 2::   Negate third stack element
+! * Programming Answer 3::   Compute sin(x) / x, etc.
+! * Programming Answer 4::   Average value of a list
+! * Programming Answer 5::   Continued fraction phi
+! * Programming Answer 6::   Matrix Fibonacci numbers
+! * Programming Answer 7::   Harmonic number greater than 4
+! * Programming Answer 8::   Newton's method
+! * Programming Answer 9::   Digamma function
+! * Programming Answer 10::  Unpacking a polynomial
+! * Programming Answer 11::  Recursive Stirling numbers
+! * Programming Answer 12::  Stirling numbers with rewrites
+  @end menu
+  
+  @node RPN Answer 1, RPN Answer 2, Answers to Exercises, Answers to Exercises
+***************
+*** 7770,7776 ****
+  If you typed @kbd{v .} and @kbd{t .} before, type them again to
+  return to full-sized display of vectors.
+  
+! @node List Answer 13, Types Answer 1, List Answer 12, Answers to Exercises
+  @subsection List Tutorial Exercise 13
+  
+  @noindent
+--- 7867,7873 ----
+  If you typed @kbd{v .} and @kbd{t .} before, type them again to
+  return to full-sized display of vectors.
+  
+! @node List Answer 13, List Answer 14, List Answer 12, Answers to Exercises
+  @subsection List Tutorial Exercise 13
+  
+  @noindent
+***************
+*** 7907,7913 ****
+  basically automate the idea of reducing every intermediate result
+  modulo some value @i{M}.
+  
+! @node Types Answer 1, Types Answer 2, List Answer 13, Answers to Exercises
+  @subsection Types Tutorial Exercise 1
+  
+  @noindent
+--- 8004,8075 ----
+  basically automate the idea of reducing every intermediate result
+  modulo some value @i{M}.
+  
+! @node List Answer 14, Types Answer 1, List Answer 13, Answers to Exercises
+! @subsection List Tutorial Exercise 14
+! 
+! We want to use @kbd{H V U} to nest a function which adds a random
+! step to an @cite{(x,y)} coordinate.  The function is a bit long, but
+! otherwise the problem is quite straightforward.
+! 
+! @group
+! @smallexample
+! 2:  [0, 0]     1:  [ [    0,       0    ]
+! 1:  50               [  0.4288, -0.1695 ]
+!     .                [ -0.4787, -0.9027 ]
+!                      ...
+! 
+!     [0,0] 50       H V U ' <# + [random(2.0)-1, random(2.0)-1]> RET
+! @end smallexample
+! @end group
+! 
+! Just as the text recommended, we used @samp{< >} nameless function
+! notation to keep the two @code{random} calls from being evaluated
+! before nesting even begins.
+! 
+! We now have a vector of @cite{[x, y]} sub-vectors, which by Calc's
+! rules acts like a matrix.  We can transpose this matrix and unpack
+! to get a pair of vectors, @cite{x} and @cite{y}, suitable for graphing.
+! 
+! @group
+! @smallexample
+! 2:  [ 0, 0.4288, -0.4787, ... ]
+! 1:  [ 0, -0.1696, -0.9027, ... ]
+!     .
+! 
+!     v t  v u  g f
+! @end smallexample
+! @end group
+! 
+! Incidentally, because the @cite{x} and @cite{y} are completely
+! independent in this case, we could have done two separate commands
+! to create our @cite{x} and @cite{y} vectors of numbers directly.
+! 
+! To make a random walk of unit steps, we note that @code{sincos} of
+! a random direction exactly gives us a @cite{[x, y]} step of unit
+! length; in fact, the new nesting function is even briefer, though
+! we might want to lower the precision a bit for it.
+! 
+! @group
+! @smallexample
+! 2:  [0, 0]     1:  [ [    0,      0    ]
+! 1:  50               [  0.1318, 0.9912 ]
+!     .                [ -0.5965, 0.3061 ]
+!                      ...
+! 
+!     [0,0] 50   m d  p 6 RET   H V U ' <# + sincos(random(360.0))> RET
+! @end smallexample
+! @end group
+! 
+! Another @kbd{v t v u g f} sequence will graph this new random walk.
+! 
+! An interesting twist on these random walk functions would be to use
+! complex numbers instead of 2-vectors to represent points on the plane.
+! In the first example, we'd use something like @samp{random + random*(0,1)},
+! and in the second we could use polar complex numbers with random phase
+! angles.  (This exercise was first suggested in this form by Randal
+! Schwartz.)
+! 
+! @node Types Answer 1, Types Answer 2, List Answer 14, Answers to Exercises
+  @subsection Types Tutorial Exercise 1
+  
+  @noindent
+***************
+*** 8920,8925 ****
+--- 9082,9110 ----
+  @node Programming Answer 1, Programming Answer 2, Rewrites Answer 6, Answers to Exercises
+  @subsection Programming Tutorial Exercise 1
+  
++ Just enter the formula @samp{ninteg(cos(pi t^2/2), t, 0, x)}, type
++ @kbd{Z F}, and answer the questions.  Since this formula contains two
++ variables, the default argument list will be @samp{(t x)}.  We want to
++ change this to @samp{(x)} since @cite{t} is really a dummy variable
++ to be used within @code{ninteg}.
++ 
++ The exact keystrokes are @kbd{Z F c fresC RET RET C-b C-b DEL DEL RET y}.
++ (The @kbd{C-b C-b DEL DEL} are what fix the argument list.)
++ 
++ While this definition works, you'll find the @code{erf}-based definition
++ described afterwards to be much more efficient; @code{erf} is also defined
++ by an integral (involving @samp{exp(-t^2)}), but Calc has good algorithms
++ for computing it that don't rely on brute-force numerical integration.
++ The @kbd{Z F} formula would be @samp{re((i+1) erf(sqrt(pi) (1-i) x / 2) / 2)},
++ where @code{re} is the function that extracts the real part of a complex
++ number.  Actually, you'd want to type @kbd{=} on this formula first to
++ evaluate the @code{pi} and @code{i} variables in it; otherwise your
++ @kbd{z c} function will return a formula that needs to have @kbd{=}
++ typed on it each time.
++ 
++ @node Programming Answer 2, Programming Answer 3, Programming Answer 1, Answers to Exercises
++ @subsection Programming Tutorial Exercise 2
++ 
+  @noindent
+  One way is to move the number to the top of the stack, operate on
+  it, then move it back:  @kbd{C-x ( M-TAB n M-TAB M-TAB C-x )}.
+***************
+*** 8934,8941 ****
+  Just for kicks, let's also do it algebraically:
+  @w{@kbd{C-x ( ' -$$$, $$, $ RET C-x )}}.
+  
+! @node Programming Answer 2, Programming Answer 3, Programming Answer 1, Answers to Exercises
+! @subsection Programming Tutorial Exercise 2
+  
+  @noindent
+  Each of these functions can be computed using the stack, or using
+--- 9119,9126 ----
+  Just for kicks, let's also do it algebraically:
+  @w{@kbd{C-x ( ' -$$$, $$, $ RET C-x )}}.
+  
+! @node Programming Answer 3, Programming Answer 4, Programming Answer 2, Answers to Exercises
+! @subsection Programming Tutorial Exercise 3
+  
+  @noindent
+  Each of these functions can be computed using the stack, or using
+***************
+*** 8969,8982 ****
+  
+  Using algebraic entry:  @kbd{C-x (  ' index($) RET  C-x )}.
+  
+! @node Programming Answer 3, Programming Answer 4, Programming Answer 2, Answers to Exercises
+! @subsection Programming Tutorial Exercise 3
+  
+  @noindent
+  Here's one way:  @kbd{C-x ( RET V R + TAB v l / C-x )}.
+  
+! @node Programming Answer 4, Programming Answer 5, Programming Answer 3, Answers to Exercises
+! @subsection Programming Tutorial Exercise 4
+  
+  @group
+  @smallexample
+--- 9154,9167 ----
+  
+  Using algebraic entry:  @kbd{C-x (  ' index($) RET  C-x )}.
+  
+! @node Programming Answer 4, Programming Answer 5, Programming Answer 3, Answers to Exercises
+! @subsection Programming Tutorial Exercise 4
+  
+  @noindent
+  Here's one way:  @kbd{C-x ( RET V R + TAB v l / C-x )}.
+  
+! @node Programming Answer 5, Programming Answer 6, Programming Answer 4, Answers to Exercises
+! @subsection Programming Tutorial Exercise 5
+  
+  @group
+  @smallexample
+***************
+*** 8991,8998 ****
+  @noindent
+  This answer is quite accurate.
+  
+! @node Programming Answer 5, Programming Answer 6, Programming Answer 4, Answers to Exercises
+! @subsection Programming Tutorial Exercise 5
+  
+  @noindent
+  Here is the matrix:
+--- 9176,9183 ----
+  @noindent
+  This answer is quite accurate.
+  
+! @node Programming Answer 6, Programming Answer 7, Programming Answer 5, Answers to Exercises
+! @subsection Programming Tutorial Exercise 6
+  
+  @noindent
+  Here is the matrix:
+***************
+*** 9019,9026 ****
+  @kbd{Z < ... Z >} solution had much simpler steps, it would have
+  required so many steps that it would not have been practical.
+  
+! @node Programming Answer 6, Programming Answer 7, Programming Answer 5, Answers to Exercises
+! @subsection Programming Tutorial Exercise 6
+  
+  @noindent
+  The trick here is to compute the harmonic numbers differently, so that
+--- 9204,9211 ----
+  @kbd{Z < ... Z >} solution had much simpler steps, it would have
+  required so many steps that it would not have been practical.
+  
+! @node Programming Answer 7, Programming Answer 8, Programming Answer 6, Answers to Exercises
+! @subsection Programming Tutorial Exercise 7
+  
+  @noindent
+  The trick here is to compute the harmonic numbers differently, so that
+***************
+*** 9060,9067 ****
+  Thus we find that the 30th harmonic number is 3.99, and the 31st
+  harmonic number is 4.02.
+  
+! @node Programming Answer 7, Programming Answer 8, Programming Answer 6, Answers to Exercises
+! @subsection Programming Tutorial Exercise 7
+  
+  @noindent
+  The first step is to compute the derivative @cite{f'(x)} and thus
+--- 9245,9252 ----
+  Thus we find that the 30th harmonic number is 3.99, and the 31st
+  harmonic number is 4.02.
+  
+! @node Programming Answer 8, Programming Answer 9, Programming Answer 7, Answers to Exercises
+! @subsection Programming Tutorial Exercise 8
+  
+  @noindent
+  The first step is to compute the derivative @cite{f'(x)} and thus
+***************
+*** 9175,9182 ****
+  method (among others) to look for numerical solutions to any equation.
+  @xref{Root Finding}.
+  
+! @node Programming Answer 8, Programming Answer 9, Programming Answer 7, Answers to Exercises
+! @subsection Programming Tutorial Exercise 8
+  
+  @noindent
+  The first step is to adjust @cite{z} to be greater than 5.  A simple
+--- 9360,9367 ----
+  method (among others) to look for numerical solutions to any equation.
+  @xref{Root Finding}.
+  
+! @node Programming Answer 9, Programming Answer 10, Programming Answer 8, Answers to Exercises
+! @subsection Programming Tutorial Exercise 9
+  
+  @noindent
+  The first step is to adjust @cite{z} to be greater than 5.  A simple
+***************
+*** 9292,9299 ****
+  @end example
+  @end group
+  
+! @node Programming Answer 9, Programming Answer 10, Programming Answer 8, Answers to Exercises
+! @subsection Programming Tutorial Exercise 9
+  
+  @noindent
+  Taking the derivative of a term of the form @cite{x^n} will produce
+--- 9477,9484 ----
+  @end example
+  @end group
+  
+! @node Programming Answer 10, Programming Answer 11, Programming Answer 9, Answers to Exercises
+! @subsection Programming Tutorial Exercise 10
+  
+  @noindent
+  Taking the derivative of a term of the form @cite{x^n} will produce
+***************
+*** 9388,9395 ****
+  @end example
+  @end group
+  
+! @node Programming Answer 10, Programming Answer 11, Programming Answer 9, Answers to Exercises
+! @subsection Programming Tutorial Exercise 10
+  
+  @noindent
+  First we define a dummy program to go on the @kbd{z s} key.  The true
+--- 9573,9580 ----
+  @end example
+  @end group
+  
+! @node Programming Answer 11, Programming Answer 12, Programming Answer 10, Answers to Exercises
+! @subsection Programming Tutorial Exercise 11
+  
+  @noindent
+  First we define a dummy program to go on the @kbd{z s} key.  The true
+***************
+*** 9493,9500 ****
+  definition as it reads it in.  For this reason, @code{M-# m} is often
+  the easiest way to create recursive programs in Calc.
+  
+! @node Programming Answer 11, , Programming Answer 10, Answers to Exercises
+! @subsection Programming Tutorial Exercise 11
+  
+  @noindent
+  This turns out to be a much easier way to solve the problem.  Let's
+--- 9678,9685 ----
+  definition as it reads it in.  For this reason, @code{M-# m} is often
+  the easiest way to create recursive programs in Calc.
+  
+! @node Programming Answer 12, , Programming Answer 11, Answers to Exercises
+! @subsection Programming Tutorial Exercise 12
+  
+  @noindent
+  This turns out to be a much easier way to solve the problem.  Let's
+***************
+*** 13242,13248 ****
+  @item 4
+  @samp{M/D/Y< H:mm:SSpp>}  (American slashed format)
+  @item 5
+! @samp{D/M/Y< h:mm:SS>}  (European slashed format)
+  @item 6
+  @samp{M-D-Y< H:mm:SSpp>}  (American dashed format)
+  @item 7
+--- 13427,13433 ----
+  @item 4
+  @samp{M/D/Y< H:mm:SSpp>}  (American slashed format)
+  @item 5
+! @samp{D.M.Y< h:mm:SS>}  (European dotted format)
+  @item 6
+  @samp{M-D-Y< H:mm:SSpp>}  (American dashed format)
+  @item 7
+***************
+*** 22076,22081 ****
+--- 22261,22272 ----
+  finds a point at which the function's value is greater both to the left
+  and to the right.  Calc does not use derivatives when minimizing a function.
+  
++ If your initial guess is an interval and it looks like the minimum
++ occurs at one or the other endpoint of the interval, Calc will return
++ that endpoint only if that endpoint is closed; thus, minimizing @cite{17 x}
++ over @cite{[2..3]} will return @cite{[2, 38]}, but minimizing over
++ @cite{(2..3]} would report no minimum found.
++ 
+  Most functions are smooth and flat near their minimum values.  Because
+  of this flatness, if the current precision is, say, 12 digits, the
+  variable can only be determined meaningfully to about six digits.  Thus
+***************
+*** 27138,27144 ****
+  
+  @group
+  @smallexample
+! |----+-----Calc 2.00beta1-----+----1
+  |FLR |CEIL|RND |TRNC|CLN2|FLT |
+  |----+----+----+----+----+----|
+  | LN |EXP |    |ABS |IDIV|MOD |
+--- 27329,27335 ----
+  
+  @group
+  @smallexample
+! |----+-----Calc 2.00beta2-----+----1
+  |FLR |CEIL|RND |TRNC|CLN2|FLT |
+  |----+----+----+----+----+----|
+  | LN |EXP |    |ABS |IDIV|MOD |
+***************
+*** 32034,32040 ****
+  @appendix Installation
+  
+  @noindent
+! Calc 2.00beta1 comes as a set of Emacs Lisp files, with names like
+  @file{calc.el} and @file{calc-ext.el}, and also as a @file{calc.texinfo}
+  file which can be used to generate both on-line and printed
+  documentation.@refill
+--- 32225,32231 ----
+  @appendix Installation
+  
+  @noindent
+! Calc 2.00beta2 comes as a set of Emacs Lisp files, with names like
+  @file{calc.el} and @file{calc-ext.el}, and also as a @file{calc.texinfo}
+  file which can be used to generate both on-line and printed
+  documentation.@refill
+***************
+*** 32069,32077 ****
+  to create a zero-sized one first.)
+  
+  @item
+! @samp{make info} to format the on-line Calc manual.  If this
+! fails because your system does not have the @file{makeinfo} program,
+! type @samp{make texinfo} instead.
+  @end itemize
+  @noindent
+  The Unix @code{make} utility looks in the file @file{Makefile} in the
+--- 32260,32268 ----
+  to create a zero-sized one first.)
+  
+  @item
+! @samp{make info} to format the on-line Calc manual.  This first tries
+! to use the @file{makeinfo} program; if that program is not present, it
+! uses the Emacs @code{texinfo-format-buffer} command instead.
+  @end itemize
+  @noindent
+  The Unix @code{make} utility looks in the file @file{Makefile} in the
+***************
+*** 32111,32117 ****
+  old @code{autoload} and @code{global-set-key} commands for Calc, since
+  @samp{make public}/@samp{make private} has added new, better ones.
+  
+! @xref{What's New in Calc 2.00}, for more information about what has
+  changed since version 1.07.
+  
+  @ifinfo
+--- 32302,32308 ----
+  old @code{autoload} and @code{global-set-key} commands for Calc, since
+  @samp{make public}/@samp{make private} has added new, better ones.
+  
+! @xref{New for Calc 2.00}, for more information about what has
+  changed since version 1.07.
+  
+  @ifinfo
+***************
+*** 32199,32208 ****
+  Unless you have installed the Calc files in Emacs' main @file{lisp/}
+  directory, you will also have to add a command that looks like the
+  following to tell Emacs where to find them.  In this example, we
+! have put the files in directory @file{/usr/gnu/src/calc-2.00beta1}.
+  
+  @smallexample
+! (setq load-path (append load-path (list "/usr/gnu/src/calc-2.00beta1")))
+  @end smallexample
+  
+  @noindent
+--- 32390,32399 ----
+  Unless you have installed the Calc files in Emacs' main @file{lisp/}
+  directory, you will also have to add a command that looks like the
+  following to tell Emacs where to find them.  In this example, we
+! have put the files in directory @file{/usr/gnu/src/calc-2.00beta2}.
+  
+  @smallexample
+! (setq load-path (append load-path (list "/usr/gnu/src/calc-2.00beta2")))
+  @end smallexample
+  
+  @noindent
+***************
+*** 32254,32267 ****
+  @code{load-path}:
+  
+  @example
+! (autoload 'calc-dispatch "calc-2.00beta1/calc" "Calculator" t)
+  @end example
+  
+  @noindent
+  Suppose the directory @file{/usr/gnu/src/emacs/lisp} is on the path, and
+  the above @code{autoload} allows Emacs to find Calc under the name
+! @file{/usr/gnu/src/emacs/lisp/calc-2.00beta1/calc.elc}.  Then when Calc
+! starts up it will add @file{/usr/gnu/src/emacs/lisp/calc-2.00beta1}
+  to the path so that it will later be able to find its component files.
+  
+  @vindex calc-autoload-directory
+--- 32445,32458 ----
+  @code{load-path}:
+  
+  @example
+! (autoload 'calc-dispatch "calc-2.00beta2/calc" "Calculator" t)
+  @end example
+  
+  @noindent
+  Suppose the directory @file{/usr/gnu/src/emacs/lisp} is on the path, and
+  the above @code{autoload} allows Emacs to find Calc under the name
+! @file{/usr/gnu/src/emacs/lisp/calc-2.00beta2/calc.elc}.  Then when Calc
+! starts up it will add @file{/usr/gnu/src/emacs/lisp/calc-2.00beta2}
+  to the path so that it will later be able to find its component files.
+  
+  @vindex calc-autoload-directory
+***************
+*** 32563,32569 ****
+  @appendix Calc Summary
+  
+  @noindent
+! This section includes a complete list of Calc 2.00beta1 keystroke commands.
+  Each line lists the stack entries used by the command (top-of-stack
+  last), the keystrokes themselves, the prompts asked by the command,
+  and the result of the command (also with top-of-stack last).
+--- 32754,32760 ----
+  @appendix Calc Summary
+  
+  @noindent
+! This section includes a complete list of Calc 2.00beta2 keystroke commands.
+  Each line lists the stack entries used by the command (top-of-stack
+  last), the keystrokes themselves, the prompts asked by the command,
+  and the result of the command (also with top-of-stack last).
+

@@ -1,0 +1,9 @@
+This is a working Emacs info directory.  If you don't have locally
+installed info files, copy everything to /usr/local/lib/emacs/info (or
+wherever your emacs lives).  Otherwise, copy the info files needed and
+add the appropriate entries to your dir files.
+
+For questions, comments, or reactions, please mail to me, David Zuhn
+at any of the following addresses:  zuhn@cs.umn.edu or zoo@ai.mit.edu
+
+Pax, Zoo

@@ -1,0 +1,15 @@
+		    GNU Emacs Lisp Archive README
+
+The Emacs Lisp archives on archive.cis.ohio-state.edu contain various
+pieces and packages of Emacs Lisp code.  Emacs Lisp is the language used to
+extend the GNU Emacs editor published by the Free Software Foundation.
+Although much Emacs Lisp code is included in the GNU Emacs distribution,
+many people have written packages to interface with other systems, to
+better support editing the programming language they use, to add new
+features, or to change Emacs' default behavior.  Most of the contents of
+this archive have been written by individuals and distributed publicly over
+the Internet through the info-emacs or info-gnu-emacs mailing lists or the
+comp.emacs, gnu.emacs, or gnu.emacs.sources newsgroups.
+
+The archives are available via anonymous FTP from
+archive.cis.ohio-state.edu in /pub/gnu/emacs/elisp-archive

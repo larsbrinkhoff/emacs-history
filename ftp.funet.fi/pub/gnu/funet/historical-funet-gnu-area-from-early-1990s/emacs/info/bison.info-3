@@ -1,0 +1,1334 @@
+Info file bison.info, produced by Makeinfo, -*- Text -*- from input
+file bison.texinfo.
+
+This file documents the Bison parser generator.
+
+Copyright (C) 1988 Free Software Foundation, Inc.
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of
+this manual under the conditions for verbatim copying, provided also
+that the sections entitled ``Bison General Public License'' and
+``Conditions for Using Bison'' are included exactly as in the
+original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this
+manual into another language, under the above conditions for modified
+versions, except that the text of the translations of the sections
+entitled ``Bison General Public License'' and ``Conditions for Using
+Bison'' must be approved for accuracy by the Foundation.
+
+
+
+File: bison.info,  Node: Action Features,  Prev: Error Reporting,  Up: Interface
+
+Special Features for Use in Actions
+===================================
+
+Here is a table of Bison constructs, variables and macros that are
+useful in actions.
+
+`$$'
+     Acts like a variable that contains the semantic value for the
+     grouping made by the current rule.  *Note Actions::.
+
+`$N'
+     Acts like a variable that contains the semantic value for the
+     Nth component of the current rule.  *Note Actions::.
+
+`$<TYPEALT>$'
+     Like `$$' but specifies alternative TYPEALT in the union
+     specified by the `%union' declaration.  *Note Action Types::.
+
+`$<TYPEALT>N'
+     Like `$N' but specifies alternative TYPEALT in the union
+     specified by the `%union' declaration.  *Note Action Types::.
+
+`YYABORT;'
+     Return immediately from `yyparse', indicating failure.  *Note
+     Parser Function::.
+
+`YYACCEPT;'
+     Return immediately from `yyparse', indicating success.  *Note
+     Parser Function::.
+
+`YYEMPTY'
+     Value stored in `yychar' when there is no look-ahead token.
+
+`YYERROR;'
+     Cause an immediate syntax error.  This causes `yyerror' to be
+     called, and then error recovery begins.  *Note Error Recovery::.
+
+`yychar'
+     Variable containing the current look-ahead token.  When there is
+     no look-ahead token, the value `YYERROR' is stored here.  *Note
+     Look-Ahead::.
+
+`yyclearin;'
+     Discard the current look-ahead token.  This is useful primarily
+     in error rules.  *Note Error Recovery::.
+
+`yyerrok;'
+     Resume generating error messages immediately for subsequent
+     syntax errors.  This is useful primarily in error rules.  *Note
+     Error Recovery::.
+
+`@N'
+     Acts like a structure variable containing information on the
+     line numbers and column numbers of the Nth component of the
+     current rule.  The structure has four members, like this:
+
+          struct {
+            int first_line, last_line;
+            int first_column, last_column;
+          };
+
+     Thus, to get the starting line number of the third component,
+     use `@3.first_line'.
+
+     In order for the members of this structure to contain valid
+     information, you must make `yylex' supply this information about
+     each token.  If you need only certain members, then `yylex' need
+     only fill in those members.
+
+     The use of this feature makes the parser noticeably slower.
+
+
+
+File: bison.info,  Node: Algorithm,  Next: Error Recovery,  Prev: Interface,  Up: Top
+
+The Algorithm of the Bison Parser
+*********************************
+
+As Bison reads tokens, it pushes them onto a stack along with their
+semantic values.  The stack is called the "parser stack".  Pushing a
+token is traditionally called "shifting".
+
+For example, suppose the infix calculator has read `1 + 5 *', with a
+`3' to come.  The stack will have four elements, one for each token
+that was shifted.
+
+But the stack does not always have an element for each token read. 
+When the last N tokens and groupings shifted match the components of
+a grammar rule, they can be combined according to that rule.  This is
+called "reduction".  Those tokens and groupings are replaced on the
+stack by a single grouping whose symbol is the result (left hand
+side) of that rule.  Running the rule's action is part of the process
+of reduction, because this is what computes the semantic value of the
+resulting grouping.
+
+For example, if the infix calculator's parser stack contains this:
+
+     1 + 5 * 3
+
+and the next input token is a newline character, then the last three
+elements can be reduced to 15 via the rule:
+
+     expr: expr '*' expr;
+
+Then the stack contains just these three elements:
+
+     1 + 15
+
+At this point, another reduction can be made, resulting in the single
+value 16.  Then the newline token can be shifted.
+
+The parser tries, by shifts and reductions, to reduce the entire
+input down to a single grouping whose symbol is the grammar's
+start-symbol (*note Language and Grammar::.).
+
+This kind of parser is known in the literature as a bottom-up parser.
+
+* Menu:
+
+* Look-Ahead::          Parser looks one token ahead when deciding what to do.
+* Shift/Reduce::        Conflicts: when either shifting or reduction is valid.
+* Precedence::          Operator precedence works by resolving conflicts.
+* Contextual Precedence:: When an operator's precedence depends on context.
+* Parser States::       The parser is a finite-state-machine with stack.
+* Reduce/Reduce::       When two rules are applicable in the same situation.
+
+ 
+
+File: bison.info,  Node: Look-Ahead,  Next: Shift/Reduce,  Prev: Algorithm,  Up: Algorithm
+
+Look-Ahead Tokens
+=================
+
+The Bison parser does *not* always reduce immediately as soon as the
+last N tokens and groupings match a rule.  This is because such a
+simple strategy is inadequate to handle most languages.  Instead,
+when a reduction is possible, the parser sometimes ``looks ahead'' at
+the next token in order to decide what to do.
+
+When a token is read, it is not immediately shifted; first it becomes
+the "look-ahead token", which is not on the stack.  Now the parser
+can perform one or more reductions of tokens and groupings on the
+stack, while the look-ahead token remains off to the side.  When no
+more reductions should take place, the look-ahead token is shifted
+onto the stack.  This does not mean that all possible reductions have
+been done; depending on the token type of the look-ahead token, some
+rules may choose to delay their application.
+
+Here is a simple case where look-ahead is needed.  These three rules
+define expressions which contain binary addition operators and
+postfix unary factorial operators (`!'), and allow parentheses for
+grouping.
+
+     expr:     term '+' expr
+             | term
+             ;
+     
+     term:     '(' expr ')'
+             | term '!'
+             | NUMBER
+             ;
+
+Suppose that the tokens `1 + 2' have been read and shifted; what
+should be done?  If the following token is `)', then the first three
+tokens must be reduced to form an `expr'.  This is the only valid
+course, because shifting the `)' would produce a sequence of symbols
+`term ')'', and no rule allows this.
+
+If the following token is `!', then it must be shifted immediately so
+that `2 !' can be reduced to make a `term'.  If instead the parser
+were to reduce before shifting, `1 + 2' would become an `expr'.  It
+would then be impossible to shift the `!' because doing so would
+produce on the stack the sequence of symbols `expr '!''.  No rule
+allows that sequence.
+
+The current look-ahead token is stored in the variable `yychar'. 
+*Note Action Features::.
+
+
+
+File: bison.info,  Node: Shift/Reduce,  Next: Precedence,  Prev: Look-Ahead,  Up: Algorithm
+
+Shift/Reduce Conflicts
+======================
+
+Suppose we are parsing a language which has if-then and if-then-else
+statements, with a pair of rules like this:
+
+     if_stmt:
+               IF expr THEN stmt
+             | IF expr THEN stmt ELSE stmt
+             ;
+
+(Here we assume that `IF', `THEN' and `ELSE' are terminal symbols for
+specific keyword tokens.)
+
+When the `ELSE' token is read and becomes the look-ahead token, the
+contents of the stack (assuming the input is valid) are just right
+for reduction by the first rule.  But it is also legitimate to shift
+the `ELSE', because that would lead to eventual reduction by the
+second rule.
+
+This situation, where either a shift or a reduction would be valid,
+is called a "shift/reduce conflict".  Bison is designed to resolve
+these conflicts by choosing to shift, unless otherwise directed by
+operator precedence declarations.  To see the reason for this, let's
+contrast it with the other alternative.
+
+Since the parser prefers to shift the `ELSE', the result is to attach
+the else-clause to the innermost if-statement, making these two
+inputs equivalent:
+
+     if x then if y then win(); else lose;
+     
+     if x then do; if y then win(); else lose; end;
+
+But if the parser chose to reduce when possible rather than shift,
+the result would be to attach the else-clause to the outermost
+if-statement, making these two inputs equivalent:
+
+     if x then if y then win(); else lose;
+     
+     if x then do; if y then win(); end; else lose;
+
+The conflict exists because the grammar as written is ambiguous:
+either parsing of the simple nested if-statement is legitimate.  The
+established convention is that these ambiguities are resolved by
+attaching the else-clause to the innermost if-statement; this is what
+Bison accomplishes by choosing to shift rather than reduce.  (It
+would ideally be cleaner to write an unambiguous grammar, but that is
+very hard to do in this case.) This particular ambiguity was first
+encountered in the specifications of Algol 60 and is called the
+``dangling `else''' ambiguity.
+
+To avoid warnings from Bison about predictable, legitimate
+shift/reduce conflicts, use the `%expect N' declaration.  There will
+be no warning as long as the number of shift/reduce conflicts is
+exactly N.  *Note Expect Decl::.
+
+
+
+File: bison.info,  Node: Precedence,  Next: Contextual Precedence,  Prev: Shift/Reduce,  Up: Algorithm
+
+Operator Precedence
+===================
+
+Another situation where shift/reduce conflicts appear is in
+arithmetic expressions.  Here shifting is not always the preferred
+resolution; the Bison declarations for operator precedence allow you
+to specify when to shift and when to reduce.
+
+* Menu:
+
+* Why Precedence::      An example showing why precedence is needed.
+* Using Precedence::    How to specify precedence in Bison grammars.
+* Precedence Examples:: How these features are used in the previous example.
+* How Precedence::      How they work.
+
+ 
+
+File: bison.info,  Node: Why Precedence,  Next: Using Precedence,  Prev: Precedence,  Up: Precedence
+
+When Precedence is Needed
+-------------------------
+
+Consider the following ambiguous grammar fragment (ambiguous because
+the input `1 - 2 * 3' can be parsed in two different ways):
+
+     expr:     expr '-' expr
+             | expr '*' expr
+             | expr '<' expr
+             | '(' expr ')'
+             ...
+             ;
+
+Suppose the parser has seen the tokens `1', `-' and `2'; should it
+reduce them via the rule for the addition operator?  It depends on
+the next token.  Of course, if the next token is `)', we must reduce;
+shifting is invalid because no single rule can reduce the token
+sequence `- 2 )' or anything starting with that.  But if the next
+token is `*' or `<', we have a choice: either shifting or reduction
+would allow the parse to complete, but with different results.
+
+To decide which one Bison should do, we must consider the results. 
+If the next operator token OP is shifted, then it must be reduced
+first in order to permit another opportunity to reduce the sum.  The
+result is (in effect) `1 - (2 OP 3)'.  On the other hand, if the
+subtraction is reduced before shifting OP, the result is
+`(1 - 2) OP 3'.  Clearly, then, the choice of shift or reduce
+should depend on the relative precedence of the operators `-' and OP:
+`*' should be shifted first, but not `<'.
+
+What about input like `1 - 2 - 5'; should this be `(1 - 2) - 5' or
+`1 - (2 - 5)'?  For most operators we prefer the former, which is
+called "left association".  The latter alternative, "right
+association", is desirable for assignment operators.  The choice of
+left or right association is a matter of whether the parser chooses
+to shift or reduce when the stack contains `1 - 2' and the look-ahead
+token is `-': shifting makes right-associativity.
+
+
+
+File: bison.info,  Node: Using Precedence,  Next: Precedence Examples,  Prev: Why Precedence,  Up: Precedence
+
+How to Specify Operator Precedence
+----------------------------------
+
+Bison allows you to specify these choices with the operator
+precedence declarations `%left' and `%right'.  Each such declaration
+contains a list of tokens, which are operators whose precedence and
+associativity is being declared.  The `%left' declaration makes all
+those operators left-associative and the `%right' declaration makes
+them right-associative.  A third alternative is `%nonassoc', which
+declares that it is a syntax error to find the same operator twice
+``in a row''.
+
+The relative precedence of different operators is controlled by the
+order in which they are declared.  The first `%left' or `%right'
+declaration declares the operators whose precedence is lowest, the
+next such declaration declares the operators whose precedence is a
+little higher, and so on.
+
+
+
+File: bison.info,  Node: Precedence Examples,  Next: How Precedence,  Prev: Using Precedence,  Up: Precedence
+
+Precedence Examples
+-------------------
+
+In our example, we would want the following declarations:
+
+     %left '<'
+     %left '-'
+     %left '*'
+
+In a more complete example, which supports other operators as well,
+we would declare them in groups of equal precedence.  For example,
+`'+'' is declared with `'-'':
+
+     %left '<' '>' '=' NE LE GE
+     %left '+' '-'
+     %left '*' '/'
+
+(Here `NE' and so on stand for the operators for ``not equal'' and so
+on.  We assume that these tokens are more than one character long and
+therefore are represented by names, not character literals.)
+
+
+
+File: bison.info,  Node: How Precedence,  Prev: Precedence Examples,  Up: Precedence
+
+How Precedence Works
+--------------------
+
+The first effect of the precedence declarations is to assign
+precedence levels to the terminal symbols declared.  The second
+effect is to assign precedence levels to certain rules: each rule
+gets its precedence from the last terminal symbol mentioned in the
+components.  (You can also specify explicitly the precedence of a
+rule.  *Note Contextual Precedence::.)
+
+Finally, the resolution of conflicts works by comparing the
+precedence of the rule being considered with that of the look-ahead
+token.  If the token's precedence is higher, the choice is to shift. 
+If the rule's precedence is higher, the choice is to reduce.  If they
+have equal precedence, the choice is made based on the associativity
+of that precedence level.  The verbose output file made by `-v'
+(*note Invocation::.) says how each conflict was resolved.
+
+Not all rules and not all tokens have precedence.  If either the rule
+or the look-ahead token has no precedence, then the default is to
+shift.
+
+
+
+File: bison.info,  Node: Contextual Precedence,  Next: Parser States,  Prev: Precedence,  Up: Algorithm
+
+Operators with Context-Dependent Precedence
+===========================================
+
+Often the precedence of an operator depends on the context.  This
+sounds outlandish at first, but it is really very common.  For
+example, a minus sign typically has a very high precedence as a unary
+operator, and a somewhat lower precedence (lower than multiplication)
+as a binary operator.
+
+The Bison precedence declarations, `%left', `%right' and `%nonassoc',
+can only be used once for a given token; so a token has only one
+precedence declared in this way.  For context-dependent precedence,
+you need to use an additional mechanism: the `%prec' modifier for
+rules.
+
+The `%prec' modifier declares the precedence of a particular rule by
+specifying a terminal symbol whose predecence should be used for that
+rule.  It's not necessary for that symbol to appear otherwise in the
+rule.  The modifier's syntax is:
+
+     %prec TERMINAL-SYMBOL
+
+and it is written after the components of the rule.  Its effect is to
+assign the rule the precedence of TERMINAL-SYMBOL, overriding the
+precedence that would be deduced for it in the ordinary way.  The
+altered rule precedence then affects how conflicts involving that
+rule are resolved (*note Precedence::.).
+
+Here is how `%prec' solves the problem of unary minus.  First,
+declare a precedence for a fictitious terminal symbol named `UMINUS'.
+There are no tokens of this type, but the symbol serves to stand for
+its precedence:
+
+     ...
+     %left '+' '-'
+     %left '*'
+     %left UMINUS
+
+Now the precedence of `UMINUS' can be used in specific rules:
+
+     exp:    ...
+             | exp '-' exp
+             ...
+             | '-' exp %prec UMINUS
+
+
+
+File: bison.info,  Node: Parser States,  Next: Reduce/Reduce,  Prev: Contextual Precedence,  Up: Algorithm
+
+Parser States
+=============
+
+The function `yyparse' is implemented using a finite-state machine. 
+The values pushed on the parser stack are not simply token type
+codes; they represent the entire sequence of terminal and nonterminal
+symbols at or near the top of the stack.  The current state collects
+all the information about previous input which is relevant to
+deciding what to do next.
+
+Each time a look-ahead token is read, the current parser state
+together with the type of look-ahead token are looked up in a table. 
+This table entry can say, ``Shift the look-ahead token.''  In this
+case, it also specifies the new parser state, which is pushed onto
+the top of the parser stack.  Or it can say, ``Reduce using rule
+number N.'' This means that a certain of tokens or groupings are
+taken off the top of the stack, and replaced by one grouping.  In
+other words, that number of states are popped from the stack, and one
+new state is pushed.
+
+There is one other alternative: the table can say that the look-ahead
+token is erroneous in the current state.  This causes error
+processing to begin (*note Error Recovery::.).
+
+
+
+File: bison.info,  Node: Reduce/Reduce,  Prev: Parser States,  Up: Algorithm
+
+Reduce/Reduce conflicts
+=======================
+
+A reduce/reduce conflict occurs if there are two or more rules that
+apply to the same sequence of input.  This usually indicates a
+serious error in the grammar.
+
+For example, here is an erroneous attempt to define a sequence of
+zero or more `word' groupings.
+
+     sequence: /* empty */
+                     { printf ("empty sequence\n"); }
+             | word
+                     { printf ("single word %s\n", $1); }
+             | sequence word
+                     { printf ("added word %s\n", $2); }
+             ;
+
+The error is an ambiguity: there is more than one way to parse a
+single `word' into a `sequence'.  It could be reduced directly via
+the second rule.  Alternatively, nothing-at-all could be reduced into
+a `sequence' via the first rule, and this could be combined with the
+`word' using the third rule.
+
+You might think that this is a distinction without a difference,
+because it does not change whether any particular input is valid or
+not.  But it does affect which actions are run.  One parsing order
+runs the second rule's action; the other runs the first rule's action
+and the third rule's action.  In this example, the output of the
+program changes.
+
+Bison resolves a reduce/reduce conflict by choosing to use the rule
+that appears first in the grammar, but it is very risky to rely on
+this.  Every reduce/reduce conflict must be studied and usually
+eliminated.  Here is the proper way to define `sequence':
+
+     sequence: /* empty */
+                     { printf ("empty sequence\n"); }
+             | sequence word
+                     { printf ("added word %s\n", $2); }
+             ;
+
+Here is another common error that yields a reduce/reduce conflict:
+
+     sequence: /* empty */
+             | sequence words
+             | sequence redirects
+             ;
+     
+     words:    /* empty */
+             | words word
+             ;
+     
+     redirects:/* empty */
+             | redirects redirect
+             ;
+
+The intention here is to define a sequence which can contain either
+`word' or `redirect' groupings.  The individual definitions of
+`sequence', `words' and `redirects' are error-free, but the three
+together make a subtle ambiguity: even an empty input can be parsed
+in infinitely many ways!
+
+Consider: nothing-at-all could be a `words'.  Or it could be two
+`words' in a row, or three, or any number.  It could equally well be
+a `redirects', or two, or any number.  Or it could be a `words'
+followed by three `redirects' and another `words'.  And so on.
+
+Here are two ways to correct these rules.  First, to make it a single
+level of sequence:
+
+     sequence: /* empty */
+             | sequence word
+             | sequence redirect
+             ;
+
+Second, to prevent either a `words' or a `redirects' from being empty:
+
+     sequence: /* empty */
+             | sequence words
+             | sequence redirects
+             ;
+     
+     words:    word
+             | words word
+             ;
+     
+     redirects:redirect
+             | redirects redirect
+             ;
+
+
+
+File: bison.info,  Node: Error Recovery,  Next: Debugging,  Prev: Algorithm,  Up: Top
+
+Error Recovery
+**************
+
+It is not usually acceptable to have the program terminate on a parse
+error.  For example, a compiler should recover sufficiently to parse
+the rest of the input file and check it for errors; a calculator
+should accept another expression.
+
+In a simple interactive command parser where each input is one line,
+it may be sufficient to allow `yyparse' to return 1 on error and have
+the caller ignore the rest of the input line when that happens (and
+then call `yyparse' again).  But this is inadequate for a compiler,
+because it forgets all the syntactic context leading up to the error.
+A syntax error deep within a function in the compiler input should
+not cause the compiler to treat the following line like the beginning
+of a source file.
+
+You can define how to recover from a syntax error by writing rules to
+recognize the special token `error'.  This is a terminal symbol that
+is always defined (you need not declare it) and reserved for error
+handling.  The Bison parser generates an `error' token whenever a
+syntax error happens; if you have provided a rule to recognize this
+token in the current context, the parse can continue.  For example:
+
+     stmnts:  /* empty string */
+             | stmnts '\n'
+             | stmnts exp '\n'
+             | stmnts error '\n'
+
+The fourth rule in this example says that an error followed by a
+newline makes a valid addition to any `stmnts'.
+
+What happens if a syntax error occurs in the middle of an `exp'?  The
+error recovery rule, interpreted strictly, applies to the precise
+sequence of a `stmnts', an `error' and a newline.  If an error occurs
+in the middle of an `exp', there will probably be some additional
+tokens and subexpressions on the stack after the last `stmnts', and
+there will be tokens to read before the next newline.  So the rule is
+not applicable in the ordinary way.
+
+But Bison can force the situation to fit the rule, by discarding part
+of the semantic context and part of the input.  First it discards
+states and objects from the stack until it gets back to a state in
+which the `error' token is acceptable.  (This means that the
+subexpressions already parsed are discarded, back to the last
+complete `stmnts'.)  At this point the `error' token can be shifted. 
+Then, if the old look-ahead token is not acceptable to be shifted
+next, the parser reads tokens and discards them until it finds a
+token which is acceptable.  In this example, Bison reads and discards
+input until the next newline so that the fourth rule can apply.
+
+The choice of error rules in the grammar is a choice of strategies
+for error recovery.  A simple and useful strategy is simply to skip
+the rest of the current input line or current statement if an error
+is detected:
+
+     stmnt: error ';'  /* on error, skip until ';' is read */
+
+It is also useful to recover to the matching close-delimiter of an
+opening-delimiter that has already been parsed.  Otherwise the
+close-delimiter will probably appear to be unmatched, and generate
+another, spurious error message:
+
+     primary:  '(' expr ')'
+             | '(' error ')'
+             ...
+             ;
+
+Error recovery strategies are necessarily guesses.  When they guess
+wrong, one syntax error often leads to another.  In the above
+example, the error recovery rule guesses that an error is due to bad
+input within one `stmnt'.  Suppose that instead a spurious semicolon
+is inserted in the middle of a valid `stmnt'.  After the error
+recovery rule recovers from the first error, another syntax error
+will be found straightaway, since the text following the spurious
+semicolon is also an invalid `stmnt'.
+
+To prevent an outpouring of error messages, the parser will output no
+error message for another syntax error that happens shortly after the
+first; only after three consecutive input tokens have been
+successfully shifted will error messages resume.
+
+Note that rules which accept the `error' token may have actions, just
+as any other rules can.
+
+You can make error messages resume immediately by using the macro
+`yyerrok' in an action.  If you do this in the error rule's action,
+no error messages will be suppressed.  This macro requires no
+arguments; `yyerrok;' is a valid C statement.
+
+The previous look-ahead token is reanalyzed immediately after an
+error.  If this is unacceptable, then the macro `yyclearin' may be
+used to clear this token.  Write the statement `yyclearin;' in the
+error rule's action.
+
+For example, suppose that on a parse error, an error handling routine
+is called that advances the input stream to some point where parsing
+should once again commence.  The next symbol returned by the lexical
+scanner is probably correct.  The previous look-ahead token ought to
+be discarded with `yyclearin;'.
+
+
+
+File: bison.info,  Node: Debugging,  Next: Invocation,  Prev: Error Recovery,  Up: Top
+
+Debugging Your Parser
+*********************
+
+If a Bison grammar compiles properly but doesn't do what you want
+when it runs, the `yydebug' parser-trace feature can help you figure
+out why.
+
+To enable compilation of trace facilities, you must define the macro
+`YYDEBUG' when you compile the parser.  You could use `-DYYDEBUG' as
+a compiler option or you could put `#define YYDEBUG' in the C
+declarations section of the grammar file (*note C Declarations::.). 
+Alternatively, use the `-t' option when you run Bison (*note
+Invocation::.).  I always define `YYDEBUG' so that debugging is
+always possible.
+
+The trace facility uses `stderr', so you must add
+`#include <stdio.h>' to the C declarations section unless it is
+already there.
+
+Once you have compiled the program with trace facilities, the way to
+request a trace is to store a nonzero value in the variable `yydebug'.
+You can do this by making the C code do it (in `main', perhaps), or
+you can alter the value with a C debugger.
+
+Each step taken by the parser when `yydebug' is nonzero produces a
+line or two of trace information, written on `stderr'.  The trace
+messages tell you these things:
+
+   * Each time the parser calls `yylex', what kind of token was read.
+
+   * Each time a token is shifted, the depth and complete contents of
+     the state stack (*note Parser States::.).
+
+   * Each time a rule is reduced, which rule it is, and the complete
+     contents of the state stack afterward.
+
+To make sense of this information, it helps to refer to the listing
+file produced by the Bison `-v' option (*note Invocation::.).  This
+file shows the meaning of each state in terms of positions in various
+rules, and also what each state will do with each possible input
+token.  As you read the successive trace messages, you can see that
+the parser is functioning according to its specification in the
+listing file.  Eventually you will arrive at the place where
+something undesirable happens, and you will see which parts of the
+grammar are to blame.
+
+The parser file is a C program and you can use C debuggers on it, but
+it's not easy to interpret what it is doing.  The parser function is
+a finite-state machine interpreter, and aside from the actions it
+executes the same code over and over.  Only the values of variables
+show where in the grammar it is working.
+
+
+
+File: bison.info,  Node: Invocation,  Next: Table of Symbols,  Prev: Debugging,  Up: Top
+
+Invocation of Bison; Command Options
+************************************
+
+The usual way to invoke Bison is as follows:
+
+     bison INFILE
+
+Here INFILE is the grammar file name, which usually ends in `.y'. 
+The parser file's name is made by replacing the `.y' with `.tab.c'. 
+Thus, `bison foo.y' outputs `foo.tab.c'.
+
+These options can be used with Bison:
+
+`-d'
+     Write an extra output file containing macro definitions for the
+     token type names defined in the grammar and the semantic value
+     type `YYSTYPE', as well as a few `extern' variable declarations.
+
+     If the parser output file is named `NAME.c' then this file is
+     named `NAME.h'.
+
+     This output file is essential if you wish to put the definition
+     of `yylex' in a separate source file, because `yylex' needs to
+     be able to refer to token type codes and the variable `yylval'. 
+     *Note Lexical::.
+
+`-l'
+     Don't put any `#line' preprocessor commands in the parser file. 
+     Ordinarily Bison puts them in the parser file so that the C
+     compiler and debuggers will associate errors with your source
+     file, the grammar file.  This option causes them to associate
+     errors with the parser file, treating it an independent source
+     file in its own right.
+
+`-o OUTFILE'
+     Specify the name OUTFILE for the parser file.
+
+     The other output files' names are constructed from OUTFILE as
+     described under the `-v' and `-d' switches.
+
+`-t'
+     Output a definition of the macro `YYDEBUG' into the parser file,
+     so that the debugging facilities are compiled.  *Note Debugging::.
+
+`-v'
+     Write an extra output file containing verbose descriptions of
+     the parser states and what is done for each type of look-ahead
+     token in that state.
+
+     This file also describes all the conflicts, both those resolved
+     by operator precedence and the unresolved ones.
+
+     The file's name is made by removing `.tab.c' or `.c' from the
+     parser output file name, and adding `.output' instead.
+
+     Therefore, if the input file is `foo.y', then the parser file is
+     called `foo.tab.c' by default.  As a consequence, the verbose
+     output file is called `foo.output'.
+
+`-y'
+     Equivalent to `-o y.tab.c'; the parser output file is called
+     `y.tab.c', and the other outputs are called `y.output' and
+     `y.tab.h'.  The purpose of this switch is to imitate Yacc's
+     output file name conventions.
+
+     If the Bison utility is given the file name `yacc', then it
+     assumes the `-y' option automatically.  Thus, Bison can
+     substitute precisely for Yacc.
+
+
+
+File: bison.info,  Node: Table of Symbols,  Next: Glossary,  Prev: Invocation,  Up: Top
+
+Table of Bison Symbols
+**********************
+
+`error'
+     A token name reserved for error recovery.  This token may be
+     used in grammar rules so as to allow the Bison parser to
+     recognize an error in the grammar without halting the process. 
+     In effect, a sentence containing an error may be recognized as
+     valid.  On a parse error, the token `error' becomes the current
+     look-ahead token.  Actions corresponding to `error' are then
+     executed, and the look-ahead token is reset to the token that
+     originally caused the violation.  *Note Error Recovery::.
+
+`YYACCEPT'
+     Pretend that a complete utterance of the language has been read,
+     by making `yyparse' return 0 immediately.  *Note Parser
+     Function::.
+
+`YYERROR'
+     Pretend that an unrecoverable syntax error has occurred, by
+     making `yyparse' return 1 immediately.  The error reporting
+     function `yyerror' is not called.  *Note Parser Function::.
+
+`YYFAIL'
+     Pretend that a syntax error has just been detected: call
+     `yyerror' and then perform normal error recovery if possible
+     (*note Error Recovery::.) or (if recovery is not possible) make
+     `yyparse' return nonzero.  *Note Error Recovery::.
+
+`YYSTYPE'
+     Data type of semantic values; `int' by default.  *Note Value
+     Type::.
+
+`yychar'
+     External integer variable that contains the integer value of the
+     current look-ahead token.  Error-recovery rule actions may
+     examine this variable.  *Note Action Features::.
+
+`yyclearin'
+     Macro used in error-recovery rule actions.  It clears the
+     previous look-ahead token.  *Note Error Recovery::.
+
+`yydebug'
+     External integer variable set to zero by default.  If `yydebug'
+     is given a nonzero value, the parser will output information on
+     input symbols and parser action.  *Note Debugging::.
+
+`yyerrok'
+     Macro to cause parser to recover immediately to its normal mode
+     after a parse error.  *Note Error Recovery::.
+
+`yyerror'
+     User-supplied function to be called by `yyparse' on error.  The
+     function receives one argument, a pointer to a character string
+     containing an error message.  *Note Error Reporting::.
+
+`yylex'
+     User-supplied lexical analyzer function, called with no
+     arguments to get the next token.  *Note Lexical::.
+
+`yylval'
+     External variable in which `yylex' should place the semantic
+     value associated with a token.  *Note Lexical::.
+
+`yylloc'
+     External variable in which `yylex' should place the line and
+     column numbers associated with a token.  This is needed only if
+     the `@' feature is used in the grammar actions.  *Note Lexical::.
+
+`yyparse'
+     The parser function produced by Bison; call this function to
+     start parsing.  *Note Parser Function::.
+
+`%left'
+     Bison declaration to assign left associativity to token(s). 
+     *Note Precedence Decl::.
+
+`%nonassoc'
+     Bison declaration to assign nonassociativity to token(s).  *Note
+     Precedence Decl::.
+
+`%prec'
+     Bison declaration to assign a precedence to a specific rule. 
+     *Note Contextual Precedence::.
+
+`%pure_parser'
+     Bison declaration to request a pure (reentrant) parser.  *Note
+     Pure Decl::.
+
+`%right'
+     Bison declaration to assign right associativity to token(s). 
+     *Note Precedence Decl::.
+
+`%start'
+     Bison declaration to specify the start symbol.  *Note Start
+     Decl::.
+
+`%token'
+     Bison declaration to declare token(s) without specifying
+     precedence.  *Note Token Decl::.
+
+`%type'
+     Bison declaration to declare nonterminals.  *Note Type Decl::.
+
+`%union'
+     Bison declaration to specify several possible data types for
+     semantic values.  *Note Union Decl::.
+
+These are the punctuation and delimiters used in Bison input:
+
+`%%'
+     Delimiter used to separate the grammar rule section from the
+     Bison declarations section or the additional C code section. 
+     *Note Grammar Layout::.
+
+`%{ %}'
+     All code listed between `%{' and `%}' is copied directly to the
+     output file uninterpreted.  Such code forms the ``C
+     declarations'' section of the input file.  *Note Grammar
+     Outline::.
+
+`/*...*/'
+     Comment delimiters, as in C.
+
+`:'
+     Separates a rule's result from its components.  *Note Rules::.
+
+`;'
+     Terminates a rule.  *Note Rules::.
+
+`|'
+     Separates alternate rules for the same result nonterminal. 
+     *Note Rules::.
+
+
+
+File: bison.info,  Node: Glossary,  Next: Index,  Prev: Table of Symbols,  Up: top
+
+Glossary
+********
+
+Backus-Naur Form (BNF)
+     Formal method of specifying context-free grammars.  BNF was
+     first used in the ``ALGOL-60'' report, 1963.  *Note Language and
+     Grammar::.
+
+Context-free grammars
+     Grammars specified as rules that can be applied regardless of
+     context.  Thus, if there is a rule which says that an integer
+     can be used as an expression, integers are allowed *anywhere* an
+     expression is permitted.  *Note Language and Grammar::.
+
+Dynamic allocation
+     Allocation of memory that occurs during execution, rather than
+     at compile time or on entry to a function.
+
+Empty string
+     Analogous to the empty set in set theory, the empty string is a
+     character string of length zero.
+
+Finite-state stack machine
+     A ``machine'' that has discrete states in which it is said to
+     exist at each instant in time.  As input to the machine is
+     processed, the machine moves from state to state as specified by
+     the logic of the machine.  In the case of the parser, the input
+     is the language being parsed, and the states correspond to
+     various stages in the grammar rules.  *Note Algorithm::.
+
+Grouping
+     A language construct that is (in general) grammatically
+     divisible; for example, `expression' or `declaration' in C. 
+     *Note Language and Grammar::.
+
+Infix operator
+     An arithmetic operator that is placed between the operands on
+     which it performs some operation.
+
+Input stream
+     A continuous flow of data between devices or programs.
+
+Language construct
+     One of the typical usage schemas of the language.  For example,
+     one of the constructs of the C language is the `if' statement. 
+     *Note Language and Grammar::.
+
+Left associativity
+     Operators having left associativity are analyzed from left to
+     right: `a+b+c' first computes `a+b' and then combines with `c'. 
+     *Note Precedence::.
+
+Left recursion
+     A rule whose result symbol is also its first component symbol;
+     for example, `expseq1 : expseq1 ',' exp;'.  *Note Recursion::.
+
+Left-to-right parsing
+     Parsing a sentence of a language by analyzing it token by token
+     from left to right.  *Note Algorithm::.
+
+Lexical analyzer (scanner)
+     A function that reads an input stream and returns tokens one by
+     one.
+
+Look-ahead token
+     A token already read but not yet shifted.  *Note Look-Ahead::.
+
+Nonterminal symbol
+     A grammar symbol standing for a grammatical construct that can
+     be expressed through rules in terms of smaller constructs; in
+     other words, a construct that is not a token.  *Note Symbols::.
+
+Parse error
+     An error encountered during parsing of an input stream due to
+     invalid syntax.  *Note Error Recovery::.
+
+Parser
+     A function that recognizes valid sentences of a language by
+     analyzing the syntax structure of a set of tokens passed to it
+     from a lexical analyzer.
+
+Postfix operator
+     An arithmetic operator that is placed after the operands upon
+     which it performs some operation.
+
+Reduction
+     Replacing a string of nonterminals and/or terminals with a
+     single nonterminal, according to a grammar rule.  *Note
+     Algorithm::.
+
+Reverse polish notation
+     A language in which all operators are postfix operators.
+
+Right recursion
+     A rule whose result symbol is also its last component symbol;
+     for example, `expseq1: exp ',' expseq1;'.  *Note Recursion::.
+
+Semantics
+     In computer languages the semantics are specified by the actions
+     taken for each instance of the language, i.e., the meaning of
+     each statement.  *Note Semantics::.
+
+Shift
+     A parser is said to shift when it makes the choice of analyzing
+     further input from the stream rather than reducing immediately
+     some already-recognized rule.  *Note Algorithm::.
+
+Single-character literal
+     A single character that is recognized and interpreted as is. 
+     *Note Grammar in Bison::.
+
+Start symbol
+     The nonterminal symbol that stands for a complete valid
+     utterance in the language being parsed.  The start symbol is
+     usually listed as the first nonterminal symbol in a language
+     specification.  *Note Start Decl::.
+
+Symbol table
+     A data structure where symbol names and associated data are
+     stored during parsing to allow for recognition and use of
+     existing information in repeated uses of a symbol.  *Note
+     Multi-function Calc::.
+
+Token
+     A basic, grammatically indivisible unit of a language.  The
+     symbol that describes a token in the grammar is a terminal symbol.
+     The input of the Bison parser is a stream of tokens which comes
+     from the lexical analyzer.  *Note Symbols::.
+
+Terminal symbol
+     A grammar symbol that has no rules in the grammar and therefore
+     is grammatically indivisible.  The piece of text it represents
+     is a token.  *Note Language and Grammar::.
+
+
+
+File: bison.info,  Node: Index,  Prev: Glossary,  Up: top
+
+Index
+*****
+
+* Menu:
+
+* $$: Actions.
+* $N: Actions.
+* %expect: Expect Decl.
+* %left: Using Precedence.
+* %nonassoc: Using Precedence.
+* %prec: Contextual Precedence.
+* %pure_parser: Pure Decl.
+* %right: Using Precedence.
+* %start: Start Decl.
+* %token: Token Decl.
+* %type: Type Decl.
+* %union: Union Decl.
+* @N: Action Features.
+* `calc': Infix Calc.
+* `else', dangling: Shift/Reduce.
+* `mfcalc': Multi-function Calc.
+* `rpcalc': RPN Calc.
+* BNF: Language and Grammar.
+* Backus-Naur form: Language and Grammar.
+* Bison declaration summary: Decl Summary.
+* Bison declarations: Declarations.
+* Bison declarations section (introduction): Bison Declarations.
+* Bison grammar: Grammar in Bison.
+* Bison invocation: Invocation.
+* Bison parser: Bison Parser.
+* Bison symbols, table of: Table of Symbols.
+* Bison utility: Bison Parser.
+* C code, section for additional: C Code.
+* C declarations section: C Declarations.
+* C-language interface: Interface.
+* YYABORT: Parser Function.
+* YYACCEPT: Parser Function.
+* YYDEBUG: Debugging.
+* action: Actions.
+* action data types: Action Types.
+* action features summary: Action Features.
+* actions in mid-rule: Mid-Rule Actions.
+* actions, semantic: Semantic Actions.
+* additional C code section: C Code.
+* algorithm of parser: Algorithm.
+* associativity: Why Precedence.
+* calculator, infix notation: Infix Calc.
+* calculator, multi-function: Multi-function Calc.
+* calculator, simple: RPN Calc.
+* character token: Symbols.
+* compiling the parser: Rpcalc Compile.
+* conflicts: Shift/Reduce.
+* conflicts, preventing warnings of: Expect Decl.
+* context-dependent precedence: Contextual Precedence.
+* context-free grammar: Language and Grammar.
+* controlling function: Rpcalc Main.
+* dangling `else': Shift/Reduce.
+* data types in actions: Action Types.
+* data types of semantic values: Value Type.
+* debugging: Debugging.
+* declaration summary: Decl Summary.
+* declarations section, Bison (introduction): Bison Declarations.
+* declarations, Bison: Declarations.
+* declarations, C: C Declarations.
+* declaring operator precedence: Precedence Decl.
+* declaring the start-symbol: Start Decl.
+* declaring token type names: Token Decl.
+* declaring value types: Union Decl.
+* declaring value types, nonterminals: Type Decl.
+* error: Error Recovery.
+* error recovery: Error Recovery.
+* error recovery, simple: Simple Error Recovery.
+* error reporting function: Error Reporting.
+* error reporting routine: Rpcalc Error.
+* examples, simple: Examples.
+* exercises: Exercises.
+* finite-state machine: Parser States.
+* formal grammar: Grammar in Bison.
+* glossary: Glossary.
+* grammar file: Grammar Layout.
+* grammar rule syntax: Rules.
+* grammar rules section: Grammar Rules.
+* grammar, context-free: Language and Grammar.
+* grouping, syntactic: Language and Grammar.
+* infix notation calculator: Infix Calc.
+* interface: Interface.
+* introduction: Introduction.
+* invoking Bison: Invocation.
+* language semantics: Semantics.
+* layout of Bison grammar: Grammar Layout.
+* left recursion: Recursion.
+* lexical analyzer: Lexical.
+* lexical analyzer, purpose: Bison Parser.
+* lexical analyzer, writing: Rpcalc Lexer.
+* literal token: Symbols.
+* look-ahead token: Look-Ahead.
+* main function in simple example: Rpcalc Main.
+* mid-rule actions: Mid-Rule Actions.
+* multi-function calculator: Multi-function Calc.
+* mutual recursion: Recursion.
+* nonterminal symbol: Symbols.
+* operator precedence: Precedence.
+* operator precedence, declaring: Precedence Decl.
+* options for Bison invocation: Invocation.
+* parser: Bison Parser.
+* parser stack: Algorithm.
+* parser state: Parser States.
+* polish notation calculator: RPN Calc.
+* precedence of operators: Precedence.
+* preventing warnings about conflicts: Expect Decl.
+* pure parser: Pure Decl.
+* recovery from errors: Error Recovery.
+* recursive rule: Recursion.
+* reduce/reduce conflict: Reduce/Reduce.
+* reduction: Algorithm.
+* reentrant parser: Pure Decl.
+* reverse polish notation: RPN Calc.
+* right recursion: Recursion.
+* rule syntax: Rules.
+* rules section for grammar: Grammar Rules.
+* running Bison (introduction): Rpcalc Gen.
+* semantic actions: Semantic Actions.
+* semantic value: Semantic Values.
+* semantic value type: Value Type.
+* semantics of the language: Semantics.
+* shift/reduce conflicts: Shift/Reduce.
+* shifting: Algorithm.
+* simple examples: Examples.
+* single-character literal: Symbols.
+* stack, parser: Algorithm.
+* stages in using Bison: Stages.
+* start symbol: Language and Grammar.
+* start-symbol, declaring: Start Decl.
+* state (of parser): Parser States.
+* summary, Bison declaration: Decl Summary.
+* summary, action features: Action Features.
+* symbol: Symbols.
+* symbol table example: Mfcalc Symtab.
+* symbols (abstract): Language and Grammar.
+* symbols in Bison, table of: Table of Symbols.
+* syntactic grouping: Language and Grammar.
+* syntax of grammar rules: Rules.
+* terminal symbol: Symbols.
+* token: Language and Grammar.
+* token type: Symbols.
+* token type names, declaring: Token Decl.
+* tracing the parser: Debugging.
+* unary operator precedence: Contextual Precedence.
+* value type, semantic: Value Type.
+* value types, declaring: Union Decl.
+* value types, nonterminals, declaring: Type Decl.
+* warnings, preventing: Expect Decl.
+* writing a lexical analyzer: Rpcalc Lexer.
+* yychar: Look-Ahead.
+* yyclearin: Error Recovery.
+* yydebug: Debugging.
+* yyerrok: Error Recovery.
+* yyerror: Error Reporting.
+* yyerror: Rpcalc Error.
+* yylex: Lexical.
+* yylloc: Lexical.
+* yylval: Lexical.
+* yynerr: Error Reporting.
+* yyparse: Parser Function.
+* |: Rules.
+
+
+ 
+Tag Table:
+Node: Top1084
+Node: Introduction2071
+Node: Conditions3145
+Node: Copying4998
+Node: Concepts12368
+Node: Language and Grammar13402
+Node: Grammar in Bison17868
+Node: Semantic Values19590
+Node: Semantic Actions21661
+Node: Bison Parser22838
+Node: Stages25073
+Node: Grammar Layout26290
+Node: Examples27532
+Node: RPN Calc28611
+Node: Rpcalc Decls29787
+Node: Rpcalc Rules31289
+Node: Rpcalc Input33019
+Node: Rpcalc Line34475
+Node: Rpcalc Expr35580
+Node: Rpcalc Lexer37531
+Node: Rpcalc Main40045
+Node: Rpcalc Error40421
+Node: Rpcalc Gen41394
+Node: Rpcalc Compile42502
+Node: Infix Calc43374
+Node: Simple Error Recovery45933
+Node: Multi-function Calc47808
+Node: Mfcalc Decl49346
+Node: Mfcalc Rules51298
+Node: Mfcalc Symtab52676
+Node: Exercises58823
+Node: Grammar File59331
+Node: Grammar Outline60025
+Node: C Declarations60782
+Node: Bison Declarations61383
+Node: Grammar Rules61775
+Node: C Code62207
+Node: Symbols63100
+Node: Rules66683
+Node: Recursion68305
+Node: Semantics69982
+Node: Value Type71071
+Node: Multiple Types71705
+Node: Actions72659
+Node: Action Types75022
+Node: Mid-Rule Actions76317
+Node: Declarations81594
+Node: Token Decl82812
+Node: Precedence Decl84116
+Node: Union Decl85663
+Node: Type Decl86500
+Node: Expect Decl87229
+Node: Start Decl88751
+Node: Pure Decl89148
+Node: Decl Summary90244
+Node: Interface91445
+Node: Parser Function92280
+Node: Lexical93123
+Node: Error Reporting97392
+Node: Action Features98415
+Node: Algorithm100822
+Node: Look-Ahead102942
+Node: Shift/Reduce105044
+Node: Precedence107432
+Node: Why Precedence108086
+Node: Using Precedence109938
+Node: Precedence Examples110899
+Node: How Precedence111598
+Node: Contextual Precedence112699
+Node: Parser States114487
+Node: Reduce/Reduce115721
+Node: Error Recovery118871
+Node: Debugging123710
+Node: Invocation126123
+Node: Table of Symbols128802
+Node: Glossary133296
+Node: Index138266

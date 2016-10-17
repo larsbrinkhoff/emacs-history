@@ -1,0 +1,15 @@
+psfig allows the inclusion of postscript in latex documents
+   Perhaps the best way to do this is to use the psfig macros written
+   by Trevor Darrell. They are available via anonymous ftp from
+   whitechapel.media.mit.edu (18.85.0.125) in ./pub/psfig or 
+   linc.cis.upenn.edu (130.91.6.8) in the directory ./dist/psfig. You 
+   will also need a dvi to PostScript conversion program that supports 
+   specials. The ones mentioned in question 1 do, and the first two
+   drivers come with a version of psfig ready to use with them. The psfig 
+   macros work best with Encapsulated PostScript Files (EPS). In
+   particular, psfig will need the file to have a BoundingBox (see 
+   Appendix C of the _PostScript Language Reference Manual_). If you 
+   don't have an EPS file, life can be difficult. For people who don't
+   have ftp access or can't deal with tar files, the files are also
+   available from ymir.claremont.edu (134.173.4.23) in
+   [anonymous.tex.graphics.psfig].

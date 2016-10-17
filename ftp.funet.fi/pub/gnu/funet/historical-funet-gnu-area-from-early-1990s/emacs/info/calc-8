@@ -1,0 +1,41 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+File: calc  Node: Lisp Variable Index, Prev: Lisp Function Index, Up: Top
+
+Index of Lisp Variables
+***********************
+
+
+* Menu:
+
+* calc-defs: Defining Functions.
+
+

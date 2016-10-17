@@ -1,0 +1,48 @@
+--------------------------------------            
+
+;;; HyperActive FTP Version rsw	 		<(todo)> <(chnglg)> <(up)>
+                                
+;;; Author                     		        <(Documentation)>
+;;;  brannon@jove.cs.caltech.edu     
+				
+;;; Purpose				
+;;; To gain hyperactive, effortless,
+;;; unbridled total control of all	
+;;; available ftp software available
+;;; on the face of this earth.	
+				
+;;; Requirements
+;;; Hyperbole and ange-ftp. ange-ftp
+;;; is available in the directory above 
+;;; this one. Hyperbole's home is 
+;;; anonymous ftp to wilma.cs.brown.edu
+
+;;; Version rs
+;;; Completed 22 Apr 92
+;;; Note on version numbers: Bob
+;;; Weiners email address is
+;;; rsw@cs.brown.edu. The next 
+;;; version of this will be rs.
+;;; The next rsw, the next rsw@.
+;;; I think you get the picture.
+
+;;; Thanks				
+;;; Andy Norman for writing ange-ftp
+;;; Bob Weiner for creating Hyperbole
+;;; TV Raman for many suggestions
+;;; Raul Rockwell for the browser which
+    carry over from the defunct ftp+
+;;; Rodney Peck II for those burly
+    regexps to search for ftp sites
+;;; Jon Stromme for his many helpful
+    suggestions.
+;;; Janne Himanka for many suggestions
+    and his knowledge of library and
+    information science
+;;; Martin Maechler 
+    (maechler@stat.math.ethz.ch)
+;;; Site Additions (the pranic force
+;;; and qi of this whole effort)
+    srivasta@syhet.pilgram.umass.edu
+--------------------------------------
+

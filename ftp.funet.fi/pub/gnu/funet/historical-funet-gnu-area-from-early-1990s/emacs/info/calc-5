@@ -1,0 +1,1141 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+File: calc  Node: Kill and Yank, Prev: Store and Recall, Up: Top, Next: Programming
+
+Kill and Yank Functions
+***********************
+
+The commands in this chapter move information between the Calculator and
+other Emacs editing buffers.
+
+* Menu:
+
+* Killing From Stack::
+* Yanking Into Stack::
+* Grabbing From Buffers::
+* Yanking Into Buffers::
+* Editing Stack Entries::
+
+
+File: calc  Node: Killing From Stack, Prev: Kill and Yank, Up: Kill and Yank, Next: Yanking Into Stack
+
+Killing from the Stack
+======================
+
+"Kill" commands are Emacs commands that insert text into the "kill
+ring," from which it can later be "yanked" by a `C-y' command.  Three
+common kill commands in normal Emacs are `C-k', which kills one line,
+`C-w', which kills the region between mark and point, and `M-w', which
+puts the region into the kill ring without actually deleting it.  All of
+these commands work in the Calculator, too.  Also, `M-k' has been
+provided to complete the set; it puts the current line into the kill
+ring without deleting anything.
+
+The kill commands are unusual in that they pay attention to the location
+of the cursor in the Calculator buffer.  If the cursor is on or below
+the bottom line, the kill commands operate on the top of the stack.
+Otherwise, they operate on whatever stack element the cursor is on.
+Calc's kill commands always operate on whole stack entries.  (They act
+the same as their standard Emacs cousins except they "round up" the
+specified region to encompass full lines.)  The text is copied into the
+kill ring exactly as it appears on the screen, including line numbers if
+they are enabled.
+
+A numeric prefix argument to `C-k' or `M-k' affects the number of lines
+killed.  A positive argument kills the current line and `n-1' lines
+below it.  A negative argument kills the `-n' lines above the current
+line.  Again this mirrors the behavior of the standard Emacs `C-k'
+command.  Although a whole line is always deleted, `C-k' with no
+argument copies only the number itself into the kill ring, whereas `C-k'
+with a prefix argument of 1 copies the number with its trailing newline.
+
+
+File: calc  Node: Yanking Into Stack, Prev: Killing From Stack, Up: Kill and Yank, Next: Grabbing From Buffers
+
+Yanking into the Stack
+======================
+
+The `C-y' command yanks the most recently killed text back into the
+Calculator.  It pushes this value onto the top of the stack regardless
+of the cursor position.  In general it re-parses the killed text as a
+number or formula (or list of these seperated by commas or newlines).
+However if the thing being yanked is something that was just killed from
+the Calculator itself, its full internal structure is yanked.  For
+example, if you have set the floating-point display mode to show only
+four significant digits, then killing and re-yanking 3.14159 (which
+displays as 3.142) will yank the full 3.14159, even though yanking it
+into any other buffer would yank the number in its displayed form,
+3.142.  (Since the default display modes show all objects to their full
+precision, this feature normally makes no difference.)
+
+
+File: calc  Node: Grabbing From Buffers, Prev: Yanking Into Stack, Up: Kill and Yank, Next: Yanking Into Buffers
+
+Grabbing from Other Buffers
+===========================
+
+The `calc-grab-region' command takes the text between point and mark in
+the current buffer and attempts to parse it as a matrix.  If point and
+mark are both in the leftmost column, the lines in between are parsed in
+their entirety.  Otherwise, point and mark define the corners of a
+rectangle whose contents are parsed.  Note that, unlike all other
+`calc-' commands, `calc-grab-region' is intended to be used in a normal
+editing buffer, *not* from inside the Calculator buffer!  If the command
+works successfully, it does an automatic `M-x calc' to enter the
+Calculator buffer.
+
+The `M-#' key with a negative prefix argument (`M-- M-#') is equivalent
+to `calc-grab-region'.
+
+Each line of the grabbed area must contain one or more numbers,
+separated by spaces and/or commas.  Leading and trailing square
+brackets, curly braces and commas on the line are ignored.  Leading line
+numbers (as found in the Calc stack) are also ignored.  Thus, this
+command can generally read anything from a column of numbers in a
+spreadsheet to a matrix in one of Calc's own display formats.  The
+grabbed values may actually be any Calc formulas, except that spaces not
+enclosed in parentheses will be interpreted as separating two separate
+formulas.
+
+If a different language has been specified (*Note Language Modes::), the
+grabbed text will be interpreted according to the that language.
+
+Each line becomes a row of the matrix.  The result will actually be a
+vector of vectors, which Calc will treat as a matrix only if every row
+contains the same number of values.  *Note Matrix Functions::, to see
+how to pull the matrix apart into its constituent rows and columns.  (If
+it is a 1x1 matrix, just hit `v u' (`calc-unpack') twice.)
+
+For example, suppose we have a column of numbers in a file which we wish
+to sum.  Go to one corner of the column and press `C-@' to set the mark;
+go to the other corner and type `M-x calc-grab-region'.  This will grab
+the column of numbers into the calculator in the form of column matrix.
+Press `v t' to transpose this into a row matrix.  Press `v u' to unpack
+this into a simple vector.  (Recall, a one-row matrix is a vector of a
+single vector.)  Then, type `V R +' to compute the sum.
+
+
+File: calc  Node: Yanking Into Buffers, Prev: Grabbing From Buffers, Up: Kill and Yank, Next: Editing Stack Entries
+
+Yanking into Other Buffers
+==========================
+
+The plain `y' (`calc-copy-to-buffer') command inserts the number at the
+top of the stack into the most recently used normal editing buffer.
+(More specifically, this is the most recently used buffer which is
+displayed in a window and whose name does not begin with `*'.  If there
+is no such buffer, this is the most recently used buffer except for
+Calculator and Calc Trail buffers.)  The number is inserted exactly as
+it appears and without a newline.  (If line-numbering is enabled, the
+line number is normally not included.)  The number is *not* removed from
+the stack.
+
+With a prefix argument, `y' inserts several numbers, one per line.  A
+positive argument inserts the specified number of values from the top of
+the stack.  A negative argument inserts the `n'th value from the top of
+the stack.  An argument of zero inserts the entire stack.  Note that `y'
+with an argument of 1 is different from `y' with no argument; the former
+always copies exactly what appears in the stack display, whereas the
+latter strips off the line number and trailing newline.
+
+With a lone `C-u' as a prefix argument, `y' *replaces* the region in the
+other buffer with the yanked text, then quits the Calculator, leaving
+you in that buffer.  A typical use would be to run `calc-grab-region' to
+read a matrix of data into the Calculator, operate on the data to
+produce a new matrix, then type `C-u y' to replace the original matrix
+with the new one.  One would normally disable line-numbering (with `d
+l') before doing this, and possibly also alter the matrix display style
+(*Note Vector and Matrix Formats::) or change the current display
+language (*Note Language Modes::).  Also, note that this command
+replaces a linear region of text, not a rectangle.
+
+
+File: calc  Node: Editing Stack Entries, Prev: Yanking Into Buffers, Up: Kill and Yank
+
+Editing Stack Entries
+=====================
+
+The backquote, ``' (`calc-edit') command creates a temporary buffer
+(`*Calc Edit*') for editing the top-of-stack value using regular Emacs
+commands.  With a numeric prefix argument, it edits the specified number
+of stack entries at once.  (An argument of zero edits the entire stack.)
+When you press RET, LFD, or `C-c C-c' (all bound to `calc-edit-finish'),
+the Calculator parses the lines of text in this buffer as numbers or
+formulas, replaces the original stack elements in the original buffer
+with these new values, then kills the `*Calc Edit*' buffer.  The
+original Calculator buffer continues to exist during editing, but for
+best results you should be careful not to change it until you have
+finished the edit.  You can also cancel the edit simply by killing the
+`*Calc Edit*' buffer with `C-x k' (`kill-buffer').
+
+
+File: calc  Node: Programming, Prev: Kill and Yank, Up: Top, Next: Installation
+
+Programming the Calculator
+**************************
+
+There are several ways to "program" the Emacs Calculator, depending on
+the nature of the problem you need to solve.
+
+  1. "Keyboard macros" allow you to record a sequence of keystrokes and
+     play them back at a later time.  This is just the standard Emacs
+     keyboard macro mechanism, dressed up with a few more features such
+     as loops and conditionals.
+  2. "Algebraic definitions" allow you to use any formula to define a
+     new function.  This function can then be used in algebraic formulas
+     or as an interactive command.
+  3. "Rewrite rules" are discussed in the section on algebra commands.
+     You can use them for programming by creating a command (say, using
+     keyboard macros) that applies the rules that define your function's
+     behavior.  *Note Rewrite Rules::.
+  4. "Lisp" is the programming language that Calc (and most of Emacs) is
+     written in.  If the above techniques aren't powerful enough, you
+     can write Lisp functions to do anything that built-in Calc commands
+     can do.  Lisp code is also somewhat faster than keyboard macros.
+
+Programming features are available through the `z' and `Z' prefix keys.
+New commands that you define are two-key sequences beginning with `z'.
+Commands for managing these definitions use the shift-`Z' prefix.  (The
+`Z V' (`calc-permanent-variable') command is described elsewhere; *Note
+Storing Variables::.)
+
+* Menu:
+
+* Creating User Keys::
+* Keyboard Macros::
+* Algebraic Definitions::
+* Lisp Definitions::
+
+
+File: calc  Node: Creating User Keys, Prev: Programming, Up: Programming, Next: Keyboard Macros
+
+Creating User Keys
+==================
+
+Any Calculator command may be bound to a key using the `Z D'
+(`calc-user-define') command.  Actually, it is bound to a two-key
+sequence beginning with the `z' prefix.  (Note that the commands for
+programming begin with shift-`Z', and your own commands begin with
+unshifted `z'.)
+
+The `Z D' command first prompts for the key to define.  For example,
+press `Z D a' to define the new key sequence `z a'.  You are then
+prompted for the name of the Calculator command that this key should
+run.  For example, the `calc-hypot' (hypotenuse) command is not normally
+available on a key.  Typing `Z D h hypot RET' programs the `z h' key
+sequence to run `calc-hypot'.  This definition will remain in effect for
+the rest of this Emacs session, or until you redefine `z h' to be
+something else.
+
+You can actually bind any Emacs command to a `z' key sequence by
+backspacing over the `calc-' when you are prompted for the command name.
+
+As with any other prefix key, you can type `z ?' to see a list of all
+the two-key sequences you have defined that start with `z'.  Initially,
+no `z' sequences (except `z ?' itself) are defined.
+
+User keys are typically letters, but may in fact use any key.
+(META-keys are not permitted, nor are a terminal's special function keys
+which generate multi-character sequences when pressed.)  You can define
+different commands on the shifted and unshifted versions of a letter if
+you wish.
+
+The `Z U' (`calc-user-undefine') command unbinds a user key.  For
+example, the key sequence `Z U h' will undefine the `hypot' key we
+defined above.
+
+The `Z P' (`calc-user-define-permanent') command makes a key binding
+permanent so that it will remain in effect even in future Emacs
+sessions.  (It does this by adding a suitable bit of Lisp code into your
+`.emacs' file.)  For example, `Z P h' would register our `hypot' command
+permanently.  If you later wish to unregister this command you must edit
+your `.emacs' file by hand.
+
+The `Z E' (`calc-user-define-edit') command edits the definition of a
+user key.  This works for keys that have been defined by either keyboard
+macros or formulas; further details are contained in the relevant
+following sections.
+
+
+File: calc  Node: Keyboard Macros, Prev: Creating User Keys, Up: Programming, Next: Algebraic Definitions
+
+Programming with Keyboard Macros
+================================
+
+The easiest way to "program" the Emacs Calculator is to use standard
+keyboard macros.  Press `C-x (' to begin recording a macro.  From this
+point on, keystrokes you type will be saved away as well as performing
+their usual functions.  Press `C-x )' to end recording.  Press shift-`K'
+(or the standard Emacs key sequence `C-x e') to execute your keyboard
+macro by replaying the recorded keystrokes.  *Note Keyboard Macros:
+(emacs)Keyboard Macros, for further information.
+
+When you use `K' to invoke a keyboard macro, the entire macro is treated
+as a single command by the undo and trail features.  The stack display
+buffer is not updated during macro execution, but is instead fixed up
+once the macro completes.  Thus, commands defined with keyboard macros
+are convenient and efficient.  The `C-x e' command, on the other hand,
+invokes the keyboard macro with no special treatment: Each command in
+the macro will record its own undo information and trail entry, and
+update stack buffer accordingly.  If your macro uses features outside of
+Calc's control to operate on the contents of the Calc stack buffer, or
+if it includes Undo, Redo, or Last X commands, you must use `C-x e' to
+make sure the buffer and undo list are up-to-date at all times.
+
+Calc extends the standard Emacs keyboard macros in several ways.
+Keyboard macros can be used to create user-defined commands.  Keyboard
+macros can include conditional and iteration structures, somewhat
+analogous to those provided by a traditional programmable calculator.
+
+* Menu:
+
+* Naming Keyboard Macros::
+* Conditionals in Macros::
+* Loops in Macros::
+* Queries in Macros::
+
+
+File: calc  Node: Naming Keyboard Macros, Prev: Keyboard Macros, Up: Keyboard Macros, Next: Conditionals in Macros
+
+Naming Keyboard Macros
+----------------------
+
+Once you have defined a keyboard macro, you can bind it to a `z' key
+sequence with the `Z K' (`calc-user-define-kbd-macro') command.  This
+command prompts first for a key, then for a command name.  For example,
+if you type `C-x ( n TAB n TAB C-x )' you will define a keyboard macro
+which negates the top two numbers on the stack (TAB swaps the top two
+stack elements).  Now you can type `Z K n RET' to define this keyboard
+macro onto the `z n' key sequence.  The default command name (if you
+answer the second prompt with just the RET key as in this example) will
+be something like `calc-User-n'.  The keyboard macro will now be
+available as both `z n' and `M-x calc-User-n'.  You can backspace and
+enter a more descriptive command name if you wish.
+
+Macros defined by `Z K' act like single commands; they are executed in
+the same way as by the `K' key.  If you wish to define the macro as a
+standard no-frills Emacs macro (to be executed as if by `C-x e'), give a
+negative prefix argument to `Z K'.
+
+Once you have bound your keyboard macro to a key, you can use `Z P' to
+register it permanently with Emacs.  *Note Creating User Keys::.
+
+The `Z E' (`calc-user-define-edit') command on a key that has been
+defined by a keyboard macro tries to use the `edit-kbd-macro' command to
+edit the macro.  This command may be found in the `macedit' package, a
+copy of which comes with Calc.  If `edit-kbd-macro' is not available, or
+if you give a negative numeric prefix argument, `Z E' uses a variant of
+`calc-edit' with the contents of the buffer being the keyboard macro in
+"raw" form.  In either case, type `C-c C-c' to finish editing and update
+the definition stored on the key, or, to cancel the edit, just kill the
+macro-editing buffer with `C-x k'.
+
+
+File: calc  Node: Conditionals in Macros, Prev: Naming Keyboard Macros, Up: Keyboard Macros, Next: Loops in Macros
+
+Conditionals in Keyboard Macros
+-------------------------------
+
+The `Z [' (`calc-kbd-if') and `Z ]' (`calc-kbd-end-if') commands allow
+you to put simple tests in a keyboard macro.  When Calc sees the `Z [',
+it pops an object from the stack and, if the object is a non-zero
+number, continues executing keystrokes.  But if the object is zero, or
+if it is not a number, Calc skips ahead to the matching `Z ]' keystroke.
+*Note Logical Operations::, for a set of commands for performing tests
+which conveniently produce 1 for true and 0 for false.
+
+For example, `RET 0 a < Z [ n Z ]' implements an absolute-value function
+as a keyboard macro.  To program this macro, type `C-x (', type the
+above sequence of keystrokes, then type `C-x )'.  Note that the
+keystrokes will be executed while you are making the definition as well
+as when you later re-execute the macro by typing `K'.  Thus you should
+make sure a suitable number is on the stack before defining the macro to
+make sure you don't get a stack-underflow error during the definition
+process.
+
+The above macro duplicates the number on the top of the stack, pushes
+zero and compares using `a <' (`calc-less-than'), then, if the number
+was less than zero, executes `n' (`calc-change-sign').  Otherwise, the
+change-sign command is skipped.
+
+Conditionals can be nested arbitrarily.  However, there should be
+exactly one `Z ]' for each `Z [' in a keyboard macro.
+
+The `Z :' (`calc-kbd-else') command allows you to choose between two
+keystroke sequences.  The general format is `COND Z [ THEN-PART Z :
+ELSE-PART Z ]'.  If COND is true (i.e., if the top of stack contains a
+non-zero number after COND has been executed), the THEN-PART will be
+executed and the ELSE-PART will be skipped.  Otherwise, the THEN-PART
+will be skipped and the ELSE-PART will be executed.
+
+The `Z |' (`calc-kbd-else-if') command allows you to choose between any
+number of alternatives.  For example, `COND1 Z [ PART1 Z : COND2 Z |
+PART2 Z : PART3 Z ]' will execute PART1 if COND1 is true, otherwise it
+will execute PART2 if COND2 is true, otherwise it will execute PART3.
+
+More precisely, `Z [' pops a number and conditionally skips to the next
+matching `Z :' or `Z ]' key.  `Z ]' has no effect when actually
+executed.  `Z :' skips to the next matching `Z ]'.  `Z |' pops a number
+and conditionally skips to the next matching `Z :' or `Z ]'; thus, `Z ['
+and `Z |' are functionally equivalent except that `Z [' participates in
+nesting but `Z |' does not.
+
+If Calc gets stuck while skipping characters during the definition of a
+macro, type `Z C-g' to cancel the definition.  (Typing plain `C-g'
+actually adds a `C-g' keystroke to the macro.)
+
+
+File: calc  Node: Loops in Macros, Prev: Conditionals in Macros, Up: Keyboard Macros, Next: Queries in Macros
+
+Loops in Keyboard Macros
+------------------------
+
+The `Z <' (`calc-kbd-repeat') and `Z >' (`calc-kbd-end-repeat') commands
+pop a number from the stack, which must be an integer, then repeat the
+keystrokes between the brackets the specified number of times.  If the
+integer is zero or negative, the body is skipped altogether.  For
+example, `1 TAB Z < 2 * Z >' computes two to a nonnegative integer
+power.  First, we push 1 on the stack and then swap the integer argument
+back to the top.  The `Z <' pops that argument leaving the 1 back on top
+of the stack.  Then, we repeat a multiply-by-two step however many
+times.
+
+Once again, the keyboard macro is executed as it is being entered.  In
+this case it is especially important to set up reasonable initial
+conditions before making the definition: Suppose the integer 1000 just
+happened to be sitting on the stack before we typed the above
+definition!  Another approach is to enter a harmless dummy definition
+for the macro, then go back and edit in the real one with a `Z E'
+command.
+
+The `Z /' (`calc-kbd-break') command allows you to break out of a
+keyboard macro loop prematurely.  It pops an object from the stack; if
+that object is true (a non-zero number), control jumps out of the
+innermost enclosing `Z <' ... `Z >' loop and continues after the `Z >'.
+If the object is false, the `Z /' has no effect.  Thus the effect is
+similar to the C language's `break' statement with an enclosing `if'.
+
+The `Z (' (`calc-kbd-for') and `Z )' (`calc-kbd-end-for') commands are
+similar to `Z <' and `Z >', except that they make the value of the
+counter available inside the loop.  The general layout is `INIT FINAL Z
+( BODY STEP Z )'.  The `Z (' command pops initial and final values from
+the stack.  It then creates a temporary internal counter and initializes
+it with the value INIT.  The `Z (' command then repeatedly pushes the
+counter value onto the stack and executes BODY and STEP, adding STEP to
+the counter each time until the loop finishes.
+
+By default, the loop finishes when the counter becomes greater than (or
+less than) FINAL, assuming INITIAL is less than (greater than) FINAL.
+If INITIAL is equal to FINAL, the body executes exactly once.  The body
+of the loop always executes at least once.  For example, `0 1 10 Z ( 2 ^
++ 1 Z )' computes the sum of the squares of the integers from 1 to 10,
+in steps of 1.
+
+If you give a numeric prefix argument of 1 to `Z (', the loop is forced
+to use upward-counting conventions.  In this case, if INITIAL is greater
+than FINAL the body will not be executed at all.  Note that STEP may
+still be negative in this loop; the prefix argument merely constrains
+the loop-finished test.  Likewise, a prefix argument of -1 forces
+downward-counting conventions.
+
+The `Z {' (`calc-kbd-loop') and `Z }' (`calc-kbd-end-loop') commands are
+similar to `Z <' and `Z >', except that they do not pop a count from the
+stack---they effectively create an infinite loop.  Every `Z {' ... `Z }'
+loop ought to include at least one `Z /' to make sure the loop doesn't
+run forever.  (If any error message occurs which causes Emacs to beep,
+the keyboard macro will also be halted; this is a standard feature of
+Emacs.  You can also generally press `C-g' to halt a running keyboard
+macro, although not all versions of Unix support this feature.)
+
+Calc's conditional and looping constructs work by scanning the keyboard
+macro for occurrences of character sequences like `Z:' and `Z>'.  One
+side-effect of this is that if you use these constructs you must be
+careful that these character pairs do not occur by accident in other
+parts of the macros.  Since Calc doesn't use shift-Z for any purpose
+except as a prefix character, this is not likely to be a problem.
+Another side-effect is that it will not work to define your own custom
+key bindings for these commands.  Only the standard shift-Z bindings
+will work correctly.
+
+The conditional and looping constructs are not actually tied to keyboard
+macros, but they are most often used in that context.  For example, the
+keystrokes `10 Z < 23 RET Z >' push ten copies of 23 onto the stack.
+This can be typed "live" just as easily as in a macro definition.
+
+
+File: calc  Node: Queries in Macros, Prev: Loops in Macros, Up: Keyboard Macros
+
+Queries in Keyboard Macros
+--------------------------
+
+The `Z =' (`calc-kbd-report') command displays an informative message
+including the value on the top of the stack.  You are prompted to enter
+a string.  That string, along with the top-of-stack value, is displayed
+unless `m w' (`calc-working') has been used to turn such messages off.
+
+The `Z '' (`calc-kbd-query') command displays a prompt message (which
+you enter during macro definition), then does an algebraic entry which
+takes its input from the keyboard, even during macro execution.  This
+command allows your keyboard macros to accept numbers or formulas as
+interactive input.  All the normal conventions of algebraic input,
+including the use of `$' characters, are supported.  *Note Kbd Macro
+Query: (emacs)Kbd Macro Query, for a description of `C-x q'
+(`kbd-macro-query'), the standard Emacs way to accept keyboard input
+during a keyboard macro.  In particular, you can use `C-x q' to enter a
+recursive edit, which allows the user to perform any Calculator
+operations interactively before pressing `C-M-c' to return control to
+the keyboard macro.
+
+
+File: calc  Node: Algebraic Definitions, Prev: Keyboard Macros, Up: Programming, Next: Lisp Definitions
+
+Programming with Algebraic Formulas
+===================================
+
+Another way to create a new Calculator command uses algebraic formulas.
+The `Z F' (`calc-user-define-formula') command stores the formula at the
+top of the stack as the definition for a key.  This command prompts for
+five things: The key, the command name, the function name, the argument
+list, and the behavior of the command when given non-numeric arguments.
+
+For example, suppose we type `' a+2b RET' to push the formula `a + 2*b'
+onto the stack.  We now type `Z F m' to define this formula on the `z m'
+key sequence.  The next prompt is for a command name, beginning with
+`calc-', which should be the long (`M-x') form for the new command.  If
+you simply press RET, a default name like `calc-User-m' will be
+constructed.  In our example, suppose we enter `spam RET' to define the
+new command as `calc-spam'.
+
+If you want to give the formula a long-style name only, you can press
+SPC or RET when asked which single key to use.  For example `Z F RET
+spam RET' defines the new command as `calc-spam', with no keyboard
+equivalent.
+
+The third prompt is for a function name.  The default is to use the same
+name as the command name but with `calcFunc-' in place of `calc-'.  This
+is the name you will use if you want to enter your new function in an
+algebraic formula.  Suppose we enter `yow RET'.  Then the new function
+can be invoked by pushing two numbers on the stack and typing `z m' or
+`x spam', or by entering the algebraic formula `yow(x,y)'.
+
+The fourth prompt is for the function's argument list.  This is used to
+associate values on the stack with the variables that appear in the
+formula.  The default is a list of all variables which appear in the
+formula, sorted into alphabetical order.  In our case, the default would
+be `(a b)'.  This means that, when the user types `z m', the Calculator
+will remove two numbers from the stack, substitute these numbers for `a'
+and `b' (respectively) in the formula, then simplify the formula and
+push the result on the stack.  In other words, `10 RET 100 z m' would
+replace the 10 and 100 on the stack with the number 210, which is `a +
+2*b' with `a=10' and `b=100'.  Likewise, the formula `yow(10, 100)' will
+be evaluated by substituting `a=10' and `b=100' in the definition.
+
+You can rearrange the order of the names before pressing RET to control
+which stack positions go to which variables in the formula.  If you
+remove a variable from the argument list, that variable will be left in
+symbolic form by the command.  Thus using an argument list of `(b)' for
+our function would cause `10 z m' to replace the 10 on the stack with
+the formula `a + 20'.  If we had used an argument list of `(b a)', the
+result with inputs 10 and 100 would have been 120.
+
+The final prompt is a y-or-n question concerning what to do if symbolic
+arguments are given to your function.  If you answer `y', then executing
+`z m' (using the original argument list `(a b)') with arguments `10' and
+`x' will leave the function in symbolic form, i.e., `yow(10,x)'.  On the
+other hand, if you answer `n', then the formula will always be expanded,
+even for non-constant arguments: `10 + 2 * x'.  If you never plan to
+feed algebraic formulas to your new function, it doesn't matter how you
+answer this question.
+
+Once you have defined a formula on a key, you can retrieve this formula
+with the `Z G' (`calc-user-define-get-defn') command.  Press a key, and
+this command pushes the formula that was used to define that key onto
+the stack.  You will get an error message if the key is undefined, or if
+the key was not defined by a `Z F' command.
+
+The `Z E' (`calc-user-define-edit') command on a key that has been
+defined by a formula uses a variant of the `calc-edit' command to edit
+the defining formula.  Press `C-c C-c' to finish editing and store the
+new formula back in the definition, or kill the formula-editing buffer
+with `C-x k' to cancel the edit.  (The argument list and other
+properties of the definition are unchanged; to adjust the argument list,
+you must use `Z G' to grab the formula onto the stack and then
+re-execute the `Z F' command.)
+
+As usual, the `Z P' command records your definition permanently.  In
+this case it will permanently record all three of the relevant
+definitions: the key, the command, and the function.
+
+You may find it useful to turn off the default simplifications with `m
+O' (`calc-no-simplify-mode') when entering a formula to be used as a
+function definition.  For example, the formula `deriv(a^2,v)' which
+might be used to define a new function `dsqr(a,v)' will be "simplified"
+to 0 immediately upon entry since `deriv' considers `a' to be constant
+with respect to `v'.  Turning off default simplifications cures this
+problem: the definition will be stored in symbolic form without ever
+activating the `deriv' function.  Press `m D' to turn the default
+simplifications back on afterwards.
+
+
+File: calc  Node: Lisp Definitions, Prev: Algebraic Definitions, Up: Programming
+
+Programming with Lisp
+=====================
+
+The Calculator can be programmed quite extensively in Lisp.  All you do
+is write a normal Lisp function definition, but with `defmath' in place
+of `defun'.  This has the same form as `defun', but it automagically
+replaces calls to standard Lisp functions like `+' and `zerop' with
+calls to the corresponding functions in Calc's own library.  Thus you
+can write natural-looking Lisp code which operates on all of the
+standard Calculator data types.  You can then use `Z D' if you wish to
+bind your new command to a `z'-prefix key sequence.  The `Z E' command
+will not edit a Lisp-based definition.
+
+Emacs Lisp is described in the Emacs Lisp Reference Manual.  This
+section assumes a familiarity with Lisp programming concepts; if you do
+not know Lisp, you may find keyboard macros to be an easier way to
+program the Calculator.
+
+* Menu:
+
+* Defining Functions::
+* Defining Simple Commands::
+* Defining Stack Commands::
+* Argument Qualifiers::
+* Example Definitions::
+* Internals::
+
+
+File: calc  Node: Defining Functions, Prev: Lisp Definitions, Up: Lisp Definitions, Next: Defining Simple Commands
+
+Defining New Functions
+----------------------
+
+The `defmath' function (actually a Lisp macro) is like `defun' except
+that code in the body of the definition can make use of the full range
+of Calculator data types.  The prefix `calcFunc-' is added to the
+specified name to get the actual Lisp function name.  As a simple
+example,
+
+     (defmath myfact (n)
+       (if (> n 0)
+           (* n (myfact (1- n)))
+         1))
+
+This actually expands to the code,
+
+     (defun calcFunc-myfact (n)
+       (if (math-posp n)
+           (math-mul n (calcFunc-myfact (math-add n -1)))
+         1))
+
+This function can be used in algebraic expressions, e.g., `myfact(5)'.
+
+The `myfact' function as it is defined above has the bug that an
+expression `myfact(a+b)' will be simplified to 1 because the formula
+`a+b' is not considered to be `posp'.  A robust factorial function would
+be written along the following lines:
+
+     (defmath myfact (n)
+       (if (> n 0)
+           (* (myfact (1- n)))
+         (if (= n 0)
+             1
+           nil)))    ; this could be simplified as: (and (= n 0) 1)
+
+If a function returns `nil', it is left unsimplified by the Calculator
+(except that its arguments will be simplified).  Thus, `myfact(a+1+2)'
+will be simplified to `myfact(a+3)' but no further.  Beware that every
+time the Calculator reexamines this formula it will attempt to
+resimplify it, so your function ought to detect the returning-`nil' case
+as efficiently as possible.
+
+The following standard Lisp functions are treated by `defmath': `+',
+`-', `*', `/', `%', `^' or `expt', `=', `<', `>', `<=', `>=', `/=',
+`1+', `1-', `logand', `logior', `logxor', `logandc2', `lognot'.  Also,
+`~=' is an abbreviation for `math-nearly-equal', which is useful in
+implementing Taylor series.
+
+For other functions FUNC, if a function by the name `calcFunc-FUNC'
+exists it is used, otherwise if a function by the name `math-FUNC'
+exists it is used, otherwise if FUNC itself is defined as a function it
+is used, otherwise `calcFunc-FUNC' is used on the assumption that this
+is a to-be-defined math function.  Also, if the function name is quoted
+as in `('integerp a)' the function name is always used exactly as
+written.
+
+Variable names have `var-' prepended to them unless they appear in the
+function's argument list or in an enclosing `let', `let*', `for', or
+`foreach' form, or their names already contain a `-' character.  Thus a
+reference to `foo' is the same as a reference to `var-foo'.
+
+A few other Lisp extensions are available in `defmath' definitions:
+
+   * The `elt' function accepts any number of index variables.  Note
+     that Calc vectors are stored as Lisp lists whose first element is
+     the symbol `vec'; thus, `(elt v 2)' yields the second element of
+     vector `v', and `(elt m i j)' yields one element of a Calc matrix.
+
+   * The `setq' function has been extended to act like the Common Lisp
+     `setf' function.  (The name `setf' is recognized as a synonym of
+     `setq'.)  Specifically, the first argument of `setq' can be an
+     `nth', `elt', `car', or `cdr' form, in which case the effect is to
+     store into the specified element of a list.  Thus, `(setq (elt m i
+     j) x)' stores `x' into one element of a matrix.
+
+   * A `for' looping construct is available.  For example, `(for ((i 0
+     10)) body)' executes `body' once for each binding of `i' from zero
+     to 10.  This is like a `let' form in that `i' is temporarily bound
+     to the loop count without disturbing its value outside the `for'
+     construct.  Nested loops, as in `(for ((i 0 10) (j 0 (1- i) 2))
+     body)', are also available.  For each value of `i' from zero to 10,
+     `j' counts from 0 to `i-1' in steps of two.  Note that `for' has
+     the same general outline as `let', except that each element of the
+     header is a list of three or four things, not just two.
+
+   * The `foreach' construct loops over elements of a list.  For
+     example, `(foreach ((x (cdr v))) body)' executes `body' with `x'
+     bound to each element of Calc vector `v' in turn.  The purpose of
+     `cdr' here is to skip over the initial `vec' symbol in the vector.
+
+   * The `break' function breaks out of the innermost enclosing `while',
+     `for', or `foreach' loop.  If given a value, as in `(break x)',
+     this value is returned by the loop.  (Lisp loops otherwise always
+     return `nil'.)
+
+   * The `return' function prematurely returns from the enclosing
+     function.  For example, `(return (+ x y))' returns `x+y' as the
+     value of a function.  You can use `return' anywhere inside the body
+     of the function.
+
+Non-integer numbers (and extremely large integers) cannot be included
+directly into a `defmath' definition.  This is because the Lisp reader
+will fail to parse them long before `defmath' ever gets control.
+Instead, use the notation, `:"3.1415"'.  In fact, any algebraic formula
+can go between the quotes.  For example,
+
+     (defmath sqexp (x)     ; sqexp(x) == sqrt(exp(x)) == exp(x*0.5)
+       (and (numberp x)
+            (exp :"x * 0.5")))
+
+expands to
+
+     (defun calcFunc-sqexp (x)
+       (and (math-numberp x)
+            (calcFunc-exp (math-mul x '(float 5 -1)))))
+
+Note the use of `numberp' as a guard to ensure that the argument is a
+number first, returning `nil' if not.  The exponential function could
+itself have been included in the expression, if we had preferred:
+`:"exp(x * 0.5)"'.  As another example, the multiplication-and-recursion
+step of `myfact' could have been written
+
+     :"n * myfact(n-1)"
+
+If a file named `.emacs' exists in your home directory, Emacs reads and
+executes the Lisp forms in this file as it starts up.  While it may seem
+like a good idea to put your favorite `defmath' commands here, this has
+the unfortunate side-effect that the entire Calculator must be loaded in
+to process the `defmath' commands whether or not you will actually use
+the Calculator!  A better effect can be had by writing
+
+     (setq calc-defs '(
+       (defmath ... )
+       (defmath ... )
+     ))
+
+If the `calc-defs' variable contains a list of Lisp expressions when the
+Calculator is started, those expressions will be executed and the
+`calc-defs' variable cleared.  Thus your `defmath' commands will be
+executed only once, and only when the Calculator is first used.  If you
+must edit these definitions, simply re-execute the `setq' command using
+`C-x C-e' and restart the Calculator with `M-x calc'.
+
+
+File: calc  Node: Defining Simple Commands, Prev: Defining Functions, Up: Lisp Definitions, Next: Defining Stack Commands
+
+Defining New Simple Commands
+----------------------------
+
+If a `defmath' form contains an `interactive' clause, it defines a
+Calculator command.  Actually such a `defmath' results in *two* function
+definitions: One, a `calcFunc-' function as was just described, with the
+`interactive' clause removed.  Two, a `calc-' function with a suitable
+`interactive' clause and some sort of wrapper to make the command work
+in the Calc environment.
+
+In the simple case, the `interactive' clause has the same form as for
+normal Emacs Lisp commands:
+
+     (defmath increase-precision (delta)
+       "Increase precision by DELTA."     ; This is the "documentation string"
+       (interactive "p")                  ; Register this as a M-x-able command
+       (setq calc-internal-prec (+ calc-internal-prec delta)))
+
+This expands to the pair of definitions,
+
+     (defun calc-increase-precision (delta)
+       "Increase precision by DELTA."
+       (interactive "p")
+       (calc-wrapper
+        (setq calc-internal-prec (math-add calc-internal-prec delta))))
+
+     (defun calcFunc-increase-precision (delta)
+       "Increase precision by DELTA."
+       (setq calc-internal-prec (math-add calc-internal-prec delta)))
+
+where in this case the latter function would never really be used!  Note
+that since the Calculator stores small integers as plain Lisp integers,
+the `math-add' function will work just as well as the native `+' even
+when the intent is to operate on native Lisp integers.
+
+The `calc-wrapper' call invokes a macro which surrounds the body of the
+function with code that looks like this:
+
+       (let ((calc-command-flags nil))
+         (unwind-protect
+             (progn
+               (save-excursion
+                 (calc-select-buffer)
+                 *body of function*)
+               (calc-finish-command))
+           (calc-cleanup-command)))
+
+The `calc-select-buffer' function selects the `*Calculator*' buffer if
+necessary, say, because the command was invoked from inside the `*Calc
+Trail*' window.
+
+The `calc-finish-command' function recomputes the line numbers for all
+stack entries if they have been changed.  Also, if the `clear-message'
+flag is set it executes `(message "")' to clear any lingering "Working"
+message out of the echo area.
+
+The `calc-cleanup-command' function normally aligns the stack window so
+that the top element of the stack is visible at the bottom of the
+window, and moves the cursor down to the bottom line.  This can be
+suppressed by setting the `no-align' flag as described below.  Also, it
+clears the Inverse and Hyperbolic flags (unless the `keep-flags' flag
+has been set), and updates the display of the mode line.
+
+You can call, for example, `(calc-set-command-flag 'no-align)' to set
+the above-mentioned command flags.
+
+
+File: calc  Node: Defining Stack Commands, Prev: Defining Simple Commands, Up: Lisp Definitions, Next: Argument Qualifiers
+
+Defining New Stack-Based Commands
+---------------------------------
+
+To define a new computational command which takes and/or leaves
+arguments on the stack, a special form of `interactive' clause is used.
+
+     (interactive NUM TAG)
+
+where NUM is an integer, and TAG is a string.  The effect is to pop NUM
+values off the stack, resimplify them by calling `calc-normalize', and
+hand them to your function according to the function's argument list.
+Your function may include `&optional' and `&rest' parameters, so long as
+calling the function with NUM parameters is legal.
+
+Your function must return either a number or a formula in a form
+acceptable to Calc, or a list of such numbers or formulas.  These
+value(s) are pushed onto the stack when the function completes.  They
+are also recorded in the Calc Trail buffer on a line beginning with TAG,
+a string of (normally) four characters or less.  If you omit TAG or use
+`nil' as a tag, the result is not recorded in the trail.
+
+As an example, the definition
+
+     (defmath myfact (n)
+       "Compute the factorial of the integer at the top of the stack."
+       (interactive 1 "fact")
+       (if (> n 0)
+           (* (myfact (1- n)))
+         (and (= n 0) 1)))
+
+is a version of the factorial function shown previously which can be
+used as a command as well as an algebraic function.  It expands to
+
+     (defun calc-myfact ()
+       "Compute the factorial of the integer at the top of the stack."
+       (interactive)
+       (calc-slow-wrapper
+        (calc-enter-result 1 "fact"
+          (cons 'calcFunc-myfact (calc-top-list-n 1)))))
+
+     (defun calcFunc-myfact (n)
+       "Compute the factorial of the integer at the top of the stack."
+       (if (math-posp n)
+           (math-mul n (calcFunc-myfact (math-add n -1)))
+         (and (math-zerop n) 1)))
+
+The `calc-slow-wrapper' function is a version of `calc-wrapper' that
+automatically puts up a `Working...' message before the computation
+begins.  (This message can be turned off by the user with a `m w'
+(`calc-working') command.)
+
+The `calc-top-list-n' function returns a list of the specified number of
+values from the top of the stack.  It resimplifies each value by calling
+`calc-normalize'.  If its argument is zero it returns an empty list.  It
+does not actually remove these values from the stack.
+
+The `calc-enter-result' function takes an integer NUM and string TAG as
+described above, plus a third argument which is either a Calculator data
+object or a list of such objects.  These objects are resimplified and
+pushed onto the stack after popping the specified number of values from
+the stack.  If TAG is non-`nil', the values being pushed are also
+recorded in the trail.
+
+Note that if `calcFunc-myfact' returns `nil' this represents "leave the
+function in symbolic form."  To return an actual empty list, in the
+sense that `calc-enter-result' will push zero elements back onto the
+stack, you should return the special value `'(nil)', a list containing
+the single symbol `nil'.
+
+The `interactive' declaration can actually contain a limited Emacs-style
+code string as well which comes just before NUM and TAG.  Currently only
+Emacs code supported is `"p"', as in
+
+     (defmath foo (a b &optional c)
+       (interactive "p" 2 "foo")
+       BODY)
+
+In this example, the command `calc-foo' will evaluate the expression
+`foo(a,b)' if executed with no argument, or `foo(a,b,n)' if executed
+with a numeric prefix argument of `n'.
+
+The other code string allowed is `"m"' (unrelated to the usual `"m"'
+code as used with `defun').  It uses the numeric prefix argument as the
+number of objects to remove from the stack and pass to the function.  In
+this case, the integer NUM serves as a default number of arguments to be
+used when no prefix is supplied.
+
+
+File: calc  Node: Argument Qualifiers, Prev: Defining Stack Commands, Up: Lisp Definitions, Next: Example Definitions
+
+Argument Qualifiers
+-------------------
+
+Anywhere a parameter name can appear in the parameter list you can also
+use an "argument qualifier".  Thus the general form of a definition is:
+
+     (defmath NAME (PARAM PARAM...
+                    &optional PARAM PARAM...
+                    &rest PARAM)
+       BODY)
+
+where each PARAM is either a symbol or a list of the form
+
+     (QUAL PARAM)
+
+The following qualifiers are recognized:
+
+`complete'
+     The argument must not be an incomplete vector, interval, or complex
+     number.  (This is rarely needed since the Calculator itself will
+     never call your function with an incomplete argument.  But there is
+     nothing stopping your own Lisp code from calling your function with
+     an incomplete argument.)
+
+`integer'
+     The argument must be an integer.  If it is an integer-valued float
+     it will be accepted but converted to integer form.  Non-integers
+     and formulas are rejected.
+
+`natnum'
+     Like `integer', but the argument must be non-negative.
+
+`fixnum'
+     Like `integer', but the argument must fit into a native Lisp
+     integer, which on most systems means less than 2^23 in absolute
+     value.  The argument is converted into Lisp-integer form if
+     necessary.
+
+`float'
+     The argument is converted to floating-point format if it is a
+     number or vector.  If it is a formula it is left alone.  (The
+     argument is never actually rejected by this qualifier.)
+
+`PRED'
+     The argument must satisfy predicate PRED, which is one of the
+     standard Calculator predicates.  *Note Predicates::.
+
+`not-PRED'
+     The argument must *not* satisfy predicate PRED.
+
+For example,
+
+     (defmath foo (a (constp (not-matrixp b)) &optional (float c)
+                   &rest (integer d))
+       BODY)
+
+expands to
+
+     (defun calcFunc-foo (a b &optional c &rest d)
+       (and (math-matrixp b)
+            (math-reject-arg b 'not-matrixp))
+       (or (math-constp b)
+           (math-reject-arg b 'constp))
+       (and c (setq c (math-check-float c)))
+       (setq d (mapcar 'math-check-integer d))
+       BODY)
+
+which performs the necessary checks and conversions before executing the
+body of the function.
+
+
+File: calc  Node: Example Definitions, Prev: Argument Qualifiers, Up: Lisp Definitions, Next: Internals
+
+Example Definitions
+-------------------
+
+This section includes some Lisp programming examples on a larger scale.
+These programs make use of many of the Calculator's internal functions
+(*Note Internals::).
+
+* Menu:
+
+* Sine Example::
+
+
+File: calc  Node: Sine Example, Prev: Example Definitions, Up: Example Definitions
+
+The Sine Function
+.................
+
+A somewhat limited sine function could be defined as follows, using the
+well-known Taylor series expansion for `sin(x)':
+
+     (defmath mysin ((float (anglep x)))
+       (interactive 1 "mysn")
+       (setq x (to-radians x))    ; Convert from current angular mode.
+       (let ((sum x)              ; Initial term of Taylor expansion of sin.
+             newsum
+             (nfact 1)            ; "nfact" equals "n" factorial at all times.
+             (xnegsqr :"-(x^2)")) ; "xnegsqr" equals -x^2.
+         (for ((n 3 100 2))       ; Upper limit of 100 is a good precaution.
+              (working "mysin" sum)   ; Display "Working" message, if enabled.
+              (setq nfact (* nfact (1- n) n)
+                    x (* x xnegsqr)
+                    newsum (+ sum (/ x nfact)))
+              (if (~= newsum sum)     ; If newsum is "nearly equal to" sum,
+                  (break))            ;  then we are done.
+              (setq sum newsum))
+         sum))
+
+The actual `sin' function in Calc works by first reducing the problem to
+a sine or cosine of a nonnegative number less than `pi/4'.  This ensures
+that the Taylor series will converge quickly.  Also, the calculation is
+carried out with two extra digits of precision to guard against
+cumulative round-off in `sum'.  Finally, complex arguments are allowed
+and handled by a separate algorithm.
+
+     (defmath mysin ((float (scalarp x)))
+       (interactive 1 "mysn")
+       (setq x (to-radians x))    ; Convert from current angular mode.
+       (with-extra-prec 2         ; Evaluate with extra precision.
+         (cond ((complexp x)
+                (mysin-complex x))
+               ((< x 0)
+                (- (mysin-raw (- x)))    ; Always call mysin-raw with x >= 0.
+               (t (mysin-raw x))))))
+
+     (defmath mysin-raw (x)
+       (cond ((>= x 7)
+              (mysin-raw (% x (two-pi))))     ; Now x < 7.
+             ((> x (pi-over-2))
+              (- (mysin-raw (- x (pi)))))     ; Now -pi/2 <= x <= pi/2.
+             ((> x (pi-over-4))
+              (mycos-raw (- x (pi-over-2))))  ; Now -pi/2 <= x <= pi/4.
+             ((< x (- (pi-over-4)))
+              (- (mycos-raw (+ x (pi-over-2)))))  ; Now -pi/4 <= x <= pi/4,
+             (t (mysin-series x))))           ; so the series will be efficient.
+
+where `mysin-complex' is an appropriate function to handle complex
+numbers, `mysin-series' is the routine to compute the sine Taylor series
+as before, and `mycos-raw' is a function analogous to `mysin-raw' for
+cosines.
+
+The strategy is to ensure that `x' is nonnegative before calling
+`mysin-raw'.  This function then recursively reduces its argument to a
+suitable range, namely, plus-or-minus `pi/4'.  Note that each test, and
+particularly the first comparison against 7, is designed so that small
+roundoff errors cannnot produce an infinite loop.  (Suppose we compared
+with `(two-pi)' instead; if due to roundoff problems the modulo operator
+ever returned `(two-pi)' exactly, an infinite recursion could result!)
+We use modulo only for arguments that will clearly get reduced, knowing
+that the next rule will catch any reductions that this rule misses.
+
+If a program is being written for general use, it is important to code
+it carefully as shown in this second example.  For quick-and-dirty
+programs, when you know that your own use of the sine function will
+never encounter a large argument, a simpler program like the first one
+shown is fine.
+
+
+File: calc  Node: Internals, Prev: Example Definitions, Up: Lisp Definitions
+
+Calculator Internals
+--------------------
+
+This chapter describes the Lisp functions defined by the Calculator that
+may be of use to user-written Calculator programs (as described in the
+rest of this chapter).  These functions are shown by their names as they
+conventionally appear in `defmath'.  Their full Lisp names are generally
+gotten by prepending `calcFunc-' or `math-' to their apparent names.
+(Names that begin with `calc-' are already in their full Lisp form.)
+You can use the actual full names instead if you prefer them, or if you
+are calling these functions from regular Lisp.
+
+Little distinction is made here between functions in the main Calc body
+and functions in the extensions module.  Because `defmath' itself is in
+the extensions, user-written code generally always executes with the
+extensions already loaded, so this is not an issue.  If you are doing
+something special, check carefully to make sure each function you are
+using is from the main body; be sure to call `(calc-extensions)' before
+using any function from the extensions package if you can't prove the
+extensions will already have been loaded.
+
+* Menu:
+
+* Data Type Formats::
+* Interactive Lisp Functions::
+* Stack Lisp Functions::
+* Predicates::
+* Computational Lisp Functions::
+* Vector Lisp Functions::
+* Symbolic Lisp Functions::
+* Formatting Lisp Functions::
+* Lisp Variables::
+* Hooks::
+
+

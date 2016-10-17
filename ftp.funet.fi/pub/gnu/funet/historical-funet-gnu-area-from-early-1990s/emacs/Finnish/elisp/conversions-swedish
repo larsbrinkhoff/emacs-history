@@ -1,0 +1,174 @@
+Newsgroups: soc.culture.nordic,swnet.svenska
+From: kurt@dna.lth.se (Kurt Swanson)
+Subject: Emacs 8bit-7bit-2char translators
+Message-ID: <1992Dec16.165658.6602@lth.se>
+Organization: Lund Institute of Technology, Sweden
+Date: Wed, 16 Dec 1992 16:56:58 GMT
+Lines: 96
+
+Here is some emacs code to put into your .emacs files.  It creates four
+functions: eight-to-seven, seven-to-eight, eight-to-two, and
+seven-to-two.  The translate those *special* characters between 8-bit
+iso-8859-1 (åäöÅÄÖ), 7-bit garbage (}{|][\), and two character garbage
+(aa,ae,oe,AA,AE,OE).  Modify 'em to translate to the Danish/Norwegian
+versions, or extend them to deal with éÉ (accented e's), if you
+will...  go crazy...
+
+;
+; 7-8 bit Swedish translations...
+;
+
+(defun seven-to-eight () "Changes 7-bit Swedish to iso-8859-1"
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (replace-string "\}" "å")
+    (goto-char (point-min))
+    (replace-string "\{" "ä")
+    (goto-char (point-min))
+    (replace-string "\|" "ö")
+    (goto-char (point-min))
+    (replace-string "\]" "Å")
+    (goto-char (point-min))
+    (replace-string "\[" "Ä")
+    (goto-char (point-min))
+    (replace-string "\\" "Ö")))
+
+;
+; Note the order for the reverse - upper case must be changed first!
+;
+
+(defun eight-to-seven () "Changes iso-8859-1 to 7-bit Swedish"
+  (interactive)
+  (save-excursion
+    (let ((case-fold-search nil))
+      (goto-char (point-min))
+      (replace-string "Å" "\]")
+      (goto-char (point-min))
+      (replace-string "Ä" "\[")
+      (goto-char (point-min))
+      (replace-string "Ö" "\\")
+      (goto-char (point-min))
+      (replace-string "å" "\}")
+      (goto-char (point-min))
+      (replace-string "ä" "\{")
+      (goto-char (point-min))
+      (replace-string "ö" "\|"))))
+
+;
+; 7-bit - 2 character Swedish translation...
+;
+
+(defun seven-to-two () "Changes 7-bit Swedish to 2-character ASCII"
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (replace-string "\}" "aa")
+    (goto-char (point-min))
+    (replace-string "\{" "ae")
+    (goto-char (point-min))
+    (replace-string "\|" "oe")
+    (goto-char (point-min))
+    (replace-string "\]" "AA")
+    (goto-char (point-min))
+    (replace-string "\[" "AE")
+    (goto-char (point-min))
+    (replace-string "\\" "OE")))
+
+;
+; Lastly, 
+;
+
+(defun eight-to-two () "Changes iso-8859-1 to 2-character ASCII"
+  (interactive)
+  (save-excursion
+    (let ((case-fold-search nil))
+      (goto-char (point-min))
+      (replace-string "Å" "AA")
+      (goto-char (point-min))
+      (replace-string "Ä" "AE")
+      (goto-char (point-min))
+      (replace-string "Ö" "OE")
+      (goto-char (point-min))
+      (replace-string "å" "aa")
+      (goto-char (point-min))
+      (replace-string "ä" "ae")
+      (goto-char (point-min))
+      (replace-string "ö" "oe"))))
+
+-- 
+Kurt Swanson, Dept. of Computer Science,
+Lunds universitet.  Kurt.Swanson@dna.lth.se
+-- 
+Kurt Swanson, Dept. of Computer Science,
+Lunds universitet.  Kurt.Swanson@dna.lth.se
+From: ml85920@ee.tut.fi (Laiho Mikko Tapio)
+Newsgroups: sfnet.atk.amiga
+Subject: Re: ISO-skandit (was: Re: Ei-asiaa (resoluutioita))
+Date: 12 Jan 93 18:13:19
+Organization: Tampere Univ. of Technology, Finland.
+Lines: 59
+Distribution: sfnet
+Message-ID: <ML85920.93Jan12181319@bekkerel.ee.tut.fi>
+References: <harry.041d@elfuerte.fipnet.fi> <1iubsqINNd07@vttux1.vtt.fi>
+NNTP-Posting-Host: bekkerel.ee.tut.fi
+
+
+>   N{ht{v{sti ovat - luen itse newsej{ gnus:illa (gnu emacs pohjainen news-
+>   lukija). (Se on hankala, mutta kun kirjoittaa ne t{rkeimm{t komennot alas
+>   lapulle ja tottuu siihen, niin se on kuitenkin t{h{n saakka paras, mink{
+>   olen kokeillut). Kun sit{ k{ytet{{n telnet-yhteydell{ tai vaikka 8N1 + telnet
+>   -yhteydell{ tulostuu ruutuun kenoviiva (backslash) ja 344 tai 366 ({ tai |
+>   vast). Kieless{, jossa n{it{ merkkej{ viel{ k{ytet{{n usein, niin luettavuus
+>   on aika huono. Ohjelmat olettavat ilmeisesti (ja osittain syyst{kin) ett{
+>   p{{tteet ovat 7-bittisi{.
+
+pist{s .emacsiin rivit:
+
+(defun gnus-scand-8to7 ()
+  (interactive)
+  (set-buffer gnus-Article-buffer)
+  (let ((buffer-read-only nil))
+    (subst-char-in-region (point-min) (point-max) ?\344 ?\{ t)
+    (subst-char-in-region (point-min) (point-max) ?\304 ?\[ t)
+    (subst-char-in-region (point-min) (point-max) ?\345 ?\} t)
+    (subst-char-in-region (point-min) (point-max) ?\305 ?\] t)
+    (subst-char-in-region (point-min) (point-max) ?\366 ?\| t)
+    (subst-char-in-region (point-min) (point-max) ?\326 ?\\ t)))
+ 
+(defun gnus-scand-7to8 ()
+  (interactive)
+  (set-buffer gnus-Article-buffer)
+  (let ((buffer-read-only nil))
+    (subst-char-in-region (point-min) (point-max) ?\{ ?\344 t)
+    (subst-char-in-region (point-min) (point-max) ?\[ ?\304 t)
+    (subst-char-in-region (point-min) (point-max) ?\} ?\345 t)
+    (subst-char-in-region (point-min) (point-max) ?\] ?\305 t)
+    (subst-char-in-region (point-min) (point-max) ?\| ?\366 t)
+    (subst-char-in-region (point-min) (point-max) ?\\ ?\326 t)))
+ 
+(setq gnus-Article-prepare-hook
+      '(lambda ()
+         (if (string-equal (getenv "TERM") "vt100")
+             (gnus-scand-8to7))
+         )
+      )
+ 
+ 
+(setq gnus-Startup-hook
+      '(lambda ()
+         (define-key gnus-Subject-mode-map "Z" 'gnus-scand-8to7)
+         (define-key gnus-Subject-mode-map "z" 'gnus-scand-7to8)))
+ 
+
+
+
+[l{ kysy mink{ emacs-version kanssa toi toimii, muista vaihtaa vt100 
+mieleiseksesi. Tuo on kohtuu usein liikkunut netiss{, viel{ kun saisi
+sellaisen joka piilottaisi ne IBM-y|kk|set.
+
+
+>   Jan
+
+Mikko Laiho
+ml85920@ee.tut.fi

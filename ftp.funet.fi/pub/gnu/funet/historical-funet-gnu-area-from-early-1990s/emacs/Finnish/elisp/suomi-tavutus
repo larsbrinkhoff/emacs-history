@@ -1,0 +1,48 @@
+From: sti@cs.hut.fi (Sami-Jaakko Tikka)
+Newsgroups: atk.emacs
+Subject: Tavutus GNU Emacsiin
+Message-ID: <STI.92Aug12000723@laphroaig.cs.hut.fi>
+Date: 11 Aug 92 21:07:26 GMT
+Reply-To: Sami.Tikka@hut.fi
+Distribution: atk
+Organization: Helsinki University of Technology, Finland
+Lines: 37
+X-Md4-Signature: 3f6dacbf7564089bb7336b1e79a70fe2
+
+
+Olen t{ss{ muutamana iltapuhteena vaivannut p{{t{ni kysymyksell{, mi-
+ten toteuttaa tavutus Emacsissa.  Eritoten suomenkielen tavutus, koska
+olen siin{ uskossa, ett{ suomen tavuttaminen on melko helppoa.
+
+Tuloksena syntyi pari ohjelmanp{tk{{, jotka olen asentanut muidenkin
+k{ytett{v{ksi vipusen ja niksulan /p/contrib/elisp:iin.  Niit{ saa va-
+paasti k{ytt{{ vaikken (viel{) olekaan niihin GPL:{{ laittanutkaan.
+Ohjelmat ovat mielest{ni tilassa jota voisi ehk{ luonnehtia beta-ver-
+sioksi.  Joka tapauksessa olisin kiinnostunut kuulemaan kommentteja
+tavutuksesta.  My|s tavattujen luteiden m{{r{st{, lajista ja kannan
+vahvuudesta olisi kiva saada tietoa.
+
+Kyseess{ on itse asiassa kaksi ohjelmaa: tavuttavat korvikkeet Emacsin
+funktioille fill-paragraph ja fill-region ja erillinen ohjelma, jota 
+edelliset k{ytt{v{t, joka tavuttaa suomea.
+
+Lis{ksi nikkaroin hyp-mode nimisen minor-moodin, jolla voi laittaa ta-
+vutuksen p{{lle ja pois.
+
+Simppeli k{ytt||notto pit{isi tapahtua lataamalla tiedosto /p/cont-
+rib/elisp/finn-hyp-init.  Sen j{lkeen jos haluaa tavuttaa teksti{,
+voipi antaa komennon M-x turn-on-finn-hyp.  Antamalla t{lle komennolle
+viel{ numeerisen argumentin tekstin oikea reuna lis{ksi tasataan.  Jos
+kappaleeseen lis{{ j{lkik{teen teksti{, sen voi 'fillata' kuten vanhaan
+malliin M-q:lla.
+
+Jos joku tiet{{ tavutuss{{nt|j{ muille kielille, ainakin englanninkie-
+lelle, kertokoon minulle.  Yrit{n siin{ tapauksessa saada aikaan tavu-
+tuksen my|s englannin kielelle, ellei se ole liian vaikaa.
+
+Enjoy!
+--
+Sami.Tikka@hut.fi                                  "Live Long and Prosper!"
+---------------------------------------------------------------------------
+"I think there's a world market for about 5 computers."
+        - Thomas J. Watson, Chairman of the Board, IBM (around 1948)

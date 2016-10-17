@@ -1,0 +1,59 @@
+			by Dr. Weiguang HUANG
+	5/6 Cara Road, Geelong, Vic. 3216, Australia
+
+	SymbMath, (an abbreviation for Symbolic Mathematics), is not
+only a symbolic calculator but also an expert system that can solve 
+symbolically mathematical problems. SymbMath performs symbolic formula, 
+as well as exact numeric computation. It can manipulate complicated 
+formulas and return answers in terms of symbols, formulas and exact 
+numbers, not just floating-point numbers. Symbolic mathematics is also 
+called Computer Algebra, Symbolic Manipulation, Algebraic Manipulation, 
+Symbolic Computation, or Algebraic Computation. 
+	There are a number of software packages for symbolic 
+computation, e.g. MACSYMA, Reduce, MAPLE, Mathematica, MicroCalc, etc. 
+However, most of them require large memory, e.g. Mathematica requires 
+at least 4 MBytes of RAM. MicroCalc is available for small IBM PC. 
+MicroCalc provides graphical or numerical answers, and recognizes 
+special symbols as constants and variables, but outputs formula only 
+for derivatives.
+	SymbMath is different from most of other software. (1) It 
+only require 640 KBytes RAM, so it can run on small IBM PC under 
+MS-DOS. (2) It is able to learn from human as machine learning. If 
+users only show it one thing (e.g. one integral) without writing any 
+line of program, it will learn many relative knowledges (e.g. many 
+integrals) although it has no these predefined knowledges before. (3) 
+Users easily edit the library (e.g. integral tables) in the formula 
+format. (4) It can do something that other software cannot do.
+	Its capabilities include facilities to provide analytical and 
+numerical answers for:
+	1. Differentiation: derivatives, higher order derivatives, 
+partial derivatives, mixed derivatives, total derivatives, implicit
+differentiation.
+	2. Integration: indefinite integration, definite integration, 
+multiple integration, infinite integration, parametric integration, 
+iterated integration, line integration, surface integration, 
+discontinuous integration, implicit integration.
+	3. Solution of equations: polynomial equations, algebraic 
+equations, systems of equations, differential and integral equations.
+	4. Manipulation of expressions: simplification, factorisation, 
+expansion, substitution, evaluation, user-defined functions, built-in 
+standard functions (including the error function).
+	5. Calculation: exact and floating-point numerical computation 
+of integer, rational, real and complex numbers in the range from 
+-infinity to infinity, even with different units.
+	6. Limits: real limits, complex limits, one-sided limits, 
+including the indeterminate forms, (e.g. 0/0, infinity/infinity, etc.).
+	7. Chemical calculation: the molecular weights, atomic weights, 
+and concentrations, by entering the symbols of the chemical elements.
+	8. Chemical reactions: inorganic and organic chemical reactions.
+	9. Others such as extrema, Taylor series, lists, arrays, vectors,
+matrices, sum, product, etc.
+	Its features also include:
+	1. Programming as an interpreter.
+	2. Interface with other software (e.g. with PlotData for graph).
+        3. Outputting two-dimentional displays, and the BASIC format.
+	4. On-line help, on-line manual.
+	5. Syntax check and the line editor for input.
+	Shareware version of SymbMath, SM14A.ZIP, is available from 
+the Calculator directory in SIMTEL20 on anonymous FTP sites.
+

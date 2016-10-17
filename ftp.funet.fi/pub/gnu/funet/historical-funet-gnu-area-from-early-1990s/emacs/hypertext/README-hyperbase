@@ -1,0 +1,291 @@
+THANK YOU FOR YOUR INTEREST IN HYPERBASE AND EHTS.
+
+HyperBase and EHTS description:
+==============================
+
+HyperBase is an active multiuser backend for hypertext systems written
+in C++. HyperBase is built on the client-server model enabling
+distributed, concurrent, and shared access from workstations in a
+local area network.
+
+HyperBase has been designed especially to support collaboration among
+its users, by providing an event (notification) mechanism and a fine
+grained lock mechanism. HyperBase is experimental: The present version
+only provides a simple node and link based data model and very limited
+query facilities.
+
+The client library of HyperBase is written in C and C++, but HyperBase
+has also been interfaced from elisp and Smalltalk applications.
+
+HyperBase enables us to experiment with multiuser multimachine and
+collaboration issues in connection with hypertext.
+
+EHTS (Emacs HyperText System) is such an experimental multiuser
+hypertext system consisting of a text editor (based on Epoch and GNU
+Emacs and written in elisp) and a graphical browser (based on XView
+and written in C) running under X and Open Windows. Both hypertext
+tools use our HyperBase as database.
+
+EHTS enables simultaneous sharing of the hypertext network of nodes
+and links by providing real-time monitoring and real-time
+communication and helping users to deal with access contentions. These
+are the main issues we tried to solve with EHTS, but it also provides
+"normal" hypertext services (linking portions of documents to each
+other, following chains, and the like).
+
+Our experimental systems is developed to run on Sun Sparcstations.
+
+
+HyperBase and EHTS documentation:
+================================
+
+[1] Uffe K. Wiil and Kasper Osterbye, Experiences with HyperBase - a
+    multi-user back-end for hypertext applications with emphasis on
+    collaboration support, Technical Report R 90-38, The University of
+    Aalborg, October 1990.
+
+    File: TR-90-38.ps.Z    
+
+    This is an abbreviated, newer, and more readable version of an
+    *internal* report:
+
+[0] Uffe K. Wiil et al., Design and Implementation of a HyperBase,
+    Internal Report IR 90-03, The University of Aalborg, September
+    1990. 
+
+    File: IR-90-03.ps.Z
+
+
+[2] Uffe K. Wiil, Using Events as Support for Data Sharing in
+    Collaborative Work, In K. Gorling and C. Sattler, editors,
+    Proceedings of the International Workshop on CSCW, pages 162-177,
+    Berlin, April 9-11 1991.
+
+    Also available as Technical Report R 91-14, The University of
+    Aalborg, April 1991.
+
+    File: TR-91-14.ps.Z    
+
+
+[3] Uffe K. Wiil, Issues in the Design of EHTS: A Multiuser Hypertext 
+    System for Collaboration, Technical Report R 91-24, The University
+    of Aalborg, June 1991. 
+
+    File: TR-91-24.ps.Z
+
+
+The internal HyperBase report [0] describes the design and
+implementation of HyperBase in detail, but it is an *internal* report
+written by 7 different people. Therefore, the quality of the written
+language differs very much. A complex hand drawn figure is missing
+(Figure 2.3), which could not be included in the first postscript
+version due to lack of time.
+
+The HyperBase paper [1] describes the design, implementation, and
+experiences with HyperBase. The experiences are gained from its use in
+EHTS and other systems in our department.
+
+The Event paper [2] talks about how the multiuser mechanisms in
+HyperBase can be used to support data sharing among multiple
+simultaneous working users. Examples from EHTS are given.
+
+The EHTS paper [3] describes four categories of issues from the design
+and experiences from the use of EHTS in our department: architecture,
+collaboration, user interface, and data model. An appendix on the
+functionality of the system (a description of functions) is included.
+
+HyperBase has been changed drastically since the internal report [0]
+was written (January 1990). Therefore, there might be some differences
+in the description of HyperBase in the technical reports [1], [2], and
+[3] and in [0].
+
+I would suggest interested persons to start reading [3] which gives a
+general view of the whole system making it possible to skip sections
+in [1] and [2]. If you only intend to try EHTS (and HyperBase), you
+should read [3] and maybe [2] and [1] only. If you intend to use the
+HyperBase software for other purposes, you should read [0] also.
+
+
+HyperBase and EHTS software:
+===========================
+
+EHTS software:
+
+    EHTS/Browser: 		EHTS graphical browser.
+				(C source code, makefile, browser)
+				(browser layout file)
+
+    EHTS/Editor:		EHTS editor.
+				(elisp source code, loadfile)
+
+    File: ehts.tar.Z 		contains all EHTS software.
+
+HyperBase software:
+
+    HyperBase:			HyperBase 
+				(makefile, hbserver, hblib.a)
+				(HyperBase data, link, and node files) 
+
+    HyperBase/HB-Client:	Simple HyperBase test program.
+				(C++ source code, makefile, hbclient)
+
+    HyperBase/block1:		HyperBase block1 source code - C++.
+				(file system interface)
+
+    HyperBase/block2:		HyperBase block2 source code - C++.
+				(operations)
+
+    HyperBase/block3:		HyperBase block3 source code - C++.
+				(event + lock)
+
+    HyperBase/block4/4a:	HyperBase block4a source code - C++.
+				(networking)
+
+    HyperBase/block4/4b:	HyperBase block4b source code - C++.
+				(client library)
+
+    HyperBase/config:		HyperBase configuration.
+				(C source code, makefile, hb_config)
+				(Configuration example: CONFIG-EHTS)
+
+    File: hyperbase.tar.Z	contains all HyperBase software.
+
+
+HyperBase and EHTS installation guide:
+=====================================
+
+The system (hardware and software) requirements are:
+
+    The HyperBase server runs on Sun 4s, but the software can easily
+    be changed to run on Sun 3s.
+
+    EHTS runs under both OpenWindows and X (X11R4) - best with open
+    look window manager (olwm), but also with other window managers
+    (twm,gwm). 
+
+    The EHTS editor runs under GNU Emacs version 18.55.8 and Epoch
+    version 3.2 in our network of Sun Sparcstations.
+
+    The EHTS browser needs XView version 1 to run.
+
+    We use SunOS release 4.1.1, but the system also runs on SunOS
+    release 4.1.
+    
+
+HyperBase should run as a background process. Start with:
+
+    ./hbserver & 
+
+Option -h (./hbserver -h) shows the possible options when starting a
+HyperBase server and signals to send to a running HyperBase server.
+
+The server creates three files:
+
+    datablocks.hb		storing the data fields of the nodes.
+    datanodes.hb		storing the nodes.
+    linknodes.hb		storing the links.
+
+in the directory where it is started. Remember to start same place
+next time to use the same files (or move the files). Three sample
+files with online documentation (from [3]) are included in
+"HyperBase/".
+
+
+The EHTS editor is started (in our system) with the command:
+
+    epoch -l emacsepoch -f ehts &
+
+You are asked for the name of the machine where the HyperBase server
+is running. But, you can also set a variable in "EHTS.el" (line 60):
+
+    (setq ehts-on-machine "<machine-name>")
+
+if you decide always to have the HyperBase server running on a
+specific machine, like we have.
+
+To get the editor running you should change the definition of the two
+alists in "EHTS.el" (line 47 and line 52):
+
+    "ehts-user-alist" and "ehts-user-message-alist"
+
+These lists should contain the user names (login names) of the persons
+using the system.
+
+You should also change the two load paths in the "emacsepoch" file in
+line 60 and line 87. Line 60 should load the file "mouse.el" from the
+epoch library at your system and line 87 should load "EHTS.el".
+
+
+The EHTS browser is started with the command:
+
+    ./browser -h <machine name of hbserver> &
+
+We use an alias (alias browser "..path../browser -h turquoise"), as
+our HyperBase server always runs on the same machine (turquoise).
+
+If you normally use a later version of XView (than version 1) at your
+site (like we do) then your ".cshrc" file or ".login" file (or ...)
+should contain a path to XView version 1 as shown in the following
+example from our system:
+
+setenv LD_LIBRARY_PATH $LD_LIBRARY_PATH":/home/local/sys/X11/lib/XView1"
+
+Ask your system manager where XView1 is located in your system.
+
+When you save the layout in the browser the file named ".ehts-browser"
+in your home directory is updated. A sample layout file is included in
+"EHTS/Browser/" named "ehts-browser" - remember to rename (to
+".ehts-browser") and place in your home directory. The layout file
+stores a specific layout of the nodes and links in the three sample
+HyperBase files with online documentation. Note that you should always
+have a file named ".ehts-browser" in your home directory, when EHTS
+browser is started. The first line in this file specifies the size of
+the canvas in the browser.
+
+
+These are to my best knowledge the things you should know to install
+the system, but there might be other system dependent things that
+could cause (minor) problems in getting the system running at your
+site. 
+
+Please let me know of such problems (and how you solved them) and it
+will be included in the next version of the installation guide.
+
+
+Changing HyperBase and EHTS software:
+====================================
+
+If you decide to change the software, it will be 100% at your own
+risk...! There are very few comments in the source code...!
+
+The system is fairly stable as it is now, but a group of graduate
+students in our lab have extended HyperBase with version control on
+nodes and they ran into serious problems before the extended HyperBase
+again was reasonable stable. But, it is possible...!
+
+It is much easier to experiment with the EHTS source code, because it
+is written in elisp and uses a stable version of HyperBase.
+
+The binaries located in "HyperBase/" are compiled with GNU g++ version
+1.36. Minor changes should be made to use the latest GNU g++ version
+(1.39 ??). 
+
+Note that all makefiles use system dependent load paths ...!
+
+
+Please share your experiences with the use of the system with me
+(Email: kock@iesd.auc.dk), and please tell me in which way you plan to
+extend the system...if you do. I will keep descriptions of ongoing
+extensions in the directory "extensions", so that two persons do not
+make the same changes...what a waste of good work...!
+
+(Do not expect me to answer questions about the source code or any
+problems you might have changing the software!)
+
+Good luck,
+
+Uffe Kock Wiil
+Department of Computer Science,
+The University of Aalborg,         Email:  kock@iesd.auc.dk
+Fredrik Bajers Vej 7E,             Phone:  + 45 98 15 42 11 (Ext 5051)
+DK-9220 Aalborg, Denmark.          Fax:    + 45 98 15 81 29

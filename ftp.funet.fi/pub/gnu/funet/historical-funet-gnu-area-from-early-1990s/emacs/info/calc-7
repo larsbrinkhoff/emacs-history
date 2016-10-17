@@ -1,0 +1,1499 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+File: calc  Node: Formatting Lisp Functions, Prev: Symbolic Lisp Functions, Up: Internals, Next: Lisp Variables
+
+I/O and Formatting Functions
+............................
+
+The functions described here are responsible for parsing and formatting
+Calc numbers and formulas.
+
+* Function: read-number STR
+
+     If string STR contains a valid Calc number, either integer,
+     fraction, float, or HMS form, this function parses and returns that
+     number.  Otherwise, it returns `nil'.
+
+* Function: read-expr STR
+
+     Read an algebraic expression from string STR.  If STR does not have
+     the form of a valid expression, return a list of the form `(error
+     POS MSG)' where POS is an integer index into STR of the general
+     location of the error, and MSG is a string describing the problem.
+
+* Function: read-exprs STR
+
+     Read a list of expressions separated by commas, and return it as a
+     Lisp list.  If an error occurs in any expressions, an error list as
+     shown above is returned instead.
+
+* Function: calc-do-alg-entry INITIAL PROMPT NO-NORM
+
+     Read an algebraic formula or formulas using the minibuffer.  All
+     conventions of regular algebraic entry are observed.  The return
+     value is a list of Calc formulas; there will be more than one if
+     the user entered a list of values separated by commas.  The result
+     is `nil' if the user presses Return with a blank line.  If INITIAL
+     is given, it is a string which the minibuffer will initially
+     contain.  If PROMPT is given, it is the prompt string to use; the
+     default is "Algebraic:".  If NO-NORM is `t', the formulas will be
+     returned exactly as parsed; otherwise, they will be passed through
+     `calc-normalize' first.
+
+     To support the use of `$' characters in the algebraic entry, use
+     `let' to bind `calc-dollar-values' to a list of the values to be
+     substituted for `$', `$$', and so on, and bind `calc-dollar-used'
+     to 0.  Upon return, `calc-dollar-used' will have been changed to
+     the highest number of consecutive `$'s that actually appeared in
+     the input.
+
+* Function: format-number A
+
+     Convert the real or complex number or HMS form A to string form.
+
+* Function: format-flat-expr A PREC
+
+     Convert the arbitrary Calc number or formula A to string form, in
+     the style used by the trail buffer.  This is a simple format
+     designed mostly to guarantee the string is of a form that can be
+     re-parsed by `read-expr'.  Most formatting modes, such as digit
+     grouping, complex number format, and point character, are ignored
+     to ensure the result will be re-readable.  The PREC parameter is
+     normally 0; if you pass a large integer like 1000 instead, the
+     expression will be surrounded by parentheses unless it is a plain
+     number or variable name.
+
+* Function: format-value A WIDTH
+
+     Convert the Calc number or formula A to string form, using the
+     format seen in the stack buffer.  Beware the the string returned
+     may not be re-readable by `read-expr', for example, because of
+     digit grouping.  Multi-line objects like matrices produce strings
+     that contain newline characters to separate the lines.  The W
+     parameter, if given, is the target window size for which to format
+     the expressions.  If W is omitted, the width of the Calculator
+     window is used.
+
+* Function: compose-expr A PREC
+
+     Format the Calc number or formula A according to the current
+     language mode, returning a "composition."  To learn about the
+     structure of compositions, see the comments in the Calc source
+     code.  In the "big" language mode, you can specify the format of a
+     given type of function call by putting a `math-compose-big'
+     property on the function's symbol, whose value is a Lisp function
+     that takes A and PREC as arguments and returns a composition.
+
+* Function: composition-to-string C W
+
+     Convert a composition structure returned by `compose-expr' into a
+     string.  Multi-line compositions convert to strings containing
+     newline characters.  The target window size is given by W.  The
+     `format-value' function basically calls `compose-expr' followed by
+     `composition-to-string'.
+
+* Function: comp-width C
+
+     Compute the width in characters of composition C.
+
+* Function: comp-height C
+
+     Compute the height in lines of composition C.
+
+* Function: comp-ascent C
+
+     Compute the portion of the height of composition C which is on or
+     above the baseline.  For a one-line composition, this will be one.
+
+* Function: comp-descent C
+
+     Compute the portion of the height of composition C which is below
+     the baseline.  For a one-line composition, this will be zero.
+
+* Function: comp-first-char C
+
+     If composition C is a simple horizontal composition, return the
+     first (leftmost) character of the composition as an integer.
+     Otherwise, return `nil'.
+
+* Function: comp-last-char C
+
+     If composition C is a simple horizontal composition, return the
+     last (rightmost) character, otherwise return `nil'.
+
+
+File: calc  Node: Lisp Variables, Prev: Formatting Lisp Functions, Up: Internals, Next: Hooks
+
+Lisp Variables
+..............
+
+(This section is currently unfinished.)
+
+
+File: calc  Node: Hooks, Prev: Lisp Variables, Up: Internals
+
+Hooks
+.....
+
+(This section is currently unfinished.)
+
+
+File: calc  Node: Installation, Prev: Programming, Up: Top, Next: Reporting Bugs
+
+Installation
+************
+
+Calc comes as a pair of Emacs Lisp files, generally called `calc.el' and
+`calc-ext.el'.  The first contains the basic foundations of the
+Calculator, and is as small as possible to promote quick loading.  The
+second contains all the more advanced commands and functions.  Calc is
+usually installed so that the `M-x calc' or `M-#' command auto-loads
+only the first part, and the second part is auto-loaded whenever the
+first advanced feature is used.
+
+Calc is written in a way that maximizes performance when its code has
+been byte-compiled; a side effect is that performance is seriously
+degraded if it *isn't* compiled.  Thus, it is essential to compile the
+Calculator before trying to use it.  The Emacs command `M-x
+byte-compile-file' is used to compile an Emacs Lisp file.  Compile each
+of `calc.el' and `calc-ext.el' to obtain byte-code files `calc.elc' and
+`calc-ext.elc'.
+
+For your convenience, the FTP distribution of Calc, obtainable from
+anonymous FTP on `csvax.caltech.edu', includes already-compiled versions
+of both of these files.
+
+To teach Emacs how to load in Calc when you type `M-x calc' for the
+first time, include these lines in your `.emacs' file (if you are
+installing Calc just for your own use), or the system's `lisp/default'
+file (if you are installing Calc publicly).
+
+     (autoload 'calc             ".../calc.elc"     "Calculator Mode" t nil)
+     (autoload 'calc-extensions  ".../calc-ext.elc" nil nil nil)
+     (autoload 'quick-calc       ".../calc.elc"     "Quick Calculator" t nil)
+     (autoload 'calc-grab-region ".../calc-ext.elc" nil t nil)
+     (autoload 'defmath          ".../calc-ext.elc" nil t t)
+
+where `.../calc.elc' represents the full path to the `calc.elc' file,
+and similarly for `.../calc-ext.elc'.  If you have installed these files
+in Emacs' main `lisp/' directory, you can just write `"calc.elc"' and
+`"calc-ext.elc"'.
+
+The `autoload' command for `calc' is what loads `calc.elc' when you type
+`M-x calc'.  The `autoload' for `calc-extensions' brings in the
+extensions module; Calc takes care to call the `calc-extensions'
+function (which doesn't actually do anything) before any operation that
+requires the extensions to be present.  The other three `autoload'
+commands are for functions which might reasonably be used before the
+user has typed `M-x calc' for the first time.
+
+If you don't want to bother with a split Calculator, you can simply
+concatenate `calc-ext.elc' onto the end of `calc.elc', rewrite the above
+`autoload' commands all to point to the combined file, and treat Calc as
+one big program.  You may need to do this if `autoload' is giving you
+problems.
+
+You may also wish to bind the `calc' command to a key.  The recommended
+keystroke is `M-#' (i.e., Meta-Shift-3).  To set up this key binding,
+include this command in your `.emacs' or `lisp/default' file:
+
+     (global-set-key "\e#" 'calc)
+
+There are no standard key assignments for `quick-calc' and
+`calc-grab-region', but you may wish to define some.
+
+The file `macedit.el' contains another useful Emacs extension called
+`edit-kbd-macro'.  It allows you to edit a keyboard macro in
+human-readable form.  The `Z E' command in Calc knows how to use it to
+edit user commands that have been defined by keyboard macros.  To
+autoload it, you will want to include the commands,
+
+     (autoload 'edit-kbd-macro      ".../macedit.elc" "Edit Keyboard Macro" t nil)
+     (autoload 'edit-last-kbd-macro ".../macedit.elc" "Edit Keyboard Macro" t nil)
+
+The documentation for Calc (i.e., this manual) comes in a file
+`calc.texinfo'.  To format this for use as an on-line manual, open this
+file for editing in Emacs and give the command `M-x
+texinfo-format-buffer'.  When this finishes, type `C-x C-s' to save.
+The result will be a collection of files whose names begin with
+`calc-info'.  You can also format this into a printable document using
+TeX, but beware, the manual is about 170 printed pages!
+
+There is a Lisp variable called `calc-info-filename' which holds the
+name of the Info file containing Calc's on-line documentation.  Its
+default value is `calc-info', which will work correctly if the Info
+files are stored in Emacs' main `info/' directory.  If you keep them
+elsewhere, you will want to put a command of the form,
+
+     (setq calc-info-filename ".../calc-info")
+
+in your `.emacs' or `lisp/default' file, where again `...'  represents
+the directory containing the Info files.
+
+To test your installation of Calc, start a fresh Emacs and type `M-#' to
+make sure the autoload commands and key bindings work.  Now, type `i' to
+make sure Calc can find its Info documentation.  Press `q' to exit the
+Info system.  Type `20 S' to compute the sine of 20 degrees; this will
+test the autoloading of the extensions module.  The result should be
+0.342020143326.  Finally, press `M-#' again to make sure the Calculator
+can exit.
+
+(The above text is included in both the Calc documentation and the file
+INSTALL in the Calc distribution directory.)
+
+
+File: calc  Node: Reporting Bugs, Prev: Installation, Up: Top, Next: Key Index
+
+Reporting Bugs
+**************
+
+If you find a bug in Calc, send e-mail to Dave Gillespie,
+`daveg@csvax.caltech.edu'.  While I cannot guarantee that I will have
+time to work on your bug, I do try to fix bugs quickly whenever I can.
+
+If you have suggestions for additional features for Calc, I would love
+to hear them.  Some have dared to suggest that Calc is already top-heavy
+with features; I really don't see what they're talking about, so, if you
+have ideas, send them right in.  (I may even have time to implement
+them!)
+
+At the front of the source file, `calc.el', is a list of ideas for
+future work which I have not had time to do.  If any enthusiastic souls
+wish to take it upon themselves to work on these, I would be delighted.
+Please let me know if you plan to contribute to Calc so I can coordinate
+your efforts with mine and those of others.  I will do my best to help
+you in whatever way I can.
+
+
+File: calc  Node: Key Index, Prev: Reporting Bugs, Up: Top, Next: Command Index
+
+Index of Key Sequences
+**********************
+
+
+* Menu:
+
+* $: Algebraic Entry.
+* ': Algebraic Entry.
+* %: Basic Arithmetic.
+* &: Basic Arithmetic.
+* *: Basic Arithmetic.
+* +: Basic Arithmetic.
+* -: Basic Arithmetic.
+* /: Basic Arithmetic.
+* :: Basic Arithmetic.
+* \: Basic Arithmetic.
+* ^: Basic Arithmetic.
+* |: Building Vectors.
+* !: Combinatorial Functions.
+* `: Editing Stack Entries.
+* (: Incomplete Objects.
+* ): Incomplete Objects.
+* ,: Incomplete Objects.
+* ;: Incomplete Objects.
+* [: Incomplete Objects.
+* ]: Incomplete Objects.
+* <: Introduction.
+* >: Introduction.
+* ?: Introduction.
+* #: Numeric Entry.
+* .: Numeric Entry.
+* @: Numeric Entry.
+* _: Numeric Entry.
+* ~: Prefix Arguments.
+* ": Strings.
+* =: Variables.
+* 0-9: Numeric Entry.
+* a !: Logical Operations.
+* a #: Logical Operations.
+* a &: Logical Operations.
+* a <: Logical Operations.
+* a =: Logical Operations.
+* a >: Logical Operations.
+* a [: Logical Operations.
+* a ]: Logical Operations.
+* a {: Logical Operations.
+* a |: Logical Operations.
+* a b: Algebraic Manipulation.
+* A: Basic Arithmetic.
+* a c: Algebraic Manipulation.
+* a d: Calculus.
+* a e: Algebraic Manipulation.
+* a I: Calculus.
+* a i: Calculus.
+* a r: Rewrite Rules.
+* a s: Algebraic Manipulation.
+* a S: Calculus.
+* a t: Calculus.
+* A (vectors): Vector and Matrix Arithmetic.
+* a x: Algebraic Manipulation.
+* b a: Binary Functions.
+* b c: Binary Functions.
+* b d: Binary Functions.
+* b l: Binary Functions.
+* B: Logarithmic Functions.
+* b n: Binary Functions.
+* b o: Binary Functions.
+* b R: Binary Functions.
+* b r: Binary Functions.
+* b s: Binary Functions.
+* b w: Binary Functions.
+* b x: Binary Functions.
+* c 1: Conversions.
+* c 2: Conversions.
+* c 3: Conversions.
+* c c: Conversions.
+* c d: Conversions.
+* c F: Conversions.
+* c f: Conversions.
+* c h: Conversions.
+* c p: Conversions.
+* c r: Conversions.
+* C: Trigonometric and Hyperbolic Functions.
+* C-_: Undo.
+* C-c C-c (Edit Mode): Editing Stack Entries.
+* C-d: Stack Manipulation.
+* C-k: Killing From Stack.
+* C-w: Killing From Stack.
+* C-y: Yanking Into Stack.
+* d .: Float Formats.
+* d ,: Grouping Digits.
+* d `: Introduction.
+* d ~: Introduction.
+* d <: Justification.
+* d =: Justification.
+* d >: Justification.
+* d ": Strings.
+* d [: Truncating the Stack.
+* d ]: Truncating the Stack.
+* d 0: Radix Modes.
+* d 2: Radix Modes.
+* d 6: Radix Modes.
+* d 8: Radix Modes.
+* d B: Normal Language Modes.
+* d b: Normal Language Modes.
+* d C: C Fortran Pascal.
+* d c: Complex Formats.
+* d e: Float Formats.
+* d F: C Fortran Pascal.
+* d f: Float Formats.
+* d g: Grouping Digits.
+* d h: HMS Formats.
+* d i: Complex Formats.
+* d j: Complex Formats.
+* d l: Stack Basics.
+* d M: Mathematica Language Mode.
+* d n: Float Formats.
+* d N: Normal Language Modes.
+* d o: Fraction Formats.
+* d O: Normal Language Modes.
+* d P: C Fortran Pascal.
+* d r: Radix Modes.
+* d s: Float Formats.
+* d T: Tex Language Mode.
+* d t: Truncating the Stack.
+* d U: Normal Language Modes.
+* D: Undo.
+* d w: Error Messages.
+* d z: Radix Modes.
+* DEL: Stack Manipulation.
+* E: Logarithmic Functions.
+* e: Numeric Entry.
+* F: Integer Truncation.
+* G: Complex Number Functions.
+* H a d: Calculus.
+* H a S: Calculus.
+* H C: Trigonometric and Hyperbolic Functions.
+* H E: Logarithmic Functions.
+* H F: Integer Truncation.
+* H I a S: Calculus.
+* H I C: Trigonometric and Hyperbolic Functions.
+* H I E: Logarithmic Functions.
+* H I F: Integer Truncation.
+* H I L: Logarithmic Functions.
+* H I R: Integer Truncation.
+* H I S: Trigonometric and Hyperbolic Functions.
+* H I T: Trigonometric and Hyperbolic Functions.
+* h: Introduction.
+* H: Inverse and Hyperbolic.
+* H k b: Combinatorial Functions.
+* H L: Logarithmic Functions.
+* H P: Scientific Functions.
+* H R: Integer Truncation.
+* H S: Trigonometric and Hyperbolic Functions.
+* H T: Trigonometric and Hyperbolic Functions.
+* I a S: Calculus.
+* I C: Trigonometric and Hyperbolic Functions.
+* I E: Logarithmic Functions.
+* I F: Integer Truncation.
+* i: Introduction.
+* I: Inverse and Hyperbolic.
+* I k n: Combinatorial Functions.
+* I L: Logarithmic Functions.
+* I R: Integer Truncation.
+* I S: Trigonometric and Hyperbolic Functions.
+* I T: Trigonometric and Hyperbolic Functions.
+* I v s: Building Vectors.
+* J: Complex Number Functions.
+* k a: Random Numbers.
+* k b: Combinatorial Functions.
+* k d: Combinatorial Functions.
+* k f: Combinatorial Functions.
+* k G: Combinatorial Functions.
+* k g: Combinatorial Functions.
+* K: Keyboard Macros.
+* k l: Combinatorial Functions.
+* k m: Combinatorial Functions.
+* k n: Combinatorial Functions.
+* k p: Combinatorial Functions.
+* k r: Random Numbers.
+* k t: Combinatorial Functions.
+* l: Let Command.
+* L: Logarithmic Functions.
+* LFD: Stack Manipulation.
+* m a: Algebraic Entry.
+* m A: Simplification Modes.
+* m B: Simplification Modes.
+* M-# (calc-grab-region): Grabbing From Buffers.
+* m d: Angular Modes.
+* m D: Simplification Modes.
+* m E: Simplification Modes.
+* m f: Fraction Mode.
+* m h: Angular Modes.
+* M-#: Introduction.
+* m m: Mode Settings.
+* m N: Simplification Modes.
+* m O: Simplification Modes.
+* m p: Polar Mode.
+* m r: Angular Modes.
+* M: Recursion Depth.
+* m s: Symbolic Mode.
+* m U: Simplification Modes.
+* m w: Working Message.
+* m x: Mode Settings.
+* M-k: Killing From Stack.
+* M-TAB: Stack Manipulation.
+* M-w: Killing From Stack.
+* M-x: Introduction.
+* n: Basic Arithmetic.
+* N: Symbolic Mode.
+* p: Precision.
+* P: Scientific Functions.
+* Q: Basic Arithmetic.
+* q: Introduction.
+* R: Integer Truncation.
+* r: Recalling Variables.
+* RET: Stack Manipulation.
+* s: Storing Variables.
+* S: Trigonometric and Hyperbolic Functions.
+* SPC: Stack Manipulation.
+* t <: Trail Commands.
+* t >: Trail Commands.
+* t [: Trail Commands.
+* t ]: Trail Commands.
+* t b: Trail Commands.
+* t d: Trail Commands.
+* t f: Trail Commands.
+* t h: Trail Commands.
+* t i: Trail Commands.
+* t k: Trail Commands.
+* t m: Trail Commands.
+* t n: Trail Commands.
+* t o: Trail Commands.
+* t p: Trail Commands.
+* t r: Trail Commands.
+* t s: Trail Commands.
+* T: Trigonometric and Hyperbolic Functions.
+* t y: Trail Commands.
+* TAB: Stack Manipulation.
+* u b: Basic Operations on Units.
+* u c: Basic Operations on Units.
+* u d: User-Defined Units.
+* u e: The Units Table.
+* u g: The Units Table.
+* u p: User-Defined Units.
+* u r: Basic Operations on Units.
+* u s: Basic Operations on Units.
+* u t: Basic Operations on Units.
+* u u: User-Defined Units.
+* U: Undo.
+* u V: The Units Table.
+* u v: The Units Table.
+* u x: Basic Operations on Units.
+* v (: Vector and Matrix Formats.
+* v ,: Vector and Matrix Formats.
+* v <: Vector and Matrix Formats.
+* v =: Vector and Matrix Formats.
+* v >: Vector and Matrix Formats.
+* v [: Vector and Matrix Formats.
+* v {: Vector and Matrix Formats.
+* v a: Building Vectors.
+* V A: Reducing and Mapping.
+* v b: Building Vectors.
+* v c: Extracting Elements.
+* V C: Vector and Matrix Arithmetic.
+* v d: Building Vectors.
+* V D: Vector and Matrix Arithmetic.
+* v h: Building Vectors.
+* v i: Building Vectors.
+* V I: Vector and Matrix Arithmetic.
+* V J: Vector and Matrix Arithmetic.
+* v l: Extracting Elements.
+* V L: Vector and Matrix Arithmetic.
+* V M: Reducing and Mapping.
+* V N: Vector and Matrix Arithmetic.
+* v n: Vector and Matrix Arithmetic.
+* v p (complex): Complex Number Functions.
+* v p (vectors): Building Vectors.
+* v r: Extracting Elements.
+* V R: Reducing and Mapping.
+* v s: Building Vectors.
+* V T: Vector and Matrix Arithmetic.
+* v t: Vector and Matrix Arithmetic.
+* v u (complex): Complex Number Functions.
+* v u (vectors): Building Vectors.
+* v x: Building Vectors.
+* w: Error Messages.
+* x: Introduction.
+* X: Undo.
+* y: Yanking Into Buffers.
+* Z :: Conditionals in Macros.
+* Z [: Conditionals in Macros.
+* Z ]: Conditionals in Macros.
+* Z |: Conditionals in Macros.
+* Z (: Loops in Macros.
+* Z ): Loops in Macros.
+* Z /: Loops in Macros.
+* Z <: Loops in Macros.
+* Z >: Loops in Macros.
+* Z {: Loops in Macros.
+* Z }: Loops in Macros.
+* Z ': Queries in Macros.
+* Z =: Queries in Macros.
+* Z C-g: Conditionals in Macros.
+* Z D: Creating User Keys.
+* Z E: Creating User Keys.
+* Z F: Algebraic Definitions.
+* Z G: Algebraic Definitions.
+* Z K: Naming Keyboard Macros.
+* Z P: Creating User Keys.
+* Z U: Creating User Keys.
+* Z V: Storing Variables.
+
+
+File: calc  Node: Command Index, Prev: Key Index, Up: Top, Next: Function Index
+
+Index of Calculator Commands
+****************************
+
+Since all Calculator commands begin with the prefix `calc-', the `x' key
+has been provided as a variant of `M-x' which automatically types
+`calc-' for you.  Thus, `x last-x' is short for `M-x calc-last-x'.
+
+
+* Menu:
+
+* another-calc: Multiple Calculators.
+* calc: Introduction.
+* calc-abs: Basic Arithmetic.
+* calc-abs (vectors): Vector and Matrix Arithmetic.
+* calc-abssqr: Basic Arithmetic.
+* calc-algebraic-entry: Algebraic Entry.
+* calc-algebraic-mode: Algebraic Entry.
+* calc-alg-simplify-mode: Simplification Modes.
+* calc-always-load-extensions: Mode Settings.
+* calc-and: Binary Functions.
+* calc-apply: Reducing and Mapping.
+* calc-arccos: Trigonometric and Hyperbolic Functions.
+* calc-arccosh: Trigonometric and Hyperbolic Functions.
+* calc-arcsin: Trigonometric and Hyperbolic Functions.
+* calc-arcsinh: Trigonometric and Hyperbolic Functions.
+* calc-arctan: Trigonometric and Hyperbolic Functions.
+* calc-arctan2: Trigonometric and Hyperbolic Functions.
+* calc-arctanh: Trigonometric and Hyperbolic Functions.
+* calc-argument: Complex Number Functions.
+* calc-arrange-vector: Building Vectors.
+* calc-auto-why: Error Messages.
+* calc-base-units: Basic Operations on Units.
+* calc-big-language: Normal Language Modes.
+* calc-bin-simplify-mode: Simplification Modes.
+* calc-break: Loops in Macros.
+* calc-build-vector: Building Vectors.
+* calc-ceiling: Integer Truncation.
+* calc-center-justify: Justification.
+* calc-change-sign: Basic Arithmetic.
+* calc-choose: Combinatorial Functions.
+* calc-c-language: C Fortran Pascal.
+* calc-clean: Conversions.
+* calc-clip: Binary Functions.
+* calc-cnorm: Vector and Matrix Arithmetic.
+* calc-collect: Algebraic Manipulation.
+* calc-complex-notation: Complex Formats.
+* calc-concat: Building Vectors.
+* calc-conj: Complex Number Functions.
+* calc-conj-transpose: Vector and Matrix Arithmetic.
+* calc-convert-temperature: Basic Operations on Units.
+* calc-convert-units: Basic Operations on Units.
+* calc-copy-as-kill: Killing From Stack.
+* calc-copy-region-as-kill: Killing From Stack.
+* calc-copy-to-buffer: Yanking Into Buffers.
+* calc-cos: Trigonometric and Hyperbolic Functions.
+* calc-cosh: Trigonometric and Hyperbolic Functions.
+* calc-cross: Vector and Matrix Arithmetic.
+* calc-default-simplify-mode: Simplification Modes.
+* calc-define-unit: User-Defined Units.
+* calc-degrees-mode: Angular Modes.
+* calc-derivative: Calculus.
+* calc-diag: Building Vectors.
+* calc-diff: Binary Functions.
+* calc-display-strings: Strings.
+* calc-divide: Basic Arithmetic.
+* calc-dots: Incomplete Objects.
+* calc-double-factorial: Combinatorial Functions.
+* calc-edit: Editing Stack Entries.
+* calc-edit-finish: Editing Stack Entries.
+* calc-eng-notation: Float Formats.
+* calc-enter: Stack Manipulation.
+* calc-enter-units-table: The Units Table.
+* calc-equal-to: Logical Operations.
+* calc-eval-num: Symbolic Mode.
+* calc-evaluate: Variables.
+* calc-execute-extended-command: Introduction.
+* calc-exp: Logarithmic Functions.
+* calc-expand: Algebraic Manipulation.
+* calc-explain-units: The Units Table.
+* calc-expm1: Logarithmic Functions.
+* calc-extended-gcd: Combinatorial Functions.
+* calc-extract-units: Basic Operations on Units.
+* calc-ext-simplify-mode: Simplification Modes.
+* calc-factorial: Combinatorial Functions.
+* calc-fdiv: Basic Arithmetic.
+* calc-fix-notation: Float Formats.
+* calc-flat-language: Normal Language Modes.
+* calc-float: Conversions.
+* calc-floor: Integer Truncation.
+* calc-flush-caches: Caches.
+* calc-fortran-language: C Fortran Pascal.
+* calc-frac-mode: Fraction Mode.
+* calc-fraction: Conversions.
+* calc-from-hms: Conversions.
+* calc-gamma: Combinatorial Functions.
+* calc-gcd: Combinatorial Functions.
+* calc-get-unit-definition: The Units Table.
+* calc-get-user-defn: Algebraic Definitions.
+* calc-grab-region: Grabbing From Buffers.
+* calc-greater-equal: Logical Operations.
+* calc-greater-than: Logical Operations.
+* calc-group-char: Grouping Digits.
+* calc-group-digits: Grouping Digits.
+* calc-help: Introduction.
+* calc-histogram: Building Vectors.
+* calc-hms-mode: Angular Modes.
+* calc-hms-notation: HMS Formats.
+* calc-hyperbolic: Inverse and Hyperbolic.
+* calc-hypot: Basic Arithmetic.
+* calc-ident: Building Vectors.
+* calc-idiv: Basic Arithmetic.
+* calc-im: Complex Number Functions.
+* calc-imaginary: Complex Number Functions.
+* calc-index: Building Vectors.
+* calc-info: Introduction.
+* calc-i-notation: Complex Formats.
+* calc-in-set: Logical Operations.
+* calc-integral: Calculus.
+* calc-integral-limit: Calculus.
+* calc-inv: Basic Arithmetic.
+* calc-inv: Vector and Matrix Arithmetic.
+* calc-inverse: Inverse and Hyperbolic.
+* calc-j-notation: Complex Formats.
+* calc-kbd-else: Conditionals in Macros.
+* calc-kbd-else-if: Conditionals in Macros.
+* calc-kbd-end-for: Loops in Macros.
+* calc-kbd-end-if: Conditionals in Macros.
+* calc-kbd-end-loop: Loops in Macros.
+* calc-kbd-end-repeat: Loops in Macros.
+* calc-kbd-for: Loops in Macros.
+* calc-kbd-if: Conditionals in Macros.
+* calc-kbd-loop: Loops in Macros.
+* calc-kbd-query: Queries in Macros.
+* calc-kbd-repeat: Loops in Macros.
+* calc-kbd-report: Queries in Macros.
+* calc-kill: Killing From Stack.
+* calc-kill-region: Killing From Stack.
+* calc-last-x: Undo.
+* calc-lcm: Combinatorial Functions.
+* calc-leading-zeros: Radix Modes.
+* calc-left-justify: Justification.
+* calc-less-equal: Logical Operations.
+* calc-less-recursion-depth: Recursion Depth.
+* calc-less-than: Logical Operations.
+* calc-let: Let Command.
+* calc-line-breaking: Normal Language Modes.
+* calc-line-numbering: Stack Basics.
+* calc-ln: Logarithmic Functions.
+* calc-lnp1: Logarithmic Functions.
+* calc-log: Logarithmic Functions.
+* calc-log10: Logarithmic Functions.
+* calc-logical-and: Logical Operations.
+* calc-logical-not: Logical Operations.
+* calc-logical-or: Logical Operations.
+* calc-lshift-binary: Binary Functions.
+* calc-map: Reducing and Mapping.
+* calc-mathematica-language: Mathematica Language Mode.
+* calc-matrix-center-justify: Vector and Matrix Formats.
+* calc-matrix-left-justify: Vector and Matrix Formats.
+* calc-matrix-right-justify: Vector and Matrix Formats.
+* calc-max: Basic Arithmetic.
+* calc-mcol: Extracting Elements.
+* calc-mdet: Vector and Matrix Arithmetic.
+* calc-min: Basic Arithmetic.
+* calc-minus: Basic Arithmetic.
+* calc-mlud: Vector and Matrix Arithmetic.
+* calc-mod: Basic Arithmetic.
+* calc-mode: Introduction.
+* calc-moebius: Combinatorial Functions.
+* calc-more-recursion-depth: Recursion Depth.
+* calc-mrow: Extracting Elements.
+* calc-mtrace: Vector and Matrix Arithmetic.
+* calc-next-prime: Combinatorial Functions.
+* calc-normal-language: Normal Language Modes.
+* calc-normal-notation: Float Formats.
+* calc-no-simplify-mode: Simplification Modes.
+* calc-not: Binary Functions.
+* calc-not-equal-to: Logical Operations.
+* calc-num-prefix: Prefix Arguments.
+* calc-num-simplify-mode: Simplification Modes.
+* calc-or: Binary Functions.
+* calc-over: Stack Manipulation.
+* calc-over-notation: Fraction Formats.
+* calc-pack: Complex Number Functions.
+* calc-pack (vectors): Building Vectors.
+* calc-pascal-language: C Fortran Pascal.
+* calc-perm: Combinatorial Functions.
+* calc-permanent-units: User-Defined Units.
+* calc-permanent-variable: Storing Variables.
+* calc-pi: Scientific Functions.
+* calc-plus: Basic Arithmetic.
+* calc-point-char: Float Formats.
+* calc-polar: Conversions.
+* calc-polar-mode: Polar Mode.
+* calc-pop: Stack Manipulation.
+* calc-power: Basic Arithmetic.
+* calc-precision: Precision.
+* calc-prev-prime: Combinatorial Functions.
+* calc-prime-factors: Combinatorial Functions.
+* calc-prime-test: Combinatorial Functions.
+* calc-quit: Introduction.
+* calc-radians-mode: Angular Modes.
+* calc-radix: Radix Modes.
+* calc-random: Random Numbers.
+* calc-random-again: Random Numbers.
+* calc-re: Complex Number Functions.
+* calc-realign: Introduction.
+* calc-recall: Recalling Variables.
+* calc-redo: Undo.
+* calc-reduce: Reducing and Mapping.
+* calc-refresh: Introduction.
+* calc-remove-units: Basic Operations on Units.
+* calc-rewrite: Rewrite Rules.
+* calc-right-justify: Justification.
+* calc-rnorm: Vector and Matrix Arithmetic.
+* calc-roll-down: Stack Manipulation.
+* calc-roll-up: Stack Manipulation.
+* calc-rotate-binary: Binary Functions.
+* calc-round: Integer Truncation.
+* calc-rrandom: Random Numbers.
+* calc-rshift-binary: Binary Functions.
+* calc-save-modes: Mode Settings.
+* calc-sci-notation: Float Formats.
+* calc-scroll-left: Introduction.
+* calc-scroll-right: Introduction.
+* calc-shift-binary: Binary Functions.
+* calc-sign: Basic Arithmetic.
+* calc-simplify: Algebraic Manipulation.
+* calc-simplify-extended: Algebraic Manipulation.
+* calc-simplify-units: Basic Operations on Units.
+* calc-sin: Trigonometric and Hyperbolic Functions.
+* calc-sincos: Trigonometric and Hyperbolic Functions.
+* calc-sinh: Trigonometric and Hyperbolic Functions.
+* calc-solve-for: Calculus.
+* calc-sort: Building Vectors.
+* calc-sqrt: Basic Arithmetic.
+* calc-store: Storing Variables.
+* calc-substitute: Algebraic Manipulation.
+* calc-symbolic-mode: Symbolic Mode.
+* calc-tan: Trigonometric and Hyperbolic Functions.
+* calc-tanh: Trigonometric and Hyperbolic Functions.
+* calc-taylor: Calculus.
+* calc-tex-language: Tex Language Mode.
+* calc-time: HMS Forms.
+* calc-times: Basic Arithmetic.
+* calc-to-degrees: Conversions.
+* calc-to-hms: Conversions.
+* calc-to-radians: Conversions.
+* calc-totient: Combinatorial Functions.
+* calc-trail-backward: Trail Commands.
+* calc-trail-display: Trail Commands.
+* calc-trail-first: Trail Commands.
+* calc-trail-forward: Trail Commands.
+* calc-trail-here: Trail Commands.
+* calc-trail-in: Trail Commands.
+* calc-trail-isearch-backward: Trail Commands.
+* calc-trail-isearch-forward: Trail Commands.
+* calc-trail-kill: Trail Commands.
+* calc-trail-last: Trail Commands.
+* calc-trail-marker: Trail Commands.
+* calc-trail-next: Trail Commands.
+* calc-trail-out: Trail Commands.
+* calc-trail-previous: Trail Commands.
+* calc-trail-scroll-left: Trail Commands.
+* calc-trail-scroll-right: Trail Commands.
+* calc-trail-yank: Trail Commands.
+* calc-transpose: Vector and Matrix Arithmetic.
+* calc-trunc: Integer Truncation.
+* calc-truncate-down: Truncating the Stack.
+* calc-truncate-stack: Truncating the Stack.
+* calc-truncate-up: Truncating the Stack.
+* calc-undefine-unit: User-Defined Units.
+* calc-undo: Undo.
+* calc-unformatted-language: Normal Language Modes.
+* calc-units-simplify-mode: Simplification Modes.
+* calc-unpack: Complex Number Functions.
+* calc-unpack (vectors): Building Vectors.
+* calc-unstore: Storing Variables.
+* calc-user-define: Creating User Keys.
+* calc-user-define-edit: Creating User Keys.
+* calc-user-define-formula: Algebraic Definitions.
+* calc-user-define-kbd-macro: Naming Keyboard Macros.
+* calc-user-define-permanent: Creating User Keys.
+* calc-user-undefine: Creating User Keys.
+* calc-vector-braces: Vector and Matrix Formats.
+* calc-vector-brackets: Vector and Matrix Formats.
+* calc-vector-commas: Vector and Matrix Formats.
+* calc-vector-parens: Vector and Matrix Formats.
+* calc-view-units-table: The Units Table.
+* calc-vlength: Extracting Elements.
+* calc-why: Error Messages.
+* calc-word-size: Binary Functions.
+* calc-working: Working Message.
+* calc-xor: Binary Functions.
+* calc-yank: Yanking Into Stack.
+* quick-calc: Quick Calculator.
+
+
+File: calc  Node: Function Index, Prev: Command Index, Up: Top, Next: Concept Index
+
+Index of Algebraic Functions
+****************************
+
+This is a list of built-in functions usable in algebraic expressions.
+Their full Lisp names are derived by adding the prefix `calcFunc-', as
+in `calcFunc-sqrt'.
+
+
+* Menu:
+
+* abs: Basic Arithmetic.
+* abs (vectors): Vector and Matrix Arithmetic.
+* abssqr: Basic Arithmetic.
+* add: Reducing and Mapping.
+* and: Binary Functions.
+* apply: Reducing and Mapping.
+* arccos: Trigonometric and Hyperbolic Functions.
+* arccosh: Trigonometric and Hyperbolic Functions.
+* arcsin: Trigonometric and Hyperbolic Functions.
+* arcsincos: Trigonometric and Hyperbolic Functions.
+* arcsinh: Trigonometric and Hyperbolic Functions.
+* arctan: Trigonometric and Hyperbolic Functions.
+* arctan2: Trigonometric and Hyperbolic Functions.
+* arctanh: Trigonometric and Hyperbolic Functions.
+* arg: Complex Number Functions.
+* arrange: Building Vectors.
+* ash: Binary Functions.
+* ceil: Integer Truncation.
+* choose: Combinatorial Functions.
+* clean: Conversions.
+* clip: Binary Functions.
+* cnorm: Vector and Matrix Arithmetic.
+* conj: Complex Number Functions.
+* constant: Logical Operations.
+* cos: Trigonometric and Hyperbolic Functions.
+* cosh: Trigonometric and Hyperbolic Functions.
+* cross: Vector and Matrix Arithmetic.
+* cvec: Building Vectors.
+* deg: Conversions.
+* deriv: Calculus.
+* det: Vector and Matrix Arithmetic.
+* dfact: Combinatorial Functions.
+* diag: Building Vectors.
+* diff: Binary Functions.
+* div: Reducing and Mapping.
+* egcd: Combinatorial Functions.
+* eq: Logical Operations.
+* exp: Logarithmic Functions.
+* expm1: Logarithmic Functions.
+* fact: Combinatorial Functions.
+* fceil: Integer Truncation.
+* fdiv: Basic Arithmetic.
+* ffinv: Calculus.
+* ffloor: Integer Truncation.
+* finv: Calculus.
+* float: Conversions.
+* floor: Integer Truncation.
+* frac: Conversions.
+* fround: Integer Truncation.
+* fsolve: Calculus.
+* ftrunc: Integer Truncation.
+* gamma: Combinatorial Functions.
+* gcd: Combinatorial Functions.
+* geq: Logical Operations.
+* getdiag: Extracting Elements.
+* gt: Logical Operations.
+* hms: Conversions.
+* hypot: Basic Arithmetic.
+* idiv: Basic Arithmetic.
+* if: Logical Operations.
+* ilog: Logarithmic Functions.
+* im: Complex Number Functions.
+* in: Logical Operations.
+* index: Building Vectors.
+* integ: Calculus.
+* integer: Logical Operations.
+* inv: Basic Arithmetic.
+* inv: Vector and Matrix Arithmetic.
+* lambda: Reducing and Mapping.
+* land: Logical Operations.
+* lcm: Combinatorial Functions.
+* leq: Logical Operations.
+* ln: Logarithmic Functions.
+* lnot: Logical Operations.
+* lnp1: Logarithmic Functions.
+* log: Logarithmic Functions.
+* log10: Logarithmic Functions.
+* lor: Logical Operations.
+* lsh: Binary Functions.
+* lt: Logical Operations.
+* lud: Vector and Matrix Arithmetic.
+* makemod: Computational Lisp Functions.
+* map: Reducing and Mapping.
+* mapa: Mapping Matrices.
+* mapc: Mapping Matrices.
+* mapd: Mapping Matrices.
+* mapr: Mapping Matrices.
+* max: Basic Arithmetic.
+* mcol: Extracting Elements.
+* min: Basic Arithmetic.
+* mod: Reducing and Mapping.
+* moebius: Combinatorial Functions.
+* mrcol: Extracting Elements.
+* mrow: Extracting Elements.
+* mrrow: Extracting Elements.
+* mul: Reducing and Mapping.
+* neg: Reducing and Mapping.
+* neq: Logical Operations.
+* nextprime: Combinatorial Functions.
+* not: Binary Functions.
+* or: Binary Functions.
+* perm: Combinatorial Functions.
+* polar: Conversions.
+* pow: Reducing and Mapping.
+* pow10: Logarithmic Functions.
+* prevprime: Combinatorial Functions.
+* prfac: Combinatorial Functions.
+* rad: Conversions.
+* random: Random Numbers.
+* re: Complex Number Functions.
+* real: Logical Operations.
+* rect: Conversions.
+* reduce: Reducing and Mapping.
+* reducea: Reducing Matrices.
+* reducec: Reducing Matrices.
+* reduced: Reducing Matrices.
+* reducer: Reducing Matrices.
+* refers: Logical Operations.
+* rnorm: Vector and Matrix Arithmetic.
+* rot: Binary Functions.
+* round: Integer Truncation.
+* rsh: Binary Functions.
+* rsort: Building Vectors.
+* sign: Basic Arithmetic.
+* sin: Trigonometric and Hyperbolic Functions.
+* sincos: Trigonometric and Hyperbolic Functions.
+* sinh: Trigonometric and Hyperbolic Functions.
+* solve: Calculus.
+* sort: Building Vectors.
+* sqrt: Basic Arithmetic.
+* sub: Reducing and Mapping.
+* tan: Trigonometric and Hyperbolic Functions.
+* tanh: Trigonometric and Hyperbolic Functions.
+* taylor: Calculus.
+* tderiv: Calculus.
+* totient: Combinatorial Functions.
+* tr: Vector and Matrix Arithmetic.
+* trn: Vector and Matrix Arithmetic.
+* trunc: Integer Truncation.
+* typeof: Logical Operations.
+* vconcat: Reducing and Mapping.
+* vlen: Extracting Elements.
+* xor: Binary Functions.
+
+
+File: calc  Node: Concept Index, Prev: Function Index, Up: Top, Next: Lisp Function Index
+
+Concept Index
+*************
+
+
+* Menu:
+
+* Accuracy of computations: Floats.
+* Algebraic definitions: Programming.
+* Algebraic mode: Algebraic Entry.
+* Algebraic notation: Algebraic Entry.
+* Angular mode: Angular Modes.
+* argument qualifier: Argument Qualifiers.
+* Arguments, restoring: Undo.
+* Arranging a matrix: Building Vectors.
+* bignums: Data Type Formats.
+* Binary numbers: Binary Functions.
+* Branch cuts: Branch Cuts.
+* Breaking up long lines: Normal Language Modes.
+* C language: C Fortran Pascal.
+* Caches: Caches.
+* Calc: Introduction.
+* Calc: Top.
+* calc-ext module: Introduction.
+* Character strings: Strings.
+* closed: Interval Forms.
+* Complex numbers: Complex Numbers.
+* Conditional structures: Conditionals in Macros.
+* Continuous memory: Mode Settings.
+* Decimal and non-decimal integers: Radix Modes.
+* Degrees-minutes-seconds forms: HMS Forms.
+* Deleting stack entries: Stack Manipulation.
+* Digit grouping: Grouping Digits.
+* Division of integers: Fraction Mode.
+* Duplicating stack entries: Stack Manipulation.
+* `e' variable: Scientific Functions.
+* `e' variable: Variables.
+* Editing the stack with Emacs: Editing Stack Entries.
+* Editing user definitions: Creating User Keys.
+* `.emacs' file, mode settings: Mode Settings.
+* `.emacs' file, user-defined commands: Creating User Keys.
+* `.emacs' file, user-defined units: User-Defined Units.
+* `.emacs' file, veriables: Storing Variables.
+* Entering numbers: Numeric Entry.
+* error form: Error Forms.
+* Error forms: Error Forms.
+* Errors, messages: Error Messages.
+* Errors, undoing: Undo.
+* Evaluation of variables in a formula: Variables.
+* Exiting the Calculator: Introduction.
+* Extensions module: Introduction.
+* fixnums: Data Type Formats.
+* flattened: Building Vectors.
+* Flattening a matrix: Building Vectors.
+* float: Floats.
+* Floating-point numbers: Floats.
+* Flushing caches: Caches.
+* Formulas, entering: Algebraic Entry.
+* Formulas, evaluation: Variables.
+* Formulas: Formulas.
+* Formulas, referring to stack: Algebraic Entry.
+* Fortran language: C Fortran Pascal.
+* fraction: Fractions.
+* Fraction mode: Fraction Mode.
+* Fractional part of a number: Integer Truncation.
+* Fractions: Fractions.
+* Function call notation: Formulas.
+* Garbled displays, refreshing: Introduction.
+* Generic functions: Reducing and Mapping.
+* Grouping digits: Grouping Digits.
+* grouping: Grouping Digits.
+* Help commands: Introduction.
+* Hexadecimal integers: Radix Modes.
+* HMS: HMS Forms.
+* Horizontal scrolling: Introduction.
+* Hours-minutes-seconds forms: HMS Forms.
+* `i' variable: Complex Formats.
+* `i' variable: Variables.
+* Implicit comma in vectors: Formulas.
+* Implicit multiplication: Formulas.
+* Incomplete complex numbers: Incomplete Objects.
+* incomplete: Incomplete Objects.
+* Incomplete interval forms: Incomplete Objects.
+* Incomplete vectors: Incomplete Objects.
+* Inexact results: Symbolic Mode.
+* Integer part of a number: Integer Truncation.
+* Integers: Integers.
+* Interval forms: Interval Forms.
+* interval: Interval Forms.
+* Inverse Flag: Inverse and Hyperbolic.
+* Iterative structures: Loops in Macros.
+* Keyboard macros, editing: Naming Keyboard Macros.
+* Keyboard macros: Keyboard Macros.
+* Keyboard macros: Programming.
+* Kill: Killing From Stack.
+* Kill ring: Killing From Stack.
+* Lambda expressions: Reducing and Mapping.
+* Last-X feature: Undo.
+* Leading zeros: Radix Modes.
+* Line breaking: Normal Language Modes.
+* Lisp: Programming.
+* Looping structures: Loops in Macros.
+* mapping mode: Mapping Matrices.
+* mapping mode: Reducing Matrices.
+* Mapping modes: Mapping Matrices.
+* Mathematica language: Mathematica Language Mode.
+* Matrices: Vectors and Matrices.
+* Matrix display: Normal Language Modes.
+* matrix: Vectors and Matrices.
+* `max-lisp-eval-depth': Recursion Depth.
+* `max-specpdl-size': Recursion Depth.
+* Minus signs: Numeric Entry.
+* Mistakes, undoing: Undo.
+* Modulo division: Modulo Forms.
+* modulo form: Modulo Forms.
+* Modulo forms: Modulo Forms.
+* Multiplication, implicit: Formulas.
+* Narrowing the stack: Truncating the Stack.
+* Negative numbers, entering: Numeric Entry.
+* Non-decimal integers: Radix Modes.
+* numbers: Data Types.
+* Numeric entry: Numeric Entry.
+* Octal integers: Radix Modes.
+* open: Interval Forms.
+* Operators in formulas: Formulas.
+* Overview: Quick Overview.
+* Pascal language: C Fortran Pascal.
+* Pattern matching: Rewrite Rules.
+* Performance: Working Message.
+* Permanent mode settings: Mode Settings.
+* Permanent user definitions: Creating User Keys.
+* Permanent variables: Storing Variables.
+* `pi' variable: Scientific Functions.
+* `pi' variable: Variables.
+* plain vector: Vectors and Matrices.
+* Plain vectors: Vectors and Matrices.
+* Polar Mode: Complex Numbers.
+* Polar mode: Polar Mode.
+* Precedence of operators: Formulas.
+* Precision of calculations: Precision.
+* Primes: Combinatorial Functions.
+* Principal values: Branch Cuts.
+* Programming with algebraic formulas: Algebraic Definitions.
+* Programming with keyboard macros: Keyboard Macros.
+* Quick Calculator: Quick Calculator.
+* Quick overview: Quick Overview.
+* Quick variables: Storing Variables.
+* Quitting the Calculator: Introduction.
+* Radix display: Radix Modes.
+* radix-10: Radix Modes.
+* rationals: Data Types.
+* reals: Data Types.
+* Recalling variables: Recalling Variables.
+* Reciprocal: Basic Arithmetic.
+* Recursion depth: Recursion Depth.
+* Redoing after an Undo: Undo.
+* Refreshing a garbled display: Introduction.
+* Removing stack entries: Stack Manipulation.
+* Reshaping a matrix: Building Vectors.
+* Retrieving previous results: Trail Commands.
+* Rewrite rules: Programming.
+* Rewrite rules: Rewrite Rules.
+* rewrite rules: Rewrite Rules.
+* Roundoff errors, correcting: Conversions.
+* RPN notation: Stack Basics.
+* Running the Calculator: Introduction.
+* Saving mode settings: Mode Settings.
+* Scrolling horizontally: Introduction.
+* semi-open: Interval Forms.
+* simplification mode: Simplification Modes.
+* special constants: Variables.
+* Stack basics: Stack Basics.
+* stack: Stack Basics.
+* Standard deviations: Error Forms.
+* Starting the Calculator: Introduction.
+* Statistical operations: Map/Reduce Examples.
+* Storing user definitions: Creating User Keys.
+* Storing variables: Storing Variables.
+* Storing variables: Storing Variables.
+* Strings: Strings.
+* Summations (by keyboard macros): Loops in Macros.
+* Summations (by vector mapping): Map/Reduce Examples.
+* Symbolic mode: Symbolic Mode.
+* symbolic mode: Symbolic Mode.
+* Temperature conversion: Basic Operations on Units.
+* Temporary assignment to variables: Let Command.
+* TeX language: Tex Language Mode.
+* Time of day: HMS Forms.
+* Trail buffer: Trail Commands.
+* Trail pointer: Trail Commands.
+* trail pointer: Trail Commands.
+* Transformations: Rewrite Rules.
+* Truncating the stack: Truncating the Stack.
+* Undoing mistakes: Undo.
+* unit names: Basic Operations on Units.
+* unit table: Basic Operations on Units.
+* units expression: Basic Operations on Units.
+* Un-storing variables: Storing Variables.
+* User-defined units: User-Defined Units.
+* variable: Variables.
+* Variables, evaluation: Variables.
+* Variables, in formulas: Variables.
+* Variables, temporary assignment: Let Command.
+* vector: Vectors and Matrices.
+* Vectors: Vectors and Matrices.
+* Void variables: Storing Variables.
+* Why did an error occur?: Error Messages.
+* Wide text, scrolling: Introduction.
+* word size: Binary Functions.
+* Word size for binary operations: Binary Functions.
+* Working messages: Working Message.
+
+
+File: calc  Node: Lisp Function Index, Prev: Concept Index, Up: Top, Next: Lisp Variable Index
+
+Index of Lisp Math Functions
+****************************
+
+The following functions are meant to be used with `defmath', not `defun'
+definitions.  For names that do not start with `calc-', the
+corresponding full Lisp name is derived by adding a prefix of `math-'.
+
+
+* Menu:
+
+* abs-approx: Computational Lisp Functions.
+* anglep: Predicates.
+* apply-rewrite: Symbolic Lisp Functions.
+* apply-rewrite-rules: Symbolic Lisp Functions.
+* beforep: Predicates.
+* build-polynomial-expr: Symbolic Lisp Functions.
+* build-vector: Vector Lisp Functions.
+* calc-binary-op: Stack Lisp Functions.
+* calc-cleanup-command: Defining Simple Commands.
+* calc-clear-command-flag: Interactive Lisp Functions.
+* calc-cursor-stack-index: Stack Lisp Functions.
+* calc-do-alg-entry: Formatting Lisp Functions.
+* calc-enter-result: Defining Stack Commands.
+* calc-enter-result: Stack Lisp Functions.
+* calc-finish-command: Defining Simple Commands.
+* calc-is-hyperbolic: Interactive Lisp Functions.
+* calc-is-inverse: Interactive Lisp Functions.
+* calc-normalize: Stack Lisp Functions.
+* calc-pop-stack: Stack Lisp Functions.
+* calc-push-list: Stack Lisp Functions.
+* calc-record-list: Stack Lisp Functions.
+* calc-record-undo: Interactive Lisp Functions.
+* calc-record-why: Interactive Lisp Functions.
+* calc-refresh: Stack Lisp Functions.
+* calc-select-buffer: Defining Simple Commands.
+* calc-set-command-flag: Defining Simple Commands.
+* calc-set-command-flag: Interactive Lisp Functions.
+* calc-slow-wrapper: Defining Stack Commands.
+* calc-stack-size: Stack Lisp Functions.
+* calc-substack-height: Stack Lisp Functions.
+* calc-top-list: Stack Lisp Functions.
+* calc-top-list-n: Defining Stack Commands.
+* calc-top-list-n: Stack Lisp Functions.
+* calc-top-n: Stack Lisp Functions.
+* calc-unary-op: Stack Lisp Functions.
+* calc-wrapper: Defining Simple Commands.
+* cancel-common-factor: Symbolic Lisp Functions.
+* check-rewrite-rules: Symbolic Lisp Functions.
+* check-unit-name: Symbolic Lisp Functions.
+* col-matrix: Vector Lisp Functions.
+* common-constant-factor: Symbolic Lisp Functions.
+* compare: Computational Lisp Functions.
+* comp-ascent: Formatting Lisp Functions.
+* comp-descent: Formatting Lisp Functions.
+* comp-first-char: Formatting Lisp Functions.
+* comp-height: Formatting Lisp Functions.
+* comp-last-char: Formatting Lisp Functions.
+* complete: Argument Qualifiers.
+* complexp: Predicates.
+* compose-expr: Formatting Lisp Functions.
+* composition-to-string: Formatting Lisp Functions.
+* comp-width: Formatting Lisp Functions.
+* constp: Predicates.
+* copy-matrix: Vector Lisp Functions.
+* defmath: Defining Functions.
+* deriv: Symbolic Lisp Functions.
+* dimension-error: Vector Lisp Functions.
+* div-mod: Computational Lisp Functions.
+* e: Computational Lisp Functions.
+* equal: Predicates.
+* equal-int: Predicates.
+* evaluate-expr: Computational Lisp Functions.
+* evenp: Predicates.
+* expr-contains: Symbolic Lisp Functions.
+* expr-contains-vars: Symbolic Lisp Functions.
+* expr-depends: Symbolic Lisp Functions.
+* expr-height: Symbolic Lisp Functions.
+* expr-subst: Symbolic Lisp Functions.
+* expr-weight: Symbolic Lisp Functions.
+* extract-units: Symbolic Lisp Functions.
+* fixnatnump: Predicates.
+* fixnum: Argument Qualifiers.
+* fixnum: Computational Lisp Functions.
+* fixnump: Predicates.
+* flatten-vector: Vector Lisp Functions.
+* float: Argument Qualifiers.
+* float: Computational Lisp Functions.
+* floatp: Predicates.
+* format-flat-expr: Formatting Lisp Functions.
+* format-number: Formatting Lisp Functions.
+* format-value: Formatting Lisp Functions.
+* frac-gcd: Symbolic Lisp Functions.
+* from-hms: Computational Lisp Functions.
+* from-radians: Computational Lisp Functions.
+* from-radians-2: Computational Lisp Functions.
+* full-circle: Computational Lisp Functions.
+* half-circle: Computational Lisp Functions.
+* idiv: Computational Lisp Functions.
+* idivmod: Computational Lisp Functions.
+* imod: Computational Lisp Functions.
+* inexact-value: Predicates.
+* integ: Symbolic Lisp Functions.
+* integer: Argument Qualifiers.
+* integer-log2: Computational Lisp Functions.
+* integerp: Predicates.
+* interactive: Defining Simple Commands.
+* is-polynomial: Symbolic Lisp Functions.
+* isqrt: Computational Lisp Functions.
+* is-true: Predicates.
+* lessp: Predicates.
+* ln-10: Computational Lisp Functions.
+* ln-2: Computational Lisp Functions.
+* looks-evenp: Predicates.
+* looks-negp: Predicates.
+* make-float: Computational Lisp Functions.
+* make-frac: Computational Lisp Functions.
+* make-intv: Computational Lisp Functions.
+* make-mod: Computational Lisp Functions.
+* make-sdev: Computational Lisp Functions.
+* make-vec: Vector Lisp Functions.
+* map-tree: Symbolic Lisp Functions.
+* map-vec: Vector Lisp Functions.
+* map-vec-2: Vector Lisp Functions.
+* mat-col: Vector Lisp Functions.
+* mat-dimens: Vector Lisp Functions.
+* math-concat: Vector Lisp Functions.
+* math-defcache: Computational Lisp Functions.
+* math-defintegral: Symbolic Lisp Functions.
+* math-defintegral-2: Symbolic Lisp Functions.
+* math-defsimplify: Symbolic Lisp Functions.
+* math-equal: Predicates.
+* mat-less-col: Vector Lisp Functions.
+* mat-less-row: Vector Lisp Functions.
+* matrixp: Predicates.
+* mat-row: Vector Lisp Functions.
+* messy-integerp: Predicates.
+* natnum: Argument Qualifiers.
+* natnump: Predicates.
+* nearly-equal: Predicates.
+* nearly-zerop: Predicates.
+* negp: Predicates.
+* normalize: Computational Lisp Functions.
+* numberp: Predicates.
+* numdigs: Computational Lisp Functions.
+* num-integerp: Predicates.
+* num-natnump: Predicates.
+* numvecp: Predicates.
+* objectp: Predicates.
+* objvecp: Predicates.
+* oddp: Predicates.
+* pi: Computational Lisp Functions.
+* pi-over-180: Computational Lisp Functions.
+* pi-over-2: Computational Lisp Functions.
+* pi-over-4: Computational Lisp Functions.
+* polar-complexp: Predicates.
+* poly-mix: Symbolic Lisp Functions.
+* poly-mul: Symbolic Lisp Functions.
+* polynomial-base: Symbolic Lisp Functions.
+* polynomial-p: Symbolic Lisp Functions.
+* poly-simplify: Symbolic Lisp Functions.
+* posp: Predicates.
+* pow: Computational Lisp Functions.
+* power-of-2: Computational Lisp Functions.
+* pow-mod: Computational Lisp Functions.
+* prime-test: Computational Lisp Functions.
+* primp: Predicates.
+* provably-integerp: Predicates.
+* provably-realp: Predicates.
+* quarter-circle: Computational Lisp Functions.
+* quotient: Computational Lisp Functions.
+* random-digit: Computational Lisp Functions.
+* random-digits: Computational Lisp Functions.
+* random-float: Computational Lisp Functions.
+* ratp: Predicates.
+* read-expr: Formatting Lisp Functions.
+* read-exprs: Formatting Lisp Functions.
+* read-number: Formatting Lisp Functions.
+* real-objectp: Predicates.
+* realp: Predicates.
+* rect-complexp: Predicates.
+* reduce-cols: Vector Lisp Functions.
+* reduce-vec: Vector Lisp Functions.
+* reject-arg: Predicates.
+* remove-units: Symbolic Lisp Functions.
+* row-matrix: Vector Lisp Functions.
+* scalarp: Predicates.
+* scale-int: Computational Lisp Functions.
+* scale-rounding: Computational Lisp Functions.
+* simplify: Symbolic Lisp Functions.
+* simplify-extended: Symbolic Lisp Functions.
+* simplify-units: Symbolic Lisp Functions.
+* single-units-in-expr-p: Symbolic Lisp Functions.
+* solve-for: Symbolic Lisp Functions.
+* sort-intv: Computational Lisp Functions.
+* sqr: Computational Lisp Functions.
+* sqrt-e: Computational Lisp Functions.
+* sqrt-two-pi: Computational Lisp Functions.
+* square-matrixp: Predicates.
+* swap-rows: Vector Lisp Functions.
+* tderiv: Symbolic Lisp Functions.
+* to-fraction: Computational Lisp Functions.
+* to-hms: Computational Lisp Functions.
+* to-radians: Computational Lisp Functions.
+* to-radians-2: Computational Lisp Functions.
+* to-simple-fraction: Computational Lisp Functions.
+* to-standard-units: Symbolic Lisp Functions.
+* transpose: Vector Lisp Functions.
+* two-pi: Computational Lisp Functions.
+* units-in-expr-p: Symbolic Lisp Functions.
+* vec-length: Vector Lisp Functions.
+* vectorp: Predicates.
+* with-extra-prec: Computational Lisp Functions.
+* zerop: Predicates.
+
+

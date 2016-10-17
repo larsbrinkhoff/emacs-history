@@ -1,0 +1,1479 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Creating Buffers, Prev: The Buffer List, Up: Buffers, Next: Killing Buffers
+
+Creating Buffers
+================
+
+
+  The following two functions create buffers.  `get-buffer-create' may
+create a buffer if one by the given name doesn't exist.
+`generate-new-buffer' always creates a new buffer, and gives it a unique
+name.
+
+  Other functions that create buffers include
+`with-output-to-temp-buffer', `create-file-buffer', ...  Other functions
+that create buffers use these functions.  *Note Finding and Visiting
+Files::.
+
+  (Which set the current buffer??)
+
+
+* Function: get-buffer-create NAME
+
+       This function returns a buffer named NAME.  If such a buffer
+     already exists, it is returned.  If such a buffer does not exist,
+     it is created and returned.  The buffer does not become the current
+     buffer.
+
+       It is an error if NAME is not a string.
+
+          (get-buffer-create "foo")
+          => #<buffer foo>
+
+
+
+* Function: generate-new-buffer NAME
+
+       This function returns a newly created, empty buffer.  If there is
+     no buffer named NAME, then that is the name of the new buffer.  If
+     there is a buffer with that name, then suffixes of the form `<N>'
+     are tried, where N is an integer starting with `2', until a new
+     name is created.
+
+       It is an error if NAME is not a string.
+
+          (generate-new-buffer "bar")
+          => #<buffer bar>
+          (generate-new-buffer "bar")
+          => #<buffer bar<2>>
+          (generate-new-buffer "bar")
+          => #<buffer bar<3>>
+
+
+
+
+File: elisp  Node: Killing Buffers, Prev: Creating Buffers, Up: Buffers, Next: Selecting Buffers
+
+Killing Buffers
+===============
+
+
+  Two functions are available for killing buffers.
+
+  The `buffer-name' of a killed buffer is `nil'.  You can use this fact
+to test if a buffer has been killed.
+
+     (defun killed-buffer-p (buffer-or-name)
+       "Return t if buffer is killed."
+       (not (buffer-name buffer-or-name)))
+
+
+* Command: kill-buffer BUFFER-OR-NAME
+
+       This function kills the buffer BUFFER-OR-NAME, freeing all of its
+     memory.  It returns `nil'.
+
+       After the buffer is killed, the buffer object is a "killed
+     buffer" object.  Killed buffers are not `eq' to each other unless
+     their original buffers were.
+
+       If the buffer is visiting a file and the it has not been saved
+     since the last modification, the user is asked if he *really* wants
+     to kill the buffer, even if `kill-buffer' is not called
+     interactively.
+
+          (kill-buffer "foo.unchanged")
+          => nil
+          (kill-buffer "foo.changed")
+          => nil
+
+          ---------- Buffer: Minibuffer ----------
+          Buffer foo.changed modified; kill anyway? (yes or no) yes
+          ---------- Buffer: Minibuffer ----------
+
+
+* Command: kill-some-buffers
+
+       This function goes through the list of buffers, and for each
+     buffer, it prints a line in the echo area, indicating if it has
+     been modified, and asks whether to kill it (using `yes-or-no-p').
+     If the user answers `yes', then the buffer is killed immediately.
+
+       If the buffer has been modified and it is visiting a file, then
+     the user is asked `twice' if it is to be killed.
+
+       This function is for interactive use.
+
+
+
+
+
+File: elisp  Node: Selecting Buffers, Prev: Killing Buffers, Up: Buffers
+
+Selecting Buffers
+=================
+
+  Several functions are available for selecting buffers.  Selecting a
+buffer means that the current buffer is changed to some other buffer.
+Also see `other-buffer' in *Note Buffer List::.
+
+  `switch-to-buffer' changes the current buffer (the one in which
+editing takes place) and displays it in the selected window (the one
+with the cursor in it).  `set-buffer' changes the current buffer, but
+leaves the same buffer displayed in the selected window.  Note, though,
+that when it comes time to get more keyboard input, the buffer displayed
+in the selected window becomes the current buffer, regardless of
+previous `set-buffers'.  This makes `set-buffer' the function to use to
+work on another buffer temporarily within a Lisp function, since when
+the function returns the current buffer will be restored to the buffer
+associated with the selected window.  Also see `save-excursion' in *Note
+Excursions:: for another way to do this.
+
+
+* Function: set-buffer BUFFER-OR-NAME
+
+       This function makes BUFFER-OR-NAME the current buffer.  It does
+     not display the buffer in the currently selected window, however.
+     This means that as soon as Emacs returns to the command loop (or
+     keyboard input??), the buffer in the selected window will become
+     current again.  *Note Commands:: to find out about the command
+     loop.
+
+       Use this function for writing commands that do editing in buffers
+     other than the current buffer.  It returns the buffer identified by
+     BUFFER-OR-NAME.
+
+       It is an error if BUFFER-OR-NAME does not identify an existing
+     buffer.
+
+          (example!!)
+
+
+* Command: switch-to-buffer BUFFER-OR-NAME &optional NORECORD
+
+       This function selects BUFFER-OR-NAME to be the buffer in the
+     selected window.  If NORECORD is non-`nil', then this buffer is not
+     put on the front of the list of recently chosen buffers.  *Note The
+     Buffer List:: for the implications.
+
+       This function is intended for interactive use where you wish to
+     change the buffer in the current window.  It returns `nil'.
+
+       If BUFFER-OR-NAME does not identify an existing buffer, then a
+     new buffer by that name is created.
+
+
+* Command: switch-to-buffer-other-window BUFFER-OR-NAME
+
+       This function selects BUFFER-OR-NAME to be the buffer in another
+     window.  If there is only one window, then it is split --- even if
+     the current window is displaying BUFFER-OR-NAME.
+
+
+* Function: pop-to-buffer BUFFER-OR-NAME &optional OTHER-WINDOW
+
+       This function selects BUFFER-OR-NAME in some window, preferably
+     not the selected window.  If the variable `pop-up-windows' is
+     non-`nil', windows may be split to do this.
+
+       If OTHER-WINDOW is non-`nil', find another window even if
+     BUFFER-OR-NAME is already visible in the selected window.  Thus
+     BUFFER-OR-NAME could be displayed in two windows.
+
+       If BUFFER-OR-NAME is a string that does not name an existing
+     buffer, a buffer by that name is created.
+
+
+
+File: elisp  Node: Windows, Prev: Buffers, Up: Top, Next: Positions
+
+Windows
+*******
+
+  This chapter desribes most functions and variables related to Emacs
+windows.  However, *Note Emacs Display:: and *Note Selecting Buffers::
+for more.
+
+* Menu:
+
+* Window Basics::	
+* Splitting Windows::	
+* Deleting Windows::	
+* Selecting Windows::	
+* Buffers and Windows::	
+* Window Point::	
+* Vertical Scrolling::	
+* Horizontal Scrolling::	
+* Window Size::	
+* Window Configurations::	
+
+
+
+File: elisp  Node: Window Basics, Up: Windows, Next: Splitting Windows
+
+Window Basics
+=============
+
+  A "window" is the physical area of a terminal in which a buffer is
+displayed.  But the term is also used to refer to a Lisp object.  Which
+is meant should be clear from the context.
+
+  At all times, there is at least one window displayed on the screen,
+and there is exactly one window that we call the "selected window".  The
+selected window's buffer is usually the current buffer, but see
+`set-buffer' in *Note Selecting Buffers:: for when this is not true.
+
+  For all intents and purposes, a window only exists as long as it is
+displayed on the terminal.  Once removed from the display, the window is
+effectively deleted and should not be used, *even though there may still
+be references to it*.  *Note Deleting Windows:: for more details.
+
+  Windows each have the following attributes:
+
+
+   * window height
+
+   * window width
+
+   * window edges with respect to the screen
+
+   * the buffer displayed
+
+   * position within the buffer at the upper left of the window
+
+   * how many horizontally scrolled columns
+
+   * point
+
+   * mark
+
+   * whether the cursor is in the window
+
+   * position in the window circular list
+
+
+  An application may want to manipulate multiple windows for a variety
+of reasons, most often to give varying views of the same object(s).  In
+`rmail', for instance, requesting a message header summary obtains a
+second window, displays headers in it, and allows the user to process
+messages by moving to the corresponding message line with commands
+specific to the `RMAIL Summary' mode.
+
+For more techniques, *Note Major Modes: (emacs)Major Modes. and *Note
+Key Bindings: (emacs)Key Bindings..
+
+  This chapter does not discuss Emacs' use of the X window system.  For
+those familiar with windowing systems, Emacs' windows are rectangles
+tiled onto the rectangle of the screen, and every portion of the screen
+is part of some window.  There are no areas which do not belong to a
+window, except for the minibuffer (and even it acts like a window
+sometimes).  This limitation helps you avoid wasting the historically
+scarce resource of screen space.  You can't create every conceivable
+tiling, because of the way in which Emacs creates new windows and
+resizes them.  *Note Splitting Windows::.  Also, *Note Resizing
+Windows::.
+
+  So, the term ``window'' as used in this manual does not refer to a
+window in a window system like X.  Rather a window is one of several in
+the Emacs "screen"; the screen may happen to be one window in a window
+system, or the entire CRT screen if a window system is not used.  *Note
+Display:: for functions related to the Emacs screen.
+
+
+* Function: windowp OBJECT
+
+       This function returns `t' if object is a window.
+
+
+
+File: elisp  Node: Splitting Windows, Prev: Window Basics, Up: Windows, Next: Deleting Windows
+
+Splitting Windows
+=================
+
+  (intro text!!)
+
+* Function: one-window-p &optional NO-MINI
+
+       Returns non-`nil' if there is only one window.  Optional NO-MINI
+     non-`nil' means don't count the minibuffer even if it is active.
+
+
+* Command: split-window &optional WINDOW SIZE HORIZONTAL
+
+       This function splits WINDOW into two, leaving SIZE lines in
+     WINDOW (which becomes the top window), and putting the rest of the
+     lines that WINDOW had into the new window.
+
+       If SIZE is missing, than WINDOW divides evenly, (if there is an
+     odd line, it goes into the new window).  If WINDOW is missing, than
+     the selected window divides.
+
+       If HORIZONTAL is non-`nil', then WINDOW splits side by side,
+     leaving SIZE columns in WINDOW (which becomes the left-hand
+     window), and putting the rest of the columns that WINDOW had into
+     the new window.
+
+       When called interactively, WINDOW defaults to the selected
+     window, and SIZE and HORIZONTAL default to `nil'.
+
+       `split-window' returns the window created.  The original window
+     remains the selected window.
+
+       The example below executes starting with only one window on a
+     screen that is 50 lines by 80 columns.  Also *Note Screen
+     Position::.
+
+          (setq w (selected-window))
+          => #<window 8 on windows.texinfo>
+          (window-edges)
+          => (0 0 80 49)
+
+          (setq w2 (split-window w 15))
+          => #<window 28 on windows.texinfo>
+          (window-edges w2)
+          => (0 15 80 49)
+          (window-edges w)
+          => (0 0 80 15)
+
+          (setq w3 (split-window w 35 t))
+          => #<window 32 on windows.texinfo>
+          (window-edges w3)
+          => (35 0 80 15)
+          (window-edges w)
+          => (0 0 35 15)
+          (window-edges w2)
+          => (0 15 80 49)
+
+
+* Command: split-window-vertically SIZE
+
+       This function splits the selected window into two, one above the
+     other, leaving the selected window with SIZE lines.
+
+       This function is simply an interface to `split-windows'.
+
+
+* Command: split-window-horizontally SIZE
+
+       This function splits the selected window into two, side-by-side,
+     leaving the selected window with SIZE lines.
+
+       This function is simply an interface to split-windows.
+
+
+* User Option: pop-up-windows
+
+       This global variable determines if `display-buffer' may make new
+     windows.  If it is `t' and there is only one window on the screen,
+     then it splits that window.  If it is `nil', then `display-buffer'
+     does not split the single window, but rather replace its buffer.
+
+
+* User Option: split-height-threshold
+
+       This global variable determines when `display-buffer' may split a
+     window, assuming that there are multiple windows.  `display-buffer'
+     splits the largest window if it has at least this many lines.
+
+       If there is only one window, it splits regardless of this value.
+
+
+
+File: elisp  Node: Deleting Windows, Prev: Splitting Windows, Up: Windows, Next: Selecting Windows
+
+Deleting Windows
+================
+
+  (intro text!!)
+
+* Command: delete-window &optional WINDOW
+
+       This function removes WINDOW from the display.  If WINDOW is
+     missing, then the selected window disappears from the display.  The
+     neighboring windows are all expanded proportionally.  It is an
+     error if there is only one window being displayed when
+     `delete-window' executes.
+
+          Warning: Erroneous information or fatal errors may result by
+          using a deleted window.  You can test whether a window has
+          been deleted with `(window-point WINDOW)'.
+
+       This function returns `nil'.
+
+       When called interactively, WINDOW defaults to the selected
+     window.
+
+
+
+* Command: delete-other-windows WINDOW
+
+       This function makes WINDOW the only window on the screen by
+     deleting all the other windows.  If WINDOW is missing, then the
+     selected window is the one remaining.
+
+       The result is `nil'.
+
+
+* Command: delete-windows-on BUFFER
+
+       This function deletes all windows showing BUFFER.  If there are
+     no windows showing BUFFER, then this function does nothing.  If all
+     windows are showing BUFFER (including the case where there is only
+     one window), then the screen reverts to having a single window
+     showing the buffer chosen by `other-buffer'.
+
+       If there are several windows showing different buffers, then
+     those showing BUFFER are removed, and the others are expanded to
+     fill the void.
+
+       It returns `nil'.
+
+
+
+File: elisp  Node: Selecting Windows, Prev: Deleting Windows, Up: Windows, Next: Buffers and Windows
+
+Selecting Windows
+=================
+
+  (intro text!!)
+
+
+* Function: next-window WINDOW &optional MINIBUF
+
+       This function returns the next window after WINDOW in the
+     canonical ordering of windows.  The canonical ordering of windows
+     begins with the selected window.  The successor to that window is
+     the window which would be selected by `(other-window 1)'.  The
+     ordering includes all the windows except the minibuffer.  Inclusion
+     of the minibuffer in the ordering depends on the state of MINIBUF.
+
+       If WINDOW is the only window visible, then this function returns
+     WINDOW.  If MINIBUF is `t', then the canonical ordering includes
+     the minibuffer window even if it is not active.  If MINIBUF is
+     neither `t' nor `nil', then the minibuffer window is not included
+     even if it is active.  *Note Minibuffer:: for what it means for the
+     minibuffer to be active.
+
+       In the example, there are two windows in existence.  They both
+     happen to be displaying the same buffer.
+
+          (selected-window)
+          => #<window 56 on windows.texinfo>
+          (next-window (selected-window))
+          => #<window 52 on windows.texinfo>
+          (next-window (next-window (selected-window)))
+          => #<window 56 on windows.texinfo>
+
+
+* Function: previous-window WINDOW
+
+       This function returns the windows previous to WINDOW in the
+     canonical ordering of windows.
+
+
+* Function: selected-window
+
+       This function returns the selected window.  This is the window in
+     which the cursor appears (and to which many commands apply).
+
+
+* Command: other-window COUNT
+
+       This function selects the COUNT'TH next window.  If count is
+     negative, then it selects the COUNT'TH previous window.
+
+       It returns `nil'.
+
+       When called interactively, it sets COUNT to the processed prefix
+     argument.
+
+
+* Function: select-window WINDOW
+
+       This function makes WINDOW the selected window.  The cursor then
+     appears in WINDOW (on redisplay).  The current buffer changes to
+     WINDOW's buffer
+
+       It returns WINDOW.
+
+          (setq w (next-window))
+          (select-window w)
+          => #<window 65 on windows.texinfo>
+
+
+  Often you want to try to select the ``best'' window.  These functions
+give you a choice of criteria with which to choose.
+
+
+* Function: get-lru-window
+
+       This function returns the window least recently used or selected
+     for display.  Selecting a window uses it.  The selected window is
+     the most recently used window. A newly created window becomes the
+     least recently used window until it is selected.  The selected
+     window can be the least recently used window if it is the only
+     window.  The minibuffer window is never returned.
+
+          (get-lru-window)
+          => #<window 58 on windows.texinfo>
+
+
+* Function: get-largest-window
+
+       This function returns the window with the largest area (height
+     times width).  If the screen is not divided horizontally, then this
+     is just the window with the most lines.
+
+       If there are two windows of the same size, then the function
+     returns the window which is first in the canonical ordering of
+     windows.
+
+
+
+
+File: elisp  Node: Buffers and Windows, Prev: Selecting Windows, Up: Windows, Next: Window Point
+
+Buffers and Windows
+===================
+
+(intro text!!)  *Note Selecting Buffers:: for related functions.
+
+
+* Function: get-buffer-window BUFFER-OR-NAME
+
+       This function returns a window currently displaying
+     BUFFER-OR-NAME, or `nil' if there are none.  If there are several
+     such windows, then the function returns the window which is first
+     in the canonical ordering of windows.
+
+
+* Function: display-buffer BUFFER-OR-NAME &optional NOT-THIS-WINDOW
+
+       This function makes BUFFER-OR-NAME appear in some window but it
+     doesn't select that window and doesn't make the buffer current.  If
+     NOT-THIS-WINDOW is non-`nil' and BUFFER-OR-NAME is shown already in
+     the selected window, then the buffer is displayed in a second
+     window.
+
+       If the variable `pop-up-windows' is non-`nil', windows can be
+     split to display the buffer.  See `split-height-threshold' for
+     another option that affects splitting
+
+       `display-buffer' returns the window displaying BUFFER-OR-NAME.
+
+
+
+* Command: replace-buffer-in-windows BUFFER
+
+       This function replaces BUFFER with some other buffer in all
+     windows showing it.
+
+       It returns `nil'.
+
+       When called interactively, the functions prompts for BUFFER in
+     the minibuffer.
+
+
+* Function: window-buffer &optional WINDOW
+
+       This function returns the buffer that WINDOW is displaying.  If
+     WINDOW is missing, then function returns the buffer for the
+     selected window.
+
+          (window-buffer)
+          => #<buffer windows.texinfo>
+
+
+* Function: set-window-buffer WINDOW BUFFER-OR-NAME
+
+       This function makes WINDOW display BUFFER-OR-NAME as its
+     contents.  It returns BUFFER-OR-NAME.
+
+          (set-window-buffer (selected-window) "foo")
+          => nil
+
+
+
+File: elisp  Node: Window Point, Prev: Buffers and Windows, Up: Windows, Next: Vertical Scrolling
+
+Window Point
+============
+
+  Each window has a value of point, which is independent of the value of
+point in other windows on the same buffer.  The window point is
+established when a window is first opened on a buffer and the initial
+value of the window point is set to be the value of the buffer's point
+or the window point of another window opened on the buffer, if such a
+window exists.
+
+  Functions that query or change the value of point in the buffer of the
+selected window actually reference the value of the selected window's
+point.  This is because the selected window's point shadows the buffer
+point while the window is on the buffer.  When the last window opened on
+a buffer is deleted, the buffer point is left set to the value of the
+window's point before the window was deleted.  *Note Positions:: for
+more details on positions.
+
+
+* Function: window-point WINDOW
+
+       This function returns the current position of the point in
+     WINDOW.  For a nonselected window, this is the value the point
+     would have if that window were selected.
+
+       When WINDOW is the selected window and its buffer is also
+     currently selected, the value returned is the same as `(point)'.
+
+       It would be more strictly correct to return the `top-level' value
+     of point, outside of any `save-excursion' forms.  But that is hard
+     to define.
+
+
+* Function: set-window-point WINDOW POSITION
+
+       This function positions the point in WINDOW at POSITION in
+     WINDOW's buffer.
+
+
+* Function: window-start &optional WINDOW
+
+       This function returns the position in the buffer displayed by
+     WINDOW at which the display starts.  This is the same number that
+     `point' returns when positioned at the beginning of the top line in
+     the window.
+
+       This function is not affected by clipping restrictions.  If
+     WINDOW is `nil' the selected window is used.
+
+          (window-start)
+          => 7058
+
+
+* Function: set-window-start WINDOW POSITION &optional NOFORCE
+
+       This function makes the display in WINDOW start at POSITION in
+     WINDOW's buffer.  Normally the display starts at the beginning of a
+     line, although this is not necessary.
+
+       Point is associated with a position within the buffer.  After
+     this function completes, that position in the buffer might not be
+     on the screen.  For instance, if point is 1 and we attempt to
+     position the buffer in the window at 2, then position of point
+     would be ``above'' the window.  Since point is required to be
+     visible, it moves back onto the screen unless NOFORCE is non-`nil'.
+     If point would move off the screen and NOFORCE is non-`nil', then
+     the function has no effect.
+
+       The function returns the requested starting position of the
+     window, regardless of whether the NOFORCE option caused the
+     function not to proceed (a bug?).
+
+       The example below moves the starting position of the window
+     forward one character.
+
+          (set-window-start (selected-window) (1+ (window-start)))
+          => 7062
+
+
+
+* Function: pos-visible-in-window-p &optional POSITION WINDOW
+
+       This function returns `t' if POSITION is currently visible on the
+     screen in WINDOW.  It returns `nil' if that position is scrolled
+     vertically out of view.  POSITION defaults to the current point;
+     WINDOW, to the selected window.
+
+          (pos-visible-in-window-p (point) (current-window))
+
+
+
+File: elisp  Node: Vertical Scrolling, Prev: Window Point, Up: Windows, Next: Horizontal Scrolling
+
+Vertical Scrolling
+==================
+
+  (intro text!!)
+
+* Command: scroll-up &optional COUNT
+
+       This function scrolls the selected window upward COUNT lines.
+     COUNT defaults to `nil'.  If COUNT is `nil', then it scrolls
+     `next-screen-context-lines' lines less than a full screen.
+
+       When called interactively, it sets COUNT to the unprocessed
+     prefix argument.
+
+       It returns `nil'.
+
+
+* Command: scroll-down &optional COUNT
+
+       This function scrolls the selected window downward COUNT lines.
+     If COUNT is missing, then it scrolls `next-screen-context-lines'
+     lines less than a full screen.
+
+       When called interactively, it sets COUNT to the processed prefix
+     argument.
+
+       It returns `nil'.
+
+
+
+* Command: scroll-other-window &optional COUNT
+
+       This function scrolls the next window upward COUNT lines.  The
+     next window is the one below (or to the right of) the current one;
+     or the one at the top (right hand side) of the screen if the
+     current one is at the bottom (left hand side).  More precisely, it
+     is the window returned by `(next-window)'.  Also
+     `minibuffer-scroll-window' in *Note Minibuffer Basics::.
+
+
+* User Option: scroll-step
+
+       The value of this variable is the number of lines to try
+     scrolling a window by, when point moves out of the window.  If this
+     is zero, the line that the point is on always goes to the center of
+     the window after the point moves off screen.
+
+       If scrolling by `scroll-step' would fail to bring point back on
+     screen, then the command puts point in the center instead.
+
+
+* User Option: next-screen-context-lines
+
+       The value of this variable is the number of lines of continuity
+     to retain when scrolling by screenfulls.  This means that when
+     `scroll-up' executes, this many lines that had been visible at the
+     bottom of the screen are now visible at the top of the screen.  The
+     default value is `2'.
+
+
+* Command: recenter &optional COUNT
+
+       This function repositions the text displayed in the selected
+     window.  It puts the line containing point COUNT lines down from
+     the top of the window and redraws only that window.  The text
+     displayed in the other windows does not move.
+
+       If COUNT is `nil', then it puts the line containing point in the
+     center of the window.  If COUNT is a non-`nil' list, then it puts
+     the line containing point in the center of the window, but only
+     redisplays as much of the window as necessary to position the text
+     --- only with `nil' does it redisplay the entire screen.
+
+       When called interactively, it sets COUNT to the unprocessed
+     prefix argument.  Thus, typing `C-u' as the prefix sets the prefix
+     argument to a non-`nil' list, while typing `C-u 4' positions the
+     line four lines from the top.
+
+
+* Command: move-to-window-line COUNT
+
+       This function repositions the point relative to the text
+     currently displayed in the selected window.  The point moves to the
+     beginning of the line COUNT lines from the top of the window.  If
+     COUNT is negative, the point moves either to the beginning of the
+     line -COUNT lines from the bottom or else to the last line of the
+     buffer if that point is beyond the end of buffer.
+
+       If COUNT is `nil', then the point moves to the beginning of the
+     line in the middle of the window.  If the absolute value of COUNT
+     is greater than the size of the window, then the window scrolls and
+     that line goes to the middle of the window.
+
+       When called interactively, COUNT gets the value of the processed
+     prefix argument.
+
+       The result of the function call is the window line number, origin
+     0.
+
+
+
+File: elisp  Node: Horizontal Scrolling, Prev: Vertical Scrolling, Up: Windows, Next: Window Size
+
+Horizontal Scrolling
+====================
+
+  (intro text!!)
+
+
+* Command: scroll-left COUNT
+
+       This function scrolls the selected window COUNT columns to the
+     left.  It scrolls to the right if COUNT is negative.
+
+       When called interactively, if sets COUNT to the processed prefix
+     argument.
+
+
+* Command: scroll-right COUNT
+
+       This function scrolls the selected window COUNT columns to the
+     right.  It scrolls to the left if COUNT is negative.
+
+       When called interactively, it COUNT gets the value of the
+     processed prefix argument.
+
+
+* Function: window-hscroll &optional WINDOW
+
+       This function returns the number of columns by which WINDOW is
+     scrolled from the left margin.
+
+       If WINDOW is `nil', it uses the selected window.
+          (window-hscroll)
+          => 0
+
+
+* Function: set-window-hscroll WINDOW COLUMNS
+
+       This function sets the number of columns WINDOW is scrolled from
+     left margin to COLUMNS.  COLUMNS should be zero or positive.
+
+       It returns COLUMNS.
+
+          (set-window-hscroll (selected-window)  10)
+          => 10
+
+
+
+
+File: elisp  Node: Window Size, Prev: Horizontal Scrolling, Up: Windows, Next: Window Configurations
+
+Window Size
+===========
+
+
+
+  Functions `enlarge-window' and `shrink-window' perform the same task
+of adjusting the sizes of windows.
+
+* Command: enlarge-window SIZE &optional HORIZONTAL
+
+       This function makes the selected window SIZE lines bigger,
+     stealing lines from any other windows that are displayed.  It
+     generally tries to steal equal numbers of lines from the other
+     windows.  If, in stealing lines from a window, that window shrinks
+     below `window-min-height', then it disappears.
+
+       If HORIZONTAL is non-`nil', then this function makes WINDOW wider
+     by SIZE columns, stealing columns as it does lines.  If, in
+     stealing columns from a window, that window shrinks below
+     `window-min-width', then it disappears.
+
+       It returns `nil'.  If the screen is smaller than SIZE lines (or
+     columns), then it makes the window occupy the entire height (or
+     width) of the screen.
+
+       If SIZE is negative, it shrinks instead by -SIZE.
+
+       When called interactively, it sets SIZE to the processed prefix
+     argument, and HORIZONTAL to `nil'.
+
+
+* Command: enlarge-window-horizontally COLUMNS
+
+       This function makes the selected window COLUMNS wider.
+
+       This function is simply an interface to `enlarge-window'.
+
+
+* Command: shrink-window SIZE &optional HORIZONTAL
+
+       This function is the exact analog to `enlarge-window', making the
+     selected window smaller by giving lines (or columns) to the other
+     windows.  If the window shrinks below `window-min-height', then it
+     disappears.  If SIZE is negative, it enlarges instead by -SIZE.
+
+
+* Command: shrink-window-horizontally COLUMNS
+
+       This function makes the selected window COLUMNS narrower.
+
+       This function is simply an interface to `shrink-window'.
+
+
+  Three functions return size information about a window.
+
+* Function: window-height &optional WINDOW
+
+       This function returns the number of lines in WINDOW (including
+     its mode line).  If WINDOW fills the entire screen, this is one
+     less than what `(screen-height)' would return (since the final line
+     on the terminal is always reserved for the minibuffer).
+
+       If WINDOW is `nil', the function uses the selected window.
+
+          (window-height)
+          => 49
+
+
+* Function: window-width &optional WINDOW
+
+       This function returns the number of columns in WINDOW.  If WINDOW
+     fills the entire screen, this is what `(screen-width)' would
+     return.
+
+       If WINDOW is `nil', the function uses the selected window.
+
+          (window-width)
+          => 80
+
+
+* Function: window-edges &optional WINDOW
+
+       This function returns a list of the edge coordinates of WINDOW.
+     The order of the list is: `(LEFT TOP RIGHT BOTTOM)', all relative
+     to 0, 0 at top left corner of screen.  RIGHT is one more than the
+     rightmost column used by WINDOW, and BOTTOM is one more than the
+     bottommost row used by WINDOW and its mode-line.
+
+       If WINDOW fills the entire screen, then RIGHT and BOTTOM are the
+     values returned by `(window-width)' and `(window-height)'
+     respectively.
+
+       If WINDOW is `nil', the function uses the selected window.
+
+          (window-edges (selected-window))
+          => (0 0 80 49)
+
+          (list 0 0 (window-width) (window-height))
+          => (0 0 80 49)
+
+
+  Two variables contrain resizing functions to a minimum height and
+width.
+
+* User Option: window-min-height
+
+       The value of this variable determines how small a window may
+     become (when enlarging other windows) before it disappears.  No
+     window may be created that is smaller than this.  The absolute
+     minimum height is 2 (allowing one line for the mode line, and one
+     line for the buffer display); actions which change window sizes
+     reset values less than 2 back to 2.
+
+          WARNING: min-size of 2 can cause strange update effects.
+
+
+* User Option: window-min-width
+
+       The value of this variable determines how small a window may
+     become (when enlarging other windows) before it disappears.  No
+     window may be created that is smaller than this.  The absolute
+     minimum width is 1; any value below that is ignored.
+
+          WARNING: version 18.50 of emacs doesn't always guard this
+          value properly, and can core dump when the value is less than
+          2 and actions force a window to a size smaller than that.
+          Because of the vertical borders between windows, 2 is the
+          minimum reasonable value for this option. (Is this fixed
+          yet??)
+
+
+
+
+File: elisp  Node: Window Configurations, Prev: Window Size, Up: Windows
+
+Window Configurations
+=====================
+
+  (intro text!!)
+
+
+* Function: current-window-configuration
+
+       This function returns a new object representing Emacs' current
+     window configuration, namely the number of windows, their sizes and
+     current buffers, which window is the selected window, and for each
+     displayed buffer, where display starts, and the positions of the
+     point and the mark.  An exception is made for the point in the
+     current buffer, whose value is not saved.  An example of how it
+     could be used with `set-window-configuration' to emulate
+     `save-window-excursion' appears below with `save-window-excursion'.
+
+
+* Function: set-window-configuration CONFIGURATION
+
+       This function restores the configuration of Emacs' windows and
+     buffers to the state specified by CONFIGURATION.  CONFIGURATION
+     must be a value returned by `current-window-configuration'.
+
+
+* Special form: save-window-excursion FORMS*
+
+       This function executes FORMS in sequence, preserving window sizes
+     and contents.  It restores each window with the same start of
+     display of its buffer.  It does not restore the value of point in
+     the current buffer (use `save-excursion' for that).
+
+       It returns the value of the final form in FORMS.
+
+          (split-window)
+          => #<window 25 on control-structure.texinfo>
+          (setq w (selected-window))
+          => #<window 19 on control-structure.texinfo>
+          (save-window-excursion
+             (delete-other-windows w)
+             (switch-to-buffer "foo")
+             'do-something)
+          => do-something
+
+       Equivalent to `save-window-excursion' is the following:
+
+          (let ((saved-windows (current-window-configuration)))
+            FORMS
+            (set-window-configuration saved-windows))
+
+
+
+
+
+
+File: elisp  Node: Positions, Prev: Windows, Up: Top, Next: Markers
+
+Positions
+*********
+
+  A "position" is a number denoting the offset of a character from the
+beginning of a buffer.  The position of the first character in a buffer
+is `1'.  Positions are always between two characters.  The character
+referred to as *at* or *after* a position is always the one immediately
+following the position.
+
+  Special positions that stay with the surrounding characters are called
+markers; *Note Markers::.
+
+* Menu:
+
+* Point::       		Special position
+* Motion::                      Changing point
+* Excursions::                  Temporary motion and buffer changes
+* Clipping Restrictions::       Restricting point to a region
+
+
+
+File: elisp  Node: Point, Up: Positions, Next: Motion
+
+Point
+=====
+
+  "Point" is a special buffer position for which many editing commands
+apply, including the self-inserting typed characters and text insertion
+functions.  Other commands move point through the text, so that you can
+edit at different places in it.
+
+  Each buffer has a value of point, which is independent of the value of
+point in other buffers.  The value of point is always between `1' and
+the buffer size plus one (*Note Buffer Contents::).  If there is a
+clipping restriction in effect (*Note Clipping Restrictions::), then the
+point is (always??) constrained to fall between the restriction
+boundaries.
+
+  Each window also has a value of point, which is independent of the
+value of point in other windows on the same buffer.  The window point is
+established when a window is first opened on a buffer and the initial
+value of the window point is set to be the value of the buffer's point
+or the window point of another window opened on the buffer, if such a
+window exists.  *Note Window Point:: for more details.
+
+
+* Function: point
+
+       This function returns the position of the point in the current
+     buffer, as an integer.
+
+          (point)
+          => 175
+
+
+  Testing point.  (say more!!)
+
+
+* Function: bobp
+
+       This function returns `t' if the point is at the beginning of the
+     buffer.  If a clipping restriction is in effect, this means the
+     beginning of that region.  Also see `point-min' in *Note Buffer
+     Contents::.
+
+* Function: eobp
+
+       This function returns `t' if point is at the end of the buffer.
+     If a clipping restriction is in effect, this means the end of that
+     region.  Also *Note point-max:: in *Note Buffer Contents::.
+
+* Function: bolp
+
+       This function returns `t' if the point is at the beginning of a
+     line.
+
+* Function: eolp
+
+       This function returns `t' if the point is at the end of a line.
+
+
+  Many functions are provided to look at the characters around the
+point.  Three simple functions are described here.  Also see functions
+described in *Note Searching and Matching::.
+
+
+* Function: char-after POSITION
+
+       This function returns the character in the current buffer at
+     position POSITION.  If POSITION does not specify a character in the
+     buffer, then it returns `nil'.
+
+       In the example, the first character in the buffer is `@'.
+          (char-to-string (char-after 1))
+          => "@"
+
+
+* Function: following-char
+
+       This function returns the character following the point in the
+     current buffer.  This is the same as `(char-after (point))'.  If
+     point is the last position of the buffer, then the result of
+     `following-char' is `0'.
+
+       In this example, the point is between the `a' and the `c'.
+            Gentlemen may cry ``Peace! Peace!,'' but there is no peace.
+
+          (char-to-string (preceding-char))
+          => "a"
+          (char-to-string (following-char))
+          => "c"
+
+
+* Function: preceding-char
+
+        This function returns the character preceding the point in the
+     current buffer.  See `following-char' for example.  If point is the
+     first position of the buffer, then the result of `preceding-char'
+     is `0'.
+
+
+
+
+File: elisp  Node: Motion, Prev: Point, Up: Positions, Next: Excursions
+
+Motion
+======
+
+  Motion functions change the value of point, either relative to the
+current value of point, relative to the beginning or end of the buffer,
+or relative to the edges of the selected window.
+
+  Only the simplest motion functions are described here.  Also see
+following sections on line and column related functions.
+
+* Menu:
+
+* Lines::       
+* Columns::     
+* Goal Column:: 
+
+
+* Command: goto-char POSITION
+
+       This function sets the point in the current buffer to that
+     position in the current buffer.  If POSITION is less than 1, then
+     the point is set to the top of the buffer.  If it is greater than
+     the length of the buffer, then the point is set to the end of the
+     buffer.
+
+       If a clipping restriction is in effect, then the position is
+     still measured from the beginning of the buffer, but any position
+     specified outside of the clipped region will result in the point
+     being placed at either the top or bottom of the clipped region.
+
+       When called interactively, POSITION is the numeric prefix
+     argument, if provided; otherwise it is read from the minibuffer.
+
+     `goto-char' returns POSITION.
+
+
+
+* Command: forward-char &optional COUNT
+
+       This function moves the point right COUNT characters (left if
+     COUNT negative).  If it attempts to move past the beginning or end
+     of the buffer (or clipped region), an error is signled, with error
+     code `beginning-of-buffer' or `end-of-buffer'.
+
+       When called interactively, COUNT is the numeric prefix argument.
+
+
+* Command: backward-char &optional COUNT
+
+       This function moves the point left COUNT characters (right if
+     COUNT negative).  If it attempts to move past the beginning or end
+     of the buffer (or clipped region), an error is signled, with error
+     code `beginning-of-buffer' or `end-of-buffer'.
+
+       When called interactively, COUNT is the numeric prefix argument.
+
+
+* Command: forward-word COUNT
+
+       This function moves the point forward COUNT words (backward if
+     COUNT is negative).  Normally it returns `t'.  If an edge of the
+     buffer is reached, point is left there and `nil' is returned.
+
+       When called interactively, COUNT is set to the numeric prefix
+     argument.
+
+
+* Command: backward-word COUNT
+
+       This function is the exact analog to `forward-word', save that it
+     moves backward until encountering the front of a word.
+
+       When called interactively, COUNT is set to the numeric prefix
+     argument.
+
+       In programs, it is faster to call `forward-word' with negative
+     argument, as that is all that this function does anyway.
+
+
+* Command: beginning-of-buffer &optional N
+
+       This function moves the point to the beginning of the buffer,
+     leaving the mark at the previous position.  If N is non-`nil', then
+     it puts the point N tenths of the way from the beginning of the
+     buffer.
+
+       When called interactively, N is the numeric prefix argument, if
+     provided; otherwise N defaults to `nil'.
+
+       Don't use this in Lisp programs!  `(goto-char (point-min))' is
+     faster and does not set the mark.
+
+
+* Command: end-of-buffer &optional N
+
+       This function moves the point to the end of the buffer, leaving
+     the mark at the previous position.  If N is non-`nil', then it puts
+     the point N tenths of the way from the end.
+
+       When called interactively, N is the numeric prefix argument, if
+     provided; otherwise N defaults to `nil'.
+
+       Don't use this in Lisp programs!  `(goto-char (point-max))' is
+     faster and does not set the mark.
+
+
+
+File: elisp  Node: Lines, Up: Motion, Next: Columns
+
+Lines
+-----
+
+Also see `bolp' and `eolp' in *Note Point::.
+
+* Command: goto-line LINE
+
+       This function sets the point to the front of the LINE'th line,
+     counting from line 1 at beginning of buffer.  If LINE is less than
+     1, then the point is set to the top of the buffer.  If it is
+     greater than the number of lines in the buffer, then the point is
+     set to the *end of the last line* of the buffer.
+
+       If a clipping restriction is in effect, then the line is still
+     measured from the beginning of the buffer, but any line specified
+     outside of the clipped region will result in the point being placed
+     at either the top or bottom of the clipped region.
+
+       The return value is the difference between LINE and the line
+     number of the line point could move to, ignoring any clipping
+     restriction.
+
+       When called interactively, LINE is the numeric prefix argument if
+     one has been provided.  Otherwise LINE is read from the minibuffer.
+
+
+* Command: beginning-of-line &optional COUNT
+
+       This function moves the point to the beginning of the current
+     line.  With an argument COUNT not `nil' or 1, it moves down (COUNT
+     - 1) lines first.  If it reaches the end of the buffer (or the
+     clipped region), it positions the point at the beginning of the
+     last line.  No error is signaled.
+
+
+* Command: end-of-line &optional COUNT
+
+       This function moves the point to the end of the current line.
+     With an argument COUNT not `nil' or 1, it moves down (COUNT - 1)
+     lines first.  If it reaches the end of the buffer (or the clipped
+     region), it positions the point at the end of the last line.  No
+     error is signaled.
+
+
+* Command: forward-line &optional COUNT
+
+       This function moves the point to the first column of a line,
+     COUNT lines down from the present position.  If COUNT is negative,
+     it moves that many lines up.
+
+       If there are not that many lines in the buffer (or the clipped
+     region), then it moves the point to the beginning (or end) of the
+     buffer (or the clipped region).
+
+       It returns the difference between COUNT and the number of lines
+     actually moved.  If you attempt to move down five lines from the
+     top of a buffer that has only three lines, the point will
+     positioned at the end of the last line, and a value of 2 will be
+     returned.
+
+       When called interactively, COUNT will be the numeric prefix
+     argument.
+
+
+* Command: previous-line COUNT
+
+       This function moves the point up COUNT lines (down if COUNT is
+     negative).  In moving, it attempts to keep the point in the ``goal
+     column'' (normally the same column that it was at the beginning of
+     the move).
+
+       If there is no character in the target line exactly under the
+     current column, the point is positioned after the character in that
+     line which spans this column, or at the end of the line if it is
+     not long enough.
+
+       If it attempts to move beyond the top or bottom of the buffer (or
+     clipped region), then the point is positioned in the goal column in
+     the top or bottom line.  No error is signaled.
+
+       When called interactively, COUNT will be the numeric prefix
+     argument.
+
+       The command `set-goal-column' can be used to create a
+     semipermanent goal column to which this command always moves.  Then
+     it does not try to move vertically.
+
+       If you are thinking of using this in a Lisp program, consider
+     using `forward-line' with a negative argument instead.  It is
+     usually easier to use and more reliable (no dependence on goal
+     column, etc.).
+
+
+* Command: next-line COUNT
+
+       This function moves the point down COUNT lines (up if COUNT is
+     negative).  In moving, it attempts to keep the point in the ``goal
+     column'' (normally the same column that it was at the beginning of
+     the move).
+
+       If there is no character in the target line exactly under the
+     current column, the point is positioned after the character in that
+     line which spans this column, or at the end of the line if it is
+     not long enough.
+
+       If it attempts to move beyond the top or bottom of the buffer (or
+     clipped region), then the point is positioned in the goal column in
+     the top or bottom line.  No error is signaled.
+
+       In the case where the COUNT is 1, and the point is on the last
+     line of the buffer (or clipped region), a new empty line is
+     inserted at the end of the buffer (or clipped region) and the point
+     moved there.
+
+       When called interactively, COUNT will be the numeric prefix
+     argument.
+
+       The command `set-goal-column' can be used to create a
+     semipermanent goal column to which this command always moves.  Then
+     it does not try to move vertically.
+
+       If you are thinking of using this in a Lisp program, consider
+     using `forward-line' instead.  It is usually easier to use and more
+     reliable (no dependence on goal column, etc.).
+
+
+* Function: vertical-motion COUNT
+
+       This function moves the point to the start of the line COUNT
+     lines down.  If COUNT is negative, it moves up.  If Emacs is
+     wrapping a line of text around to a second (or third, etc.) line on
+     the display, this will count the lines of display, not the lines
+     terminated by newline characters.  (what's the difference with
+     forward-line??)
+
+       It returns the number of lines moved.  It may be closer to zero
+     than COUNT if the beginning or end of the buffer was reached.
+
+
+* Function: count-lines START END
+
+       This function returns number of lines between the positions START
+     and END (which are character offsets from the beginning of the
+     buffer) in the current buffer.  If START and END are the same, then
+     it returns 0.  Otherwise it returns at least 1, even if START and
+     END are on the same line.
+
+          (defun current-line ()
+            "Return the vertical position of point in the current window.  
+          Top line is 0.  Counts each text line only once, even if it wraps."
+            (+ (count-lines (window-start) (point))
+               (if (= (current-column) 0) 1 0)
+               -1))
+
+
+
+
+
+File: elisp  Node: Columns, Prev: Lines, Up: Motion, Next: Goal Column
+
+Columns
+-------
+
+  The first column is numbered `0'.
+
+
+* Function: move-to-column COLUMN
+
+       This function moves the point to COLUMN in the current line of
+     the current window, regardless of horizontal scrolling.  COLUMN is
+     calculated by adding together the widths of all the displayed
+     representations of the characters between the start of the previous
+     line and the point.  (Thus control characters will have a width of
+     2 or 4, depending upon the setting of `ctl-arrow', and tabs will
+     have a variable width.)
+
+       This function may be passed values greater than `(screen-width)'.
+     If the current line is not that wide, then the point is moved to
+     the end of the line.  If COLUMN is negative, the point is moved to
+     the beginning of the line.  COLUMN must be an integer.
+
+       The result is the column number actually moved to.
+
+
+* Function: current-column
+
+       This function returns the horizontal position of point.  The
+     beginning of a line is column 0.  The position is calculated by
+     adding together the widths of all the displayed representations of
+     the character between the start of the current line and the point.
+     This means control characters will have a width of 2 or 4,
+     depending upon the value of `ctl-arrow' and tabs will have a
+     variable width.  It ignores the finite width of the screen, which
+     means that this function may return values greater than
+     `(screen-width)'.
+
+
+

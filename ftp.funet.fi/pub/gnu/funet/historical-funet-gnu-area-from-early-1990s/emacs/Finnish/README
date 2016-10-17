@@ -1,0 +1,7 @@
+This directory has patches for Finnish versions of emacs
+(supporting 8-bit character display and entry, possibly others)
+
+Currently it's unorganized - hopefully there'll be more organization
+in the future.
+
+jkp@cs.hut.fi

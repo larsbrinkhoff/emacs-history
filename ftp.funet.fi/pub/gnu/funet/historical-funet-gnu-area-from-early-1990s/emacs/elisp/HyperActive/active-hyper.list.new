@@ -1,0 +1,63 @@
+--- New HyperActiveFTP Sites and Source Code  
+
+Policy on new sites: These sites will remain
+in this file until there is a new release of 
+HyperActiveFTP.  At that time,  they will be
+tranferred to active-hyper.list.big.otl.
+
+<(Back to Top)>
+
+Site Listings Courtesy of:
+srivasta@sylhet.pilgram.umass.edu
+
+*    TeX (transfig)
+**   pub/transfig*.tar.Z
+***  Contains the sources for the figure translation package for TeX, including
+fig2dev.
+**** "/anonymous@ftp.cs.cornell.edu:pub"
+
+*    TeX/GIF/Animation/IEEE style file
+**   
+***  
+**** "/anonymous@wpi.wpi.edu:"
+
+*    XGobi
+**   general
+***  Dynamic scatter plotting graphics package for exploratory data analysis.
+ email: statlib@temper.stat.cmu.edu with message "send xgobi from general"
+**** "/statlib@lib.stat.cmu.edu:general"
+
+*     Project Gutenberg
+**   etext/*
+***  Public Domain Etexts. The primary goal of Project Gutenberg is 
+to encourage the creation and distribution of electronic text.
+**** "/anonymous@mrcnext.cso.uiuc.edu:"
+
+*    LaTeX/Postscript (Boxed eps)
+**   pub/siebenmann/*
+***  Boxed postscript filr inclusions in LaTeX. Supports OzTeX. 
+IP 130.84.128.100
+**** "/anonymous@rsovax.ups.circe.fr:"
+
+
+* 	How can I include a PostScript figure in LaTeX?/LaTeX/Postscript
+** 	psfig
+*** 	<(Describe psfig)>
+**** 	"/anonymous@whitechapel.media.mit.edu:"
+ 	"/anonymous@linc.cis.upenn.edu:"
+ 	"/anonymous@ymir.claremont.edu:"
+
+*    Xtank/Sun Sparcstation Sounds
+**   pub/xtank/xtank1.3d.tar.Z
+***  The directory contains the tar'd sources for a great X11 multiplayer game.
+There is a README file in there.
+**** "/anonymous@ftp.eng.umd.edu:"
+
+[ site from Janne Himanka ]
+
+*    Rc
+**   Rc
+***  Here is always the latest version of the Rc shell. Rc is a Unix implementation of the Bell labs Plan 9 shell.
+**** "/anonymous@archone.tamu.edu:/pub/rc"
+
+<(Back to Top)>

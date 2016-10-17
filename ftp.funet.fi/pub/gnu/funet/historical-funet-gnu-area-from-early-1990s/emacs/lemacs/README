@@ -1,0 +1,261 @@
+Lucid GNU Emacs 19.3 is now available.  This is a version of GNU Emacs derived
+from an early version of Emacs version 19 from the Free Software Foundation.
+
+(If you are already a user of version 19.2, you might want to skip ahead to
+the section labeled "Differences Between 19.2 and 19.3".)
+
+You can get it via anonymous FTP from the host labrea.Stanford.EDU (36.8.0.47).
+It is currently available only by FTP.  We don't have the manpower to make 
+tapes right now.
+
+Log in with the user "anonymous" and "username@host" as a password (that is,
+your email address.)  Execute the command "cd pub/gnu/lucid/".  These are
+the files you will find there:
+
+  lemacs-19.3.tar.Z
+	The complete source distribution.  This file is about 8 megabytes.
+	When untarred and uncompressed, the source distribution will take up
+	about 20 megs. You will need an additional 12 megs or so to compile it.
+
+  lemacs-19.3-sun4.tar.Z
+	This is a ready-to-run set of Sun4 executables, and a DOC file.  If
+	you want to use these executables, you will still need to get the file
+	lemacs-19.3.tar.Z, because Emacs cannot function very well without the
+	lisp library online.  This file is about 1.7 megs, 3.8 megs when
+	unpacked, 3 megs of which is the Emacs executable itself (2.1 megs if
+	stripped.)
+
+Don't forget to set "binary" mode when transferring these files.  Unpack them
+with some variation of the command "zcat lemacs-19.3.tar.Z | tar -vxf -".
+
+We have created two mailing lists for discussing our Emacs.
+
+   bug-lucid-emacs@lucid.com	For reporting all bugs in Lucid GNU Emacs,
+				including bugs in the compilation and
+				installation procedures.
+
+   help-lucid-emacs@lucid.com	For random questions and conversation
+				about using Lucid GNU Emacs.
+
+To be added or removed from these mailing lists, send mail to 
+bug-lucid-emacs-request@lucid.com or help-lucid-emacs-request@lucid.com.
+
+The bug-lucid-emacs and help-lucid-emacs mailing lists are archived on labrea,
+and are bidirectionally gatewayed into the newsgroups alt.lucid-emacs.bug and
+alt.lucid-emacs.help.
+
+The bug-lucid-emacs and help-lucid-emacs mailing lists are archived on labrea.
+
+Please do not send messages about problems with Lucid GNU Emacs to the FSF
+GNU Emacs newsgroups and mailing lists (help-gnu-emacs@prep.ai.mit.edu,
+bug-gnu-emacs@prep.ai.mit.edu, gnu.emacs.help, gnu.emacs.bug, et cetera)
+unless you are sure that the problem you are reporting is a problem with
+both versions of GNU Emacs.  People who aren't subscribed to the Lucid GNU
+Emacs mailing lists most likely are not interested in hearing about problems
+with it.
+
+
+Why Another Version of Emacs?
+=============================
+
+Lucid's latest product, Energize, is a C/C++ development environment.  Rather
+than invent (and force our users to learn) a new user-interface, we chose to
+build part of our environment on top of the world's best editor, GNU Emacs.
+(Though our product is commercial, the work we did on GNU Emacs is free
+software, and is useful without having to purchase our product.)
+
+We needed a version of Emacs with mouse-sensitive regions, multiple fonts,
+the ability to mark sections of a buffer as read-only, the ability to detect
+which parts of a buffer has been modified, and many other features.
+
+Why Not Epoch?
+==============
+
+For our purposes, the existing version of Epoch was not sufficient; it did
+not allow us to put arbitrary pixmaps/icons in buffers, `undo' did not
+restore changes to regions, regions did not overlap and merge their
+attributes in the way we needed, and several other things.
+
+We could have devoted our time to making Epoch do what we needed (and, in
+fact, we spent some time doing that) but, since the FSF planned to include
+Epoch-like features in their version 19, we decided that our efforts would be
+better spent improving Emacs19 instead of Epoch.  
+
+Our original hope was that our changes to Emacs would be incorporated into
+the "official" v19.  However, scheduling conflicts arose, and we found that,
+given the amount of work still remaining to be done, we didn't have time to
+merge with the FSF's code.  Consequently, we have released our work as a
+forked branch of Emacs, instead of delaying any longer.
+
+It seems likely that a merger of Epoch and Lucid Emacs will occur in the
+not-too-distant future.
+
+No Warranty
+===========
+
+Lucid GNU Emacs is distributed under exactly the same terms as GNU Emacs,
+and thus has no warranty of any kind.  (However, Energize support contracts
+include Lucid GNU Emacs support.)  We do not currently have plans to sell
+support for Emacs independent of support for Energize.
+
+What's Different?
+=================
+
+Lucid GNU Emacs *currently* requires X Windows to run, though it will not be
+much work to make it run on dumb ttys again.  We plan to do this soon.
+
+We have not personally tried to compile this version of Emacs under anything
+but SunOS 4.1 on SparcStations, though others have successfully done so.  We
+are very eager to get feedback about portability problems from those who
+compile it on other systems.
+
+We have reimplemented the basic input model in a more general way; instead of
+X input being a special-case of the normal ASCII input stream, Emacs has a
+concept of "input events", and ASCII characters are a subset of that.  The
+events that Emacs knows about are not X events, but are a generalization of
+them, so that Emacs can eventually be ported to different window systems.
+
+We have reimplemented keymaps so that sequences of events can be stored into
+them instead of just ASCII codes; it is possible to, for example, bind 
+different commands to each of the chords Control-h, Control-H, Backspace,
+Control-Backspace, and Super-Shift-Backspace.  Key bindings, function key
+bindings, and mouse bindings live in the same keymaps.
+
+Input and display of all ISO-8859-1 characters is supported.
+
+You can have multiple X Windows ("screens" in Emacs terminology).
+
+Our Emacs has objects called "extents" and "faces", which are roughly
+analogous to Epoch's "buttons," "zones," and "styles."  An extent is a region
+of text (a start position and an end position) and a face is a collection of
+textual attributes like fonts and colors.  Every extent is displayed in some
+"face", so changing the properties of a face immediately updates the display 
+of all associated extents.  Faces can be screen-local: you can have a region
+of text which displays with completely different attributes when its buffer
+is viewed from a different X window.
+
+The display attributes of faces may be specified either in lisp or through
+the X resource manager.
+
+Emacs use the MIT "Xt" toolkit instead of raw Xlib calls, which makes it be
+a more well-behaved X citizen (and also improves portability).  A result of
+this is that it is possible to include other Xt "Widgets" in the Emacs
+window.  Also, Emacs understands the standard Xt command-line arguments.
+
+Emacs understands the X11 "Selection" mechanism; it's possible to define
+and customize selection converter functions and new selection types from 
+elisp, without having to recompile Emacs.
+
+Emacs now supports the Zmacs/Lispm style of region highlighting, where the
+region between the point and mark is highlighted when in its "active" state.
+
+Emacs has a menubar, whose contents are customizable from emacs-lisp.
+This menubar looks Motif-ish, but does not require Motif.  If you already
+own Motif, however, you can configure Emacs to use a *real* Motif menubar
+instead.  If you have OLIT ("OpenLook Intrinsics"), you can use an
+OpenWindows-like menubar.
+
+The initial load-path is computed at run-time, instead of at compile-time.
+This means that if you move the Emacs executable and associated directories
+to somewhere else, you don't have to recompile anything.
+
+Emacs now supports floating-point numbers.
+
+Emacs now knows about timers directly, instead of them being simulated by
+a subprocess.
+
+Emacs understands truenames, and can be configured to notice when you are
+visiting two names of the same file.
+
+If you're running on a sun SparcStation, you can specify sound files for
+Emacs to play instead of the default X beep.
+
+Much more detail about the differences between Lucid GNU Emacs and Emacs 18
+can be found in the file .../etc/NEWS (accessible with ``C-h n''.)
+
+Note that building Lucid GNU Emacs requires an ANSI C compiler, such as gcc.
+
+
+Major Differences Between 19.2 and 19.3
+=======================================
+
+The ISO characters have correct case and syntax tables now, so the word-motion
+and case-converting commands work sensibly on them.
+
+If you set ctl-arrow to an integer, you can control exactly which characters
+are printable.  (There will be a less crufty way to do this eventually.)
+
+Menubars can now be buffer local; the function set-screen-menubar no longer
+exists.  Look at GNUS and VM for examples of how to do this, or read 
+menubar.el.
+
+When emacs is reading from the minibuffer with completions, any completions
+which are visible on the screen will highlight when the mouse moves over them;
+clicking middle on a completion is the same as typing it at the minibuffer.
+Some implications of this:  The *Completions* buffer is always mousable.  If
+you're using the completion feature of find-tag, your source code will be
+mousable when you type M-.  Dired buffers will be mousable as soon as you 
+type ^X^F.  And so on.
+
+The old isearch code has been replaced with a descendant of Dan LaLiberte's
+excellent isearch-mode; it is more customizable, and generally less bogus.
+You can search for "composed" characters.  There are new commands, too; see
+the doc for ^S, or the NEWS file.
+
+Note that ESC no longer terminates an isearch: LFD does instead.  This is 
+a change RMS has made in his v19 as well.  The old isearch variables (like
+search-repeat-char) are no longer used; it's all done with keymaps now.
+Please try to avoid the temptation to bind ESC to its old behavior; it was
+always a bad idea to overload the meta-prefix-char in this way.  If you 
+don't have a LFD key, you can make some other key be the terminator (RET,
+or F1, or whatever) but using ESC is more complicated because of its goofy
+equivalence to Meta.
+
+A patched GNUS 3.14 is included.
+
+The user's manual now documents Lucid Emacs 19.3.
+
+A few more modes have mouse and menu support.
+
+The startup code should be a little more robust, and give you more reasonable
+error messages when things aren't installed quite right (instead of the
+ubiquitous "cannot open DISPLAY"...)
+
+Subdirectories of the lisp directory whose names begin with a hyphen or dot
+are not automatically added to the load-path, so you can use this to avoid
+accidentally inflicting experimental software on your users.
+
+I've tried to incorporate all of the portability patches that were sent to
+me; I tried to solve some of the problems in different ways than the 
+patches did, so let me know if I missed something.
+
+There's no `configure' support yet.  I've been sent patches to make 19.1
+work with configure, but I haven't had time to integrate them into 19.3.
+
+The OLIT menubar probably still doesn't work.  Fixes are welcome, as always.
+
+Some systems will need to define NEED_STRDUP, NEED_REALPATH, HAVE_DREM, or
+HAVE_REMAINDER in config.h.  Really this should be done in the appropriate
+s- or m- files, but I don't know which systems need these and which don't.
+If yours does, let me know which file it should be in.
+
+I haven't made diffs, because they would be really huge, and I still don't
+know a truly painless way to make diffs of an emacs source tree.
+
+Check out these new packages:
+
+blink-paren.el:	causes the matching parenthesis to flash on and off whenever
+		the cursor is sitting on a paren-syntax character.
+
+pending-del.el:	Certain commands implicitly delete the highlighted region:
+		Typing a character when there is a highlighted region replaces
+		that region with the typed character.
+
+lhilit.el:	Attaches fonts/colors to patterns matching regular expressions.
+
+font-lock.el:	Yet Another code-highlighting package, but this one is driven
+		off of syntax tables, so that it understands block comments,
+		strings, etc.  The insertion hook is used to fontify text as
+		you type it in.  (This is fast now.)
+
+shell-font.el:	Displays your shell-buffer prompt in boldface.

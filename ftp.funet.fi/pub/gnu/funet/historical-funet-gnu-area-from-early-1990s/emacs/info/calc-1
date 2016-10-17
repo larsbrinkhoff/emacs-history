@@ -1,0 +1,1067 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+File: calc  Node: Top, Up: (dir), Next: Introduction
+
+The GNU Emacs Calculator
+************************
+
+"Calc" is an advanced desk calculator and mathematical tool that runs as
+part of the GNU Emacs environment.
+
+* Menu:
+
+* Copying::               How you can copy and share Calc.
+
+* Quick Overview::	  If you're in a hurry to use Calc.
+
+* Introduction::	  An introduction to Calc.
+* Data Types::		  Types of objects manipulated by Calc.
+* Stack and Trail::	  Manipulating the stack and trail buffers.
+* Mode Settings::	  Adjusting display format and other modes.
+* Arithmetic::		  Basic arithmetic functions.
+* Scientific Functions::  Trancendentals and other scientific functions.
+* Binary Functions::	  Bitwise operations on integers.
+* Matrix Functions::	  Operations on vectors and matrices.
+* Algebra::	          Manipulating expressions algebraically.
+* Units::	          Operations on numbers with units.
+* Store and Recall::	  Storing and recalling variables.
+* Kill and Yank::	  Moving data into and out of Calc.
+* Programming::		  Calc as a programmable calculator.
+
+* Installation::	  Installing Calc as a part of GNU Emacs.
+* Reporting Bugs::	  How to report bugs and make suggestions.
+
+* Key Index::		  The standard Calc key sequences.
+* Command Index::	  The interactive Calc commands.
+* Function Index::	  Functions (in algebraic formulas).
+* Concept Index::	  General concepts.
+* Lisp Function Index::	  Internal Lisp math functions.
+* Lisp Variable Index::	  Internal Lisp variables used by Calc.
+
+
+File: calc  Node: Copying, Prev: Top, Up: Top, Next: Quick Overview
+
+GNU GENERAL PUBLIC LICENSE
+**************************
+                        Version 1, February 1989
+
+     Copyright (C) 1989 Free Software Foundation, Inc.
+     675 Mass Ave, Cambridge, MA 02139, USA
+
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+
+Preamble
+========
+
+  The license agreements of most software companies try to keep users at
+the mercy of those companies.  By contrast, our General Public License
+is intended to guarantee your freedom to share and change free
+software---to make sure the software is free for all its users.  The
+General Public License applies to the Free Software Foundation's
+software and to any other program whose authors commit to using it.  You
+can use it for your programs, too.
+
+  When we speak of free software, we are referring to freedom, not
+price.  Specifically, the General Public License is designed to make
+sure that you have the freedom to give away or sell copies of free
+software, that you receive source code or can get it if you want it,
+that you can change the software or use pieces of it in new free
+programs; and that you know you can do these things.
+
+  To protect your rights, we need to make restrictions that forbid
+anyone to deny you these rights or to ask you to surrender the rights.
+These restrictions translate to certain responsibilities for you if you
+distribute copies of the software, or if you modify it.
+
+  For example, if you distribute copies of a such a program, whether
+gratis or for a fee, you must give the recipients all the rights that
+you have.  You must make sure that they, too, receive or can get the
+source code.  And you must tell them their rights.
+
+  We protect your rights with two steps: (1) copyright the software, and
+(2) offer you this license which gives you legal permission to copy,
+distribute and/or modify the software.
+
+  Also, for each author's protection and ours, we want to make certain
+that everyone understands that there is no warranty for this free
+software.  If the software is modified by someone else and passed on, we
+want its recipients to know that what they have is not the original, so
+that any problems introduced by others will not reflect on the original
+authors' reputations.
+
+  The precise terms and conditions for copying, distribution and
+modification follow.
+
+
+                          TERMS AND CONDITIONS
+
+  1. This License Agreement applies to any program or other work which
+     contains a notice placed by the copyright holder saying it may be
+     distributed under the terms of this General Public License.  The
+     "Program", below, refers to any such program or work, and a "work
+     based on the Program" means either the Program or any work
+     containing the Program or a portion of it, either verbatim or with
+     modifications.  Each licensee is addressed as "you".
+
+  2. You may copy and distribute verbatim copies of the Program's source
+     code as you receive it, in any medium, provided that you
+     conspicuously and appropriately publish on each copy an appropriate
+     copyright notice and disclaimer of warranty; keep intact all the
+     notices that refer to this General Public License and to the
+     absence of any warranty; and give any other recipients of the
+     Program a copy of this General Public License along with the
+     Program.  You may charge a fee for the physical act of transferring
+     a copy.
+
+  3. You may modify your copy or copies of the Program or any portion of
+     it, and copy and distribute such modifications under the terms of
+     Paragraph 1 above, provided that you also do the following:
+
+        * cause the modified files to carry prominent notices stating
+          that you changed the files and the date of any change; and
+
+        * cause the whole of any work that you distribute or publish,
+          that in whole or in part contains the Program or any part
+          thereof, either with or without modifications, to be licensed
+          at no charge to all third parties under the terms of this
+          General Public License (except that you may choose to grant
+          warranty protection to some or all third parties, at your
+          option).
+
+        * If the modified program normally reads commands interactively
+          when run, you must cause it, when started running for such
+          interactive use in the simplest and most usual way, to print
+          or display an announcement including an appropriate copyright
+          notice and a notice that there is no warranty (or else, saying
+          that you provide a warranty) and that users may redistribute
+          the program under these conditions, and telling the user how
+          to view a copy of this General Public License.
+
+        * You may charge a fee for the physical act of transferring a
+          copy, and you may at your option offer warranty protection in
+          exchange for a fee.
+
+     Mere aggregation of another independent work with the Program (or
+     its derivative) on a volume of a storage or distribution medium
+     does not bring the other work under the scope of these terms.
+
+  4. You may copy and distribute the Program (or a portion or derivative
+     of it, under Paragraph 2) in object code or executable form under
+     the terms of Paragraphs 1 and 2 above provided that you also do one
+     of the following:
+
+        * accompany it with the complete corresponding machine-readable
+          source code, which must be distributed under the terms of
+          Paragraphs 1 and 2 above; or,
+
+        * accompany it with a written offer, valid for at least three
+          years, to give any third party free (except for a nominal
+          charge for the cost of distribution) a complete
+          machine-readable copy of the corresponding source code, to be
+          distributed under the terms of Paragraphs 1 and 2 above; or,
+
+        * accompany it with the information you received as to where the
+          corresponding source code may be obtained.  (This alternative
+          is allowed only for noncommercial distribution and only if you
+          received the program in object code or executable form alone.)
+
+     Source code for a work means the preferred form of the work for
+     making modifications to it.  For an executable file, complete
+     source code means all the source code for all modules it contains;
+     but, as a special exception, it need not include source code for
+     modules which are standard libraries that accompany the operating
+     system on which the executable file runs, or for standard header
+     files or definitions files that accompany that operating system.
+
+  5. You may not copy, modify, sublicense, distribute or transfer the
+     Program except as expressly provided under this General Public
+     License.  Any attempt otherwise to copy, modify, sublicense,
+     distribute or transfer the Program is void, and will automatically
+     terminate your rights to use the Program under this License.
+     However, parties who have received copies, or rights to use copies,
+     from you under this General Public License will not have their
+     licenses terminated so long as such parties remain in full
+     compliance.
+
+  6. By copying, distributing or modifying the Program (or any work
+     based on the Program) you indicate your acceptance of this license
+     to do so, and all its terms and conditions.
+
+  7. Each time you redistribute the Program (or any work based on the
+     Program), the recipient automatically receives a license from the
+     original licensor to copy, distribute or modify the Program subject
+     to these terms and conditions.  You may not impose any further
+     restrictions on the recipients' exercise of the rights granted
+     herein.
+
+  8. The Free Software Foundation may publish revised and/or new
+     versions of the General Public License from time to time.  Such new
+     versions will be similar in spirit to the present version, but may
+     differ in detail to address new problems or concerns.
+
+     Each version is given a distinguishing version number.  If the
+     Program specifies a version number of the license which applies to
+     it and "any later version", you have the option of following the
+     terms and conditions either of that version or of any later version
+     published by the Free Software Foundation.  If the Program does not
+     specify a version number of the license, you may choose any version
+     ever published by the Free Software Foundation.
+
+  9. If you wish to incorporate parts of the Program into other free
+     programs whose distribution conditions are different, write to the
+     author to ask for permission.  For software which is copyrighted by
+     the Free Software Foundation, write to the Free Software
+     Foundation; we sometimes make exceptions for this.  Our decision
+     will be guided by the two goals of preserving the free status of
+     all derivatives of our free software and of promoting the sharing
+     and reuse of software generally.
+
+
+                                 NO WARRANTY
+
+ 10. BECAUSE THE PROGRAM IS LICENSED FREE OF CHARGE, THERE IS NO
+     WARRANTY FOR THE PROGRAM, TO THE EXTENT PERMITTED BY APPLICABLE
+     LAW.  EXCEPT WHEN OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS
+     AND/OR OTHER PARTIES PROVIDE THE PROGRAM "AS IS" WITHOUT WARRANTY
+     OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT
+     LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+     FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY AND
+     PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE PROGRAM PROVE
+     DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING, REPAIR
+     OR CORRECTION.
+
+ 11. IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN
+     WRITING WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY
+     MODIFY AND/OR REDISTRIBUTE THE PROGRAM AS PERMITTED ABOVE, BE
+     LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL,
+     INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+     INABILITY TO USE THE PROGRAM (INCLUDING BUT NOT LIMITED TO LOSS OF
+     DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU
+     OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY
+     OTHER PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN
+     ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+
+File: calc  Node: Introduction, Prev: Quick Overview, Up: Top, Next: Data Types
+
+Introduction
+************
+
+"Calc" is an advanced calculator and mathematical tool that runs as part
+of the GNU Emacs environment.  Very roughly based on the HP-28/48 series
+of calculators, its many features include:
+
+   * Choice of algebraic or RPN style entry of calculations.
+   * Arbitrary precision integers and floating-point numbers.
+   * Arithmetic on rational numbers, complex numbers (rectangular and
+     polar), error forms with standard deviations, open and closed
+     intervals, vectors and matrices, and simple algebraic expressions.
+   * Mathematical operations such as logarithms and trig functions.
+   * Programmer's features (bitwise operations, non-decimal integers).
+   * Number theoretical features such as prime factorization and
+     arithmetic modulo M for any M.
+   * Algebraic manipulation features, including symbolic calculus.
+   * Kill and yank to and from regular editing buffers.
+   * Easy programming using keyboard macros, algebraic formulas,
+     algebraic rewrite rules, or Lisp code.
+
+Calc tries to include a little something for everyone; as a result it is
+large and might be intimidating to the first-time user.  If you plan to
+use Calc only as a traditional desk calculator, all you really need to
+read is the "Quick Overview" section of this manual and possibly a few
+of the other introductory sections.  As you become more comfortable with
+the program you can learn its additional features.  In terms of
+efficiency, scope and depth, Calc cannot replace a powerful tool like
+Mathematica (tm).  But Calc has the advantages of convenience,
+portability, and availability of the source code.  And, of course, it's
+free!
+
+To start the Calculator, type `M-x calc'.  By default this creates a
+pair of small windows, `*Calculator*' and `*Calc Trail*'.  The former
+displays the contents of the Calculator stack and is manipulated
+exclusively through Calc commands.  It is possible (though not usually
+necessary) to create several Calc Mode buffers each of which has an
+independent stack, undo list, and mode settings.  There is exactly one
+Calc Trail buffer; it records a list of the results of all calculations
+that have been done.  The Calc Trail buffer uses a variant of Calc Mode,
+so Calculator commands still work when the trail buffer's window is
+selected.  It is possible to turn the trail window off, but the `*Calc
+Trail*' buffer still exists and is updated silently.  *Note Trail
+Commands::.
+
+In most installations, the `M-#' (Meta-Shift-3) keystroke is a more
+convenient way to start the Calculator.
+
+Most Calc commands use one or two keystrokes.  Lower- and upper-case
+letters are distinct.  Commands may also be entered in `M-x' form; for
+some commands this is the only form.  As a convenience, the `x' key
+(`calc-execute-extended-command') is like `M-x' except that it enters
+the initial string `calc-' for you.  For example, the following key
+sequences are equivalent: `S', `M-x calc-sin RET', `x sin RET'.
+
+The Calculator exists in two parts.  When you type `M-x calc', the Emacs
+"auto-load" mechanism will bring in only the first part, which contains
+the basic arithmetic functions.  The second half will be auto-loaded the
+first time you use a more advanced command like a trig function or
+matrix operation.  This is done to improve the response time of the
+Calculator in the common case when all you need to do is a little
+arithmetic.  If for some reason the Calculator fails to load the
+extensions module automatically, you can force it to load the extensions
+by pressing `x', or by using the `m x' command.  *Note Mode Settings::.
+
+If you type `M-x calc' or `M-#' with any numeric prefix argument, the
+Calculator is loaded if necessary, but it is not actually started.  If
+the argument is positive, the extensions are also loaded if necessary.
+User-written Lisp code that wishes to make use of Calc's arithmetic
+routines can use `(calc 0)' or `(calc 1)' to auto-load the Calculator.
+(Also, *Note Grabbing From Buffers::.)
+
+The `?' key (`calc-help') displays a series of brief help messages.
+Some keys (such as `b' and `d') are prefix keys, like Emacs' ESC and
+`C-x' prefixes.  You can type `?' after a prefix to see a list of
+commands beginning with that prefix.  (If the message includes `[MORE]',
+press `?' again to see additional commands for that prefix.)  Also, `h'
+(`describe-mode') calls up more complete help information on the
+Calculator in another window, and `i' (`calc-info') runs the Emacs Info
+system to read this manual on-line.
+
+The `q' key (`calc-quit') exits Calc Mode and closes the Calculator's
+window(s).  It does not delete the Calculator buffers.  If you type `M-x
+calc' again, the Calculator will reappear with the contents of the stack
+intact.  Typing `M-#' or `M-x calc' from inside the Calculator buffer is
+equivalent to executing `calc-quit'; you can think of `M-#' as toggling
+the Calculator on and off.
+
+The `d ~' key sequence (`calc-refresh') redraws the contents of the
+Calculator buffer from memory.  Use this if the contents of the buffer
+have been damaged somehow.  The `o' key and `d `' key (`calc-realign')
+move the cursor back to its "home" position at the bottom of the
+Calculator buffer.
+
+The `<' and `>' keys are bound to `calc-scroll-left' and
+`calc-scroll-right'.  These are just like the normal horizontal
+scrolling commands except that they scroll one half-screen at a time by
+default.  (Calc formats its output to fit within the bounds of the
+window whenever it can.)
+
+* Menu:
+
+* Stack Basics::
+* Numeric Entry::
+* Algebraic Entry::
+* Quick Calculator::
+* Prefix Arguments::
+* Undo::
+* Error Messages::
+* Multiple Calculators::
+* Troubleshooting Commands::
+
+
+File: calc  Node: Quick Overview, Prev: Top, Up: Top, Next: Introduction
+
+Quick Overview
+==============
+
+Type `M-x calc' or `M-#' to start the Calculator; type `q' to quit.
+Type `M-x quick-calc' to do one quick calculation in the minibuffer.
+
+Calc normally uses RPN notation.  *Note Stack Basics::, for a discussion
+of RPN for the beginner.  The `RET' or `SPC' key enters a number or
+duplicates the top number on the stack, `DEL' removes the top number
+from the stack, and `TAB' swaps the top two numbers.
+
+You can enter a formula in familiar "algebraic" form (as in `1+2*3') by
+pressing the apostrophe key.  If you find yourself always using the
+apostrophe, press the two-key sequence `m a' so that the numeric, `(',
+and `[' keys will automatically begin algebraic entry.  In a formula,
+`$' represents the previously computed result.
+
+The basic arithmetic operations are `+', `-', `*', `/', `^' (raise to a
+power), `%' (modulo), and `n' (change sign).
+
+Mathematical functions include `Q' (square root), `S' (sine), `C'
+(cosine), `T' (tangent), `E' (exponential), and `L' (natural logarithm).
+The `I' (inverse) and `H' (hyperbolic) prefix keys may be used with
+these commands.  These are all shifted letter keys.
+
+Press `U' to undo the effect of the previous Calculator command.
+
+The Calculator can operate on integers, rational numbers (fractions), or
+floating-point numbers.  Dividing two integers produces a floating-point
+approximation; press `m f' to enable a mode where dividing integers
+produces fractions instead.
+
+The notation `(a,b)' stands for the complex number `a+bi'.  The notation
+`(r;theta)' stands for a complex number in polar form.  The notation
+`a+/-b' stands for `a' with standard deviation `b'.  The notation `a mod
+M' stands for `a' which is taken modulo `M'.  The notation `h@ m' s"'
+stands for a value in hours, minutes, and seconds.  The notation
+`[lo..hi)' stands for the interval `lo <= x < hi'.  The notation
+`[a,b,c]' stands for a vector of three values.  The notation
+`[[a,b,c],[d,e,f]]' stands for a 2-by-3 matrix.  Matrices can also be
+entered in the form `[a,b,c;d,e,f]'.
+
+Integers and fractions are computed to arbitrary size.  Floating-point
+numbers are computed to the current precision, which may be arbitrarily
+large.  Press `p' to set the current precision.
+
+Erroneous calculations such as dividing 1 by 0 simply leave an
+unsimplified formula (like `1 / 0') on the stack.  If the Calculator
+leaves a formula unsimplified, press `w' to see why.  Press `d w' to
+enable a mode where this happens automatically.
+
+Press `?' for a brief summary of Calculator commands.  Press `?'
+repeatedly to cycle among the lines of the summary.
+
+Press `d ?' for a list of commands for changing the display format.  For
+example, `d f' sets fixed-point notation.  (After you type `?'  the
+Calculator is still waiting for a key to complete the `d' sequence; type
+`C-g' to cancel the prefix.)
+
+Press `m ?' for a list of other mode-setting commands.  Press `m m' to
+save all current mode settings in your `.emacs' file.
+
+Press `c ?' for a list of commands for numeric conversions, such as
+degrees-to-radians and back.
+
+Press `b ?' for a list of binary-arithmetic commands.  (Press `d 2' or
+`d 0' to switch between binary and decimal display of integers.)  Press
+`b w' to see or change the current word size for binary operations.
+
+Press `a ?' for a list of commands for manipulating algebraic formulas.
+
+Press `v ?' for a list of commands for manipulating vectors and
+matrices.
+
+Press `k ?' for a list of commands related to number theory and
+combinatorial analysis.
+
+Press `t ?' for a list of commands for manipulating the trail.
+
+Press `Z ?' for a list of commands for defining your own commands.
+Press `z ?' for a list of commands you have defined.
+
+Press `s' to store a number in a variable.  Variable names are single
+digits or whole words.  Press `r' to recall a value from a variable.
+
+Press `y' to copy the top number on the stack into the most recently
+used editing buffer.  Use `M-x calc-grab-region' or `C-u - M-#' in an
+editing buffer to transfer a region of data to the Calculator stack.
+
+
+File: calc  Node: Stack Basics, Prev: Introduction, Up: Introduction, Next: Numeric Entry
+
+Stack Basics
+============
+
+Calc uses RPN notation.  (Algebraic "`1+2'" entry is also available;
+*Note Algebraic Entry::.)  You may be familiar with the RPN system from
+HP calculators, FORTH, or PostScript.  The central component of an RPN
+calculator is the "stack".  A calculator stack is like a stack of
+dishes.  New dishes (numbers) are added at the top of the stack, and
+numbers are normally only removed from the top of the stack.
+
+To add the numbers 1 and 2 in an RPN calculator you would type the keys:
+`1 RET 2 +'.  (RET corresponds to the ENTER key on most calculators.)
+The first three keystrokes "push" the numbers 1 and 2 onto the stack.
+The `+' key always "pops" the top two numbers from the stack, adds them,
+and pushes the result (3) back onto the stack.  This number is ready for
+further calculations: `5 -' pushes 5 onto the stack, then pops the 3 and
+5, subtracts them, and pushes the result (-2).
+
+Note that the "top" of the stack actually appears at the *bottom* of the
+buffer.  A line containing a single `.' character signifies the end of
+the buffer; Calculator commands operate on the number(s) directly above
+this line.  The `d t' (`calc-truncate-stack') command allows you to move
+the `.' marker up and down in the stack; *Note Truncating the Stack::.
+
+Stack elements are numbered consecutively, with number 1 being the top
+of the stack.  These line numbers are ordinarily displayed on the
+lefthand side of the window.  The `d l' (`calc-line-numbering') command
+controls whether these numbers appear.  (Line numbers may be turned off
+since they slow the Calculator down a bit and also clutter the display.)
+
+The RET (or equivalent SPC) key is only required to separate two
+consecutive numbers.  (After all, if you typed `1 2' by themselves the
+Calculator would enter the number 12.)  If you press `RET' or `SPC'
+*not* right after typing a number, the key duplicates the number on the
+top of the stack: `3 RET RET * RET *' computes the fourth power of 3.
+The first RET enters 3 onto the stack.  This number is then duplicated
+and multiplied by itself to get 9, which is again duplicated and
+multiplied by itself to get 81.
+
+The DEL key pops and throws away the top number on the stack.  The TAB
+key swaps the top two objects on the stack.  *Note Stack and Trail::,
+for descriptions of these and other stack-related commands.
+
+
+File: calc  Node: Numeric Entry, Prev: Stack Basics, Up: Introduction, Next: Algebraic Entry
+
+Numeric Entry
+=============
+
+Pressing a digit or other numeric key begins numeric entry using the
+minibuffer.  The number is pushed on the stack when you press the RET or
+SPC keys.  If you press any other non-numeric key, the number is pushed
+onto the stack and the appropriate operation is performed.  If you press
+a numeric key which is not valid (say, a second decimal point), the key
+is ignored.
+
+There are three different concepts corresponding to the word "minus,"
+typified by `a-b' (subtraction), `-x' (change-sign), and `-5' (negative
+number).  Calc uses three different keys for these operations,
+respectively: `-', `n', and `_' (the underscore).  The `-' key subtracts
+the two numbers on the top of the stack.  The `n' key changes the sign
+of the number on the top of the stack or the number currently being
+entered.  The `_' key begins entry of a negative number or changes the
+sign of the number currently being entered.  The following sequences all
+enter the number `-5' onto the stack: `0 RET 5 -', `5 n RET', `5 RET n',
+`_ 5 RET', `5 _ RET'.
+
+During numeric entry, the only editing key available is `DEL'.
+
+
+File: calc  Node: Algebraic Entry, Prev: Numeric Entry, Up: Introduction, Next: Quick Calculator
+
+Algebraic Entry
+===============
+
+Calculations can also be entered in algebraic form.  This is
+accomplished by typing the apostrophe key, `'', followed by the
+expression in standard format: `' 2+3*4 RET' computes `2+(3*4)' = 14 and
+pushes that on the stack.  If you wish you can ignore the RPN aspect of
+Calc altogether and simply enter algebraic expressions in this way.  You
+may want to use DEL every so often to clear previous results off the
+stack.
+
+You can press the apostrophe key during normal numeric entry to switch
+the half-entered number into algebraic entry mode.  One reason to do
+this would be to use the full Emacs cursor motion and editing keys,
+which are available during algebraic entry but not during numeric entry.
+
+If you prefer algebraic entry, you can use the command `m a'
+(`calc-algebraic-mode') to set Algebraic mode.  In this mode, digits and
+other keys that would normally start numeric entry instead start full
+algebraic entry; as long as your formula begins with a digit you can
+omit the apostrophe.  Open parentheses and square brackets also begin
+algebraic entry.  You can still do RPN calculations in this mode, but
+you will have to press RET to terminate every number: `2 RET 3 RET * 4
+RET +' would accomplish the same thing as `2*3+4 RET'.
+
+Pressing `'' (the apostrophe) a second time re-enters the previous
+algebraic formula.  You can then use the normal Emacs editing keys to
+modify this formula to your liking before pressing RET.
+
+Within a formula entered from the keyboard, the symbol `$' represents
+the number on the top of the stack.  If an entered formula contains any
+`$' characters, the Calculator replaces the top of stack with that
+formula rather than simply pushing the formula onto the stack.  Thus, `'
+1+2 RET' pushes 3 on the stack, and `$*2 RET' replaces it with 6.  Note
+that the `$' key always initiates algebraic entry; the `'' is
+unnecessary if `$' is the first character in the new formula.
+
+Higher stack elements can be accessed from an entered formula with the
+symbols `$$', `$$$', and so on.  The number of stack elements removed
+(to be replaced by the entered values) equals the number of dollar signs
+in the longest such symbol in the formula.  For example, `$$+$$$' adds
+the second and third stack elements, replacing the top three elements
+with the answer.  (All information about the top stack element is thus
+lost since no single `$' appears in this formula.)
+
+If a sequence of formulas are entered separated by commas, each formula
+is pushed onto the stack in turn.  For example, `1,2,3' pushes those
+three numbers onto the stack (leaving the 3 at the top), and `$+1,$-1'
+replaces a 5 on the stack with 4 followed by 6.  Also, `$,$$' exchanges
+the top two elements of the stack, just like the TAB key.
+
+
+File: calc  Node: Quick Calculator, Prev: Algebraic Entry, Up: Introduction, Next: Prefix Arguments
+
+"Quick Calculator" Mode
+=======================
+
+There is another way to invoke the Calculator if all you need to do is
+make one or two quick calculations.  Type `M-x quick-calc', then type
+any formula as an algebraic entry.  The Calculator will compute the
+result and display it in the echo area, without ever actually putting up
+a Calculator window.
+
+You can use the `$' character in a Quick Calculator formula to refer to
+the previous Quick Calculator result.  Older results are not retained;
+the Quick Calculator has no effect on the full Calculator's stack or
+trail.  If you compute a result and then forget what it was, just run
+`quick-calc' again and enter `$' as the formula.
+
+If this is the first time you have used the Calculator in this Emacs
+session, the `quick-calc' command will create the `*Calculator*' buffer
+and perform all the usual initializations; it simply will refrain from
+putting that buffer up in a new window.  The Quick Calculator refers to
+the `*Calculator*' buffer for all mode settings.  Thus, for example, to
+set the precision that the Quick Calculator uses, simply run the full
+Calculator momentarily and use the regular `p' command.
+
+Please note that the Quick Calculator is not any faster at loading or
+computing the answer than the full Calculator; the name "quick" merely
+refers to the fact that it's much less hassle to use for small
+calculations.
+
+You may wish to use `global-set-key' to bind `quick-calc' to some
+convenient keystroke.
+
+
+File: calc  Node: Prefix Arguments, Prev: Quick Calculator, Up: Introduction, Next: Undo
+
+Numeric Prefix Arguments
+========================
+
+Many Calculator commands use numeric prefix arguments.  Some, such as `b
+w' (`calc-word-size'), set a parameter to the value of the prefix
+argument, or display the current value if there is no prefix argument.
+Others require an argument and prompt for a number if you don't give one
+as a prefix.
+
+As a rule, stack-manipulation commands accept a numeric prefix argument
+which is interpreted as an index into the stack.  A positive argument
+operates on the top N stack entries; a negative argument operates on the
+Nth stack entry in isolation; and a zero argument operates on the entire
+stack.
+
+Most commands that perform computations (such as the arithmetic and
+scientific functions) accept a numeric prefix argument that allows the
+operation to be applied across many stack elements.  For unary
+operations (that is, functions of one argument like absolute value or
+complex conjugate), a prefix argument applies that function to the top N
+stack entries simultaneously.  For binary operations (functions of two
+arguments like addition, GCD, and vector concatenation), a positive
+prefix argument "reduces" the function across the top N stack elements
+(for example, `C-u 5 +' sums the top 5 stack entries; *Note Reducing and
+Mapping::), and a negative argument maps the next-to-top N stack
+elements with the top stack element as a second argument (for example,
+`7 c-u -5 +' adds 7 to the top 5 stack elements).  This feature is not
+available for operations which use the numeric prefix argument for some
+other purpose.
+
+Numeric prefixes are specified the same way as always in Emacs: Press a
+sequence of META-digits, or press ESC followed by digits, or press `C-u'
+followed by digits.
+
+You can type `~' (`calc-num-prefix') to pop an integer from the top of
+the stack and enter it as the numeric prefix for the next command.  For
+example, `C-u 16 p' sets the precision to 16 digits; an alternate
+(silly) way to do this would be `2 RET 4 ^ ~ p', i.e., compute 2 to the
+fourth power and set the precision to that value.
+
+Conversely, if you have typed a numeric prefix argument the `~' key
+pushes it onto the stack in the form of an integer.
+
+
+File: calc  Node: Undo, Prev: Prefix Arguments, Up: Introduction, Next: Error Messages
+
+Undoing Mistakes
+================
+
+The shift-`U' key (`calc-undo') undoes the most recent operation.  If
+that operation added or dropped objects from the stack, those objects
+are removed or restored.  If it was a `store' operation, you are queried
+whether or not to restore the variable to its original value.  The `U'
+key may be pressed any number of times to undo successively farther back
+in time; with a numeric prefix argument it undoes a specified number of
+operations.  The undo history is cleared only by the `q' (`calc-quit')
+command.  (Recall that `M-#' is usually made synonymous with `calc-quit'
+while inside the Calculator; this also clears the undo history.)
+
+Currently the mode-setting commands (like `calc-precision') are not
+undoable.  You can undo past a point where you changed a mode, but you
+will need to reset the mode yourself.
+
+The shift-`D' key (`calc-redo') redoes an operation that was mistakenly
+undone.  Pressing `U' with a negative prefix argument is equivalent to
+executing `calc-redo'.  You can redo any number of times, up to the
+number of recent consecutive undo commands.  Redo information is cleared
+whenever you give any command that adds new undo information, i.e., if
+you undo, then enter a number on the stack or make any other change,
+then it will be too late to redo.
+
+The shift-`X' key (`calc-last-x') is like undo in that it restores the
+arguments of the most recent command onto the stack; however, it does
+not remove the result of that command.  Given a numeric prefix argument,
+this command applies to the `n'th most recent command which removed
+items from the stack; it pushes those items back onto the stack.
+
+It is also possible to recall previous results or inputs using the
+trail.  *Note Trail Commands::.
+
+The standard Emacs `C-_' undo key is recognized as a synonym for `U'.
+
+
+File: calc  Node: Error Messages, Prev: Undo, Up: Introduction, Next: Multiple Calculators
+
+Error Messages
+==============
+
+Many situations that would produce an error message in other calculators
+simply create unsimplified formulas in the Emacs Calculator.  For
+example, `1 RET 0 /' pushes the formula `1 / 0'; `0 L' pushes the
+formula `ln(0)'.  When this happens, you can use the `w' (`calc-why')
+command to see a brief explanation of why the formula could not be
+simplified.  Press `w' repeatedly to see all the error messages which
+arose from the last calculation.
+
+The `d w' (`calc-auto-why') command turns on and off a mode in which
+these error messages are automatically displayed.  Sometimes these
+messages are a nuisance; for example, `sqrt(a)' will produce the message
+`Number expected: a'.  For this reason the `d w' mode is off by default.
+
+
+File: calc  Node: Multiple Calculators, Prev: Error Messages, Up: Introduction, Next: Troubleshooting Commands
+
+Multiple Calculators
+====================
+
+It is possible to have any number of Calc Mode buffers at once.  Usually
+this is done by executing `M-x another-calc', which is similar to `M-x
+calc' except that if a `*Calculator*' buffer already exists, a new,
+independent one with a name of the form `*Calculator*<N>' is created.
+You can also use the command `calc-mode' to put any buffer into
+Calculator mode, but this would ordinarily never be done.
+
+The `q' (`calc-quit') command does not destroy a Calculator buffer; it
+only closes its window.  Use `M-x kill-buffer' to destroy a Calculator
+buffer.
+
+Each Calculator buffer keeps its own stack, undo list, and mode settings
+such as precision, angular mode, and display formats.  In Emacs terms,
+variables such as `calc-stack' are buffer-local variables.  The global
+default values of these variables are used only when a new Calculator
+buffer is created.  The `calc-quit' command saves the stack and mode
+settings of the buffer being quit as the new defaults.
+
+There is only one trail buffer, `*Calc Trail*', used by all Calculator
+buffers.
+
+
+File: calc  Node: Troubleshooting Commands, Prev: Multiple Calculators, Up: Introduction
+
+Troubleshooting Commands
+========================
+
+This section describes commands you can use in case a computation
+incorrectly fails or gives the wrong answer.
+
+* Menu:
+
+* Recursion Depth::
+* Caches::
+
+
+File: calc  Node: Recursion Depth, Prev: Troubleshooting Commands, Up: Troubleshooting Commands, Next: Caches
+
+Recursion Depth
+---------------
+
+Calc uses recursion in many of its calculations.  Emacs Lisp keeps a
+variable `max-lisp-eval-depth' which limits the amount of recursion
+possible in an attempt to recover from program bugs.  If a calculation
+ever halts incorrectly because of a "Lisp nesting exceeds
+`max-lisp-eval-depth'" error, use the `M' command
+(`calc-more-recursion-depth') to increase this limit.
+
+The limit is always increased (multiplied) by a factor of two.  There is
+also a `calc-less-recursion-depth' (or `x less') command which decreases
+this limit by a factor of two, down to a minimum value of 200.  The
+default value is 1000.
+
+These commands also double or halve `max-specpdl-size', another internal
+Lisp recursion limit.  The minimum value for this limit is 600.
+
+
+File: calc  Node: Caches, Prev: Recursion Depth, Up: Troubleshooting Commands
+
+Caches
+------
+
+Calc saves certain values after they have been computed once.  For
+example, the `P' (`calc-pi') command initially "knows" the constant `pi'
+to about 20 decimal places; if the current precision is greater than
+this, it will recompute `pi' using a series approximation.  This value
+will not need to be recomputed ever again unless you raise the precision
+still further.  Many operations such as logarithms and sines make use of
+similarly cached values such as `pi/4' and `ln(2)'.  The visible effect
+of caching is that high-precision computations may be especially slow
+the first time.  Other things cached include powers of two (for the
+binary arithmetic functions), matrix inverses and determinants, and
+symbolic integrals.
+
+If you suspect a Calculator cache has become corrupt, you can use the
+`calc-flush-caches' command to reset all caches to the empty state.
+(This should only be necessary in event of bugs in the Calculator.)
+
+
+File: calc  Node: Data Types, Prev: Introduction, Up: Top, Next: Stack and Trail
+
+Data Types
+**********
+
+This chapter discusses the various types of objects that can be placed
+on the Calculator stack, how they are displayed, and how they are
+entered.  (*Note Data Type Formats::, for information on how these data
+types are represented as Lisp objects.)
+
+Integers, fractions, and floats are various ways of describing real
+numbers.  HMS forms also for many purposes act as real numbers.  These
+types can be combined to form complex numbers, modulo forms, error
+forms, or interval forms.  (But these last four types cannot be combined
+with each other: error forms may not contain modulo forms, for example.)
+Finally, all these types of numbers may be combined into vectors,
+matrices, or algebraic formulas.
+
+* Menu:
+
+* Integers::                The most basic data type.
+* Fractions::               This and above are called "rationals".
+* Floats::                  This and above are called "reals".
+* Complex Numbers::         This and above are called "numbers".
+* Vectors and Matrices::
+* Strings::
+* HMS Forms::
+* Modulo Forms::
+* Error Forms::
+* Interval Forms::
+* Incomplete Objects::
+* Variables::
+* Formulas::
+
+
+File: calc  Node: Integers, Prev: Data Types, Up: Data Types, Next: Fractions
+
+Integers
+========
+
+The Calculator stores integers to arbitrary precision.  Addition,
+subtraction, and multiplication of integers always yields an exact
+integer result.  (If the result of a division or exponentiation of
+integers is not an integer, it is expressed in fractional or
+floating-point form according to the current Fraction Mode.  *Note
+Fraction Mode::.)
+
+A decimal integer is represented as an optional sign followed by a
+sequence of digits.  Grouping (*Note Grouping Digits::) can be used to
+insert a comma at every third digit for display purposes, but such
+commas are not allowed during the entry of numbers.
+
+A non-decimal integer is represented as an optional sign, a radix
+between 2 and 36, a `#' symbol, and one or more digits.  For radix 11
+and above, the letters A through Z (upper- or lower-case) count as
+digits and do not terminate numeric entry mode.  *Note Radix Modes::,
+for how to set the default radix for display of integers.  Numbers of
+any radix may be entered at any time.  If you press `#' at the beginning
+of a number, the current display radix is used.
+
+
+File: calc  Node: Fractions, Prev: Integers, Up: Data Types, Next: Floats
+
+Fractions
+=========
+
+A "fraction" is a ratio of two integers.  Fractions are traditionally
+written "2/3" but Calc uses the notation `2:3'.  (The `/' key performs
+RPN division; the following two sequences push the number `2:3' on the
+stack: `2 : 3 RET', `2 RET 3 /', assuming Fraction Mode has been
+enabled.)  When the Calculator produces a fractional result it always
+reduces it to simplest form, which may in fact be an integer.
+
+Fractions may also be entered in a three-part form, where `2:3:4'
+represents two-and-three-quarters.  *Note Fraction Formats::, for
+fraction display formats.
+
+Non-decimal fractions are entered and displayed in the form
+`RADIX#NUM:DENOM' (or in the analogous three-part form).  The numerator
+and denominator always use the same radix.
+
+
+File: calc  Node: Floats, Prev: Fractions, Up: Data Types, Next: Complex Numbers
+
+Floats
+======
+
+A floating-point number or "float" is a number stored in scientific
+notation.  The number of significant digits in the fractional part is
+governed by the current floating precision (*Note Precision::).  The
+exponent is stored as a Lisp integer with no overflow or underflow
+checking; thus the safe limit is roughly 10^1000000 for large numbers,
+and 10^-1000000 for small numbers.
+
+If a rational number and a float are mixed in a calculation, the result
+will in general be expressed as a float.  Commands that require an
+integer value (such as `calc-gcd') will also accept integer-valued
+floats, i.e., a floating-point number with nothing after the decimal
+point.
+
+Floats are identified by the presence of a decimal point and/or an
+exponent.  In general a float consists of an optional sign, digits
+including an optional decimal point, and an optional exponent consisting
+of an `e', an optional sign, and one to six exponent digits.  For
+example, `23.5e-2' is 23.5 times ten to the minus-second power, or
+0.235.
+
+Floating-point numbers are normally displayed in decimal notation with
+all significant figures shown.  Exceedingly large or small numbers are
+displayed in scientific notation.  Various other display options are
+available.  *Note Float Formats::.
+
+Floating-point numbers are stored in decimal, not binary.  The result of
+each operation is rounded to the nearest value representable in the
+number of significant digits specified by the current precision,
+rounding away from zero in the case of a tie.  Thus (in the default
+display mode) what you see is exactly what you get.  Some operations
+such as square roots and transcendental functions are performed with
+several digits of extra precision and then rounded down, in an effort to
+make the final result accurate to the full requested precision.
+However, accuracy is not rigorously guaranteed.  If you suspect the
+validity of a result, try doing the same calculation in a higher
+precision.  The Calculator's arithmetic is not intended to be
+IEEE-conformant in any way.
+
+
+File: calc  Node: Complex Numbers, Prev: Floats, Up: Data Types, Next: Vectors and Matrices
+
+Complex Numbers
+===============
+
+There are two supported formats for complex numbers: rectangular and
+polar.  The default format is rectangular, displayed in the form
+`(REAL,IMAG)' where REAL is the real part and IMAG is the imaginary
+part, each of which may be any real number.  Rectangular complex numbers
+can also be displayed in `A+Bi' notation; *Note Complex Formats::.
+
+Polar complex numbers are displayed in the form `(R;THETA)' where R is
+the nonnegative magnitude and THETA is the argument or phase angle.  The
+range of THETA depends on the current angular mode (*Note Angular
+Modes::); it is generally between -180 and +180 degrees or the
+equivalent range in radians.
+
+Complex numbers are entered in stages using incomplete objects.  *Note
+Incomplete Objects::.
+
+Operations on rectangular complex numbers yield rectangular complex
+results, and similarly for polar complex numbers.  Where the two types
+are mixed, or where new complex numbers arise (as for the square root of
+a negative real), the current "Polar Mode" is used to determine the
+type.  *Note Polar Mode::.
+
+A complex result in which the imaginary part is zero (or the phase angle
+is 0 or 180 degrees or `pi' radians) is automatically converted to a
+real number.
+
+
+File: calc  Node: Vectors and Matrices, Prev: Complex Numbers, Up: Data Types, Next: Strings
+
+Vectors and Matrices
+====================
+
+The "vector" data type is flexible and general.  A vector is simply a
+list of zero or more data objects.  When these objects are numbers, the
+whole is a vector in the mathematical sense.  When these objects are
+themselves vectors of equal (nonzero) length, the whole is a "matrix".
+A vector which is not a matrix is referred to here as a "plain vector".
+
+A vector is displayed as a list of comma-separated values enclosed in
+square brackets: `[1, 2, 3]'.  Thus the following is a 2 row by 3 column
+matrix: `[[1, 2, 3], [4, 5, 6]]'.  Vectors, like complex numbers, are
+entered as incomplete objects.  *Note Incomplete Objects::.  During
+algebraic entry, vectors are entered all at once in the usual
+brackets-and-commas form.  Matrices may be entered algebraically as
+nested vectors, or using the shortcut notation `[1, 2, 3; 4, 5, 6]',
+with rows separated by semicolons.  The commas may usually be omitted
+when entering vectors: `[1 2 3]'.  Curly braces may be used in place of
+brackets: `{1, 2, 3}', but the commas are required in this case.
+
+Traditional vector and matrix arithmetic is supported; *Note Basic
+Arithmetic:: and *Note Matrix Functions::.  Many other operations are
+applied to vectors element-wise.  For example, the complex conjugate of
+a vector is a vector of the complex conjugates of its elements.
+
+
+File: calc  Node: Strings, Prev: HMS Forms, Up: Data Types, Next: Vectors and Matrices
+
+Strings
+=======
+
+Character strings are not a special data type in the Calculator.
+Rather, a string is represented simply as a vector all of whose elements
+are integers in the range 0 to 255.  You can enter a string at any time
+by pressing the `"' key.  Quotation marks and backslashes are written
+`\"' and `\\', respectively, inside strings.  (In fact, all the standard
+Emacs Lisp conventions for strings are allowed.)
+
+Strings are normally displayed in vector-of-integers form.  The `d "'
+(`calc-display-strings') command toggles a mode in which any vectors of
+the appropriate form are displayed as quoted strings instead.
+
+The Calculator does not use strings in any of its built-in features.
+They are provided mainly as a convenient way to do conversions between
+ASCII characters and integers.
+
+
+File: calc  Node: HMS Forms, Prev: Strings, Up: Data Types, Next: Modulo Forms
+
+HMS Forms
+=========
+
+"HMS" stands for Hours-Minutes-Seconds; when used as an angular
+argument, the interpretation is Degrees-Minutes-Seconds.  All functions
+that operate on angles accept HMS forms.  These are interpreted as
+degrees regardless of the current angular mode.  It is also possible to
+use HMS as the angular mode so that calculated angles are expressed in
+degrees, minutes, and seconds.
+
+The default format for HMS values is `HOURS@ MINS' SECS"'.  During
+entry, the letters `h' (for "hours") or `o' (approximating the "degrees"
+symbol) are accepted as well as `@', `m' is accepted in place of `'',
+and `s' is accepted in place of `"'.  The HOURS value is an integer (or
+integer-valued float).  The MINS value is an integer or integer-valued
+float between 0 and 59.  The SECS value is a real number between 0
+(inclusive) and 60 (exclusive).  A positive HMS form is interpreted as
+HOURS + MINS/60 + SECS/3600.  A negative HMS form is interpreted as -
+HOURS - MINS/60 - SECS/3600.  Display format for HMS forms is quite
+flexible.  *Note HMS Formats::.
+
+HMS forms can be added and subtracted.  When they are added to numbers,
+the numbers are interpreted according to the current angular mode.  HMS
+forms can also be multiplied and divided by real numbers.  Dividing two
+HMS forms produces a real-valued ratio of the two angles.
+
+Just for kicks, `calc-time' pushes the current time of day on the stack
+as an HMS form.
+
+

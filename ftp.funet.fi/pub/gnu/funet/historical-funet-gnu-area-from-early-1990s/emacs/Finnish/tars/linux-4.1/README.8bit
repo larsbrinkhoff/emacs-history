@@ -1,0 +1,73 @@
+Because of the international nature of the Linux project, and in the
+interest of eradicating ethno-centricity, I patched this version of
+Emacs to support eight-bit output and have also included some lisp
+files to support eight-bit input.  This file explains how to do it.
+
+The eight-bit output patch is called "the ctl-arrow patch" and was
+written by Kenneth Cline.  Normally the ctl-arrow variable is either t
+(meaning show control chars like ^C) or nil (meaning show control
+chars like \003).  The patch adds a new alternative of anything other
+than t or nil means to output eight-bit characters directly to the
+display device with no interpretation.
+
+For example, normally in Emacs, national language characters show up
+as their octal equivalents.  But if you know that your ouput device
+(terminal) supports the iso8859-1 latin character set, you can set the
+ctl-arrow variable to 1 to display the real character.  The Linux
+console, DEC vt220 terminals, and xterm fonts do support iso8859-1.
+So instead of seeing:
+
+From: d88-jwn@drax.nada.kth.se (Johan W\345hlin)
+
+you see:
+                                       o
+From: d88-jwn@drax.nada.kth.se (Johan Wahlin)
+
+Well, I'm faking it here, but you get the idea.  Sorry to single
+you out, Johan.
+
+In Emacs, ctl-arrow is a buffer-local variable meaning it can have a
+different value in each buffer.  To turn it on in a specific buffer
+type "ESC ESC (setq ctl-arrow 1) RET".  To make it the default for
+every buffer put "(set-default 'ctl-arrow 1)" in your ~/.emacs.
+
+Now, for eight-bit input.  If your keyboard supports your national
+characters directly, you can just type "C-q key" to insert the quoted
+national character.  You must have the meta-flag variable set to t
+so Emacs won't strip the eighth bit.  Quoting is needed to keep
+Emacs from interpreting the key a meta-key version of an ordinary key.
+
+If you don't like the quoting business, you can load eight-bit.el from
+you ~/.emacs.  This is a package I wrote that allows you enter eight
+bit characters directly into Emacs without quoting.  A side effect of
+this is that you lose the meta-key capability and must enter meta
+keystrokes as "ESC key" instead of "M-key".
+
+However, if your input device supports translating meta keystrokes
+into "ESC key" then you can have to best of both worlds.  Luckily,
+both the Linux console and xterm windows can be put into this mode.
+
+For Linux, you will need to recompile your kernel for some variety of
+a LATIN keyboard.  See the /usr/src/linux/Makefile for more details.
+
+For xterm, you need to set the resource "eightBitInput" to false,
+which is not the default.  This sounds backwords, but it works and
+doesn't interfere with true eight-bit national characters.  You
+can leave "eightBitOutput" as true, which is the default value.
+
+If you do not have certain national keys on your keyboard but want to
+input them anyway, you can load iso-latin-1.el (written by Matthieu
+Herrb) from your ~/.emacs.  Then, in any buffer, you can turn on an
+electric latin-1 minor mode with "ESC x iso-latin-1-mode RET" that
+translates certain keystroke combinations into their respective
+iso8859-1 single characters.  For example "c," becomes "c with a
+cedilla" etc.  If you really want those two characters, you will have
+to quote the second one.  There are other ISO input packages available
+but this gives you a starting point.
+
+Thanks to Janne Himanka for bugging me to get this working.
+
+Let me know if you have any problems.
+
+Rick Sladkey
+jrs@world.std.com

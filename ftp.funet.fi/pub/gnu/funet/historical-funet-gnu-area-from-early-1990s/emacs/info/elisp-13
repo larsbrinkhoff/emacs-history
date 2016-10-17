@@ -1,0 +1,1691 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Some Standard Syntax Tables, Prev: Syntax Table Functions, Up: Syntax Tables
+
+Some Standard Syntax Tables
+===========================
+
+  (intro!!)
+
+
+* Function: standard-syntax-table
+
+       This function returns the standard syntax table.  This is the
+     syntax table used in Fundamental mode.
+
+
+* Variable: text-mode-syntax-table
+
+       The value of this variable is the syntax table used while in text
+     mode.
+
+* Variable: c-mode-syntax-table
+
+       The value of this variable is the syntax table in use in C-mode
+     buffers.
+
+* Variable: emacs-lisp-mode-syntax-table
+
+     This syntax table does not affect `read' (or does it??).
+
+
+
+
+
+File: elisp  Node: Lisp Expressions, Prev: Syntax Tables, Up: Top, Next: Abbreviations
+
+Lisp Expressions
+****************
+
+
+There are several functions concerned with Lisp expressions.  *Note
+Editing Programs: (emacs)Lists and Sexps(could just copy it here!!)
+Also *Note Streams:: for descriptions of related functions.
+
+
+* Command: forward-list ARG
+
+     Move forward across one balanced group of parentheses.  With
+     argument, do this that many times.
+
+
+* Command: backward-list ARG
+
+     Move backward across one balanced group of parentheses.  With
+     argument, do this that many times.
+
+
+* Command: up-list ARG
+
+     Move forward out of one level of parentheses.  With argument, do
+     this that many times.  A negative argument means move backward but
+     still to a less deep spot.
+
+
+* Command: down-list ARG
+
+     Move forward down one level of parentheses.  With argument, do this
+     that many times.  A negative argument means move backward but still
+     go down a level.
+
+
+* Command: forward-sexp ARG
+
+     Move forward across one balanced expression.  With argument, do
+     this that many times.
+
+* Command: backward-sexp ARG
+
+     Move backward across one balanced expression.  With argument, do
+     this that many times.
+
+* Command: backward-up-list ARG
+
+     With argument, do this that many times.  A negative argument means
+     move forward but still to a less deep spot.
+
+* Command: backward-kill-sexp ARG
+
+     Kill the syntactic expression preceding the cursor.  With argument,
+     kill that many expressions before (or after) the cursor.
+
+
+* Command: eval-last-sexp ARG
+
+     Evaluate sexp before point; print value in minibuffer.  With
+     argument, print output into current buffer.
+
+
+* Command: eval-print-last-sexp ARG
+
+       Function: Evaluate sexp before point; print value into current
+     buffer.
+
+* Command: indent-sexp
+
+     Indent each line of the list starting just after point.
+
+
+* Command: kill-sexp ARG
+
+     Kill the syntactic expression following the cursor.  With argument,
+     kill that many expressions after (or before) the cursor.
+
+
+* Command: mark-sexp ARG
+
+     Set mark ARG sexps from point.
+
+
+* Command: transpose-sexps
+
+     Like `transpose-words' but applies to sexps.
+
+
+
+
+
+
+File: elisp  Node: Abbreviations, Prev: Lisp Expressions, Up: Top, Next: Processes
+
+Abbreviations
+*************
+
+  (intro!!)  All abbreviation related commands are described in the GNU
+Emacs User Manual *Note Abbrev Mode: (emacs)Abbrev Mode.
+
+* Variable: abbrev-mode
+
+     Non-`nil' turns on automatic expansion of abbrevs when inserted.
+     Automatically becomes local when set in any fashion.
+
+
+* Function: clear-abbrev-table TABLE
+
+     Undefine all abbrevs in abbrev table TABLE, leaving it empty.
+
+
+* Function: make-abbrev-table
+
+     Create a new, empty abbrev table object.
+
+
+* Function: define-abbrev TABLE NAME EXPANSION HOOK
+
+     Define an abbrev in TABLE named NAME, to expand to EXPANSION or
+     call HOOK.  NAME and EXPANSION are strings.  HOOK is a function or
+     `nil'.  To undefine an abbrev, define it with EXPANSION = `nil'
+
+
+* Function: define-abbrev-table TABNAME DEFINITIONS
+
+     Define TABNAME (a symbol) as an abbrev table name.  Define abbrevs
+     in it according to DEFINITIONS, a list of elements of the form
+     `(ABBREVNAME EXPANSION HOOK USECOUNT)'.
+
+
+* Function: insert-abbrev-table-description NAME &optional READABLE
+
+     Insert before point a description of abbrev table named NAME.  NAME
+     is a symbol whose value is an abbrev table.  If optional READABLE
+     is non-`nil', a readable description is inserted.  Otherwise
+     description is an expression, a call to `define-abbrev-table' which
+     would define NAME exactly as it is currently defined.
+
+
+* Function: quietly-read-abbrev-file
+
+     Read abbrev definitions from file written with write-abbrev-file.
+     Takes file name as argument.  Does not print anything.
+
+
+* Function: abbrev-expansion ABBREV TABLE
+
+     Return the string that ABBREV expands into in the current buffer.
+     Optionally specify an abbrev TABLE; then ABBREV is looked up in
+     that table only.
+
+
+* Variable: abbrev-start-location
+
+     Buffer position for expand-abbrev to use as the start of the
+     abbrev.  `nil' means use the word before point as the abbrev.  Set
+     to `nil' each time `expand-abbrev' is called.
+
+
+* Variable: abbrev-start-location-buffer
+
+     Buffer that `abbrev-start-location' has been set for.  Trying to
+     expand an abbrev in any other buffer clears abbrev-start-location.
+
+
+* Function: abbrev-symbol ABBREV TABLE
+
+     Return the symbol representing abbrev named ABBREV.  Value is `nil'
+     if that abbrev is not defined.  Optional second arg TABLE is abbrev
+     table to look it up in.  Default is try buffer's mode-specific
+     abbrev table, then global table.
+
+
+* Variable: abbrev-table-name-list
+
+     List of symbols whose values are abbrev tables.
+
+
+* Variable: abbrevs-changed
+
+     Set non-`nil' by defining or altering any word abbrevs.
+
+
+* Function: add-abbrev
+
+     not documented
+
+
+
+
+* Variable: edit-abbrevs-map
+
+     Keymap used in edit-abbrevs.
+
+
+* Variable: last-abbrev
+
+     The abbrev-symbol of the last abbrev expanded.
+
+
+* Variable: last-abbrev-location
+
+     The location of the last abbrev expanded.
+
+
+* Variable: last-abbrev-text
+
+     The exact text of the last abbrev expanded.  nil if the abbrev has
+     already been unexpanded.
+
+
+
+* User Option: abbrev-file-name
+
+     Default name of file to read abbrevs from.
+
+
+* User Option: only-global-abbrevs
+
+     `t' means user plans to use global abbrevs only.  Makes the
+     commands to define mode-specific abbrevs define global ones
+     instead.
+
+
+* User Option: save-abbrevs
+
+     Non-`nil' means save word abbrevs too when files are saved.
+     Loading an abbrev file sets this to t.
+
+
+* User Option: abbrev-all-caps
+
+     Set non-`nil' means expand multi-word abbrevs all caps if abbrev
+     was so.
+
+
+
+* Variable: default-abbrev-mode
+
+     Default abbrev-mode for buffers that do not override it.  This is
+     the same as `(default-value 'abbrev-mode)'.
+
+
+* Variable: global-abbrev-table
+
+     The abbrev table whose abbrevs affect all buffers.  Each buffer may
+     also have a local abbrev table.  If it does, the local table
+     overrides the global one for any particular abbrev defined in both.
+
+
+* Variable: local-abbrev-table
+
+       The value of this buffer-local variable is the (mode-specific)
+     abbreviation table of the current buffer.
+
+
+
+* Variable: fundamental-mode-abbrev-table
+
+     The abbrev table of mode-specific abbrevs for Fundamental Mode.
+
+
+* Variable: text-mode-abbrev-table
+
+     Abbrev table used while in text mode.
+
+
+* Variable: c-mode-abbrev-table
+
+     Abbrev table in use in C-mode buffers.
+
+
+* Variable: lisp-mode-abbrev-table
+
+     Abbrev table used in lisp-mode and emacs-lisp-mode buffers.
+
+
+
+File: elisp  Node: Processes, Prev: Abbreviations, Up: Top, Next: Operating System Interface
+
+Processes
+*********
+
+A subprocess of Emacs is represented within Emacs by an object called a
+"process".  Creating a new (asynchronous) subprocess of Emacs results in
+the creation of a process object to represent it for use by Emacs Lisp.
+
+There are functions provided to allow the user to manipulate processes
+in most of the ways one would desire; signals may be sent, process
+information can be obtained, etc.
+
+I/O for a process can be handled in several different ways by the
+operating system.  The standard I/O can be directed though a pipe, or
+through a "pseudo terminal" (or ``pty'').
+
+
+* Menu:
+
+* Predicates on Processes::     
+* Functions that Create Subprocesses::  
+* Deleting Processes::  
+* Process Information:: 
+* Sending Input to Processes::  
+* Sending Signals to Processes::        
+* Receiving Information from Processes::        
+* Subprocess Functions for VMS::        
+* TCP:: 
+
+
+* Function: processp OBJECT
+
+      This function returns `t' if OBJECT is a process, `nil' otherwise.
+
+
+
+File: elisp  Node: Functions that Create Subprocesses, Up: Processes, Next: Deleting Processes
+
+Functions that Create Subprocesses
+==================================
+
+  There are three functions that create a new Unix subprocess in which
+to run a program.  The first, `start-process', creates an asynchronous
+process and returns a process object.  The other two, `call-process' and
+`call-process-region', create a synchronous process and do not return a
+process object.  These terms are defined below.  Since the three
+functions are called in a similar fashion, the common arguments are
+described more fully here.
+
+  In all cases, the program to be run, named by the PROGRAM argument, is
+found by following the normal rules for Unix: if an absolute pathname is
+given for the program, then the program must be found in the specified
+place.  If a relative pathname is given, then the program is searched
+for in each of the directories in `exec-path', which is set to the
+user's `PATH' variable on entering Emacs.  The standard symbols `~',
+`.', and `..' are interpreted the same as by Unix shells.  Environment
+variables (`HOME', etc.) are not substituted for.  See
+`expand-file-name' in *Note Functions that Expand Filenames::.  It is an
+error if the program is not found.
+
+Each of these functions has a BUFFER-OR-NAME argument.  This buffer is
+where the standard output from the program will go.  BUFFER-OR-NAME may
+be either a buffer or the name of one, and it will be created if it does
+not already exist.  If BUFFER-OR-NAME is `nil', then the output will be
+discarded by directing it to `/dev/null' unless an output stream (how??)
+or filter function is specified to handle it.  (*Note Process Filters::
+*Note Streams::.)  Normally, one does not want to have more than one
+process outputting to one buffer because their outputs will be
+intermixed randomly.
+
+Each of these functions have a `&rest' argument, ARGS.  The ARGS must
+all be strings, and they are supplied to PROGRAM as separate command
+line arguments.  Notice that the argument PROGRAM is only the name of
+the program; it may not contain any arguments for the PROGRAM.
+
+* Menu:
+
+* Creating an Asynchronous Process::    
+* Creating a Synchronous Process::      
+
+
+* Variable: process-environment
+
+       This global variable is a list of strings to append to the
+     environment of processes that are started.  Each string assigns a
+     value to a shell environment variable.  (does this apply to
+     synchronous processes too??)
+
+          process-environment
+          => ("l=/usr/stanford/lib/gnuemacs/lisp"
+              "PATH=.:/user/lewis/bin:/usr/class:/nfsusr/local/bin"
+              "USER=lewis" 
+              "TERM=ibmapa16" 
+              "SHELL=/bin/csh"
+              "HOME=/user/lewis")
+
+
+* Variable: exec-directory
+
+       The value of this variable is the name of a directory (a string)
+     that contains programs that come with GNU Emacs, which are intended
+     for Emacs to invoke.  The program `loadst' for example, which
+     returns a string of the current time every minute, is used by the
+     ``display time'' program.
+
+
+* User Option: exec-path
+
+       The value of this variable is a list of directories to search for
+     programs to run in subprocesses.  Each element is either the name
+     of a directory (i.e., a string), or `nil' which stands for the
+     default directory (`default-directory').
+
+       This is used by `call-process' when its argument does not contain
+     an absolute pathname.
+
+
+
+
+File: elisp  Node: Creating an Asynchronous Process, Up: Functions that Create Subprocesses, Next: Creating a Synchronous Process
+
+Creating an Asynchronous Process
+--------------------------------
+
+An "asynchronous process" is created by `start-process' and control then
+returns to Emacs.  The process may thereafter run at the same time as
+Emacs and they may communicate with each other via the functions
+described in following sections.
+
+
+* Function: start-process NAME BUFFER-OR-NAME PROGRAM &rest ARGS
+
+       This function creates a new process and starts a program in that
+     process.  The process will be named NAME (modified as necessary).
+     The buffer BUFFER-OR-NAME is the buffer to associate with the
+     process.  PROGRAM is the program to run.
+
+       The remaining arguments, ARGS, are strings that will be supplied
+     as the command line arguments for the program.
+
+       `start-process' returns the process it created.  The name given
+     to the process is guaranteed to be unique among processes.  It will
+     either be the name supplied by the user, or the name of the
+     program, modified (by appending `<1>', `<2>', etc.) if necessary to
+     make it unique.
+
+       In the example below, the first process is started and runs
+     (well, sleeps) for 100 seconds.  Meanwhile, the second process is
+     started and runs to completion, inserting the directory listing at
+     the end of the buffer `foo' before the first process finishes.
+     When the first process finishes, Emacs inserts `Process my-process
+     finished' at the end of the buffer.
+
+          (start-process "my-process" "foo" "sleep" "100")
+          => #<process my-process>
+
+          (start-process "my-process" "foo" "ls" "-l" "/user/lewis/bin")
+          => #<process my-process<1>>
+
+          ---------- Buffer: foo ----------
+          total 2
+          lrwxrwxrwx  1 lewis          14 Jul 22 10:12 gnuemacs -> /usr/bin/emacs
+          -rwxrwxrwx  1 lewis          19 Jul 30 21:02 lemon
+
+          Process my-process<1> finished
+
+          Process my-process finished
+          ---------- Buffer: foo ----------
+
+
+
+
+* Variable: process-connection-type
+
+       This global variable controls the type of device used to
+     communicate with subprocesses.  If it is `nil', then pipes are
+     used.  If it is `t', then ptys are used (or pipes if ptys not
+     supported --- this is determined by the C constant `HAVE_PTYS',
+     which must be defined when Emacs is compiled.).  Ptys are usually
+     preferable because they allow job control (`C-c, C-z, etc.') to
+     work between the process and its children whereas pipes do not; the
+     shell command uses ptys by default.
+
+     The value `process-connection-type' is used when `start-process' is
+     called, so to change it for just one call of `start-process',
+     temporarily rebind it with `let'.
+
+          (let ((process-connection-type nil))  ; use a pipe
+            (start-process ...))
+
+
+
+
+File: elisp  Node: Creating a Synchronous Process, Prev: Creating an Asynchronous Process, Up: Functions that Create Subprocesses
+
+Creating a Synchronous Process
+------------------------------
+
+When a "synchronous process" is created, Emacs waits for the process to
+terminate before continuing.
+
+
+* Function: call-process PROGRAM &optional INFILE BUFFER-OR-NAME DISPLAY &rest ARGS
+
+       This function calls PROGRAM in a separate process and waits for
+     it to finish.  It returns `nil'.
+
+       The process' standard input comes from file INFILE if INFILE is
+     not `nil' and from `/dev/null' if it is.  The process' output gets
+     inserted in BUFFER-OR-NAME before the point if it names a buffer.
+     If BUFFER-OR-NAME is `t', then the current buffer is used, and if
+     it is `nil', then the output is discarded. If it is 0, then the
+     output is discarded and `call-process' returns immediately.
+
+       If DISPLAY is non-`nil', then `call-process' redisplays buffer as
+     output is inserted.  Otherwise it will wait until the command is
+     completely finished before any output is seen in the buffer.
+
+       The remaining arguments, ARGS, are strings that will be supplied
+     as the command line arguments for the program.
+
+      This function waits for PROGRAM to terminate; if you abort (e.g.,
+     by typing `C-g'), the process is killed (by sending it a
+     SIGKILL??).
+
+       The examples below are all run from the buffer foo.
+
+          (call-process "pwd" nil t)
+          => nil
+
+          ---------- Buffer: foo ----------
+          /usr/user/lewis/manual
+          ---------- Buffer: foo ----------
+
+          (call-process "grep" nil "bar" nil "lewis" "/etc/passwd")
+          => nil
+
+          ---------- Buffer: bar ----------
+          lewis:5LTsHm66CSWKg:398:21:Bil Lewis:/user/lewis:/bin/csh
+
+          ---------- Buffer: bar ----------
+
+     (Show ls -l too??)
+
+
+* Function: call-process-region START END PROGRAM &optional DELETE BUFFER-OR-NAME DISPLAY &rest ARGS
+
+       This function sends the text between START to END as standard
+     input to a process running PROGRAM.  It deletes the text if DELETE
+     is non-`nil'.
+
+     If BUFFER-OR-NAME names a buffer, the output is inserted at the
+     current point of that buffer.  If BUFFER-OR-NAME is `t', then the
+     output is put into the current buffer.  If BUFFER is `nil', then
+     the output is discarded.
+
+       If DISPLAY is non-`nil', then `call-process-region' redisplays
+     buffer as output is inserted.  Otherwise it will wait until the
+     command is completely finished before the output is seen in the
+     buffer.
+
+       The remaining arguments, ARGS, are strings that will be supplied
+     as the command line arguments for the program.
+
+       This function normally waits for the process to terminate; if you
+     quit (e.g., by typing `C-g'), the process is killed.
+
+       In the first example below, the Unix program `cat' is called with
+     standard input being the first five characters in this buffer
+     (`input').  `cat' copies its standard input into its standard
+     output.  This causes it to be inserted into this buffer.  The
+     function returns `nil'.
+
+          ---------- Buffer: foo ----------
+          input
+          ---------- Buffer: foo ----------
+
+          (call-process-region 1 6 "cat" nil t)
+          => nil
+
+          ---------- Buffer: foo ----------
+          inputinput
+          ---------- Buffer: foo ----------
+
+
+
+File: elisp  Node: Deleting Processes, Prev: Functions that Create Subprocesses, Up: Processes, Next: Process Information
+
+Deleting Processes
+==================
+
+* Variable: delete-exited-processes
+
+       This global variable determines when exited processes will be
+     deleted.  If it is `nil', then they will not be deleted until
+     `list-processes' is run; otherwise, they will be deleted
+     immediately after they exit.
+
+
+* Function: delete-process NAME
+
+       This function deletes the process associated with NAME.  NAME may
+     be a process, the name of a process, a buffer, or the name of a
+     buffer.  The subprocess is killed with a `SIGKILL' signal.
+
+          (delete-process "*shell*")
+          => nil
+
+
+* Function: process-kill-without-query PROCESS
+
+       This function declares that Emacs need not query the user if
+     PROCESS is still running when Emacs is exited.  It returns `t'.
+
+          (process-kill-without-query (get-process "shell"))
+          => t
+
+
+
+File: elisp  Node: Process Information, Prev: Deleting Processes, Up: Processes, Next: Sending Input to Processes
+
+Process Information
+===================
+
+Several functions return information about processes.  `list-processes'
+is provided for interactive use.  (maybe burst this to various sections
+they are used in!!)
+
+
+* Command: list-processes
+
+     Display a listing of all processes.  (Any processes listed as
+     Exited or Signaled are actually eliminated after the listing is
+     made.)  It returns `nil'.  (should be in user manual!!)
+
+
+* Function: process-list
+
+       This function returns a list of all processes (that are still
+     alive??).
+
+          (process-list)
+          => (#<process display-time> #<process shell>)
+
+
+* Function: get-process NAME
+
+       This function returns the process named NAME, or `nil' if there
+     is none.  It is an error if NAME is not a string.
+
+          (get-process "shell")
+          => #<process shell>
+
+
+* Variable: mode-line-process
+
+       This buffer-local variable contains the mode line information on
+     process status.  For example, the value for the `*shell*' buffer is
+     `(": %s")', which allows the shell to display its status along with
+     the major mode as: `(Shell: run)'.  Normally its value is `nil'.
+
+
+* Function: process-command PROCESS
+
+       This function returns the command that was executed to start
+     PROCESS.  This is a list of strings, the first string being the
+     program executed and the rest of the strings being the arguments
+     given to it.
+
+          (process-command (get-process "shell"))
+          => ("/bin/csh" "-i")
+
+
+* Function: process-exit-status PROCESS
+
+       This function returns the exit status of PROCESS or the signal
+     number that killed it.  If PROCESS has not yet exited or died, the
+     result is `0'.
+
+* Function: process-id PROCESS
+
+       This function returns the process id of PROCESS.  This is the pid
+     of the Unix process which PROCESS uses.
+
+
+* Function: process-mark PROCESS
+
+       This function returns the marker which indicates the end of the
+     last output from PROCESS into its buffer (*Note Process Buffers::).
+     This marker actually controls where output from the process will be
+     inserted.  Often it will be at the end of the buffer.  (can we
+     change it predictably??) (show example!!)
+
+     If PROCESS does not insert its output into a buffer, then
+     `process-mark' returns a marker that is in no buffer.
+
+
+* Function: process-name PROCESS
+
+       This function returns the name of PROCESS.
+
+
+* Function: process-status PROCESS-NAME
+
+       This function returns the status of PROCESS-NAME as a symbol.
+     PROCESS-NAME must be either a process or a string.  It need not
+     name an actual process.  (What is returned for net connections
+     opened by `open-network-stream'??)
+
+     The possible values are:
+
+     `run'
+            for a process that is running.
+     `stop'
+           for a process that is stopped but continuable.
+     `exit'
+           for a process that has exited.
+     `signal'
+           for a process that has received a fatal signal.
+     `nil'
+           if PROCESS-NAME does not exist.
+
+
+          (process-status "shell")
+          => run
+          (process-status "never-existed")
+          => nil
+          x
+          => #<process xx<1>>
+          (process-status x)
+          => exit
+
+
+
+File: elisp  Node: Sending Input to Processes, Prev: Process Information, Up: Processes, Next: Sending Signals to Processes
+
+Sending Input to Processes
+==========================
+
+Limits on size of string??
+
+
+
+* Function: process-send-string PROCESS-NAME STRING
+
+       This function sends PROCESS-NAME the contents of STRING as
+     standard input.
+
+       It returns `nil'.
+
+          (process-send-string "shell<1>" "ls\n")
+          => nil
+
+          ---------- Buffer: *shell* ----------
+          ...
+          introduction.texinfo            syntax-tables.texinfo~
+          introduction.texinfo~           text.texinfo
+          introduction.txt                text.texinfo~
+          ...
+
+          ---------- Buffer: *shell* ----------
+
+
+* Command: process-send-region PROCESS-NAME START END
+
+     This function sends the text in the region defined by START and END
+     as standard input to PROCESS-NAME (process or process name).
+
+       It is an error unless both START and END are integers or markers
+     that indicate positions in the current buffer.  It is unimportant
+     which number is larger.
+
+
+
+* Function: process-send-eof &optional PROCESS-NAME
+
+       This function makes PROCESS-NAME see an end-of-file in its input.
+     The EOF comes after any text already sent to it.
+
+       If PROCESS-NAME is not supplied, or if it is `nil', then send the
+     EOF to the current buffer's process.  It is an error if the current
+     buffer has no process.
+
+     It returns PROCESS-NAME.
+
+          (process-send-eof "shell")
+          => "shell"
+
+
+
+File: elisp  Node: Sending Signals to Processes, Prev: Sending Input to Processes, Up: Processes, Next: Receiving Information from Processes
+
+Sending Signals to Processes
+============================
+
+
+Several functions are provided to send signals to processes.  The only
+distinction between the functions is which signal they send.  They each
+take two optional arguments: PROCESS-NAME and CURRENT-GROUP.
+
+  PROCESS-NAME must be either a process, the name of one, or `nil'.  If
+it is `nil', the process defaults to the process associated with the
+current buffer.  It is an error if PROCESS-NAME does not identify a
+process.
+
+  CURRENT-GROUP is a flag.  The action depends on the
+`process-connection-type' of the process.  If it is a pty and
+CURRENT-GROUP is non-`nil', then the signal is sent to the current
+process-group of the process's controlling terminal rather than to the
+process's own process group.  If the process is a shell, this means
+interrupt current subjob rather than the shell itself.  If the
+connection type is a pipe, then the signal always goes to the process
+group of the immediate inferior of Emacs.
+
+Killing a buffer sends a `SIGHUP' signal to all its associated
+(sub??)processes.  Killing Emacs sends a `SIGHUP' signal to all
+remaining processes.
+
+
+* Function: interrupt-process &optional PROCESS-NAME CURRENT-GROUP
+
+       This function interrupts the process PROCESS-NAME (i.e., sends
+     the Unix signal `SIGINT').
+
+
+* Function: kill-process &optional PROCESS-NAME CURRENT-GROUP
+
+       This function kills the process PROCESS-NAME (i.e., sends the
+     Unix signal `SIGKILL').
+
+
+* Function: quit-process &optional PROCESS-NAME CURRENT-GROUP
+
+       This function sends the Unix signal `SIGQUIT' to the process
+     PROCESS-NAME.
+
+
+* Function: stop-process &optional PROCESS-NAME CURRENT-GROUP
+
+       This function stops the process PROCESS-NAME (i.e., sends the
+     Unix signal `SIGTSTP').
+
+
+* Function: continue-process &optional PROCESS-NAME CURRENT-GROUP
+
+       This function causes the process PROCESS to be continued (i.e.,
+     sends the Unix signal `SIGCONT').  Presumably PROCESS-NAME was
+     previously stopped.
+
+
+
+File: elisp  Node: Receiving Information from Processes, Prev: Sending Signals to Processes, Up: Processes, Next: Subprocess Functions for VMS
+
+Receiving Information from Processes
+====================================
+
+
+There are three ways to asynchronously receive information from a
+process; two are for standard output and the third is for the process
+status.  It is important to note that the filter and sentinel functions
+are only called when Emacs is waiting for something; they never run
+while other Lisp code is running.  Similarly, output is only inserted in
+an associated buffer when Emacs is waiting.
+
+You may explicitly cause Emacs to wait by calling `sit-for', `sleep', or
+`accept-process-output' (others??).  Emacs also waits in the command
+loop for the next key command.
+
+All sentinels and filters that alter the `match-data' by doing a search
+should save and restore the match data. *Note Match Data::.
+
+
+
+* Function: accept-process-output &optional PROCESS
+
+       This function allows pending output from any processes to be read
+     by Emacs.  It is read into the process' buffers or given to their
+     filter functions.  If PROCESS is non-`nil' then the function does
+     not return until some output has been received from that process.
+
+
+* Function: waiting-for-user-input-p
+
+       This function returns non-`nil' if Emacs is waiting for keyboard
+     input from the user, `nil' if it is not.  This is intended for use
+     by asynchronous process output filters and sentinels.  (check this
+     one out!!)
+
+* Menu:
+
+* Process Filters::     
+* Process Buffers::     
+* Process Sentinels::   
+
+
+
+File: elisp  Node: Process Filters, Up: Receiving Information from Processes, Next: Process Buffers
+
+Process Filters
+---------------
+
+  A "process filter" is a function that receives the standard output
+from the associated process.  If a process has a filter, then *all*
+standard output from that process will be sent to the filter rather than
+be inserted into a buffer or discarded.
+
+  A filter function must accept two arguments: the associated process
+and a string, which is the output.  The function is then free to do
+whatever it chooses to with the output.
+
+  The output to the function may come is any sized chunks.  A Unix
+command that produces the same output twice in a row may send it as one
+string of 200 characters one time, and five strings of 40 characters the
+next.
+
+
+* Function: set-process-filter PROCESS FILTER
+
+       This function gives PROCESS the filter function FILTER.  If
+     FILTER is `nil', then the process will have no filter.
+
+     (need better example!!)
+
+          (defun keep-output (process output)
+             (setq kept (cons output kept)))
+          => keep-output
+          (setq kept nil)
+          => nil
+          (set-process-filter (get-process "shell") 'keep-output)
+          => keep-output
+          (process-send-string "shell" "ls ~/other\n")
+          => nil
+          kept
+          => ("lewis@slug[8] % "
+          "FINAL-W87-SHORT.MSS    backup.otl              kolstad.mss~
+          address.txt             backup.psf              kolstad.psf
+          backup.bib~             david.mss               resume-Dec-86.mss~
+          backup.err              david.psf               resume-Dec.psf
+          backup.mss              dland                   syllabus.mss
+          "
+          "#backups.mss#          backup.mss~             kolstad.mss
+          ")
+
+          (defun my-process-filter (proc str)
+              (let ((cur (selected-window))
+                    (pop-up-windows t))
+                (pop-to-buffer my-shell-buffer)
+                (goto-char (point-max))
+                (insert str)
+                (set-marker (process-mark proc) (point-max))
+                (select-window cur)))
+
+
+
+* Function: process-filter PROCESS
+
+       This function returns the filter function of PROCESS, or `nil' if
+     has none.
+
+
+
+
+File: elisp  Node: Process Buffers, Prev: Process Filters, Up: Receiving Information from Processes, Next: Process Sentinels
+
+Process Buffers
+---------------
+
+  The buffer that a process is associated with is where the standard
+output from that process will be inserted if the process does not have a
+filter function.  Output is always inserted at the `process-mark' (*Note
+Process Information::), which is then updated to point to the end of the
+text just inserted.  Normally the `process-mark' will be at the end of
+the file.
+
+
+* Function: set-process-buffer PROCESS BUFFER
+
+       This function sets the buffer associated with PROCESS to BUFFER.
+     If BUFFER is `nil', then the process will not be associated with
+     any buffer at all.
+
+
+* Function: process-buffer PROCESS
+
+       This function returns the buffer PROCESS is associated with.
+
+          (process-buffer (get-process "shell"))
+          => #<buffer *shell*>
+
+
+* Function: get-buffer-process BUFFER-OR-NAME
+
+     Return the process associated with BUFFER-OR-NAME.  If there are
+     several processes associated with it, then one is chosen.
+     (Presently, the one chosen is the one most recently created.  This
+     should not be relied upon??)
+
+          (get-buffer-process "*shell*")
+          => #<process shell>
+
+
+
+File: elisp  Node: Process Sentinels, Prev: Process Buffers, Up: Receiving Information from Processes
+
+Process Sentinels
+-----------------
+
+  A "process sentinel" is a function that is called whenever the
+associated process changes status.  This includes anything that
+terminates, stops, or continues the process or if the process exits on
+its own.  The sentinel is called with two arguments: the process that
+received the signal, and the signal that was received.
+
+A sentinel is called for any signal that Emacs finds out about (anything
+fatal or that stops the process).  A sentinel is also called if Emacs
+sends a `SIGCONT' signal to a process.
+
+
+* Function: set-process-sentinel PROCESS SENTINEL
+
+       This function associates SENTINEL with PROCESS.  If SENTINEL is
+     `nil', then the process will have no sentinel.  The default
+     behavior when there is no sentinel is to insert a message in the
+     process's buffer.
+
+          (defun msg-me (process signal)
+             (princ
+               (format "Process: %s received the msg: %s" process signal)))
+          (set-process-sentinel (get-process "shell") 'msg-me)
+          => msg-me
+          (kill-process (get-process "shell"))
+          -> Process: #<process shell> received the msg: killed
+          => #<process shell>
+
+
+* Function: process-sentinel PROCESS
+
+       This function returns the sentinel of PROCESS, or `nil' if it has
+     none.
+
+
+
+
+File: elisp  Node: Subprocess Functions for VMS, Prev: Receiving Information from Processes, Up: Processes, Next: TCP
+
+Subprocess Functions for VMS
+============================
+
+  (...I don't have a VMS machine to work with...)
+
+* Function: default-subprocess-input-handler
+
+       This function is the default input handler for input from spawned
+     subprocesses.
+
+
+* Function: send-command-to-subprocess NAME COMMAND
+
+     Send to VMS subprocess named NAME the string COMMAND.
+
+
+* Function: spawn-subprocess
+
+       This function spawns an asynchronous VMS subprocess for command
+     processing.
+
+
+* Function: stop-subprocess PROCESS-NAME
+
+       This function stops a VMS subprocess named NAME.
+
+
+* Function: setprv ARGS??
+
+     Set or reset a VMS privilege.  First arg is privilege name.  Second
+     arg is `t' or `nil', indicating whether the privilege is to be set
+     or reset.  Default is `nil'.  Returns `t' if success, `nil' if not.
+     If third arg is non-`nil', does not change privilege, but returns
+     `t' or `nil', depending upon whether the privilege is already
+     enabled.
+
+
+
+File: elisp  Node: TCP, Prev: Subprocess Functions for VMS, Up: Processes
+
+TCP
+===
+
+  (intro!!)
+
+* Function: open-network-stream NAME BUFFER HOST SERVICE
+
+       This function opens a TCP connection for a service to a host.  It
+     returns a subprocess-object to represent the connection.  Input and
+     output work as for subprocesses; `delete-process' closes it.
+
+     NAME is the name for the process.  It is modified if necessary to
+     make it unique.  BUFFER-OR-NAME is the buffer to associate with the
+     process.
+
+      Process output goes at end of that buffer, unless you specify an
+     output stream or filter function to handle the output.
+     BUFFER-OR-NAME may be also `nil', meaning that this process is not
+     associated with any buffer
+
+     SERVICE is name of the service desired, or an integer specifying a
+     port number to connect to.
+
+     More!!
+
+
+File: elisp  Node: Operating System Interface, Prev: Processes, Up: Top, Next: Emacs Display
+
+Operating System Interface
+**************************
+
+*Note Building Emacs::, *Note Emacs Display::,
+
+* Menu:
+
+* When Emacs Starts Up::	
+* Getting out of Emacs::	
+* Operating System Environment::	
+* Terminal Input::	
+* Terminal Output::	
+* Flow Control::	
+
+
+* Variable: noninteractive
+
+        When Emacs is running in batch mode (without an interactive
+     terminal), then this variable is non-`nil'.
+
+
+
+File: elisp  Node: When Emacs Starts Up, Up: Operating System Interface, Next: Getting out of Emacs
+
+When Emacs Starts Up
+====================
+
+The order of operations performed by Emacs when it is started up (by
+`starteup.el') is as follows:
+
+
+  1. Read command line switches.
+
+  2. Load `.emacs' unless `-q' specified on command line.
+
+  3. Load `default.el' unless `inhibit-default-init' is non-`nil'.
+
+  4. Load terminal specific file.
+
+  5. Run `term-setup-hook'.
+
+  6. Run `window-setup-hook'.
+
+  7. Display CopyLeft information, if `inhibit-startup-message' is
+     `nil'.
+
+  8. Process remaining command line arguments.
+
+
+
+* Menu:
+
+* The Init File: .emacs::       
+* Terminal-specific Initialization::    
+* Command Line Arguments::      
+
+
+* User Option: inhibit-startup-message
+
+       This global variable inhibits the initial startup messages (the
+     warranty etc.).  If it is non-`nil', then the messages are not
+     printed.  This is for use in your personal init file, once you are
+     familiar with the contents of the startup message.
+
+
+
+
+File: elisp  Node: The Init File: .emacs, Up: When Emacs Starts Up, Next: Terminal-specific Initialization
+
+The Init File: .emacs
+---------------------
+
+When Emacs is started, it normally loads the file `.emacs' in your home
+directory.  This file, if it exists, should contain Lisp code.  It is
+called your "init file".  The command line switches `-q' and `-u' can be
+used to tell Emacs whether to load an init file (*Note Entering Emacs:
+(emacs)Entering Emacs.).
+
+There can also be a "default init file", which is the libary named
+`default.el', found via the standard search path for libraries.  The
+Emacs distribution contains no such library; your site may create one
+for local customizations.  If this library exists, it is loaded whenever
+you start Emacs.  But your init file, if any, is loaded first; if it
+sets `inhibit-default-init' non-`nil', then `default.el' is not loaded.
+
+If you have a large amount of code in your `.emacs' file, you should
+move it into another file named `SOMETHING.el', byte-compile it (*Note
+Byte Compilation::), and make your `.emacs' file load the other file
+using `load' (*Note Loading::).
+
+*Note Init File Examples: (emacs)Init File Examples for some examples of
+doing certain commonly desired things in your `.emacs' file.
+
+
+* User Option: inhibit-default-init
+
+       This global variable inhibits loading the default library file.
+     If it is non-`nil', then the default library is not loaded.
+     Default value is `nil'.
+
+
+
+File: elisp  Node: Terminal-specific Initialization, Prev: The Init File: .emacs, Up: When Emacs Starts Up, Next: Command Line Arguments
+
+Terminal-specific Initialization
+--------------------------------
+
+  Each terminal type can have a Lisp library to be loaded into Emacs
+when it is run on that type of terminal.  For a terminal type named
+TERMTYPE, the library is called `term/TERMTYPE' and it is found by
+searching the directories `load-path' as usual and trying the suffixes
+`.elc' and `.el'.  Normally it appears in the subdirectory `term' of the
+directory where most Emacs libraries are kept.
+
+  The usual purpose of the terminal-specific library is to define the
+escape sequences used by the terminal's function keys using the library
+`keypad.el'.  See the file `term/vt100.el' for an example of how this is
+done.
+
+  When the terminal type contains a hyphen, only the part of the name
+before the first hyphen is significant in choosing the library name.
+Thus, terminal types `aaa-48' and `aaa-30-rv' both use the library
+`term/aaa'.  The code in the library can use `(getenv "TERM")' to find
+the full terminal type name.
+
+  The library's name is constructed by concatenating the value of the
+variable `term-file-prefix' and the terminal type.  Your `.emacs' file
+can prevent the loading of the terminal-specific library by setting
+`term-file-prefix' to `nil'.
+
+  The value of the variable `term-setup-hook', if not `nil', is called
+as a function of no arguments at the end of Emacs initialization, after
+both your `.emacs' file and any terminal-specific library have been read
+in.  You can set the value in the `.emacs' file to override part of any
+of the terminal-specific libraries and to define initializations for
+terminals that do not have a library.
+
+
+* Variable: term-file-prefix
+
+       If this global variable is non-`nil', Emacs startup does ``(load
+     (concat term-file-prefix (getenv "TERM")))''.  You may set this
+     variable to `nil' in your `.emacs' file if you do not wish the
+     "terminal-initialization" file to be loaded, i.e., ``(setq
+     term-file-prefix nil)''.
+
+
+* Variable: term-setup-hook
+
+     Function to be called after loading terminal-specific lisp code.
+     It is called with no arguments.  You can use this to override the
+     definitions made by the terminal-specific file.  It is set to `nil'
+     after it is used.
+
+
+* Variable: window-setup-hook
+
+     Function to be called after loading terminal-specific lisp code.
+     It is called with no arguments.  You can use this to override the
+     definitions made by the window-system-specific file.  It is set to
+     `nil' after it is used.
+
+
+
+File: elisp  Node: Command Line Arguments, Prev: Terminal-specific Initialization, Up: When Emacs Starts Up
+
+Command Line Arguments
+----------------------
+
+  (intro!!)
+
+
+* Function: command-line
+
+       This function parses the command line which Emacs was called
+     with, processes it, loads the user's `.emacs' file and displays the
+     initial warranty information, etc.
+
+
+* Variable: command-line-processed
+
+       The value of this variable is `t' once the command line has been
+     processed.
+
+
+* Variable: command-switch-alist
+
+       The value of this variable is an alist of command-line switches
+     and associated handler functions.  A "command line switch" is an
+     argument on the command line of the form ``-C'', where C is a
+     character.  Elements look like (SWITCH-STRING . HANDLER-FUNCTION).
+     HANDLER-FUNCTION receives switch name as sole argument; remaining
+     command-line arguments are in the variable `command-line-args'.
+
+     (Show some use!!)
+
+
+* Variable: command-line-args
+
+       The value of this variable is the arguments passed by the shell
+     to Emacs, as a list of strings.
+
+
+
+
+
+File: elisp  Node: Getting out of Emacs, Prev: When Emacs Starts Up, Up: Operating System Interface, Next: Operating System Environment
+
+Getting out of Emacs
+====================
+
+  (intro!!)
+
+* Function: kill-emacs &optional NO-QUERY
+
+       This function exits the Emacs job and kills it. If NO-QUERY is
+     supplied and non-`nil', then Emacs will exit directly.  Normally,
+     if there are modified files or subprocesses running, Emacs will ask
+     the user if it should *really* exit.
+
+       If Emacs is running noninteractively and NO-QUERY is an integer,
+     then it returns NO-QUERY as the Unix program's exit code.
+
+          (kill-emacs)
+          => nil
+
+          ---------- Buffer: Minibuffer ----------
+          1 modified buffer exists, do you really want to exit? (yes or no) yes
+          Subprocesses are executing;  kill them and exit? (yes or no) no
+          ---------- Buffer: Minibuffer ----------
+
+
+* Variable: kill-emacs-hook
+
+     Function called, if non-`nil', whenever `kill-emacs' is called.  It
+     is called before anything else is done by `kill-emacs'.
+
+
+
+File: elisp  Node: Suspending Emacs, Up: Getting out of Emacs
+
+Suspending Emacs
+----------------
+
+  (intro!!)  Also see `no-redraw-on-reenter' in *Note Miscellaneous
+Display Variables::.
+
+
+* Function: suspend-emacs STRING
+
+       This function stops Emacs and returns to the superior process.
+     The Emacs process is still resumable (unlike after calling
+     `kill-emacs').  This function does nothing if Emacs is running
+     under X windows.
+
+       If STRING is non-`nil', its characters are stuffed to be read as
+     terminal input by Emacs's superior shell.  The characters in STRING
+     will not be echoed by the superior shell, the results will just
+     appear.
+
+       Before suspending, the symbol `suspend-hook' is examined.  If it
+     is bound, and its value is non-`nil', then the value will be called
+     as a function of no arguments.  Emacs won't be suspended unless it
+     returns `nil'.
+
+       After Emacs resumes, the symbol `suspend-resume-hook' will be
+     examined.  If it is bound and non-`nil', then the value will be
+     called as a function of no arguments.
+
+       `suspend-emacs' returns `nil'.
+
+       In the example, notice that `pwd' is not echoed by the Unix shell
+     after Emacs is suspended.
+
+          (suspend-emacs)
+          => nil
+
+          (setq suspend-hook
+              (function (lambda ()
+                        (not (y-or-n-p "Really suspend? ")))))
+          => (lambda nil (not (y-or-n-p "Really suspend? ")))
+          (setq suspend-resume-hook
+              (function (lambda () (message "Resumed!"))))
+          => (lambda nil (message "Resumed!"))
+          (suspend-emacs "pwd")
+          => nil
+          ---------- Buffer: Minibuffer ----------
+          Really suspend? y
+
+          ---------- Parent Shell ----------
+          lewis@slug[23] % /user/lewis/manual
+          lewis@slug[24] % fg
+
+          ---------- Echo Area ----------
+          Resumed!
+
+
+* Variable: suspend-hook
+
+     Function called, if non-`nil', before suspending with
+     `suspend-emacs'.  Emacs won't be suspended unless it returns `nil'.
+
+
+* Variable: suspend-resume-hook
+
+     Function called, if non-`nil', after resumption of an Emacs session
+     that was suspended with `suspend-emacs'.
+
+
+
+
+File: elisp  Node: Operating System Environment, Prev: Getting out of Emacs, Up: Operating System Interface, Next: Terminal Input
+
+Operating System Environment
+============================
+
+  (intro!!)
+
+
+* Function: getenv VAR
+
+       This function returns the value of environment variable VAR, as a
+     string.  (Environment variables are those Unix variables that are
+     set with `setenv', not `set' --- Their names are normally in upper
+     case.)
+
+          (getenv "USER")
+          => "lewis"
+
+          lewis@slug[10] % printenv
+          PATH=.:/user/lewis/bin:/usr/bin:/usr/local/bin
+          USER=lewis
+          TERM=ibmapa16
+          SHELL=/bin/csh
+          HOME=/user/lewis
+
+
+* Function: user-login-name
+
+       This function returns the name which the user logged in under.
+     This is based on the effective uid, not the real uid.
+
+          (user-login-name)
+          => "lewis"
+
+
+* Function: user-real-login-name
+
+       This function returns the name which the user logged in under.
+     This is based on the real uid, not the effective uid.  This differs
+     from `user-login-name' only when running with the setuid bit.  (I
+     think `su' changes both uids.  check this out!!)
+
+
+* Function: user-full-name
+
+     This function returns the full name of the user.
+
+          (user-full-name)
+          => "Bil Lewis"
+
+
+* Function: user-real-uid
+
+       This function returns the real uid of the user.
+
+          (user-real-uid)
+          => 19
+
+* Function: user-uid
+
+        This function returns the effective uid of the user.  This will
+     be the real uid unless the user has (??).
+
+
+* Function: system-name
+
+        This function returns the name of the machine you are running
+     on.
+
+          (system-name)
+          => "wheaties.ai.mit.edu"
+
+
+* Constant: display-time-day-and-date
+
+     Non-`nil' means `display-time' should display day and date as well
+     as time.
+
+
+* Function: current-time-string
+
+        This function returns the current time, as a human-readable
+     string.  The format of the string is unvarying; the number of
+     characters used for each part is always the same, so you can
+     reliably use `substring' to extract pieces of it.
+
+          (current-time-string)
+          => "Wed Oct 14 22:21:05 1987"
+
+* Function: load-average
+
+        This function returns the current 1 minute, 5 minute and 15
+     minute load averages in a list.  The load averages, are 100 times
+     the system load averages.  (describe load average!!)
+
+          (load-average)
+          => (68 48 35)
+
+          lewis@rocky[5] % uptime
+           11:55am  up 1 day, 19:37,  3 users,  load average: 0.69, 0.48, 0.36
+
+
+* Variable: default-directory
+
+       The value of this buffer-local variable is the default directory
+     for the current buffer.  This is always a string ending with a
+     slash on Unix systems.
+
+          default-directory
+          => "/user/lewis/manual/"
+
+
+* Command: cd DIRECTORY
+
+       This function makes DIRECTORY the current buffer's default
+     directory.  It is an error if DIRECTORY is not an existing
+     directory which is accessible by the user.
+
+     This function is intended for interactive use only.  Lisp programs
+     should instead use `(setq default-directory DIRECTORY)'.  When
+     called interactively, DIRECTORY is prompted for in the minibuffer.
+     (Should be in user manual.!!)
+
+          (cd "/user/lewis/emacs")
+          => "Directory /user/lewis/emacs/"
+          default-directory
+          => "/user/lewis/emacs/"
+
+
+
+
+File: elisp  Node: Terminal Input, Prev: Operating System Environment, Up: Operating System Interface, Next: Terminal Output
+
+Terminal Input
+==============
+
+  (intro!!)  Also *Note Display:: for related functions.
+
+
+* Function: recent-keys
+
+       This function returns a string comprising the last 100 characters
+     read from terminal.  These are the last 100 characters read by
+     Emacs, no exceptions.
+
+          (recent-keys)
+          => "erminal.  These are the last 100 characters read by Emacs, no
+          exceptions.
+
+          @example
+          (recent-keys)^U^X^E"
+
+
+
+* Variable: last-input-char
+
+       This global variable is set to the last terminal input character
+     that was typed (as part of a command or not).
+
+       In the example, a character is read (the character `1', ASCII
+     49).  It becomes the value of `last-input-char', while `C-e'
+     remains the value of `last-command-char'.
+
+          (progn (print (read-char))
+                 (print last-command-char)
+                 last-input-char)
+          -> 49
+          -> 5
+          => 49
+
+
+* Command: open-dribble-file FILENAME
+
+     After this function is called, Emacs copies all keyboard input
+     characters to FILENAME.  (What about inserted keyboard macros??)
+     (How do you turn it off??)  It is normally only called
+     interactively to debug Emacs input.  It returns `nil'.
+
+          (open-dribble-file "$j/dribble")
+          => nil
+
+
+* Function: set-input-mode INTERRUPT FLOW
+
+       This function sets the mode for reading keyboard input.  If
+     INTERRUPT is non-null, then Emacs uses input interrupts.  If it is
+     `nil', then it uses CBREAK mode.
+
+       If FLOW is non-`nil', then Emacs uses xon/xoff (`C-q', `C-s')
+     flow control for output to terminal.  This has no effect except in
+     CBREAK mode.
+
+       The normal setting are system dependent.  (table??)
+
+     (explain in detail for novice!!  need example!!)
+
+
+
+* Variable: meta-flag
+
+       This global variable tells Emacs if it should treat the 0200 bit
+     in keyboard input as the Meta bit.
+
+
+* Variable: keyboard-translate-table
+
+       This global variable defines the translate table for keyboard
+     input.  This allows the user to redefine the keys on the keyboard
+     without changing any command bindings.
+
+       If `keyboard-translate-table' is a string, then each character
+     read from the keyboard is looked up in this string and the
+     character in the string is used instead.  If string is of length N,
+     character codes N and up are untranslated.
+
+       In the example, `keyboard-translate-table' is set to a string of
+     128 characters.  Then the characters `C-s' and `C-\' are swapped
+     and the characters `C-q' and `C-^' are swapped.  After executing
+     this function, typing `C-\' behaves exactly like typing `C-s' and
+     vice versa.  (*Note Flow Control:: for more information on this
+     subject.)
+
+          (defun evade-flow-control ()
+            "Replace ^S with ^\ and ^Q with ^^."
+            (interactive)
+            (let ((the-table (make-string 128 0)))
+              (let ((i 0))
+                (while (< i 128)
+                  (aset the-table i i)
+                  (setq i (1+ i))))
+
+              ;; Swap ^S and ^\
+              (aset the-table ?\034 ?\^s)
+              (aset the-table ?\^s ?\034)
+              ;; Swap ^Q and ^^
+              (aset the-table ?\036 ?\^q)
+              (aset the-table ?\^q ?\036)
+
+              (setq keyboard-translate-table the-table)))
+
+
+

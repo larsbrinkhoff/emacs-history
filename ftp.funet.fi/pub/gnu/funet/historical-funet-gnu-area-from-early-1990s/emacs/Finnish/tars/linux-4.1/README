@@ -1,0 +1,126 @@
+		FAQ for Linux version of GNU Emacs
+
+This is a short list of Frequently Asked Questions about GNU Emacs
+under Linux.  It does not address general questions about Emacs which
+are not Linux specific.  For general help about Emacs, 1) learn to use
+and read the online documentation, 2) read the real Emacs FAQ found in
+emacs/etc/FAQ, and 3) read the newsgroup gnu.emacs.help.
+
+					Rick Sladkey <jrs@world.std.com>
+
+* Does Linux Emacs use the shared libraries?
+
+Yes.  It wasn't easy.  If you have any problems with them let me know.
+Also contact me if you would like static binaries.
+
+* What version of the compiler was used?  Which shared libaries?
+
+This describes version of GNU Emacs 18.58 for Linux 0.97 and above
+compiled with GCC 2.2.2d7 using the libc.so.4.1 and libX11.so.2.1 shared
+libraries.
+
+* Which files do I need?
+
+emacs-4.1.tar.Z			this file, sample default.el and diffs
+				for this version, the eight-bit patch,
+				iso-latin-1.el and eight-bit.el
+emacs-etc-4.1.tar.Z		emacs support programs and misc info
+emacs-shared-4.1.tar.Z		shared emacs binary and its doc file
+x11emacs-shared-4.1.tar.Z	shared x11emacs binary and its doc file
+
+* How do I install them?
+
+According to Linux convention, cd to /usr and untar the packages.
+
+* Does Linux Emacs support eight-bit input/output?
+
+Yes.  It is new with this version.  It uses the so-called "ctl-arrow"
+patch.  See the file README.8bit for more information.
+
+* How much disk space is required?
+
+Anywhere from 1 to 15 Meg.  Emacs works reasonably well with no
+support files at all.  With a judicious selection from lisp/*.elc and
+etc/*, quite a lot can be done using only 2 Meg.  If you want all of
+lisp/*.elc, info/*, and etc/* this will require 4 to 6 Meg.  If you
+unpack the whole source you need 8 Meg.  If you collect info files
+like rare coins and install a lot of big lisp packages then Emacs may
+need its own partition. :-)
+
+* Why can't Emacs find its support files anymore?
+
+This is because older versions of Emacs were compiled with
+"/usr/local/emacs" based paths.  The current version is compiled with
+"/usr/emacs" paths.  If you have a previous installation, just "mv
+/usr/local/emacs /usr" and you're done.  If you can't bear to part
+with the "/usr/local" pathnames because of inertia then do "ln -s
+/usr/local/emacs /usr" and you can have them both.
+
+* How do I get Emacs to recognize my cursor keys?
+
+Simple.  Don't use them. :-)  Seriously, there are as many ways to do
+this are there are elisp hackers but the preferred way is to follow
+the pattern set by the other terminal definition files in
+emacs/lisp/term/*.el.  For just arrow keys you can just copy vt220.el
+to console.el and that's it.  For all the function keys and some others see
+the sample default.el included with this file.
+
+* What packages are particularly useful under Linux?
+
+Because info format is the documentation standard of the GNU project
+and just about everything except the kernel comes from FSF, you will
+find that Dave Gillespie's enhanced info package is very useful.  It
+allows multiple info directories, space bar paging, and supports
+compressed info files. Please learn to use info.  Imagine Unix life
+without man.
+
+Others that I highly recommend are Sebastian Kremer's enhanced
+dired directory editor, Dave Gillespie's calc calculator, Masanobu
+UMEDA's gnus for usenet news, and Kyle Jone's vm for mail.
+
+All can be found in the OSU Emacs archive, ftp.cis.ohio-state.edu,
+/pub/gnu/emacs/elisp-archive.  See the real FAQ for more details.
+
+* Does Linux Emacs support the X Window System?
+
+Yes.  However, there are two binaries.  One without X support (about
+485k) and one with X support (about 515k).
+
+* Do I need both Emacs if I don't always use X?
+
+No.  The X11 version works equally well inside or outside of X.  If
+you get the message "Check your DISPLAY variable" it means that you
+have defined DISPLAY in your ~/.profile (or whatever).  You can fix
+this by starting Emacs with 'emacs -nw' or by removing the DISPLAY
+variable from your ~/.profile and putting it in you ~/.xinitrc.
+
+* Why doesn't Emacs use the settings in my .Xdefaults/.Xresources file?
+
+You are probably using the word "emacs" and your X version of emacs
+is called x11emacs.  Either use the word "Emacs" in your resource
+file or rename x11emacs to emacs.  See above question on why this
+is reasonable.
+
+* I read about some menu that is supposed to pop up when I press some
+  mouse button.  Does this work with Linux Emacs?
+
+Yes.  This requires XMenu support to be compiled in.  Former
+versions did not support it because it did not work correctly.
+
+* Sometimes Emacs crashes with a SIGALRM message.  What's wrong?
+
+You need to upgrade to a newer version of bash.  Some older versions
+of bash were compiled with buggy libraries that caused bash to
+send a SIGALRM to its parent in some circumstances.  Recent versions
+do not exhibit this problem.
+
+* Why does Emacs always put me in the root directory?
+
+You have an old version of Emacs compiled before GCC 2.11c and you are
+using the Linux extended filesystem.  Get the new version.
+
+* Why doesn't Control-Z doesn't work right with Emacs?
+* Why doesn't job control work in shell mode?
+
+You have a really old version of Linux Emacs.  Get the new one.
+

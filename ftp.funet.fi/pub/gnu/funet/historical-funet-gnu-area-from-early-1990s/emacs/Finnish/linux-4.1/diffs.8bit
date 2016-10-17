@@ -1,0 +1,188 @@
+*** indent.c.orig	Tue May 19 12:46:05 1992
+--- indent.c	Tue May 19 14:31:22 1992
+***************
+*** 78,84 ****
+    register int tab_seen;
+    register int post_tab;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+  
+    if (point == last_known_column_point
+        && MODIFF == last_known_column_modified)
+--- 78,85 ----
+    register int tab_seen;
+    register int post_tab;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                   + (EQ (current_buffer->ctl_arrow, Qt));
+  
+    if (point == last_known_column_point
+        && MODIFF == last_known_column_modified)
+***************
+*** 133,139 ****
+  	  tab_seen = 1;
+  	}
+        else
+! 	col += (ctl_arrow && c < 0200) ? 2 : 4;
+      }
+  
+    if (tab_seen)
+--- 134,141 ----
+  	  tab_seen = 1;
+  	}
+        else
+!       col += (ctl_arrow == 1 && c >= 0177) ? 1 :
+!                (ctl_arrow && c < 0200) ? 2 : 4;
+      }
+  
+    if (tab_seen)
+***************
+*** 297,303 ****
+    register int goal;
+    register int end = ZV;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   register int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+  
+    Lisp_Object val;
+  
+--- 299,306 ----
+    register int goal;
+    register int end = ZV;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   register int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                          + (EQ (current_buffer->ctl_arrow, Qt));
+  
+    Lisp_Object val;
+  
+***************
+*** 324,329 ****
+--- 327,334 ----
+  	  col += tab_width - 1;
+  	  col = col / tab_width * tab_width;
+  	}
++       else if (ctl_arrow == 1 && c >= 040)
++       continue;
+        else if (ctl_arrow && (c < 040 || c == 0177))
+          col++;
+        else if (c < 040 || c >= 0177)
+***************
+*** 354,360 ****
+    register int pos;
+    register int c;
+    register int tab_width = XFASTINT (current_buffer->tab_width);
+!   register int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+    int selective
+      = XTYPE (current_buffer->selective_display) == Lisp_Int
+        ? XINT (current_buffer->selective_display)
+--- 359,366 ----
+    register int pos;
+    register int c;
+    register int tab_width = XFASTINT (current_buffer->tab_width);
+!   register int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                          + (EQ (current_buffer->ctl_arrow, Qt));
+    int selective
+      = XTYPE (current_buffer->selective_display) == Lisp_Int
+        ? XINT (current_buffer->selective_display)
+***************
+*** 429,435 ****
+  	    }
+  	}
+        else
+! 	hpos += (ctl_arrow && c < 0200) ? 2 : 4;
+  
+        /* Handle right margin.  */
+        if (hpos >= width
+--- 435,443 ----
+  	    }
+  	}
+        else
+!         hpos += (ctl_arrow == 1 && c >= 040 ) ? 1 : 
+!               (ctl_arrow && c < 0200) ? 2: 4;
+! 
+  
+        /* Handle right margin.  */
+        if (hpos >= width
+*** buffer.c.orig	Tue May 19 12:44:21 1992
+--- buffer.c	Tue May 19 12:45:52 1992
+***************
+*** 1266,1274 ****
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("ctl-arrow", &current_buffer->ctl_arrow,
+!     "*Non-nil means display control chars with uparrow.\n\
+  Nil means use backslash and octal digits.\n\
+! Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("truncate-lines", &current_buffer->truncate_lines,
+      "*Non-nil means do not display continuation lines;\n\
+--- 1266,1277 ----
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("ctl-arrow", &current_buffer->ctl_arrow,
+!      "*t means display control chars with uparrow.\n\
+  Nil means use backslash and octal digits.\n\
+! Otherwise assume that control and meta chars are printable.\n\
+! Automatically becomes local when set in any fashion.\n\
+! \n\
+! This is an Ergo local feature.");
+  
+    DEFVAR_PER_BUFFER ("truncate-lines", &current_buffer->truncate_lines,
+      "*Non-nil means do not display continuation lines;\n\
+*** xdisp.c.orig	Tue May 19 12:51:47 1992
+--- xdisp.c	Tue May 19 12:53:57 1992
+***************
+*** 1264,1270 ****
+    register unsigned char *startp;
+    register unsigned char *p1prev;
+    int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+    int width = XFASTINT (w->width) - 1
+      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+    struct position val;
+--- 1264,1271 ----
+    register unsigned char *startp;
+    register unsigned char *p1prev;
+    int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                   + (EQ (current_buffer->ctl_arrow, Qt));
+    int width = XFASTINT (w->width) - 1
+      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+    struct position val;
+***************
+*** 1382,1387 ****
+--- 1383,1394 ----
+  	    }
+  	  break;
+  	}
++       else if (ctl_arrow == 1 && c >= 040)
++        {
++           if (p1 >= startp)
++             *p1 = c;
++           p1++;
++         }
+        else if (c < 0200 && ctl_arrow)
+  	{
+  	  if (p1 >= startp)
+***************
+*** 1975,1981 ****
+  	      p1++;
+  	    }
+  	  while ((p1 - start + hscroll - (hscroll > 0)) % tab_width);
+! 	}
+        else if (c < 0200 && buffer_defaults.ctl_arrow)
+  	{
+  	  if (p1 >= start)
+--- 1982,1994 ----
+  	      p1++;
+  	    }
+  	  while ((p1 - start + hscroll - (hscroll > 0)) % tab_width);
+!       }
+!       else if (buffer_defaults.ctl_arrow == 1 && c >= 040)
+!         {
+!           if (p1 >= start)
+!             *p1 = c;
+!           p1++;
+!       }
+        else if (c < 0200 && buffer_defaults.ctl_arrow)
+  	{
+  	  if (p1 >= start)

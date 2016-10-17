@@ -1,0 +1,34 @@
+v2.02.2 - v2.02.3
+Sat Jan  4 17:48:12 1992  Bob Weiner  (rsw at slate)
+
+* hbut.el - ebut:create - Removed 'save-excursion' call which conflicted with
+    function doc.
+  hui.el - hui:ebut-create
+	   hui:ebut-modify
+	   hui:ebut-rename - Added 'save-excursion' so buttons are always
+    created in the proper buffer.
+  hargs.el - hargs:read
+	     hargs:read-match - Added 'save-excursion' so user buffer or window
+    switching during arg reading does not change current buffer.
+
+* hbut.el - hbut:fill-prefix-remove
+	    hbut:fill-prefix-regexps - Added.
+	    hbut:label-to-key - Added removal of fill prefixes within
+    button labels.
+
+
+* hargs.el - hargs:at-p - Started fixing completion handling so does not
+    eliminate prefix portion already in minibuffer when selecting a
+    completion entry but haven't figured out whole solution, e.g.
+    "~/h/ha" in minibuffer and "hact.el" is chosen.  How do we compute
+    result.
+	     hargs:read-match - Made always ignore case in matches.
+
+---------------------------------------------------------------------------
+
+v2.02.1 - v2.02.2
+Fri Jan  3 17:51:42 1992  Bob Weiner  (rsw at slate)
+
+* hui-menus.el - hui:menu-select - Fixed bug in menus where if hit invalid
+    key, could not enter a valid one any more.
+

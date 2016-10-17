@@ -1,0 +1,764 @@
+The sharfile contains a recent version of ange-ftp.el (version 3.63)
+and another lisp file which is loaded if you are running my new dired.
+This ange-ftp.el will still work with the old dired, but works much
+better with the new dired.  However, I don't claim that everything
+works remote that worked local.
+
+Things that surely don't work:
+
+    Wildcards in filenames bomb because the ftp ls command always globs
+    its arguments, no matter how you quote them.
+
+    Renaming of remote files - ange-ftp does not redefine rename-file.
+
+Supposed to work are:
+
+    Display and redisplay of files, especially the `i', `l' and `g'
+    commands.
+
+    File copy with every mixture of local and remote files.
+
+    Shell commands (`!') - this depends on remote shell (lisp
+    variable: ange-ftp-remote-shell-file-name) to work properly.
+    Common problems with remote shell include shell startup files that
+    produce output.
+Thanks for your extensive comments.  I'm cc-ing this to the list as
+some points may be of general interest.
+
+Michael> The subdirectory listing of bib is way down at the bottom of
+Michael> the window, far away from where bib is listed under my
+Michael> top-level directory.  I would much rather have the directory
+Michael> inserted directly beneath the bib line of /u/mernst, perhaps
+Michael> indented for emphasis, like this:
+
+Michael>   /u/mernst:
+Michael> ...
+Michael>   -rw-------  1 mernst     246813 Dec  2 12:36 RMAIL
+Michael>   drwxr-xr-x  2 mernst        512 Dec  2 13:22 bib
+Michael>     drwxr-xr-x  2 mernst        512 Dec  2 13:22 .
+Michael>     drwxr-xr-x 17 mernst       1536 Dec  2 12:44 ..
+Michael>     -rw-r--r--  1 mernst       8389 Feb  3  1988 apiary.bib
+Michael> ...
+Michael>     -rw-r--r--  1 mernst       5621 Feb 15  1989 sideeff.bib
+Michael>   drwxr-xr-x  9 mernst       1024 Nov 29 23:22 bin
+
+Michael> This places the subdirectory information closer to the
+Michael> location of the subdirectory itself, making the directory
+Michael> structure clearer than a linear arrangement can.  If you
+Michael> could make style of display an option, that would be great.
+
+That would be difficult to implement and violate the principle of
+conforming to ls -lR output.  The `i' command takes some pains to
+produce exactly the same output as ls -lR would.
+
+Michael> While the "Pending ...?" message is nice, it would be better
+Michael> for marks to be maintained (and in situ subdirectories
+Michael> retained) when toggling name vs.  date sorting and when
+Michael> reverting the buffer.  For instance, I may make some marks,
+Michael> then modify the directory (via emacs or otherwise) and wish
+Michael> to get the new files in the listing (or remove from the
+Michael> listing those that no longer exist) without losing the marks
+Michael> I just made.  (The l (relist) command wipes out marks, too,
+Michael> and without even giving the "Pending ...?"  message.)
+
+That would be nice but hard to implement.  Think about files with the
+same name in different depths of the tree.  Perhaps I try it if enough
+people want it.  `l' displays just the marked files and puts the mark
+right back after redisplay, so nothing should be wiped out.  (C-u l
+_does_ wipe out the mark, but only for the current file.  This might
+be considered a bug.)
+
+Michael> The hiding operations on "this" subdirectory were somewhat
+Michael> counter-intuitive at first: I would position the cursor on a
+Michael> subdirectory's line in my top-level directory, and the
+Michael> operation would affect the top-level directory.  In Zmacs, to
+Michael> choose the top-level directory, the operation must be applied
+Michael> to the top line (like "/u/mernst:") or to any of its contents
+Michael> which were not themselves directories.  This may just be my
+Michael> learning curve, though.
+
+All files, even directories, are considered part of its parent
+directory (the header line of which appears at the beginning of its
+listing, with a trailing colon).  The dired buffer is glued together
+of regions of text, each representing exactly one subdirectory
+listing, because this is how ls -lR represents a directory tree.
+
+Michael> While most commands operate on the marked files or use the
+Michael> current file, i doesn't work this way.  I suspect you have a
+Michael> reason for this: you expect people to mostly mark files and
+Michael> to want to easily open subdirectories in order to get at more
+Michael> files when they're on a marking spree.
+
+Yes.  But there is `I' to insert marked subdirectories, though I'm
+inclined to silently drop this command as it is hardly ever used.  I'm
+also inclined to drop the use of C-u i and C-u C-x d for the same
+reason.  One of the reasons for beta testing is to trim the fat off.
+
+Michael> I parsed the last three words of this line as a verb: Type D
+Michael> to Diff a file, M-~ to diff with backup.  Something like
+Michael> "diff with its backup." might be clearer.  Or other people
+Michael> might be smarter than I am.
+
+I adopted your wording.  Thanks.
+
+Michael> ;  See dired-extra.el for an example on how to use it for sorting on
+Michael> ;  file size. 
+Michael> I don't find dired-extra.el, so I assume it's some file of yours.
+
+Yes, with some extra features for 'experts'.  It also supports use of
+several different markers (other than `D' and `*') in parallel and a
+minibuffer history for shell commands.  Email if you want to try it.
+It is about 20K.
+
+Michael> In dired.README you suggest that we use 
+Michael> (load (expand-file-name "~/emacs/emacs-19"))
+Michael> (load (expand-file-name "~/emacs/dired"))
+Michael> in our .emacs.  Instead I make sure ~/emacs is in my emacs path and use
+Michael> (autoload 'dired "dired"
+Michael> "SK's dired package -- beta" t)
+Michael> which lets emacs start up faster; dired is never loaded if I don't need it.
+
+I recommend to autoload it, too - the two lines are for the case where
+you cannot install your own lisp directory for one reason or the
+other.  Because of the interacation of $EMACSLOADPATH, setting of
+load-path in default.el or in paths.h, a general recipe for
+autoloading the new dired is difficult to give.  Some sites have dired
+dumped in the Emacs binary, so autoloading does not work at all.
+Thanks to Carl Edman for pointing out that in this case you have to do
+
+    (setq dired-mode-map nil)
+
+before the load statements, or the preloaded key bindings will not
+be overwritten.
+As always, I'm cc-ing discussions of general interest to the list.
+
+>>> On Mon, 3 Dec 90 18:22:00 PST, stef@Eng.Sun.COM (Stephane Payrard) said:
+
+stef> 2/ a suggestion: 
+
+stef> The strategy I am tempted to use with your version of dired is to have
+stef> only one dired-buffer. The drawback is that it makes difficult to find
+stef> the listing of a specific directory.
+
+stef> Suppose you maintain a buffer  which lists the directory listed in a unique
+stef> dired-buffer. You would  have a generic binding (say C-c d) which will pop
+stef> up this buffer and tou will choose a directory from that buffer.
+stef> It would allow to go very fast to the right directory.
+stef> This buffer would allow me to do some house-keeping of the
+stef> dired-buffer as well (example: D will remove of the dired-buffer
+stef> the directory)
+
+I use the following extension of buffer-menu for this purpose:
+
+(define-key ctl-x-map "\C-b" 'buffer-menu-dired-extended)
+
+(defun buffer-menu-dired-extended (arg)
+  "Make a menu of buffers so you can save, delete or select them.
+With one \\[universal-argument], show only buffers that are visiting files.
+With two \\[universal-argument], show only dired buffers.
+Type ? after invocation to get help on commands available.
+Type q immediately to make the buffer menu go away."
+  (interactive "P")
+  (if (not (equal arg '(16)))		; unless two ^U's
+      (buffer-menu arg)			; call standard version
+    ;; else hack up buffer to leave only dired buffers
+    (buffer-menu nil)
+    (let ((buffer-read-only nil) buf dir)
+      (keep-lines "Dired[ \t]*$")
+      (goto-char 1)
+      (forward-line 2)
+      (delete-region 1 (point))
+      (insert "\
+ MR Buffer         Size  Mode           Directory\n\
+ -- ------         ----  ----           ---------\n")
+      (save-excursion
+	(while (not (eobp))
+	  (if (setq buf (Buffer-menu-buffer nil))
+	      (progn
+		(save-excursion
+		  (set-buffer buf)
+		  (setq dir default-directory))
+		(end-of-line)
+		(insert dir)))
+	  (forward-line))))))
+
+
+stef> 3/ a sun-automounter bug work around:
+stef> I would like to have a way of saying, suppress "/auto" if in the
+stef> beginning of the path to obviate this false path returned by pwd when
+stef> using the automounter This is clearly to work arounf a bug of the
+stef> Sun-automounter and a work-around will be better if it will work
+stef> everywhere in emacs.  But it is good to have it here or to have a
+stef> hook to do a similar treatment.
+stef> Without that work, a file system unmounted under you  will make the
+stef> file inaccessible using dired.
+
+This is a general automounter problem.  But there is an easy solution
+that works in most cases.
+
+The only way the "wrong" names can appear in Emacs is when they are
+present when starting Emacs or when you enter them explicitly.
+
+So, when starting up Emacs, you are probably in your home directory,
+say /home/sk.  For me, this is a link to /files/home/users/sk or
+/amnt/sun4/export/home/users/sk (depending on which host I am), for
+you a link to /auto/... something.  If you you do M-x cd "~/", only
+the form "~/" or "/home/sk" should ever occur in all filenames of your
+Emacs session (unless you somehow force symbolic links to be expanded,
+be it within Emacs or for called subprocesses).  (You can even put
+this into your .emacs, perhaps generalized to strip off the leading
+"/auto" to catch the case where you start Emacs not in your home
+directory.)
+
+At least, this solves the problem for me.
+>>> On Tue, 4 Dec 90 20:44:28 EST, mernst@theory.lcs.mit.edu (Michael Ernst) said:
+
+Michael> I have a single dired buffer which contains, in addition to its "original"
+Michael> directory listing, 89 in situ directories.  How can I get a listing of the
+Michael> 90 directories dired'ed in this buffer, and how can I quickly get to the
+Michael> one I'm interested in?
+
+Type `=' to get a summary of header lines only.  Move the cursor
+(using C-n, C-v or C-s commands) to the line of the directory you are
+interested in.  Type `$' to expose just this directory, or `=' to
+expose all directories again.
+
+Also note the M-n, M-p, M-u, M-d commands for tree traversal.
+>>> On Wed, 05 Dec 90 15:46:51 PST, Stephane Payrard <stef@Eng.Sun.COM> said:
+
+stef> I would like the `!' and `&' commands to
+stef> initialize the minibuffer to the selected (files)
+stef> and position the point at the beginning of the minibuffer.
+
+The prompt + command tends to be rather long anyway and `*' can expand
+to a lot of files.  Also note that you can use `*' twice or more in a
+commandline.  But the main reason is that when `*' is expanded, the
+command cannot be reused easily.  dired-extra.el provides a history of
+shell commands so that M-p gives you the previous command, with
+unexpanded `*'.
+
+stef> it changes nothing to the current usage of the command
+stef> but it allows new usages:
+stef> 1/ if you do ^E, to use the selected file as a command
+stef> 2/ if you do ^K, to execute any command
+
+Use M-! (shell-command) to execute general shell commands and ! to
+execute dired related shell commands on the marked files.  If for some
+reason you have to reuse the list of marked files, run ! with `echo'
+as command and use the contents of the *Shell Command Output* buffer.
+
+stef> Note that loading background.el smash a previous definition of
+stef> background by epoch.
+
+I know this, but cannot do much about it.  The Epoch background
+function is just a wrapper around epoch::background (defined in
+epoch.el) and could easily be renamed to, say, x-set-background.
+It only gave me problems when I tried to autoload background from
+background.el under Epoch.
+>>> On Fri, 7 Dec 90 13:23:20 EST, mernst@theory.lcs.mit.edu (Michael
+>>> Ernst) said: 
+
+Michael> When a file is byte-compiled, the line containing the
+Michael> corresponding .elc file is not updated as it should be.
+Michael> Likewise, if the .elc file didn't exist before, it should be
+Michael> inserted into the listing at the appropriate place.
+
+Fixed in 4.15.
+
+Michael> When a file is renamed, the cursor ends up in the first
+Michael> column instead of at the beginning of the filename; this
+Michael> makes it hard to tell on what line the cursor is situated.
+
+Fixed in 4.15.
+
+Michael> There is a bug in file renaming.  To reproduce the bug:
+Michael> create foo.a, foo.b, bar.a, bar.b.  Make sure none of them
+Michael> have buffers.  Dired the directory containing them.  Use r to
+Michael> rename bar.a to foo.a.  (Confirm with "yes".)  This works and
+Michael> shows up in the dired listing.  Use r to rename bar.b to
+Michael> foo.b.  (Confirm with "yes".)  This works, but the dired
+Michael> listing remains unchanged.
+
+Fixed in 4.15.  That was what I called the "overwriting copy" bug.  I
+thought I could get away with it --- I did not want to check every
+cp/mv whether it would overwrite a file.  Your example convinced me
+that I can't.
+
+Michael> Speaking of which: a way to prefix-rename would be a
+Michael> much-appreciated feature.  R would change the prefix of the
+Michael> marked files; C-u R would change the prefix of the files with
+Michael> the current prefix.  If no marks were set, I could put the
+Michael> cursor on paper.tex, press R, respond with "new-paper", and
+Michael> paper.tex would be renamed to new-paper.tex, paper.log to
+Michael> new-paper.log, paper.dvi to new-paper.dvi, etc.  (I don't
+Michael> know of a way to make the shell conveniently do this, so I
+Michael> typically do this via emacs.)
+
+How about "renaming by regexp", with usage of \&, \1 etc. permitted?
+One could first mark by regexp, perhaps unmark some of the files, and
+then rename by regexp.
+
+Michael> I'd also like a better way to edit a file's mode; the numbers
+Michael> are terribly nonintuitive to me.  For instance, the "Change
+Michael> <filename> to mode:" message could prompt with the current
+Michael> value.  Better, it could prompt with the current "rw-r-xr--"
+Michael> value and let the user edit that (perhaps a keystroke would
+Michael> toggle the value, a space leave it unaffected, as each moved
+Michael> to the next character; or (more difficult for implementer and
+Michael> user) the user could be given free rein to edit the string,
+Michael> which would be parsed and then installed as the file's
+Michael> extension.  Best of all, keystrokes in the leftmost columns
+Michael> of the dired buffer could have the effect of changing the
+Michael> mode bit on which the cursor stood.
+
+I'm dreaming of this, too, but won't attempt to implement it at the
+moment.
+
+Michael> Or let the user enter command-line style directives like ug+x
+Michael> and o-r.
+
+This works already.  Note that `M' just calls chmod, not the builtin
+set-file-modes function.
+
+Michael> Whenever diff'ed files are different, the message "diff
+Michael> exited abnormally" is given even though diff had no problems;
+Michael> it was just setting its exit value non-0.  This is a problem
+Michael> with the compile buffer, but it would be nice to fix it in
+Michael> dired anyway.
+
+The function `diff' was just a quick method to emulate the Emacs 19
+builtin function.  I can live with it.  However, feel free to write
+your own.
+
+Michael> I am used to using M-f (forward-word) to move around in
+Michael> buffers, even dired buffers when I want to get at the date or
+Michael> permission bits.  I run into dired-flag-extension, however.
+Michael> I can easily rebind this for myself, but I wonder if others
+Michael> have the same habits.
+
+Well, come to think of it, I neither like the binding nor the function
+too much myself, because it really is still another interface to
+flagging/marking by regexp.  It's bad enough that `F' and `M-m' do
+nearly the same thing.  I'll drop the M-f binding if nobody objects.
+
+Thanks for your comments.
+--
+Sebastian Kremer <sk@thp.Uni-Koeln.DE>
+Institute of Theoretical Physics, University of Cologne, F. R. of Germany
+>>> On Sat, 8 Dec 90 15:52:57 EST, mernst@theory.lcs.mit.edu (Michael Ernst) said:
+
+Michael> There's a bug in handling of the (assumed) parent directory.
+Michael> I dired'ed my directory ~/foo, then i'ed ..  (its parent,
+Michael> which is my home directory), then ~/bar (from ~/).  Then I
+Michael> tried to operate on file bar/baz, but I got the error
+Michael> "Couldn't strip pwd /u/mernst/foo from current dired
+Michael> directory /u/mernst/bar".
+
+The assumption is that the dired buffers contains (part of) the tree
+starting at default-directory.  Perhaps I should check if there is a
+directory to be inserted that doesn't belong in this buffer.
+
+Michael> When I renamed a file from ~/bar/baz to ~/foo/baz (both bar/
+Michael> and foo/ visible in situ), it was inserted in foo at the
+Michael> beginning of the listing (before .  and ..) instead of in
+Michael> alphabetical order.
+
+dired-add-entry does not attempt to do this, see comment in the code: 
+
+  ;; Note that this adds the entry `out of order' if files sorted by
+  ;; time, etc.
+  ;; At least this version tries to insert in the right subdirectory.
+  ;; It does not try to skip "." or ".." (which would be nonsense with
+  ;; sort on time anyway).
+
+Michael> I create a dired of /u/mernst, then insert in situ its
+Michael> subdirectories foo and bar.  I K(ill) the original
+Michael> (top-level, parent) directory /u/mernst.  This is fine;
+Michael> everything seems to work.  Now I press g, and /u/mernst is
+Michael> reinstated, replacing the directory that used to be at the
+Michael> top of the buffer (in this example, foo; if I reinsert foo --
+Michael> this time foo appears at the bottom of the buffer -- and K
+Michael> /u/mernst, then g again, bar gets the axe).
+
+I could fix this in dired-revert, but other parts of the code make
+the assumption that the last element of dired-subdir-alist refers to
+default-directory.
+
+It is probably a bad idea to remove the top-level directory and K
+(when called interactively) should perhaps check for it.  Or do you
+see the need to be able to remove the top-level directory?  I think
+when you want to do this, you either should use a different dired
+buffer or hide the top-level directory (if it is just the screen space
+it takes up what is annoying you).
+
+When thinking about this, I just discovered a bug: hidden directories
+are not updated properly (e.g., by copy/rename commands).  Sigh.  I'll
+try to fix it.
+
+Michael> X doesn't act quite as advertised: if there are files marked
+Michael> with D, it only deletes those.  If there are none, then it
+Michael> deletes files marked with *.  (This should probably be
+Michael> redocumented instead of reimplemented.)
+
+I cannot reproduce this.  And I don't think X should also delete the D
+files.
+
+Michael> Once upon a time, revert-buffer caused the sorting of files
+Michael> to change from date to alpha (or vice-versa, I don't
+Michael> remember).  I can't reproduce this yet.  Then again, it took
+Michael> me a while to figure out how to reproduce the overwriting
+Michael> copy bug.  Maybe you can tell what's wrong with it better
+Michael> than I; in the meanwhile I'll try to make this happen again.
+
+I don't have an idea why this should happen.  It never happened to me.
+
+Michael> If I have a bunch of marks in a dired buffer, then I revert
+Michael> it using C-x d <directory-name> (instead of using g or
+Michael> revert-buffer as I ought to), the marks all go away.  It
+Michael> would still be nice if dired checked whether there was
+Michael> already a buffer extant and updated it instead of wiping it
+Michael> out.
+
+On the contrary, I always like it if there is a way to beat too damned
+clever programs... ;-)
+
+dired-revert tries to protect against all possible damage done to the
+buffer (such as using dired-undo without updating the subdir-alist or
+typing C-x C-q and mucking with the buffer contents...) but there
+should be a failsafe way to get virgin dired buffer.
+
+Michael> When I follow a .. link (or do ^), it would be convenient in
+Michael> some cases to have the cursor appear on the line containing
+Michael> the subdirectory.  For one thing, this would make it a single
+Michael> keystroke to get back where I came from.
+
+`^' does go to the file line of the parent directory (if there is one)
+since v 4.3.  So you can type `i' and then `^' to get back.
+
+Michael> In fact, the behavior when following a .. link via f (which
+Michael> puts me at the first file in the directory) is different from
+Michael> that obtained when following a . link (which puts me at the
+Michael> line with the directory name followed by a colon) and even
+Michael> from that obtained when following a .. link via i (which is
+Michael> the same).  These should act uniformly.
+
+Fixed.
+
+Michael> When I've hidden all directories and press K on one of them,
+Michael> it gets removed from the dired buffer, but this isn't
+Michael> reflected on the screen (unless I do = = to unhide and hide
+Michael> again).  However, even though the hidden display reflects the
+Michael> absense of that directory, the directory listing itself is
+Michael> not removed from the buffer.  If I do = again to unhide
+Michael> everything, the killed directory is still there.  (But
+Michael> operations don't work on the files of that directory; it's
+Michael> not really there, it just hasn't been removed from the
+Michael> buffer.)  When this was the first buffer, subsequent ='s
+Michael> don't hide it at all: it stays there in full glory, while the
+Michael> directories that are still supposed to be associated with
+Michael> this buffer get hidden and unhidden.  Sometimes these
+Michael> undeleted deleted directories will move to the end of the
+Michael> buffer.
+
+I cannot reproduce this when killing proper subdirectories, but
+killing the hidden top level dir is really strange.  I'll look into
+dired-kill-subdir in the case of a hidden subdir.
+
+Michael> It would be nice to have a hiding operation on certain files
+Michael> specified by a regexp; for instance, I'd like to look at all
+Michael> of the files in my directory which don't have suffix .dvi or
+Michael> .log; or I want to look at all of the files which do have
+Michael> suffix .tex.  (I realize I can do the latter with dired
+Michael> *.tex, but that isn't very flexible.)
+
+I don't think hiding certain files feasible, but you could
+automatically remove them from the listing (using dired-readin-hook).
+dired-extra.el has some code for this.
+
+Michael> /u/mernst/emacs contains a link (named lisp) to
+Michael> /usr/local/emacs/lisp.  I follow the link without problem,
+Michael> though the resulting directory is called
+Michael> /u/mernst/emacs/lisp.  Then I try to follow the .. pointer of
+Michael> this directory, but instead of getting /usr/local/emacs,
+Michael> which is where it points, I get /u/mernst/emacs.  The same
+Michael> thing happens when I do ^, obviously.  The behavior of at
+Michael> least one of these, preferrably both, ought to be changed.
+Michael> (The old dired had this unfortunate behavior, too.)
+
+As was mentioned in the discussion about automounted home directories,
+expand-file-name does not grok symbolic links.  I dimly remember Joe
+Wells posting something to remedy this...
+
+But even if this would work, your symbolic link took you out of the
+directory tree.  Dired assumes to be dealing with (part of) a tree
+starting at default-directory.  In my opinion, one should use
+different dired buffers for different trees instead of trying to
+extend dired in that direction.  Comments anyone?
+
+Michael> If the *Dired error output* buffer gets cleared (so it
+Michael> contains no useful information), it would be nice if it were
+Michael> deleted, too.  When I see it I always look at it to see what
+Michael> it has to say, and it is always empty.
+
+OK, fixed.  My reasoning was that killed buffer's memory is not totally
+reclaimed in Emacs 18.xx, so I'd rather reuse the same buffer.
+
+Michael> In buffer listings for dired buffers, the whole pathname
+Michael> should be given in the "File" column, as is the case for
+Michael> regular files.  (This is actually a list-buffers issue, not a
+Michael> dired issue.)
+
+Yes, it should.  But note that my enhanced version which I included in
+one of my messages does this (when called with two C-u's to display
+only dired buffers.)
+
+ca> Invoke dired, S to include R flag, S to remove R flag now the
+ca> directory listing contains sub directories. I do not know if this
+ca> is a bug or not. May be it is so intended.
+
+Yes, because now you have the freedom to kill some subdir and keep
+only those remaining across refreshs.
+
+ca> But, when I type g afterwards, sub directories are still there. I
+ca> think this is a bug.
+
+I don't consider it a bug.
+
+Dired has no way to know that you once had ls -lR output.  `g' is
+supposed to redisplay the currently displayed subdirs, and this it
+does.  Use C-x d to get a fresh listing that does not try to remember
+marks or displayed subdirs.
+
+
+>>> On Tue, 11 Dec 90 10:33:27 +1300, Mike Williams
+>>> <Mike.Williams@comp.vuw.ac.nz> said: 
+
+Mike> I agree completely concerning \\[dired-find-file] (`f' & `e') ...
+Mike> modifying dired-noselect in this way would be overkill.  However,
+Mike> \\[dired-view-file] (`v') uses find-file only in the sense that it is
+Mike> (probably) used by view-file (also more-file, etc.).  The existing
+Mike> version of dired-view-file (shown below) calls dired explicitly if the
+Mike> file is a directory, and so might as well make use of an existing
+Mike> subdirectory expansion.  This still leaves the user in control of how
+Mike> their dired buffers are arranged, as there *won't be* an existing
+Mike> subdirectory expansion unless they've already expanded it (with `i').
+
+You are absolutely right.  I was confused yesterday and didn't
+remember that view-file is special-casing directories anyway.
+
+Also, your suggestion would introduce functionality that was not
+available before: you could go *up* with `^', but not go *down*
+(unless by redisplaying anew with `i').  Mnemonic: `^' points up and
+`v' points down.  And `v' with this semantics on directories is still
+some kind of `viewing'.  Another mnemonic: `<' and `>' are rotated
+versions of `^' and `v' and move to existing dirlines horizontally
+instead of up and down.
+
+And you can still force a separate buffer by typing `f' or `o' instead
+of `v'.  How about `v' displaying a message if the subdir is not
+expanded, leaving the choice of typing either `i' or `f'/`o'
+afterwards?  This seems to be The Right Thing.  And it is in analogy
+to `^', which does not give you a new dired buffer without a chance to
+abort.  The strategy is to try existing in situ subdirs first, but
+make corresponding dired buffers only a keystroke away.
+
+>>> On Wed, 12 Dec 90 13:46:40 +1300, Mike Williams
+>>> <Mike.Williams@comp.vuw.ac.nz> said: 
+
+Mike> In fact, I would argue that there could be a user variable that
+Mike> controls whether \\[dired-up-directory] and \\[dired-view-file] should
+Mike> ask the user what to do, create a new buffer, or automatically expand the
+Mike> subdirectory/parent in-situ. 
+
+There is no need for a variable, as it is is easy enough to expand or
+dired - just one key stroke.  I don't want to introduce new variables
+unless it is absolutely necessary, as this enlarges the amount of work
+a user of dired has to learn before knowing everything about dired.
+There is enough to learn as it is now.
+
+I'd rather find out what features I can drop...perhaps everyone sends
+me a hitlist of the most and least useful commands?  You probably
+have to look at the bindings list in the mode doc to find out what
+commands you are not using at all.
+
+Mike> The main reason I suggest this is because I like to cram a lot of
+Mike> functionality onto a few keys (less to remember).  What do you think?
+
+Agreed, but I don't think this variable really saves much work.  And
+in this case it is not really a matter of general taste that the user
+could decide once and for all, but more of the special case at hand.
+
+I like general, flexible, powerful commands better than those that try
+to anticipate special cases.
+
+Mike> ;;=== dired-expand-directory ===
+
+Mike> (defvar dired-auto-expand-subdir t "*Controls what happens when
+Mike> \\[dired-up-directory] and \\[dired-view-file] attempt to move
+Mike> into a directory which has not been expanded in-situ.
+
+Mike> A value of t or 'expand means insert the directory expansion in
+Mike> this buffer.  A value of 'dired means create a new dired buffer
+Mike> for the directory.  A nil value means run dired, but allow the
+Mike> user a chance to abort.")
+
+You can of course still add your own extensions or redefinitions.  If
+you don't do this already, I suggest you use the dired-load-hook
+provided for just this purpose.  That way you won't have any problems
+applying the patches I send out.
+
+Thanks again for your always helpful comments.
+
+-Sebastian
+>>> On Thu, 13 Dec 90 22:43:55 -0600, kgallagh@digi.uucp (Kevin
+>>> Gallagher) said: 
+
+Michael> When a file is byte-compiled, the line containing the
+Michael> corresponding .elc file is not updated as it should be.
+Michael> Likewise, if the .elc file didn't exist before, it should be
+Michael> inserted into the listing at the appropriate place.
+SK> 
+SK> Fixed in 4.15.
+SK> 
+
+Kevin> Still a minor problem.  The .elc file is placed ABOVE the .el file.  A
+Kevin> subsequent g command restores the correct alphabetic order.
+
+This is "correct" order if you use "-al" as switches.  With "-alt"
+(which I use), the current behaviour is "correct".  Not that I
+intended it to be right only with my own favourite switches ;-) it
+just happened to come out that way.
+
+This is a general problem of the dired-add-entry function. It first
+tries to insert near point (if point is in the correct subdir).
+Failing this, it inserts at the top line of the appropriate subdir.  I
+don't think it worthwhile to make dired-add-entry as smart on sorting
+as ls is.  Inserting in name (or size) order might be just feasible,
+but inserting in date order (by parsing either the ls date format in
+the buffer or calling file-attributes) would be prohibitively slow.
+
+
+By the way, my last patch introduced a bug into 4.29 that would move
+point to the end of the first line in the buffer from where you
+invoked dired.  This is fixed in 4.33.
+>>> On Sun, 16 Dec 90 16:16:42 EST, mernst@theory.lcs.mit.edu (Michael
+>>> Ernst) said: 
+
+Michael> It would be nice if the default file for many commands
+Michael> (especially those that presently don't do anything with a
+Michael> default) was the one that the cursor is on; for instance, if
+Michael> I do C-u M-x rmail while the cursor's on a file, that should
+Michael> be the default mail file.  This suggestion goes somewhat
+Michael> beyond dired: it would require maintaining that value in a
+Michael> variable which is used as the third argument to
+Michael> read-file-name in rmail; other functions would have to be
+Michael> changed as well.  That variable should be set to nil whenever
+Michael> the dired buffer is exited; I don't know if there will be
+Michael> other, more difficult precautions that must be taken.
+
+It would really be a major effort to rewrite all packages for dired's
+sake.  However, there is something like the variable you mention: the
+kill ring.  The Dired `w' command is exactly for the purpose of
+pushing filenames around in Emacs.  It is not perfect yet (it only
+gets the basename), see comments in the code.  Last time I used it was
+yesterday when collecting filenames for a big tar file.  Also good to
+feed to commands in a shell buffer or to shell-command (M-!).  And so
+on.
+
+Michael> The shrink-to-fit deletions listing buffer is a nice feature,
+Michael> if there was only one window to begin with.  If there were
+Michael> more, then not only does Emacs possibly do more redrawing
+Michael> than it would have, had it simply used one of the existing
+Michael> ones, but the dance of windows as they are resized and
+Michael> redrawn is distracting.
+
+I'll write a separate dired-pop-up function which will be optimized,
+customizable and redefinable...good enough?  I could also use this to
+(optionally?) display the marked files before running a command on
+them.
+
+Michael> ... Speaking of killing, I would rather
+Michael> have it on c-k than on k, mostly bacause I find that easier
+Michael> to remember (because I use that in all my other buffers) but
+Michael> also because that's harder to press by accident.  A
+Michael> dired-yank would be nice for those of us who find we've
+Michael> accidentally killed one more line than we'd intended but
+Michael> don't want to start from scratch again rekilling
+Michael> uninteresting lines (which is easy to do now that g doesn't
+Michael> remove marks).
+
+I would not like it on C-k, because all my kill-commands are modified
+to copy-as-kill if the buffer is read-only.  This way I can easily cut
+and paste from dired/info/manpage/...-buffers words or sentences or
+s-exps.
+
+A dired-yank is not needed because dired-undo (C-_ or C-x u) undoes
+each kill.  (Earlier versions had a repeat factor on `k' and I believe
+then only the whole kill could be undone, not each line.  Now prefix
+on `k' means to keep the associated subdir line.)  This alleviates the
+problem of killing vital dired lines (such as subdir lines) by
+accident.  Paraphrasing Doug Gwyn about UNIX: I don't want to forbid
+stupid things, as this may also forbid clever things.
+
+Michael> Are you going to remove the version number from the mode line
+Michael> once beta testing of dired is done?  It's not the sort of
+Michael> thing most users care about, so it ends up being clutter
+Michael> rather than helpful.
+
+The " (beta)" will go of course :-) but personally I like to see at a
+glance what version I'm using.  It may also encourage use of RCS
+version numbers in GNU software (hint hint).  You can probably get
+away with setting dired-version to the empty string (the docstring
+still contains the full RCS id), although I don't recommend this
+because other dired enhancements may check dired-version.
+1.
+
+>>> On Mon, 17 Dec 90 14:04:34 -0600, kgallagh@digi.uucp (Kevin
+>>> Gallagher) said:
+
+Kevin> I am not sure if it was the upgrade to 4.29, or the upgrade to
+Kevin> 4.22, that changed the placement of the cursor upon first entry
+Kevin> into dired.  It used to be placed at the first file/directory
+Kevin> line (line 3) which usually is ".".  However, now it appears at
+Kevin> the end of the directory name (line1).  I prefer the old
+Kevin> behavior.
+
+There is now (since 4.45, not yet released) a variable for it to
+satisfy everyone:
+
+  dired-trivial-filenames's value is "^\\.\\.?$\\|^#"
+
+  Documentation:
+  *Regexp of files to skip when moving point to the first file of a
+  new directory listing.
+  Nil means move to the subdir line, t means move to first file.
+
+2.
+
+I have also fixed a bug of 4.33 that occurred when copying into a
+subdir or compressing the last file of a subdir: the new file was
+displayed in the wrong (namely, the following) subdir.
+
+Oh those "Now I'll make this code a bit cleaner" actions...sigh.
+
+3.
+
+The VMS support is as far as I am willing to push it, and that is not
+very far, I'm afraid.  I have access to a slowwww MicroVAX II running
+"VMS 5.0-2", and don't know much about VMS, so I've just layed the
+foundation for a VMS Dired.  Tree Dired works more or less (that is,
+displaying the directory tree and visiting and deleting files), but
+copy and rename has problems with redisplaying correctly.  Also, I get
+a "Renaming: undocumented error code", whatever that means.  I would
+be interested in a bug list, though I can't promise to fix any of
+them.  This is a job for a VMS expert who also is an Elisp programmer.
+Anybody volunteering or knowing someone who might?
+
+Along with the next release (probably at the end of this week) I will
+send the VMS users a dired-vms.el file.  These are the following four
+people:
+
+petechen@cs.rutgers.edu, kgallagh@digi.lonestar.org,
+jon@nucleus.mi.org, CARL@SCU.BITNET
+
+If anybody else is interested, email.

@@ -1,0 +1,905 @@
+;;; -*- outline -*-   Big Bad FTP List
+
+<(Return to Top Level)>				C-c C-s to show the full entry
+<(Cut Out All But Topic Headers)>		C-c C-h hide the subentries
+<(Frequent FTP Sites)>				C-h m for extensive help
+
+
+<(Click Here to Add a New Site to this List)>
+
+
+* 	Local Sites
+**** 	"/anonymous@ncube10.csee:"
+**** 	"/tb06@pl118g.cc.lehigh.edu:"
+**** 	"/tb06@pl118f.cc.lehigh.edu:"
+**** 	"/tb06@pl118e.cc.lehigh.edu:"
+**** 	"/tb06@pl118d.cc.lehigh.edu:"
+**** 	"/tb06@pl118c.cc.lehigh.edu:"
+**** 	"/tb06@pl118b.cc.lehigh.edu:"
+**** 	"/tbrannon@pmatlab5.csee:"
+**** 	"/anonymous@klotho.cs.caltech.edu:"
+**** 	"/brannon@jove.cs.caltech.edu:"
+
+
+<(Brand New HyperActive Site Listings)>
+
+
+<(Tom Czarnik's FTP List)> ;;; eventally perl this to HyperActive
+			   ;;; format so all the Hyperchondriacs can
+			   ;;; view it
+	
+
+*	Embedded Extensible Language
+**	Tcl/Tk
+***
+****	"/anonymous@allspice.berkeley.edu:"
+****	"/anonymous@ftp.uu.net:/languages"
+
+*	Programming Language/Oberon
+***	a technical document is available from:
+****	"/anonymous@princeton.edu:pub/oberon/oberon.tex"
+
+*	Sockets
+*** Tutorial
+"/anonymous@130.59.1.40:/docs/papers/BSD_IPC_Tutorial" ;; nic.switch.edu
+;; src.doc.ic.ac.uk
+*** 
+"/anonymous@146.169.2.1:/usenet/comp.archives/auto/comp.lang.ada 
+*** sockettool.tar.Z
+"/anonymous@140.221.10.1:/pub/pdetools" - 	
+
+
+* 	ls-LR Section
+** 
+	The purpose of this section is to allow you to view the archive files
+	for major internet ftp sites. Email me to add your favorites. 
+
+	ftp.win.tue.nl 		<(a 300k transfer)>
+	gatekeeper.dec.com: 	<(by name)>  <(by time)>  a 666k transfer 
+	ftp.uu.net:		<(master index)>  
+	"/anonymous@trantor.harris-atd.com:" <(Trantor Directory Index)>
+
+* 	Operating Systems
+** 	BSD386
+***	BSD for the 386
+**** 	"/anonymous@tesla.ee.cornell.edu:"
+
+*	Languages / Smalltalk FAQ
+**	<(Smalltalk FAQ)>
+
+* 	List of European Consulting Firms
+****	"/anonymous@ursa-major.spdcc.com:"
+
+* 	Computer Music
+**	MIT Csound
+***	Construct music for many many workstations, excellent package
+**** 	"/anonymous@ems.media.mit.edu:"
+
+*	
+	GNU Software / Free Software Foundation / Richard M. Stallman
+** 	<(List of GNU Software)>
+	<(Ordering GNU Software)>
+	<(What Hardware does GNU Software Run On?)>
+	<(How do I get support services for GNU Software?)>
+	<(Terms of Using GNU Software)>
+GNU Software Archive Sites
+  	Note: please try to use these sites first. They are mirrored daily
+	from prep.ai.mit.edu and tend to have less of a system load. Thanks.
+ 	"/anonymous@ftp.tue.win.nl:"	"/anonymous@ftp.tue.win.nl:pub/gnu"
+	"/anonymous@src.doc.ic.ac.uk:"	"/anonymous@src.doc.ic.ac.uk:pub/gnu"
+ 	"/anonymous@prep.ai.mit.edu:"	"/anonymous@prep.ai.mit.edu:pub/gnu"
+	"/anonymous@sh.cs.net:" "/anonymous@mcsun.eu.net:"
+GNU Prototyping Site
+	a good introduction to elisp is here as well as GNUmach and other stuff 	they are working on 
+	"/anonymous@alpha.gnu.ai.mit.edu:"
+Emacs Lisp Archive
+	<(Guidelines For Posting to the Archive)>
+	<(View Database of Emacs Lisp Source Code)>
+	"/anonymous@archive.cis.ohio-state.edu:pub/gnu/emacs/elisp-archive"
+	"/anonymous@tutserver.tut.ac.jp:"
+Ange-FTP - transparent FTP support for Emacs file routines
+	Mailing List Archive 	"/anonymous@ftp.reed.edu:"
+	Most Recent Version	"/anonymous@alpha.gnu.ai.mit.edu:"
+
+* 	Parallel Computing
+** 	PVM (Parallel Virtual Machine)
+*** 	PVM (parallel virtual machine) is a software package which allows
+the utilization for a heterogeneous network of computers 
+**** 	"/anonymous@cs.utk.edu:"
+
+* 	Parallel Computing
+** 	Ease
+*** 	Parallel language which allows context sharing
+**** 	"/anonymous@isatis.ensmp.fr:"
+ 
+* 	Parallel Computing
+** 	distr_os
+*** 	List of distributed systems and operating systems
+**** 	"/anonymous@titania.mathematik.uni-ulm.de:"
+
+* 	Computer Graphics/X Windows
+** 	SPHIGS
+***	Simple Hierarchical Interactive Graphics 
+**** 	"/anonymous@wilma.cs.brown.edu:"
+	"/anonymous@wuarchive.wustl.edu:"
+
+* 	Computer Graphics/X Windows
+** 	SRGP
+*** 	Simple Raster Graphics Package
+**** 	"/anonymous@wilma.cs.brown.edu:"
+	"/anonymous@wuarchive.wustl.edu:"
+
+
+* 	X Windows / comp.sources.x archive
+	<(View all files archived from comp.sources.x)>
+	"/anonymous@j.cc.purdue.edu:comp.sources.x"
+
+*	Framemaker Clip Art and Images
+****	"/anonymous@trantor.harris-atd.com:" <(Trantor Directory Index)>
+
+* 	C++ Class Libraries
+** 	NIHCL for g++
+*** 	140.174.1.1 is IP address
+**** 	"/anonymous@cygnus.com:"
+
+* 	Environment/Global Warming/Third World
+** 	Tiempo Newsletter
+*** 	pub/ECIX
+**** 	"/anonymous@igc.org:"
+
+* 	Music
+** 	Csound
+*** 	
+**** 	"/anonymous@ems.media.mit.edu:"
+
+* 	TeX
+** 	LaTeX styles
+*** 	directory of latex styles
+**** 	"/anonymous@fionavar.mit.edu:"
+**	troff to latex
+**** 	"/anonymous@137.226.112.31:/pub/textproc/TeX"
+**	<(TeX/LaTeX Frequently Asked Questions)>
+	<(TeX/LaTeX Frequently Asked Questions Supplement)>
+
+* 	Women Computer Scientists/Robotics
+** 	Women Computer Scientists/Reactive Robotics
+*** 	pub/ellens/womcs*.ps
+**** 	"/anonymous@ftp.ai.mit.edu:"
+
+* 	X-Windows
+*** 	x-source-list.Z contains X-win ftp sites. dir: contrib
+**** 	"/anonymous@export.lcs.mit.edu:"
+ 	"/anonymous@giza.cis.ohio-state.edu:" (mirror site)
+
+* 	Phone Phreaking / Hacking
+** 	Phrack
+*** 	Phrack is in cud . all kinds of hacker stuff from back in the days
+**** 	"/anonymous@192.88.144.4:"  ;; ftp.eff.org
+
+
+* 	Prose/Ethnic Tex
+** 	Poorman's TeX/Translation of John Trevisa from Latin
+**** 	"/anonymous@blackbox.hacc.washington.edu:"
+
+* 	TeX
+**** 	"/anonymous@byron.u.washington.edu:"
+ 	"/anonymous@june.cs.washington.edu:"
+
+* 	Ethnic TeX
+** 	chinese.tar.Z
+*** 	
+**** 	"/anonymous@ftphost.cac.washington.edu:"
+
+* 	Public Domain Scientific Software available from Netlib
+*** 	<(Describe Netlib)>
+
+
+* 	Statistics
+*** 	To get started using StatLib, send the one line message
+	send index to statlib@lib.stat.cmu.edu
+**** 	"/statlib@lib.stat.cmu.edu:"
+
+* 	Logic
+** 	HigherOrderLogic Theorem Prover (hol)
+*** 	
+**** 	"/anonymous@ted.cs.uidaho.edu:pub"
+
+* 	Computer Graphics
+** 	Gif Viewer for PC's
+*** 	pub/pc
+**** 	"/anonymous@wolfen.cc.uow.edu.au:"
+
+* 	Ethnic Tex
+** 	Bejing-24.bdf/PinYin pronunciation tables/Pinyin->GB code table/Best of comp.graphics/World Map/Zhongwen 
+**** 	"/anonymous@hanauma.stanford.edu:"
+
+* 	Ethnic Tex
+** 	ChTeX Modified
+**** 	"/anonymous@neon.stanford.edu:"
+
+* 	Postscript
+** 	Episode Viewer
+**** 	"/anonymous@lurch.stanford.edu:"
+
+* 	ADA/TeX
+** 	Annotated ADA
+*** 	Sriram Sankar's ada macros for TeX..
+**** 	"/anonymous@anna.stanford.edu:"
+
+* 	TeX
+** 	dvips
+*** 	quasi-official repository for TeX and related toys
+**** 	"/anonymous@labrea.stanford.edu:"
+
+* 	Gcc Hacks/Gcc for 68k
+**	Gcc 68k
+*** 	pub/GNU for docs and binaries from marc@sun-valley.stanford.edu Sat Nov 16 23:40:10 1991 
+**** 	"/anonymous@sun-valley.stanford.edu:"
+
+* 	Object-Oriented Graphics
+** 	Interviews
+*** 	home of Interviews, an object-oriented windowing system
+**** 	"/anonymous@interviews.stanford.edu:"
+
+* 	Editors/TeX/Gifs
+** 	Gifs/Unix-TECO/TeXtyl
+*** 	TeXtyl allows postprocessing with any available fonts
+**** 	"/anonymous@venus.ycc.yale.edu:"
+
+* 	Mathematics
+** 	Mathematical Abstracts Database
+*** 	<(Describe the Abstracts Database)>
+**** 	"/anonymous@yalevm.ycc.yale.edu:"
+
+* 	Graphics/Ray Tracing
+** 	Utah Raster Toolkit
+**** 	"/anonymous@weedeater.math.yale.edu:"
+
+* 	Spell Check
+** 	Ispell
+**** 	"/anonymous@bulldog.cs.yale.edu:"
+
+* 	Ethnic Tex
+** 	ChTeX
+*** 	mirror site for Ethnic Typographic/TeX things
+**** 	"/anonymous@kth.se:"
+
+* 	IBM
+** 	Hytelnet4.0
+*** 	A utility which gives an IBM-PC user instant-access to all Internet-accessible library  catalogs, Freenets, CWISs, Library BBSs, etc.  
+**** 	"/anonymous@vaxb.acs.unt.edu:"
+
+* 	Ray Tracing/Graphics
+** 	MicroEmacs/VT100 Art/Kermit Docs/Zoo Archiver
+**** 	"/anonymous@irisa.irisa.fr:"
+
+* 	Ethnic Tex
+** 	ArabTeX
+*** 	Home of ArabTeX
+**** 	"/anonymous@ifi.informatik.uni-stuttgart.de:"
+
+* 	X Games
+** 	Xpipeman
+*** 	Xpipeman is an addictive strategy game
+**** 	email to pavern@uk.ac.man.cs
+
+* 	Ethnic TeX/Chinese Metafonts
+** 	Arabic/Japanese/Korean/ChTeX/ArabTeX
+*** 	lots of language and tex-related stuff.
+**** 	"/anonymous@kythera.nmsu.edu:"
+
+* 	Ethnic Tex
+** 	Duke Chinese Typist
+**** 	"/anonymous@msdos.archive.umich.edu:"
+
+** 	ParaGraph
+**** 	"/anonymous@bull.cs.williams.edu:"
+
+* 	comp.sources.unix/TeX/Bitmaps/Games/Graphics
+** 	Bitmaps/comp.sources.unix/wp2latex/CommonTeX2.9/ckermit/Uemacs_3.10/UC-Berkeley Software Catalog
+**** 	"/anonymous@ccb.ucsf.edu:"
+
+* 	NSF-Japan/Software Development/Pnrogramming Languages/SB-Prolog
+** 	NSF-Japan/SB-Prolog/Japanese Computer Science Info/Scorpion
+Software Development System/SR Programming Language/Janus Programming
+Language/Icon Programming Language/Xkernel/Agrep/Anrep  
+**** 	"/anonymous@cs.arizona.edu:"
+
+* 	Graphics
+** 	Star Gifs/Ray Tracing
+**** 	"/anonymous@iear.arts.rpi.edu:"
+
+* 	LISP/Logic
+** 	thm (theorem prover)/Kyoto Common Lisp
+**** 	"/anonymous@rascal.ics.utexas.edu:"
+
+* 	TeX
+** 	Fig/TransFig
+**** 	"/anonymous@ftp.cs.cornell.edu:"
+
+*	Parallel Computing
+**	Oasis
+***	<(Description)>
+****	"/anonymous@141.212.99.7:oasis" ;; z.eecs.umich.edu
+
+* 	Parallel Computing Environment
+** 	Paragon Parallel Programming Environment
+*** 	<(Paragon Information)>
+**** 	"/anonymous@tesla.ee.cornell.edu:"
+
+* 	Parallel Computing
+** 	Parallel Virtual Machine
+*** 	PVM (parallel virtual machine) is a software
+package which allows the utilization for a heterogeneous network of
+computers.
+**** 	"/anonymous@cs.utk.edu:"
+
+* 	Protein Primary Structure
+** 	ProfileGraph
+**** 	"/anonymous@nic.funet.fi:"
+	"/anonymous@menudo.uh.edu:"
+
+
+* 	Drosophila Genetic Map/Protein Primary Structure
+** 	ProfileGraph/FlyBase (Drosophila)
+*** 	
+**** 	"/anonymous@ftp.bio.indiana.edu:"
+
+* 	Restriction Enzyme Dbase/Cold Spring Harbor
+** 	Cold Spring Harbor restriction enzyme database
+*** 	The data are contained in the file type2.lst and
+literature references are in references.lst.  Questions about the
+database should be directed to Dr. Roberts at roberts@cshl.org.
+
+                                Dave Kristofferson
+                                GenBank Manager
+                                kristoff@genbank.bio.net
+**** 	"/anonymous@karyon.bio.net:pub/db"
+
+* 	Games
+**** 	"/anonymous@decuac.dec.com:"
+
+* 	Biology
+** 	Biology
+*** 	<(Setup of bioftp.unibas.ch)>
+**** 	"/anonymous@bioftp.unibas.ch:"
+
+* 	Medical Information
+** 	Datafile of Biological Scientists
+*** 	<(Important for all Biological Scientists)>
+**** 	"/anonymous@lhc.nlm.nih.giv:"
+
+* 	Medical Information
+** 	Eukaryotic Promoter Database
+*** 	./repository/EPD
+**** 	"/anonymous@ncbi.nlm.nih.gov:"
+
+*	Recipes/Games/comp.sources.games/comp.sources.misc/comp.sources.sun/comp.sources.unix  
+** 	c++2latex/shX
+*** 	comp.sources.misc
+**** 	"/anonymous@gatekeeper.dec.com:"
+
+* 	TeX
+** 	TeXPS
+**** 	"/anonymous@arthur.cs.purdue.edu:"
+
+* 	Ethnic TeX
+** 	cxterm/celvis/cless/cclib16* fonts
+**** 	"/anonymous@cs.purdue.edu:"
+
+*	comp.binaries.amiga/comp.sources.amiga/comp.sources.games/comp.sources.sun comp.sources.unix/comp.sources.x/comp.sys.next  
+** 	hqx
+*** 	
+**** 	"/anonymous@j.cc.purdue.edu:"
+
+* 	TeX/Image Compression/Graphics/Ray Tracing
+** 	epp2tex/JPEGxeval IMAGE Compression/Utah Raster Toolkit
+*** 	epp2tex is a tool which accepts a relatively easy to write file
+of estimation results.  It generates a LaTeX table.  It has limited
+commandline support for tuning the appearance of the table.
+**** 	"/anonymous@ftp.uu.net:"
+
+* 	Programming Language
+** 	Fortran2C/Pascal2C/J (programming language)
+*** 	<(Describe the Programming Language J)>
+**** 	"/anonymous@watserv1.waterloo.edu:"
+
+* 	Ethnic TeX/Latin Font/Cyrillic Font/X-Windows Fonts
+** 	KOI-7/8 fonts
+*** 	cd to COUP/TL/xkoi-8.7.tar
+**** 	"/anonymous@moxie.oswego.edu:"
+
+* 	Pattern Processing/Teco
+** 	Teco
+*** 	teco is in pub/teco
+**** 	"/anonymous@usc.edu:"
+
+* 	C Declaration Parser/Pascal2C/Emacs Calculator
+** 	PascaltoC/C Declaration Parser/GnuCalc
+*** 	dave gillespies calc adds floating point ops to elisp!
+**** 	"/anonymous@csvax.cs.caltech.edu:"
+
+* 	Artificial Intelligence
+** 	Artificial Intelligence Lisp Code
+*** 	pub/norvig
+**** 	"/anonymous@unix.sri.com:"
+
+* 	Graphics
+** 	NIH Image 1.19
+**** 	"/anonymous@alw.nih.gov:"
+
+* 	Japanese Tutorial
+** 	Kanji Guess/Japanese learning aid
+*** 	<(Describe Kanji Guess)>
+**** 	"/anonymous@monu6.cc.monash.edu.au:pub/Nihongo"
+
+
+
+* 	NeXT Software
+**** 	"/anonymous@nova.cc.purdue.edu:"
+
+* 	Raster Fonts/MetaFonts
+** 	Metafonts
+*** 	probably has all the HP fonts in the world
+**** 	"/anonymous@mims-iris.waterloo.edu:"
+
+* 	Raster Fonts/MetaFonts
+** 	Metafonts
+*** 	Raster fonts for Metafont use
+**** 	"/anonymous@ctrsci.math.utah.edu:"
+
+* 	Raster Fonts/MetaFonts
+** 	Metafonts
+*** 	Raster fonts for Metafont use
+**** 	"/anonymous@science.utah.edu:"
+
+** 	VMS Gnu Emacs
+**** 	"/anonymous@cc.utah.edu:"
+
+* 	Graphics/Ray Tracing/Non-Rational B-Spline Software
+** 	Utah Raster Toolkit/NURBS (Non-Uniform Ratl B-Splines)
+**** 	"/anonymous@cs.utah.edu:"
+
+* 	Webster
+** 	Access Webster
+**** 	"/anonymous@ee.ecn.purdue.edu:"
+
+* 	X-Windows/TeX
+** 	BDF Fonts/XTeX
+*** 	view dvi file within X-Windows
+**** 	"/anonymous@foobar.colorado.edu:"
+
+* 	Graphics/TeX to Document C Code (Spiderweb)/Music/Tex
+** 	CWEB/WEB/Rayshade 3.0/Rayshade 4.0/Spiderweb
+*** 	has next wares AND is primary src for greek fonts for TeX. spiderweb is used to document c code within latex
+**** 	"/anonymous@princeton.edu:"
+
+* 	Parallel Computing
+** 	Ease
+*** 	source code for parallel language ease is here
+**** 	"/anonymous@isatis.ensmp.fr:"
+
+* 	Parallel Computing
+** 	List of Distributed Systems
+*** 	pub/soft/distr_os
+**** 	"/anonymous@titania.mathematik.uni-ulm.de:"
+
+* 	Japanese
+** 	Nihongo Emacs
+**** 	"/anonymous@ftp.cs.titech.ac.jp:"
+
+* 	Sun RPC/NN/xypic
+** 	Sun RPC/NN/xypic
+*** 	Denmark
+**** 	"/anonymous@freja.diku.dk:"
+
+* 	Statistics/Contingency Tables/EM Algorithm/TeX/AUC-TeX
+** 	AUC-TeX
+*** 	Comprehensive Environment for writing latex files
+**** 	"/anonymous@iesd.auc.dk:"
+
+* 	TeX
+** 	LaTeX figures
+**** 	"/anonymous@hercules.csl.sri.com:"
+
+* 	Mathematics
+** 	Theorem Prover
+**** 	"/anonymous@herky.cs.uiowa.edu:"
+
+* 	Knowledge Representation
+** 	Mobal
+*** 	<(View Definition of Mobal)>
+**** 	"/anonymous@xpssun.gmd.de:"
+
+* 	X-Windows
+** 	MandelSpawn
+*** 	in pub/X11/contrib/ms-0.05.tar.Z
+**** 	"/anonymous@funic.funet.fi:"
+
+* 	Tex/Graphics/Gifs/Ray Tracing/Radiosity
+** 	Astronomical Observatory FITS Viewer/Ray Tracing/Bibliography/Radiosity Bibliography/Salem/CellSim/GraphicsGems/Quickdraw Popi/Ray Tracing News/ColorQuant/DKBTracer/PVRay/DRT/Ohtas Ray Tracer/QRT/RayScene/VORT Ray Tracer/VM-pRAY/Polygon/Processor Sphigs/SRGP/Wave/Sphere/TeXhax digest    
+*** 	major TeX archive. has TeXhax digest
+**** 	"/anonymous@wuarchive.wustl.edu:"
+
+* 	TeX
+** 	ChTex/ArabTeX/Image
+*** 	huge directory of styles. including one for the thesis.
+**** 	"/anonymous@ftp.ics.osaka-u.ac.jp:"
+
+
+* 	Natural Language Processing
+** 	Text to Phoneme Program
+*** 	/pub/linguist/phone.tar.Z
+**** 	"/anonymous@ftp.Hawaii.edu:"
+
+* 	Graphics/Ray Tracing
+** 	Utah Raster Toolkit
+**** 	"/anonymous@nl.cs.cmu.edu:"
+
+* 	Natural Language Processing
+** 	English Parser
+*** 	/usr/sleator/public
+**** 	"/anonymous@spade.pc.cs.cmu.edu:"
+
+* 	ADA
+** 	ADA
+*** 	All the ADA you could ask for
+**** 	"/anonymous@ajpo.sei.cmu.edu:"
+
+* 	Gnu/VMS G++
+** 	VMS G++
+*** 	Major Gnu Archive
+**** 	"/anonymous@mango.miami.edu:"
+
+* 	Chinese News/Chinese Word Processors
+** 	Big5->GB/Readnews
+*** 	contains a lot of Chinese word processors both for PC's and other
+**** 	"/anonymous@ahkcus.org:"
+
+* 	Chinese Chess
+** 	Chinese Chess
+*** 	
+**** 	"/anonymous@cs.ualberta.ca:"
+
+* 	Genealogy
+** 	Genealogy
+*** 	
+**** 	"/anonymous@134.114.64.24:"
+
+* 	Japanese Terminal Emulator
+*** 	For the PC, you should use a terminal emulator hterm written by
+Hirano-san at Tokyo U if your PC has VGA or EGA.  If your display
+adapter is Hercules or CGA (!), then you have to settle with my
+KD (kanji driver) + MS-Kermit.  Both of these are free and can
+be obtained by anonymous FTP from mindseye.berkeley.edu
+[128.32.232.19].  Both supports full JIS-level 2 Japanese
+character set (6000+ characters).
+
+If you use regular 'rn' be sure to use a command w | more -f
+at the first pause after news header for an article is displayed.
+
+--
+Izumi Ohzawa             [ $BBg_78^=;(B ]
+USMail: University of California, 360 Minor Hall, Berkeley, CA 94720
+Telephone: (510) 642-6440     Fax:  (510) 642-3323
+Internet: izumi@pinoko.berkeley.edu (NeXT Mail OK)
+**** 	"/anonymous@mindseye.berkeley.edu:"
+
+* 	LISP/Mathematics
+** 	Lisp Mathematica (mma)
+*** 	mathematica-like system written in Allegro common lisp
+**** 	"/anonymous@peoplesparc.berkeley.edu:"
+
+
+
+* 	TeX
+** 	ChTex/ArabTeX/Image
+*** 	contains the addendum to the TeX FAQ in pub/raymond
+**** 	"/anonymous@math.berkeley.edu:"
+
+* 	Programming Languages
+** 	TCL
+*** 	Paper in USENIX 89
+**** 	"/anonymous@sprite.berkeley.edu:"
+
+* 	TeX/build an lplain.fmt with to different hyphen-files?
+** 	Babel
+*** 	
+
+   I get the impression that TeX 3.x supports some sort of a multilingual
+   scheme, providing a way to easily swith between languages in the same
+   document.
+
+You should look at the Babel system, by Johannes Braams, obtainable by
+mail from listserv@hearn.bitnet, listserv@dhdurz1.bitnet,
+mail-server@rusinfo.rus.uni-stuttgart.de, or by anonymous ftp from
+rusinfo.rus.uni-stuttgart.de [129.69.1.12].
+
+**** 	"/anonymous@rusinfo.rus.uni-stuttgart.de:"
+
+* 	Mathematics
+** 	SymbMath
+***	<(Extensive Description of SymbMath)>
+**** 	"/anonymous@simtel20.army.mil:"
+
+* 	Tex/Raster Fonts/MetaFonts
+** 	dvips/dvitops/Web/Cweb/Spiderweb/MusicTeX
+*** 	2nd largest tex archive in the WORLD. Aggresively tracks down packages
+**** 	"/anonymous@ymir.claremont.edu:"
+
+* 	Ethnic TeX
+** 	Cyrillic Fonts
+**** 	"/anonymous@hmcvax.claremont.edu:"
+
+* 	<(Perl Freyquently Asked Questions)>
+** 	Perl Reference Guide
+**** 	"/anonymous@sol.cs.ruu.nl:"
+**	Perl Distribution/Source Archive
+**** 	"/anonymous@archive.cis.ohio-state.edu:pub/perl"
+** 	Perl (MSDOS)
+*** 	pub/msdos/perl
+**** 	"/anonymous@eeserv.ee.umanitoba.ca:"
+***	Perl Manual
+****	"/anonymous@128.214.6.100:/pub/languages/perl-manual" ;; nic.funet.fi
+***	Perl Manpage
+****	"/anonymous@128.83.162.5:/pub/languages/perl-4.019" 
+***	Perl Texinfo
+****	"/anonymous@128.93.1.26:/lang/perl"
+***	Perl Tutorials
+****	"/anonymous@128.214.6.100:/pub/languages/perl/convex.com/tutorial "
+
+
+* 	ChTex/ArabTeX/Image
+** 	comp.sources.x
+**** 	"/anonymous@schizo.samsun.com:"
+* 	TeX/Gifs
+** 	ChTex
+*** 	[128.252.135.4] ... mirror wmsr-simtel20.army.mil
+**** 	"/anonymous@wuarchive.wustl.edu:"
+
+* 	TeX
+** 	Image
+*** 	[131.170.24.42] ... mirrors labrea for those down under
+**** 	"/anonymous@yallara.cs.rmit.oz.au:"
+
+* 	Cscheme
+** 	Cscheme 6.2
+*** 	includes a GL interface
+**** 	"/anonymous@godzilla.cgl.rmit.oz.au:"
+
+* 	Tex
+** 	ChTex/ArabTeX/Image
+*** 	run by george greenwade, a man on the up and up
+**** 	"/anonymous@niord.shsu.edu:"
+
+* 	TeX
+** 	TeX/gcc/ghostscript
+*** 	TeX, gcc, ghostscript, f2c
+**** 	"/anonymous@research.att.com:"
+
+* 	X-Windows/Emacs Hacks
+** 	ISO Latin-1 Emacs Mode
+*** 	input the ISO Latin-1 character set in a convenient way
+**** 	"/anonymous@laas.laas.fr:"
+
+* 	Perl
+** 	Perl
+**** 	"/anonymous@convex.com:"
+
+
+
+* 	X-Windows/Parallel Computing
+** 	PCP (parallel language)/AWM X Tutorial
+**** 	"/anonymous@maddog.llnl.gov:"
+
+* 	X-Windows
+*** 	X11R4
+**** 	"/anonymous@lll-crg.llnl.gov:"
+
+* 	X-Windows/Tex
+** 	ChTex/ArabTeX/Image
+*** 	GNU X11 comp.sources.unix
+**** 	"/anonymous@iraun1.ira.uka.de:"
+
+* 	Rapid Language Prototyping
+** 	TXL
+*** 	<(Verbose Description of TXL)>
+**** 	"/anonymous@qusuna.qucis.queensu.ca:"
+
+* 	X-Windows/Tex
+*** 	Karl Berry's font naming scheme v1.0 192.12.26.23 tex/fontname/fontname.texi
+**** 	"/anonymous@ftp.cs.umb.edu:"
+
+* 	X-Windows/Sun/Unix
+** 	comp.sources.misc/comp.sources.sun/comp.sources.unix
+*** 	misc, TeX, X
+**** 	"/anonymous@hydra.helsinki.fi:"
+
+* 	hashing
+** 	Perfect Hash Generator
+**** 	"/anonymous@ics.uci.edu:"
+
+
+
+* 	Miscellany/Images
+*** 	images, gnu, icon, kermit, and so forth, ghostscript patches
+**** 	"/anonymous@extro.ucc.su.oz.au:"
+
+* 	X-Windows
+*** 	X applications here
+**** 	"/anonymous@cs.toronto.edu:"
+
+* 	Tex
+*** 	ascii2german.sh by dorai@egeria.rice.edu in /public 
+ ascii2german converts 
+**** 	"/anonymous@titan.rice.edu:"
+
+* 	AMSTeX
+** 	AMSTeX
+*** 	AMSFonts, AMS-LaTeX, AMSTeX  NOTE: The AMS doesn't alert other 
+       archive sites when there are changes to the contents 
+       of e-math.ams.com.  Consequently, other sites may be slightly behind.
+       Administrative contact for E-MATH:  tech-support@math.ams.com.
+**** 	"/anonymous@e-math.ams.com:"
+
+* 	X-Windows/Tex
+** 	ChTex/ArabTeX/Image
+*** 	per karl berry's article in TUGboat .. also said 'adobe font names'
+**** 	"/anonymous@ftp.cs.umb.edu:"
+
+* 	X-Windows/Tex
+** 	AIList/Sun-Spots
+*** 	[128.100.1.105] ... Mirrors the clarkson style archives for 
+       Canadian users contains pub/TeX/tex-styles
+**** 	"/anonymous@ftp.cs.toronto.edu:"
+
+* 	Mailing Lists/Graphics/TeX
+** 	MuTeX/Raster Files/Huge Maling List Index (list-of-lists)
+*** 	
+**** 	"/anonymous@cs.ubc.ca:"
+
+* 	Neuro-Evolution/Speech Recognition
+** 	Neuro-Evolution/Speech Recognition
+**** 	"/anonymous@cse.ogc.edu:"
+
+* 	X-Windows/Tex
+** 	ChTex/ArabTeX/Image
+*** 	v2.1, pub/transfig/fig.tar.Z     Fig is a graphics editor under
+xo       SunView.  Its output can be translated via TransFig [qv] into
+       Postscript, pic, LaTeX picture envirnoment, PiCTeX, EEPIC, TeXtyl etc.
+**** 	"/anonymous@sun.soe.clarkson.edu:"
+
+* 	X-Windows/Tex
+** 	ChTex/ArabTeX/Image
+*** 	contains fig under pub/fig. this allows graphic editing which
+       can be put in latex by transfig which is also here. and sun.soe.clarkson.edu
+**** 	"/anonymous@svax.cs.cornell.edu:"
+
+* 	Tex
+** 	ChTex/ArabTeX/Image
+*** 	devanagari font from TeX. pub dir
+**** 	"/anonymous@rugrcx.rug.nl:"
+
+* 	X-Windows/Tex
+** 	ChTex/ArabTeX/Image
+*** 	United Kingdom Chum...X11R5 dist, udda stuph
+**** 	"/anonymous@130.88.200.7:"
+
+* 	X-Windows/Tex
+** 	ChTex/ArabTeX/Image
+*** 	X11R4
+**** 	"/anonymous@crl.dec.com:"
+
+* 	TeX
+** 	TeX
+*** 	TeX related stuph
+**** 	"/anonymous@a.cs.uiuc.edu:"
+
+* 	Elisp/Tex
+** 	Calendar.el/Diary.el/tree.sty
+*** 	tree.sty and home site for Ed Reingold's calendar
+**** 	"/anonymous@emr.cs.uiuc.edu:"
+
+* 	Smalltalk Archive
+**** 	"/anonymous@st.cs.uiuc.edu:"
+
+* 	Quran
+*** 	The login is 'MARK'
+the password is 'IPFS'
+The type 'ACCT QUOTE IRAN' for read password.
+Quran.txt is the text file
+desquran.zip is the PC program (includes the compressed version of the text).
+**** 	"/anonymous@vmd.cso.uiuc.edu:"
+
+* 	X-Windows
+** 	SPHIGS/SRGP
+*** 	sphigs and srgp are in pub... for an alternative to xlib
+**** 	"/anonymous@128.148.31.66:"
+
+* 	Hypertext
+** 	Hyperbole
+*** 	
+**** 	"/anonymous@wilma.cs.brown.edu:"
+
+* 	Recipes
+** 	Recipes
+*** 	
+**** 	"/anonymous@128.252.135.4:"
+
+* 	Recipes
+** 	Recipes
+*** 	
+**** 	"/anonymous@sulaw.law.su.oz.au:"
+
+* 	Magick/Gifs
+** 	ChTex/ArabTeX/Image
+*** 	Aleister Crowley GIF's and other magickal items
+**** 	"/anonymous@slopoke.mlb.semi.harris.com:"
+
+* 	Parallel Machine
+** 	ChTex/ArabTeX/Image
+*** 	parallel machine
+
+* 	Parallel Computing
+** 	Parallax
+*** 	Parts of the book intro to parallel computing by lewis and
+el-rewini <prentice-hall, publishers> are available on the server.
+also the parallel software is available  
+**** 	"/anonymous@lynx.cs.orst.edu:"
+
+* 	FTP Database
+** 	Xarchive Standalone
+*** 	has an x version non-x version and a perl version. all in the
+directory archive/clients  
+**** 	"/anonymous@archie.mcgill.ca:"
+
+* 	Parallel Computing
+** 	SIMD Simulator
+*** 	/pub/blitzen ... email to brain@adm.csc.ncsu.edu
+**** 	"/anonymous@mcnc.mcnc.org:"
+
+* 	Parallel Computing
+** 	PCN 
+*** 	awesome parallel language soon to have C++ compatibility
+**** 	"/anonymous@info.mcs.anl.gov:pub/pnc"
+
+* 	ftp
+** 	ange-ftp mail archive
+*** 	
+
+* 	Parallel Language
+** 	Parallel C/Parallel Fortran
+*** 	pub/Parallel/Tools/pc.1.1.1.tar.Z
+C parallel  fortran is also being developed at Univ. of Houston. Contact
+scott@uh.edu for information regarding pf.
+J. Eric Townsend - jet@uh.edu - UH Dept of Mathematics
+vox: (713) 749-2126  '91 CB750, DoD# 0378, TMRA# 27834
+**** 	"/anonymous@karazm.math.uh.edu:"
+
+* 	Z Sites
+**** 	"/anonymous@cs.umn.edu:"
+**** 	"/anonymous@sirius.ucs.adelaide.edu.au:"
+**** 	"/anonymous@kampi.hut.fi:"
+**** 	"/anonymous@garbo.uwasa.fi:"
+**** 	"/anonymous@ousrvr.oulu.fi:"
+**** 	"/anonymous@tukki.jyu.fi:"
+**** 	"/anonymous@tolsun.oulu.fi:"
+**** 	"/anonymous@ftp.nisc.sri.com:"
+**** 	"/anonymous@scam.berkeley.edu:"
+**** 	"/anonymous@peace.waikato.ac.nz:"
+**** 	"/anonymous@cs.orst.edu:"
+**** 	"/anonymous@louie.udel.edu:"
+**** 	"/anonymous@nic.nyser.net:"
+**** 	"/anonymous@jaguar.utah.edu:"
+**** 	"/anonymous@alf.uib.no:"
+**** 	"/anonymous@hemuli.tik.vtt.fi:"
+**** 	"/anonymous@sunic.sunet.se:"
+**** 	"/anonymous@chem.bu.edu:"
+**** 	"/anonymous@itstd.sri.com:"
+**** 	"/anonymous@genbank.bio.net:"
+**** 	"/anonymous@rdss.ucar.edu:"
+
+<(Return to Top Level)>				C-c C-s to show the full entry
+<(Cut Out All But Topic Headers)>		C-c C-h hide the subentries
+<(Frequent FTP Sites)>				C-h m for extensive help
+<(Top of File)>

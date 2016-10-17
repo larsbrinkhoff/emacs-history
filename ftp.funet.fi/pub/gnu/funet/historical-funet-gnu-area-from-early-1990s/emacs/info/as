@@ -1,0 +1,60 @@
+Info file: as,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: gas.texinfo
+
+
+Indirect:
+as-1: 88
+as-2: 50687
+
+Tag table:
+(Indirect)
+Node: top90
+Node: Syntax19330
+Node: Characters25147
+Node: Strings25530
+Node: Segments30766
+Node: LdSegs34612
+Node: MythSegs36802
+Node: Symbols42022
+Node: Labels42369
+Node: Expressions48928
+Node: Primary49514
+Node: Unops50689
+Node: PseudoOps52786
+Node: Abort53051
+Node: Align53444
+Node: Ascii54129
+Node: Asciz54392
+Node: Byte54589
+Node: Comm54794
+Node: Data55283
+Node: Desc55568
+Node: Double55772
+Node: File56164
+Node: Fill56515
+Node: Float57437
+Node: Gdbbeg57828
+Node: Gdbblock58168
+Node: Gdbend58765
+Node: Gdbsym59106
+Node: Global59514
+Node: Int59965
+Node: Lcomm60322
+Node: Line60763
+Node: Long61267
+Node: Lsym61400
+Node: Octa61883
+Node: Org62078
+Node: Quad63097
+Node: Set63386
+Node: Short63988
+Node: Space64127
+Node: Stab64376
+Node: Text66240
+Node: Word66535
+Node: MachineDependent67041
+Node: Maintenance86748
+Node: Retargeting98398
+
+End tag table

@@ -1,0 +1,210 @@
+#!/bin/sh
+# shar:	Shell Archiver  (v1.22)
+#
+#	Run the following text with /bin/sh to create:
+#	  README
+#	  emacs-18.55-8bit-diff
+#
+sed 's/^X//' << 'SHAR_EOF' > README &&
+XFrom: cline@PROOF.ERGO.CS.CMU.EDU (Kenneth Cline)
+XNewsgroups: comp.emacs
+XSubject: Re: Character display
+XMessage-ID: <7230@pt.cs.cmu.edu>
+XDate: 6 Dec 89 19:19:17 GMT
+XDistribution: gnu
+XOrganization: Carnegie-Mellon University, CS/RI
+X
+X
+XIncorporating the diffs for buffer.c, indent.c and xdisp.c below will
+Xcause emacs to display 255 character fonts (newline is special) in
+Xbuffers with local variable ctl-arrow set to any value other than T or
+XNIL.
+X
+XThis change will be obsolete when version 19 is released, but it is
+Xnonetheless useful for the time being.  It has been pointed out that
+Xanswering questions about the availability of version 19 takes time
+Xaway from writing the code, so please be patient.
+SHAR_EOF
+chmod 0664 README || echo "restore of README fails"
+sed 's/^X//' << 'SHAR_EOF' > emacs-18.55-8bit-diff &&
+X*** /tmp/,RCSt1a14606	Thu Dec  7 22:01:03 1989
+X--- buffer.c	Thu Dec  7 21:00:44 1989
+X***************
+X*** 1297,1305 ****
+X  Automatically becomes local when set in any fashion.");
+X  
+X    DEFVAR_PER_BUFFER ("ctl-arrow", &bf_cur->ctl_arrow,
+X!     "*Non-nil means display control chars with uparrow.\n\
+X  Nil means use backslash and octal digits.\n\
+X! Automatically becomes local when set in any fashion.");
+X  
+X    DEFVAR_PER_BUFFER ("truncate-lines", &bf_cur->truncate_lines,
+X      "*Non-nil means do not display continuation lines;\n\
+X--- 1297,1308 ----
+X  Automatically becomes local when set in any fashion.");
+X  
+X    DEFVAR_PER_BUFFER ("ctl-arrow", &bf_cur->ctl_arrow,
+X!     "*t means display control chars with uparrow.\n\
+X  Nil means use backslash and octal digits.\n\
+X! Otherwise assume that control and meta chars are printable.\n\
+X! Automatically becomes local when set in any fashion.\n\
+X! \n\
+X! This is an Ergo local feature.");
+X  
+X    DEFVAR_PER_BUFFER ("truncate-lines", &bf_cur->truncate_lines,
+X      "*Non-nil means do not display continuation lines;\n\
+X*** /tmp/,RCSt1a28312	Wed Jan 31 20:57:35 1990
+X--- indent.c	Wed Dec 27 10:56:26 1989
+X***************
+X*** 67,73 ****
+X    register int tab_seen;
+X    register int post_tab;
+X    register int tab_width = XINT (bf_cur->tab_width);
+X!   int ctl_arrow = !NULL (bf_cur->ctl_arrow);
+X  
+X    if (point == last_known_column_point
+X        && bf_modified == last_known_column_modified)
+X--- 67,74 ----
+X    register int tab_seen;
+X    register int post_tab;
+X    register int tab_width = XINT (bf_cur->tab_width);
+X!   int ctl_arrow = (!NULL (bf_cur->ctl_arrow))
+X!                   + (EQ (bf_cur->ctl_arrow, Qt));
+X  
+X    if (point == last_known_column_point
+X        && bf_modified == last_known_column_modified)
+X***************
+X*** 109,115 ****
+X  	  tab_seen = 1;
+X  	}
+X        else
+X! 	col += (ctl_arrow && c < 0200) ? 2 : 4;
+X      }
+X  
+X    if (tab_seen)
+X--- 110,117 ----
+X  	  tab_seen = 1;
+X  	}
+X        else
+X! 	col += (ctl_arrow == 1 && c >= 0177) ? 1 :
+X! 	         (ctl_arrow && c < 0200) ? 2 : 4;
+X      }
+X  
+X    if (tab_seen)
+X***************
+X*** 231,237 ****
+X    register int goal;
+X    register int end = NumCharacters;
+X    register int tab_width = XINT (bf_cur->tab_width);
+X!   register int ctl_arrow = !NULL (bf_cur->ctl_arrow);
+X  
+X    Lisp_Object val;
+X  
+X--- 233,240 ----
+X    register int goal;
+X    register int end = NumCharacters;
+X    register int tab_width = XINT (bf_cur->tab_width);
+X!   register int ctl_arrow = (!NULL (bf_cur->ctl_arrow))
+X! 			   + (EQ (bf_cur->ctl_arrow, Qt));
+X  
+X    Lisp_Object val;
+X  
+X***************
+X*** 258,263 ****
+X--- 261,268 ----
+X  	  col += tab_width - 1;
+X  	  col = col / tab_width * tab_width;
+X  	}
+X+       else if (ctl_arrow == 1 && c >= 040)
+X+ 	continue;
+X        else if (ctl_arrow && (c < 040 || c == 0177))
+X          col++;
+X        else if (c < 040 || c >= 0177)
+X***************
+X*** 306,312 ****
+X    register int pos;
+X    register int c;
+X    register int tab_width = XFASTINT (bf_cur->tab_width);
+X!   register int ctl_arrow = !NULL (bf_cur->ctl_arrow);
+X    int selective
+X      = XTYPE (bf_cur->selective_display) == Lisp_Int
+X        ? XINT (bf_cur->selective_display)
+X--- 311,318 ----
+X    register int pos;
+X    register int c;
+X    register int tab_width = XFASTINT (bf_cur->tab_width);
+X!   register int ctl_arrow = (!NULL (bf_cur->ctl_arrow))
+X! 			   + (EQ (bf_cur->ctl_arrow, Qt));
+X    int selective
+X      = XTYPE (bf_cur->selective_display) == Lisp_Int
+X        ? XINT (bf_cur->selective_display)
+X***************
+X*** 370,376 ****
+X  	    }
+X  	}
+X        else
+X! 	cpos += (ctl_arrow && c < 0200) ? 2 : 4;
+X  
+X        if (HPOS (cpos) >= width
+X  	  && (HPOS (cpos) > width
+X--- 376,382 ----
+X  	    }
+X  	}
+X        else
+X! 	cpos += (ctl_arrow == 1 && c >= 040 ) ? 1 : (ctl_arrow && c < 0200) ? 2 : 4;
+X  
+X        if (HPOS (cpos) >= width
+X  	  && (HPOS (cpos) > width
+X*** /tmp/,RCSt1a28325	Wed Jan 31 20:58:19 1990
+X--- xdisp.c	Wed Dec 27 10:56:23 1989
+X***************
+X*** 1203,1209 ****
+X    register char *p1prev;
+X    register struct display_line *line;
+X    int tab_width = XINT (bf_cur->tab_width);
+X!   int ctl_arrow = !NULL (bf_cur->ctl_arrow);
+X    int width = XFASTINT (w->width) - 1
+X      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+X    struct position val;
+X--- 1203,1210 ----
+X    register char *p1prev;
+X    register struct display_line *line;
+X    int tab_width = XINT (bf_cur->tab_width);
+X!   int ctl_arrow = (!NULL (bf_cur->ctl_arrow))
+X!                   + (EQ (bf_cur->ctl_arrow, Qt));
+X    int width = XFASTINT (w->width) - 1
+X      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+X    struct position val;
+X***************
+X*** 1319,1324 ****
+X--- 1320,1331 ----
+X  	    }
+X  	  break;
+X  	}
+X+       else if (ctl_arrow == 1 && c >= 040)
+X+ 	{
+X+ 	  if (p1 >= startp)
+X+ 	    *p1 = c;
+X+ 	  p1++;
+X+ 	}
+X        else if (c < 0200 && ctl_arrow)
+X  	{
+X  	  if (p1 >= startp)
+X***************
+X*** 1917,1922 ****
+X--- 1924,1935 ----
+X  	      p1++;
+X  	    }
+X  	  while ((p1 - start + hscroll - (hscroll > 0)) % tab_width);
+X+ 	}
+X+       else if (buffer_defaults.ctl_arrow == 1 && c >= 040)
+X+ 	{
+X+ 	  if (p1 >= start)
+X+ 	    *p1 = c;
+X+ 	  p1++;
+X  	}
+X        else if (c < 0200 && buffer_defaults.ctl_arrow)
+X  	{
+SHAR_EOF
+chmod 0664 emacs-18.55-8bit-diff || echo "restore of emacs-18.55-8bit-diff fails"
+exit 0

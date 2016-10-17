@@ -1,0 +1,1325 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Symbol Components, Up: Symbols, Next: Definitions and Declarations
+
+Symbol Components
+=================
+
+  To support the above mentioned uses, each symbol has four components
+(or attributes or cells), each of which references another object.
+
+  The print name cell is described elsewhere (*Note Symbol Type::).
+
+  One essential aspect of symbols is that a symbol with a given print
+name is unique: no other symbol can have the same print name.  The Lisp
+reader ensures that every time it reads a name, it looks for an existing
+symbol with that name before it creates a new one.  (In GNU Emacs Lisp,
+this is done with a hashing algorithm that uses an obarray; *Note
+Creating and Interning Symbols::.)
+
+  The other three cells of a symbol *may* reference any Lisp object
+whatsoever.  In normal usage, if the symbol is used as the name of a
+function, the function cell usually contains a reference to a function
+as that is what the Lisp interpreter expects to see there.  But *Note
+Function Calls:: for alternatives.  Keyboard macros (*Note Keyboard
+Macros::) and keymaps (*Note Keymaps::) may also be stored in the
+function cell of symbols.
+
+  Likewise, the property list cell normally references a correctly
+formatted property list (*Note Property Lists::), as a number of
+functions will expect to see a property list there.  The value cell
+contains the symbol's global value, if any, and that may be any Lisp
+object (*Note Global Variables::).
+
+  Quite often, we will refer to the function `foo' when we really mean
+the function referenced by the function cell of the symbol `foo'.
+Similarly for the value cell and property list cell.  The distinction
+will only be made when necessary.
+
+  Here is a summary of the components of a symbol.
+
+Name
+       The string of characters used to identify the symbol when reading
+     or printing.  See `symbol-name' in *Note Creating and Interning
+     Symbols::.
+
+Value
+       The global value of a symbol.  See `symbol-value' in *Note
+     Accessing Variable Values::.
+
+Function
+       The function that is called when the symbol appears in the
+     function position of a form being evaluated, or as the first
+     argument to `funcall', `apply', etc.  This cell is also used by
+     keymaps and keyboard macros.  See `symbol-function' in *Note
+     Accessing Function Definitions::.
+
+Property List
+       The property list is used by several functions to look up values
+     that are associated with the symbol and a property symbol.  See
+     `symbol-plist' in *Note Property Lists::.
+
+
+
+
+
+File: elisp  Node: Definitions and Declarations, Prev: Symbol Components, Up: Symbols, Next: Creating and Interning Symbols
+
+Definitions and Declarations
+============================
+
+  A "definition" or "declaration" is a special form that establishes a
+relationship between a symbol and some object.  There are four
+definition constructs in GNU Emacs Lisp.  (but a "function definition"
+is the object in the function cell of a symbol - inconsistent
+terminology!!)
+
+  `defvar' and `defconst' definitions both establish a symbol as a
+global variable.  As "declarations", they serve only to inform the
+person reading the code of the intended use of a symbol, and do not in
+any way affect whether the global value may be changed.  `defvar' and
+`defconst' are documented in *Note Variables::.
+
+  `defun' and `defmacro' definitions create `lambda' and `macro'
+expressions respectively and bind them to the function cell value of the
+symbol being defined.  `defun' and `defmacro' are documented in separate
+chapters (*Note Functions:: and *Note Macros::).
+
+  In GNU Emacs Lisp, definitions serve several purposes.  First, they
+inform the user who reads the code that certain constructs (typically
+variables or functions) are *intended* to be used in the specified ways.
+Utilities such as `etags' and `make-docfile' can recognize these
+declarations also and add the appropriate information to tag tables and
+the `etc/DOC' file.  Second, they inform Lisp of the same thing,
+allowing it to ensure that the desired uses are made possible.
+
+
+     Common Lisp Note: In most Lisp systems, declarations supply
+     information to the compiler, allowing it to output more optimal
+     code than would otherwise be possible.  The GNU Emacs Lisp compiler
+     does not presently make use of any declarations to optimize code.
+
+
+
+File: elisp  Node: Creating and Interning Symbols, Prev: Definitions and Declarations, Up: Symbols, Next: Property Lists
+
+Creating and Interning Symbols
+==============================
+
+  To understand how symbols are created in GNU Emacs Lisp, it is
+necessary to know how Lisp reads them.  It is essential to ensure that
+every time Lisp reads the same set of characters, it finds the same
+symbol.  Failure to do so would be disastrous.
+
+  When the Lisp reader encounters a symbol, it reads in all the
+characters in a name.  Then it ``hashes'' those characters into a vector
+called an "obarray".  Hashing is just an efficient method of looking
+something up.  Instead of searching a telephone book cover to cover when
+looking up Jan Jones, you start with the `J's and go from there.  That
+is a simple version of hashing.  A number of symbols might all hash to
+the same element in that obarray, that is, they hash to the same
+"bucket", and Lisp just looks through the bucket to see if one of the
+symbols has the name in question.
+
+  If such a symbol is found, then it is returned.  If no such symbol is
+found, then a new symbol is created and added to the obarray.  Adding a
+symbol to an obarray is called "interning" it, and the symbol may then
+be called an "interned symbol".  A symbol may be interned in only one
+obarray.
+
+  If a symbol is not in an obarray, then there is no way for Lisp ever
+to find it when its name is read.  Such a symbol is called an
+"uninterned symbol" relative to the obarray.  An uninterned symbol has
+all the other properties of symbols.  It is possible, though uncommon,
+for two different symbols to have the same name in different obarrays;
+they are not `eq' or `equal'.
+
+  The functions below all take a name and sometimes an obarray as
+arguments.  It is a `wrong-type-argument' error if the name is not a
+string, or if the obarray is not a vector.
+
+
+* Function: symbol-name SYMBOL
+
+       This function returns the string that is SYMBOL's name.  Changing
+     the name cell of a symbol will change the name of the symbol.
+     Changing the string by substituting characters, etc, will also
+     change the name of the symbol.  Don't do either of these things.
+     Rather, create a new symbol with the desired name.
+
+          (symbol-name 'foo)
+          => "foo"
+
+
+* Function: make-symbol NAME
+
+       Return a newly allocated uninterned symbol whose name is NAME
+     (which must be a string).  Its value and function definition are
+     void, and its property list is `nil'.  In the example below, the
+     value of `sym' is not `eq' to `foo' because the string was not
+     interned.
+
+          (setq sym (make-symbol "foo"))
+          => foo
+          (eq sym 'foo)
+          => nil
+
+
+
+* Function: intern NAME &optional OBARRAY
+
+       This function returns the symbol whose name is NAME.  If the
+     symbol is not in the obarray, it is added.  If OBARRAY is supplied,
+     it specifies the obarray to use; otherwise the value of the global
+     variable `obarray' is used.
+
+          (setq sym (intern "foo"))
+          => foo
+          (eq sym 'foo)
+          => t
+
+
+* Function: intern-soft NAME &optional OBARRAY
+
+       This function returns the symbol whose name is NAME, or `nil' if
+     a symbol with that name is not found in the obarray.  Therefore,
+     you can use `intern-soft' to test whether a symbol with a given
+     name is interned.  If OBARRAY is supplied, it specifies the obarray
+     to use; otherwise the value of the global variable `obarray' is
+     used.
+
+          (intern-soft "frazzle")                ; No such symbol exists,
+          => nil
+          (make-symbol "frazzle")                ; Create an uninterned one.
+          => frazzle
+          (intern-soft "frazzle")                ; That one cannot be found.
+          => nil
+          (setq sym (intern "frazzle"))          ; Create an interned one.
+          => frazzle
+          (intern-soft "frazzle")                ; That one can be found!
+          => frazzle
+          (eq sym 'frazzle)                      ; And it is the same one.
+          => t
+
+
+* Variable: obarray
+
+       This global variable is the standard obarray for use by `intern'
+     and `read'.  It is a vector whose length ought to be prime for best
+     results (presently 511).  Each element is an interned symbol whose
+     name hashes to that bucket.  That symbol (if any) has an internal
+     link (invisible to the user) to the next symbol that hashes to that
+     bucket.  The order of these is unimportant.
+
+
+
+
+* Function: mapatoms FUNCTION &optional OBARRAY
+
+       This function applies FUNCTION to every symbol in OBARRAY.  It
+     returns `nil'.  If OBARRAY is not supplied, it defaults to the
+     value of `obarray'; the normal obarray of all symbols.
+
+     See `documentation' in *Note Documentation Strings:: for another
+     example using `mapatoms'.
+
+          (setq count 0)
+               => 0
+          (defun count-syms (s)
+            (setq count (1+ count)))
+               => count-syms
+          (mapatoms 'count-syms)
+               => nil
+          count
+               => 1871
+
+
+
+
+File: elisp  Node: Property Lists, Prev: Creating and Interning Symbols, Up: Symbols
+
+Property Lists
+==============
+
+  A "property list" ("plist" for short) is a list of paired elements
+stored in the property list cell of a symbol.  Each of the pairs
+associate a property name (usually a symbol) with some property or
+value.  Property lists are generally used to record information about a
+symbol, such as which file it received a function definition in, or the
+grammatical class the name of the symbol belongs to in a language
+understanding system.  (more appropriate examples??)
+
+  The property names (or keys) and property values may be any Lisp
+objects.  The property names are compared using `eq'.
+
+  Association lists (*Note Association Lists::) are very similar to
+property lists.  But unlike association lists, the order in which the
+pairs of elements occur is not important since each property name can
+appear only once in the property list (as a key).  Thus a property list
+is usually more space efficient than an association list.  Another
+factor in favor of using a property list is that it is quickly
+accessable through the global symbol while an association list may be
+stored as a variable value which is accessed by a search up the run-time
+stack.
+
+  There are several reasons for using an association list over a
+property list.  Depending on your application, it may be faster to add a
+pair to the front of an association list than to update a property.  All
+properties for a symbol are stored in the same property list, so there
+is a possibility of a conflict between different uses of a property
+name.  (For this reason, it is best to name properties in some unique
+fashion such as including the name of your extension package in the
+property name.)  An association list may be used like a stack where
+pairs are pushed on the top of the stack and later popped off; this is
+not possible with a property list.
+
+
+* Function: symbol-plist SYMBOL
+
+       Returns the property list of the SYMBOL.  A property list is a
+     list in which the odd numbered elements are the property names and
+     the even numbered elements are the properties or associated values.
+     You should *not* use this function to get access to the property
+     list for the purpose of altering it.  (See example for `setplist').
+
+
+* Function: setplist SYMBOL PLIST
+
+       This function sets SYMBOL's property list to PLIST.  PLIST should
+     be a well-formed property list, although this condition is not
+     checked for.
+
+          (setplist 'foo '(a 1 b (2 3) c nil))
+          => (a 1 b (2 3) c nil)
+          (symbol-plist 'foo)
+          => (a 1 b (2 3) c nil)
+
+
+* Function: get SYMBOL KEY
+
+       This function gets KEY from SYMBOL's property list.  If SYMBOL
+     has such a key, the associated value is returned.  If there is no
+     such key, `nil' is returned.  Thus, there is no distinction between
+     an associated value of `nil' and the absence of the key.  KEY is
+     compared with the property names using `eq', so any object is
+     legitimate.  See `put' for example.
+
+
+* Function: put SYMBOL KEY VALUE
+
+       This function puts VALUE onto SYMBOL's property list under the
+     property name KEY, replacing any previous value.
+
+     (Emacs oriented example needed here!!)
+
+          (put 'fly 'verb 'transitive)
+          =>'transitive
+          (put 'fly 'noun '(a nasty little bug))
+          => (a nasty little bug)
+          (get 'fly 'verb)
+          => transitive
+          (symbol-plist 'fly)
+          => (verb transitive noun (a nasty little bug))
+
+
+
+File: elisp  Node: Variables, Prev: Symbols, Up: Top, Next: Functions
+
+Variables
+*********
+
+  As in other languages, an Emacs Lisp "variable" is a symbol that
+represents a value (*Note Symbols::).
+
+  Emacs Lisp supports three different kinds of variables. These are
+global variables, local variables, and buffer-local variables.  We will
+describe each of these in turn.  First, though, an explanation is given
+of general concepts pertaining to all variables.
+
+  The value of a variable is either stored in the global value cell, in
+the case of global variables, or on the runtime stack in a local
+binding, in the case of local variables.
+
+  When a variable does not have a binding, it is said to be "void" or a
+"void variable".  Evaluation of such a variable results in the
+`void-variable' error.  You can explicitly make a variable void with
+`makunbound' (*Note Local Variables::)
+
+
+* Menu:
+
+* Name Resolution::	
+* Global Variables::	
+* Local Variables::	
+* Buffer Local Variables::	
+* Accessing Variable Values::	
+
+
+
+File: elisp  Node: Name Resolution, Up: Variables, Next: Global Variables
+
+Name Resolution
+===============
+
+
+  When a symbol is evaluated, it is treated as a variable.  To determine
+which kind of variable it is and what the value of the variable is, the
+symbol is looked up in the environment.  This lookup process is called
+"name resolution" and is described in this section.  Another perspective
+on variable lookup is given in *Note Symbol Forms::.
+
+  Variables in Emacs Lisp have "indefinite scope" and "dynamic extent".
+"Scope" refers to *where* textually in the source code a variable can be
+accessed. "Extent" refers to *when*, as the program is executing, a
+variable can be accessed.
+
+  Indefinite scope is an unusual aspect of Emacs Lisp; most programming
+languages other than Lisp have lexical scope (and Common Lisp is
+lexically scoped unless variables are explicitly declared otherwise).
+Languages with "lexical scope" resolve references to free variables by
+looking backward through enclosing blocks in the program text from the
+point of reference. Compare this with the scoping rules for Emacs Lisp,
+described in next section.
+
+  The combination of scope and extent defines a variable's
+accessibility.  The combination of dynamic extent and indefinite scope
+is called "dynamic scope" or "dynamic binding".  In Emacs Lisp, dynamic
+scope translates into a simple stack discipline: when a function (for
+example; *Note Local Variables::) is entered, it is bound on the
+"runtime stack".  When the function exits, its bindings are removed.
+
+  It is usually possible to achieve your goal without taking advantage
+of dynamic scope. Dynamic scoping makes your program harder to read,
+because a variable can be used far from where it is defined.
+
+* Menu:
+
+* Scope::	
+* Extent::	
+
+
+
+File: elisp  Node: Scope, Up: Name Resolution, Next: Extent
+
+Scope
+-----
+
+  Emacs Lisp uses indefinite scoping for resolving variable references.
+Indefinite scoping binds free variables by looking backward on the
+(dynamic) call chain.  This implies that any function anywhere in the
+program text might access a given binding of a variable.  A variable
+`x', bound in a function `fn1', might be accessible to a function `fn2',
+even though the code for function `fn2' is completely separate from that
+of `fn1'.  Consider the following definitions for these functions.
+
+     (defun fn1 (x)  ; x is bound in fn1.
+        (foo 5))     ; foo is some other function.
+
+     (defun fn2 ()
+       (list x))     ; x is used in fn2.
+
+  In the above example, we can't tell if `fn2' will use the variable `x'
+bound in `fn1'.  That depends on the definition of `foo' which is called
+by `fn1'.  (In a lexically scoped language, however, the `x' of `fn1'
+would never be accessible in `fn2', since the `x' of `fn1' is locally
+declared.)  If `foo' calls `fn2' and does not itself bind `x', then the
+`x' bound in `fn1' will be used in `fn2'.  Suppose, though, that `foo'
+binds `x' as in the following definition:
+
+     (defun foo (x)
+       (fn2))
+
+  Then, when `foo' is called by `fn1', it will bind `x'.  Therefore,
+`fn2' will access the `x' bound by `foo' instead of the one bound by
+`fn1'.  (The `x' in `foo' is said to "shadow" the `x' in `fn1'.)
+
+
+
+File: elisp  Node: Extent, Prev: Scope, Up: Name Resolution
+
+Extent
+------
+
+  Extent refers to the time during program execution that a variable
+name is valid.  In Emacs Lisp, as in most other languages, a variable is
+valid only while the form that bound it is executing.  This is called
+"dynamic extent".
+
+  One alternative to dynamic extent is "indefinite extent".  This means
+that a form can define a function which accesses a variable that is
+bound in the form, even after the form has exited.  Common Lisp and
+Scheme, for example, support this, but Emacs Lisp does not.  To
+illustrate this, the function below, `make-add', returns a function that
+purports to add `n' to its own argument `m'.  This does not work as
+intended because after the call to `make-add' exits, the variable `n' is
+no longer bound to the actual argument `2'.
+
+     (defun make-add (n)
+         (function (lambda (m) (+ n m))))  ; Return a function.
+     => make-add
+     (fset 'add2 (make-add 2))  ; Define function add2 with (make-add 2).
+     => (lambda (m) (+ n m))
+     (add2 4)                   ; Try to add 2 to 4.
+     -> Symbol's value as variable is void: n
+
+
+
+File: elisp  Node: Global Variables, Prev: Name Resolution, Up: Variables, Next: Local Variables
+
+Global Variables
+================
+
+  In Emacs Lisp, a "global variable" is simply a symbol with a value in
+its value cell.  (*Note Symbols::).
+
+  You may declare your intention to use a symbol as a global variable
+with `defvar' or `defconst' (see below).  The difference between the two
+declarations is primarily intent. Emacs Lisp does not restrict the ways
+in which a variable can be used based on `defvar' or `defconst'
+declarations.
+
+     Note: The descriptions of `defvar' and `defconst' state that these
+     special forms set the global value cell of symbols.  This is not
+     strictly true; for a symbol that has a local binding (at the time
+     `defvar' or `defconst' are evaluated), the global value cell of the
+     symbol can not be accessed or changed.
+
+
+* Special form: defvar SYMBOL [VALUE [DOC-STRING]]
+
+       This special form informs a person reading your code that SYMBOL
+     will be used as a variable which will not normally be locally
+     bound.
+
+     SYMBOL is not evaluated. `defvar' returns SYMBOL.
+
+       If SYMBOL is bound, VALUE is not even evaluated, and SYMBOL's
+     value remains unchanged.  If SYMBOL is unbound and VALUE is given,
+     VALUE is evaluated and the global value of SYMBOL set to the
+     result; if VALUE is not given, SYMBOL is set to `nil'.
+
+       If DOC-STRING is given, the `variable-documentation' property of
+     SYMBOL is set to it.  (*Note Documentation:: for more information
+     about the documentation property and how DOC-STRING is displayed to
+     the user.)  The Emacs help functions (*Note Help::) look for such a
+     property.  If the first character of DOC-STRING is `*', then SYMBOL
+     is known as a "user option", i.e., a variable that is commonly
+     changed by the user.
+
+       For example, the first form below declares that `foo' exists.
+     This form does not set the value cell of `foo'.  The second form
+     sets the value of `bar' to `23', and gives it a documentation
+     string. The fourth form changes the documentation string for `bar',
+     making it a user option, but does not change the value (the
+     addition `(1+ 23)' is not even performed, since `bar' was already
+     bound).
+
+          (defvar foo)
+          => foo
+
+          (defvar bar 23 "The normal weight of a bar.")
+          => bar
+
+          (defvar bar (1+ 23) "*The normal weight of a bar.")
+          => bar
+          bar
+          => 23
+
+       Below we show what `defvar' is equivalent to.
+
+          (defvar SYMBOL VALUE DOC-STRING)
+          ==
+          (progn
+            (if (not (boundp 'SYMBOL))
+                (setq SYMBOL VALUE))
+            (put 'SYMBOL 'variable-documentation 'DOC-STRING)
+            'SYMBOL)
+
+
+* Function: user-variable-p VARIABLE
+
+       This function returns `t' if VARIABLE is intended to be set and
+     modified by the user, as opposed to by programs. It simply looks at
+     the first character of the property `variable-documentation' of
+     VARIABLE.  If this character is `*', then the result is `t';
+     otherwise, the result is `nil'. If VARIABLE doesn't have a
+     documentation string, the result is `nil'.
+
+
+
+* Special form: defconst SYMBOL [VALUE [DOC-STRING]]
+
+       This special form informs a person reading your code that SYMBOL
+     will not normally be locally bound, or changed by the execution of
+     the program.  Typically, you give SYMBOL a global value which is
+     not thereafter changed by your code.  The user, however, may still
+     change it.
+
+       `defconst' always evaluates VALUE and sets the global value of
+     SYMBOL to the result.  SYMBOL is not evaluated. It returns SYMBOL.
+
+
+       If DOC-STRING is given, the property `variable-documentation' is
+     set to it, unevaluated.  The Emacs help functions (*Note
+     Documentation::) look for this property.  If the first character of
+     DOC-STRING is `*', then this variable is considered to be a user
+     option.
+
+
+       In the first form below, `indent-depth' is a constant that is a
+     user option.  In the second example, `pi' is a constant which, of
+     course, should never be changed (attempts by the U.S. Congress
+     notwithstanding).  However, as the third form illustrates, this is
+     only advisory.
+
+          (defconst indent-depth 4
+            "*Indent code this many spaces per level.")
+          => indent-depth
+
+          (defconst pi 3 "Pi to one place.")
+          => pi
+          (setq pi 4)
+          => pi
+          pi
+          => 4
+
+
+
+File: elisp  Node: Local Variables, Prev: Global Variables, Up: Variables, Next: Buffer Local Variables
+
+Local Variables
+===============
+
+  A "local variable" is any symbol bound to a value by one of the forms
+described below.  In all cases, a local binding of a symbol will be used
+(if it is not void) instead of the global value.  A symbol may be a
+local variable without having a global value and vice versa.  The
+"most-local binding" or simply the "variable binding" (terminology!!) of
+a variable is either the most recent local binding if there is one, or
+the global value cell otherwise.
+
+  Local variable bindings are, conceptually, on an association list.
+That is, each form that declares local variables pushes on the runtime
+stack a list of pairs `((SYMBOL . VALUE) ...)' where each SYMBOL is
+bound to a VALUE.  The local bindings are removed when the binding form
+exits, whether normally or from a non-local exit (*Note Non-Local
+Exits::).  Only the top-most binding for each symbol will be seen.  When
+there is no local binding for a symbol, the global value in the value
+cell of the symbol will be seen (*Note Global Variables::.
+
+  The number of local variable bindings is limited by `max-specpdl-size'
+(*Note Eval::).
+
+  Although a function call is the most common form that binds local
+variables, it is not the only one.  Here is the complete list:
+
+   * Function calls (*Note Function Calls::).
+
+   * Macro calls (*Note Macro Calls::).
+
+   * The special forms `let' and `let*' (described next).
+
+   * `condition-case' (*Note Errors::).
+
+
+
+* Special form: let BINDING-LIST FORMS*
+
+       This function binds variables according to BINDING-LIST and then
+     evaluates all of the FORMS in textual order.  `let' returns the
+     value of the last form in FORMS.
+
+       Each element of BINDING-LIST is either (i) a symbol, in which
+     case the symbol is bound to `nil'; or (ii) a list of the form
+     `(SYMBOL FORM)', in which case SYMBOL is bound to the result of
+     evaluating FORM (FORM may be missing, in which case `nil' is used).
+
+       All of the FORMs in BINDING-LIST are evaluated in the order they
+     appear and *before* any of the symbols are bound.  But it is poor
+     programming practice to rely on the order of evaluation, since the
+     evaluation of FORMs may occur in some other order in other Lisp
+     implementations.  The example illustrates this: `Z' is bound to the
+     old value of `Y', which is `2', not the new value, `1'.
+
+          (setq Y 2)
+          => 2
+          (let ((Y 1) 
+                (Z Y)
+               )
+            (list Y Z))
+          => (1 2)
+
+
+
+* Special form: let* BINDING-LIST FORMS*
+
+       This special form is like `let', except that the symbols in
+     BINDING-LIST are bound as they are encountered before the remaining
+     forms are evaluated.  Therefore, an expression in the BINDING-LIST
+     may reasonably refer to symbols already bound by this BINDING-LIST.
+     Compare the following example with the example for `let'.
+
+          (setq Y 2)
+          => 2
+          (let* ((Y 1)
+                 (Z Y)
+                )
+            (list Y Z))
+          => (1 1)
+
+
+* Function: boundp SYMBOL
+
+       `boundp' returns `t' if SYMBOL is not void; to be more precise,
+     if either a local binding or its global value is not void.  It
+     returns `nil' otherwise.
+
+          (boundp 'abracadabra)                ; Starts out unbound.
+          => nil
+          (let ((abracadabra 5))               ; Locally bind it.
+               (boundp 'abracadabra))
+          => t
+          (boundp 'abracadabra)                ; Still globally unbound.
+          => nil
+          (setq abracadabra 5)                 ; Globally bind it.
+          => 5
+          (boundp 'abracadabra)
+          => t
+
+
+* Function: makunbound SYMBOL
+
+       This function makes the local binding of SYMBOL void; or if there
+     is no local binding, it makes the global value void.  This causes a
+     future attempt to use this symbol as a variable to signal the error
+     `void-variable'.
+
+       If SYMBOL is locally bound, `makunbound' invalidates that
+     binding, and does not allow any previous local binding or global
+     value to be seen. When the form that called `makunbound' exits,
+     however, the previous local binding or global value will again
+     become visible.
+
+       `makunbound' returns SYMBOL.
+
+          (makunbound 'x)                  ; Make x's global value void.
+          => x
+          x
+          -> Symbol's value as variable is void: x
+
+          (setq x 1)                       ; Now globally bind it.
+          => 1
+          (let ((x 2))                     ; And locally bind it.
+            (makunbound 'x)                ; Void its bindings.
+            x)
+          -> Symbol's value as variable is void: x
+          x                                ; The global binding is gone, too.
+          -> Symbol's value as variable is void: x
+
+          (let ((x 2))                     ; Locally bind it.
+            (let ((x 3))                   ; And again.
+              (makunbound 'x)              ; Void the most-local binding.
+              x))                          ; And refer -- it's void.
+          -> Symbol's value as variable is void: x
+
+          (let ((x 2))                     ; Same as before.
+            (let ((x 3))
+              (makunbound 'x))             ; Void bindings and exit inner let.
+            x)                             ; Now it's bound by the outer let.
+          => 2
+
+
+
+File: elisp  Node: Buffer Local Variables, Prev: Local Variables, Up: Variables, Next: Accessing Variable Values
+
+Buffer Local Variables
+======================
+
+  Global and local variables are common features of almost all
+programming languages, if not necessarily in the same form that they
+take in Emacs Lisp.  Emacs is meant for editing, though, as well as
+programming, and the central object of editing is the buffer (*Note
+Buffers::.) Therefore, Emacs Lisp also supports "buffer-local
+variable"s, which have different values in different buffers.
+
+  In fact, there are two varieties of buffer-local variables.
+`make-local-variable' makes a variable local to just the current buffer;
+`make-variable-buffer-local' makes a variable local to *every* buffer,
+even ones that are created later.  The latter will be called
+"per-buffer-local variable"s when it is necessary to distinguish them
+from buffer-local variables.  So, a per-buffer-local variable is
+buffer-local in every buffer.
+
+  When a variable that is buffer-local in the current buffer is changed,
+the value that other buffers see is not changed. This is what makes
+buffer-local variables useful.
+
+  Once `make-variable-buffer-local' has been called, the symbol remains
+per-buffer-local for its lifetime.  Calling `make-local-variable' has no
+additional effect. It also makes no difference if the symbol is locally
+bound.
+
+  The "default value" of a buffer-local variable is the value that is
+seen by buffers that have not made the variable buffer-local, or have
+not yet set the variable's value in the case of per-buffer-local
+variables.  The default value may be specifically changed with
+`set-default' or `setq-default'.
+
+     Note: The implementation of buffer-local variables is a shallow
+     binding scheme in which the local values are substituted into the
+     variable bindings each time a different buffer is selected.  This
+     makes switching buffers more expensive, but evaluating variables
+     much less so.
+
+Buffer-local variables may also be established with
+`hack-local-variables' (*Note Setting the Major Mode::) when a file is
+loaded, or when `normal-mode' is called (*Note Setting the Major
+Mode::).
+
+
+* Function: buffer-local-variables &optional BUFFER
+
+       This function tells you what the buffer local variables are in
+     buffer BUFFER.  It returns an association list (*Note Association
+     Lists::) in which each pair is a buffer-local variable and its
+     value.  If BUFFER is not given, the current buffer is used.  Note
+     that changing the values in this list will *not* change the local
+     value of the variable.
+
+          (setq lcl (buffer-local-variables))
+          => ((fill-column . 75)
+              (case-fold-search . t)
+              ...
+              (mark-ring #<marker at 5454 in buffes.texinfo>)
+              (require-final-newline . t))
+
+
+
+* Command: make-local-variable SYMBOL
+
+       This function makes SYMBOL have a separate value in the current
+     buffer.  The current value of the variable will remain as the
+     default value for other buffers that have not made the variable
+     buffer-local.
+
+          ;; In buffer A:
+          (setq foo 5)
+          => 5
+          (make-local-variable 'foo)
+          => foo
+          foo
+          => 5
+          (setq foo 6)
+          => 6
+
+          ;; In buffer B, the value hasn't changed.
+          foo
+          => 5
+
+
+
+* Command: make-variable-buffer-local SYMBOL
+
+       This function makes SYMBOL a buffer-local variable for every
+     buffer, including ones that are subsequently created.  The current
+     value of SYMBOL becomes the default value, which is seen in any
+     buffer that does not have its own value.
+
+       `make-variable-buffer-local' returns SYMBOL.
+
+
+
+* Function: kill-all-local-variables
+
+       This function eliminates all the buffer-local variable bindings
+     of the current buffer.  As a result, the buffer will see the
+     default values of all variables.  It does not, however, change the
+     buffer-local status of any variables.
+
+       `kill-all-local-variables' returns `nil'.
+
+
+* Command: kill-local-variable SYMBOL
+
+       This function makes SYMBOL no longer have a buffer-local binding
+     in the current buffer. So, the buffer will now see the default
+     value for SYMBOL.
+
+       When `kill-local-variable' called interactively, SYMBOL is
+     prompted for in the minibuffer.
+
+       `kill-local-variable' returns SYMBOL.
+
+
+
+* Special form: setq-default [SYMBOL VALUE]*
+
+       This function sets the default value of each SYMBOL to the
+     corresponding VALUE.  SYMBOL is not evaluated and VALUE is.  It
+     returns the first VALUE.
+
+       The default value is seen in buffers that do not have their own
+     buffer-local values for this variable.
+
+       If a SYMBOL is not buffer-local for the current buffer, this is
+     equivalent to `setq' in the current buffer for that symbol.  If
+     SYMBOL is buffer-local for the current buffer, then this changes
+     the value other buffers will see (as long as they don't have a
+     buffer-local value), but not the value that the current buffer
+     sees.
+
+          (make-variable-buffer-local 'local)
+          => local
+
+          ;; In buffer foo:
+          (setq local 'foo)
+          => foo
+
+          ;; In (the new) buffer bar:
+          local
+          => nil
+          (setq-default local 'default)
+          => default
+          local
+          => default
+          (setq local 'bar)
+          => bar
+
+          ;; In (the new) buffer baz:
+          local
+          => default
+
+          ;; Back in buffer foo:
+          (setq local 'foo)
+          => foo
+          (default-value 'local)
+          => default
+
+
+
+* Function: set-default SYMBOL VALUE
+
+       This function is like `setq-default' except only one SYMBOL and
+     one VALUE are allowed and both are evaluated.  (See `setq-default'
+     above.)
+
+          (set-default (car '(a b c)) 23)
+          => 23
+
+
+* Function: default-value SYMBOL
+
+       Return SYMBOL's default value.  This is the value that is seen in
+     buffers that do not have their own values for this variable.  If
+     SYMBOL is not buffer-local, than this is the same as `symbol-value'
+     (*Note Accessing Variable Values::).
+
+
+
+
+
+File: elisp  Node: Accessing Variable Values, Prev: Buffer Local Variables, Up: Variables
+
+Accessing Variable Values
+=========================
+
+  The usual way to reference a variable is just to write the symbol
+which names it (*Note Symbol Forms::).  The following constructs provide
+less common ways to reference and change the binding of a variable.
+
+
+* Function: symbol-value SYMBOL
+
+       This function returns the value of the symbol.  This is the value
+     in local binding of the symbol, or its global value if it is not
+     locally bound.
+
+       The error `void-variable' is signaled if the symbol has neither a
+     local binding nor a global value.
+
+          (setq abracadabra 5)
+          => 5
+          (let ((abracadabra 'foo))
+            (symbol-value 'abracadabra))
+          => foo
+          (symbol-value 'abracadabra)
+          => 5
+
+
+* Special form: setq [SYMBOL FORM]*
+
+       This special form is the most common method of changing a
+     variable's value.  For each SYMBOL, `setq' changes the value of the
+     most-local binding of SYMBOL to the result of evaluating FORM.  The
+     setting is done in textual order; each variable is set before the
+     remaining FORMs are evaluated.
+
+       `setq' returns the value of the last FORM.
+
+          (setq x (1+ 2))
+          => 3
+          (setq x 10            ; Notice that x gets set before y
+                y (1+ x))       ; and y uses that value.
+          => 11             
+          (let ((x 5)) 
+            (setq x 6)          ; The local binding of x gets set.
+            x)
+          => 6
+          x                     ; The global value is unchanged.
+          => 11
+
+
+
+* Function: set SYMBOL-FORM FORM
+
+       This function sets SYMBOL-FORM's value to FORM.  Since `set' is a
+     function, SYMBOL-FORM is evaluated, and it is the value returned
+     which is set to FORM.  As usual, it is the most-local binding of
+     the variable that is set.  If the evaluation of SYMBOL-FORM does
+     not result in a symbol, the error `wrong-type-argument' is
+     signaled.  If the SYMBOL-FORM includes a symbol that is unbound
+     though (perhaps a more uncommon error), the error `void-variable'
+     is signaled.
+
+       `set' returns FORM.
+
+          (set one 1)
+          -> Symbol's value as variable is void: one
+          (set 'one 1)
+          => 1
+          (set 'two 'one)
+          => one
+          (set two 2)            ; `two' evaluates to symbol `one'.
+          => 2
+          one                    ; So it is `one' that was set.
+          => 2
+          (let ((one 1))         ; This binding of `one' is set,
+            (set 'one 3)      ; not the global value.
+            one)
+          => 3
+          one
+          => 2
+
+          Common Lisp Note: In Common Lisp, `set' will always change the
+          symbol's global value and never a local binding.  This is not
+          the case with GNU Emacs Lisp.
+
+
+
+File: elisp  Node: Functions, Prev: Variables, Up: Top, Next: Macros
+
+Functions
+*********
+
+  The Lisp language that GNU Emacs uses is, like all Lisp languages,
+comprised mainly of a set of functions and variables.  This chapter is
+concerned with the definition and manipulation of functions in the Lisp
+language and their relationship to editing commands.
+
+* Menu:
+
+* What is a Function::  
+* Lambda Expressions::  
+* Function Declarations::       
+* Accessing Function Definitions::
+* Other Function Related Functions::    
+
+
+
+File: elisp  Node: What is a Function, Up: Functions, Next: Lambda Expressions
+
+What is a Function
+==================
+
+  Functions in GNU Emacs Lisp are defined in one of two basic ways; they
+may be primitives written in C, or they may be defined in Lisp.  In
+Emacs version 18.52, there are approximately 580 functions in 64 C
+source files, and over 2600 functions in about 145 Lisp files.  There
+are also about 145 Lisp variables defined in C, and about 600 in Lisp.
+
+  The C-coded functions provide the very lowest-level interfaces to
+editing functions or operating system services, or in a very few cases,
+to perform certain operations more quickly than they could be performed
+in Lisp.  These can only be modified by rewriting them and recompiling
+the editor.  This is a fairly complex process that is described in *Note
+Writing Emacs Primitives::.
+
+  The other method, which is the standard method for writing extensions
+to the editor, is to write new functions in Lisp.  If you have ever
+programmed other versions of Emacs you will find writing code for GNU
+Emacs very pleasant; the Lisp provided is a true version of Lisp, and
+functions that are used as commands do not require any terribly arcane
+calling sequence.
+
+  Another alternative to functions are macros.  When a function call is
+evaluated, all of the arguments are first evaluated, but when a macro
+call is evaluated, the arguments are not necessarily evaluated.  *Note
+Macros:: for how to define and use macros.
+
+  It will be helpful to define a few terms first, as the meanings used
+here differ from the common definitions.
+
+Primitive
+     A "primitive" is a function callable from Lisp that is written in
+     C, such as `car' and `cdr'.  These are sometimes called "built-in"
+     functions or "subrs".
+
+Function
+     A "function" in general is anything that can be called in Lisp
+     code.  In this manual, "function" will normally be used to mean
+     code written in Lisp.  But the term is also sometimes used to refer
+     to primitives, special forms, and macros.  (should Function be used
+     this way??  we need a consistent naming scheme!!)
+
+Command
+     A "command" is something that is advertised to the user and can be
+     invoked by the user either with `M-x' `command-name' or by means of
+     a keystroke.  From the programmer's point of view, it is a function
+     with an interactive specification (*Note Interactive Call::).
+
+Keystroke Command
+     A "keystroke command" is a command that can be executed with a
+     short key sequence, as opposed to a command that is not bound to a
+     key sequence.  The distinction is made here merely to avoid
+     confusion with the meaning of ``command'' in non-Emacs editors; for
+     programmers, the distinction is normally unimportant.
+
+
+
+
+File: elisp  Node: Lambda Expressions, Prev: What is a Function, Up: Functions, Next: Function Declarations
+
+Lambda Expressions
+==================
+
+  Since many people have not programmed in Lisp before, it may be
+helpful to review just what a function is before discussing some of the
+particular facilities provided for manipulating functions.  If you are a
+Lisp programmer, you can skim this section, but there are some points
+that are specific to the GNU Emacs Lisp language.
+
+  A Lisp function is a list that looks like this:
+
+     (lambda ARGS BODY)
+
+  (This sort of Lisp expression is known as a "lambda expression" for
+mainly historical reasons.)
+
+  The first element of this list is the symbol `lambda'; the second
+element of this list is a list of arguments, and all other elements of
+the list comprise Lisp code to execute, or, as a Lisp programmer would
+say, ``are a list of Lisp forms to evaluate''.  The value returned by
+the function is the value returned by the last element of the body.
+
+  The list of arguments, called the "lambda-list", is a list of variable
+names.  When a Lisp function is called, the arguments provided are
+matched up against the names in the lambda-list, and those variables are
+bound to the values provided.
+
+  Thus, if the function foo looked like this:
+
+     (lambda (a b c) (+ a b c)) and was called as follows:
+     (foo 1 2 3) `foo' would be evaluated with the variable `a' bound to
+`1', `b' bound to `2', and `c' bound to `3'.  Note that the arguments
+could have been the results of other functions; i. e.
+     (foo 1 (* 2 3) (- 5 4)) all the arguments to `foo' (`1', `(* 2 3)',
+and `(- 5 4)') would be evaluated, left to right.  Then `foo' would be
+applied to these arguments.
+
+
+  Functions are often associated with the symbols used to name them.
+For example, `foo' is a symbol, but we will regularly refer to the
+function `foo', meaning the function which that symbol's function cell
+normally points to.
+
+  The function call in our example here must provide all three arguments
+to the `foo' function.  If you attempted to call `foo' with only two
+arguments, you would get a `wrong-number-of-arguments' error.  However,
+it is often convenient not to have to specify certain arguments,
+allowing them to default in some way, such as the function `rmail',
+which will default to a predetermined filename if not passed a specific
+filename.  It is also convenient to be able to provide an indefinite
+number of arguments; functions such as `and', `or', and `+' fall into
+this category.
+
+  To specify optional arguments that may or may not be given when a
+function is called, simply include the keyword `&optional' before the
+optional arguments.  To specify a list of zero or more extra arguments,
+include the keyword `&rest' before one final argument.
+
+  The complete syntax for a lambda expression as follows:
+
+     (lambda (REQUIRED-VARS* [&optional OPTIONAL-VARS*] [&rest REST-VAR])
+        [DOCUMENTATION-STRING]
+        [INTERACTIVE-DECLARATION]
+        BODY-FORMS*)
+
+The DOCUMENTATION-STRING and INTERACTIVE-DECLARATION are described
+later.
+
+  The `&optional' and `&rest' clauses and the variables that follow are
+optional.  A function call requires one actual argument for each of the
+REQUIRED-VARS.  There may be actual arguments for zero or more of the
+OPTIONAL-VARS, and there cannot be any more actual arguments than these
+unless `&rest' exists.  In that case, there may be any number of extra
+actual arguments.  If actual arguments are not supplied for the optional
+and rest variables, then they always default to `nil'.
+
+
+     Common Lisp Note: This is different from Common Lisp, where default
+     values can be supplied for the optional parameters.
+
+
+  For example, a lambda-expression that looks like this:
+     (a b &optional c d &rest e)
+
+binds A and B to the first two actual arguments, which are required.  If
+one or two more arguments are included, C and D are bound to them
+respectively; any arguments after that are collected into a list and E
+is bound to that list.  After the arguments provided by the caller are
+used up, any remaining optional or rest variables are bound to nil.
+
+  All variables after the `&optional' are for optional arguments, and
+only one variable is meaningful after `&rest'.  To see why this must be
+so, suppose that C in the example were optional and D were required.  If
+three actual arguments are given; then what should be bound to the third
+argument?  Similarly, multiple `&rest' variables have no meaning.
+
+  One minor problem with optional arguments is that if the last argument
+provided is `nil', and it is an optional argument, then the function
+cannot tell if the argument was provided or not.
+
+  Returning to the syntax of the lambda-expression, the
+DOCUMENTATION-STRING is completely optional as far as the language is
+concerned; if provided, it is a literal string that is used by a few
+functions for the user's benefit.  It is a good idea to provide
+documentation strings for all commands and functions, and it should
+explain what the function does and all its arguments in order. (Since
+`apropos' only displays the first lines of documentation strings, try to
+make the first lines of your documentation strings whole sentences.)
+*Note Documentation:: for how the DOCUMENTATION-STRING is displayed to
+the user.
+
+  You may wonder how the documentation string could be optional, since
+there are required components of the function that follow it (the body).
+Since evaluation of a string returns that string, without any side
+effects, it has no effect if it is not the last form in the body.  Thus,
+in practice, there is no confusion between the first form of the body
+and the documentation string; if the only body form is a string then it
+serves as both the return value and the documentation.
+
+  The INTERACTIVE-DECLARATION, if it exists, is a form `(interactive
+CODE-STRING)', declaring that it is possible for the function to be used
+interactively.  Functions with this declaration are called "commands"
+(*Note Interactive Call:: for what can appear in an
+INTERACTIVE-DECLARATION).
+
+  The rest of the function definition is simply a list of Lisp
+BODY-FORMS to be evaluated in order, and the value of the last form is
+returned as the result of the function call.
+
+
+More examples of the use of lambda:
+
+
+     ((lambda (n) (1+ n))                ;One parameter:
+      1)                                 ;requires exactly one argument
+     => 2
+     ((lambda (n &optional n1)           ;One parameter and one optional:
+              (if n1 (+ n n1) (1+ n)))   ;1 or 2 arguments.
+      1 2)
+     => 3
+     ((lambda (n &rest ns)                ;One parameter and &rest:
+              (+ n (apply '+ ns)))        ;1 or more arguments.
+      1 2 3 4 5)
+     => 15
+
+
+
+
+File: elisp  Node: Function Declarations, Prev: Lambda Expressions, Up: Functions, Next: Accessing Function Definitions
+
+Function Declarations
+=====================
+
+
+
+* Special form: defun SYMBOL PARAMETER-LIST BODY-FORMS
+
+       `defun' is the usual way to define new Lisp functions.
+
+       When this function declaration is evaluated, it defines SYMBOL to
+     be the name of a function.  The rest of the special-form is used to
+     create a lambda expression that looks like: `(lambda PARAMETER-LIST
+     . BODY-FORMS)'.  This lambda expression is then stored in the
+     function cell of that symbol.  `defun' returns SYMBOL as the result
+     of the evaluation.
+
+       As described previously (*Note Lambda Expressions::), the
+     PARAMETER-LIST is a list of parameter names and may include the
+     keywords `&optional' and `&rest'.  Also, the first two forms in
+     BODY-FORMS may be a documentation string and an interactive
+     declaration.
+
+       Note that the same SYMBOL may also be used as a global variable
+     since the value cell is independent of the function cell.  But take
+     precautions against unintentionally redefining functions since
+     `defun' will even redefine primitive functions such as `car'
+     without any notification.
+
+          (defun foo () 5)
+          => foo
+          (foo)
+          => 5
+
+          (defun bar (a &optional b &rest c)
+              (list a b c))
+          => bar
+          (bar 1 2 3 4 5)
+          => (1 2 (3 4 5))
+          (bar 1)
+          => (1 nil nil)
+          (bar)
+          -> ERROR: Wrong number of arguments.
+
+          (defun capitalize-backwards ()
+              "This function makes the last letter of a word upper-case."
+              (interactive)
+              (backward-word 1)
+              (forward-word 1)
+              (backward-char 1)
+              (capitalize-word 1))
+          => capitalize-backwards
+
+
+* Special form: function OBJECT
+
+       `function' is used to create anonymous functions.  `function' is
+     identical to `quote' in interpreted code: it returns the object
+     without evaluating it.  The byte complier knows, however, that
+     OBJECT is intended to be used as a function, and produces superior
+     code than would be obtained by using `quote' for this purpose.
+     This is relevant when OBJECT is a lambda expression within a
+     function or macro.  See `quote' in *Note Quoting and Identity:: for
+     comparison.
+
+          (function car)
+          => car
+          (defun foo (x)
+            (funcall (function
+                      (lambda (arg) (car arg))) 
+                     x))
+          => foo
+
+
+

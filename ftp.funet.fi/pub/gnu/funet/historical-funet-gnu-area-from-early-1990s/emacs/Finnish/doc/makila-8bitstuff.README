@@ -1,0 +1,53 @@
+To: Jyrki Kuoppala <jkp@cs.hut.fi>
+Subject: Re: 8-bittisyytt{ emacsiin? 
+In-Reply-To: Your message of "Thu, 05 Nov 92 02:18:04 +0200."
+             <199211050018.AA11529@cardhu.cs.hut.fi> 
+Date: Thu, 05 Nov 92 13:43:45 +0200
+From: Niko.Makila@finsun.csc.fi
+
+No joo, t{ss{ on nyt tuo korjattu patchi ja mainitsemani minor-mode.
+
+Patchia on patchannyt Klaus Zeuge ja en siis osaa sen toiminnasta
+sanoa mit{{n.  Luulisin sen kuitenkin toimivan siin{ miss{
+alkuper{isenkin, koska muutokset n{ytt{v{t aika pienilt{.
+
+N{in herra itse kertoo asiasta:
+
+> Hello, I found the 8 bit patch for GNU-emacs (v18.55-patch originally
+> by Kenneth Cline, v18.58-patch update by Niko Makila) to contain a few
+> errors:
+> 	* the patch doesn't handle DEL correctly, should be
+> 	  displayed the same way as, say, CNTRL/A is, and
+> 	* the patch doesn't consider that characters 0200 to 0237
+> 	  aren't displayable characters in an ISO 8859 font.
+> 
+> I've taken the liberty to change this, accoring to the table below,
+> with one character from each range (of course, CNTRL/I, CNTRL/J etc
+> are still handled specially).
+> 
+> 		
+> Value of	
+> ctl-arrow	Character ranges
+> 
+> 		0:37*	40:176		177	200:237		240:277
+> 
+> t		\001	A		\177	\201		\241
+> nil		^A	A		^?	\201		\241
+> 'other	^A	A		^?	\201		!
+> 
+> 
+> *: In reallity, this is 0:010 and 13:37.
+> 
+> (The last ! in the table of course symbolizing a character being
+> written "as is" to the output device, for ISO 8859-1 that would be an
+> upside down exclamation mark).
+> 
+> Is this of interest to the general public? Do you want to have my
+> "fixed" patches ?
+> 
+> Your's
+> 	Klaus.Zeuge@Uppsala.SE
+> 
+
+	//niko
+

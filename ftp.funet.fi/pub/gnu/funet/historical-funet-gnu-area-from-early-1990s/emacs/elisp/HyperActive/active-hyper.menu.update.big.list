@@ -1,0 +1,19 @@
+--- Add a New Site to the big HyperActiveFTP List
+
+First of all, thank you for your contribution.
+
+Ok, you will asked 5 questions. Respond in full sentences, or phrases or
+whatever you want. Return ends input (unfortunately).
+1) Topic of the new site. Just enter what is in general interesting about this
+ftp site.    
+2) Files at the new site. Just enter what files are interesting at this site
+3) Description of the files. If the files are not self-explanatory give a
+brief rundown on the files or if there a readme available via ftp, tell me
+that and I will create a hyper-button to link out to it.
+4) Ange-ftp pathname. Just type in the ftp address after the @ sign. IP # is
+preferred, but names of sites are fine. If you enter both that is fine too.
+
+You will then be tossed into a mail buffer. Just hit C-c C-c or edit the
+contents of what will be sent to me for addition to the big site list.
+5) NOW. If you would also like this site to be automatically added to your
+frequent file just hit y in response to the next question. Otherwise hit n.

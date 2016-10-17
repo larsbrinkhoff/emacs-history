@@ -1,0 +1,1548 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Input Functions, Up: Input Streams
+
+Input Functions
+---------------
+
+  In the functions below, any time that the variable STREAM is optional,
+it will default to `nil', which means that the value of `standard-input'
+will be used.
+
+
+* Variable: standard-input
+
+       This global variable is the stream that read functions read from
+     when the STREAM argument is `nil'.
+
+
+* Function: read &optional STREAM
+
+       This function reads one Lisp expression from STREAM, returning it
+     as a Lisp object.  This is the basic Lisp input function.  In
+     version 19, function streams are sometimes called with a character
+     argument to be unread.
+
+
+* Function: read-from-string STRING &optional START END
+
+       This function reads the first expression in STRING which the Lisp
+     reader would have read had the user typed it into Lisp.  It then
+     returns the dotted pair of that expression and the position of the
+     next character in the string to be read.
+
+       If START is supplied, then reading begins at that character
+     (where the first character is character 0), and if END is also
+     supplied, then reading ends at or before that character.
+
+       An `end-of-file' error will result if an unterminated list or
+     vector is found.
+
+
+          (read-from-string "(setq x 55) (setq y 5)")
+          => ((setq x 55) . 11)
+          (read-from-string "\"A short string\"")
+          ("A short string" . 16)
+
+          ;;Read starting at the first character.
+          (read-from-string "(list 112)" 0)
+          ((list 112) . 10)
+          ;;Read starting at the second character.
+          (read-from-string "(list 112)" 1)
+          (list . 6)
+          ;;Read starting at the seventh character, and ending at the ninth.
+          (read-from-string "(list 112)" 6 8)
+          (11 . 8)
+
+
+
+* Function: parse-partial-sexp START LIMIT &optional TARGET-DEPTH STOP-BEFORE STATE
+
+       This function parses Lisp syntax in the current buffer starting
+     at START and not reading past LIMIT.  It returns the status of the
+     parse at LIMIT.  Parsing stops at LIMIT or when certain criteria
+     are met described below; point is set to where parsing stops.
+
+       Normally, START is assumed to be the top level of a form to be
+     parsed, such as the beginning of a function definition.  If you
+     wish to continue a previous parse, you must provide a STATE
+     argument.  If STATE is omitted (or `nil'), parsing assumes that
+     START is the beginning of a new parse at level 0.
+
+       If the third argument TARGET-DEPTH is non-`nil', parsing stops if
+     the depth in parentheses becomes equal to TARGET-DEPTH.  The depth
+     starts at 0, or at whatever is given in STATE.
+
+       If the fourth argument STOP-BEFORE is non-`nil', parsing stops
+     when it comes to any character that starts a sexp.
+
+       The fifth argument STATE is a seven-element list in the same form
+     as this function returns, described below.  It may be used to
+     initialize the state of the parse on another call of
+     `parse-partial-sexp'.
+
+       The result is a list of seven elements describing the final state
+     of the parse:
+
+       1. Depth in parens, starting at 0.
+
+       2. Character position of the start of the innermost containing
+          list; `nil' if none.
+
+       3. Character position of the start of the last complete sexp
+          terminated; `nil' if none (??).
+
+       4. Non-`nil' if inside a string.  (it is the character that will
+          terminate the string.)
+
+       5. `t' if inside a comment.
+
+       6. `t' if following a quote character.
+
+       7. The minimum paren-depth encountered during this scan.
+
+     This function is used to determine how to indent lines of programs
+     that have nested lists.
+
+          (need examples!!)
+
+
+
+* Function: scan-lists FROM COUNT DEPTH
+
+       Scan from character number FROM by COUNT lists.  Returns the
+     character number of the position thus found.
+
+       If DEPTH is nonzero, paren depth begins counting from that value,
+     only places where the depth in parentheses becomes zero are
+     candidates for stopping; COUNT such places are counted.  Thus, a
+     positive value for DEPTH means go out levels.
+
+       Comments are ignored if `parse-sexp-ignore-comments' is
+     non-`nil'.
+
+       If the beginning or end of (the visible part of) the buffer is
+     reached and the depth is wrong, an `end-of-file' error is signaled.
+     If the depth is right but the count is not used up, `nil' is
+     returned.
+
+
+* Function: scan-sexps FROM COUNT
+
+       Scan from character number FROM by COUNT balanced expressions.
+     Returns the character number of the position thus found.
+
+       Comments are ignored if `parse-sexp-ignore-comments' is
+     non-`nil'.
+
+       If the beginning or end of (the visible part of) the buffer is
+     reached in the middle of a parenthetical grouping, an `end-of-file'
+     error is signaled.  If the beginning or end is reached between
+     groupings but before count is used up, `nil' is returned.
+
+
+* Variable: parse-sexp-ignore-comments
+
+       Non-`nil' means `forward-sexp', etc., should treat comments as
+     whitespace.  Non-`nil' works only when the comment terminator is
+     something like `*/', and appears only when it ends a comment.  If
+     comments are terminated by newlines, you must make this variable
+     `nil'.
+
+
+
+
+
+
+File: elisp  Node: Output Streams, Prev: Input Streams, Up: Streams
+
+Output Streams
+==============
+  The argument of a function which takes an output stream may be any of
+the following objects:
+
+
+BUFFER
+       The output characters are inserted into BUFFER at the point,
+     which is advanced as characters are inserted.
+
+MARKER
+       The output characters are inserted into the buffer that MARKER is
+     in at the marker position, which is advanced one character as
+     characters are inserted.
+
+FUNCTION
+       FUNCTION is called with one output character as the argument.  It
+     is called as many times as there are characters to be output.  The
+     function is free to do anything at all with the characters.
+
+`t'
+       `t' is used as a stream means that the output characters should
+     be printed in the minibuffer (echo area??).
+
+`nil'
+       `nil' used as a stream means that the value of `standard-output'
+     should be used instead; that value must be a non-`nil' output
+     stream.
+
+
+  In the example below, the point in the buffer `foo' is located between
+the `t' and the `h'.  This is where the output is inserted.  At the end,
+the point is located directly before that same `h'.
+
+     ---------- Buffer: foo ----------
+     This is the contents of foo.
+     ---------- Buffer: foo ----------
+
+     (print "This is the output" (get-buffer "foo"))
+     => "This is the output"
+
+     ---------- Buffer: foo ----------
+     This is t
+     "This is the output"
+     he contents of foo.
+     ---------- Buffer: foo ----------
+
+
+  In the example below, `marker' is located in buffer `foo', between the
+`t' and the `h'.  At the end, the marker has been advanced so that it is
+located directly before the same `h'.
+
+     ---------- Buffer: foo ----------
+     "This is the output"
+     ---------- Buffer: foo ----------
+
+     (print "More output for foo." marker)
+     => "More output for foo."
+
+     ---------- Buffer: foo ----------
+     "This is t
+     "More output for foo."
+     he output"
+     ---------- Buffer: foo ----------
+
+  In the example below, the output in placed into the minibuffer.
+
+     (print "Echo Area output" t)
+     => "Echo Area output"
+     ---------- Buffer: Echo Area ----------
+     "Echo Area output"
+     ---------- Buffer: Echo Area ----------
+
+
+  In the example below, the function `eat-output' takes each character
+that it is given and `conses' it into the list `last-output'.  The list
+then contains all of the characters, in reverse order.
+
+     (setq last-output nil)
+     => nil
+
+     (defun eat-output (c)
+       (setq last-output (cons c last-output)))
+     => eat-output
+
+     (print "This is the output" 'eat-output)
+     => "This is the output"
+
+     last-output
+     => (10 34 116 117 112 116 117 111 32 101 104 116 32 115 105
+         32 115 105 104 84 34 10)
+
+     (concat (nreverse last-output))
+     => "
+     \"This is the output\"
+     "
+
+
+* Function: get-file-char
+
+       This function reads one character from the current
+     `standard-input' stream.  Don't use this function yourself.
+
+
+
+
+File: elisp  Node: Output Functions, Up: Output Streams
+
+Output Functions
+----------------
+
+  In the functions below, any time that the variable STREAM is optional,
+it will default to `nil', which means that the value of
+`standard-output' will be used.
+
+
+* Variable: standard-output
+
+       This global variable is the stream which `print' uses by default
+     for outputting a character.
+
+
+* Function: print OBJECT &optional STREAM
+
+       This function outputs the printed representation of OBJECT to
+     STREAM.  It also prints one newline before OBJECT and another after
+     it.  It returns OBJECT.  This is the basic Lisp printer.
+
+       The printed representation includes any escape and quoting
+     characters (i.e., `\''s and `"''s) required to allow the object to
+     be read back in.  *Note Read Syntax and Print Representation:: for
+     the details.
+
+          (progn (print 'The\ cat\ in)
+                 (print "the hat")
+                 (print " came back"))
+          -> The\ cat\ in
+
+          "the hat"
+
+          " came back"
+
+          => " came back"
+
+
+* Function: prin1 OBJECT &optional STREAM
+
+       This function outputs the printed representation of OBJECT to
+     STREAM.  It does not print any spaces or newlines to separate
+     output as `print' does.  It returns OBJECT.
+
+       The printed representation includes any quoting characters (i.e.,
+     `\''s) required to allow the object to be read back in.
+
+          (progn (prin1 'The\ cat\ in) 
+                 (prin1 "the hat") 
+                 (prin1 " came back"))
+          -> The\ cat\ in"the hat"" came back"
+          => " came back"
+
+
+* Function: prin1-to-string OBJECT
+
+       This function returns a string which is what the function `prin1'
+     would have printed. See `format' in *Note Conversion of Characters
+     and Strings:: for other ways to convert objects to string
+     representation.
+
+          (prin1-to-string 'foo)
+          => "foo"
+          (prin1-to-string (mark-marker))
+          => "#<marker at 2773 in strings.texinfo>"
+
+
+* Function: princ OBJECT &optional STREAM
+
+       This function outputs the printed representation of OBJECT to
+     STREAM.  It returns OBJECT.
+
+       This function is intended to produce output that is readable by
+     people, not `read', so no quoting characters are used, and double
+     quotes are not printed around the contents of strings.  It does not
+     add any spacing between calls.
+
+          (progn
+            (princ 'The\ cat)
+            (princ " in the \"hat\""))
+          -> The cat in the "hat"
+          => " in the \"hat\""
+
+
+* Function: terpri &optional STREAM
+
+       This function outputs a newline to STREAM.  The name stands for
+     terminate print.
+
+
+* Variable: print-escape-newlines
+
+       Non-`nil' means print newlines in strings as `\n'.
+
+
+* Variable: print-length
+
+       This global variable is the maximum number of elements of a list
+     that will be printed.  If the list being printed is longer than
+     this, then it is abbreviated by adding ellipsis.  If it is `nil'
+     (the default), then there is no limit.
+
+          (setq print-length 2)
+          => 2
+          (print '(1 2 3 4 5))
+          -> (1 2 ...)
+          => (1 2 ...)
+
+
+* Function: write-char CHARACTER &optional STREAM
+
+       This function outputs CHARACTER to STREAM.  It returns CHARACTER.
+
+
+File: elisp  Node: Minibuffers, Prev: Streams, Up: Top, Next: Commands
+
+Minibuffers
+***********
+
+A "minibuffer" is a special buffer. It is used by Emacs commands to read
+arguments more complicated than the single numeric prefix argument
+available through `universal-argument' or other default arguments such
+as the current region.
+
+Several minibuffers may exist at one time.  Only one can actually be
+receiving the characters the user types, however; that ``active'' one is
+the one we mean by *the* minibuffer.
+
+In most ways, a minibuffer is a normal Emacs buffer.  Although some
+*buffer* operations do not apply to minibuffers, most operations
+*within* a buffer, such as editing commands, work normally in the
+minibuffer.  But minibuffers cannot be deleted or renamed.  (In fact, a
+minibuffer, once created, is never deleted by Emacs, even after the user
+exits from the minibuffer.)
+
+A "recursive minibuffer" may be created when there is an active
+minibuffer and a command is invoked that requires input from a
+minibuffer.  Recursive minibuffers may be allowed or disallowed by
+setting the variable `enable-recursive-minibuffers'.  Of several
+recursive minibuffers, the one minibuffer that has a window is the
+active minibuffer.
+
+The first minibuffer is named ` *Minibuf-0*'.  Recursive minibuffers are
+named by incrementing the number at the end of the name.  All minibuffer
+names begin with a space so that they won't show up in normal buffer
+lists; a minibuffer is generally not an interesting object on which to
+act.
+
+The minibuffer has its own window, from which it cannot be separated.
+The window is the single line at the bottom of the screen; it can be
+temporarily resized with the window sizing commands.
+
+* Menu:
+
+* The Echo Area::       
+* Minibuffer Basics::      
+* Reading Text or Objects::     
+* Completion::  
+
+
+
+File: elisp  Node: The Echo Area, Up: Minibuffers, Next: Minibuffer Basics
+
+The Echo Area
+=============
+
+The minibuffer is *not* the "echo area", despite the fact that they
+occupy the same physical space on the screen.  The echo area is where
+messages from Emacs are displayed, using the `message' primitive or
+something similar.  The `GNU Emacs Manual' specifies the rules for how
+conflicts between use of the echo area and the minibuffer are resolved
+(*Note The Minibuffer: (emacs)Minibuffer.).
+
+
+* Function: message STRING &rest ARGUMENTS
+
+       This function prints a one-line message in the echo area.  STRING
+     is similar to a C language `printf' control string.  See `format'
+     in *Note Conversion of Characters and Strings:: for the details on
+     the conversion specifications.  It returns the constructed string.
+
+          (message "Minibuffer depth is %d." (minibuffer-depth))
+          => "Minibuffer depth is 0."
+
+          ---------- Echo Area ----------
+          Minibuffer depth is 0.
+          ---------- Echo Area ----------
+
+
+
+
+* Variable: cursor-in-echo-area
+
+       This global variable controls where the cursor will be placed
+     when a message is displayed in the echo area.  If it is non-`nil',
+     then do put the cursor there.
+
+     ?? A bug here??  It gives bad results to me.
+
+
+
+
+File: elisp  Node: Minibuffer Basics, Prev: The Echo Area, Up: Minibuffers, Next: Reading Text or Objects
+
+Minibuffer Basics
+=================
+
+Some basic operations and functions are defined here. First, we have two
+ways to exit.
+
+* Command: exit-minibuffer
+
+       This function terminates the present minibuffer read. It is only
+     useful if bound to a key.
+
+
+* Command: self-insert-and-exit
+
+       This function terminates minibuffer input after inserting
+     `last-command-char' (*Note Command Keys::).
+
+Some objects are special to the minibuffer:
+
+* Variable: minibuffer-help-form
+
+       The value of this variable is what `help-form' becomes inside the
+     minibuffer (*Note Help Functions::).
+
+
+* Function: minibuffer-window
+
+       This function returns the window that is used for the minibuffer.
+     This is always the same window. It cannot be deleted.
+
+
+* Variable: minibuffer-scroll-window
+
+       If this built-in variable is non-`nil', it should be a window
+     object.  If the function `scroll-other-window' is called in the
+     minibuffer, it will scroll the window `minibuffer-scroll-window'.
+
+
+* Variable: minibuffer-local-map
+
+       This variable is the default keymap Emacs uses as the local map
+     when reading from the minibuffer.  By default, it makes the
+     following bindings:
+
+
+     LFD
+            `exit-minibuffer'
+
+     RET
+            `exit-minibuffer'
+
+     C-g
+            `abort-recursive-edit'
+
+     Almost all the examples in this chapter will assume RET is bound to
+     `exit-minibuffer'. Some examples also assume DEL deletes the
+     character before point.
+
+
+Finally, some functions and variables deal with recursive minibuffers:
+
+* Function: minibuffer-depth
+
+       This function returns the current depth of activations of the
+     minibuffer, a nonnegative integer. If no minibuffers are active, it
+     returns zero.
+
+
+* User Option: enable-recursive-minibuffers
+
+       If this variable is non-`nil', minibuffers can invoke commands,
+     such as `find-file', which use minibuffers.  It is always legal to
+     invoke a minibuffer from a different window; this variable only
+     affects invoking the minibuffer while in the minibuffer itself.
+
+
+
+File: elisp  Node: Reading Text or Objects, Prev: Minibuffer Basics, Up: Minibuffers, Next: Completion
+
+Reading Text or Objects
+=======================
+
+  As we said above, the main use of the minibuffer is to read text. One
+extension of that is to treat the text as a Lisp object, and return
+that.
+
+
+* Function: read-from-minibuffer PROMPT &optional INITIAL KEYMAP READ
+
+       This function is perhaps the most general way to get input in the
+     minibuffer: It reads an arbitrary string and returns it.
+
+     First, PROMPT is printed in the minibuffer.
+
+     Then, if INITIAL is non-`nil', it must be a string. It is inserted
+     into the minibuffer. INITIAL is, part of the user's input, at least
+     to begin with, and so it can be edited normally.
+
+       If KEYMAP is non-`nil', it is the local keymap to use while
+     reading.  If it is not supplied or is `nil', the keymap
+     `minibuffer-local-map' is used.
+
+       Finally, if READ is non-`nil', Emacs will interpret the result as
+     a Lisp object and return that object, unevaluated.
+
+       For example, suppose you save the last string the user searched
+     for in the variable `last-search-string'. To get a search string,
+     you might want to call `read-from-minibuffer' as follows. (Or you
+     could call the `read-string' function instead, which we'll get to
+     shortly.)
+
+        This means you would supply PROMPT and INITIAL. Assuming the
+     value of `last-search-string' is `No', and the user wanted to
+     search for `Nope', the interaction would look like this:
+
+          (read-from-minibuffer "Find string: " last-search-string)
+          => "Nope"
+          ---------- Buffer: Minibuffer ----------
+          Find string: Nope RET
+          ---------- Buffer: Minibuffer ----------
+
+
+* Function: read-string PROMPT &optional INITIAL
+
+       This function reads a string from the minibuffer and returns it.
+     PROMPT and INITIAL are the same as in `read-from-minibuffer'.
+
+       This function is a simplified call to `read-from-minibuffer'.
+
+          (read-string PROMPT INITIAL)
+          ==
+          (read-from-minibuffer PROMPT INITIAL nil nil)
+
+
+
+* Function: read-no-blanks-input PROMPT &optional INITIAL
+
+       This function reads a string from the minibuffer, not allowing
+     blanks.  PROMPT and INITIAL are the same as in
+     `read-from-minibuffer'.  Typing a blank *exits* the minibuffer.
+
+       This function is a simplified call to `read-from-minibuffer'.  It
+     passes the keymap `minibuffer-local-ns-map'. Since it does not
+     redefine `quoted-insert', it *is* possible to put a space into the
+     string. Also, of course, the keys in `minibuffer-local-ns-map' can
+     be rebound.
+
+          (read-no-blanks-input PROMPT INITIAL)
+          ==
+          (read-from-minibuffer PROMPT INITIAL minibuffer-local-ns-map)
+
+
+* Variable: minibuffer-local-ns-map
+
+       This built-in variable is the keymap passed by the function
+     `read-no-blanks-input' to `read-from-minibuffer'.  By default, it
+     makes the following bindings:
+
+
+     LFD
+            `exit-minibuffer'
+
+     SPC
+            `exit-minibuffer'
+
+     TAB
+            `exit-minibuffer'
+
+     RET
+            `exit-minibuffer'
+
+     C-g
+            `abort-recursive-edit'
+
+     ?
+            `self-insert-and-exit'
+
+So far, we have dealt only with reading strings. Another set of
+functions return Lisp objects read from a minibuffer.  Also
+`execute-extended-command' (*Note Interactive Call::) is another
+function that reads command names.
+
+
+* Function: read-minibuffer PROMPT &optional INITIAL
+
+       This function reads a Lisp object name in the minibuffer and
+     returns it, unevaluated.  PROMPT and INITIAL are the same as in
+     `read-from-minibuffer'.
+
+       This function is a simplified call to `read-from-minibuffer'.
+
+          (read-minibuffer PROMPT INITIAL)
+          ==
+          (read-from-minibuffer PROMPT INITIAL nil t)
+
+     In the example, the Lisp expression `(this is a list)' is returned,
+     unevaluated.
+
+          (read-minibuffer "Enter an expression: " (format "%s" '(testing)))
+          => (testing one (1+ 1) "three")
+          ---------- Buffer: Minibuffer ----------
+          Enter an expression: (testing)`C-b' one (1+ 1) "three" RET
+          ---------- Buffer: Minibuffer ----------
+
+
+
+* Function: eval-minibuffer PROMPT &optional INITIAL
+
+       This function reads a Lisp expression in the minibuffer, then
+     evaluates it, returning the result.  PROMPT and INITIAL are the
+     same as in `read-from-minibuffer'.
+
+       This function simply evaluates the result of a call to
+     `read-minibuffer'.
+
+          (eval-minibuffer PROMPT INITIAL)
+          ==
+          (eval (read-minibuffer PROMPT INITIAL))
+
+
+* Function: edit-and-eval-command PROMPT FORM
+
+       This function reads a Lisp expression in the minibuffer, and then
+     evaluates it.  The difference from `eval-minibuffer' is that the
+     initial FORM is not optional and it need not be a string.
+
+     First, PROMPT is printed in the minibuffer. Then FORM is converted
+     to its print representation and inserted into the minibuffer as
+     input, like INITIAL in `read-from-minibuffer'.  When the user exits
+     the minibuffer, the new form is evaluated.
+
+       In the example, the user edits the form to a complete function
+     call of `(forward-word 1)'.  It is then executed and point is moved
+     forward one word.
+          (edit-and-eval-command "Please edit: " '(forward-))
+          => nil
+
+          ---------- Buffer: Minibuffer ----------
+          Please edit: (forward-) DEL word 1) RET
+          ---------- Buffer: Minibuffer ----------
+
+
+* Function: read-command PROMPT
+
+       This function reads the name of a command and returns it as a
+     Lisp symbol.  PROMPT is the same as in `read-from-minibuffer'.
+     Recall that a command is merely a function with an interactive
+     calling specification (keyboard macros cannot be directly entered
+     in this case).
+
+          (read-command "Command name? ")
+          => forward-char
+          ---------- Buffer: Minibuffer ----------
+          Command name? forward-c RET
+          ---------- Buffer: Minibuffer ----------
+
+       As you might guess, `read-command' is a simplified call to
+     `completing-read', using the `commandp' predicate to allow only
+     commands to be entered, and the `obarray' global to complete
+     against all extant Lisp symbols. Completion is the subject of the
+     next section.
+
+          (read-command PROMPT)
+          ==
+          (intern (completing-read PROMPT obarray 'commandp t nil))
+
+
+
+
+
+* Function: read-variable PROMPT
+
+       This function reads the name of a user variable and returns it as
+     a symbol.  This function is analogous to `read-command'; it uses
+     the predicate `user-variable-p' instead of `commandp'.
+
+          (read-variable PROMPT)
+          ==
+          (intern (completing-read PROMPT obarray 'user-variable-p t nil))
+
+          (read-variable "Variable name? ")
+          => fill-prefix
+
+          ---------- Buffer: Minibuffer ----------
+          Variable name? fill-p RET
+          ---------- Buffer: Minibuffer ----------
+
+
+* Function: read-buffer PROMPT &optional DEFAULT EXISTING
+
+       This function reads the name of a buffer and returns it as a
+     string.  DEFAULT (which must be a string if it is supplied) is
+     printed along with the prompt and is the value to return if the
+     user simply exits. DEFAULT is therefore not an initial value in the
+     sense of `read-from-minibuffer'.  If EXISTING is non-`nil', then
+     any name the user types must be the name of an existing buffer.
+     (However, even if EXISTING is non-`nil', DEFAULT need not be the
+     name of an existing buffer.)
+
+       In this example, the user entered `minibuffer.t', and then exits.
+     The only buffer name starting with that string was
+     `minibuffer.texinfo', so that name was returned.
+
+          (read-buffer "Buffer name? " "foo" t)
+          => "minibuffer.texinfo"
+          ---------- Buffer: Minibuffer ----------
+          Buffer name? (default foo) minibuffer.t RET
+          ---------- Buffer: Minibuffer ----------
+
+
+
+* Function: y-or-n-p PROMPT
+
+       This function asks the user a question, expecting input in the
+     minibuffer.  It returns `t' if the user types `y', `nil' if the
+     user types `n'.  Only a single character is needed to answer, with
+     no return to end the input.  It also accepts SPC to mean yes and
+     DEL to mean no. Upper and lowercase are not equivalent.
+
+       It prints PROMPT in the echo area, followed by the string `(y or
+     n) '. If the input is not legal, the function responds `Please
+     answer y or n.', and repeats the request.
+
+       In this example, the user first types `q', which is invalid.  At
+     the next prompt the user types `n'.  Note that we show successive
+     lines of minibuffer prompts here.  In fact, only one will appear at
+     any time.
+
+          (y-or-n-p "Do you need a lift? ")
+          ---------- Buffer: minibuffer ----------
+          Do you need a lift? (y or n) q
+          Please answer y or n.  Do you need a lift? (y or n) n
+          ---------- Buffer: minibuffer ----------
+          => nil
+
+
+* Function: yes-or-no-p PROMPT
+
+       This function also asks the user a question, expecting input in
+     minibuffer.  It returns `t' if the user types `yes', `nil' if the
+     user types `no'. A return must be typed to end the response. Again,
+     upper and lowercase are not equivalent.
+
+       It prints PROMPT in the echo area, followed by the string `(yes
+     or no) '.  The user must type one of the legal responses;
+     otherwise, the function responds `Please answer yes or no.', waits
+     about two seconds and repeat the request.
+
+       In the example, the user first types `y', which is invalid
+     (because it must be the entire word `yes').  The `y' is erased by
+     the function and a second prompt is given.  The user types `yes
+     RET'.
+
+          (yes-or-no-p 
+            "Do you really want to remove your entire directory? ")
+          ---------- Buffer: minibuffer ----------
+          Do you really want to remove your entire directory? (yes or no) y RET
+          Please answer yes or no.
+          Do you really want to remove your entire directory? (yes or no) yes RET
+          ---------- Buffer: minibuffer ----------
+          => t
+
+
+
+File: elisp  Node: Completion, Prev: Reading Text or Objects, Up: Minibuffers
+
+Completion
+==========
+
+  A number of Emacs commands attempt to make life easier for the user by
+assisting with, or forcing, the completion of names.  Such commands as
+`describe-function' and `switch-to-buffer' expect to be given a name
+which comes from a small set of possibilities (defined functions and
+existing buffers, respectively), compared to the set of all strings.
+
+  The functions below handle completion in a fairly general way.
+`try-completion' is the heart of the completion routines. It returns the
+longest possible substring for a given initial string, and set of
+strings to match against. Other functions perform completion for various
+other specifications.
+
+  The function `completing-read' is the usual interface for completion.
+A call to `completing-read' specifies what should be completed, and how.
+It then switches to the minibuffer where the appropriate local keymap
+has been set up binding a few keys to functions useful for completion.
+
+*Note Filename Completion:: for functions that complete filenames.
+
+
+* Function: try-completion STRING ALIST &optional PREDICATE
+
+       This function returns the longest common substring of all
+     possible completions of STRING in ALIST.
+
+       The first element of each pair in the association list ALIST
+     (*Note Association Lists::) is tested to see if it begins with
+     STRING.  All elements that match are then compared.  The longest
+     initial sequence common to all matches is returned as a string.  If
+     none matched, `nil' is returned.  If only one matched, and the
+     match is exact, then `t' is returned.
+
+       On the other hand, ALIST can be an obarray instead of an
+     association list.  In this case, the print names of all symbols in
+     the obarray are the possible matches. Recall that the global
+     variable `obarray' holds the names of all Lisp symbols (*Note
+     Creating and Interning Symbols::).
+
+       If PREDICATE is supplied, then it must be a function of one
+     argument.  It is used to test each possible match, and the match is
+     a candidate only if PREDICATE returns non-`nil'.  The argument
+     given to PREDICATE is the alist element (which is a pair, the `car'
+     of which is a string) or the symbol (*not* the symbol name) from
+     the obarray.
+
+       In the example below, the string `foo' is matched by three of the
+     alist pairs.  All of those begin with the characters `fooba', so
+     that is the result.  In the second example, there is only one
+     possible match, and it is exact, so `t' is returned.
+
+          (try-completion "foo"
+               '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4)))
+          => "fooba"
+
+          (try-completion "foo" '(("barfoo" 2) ("foo" 3)))
+          => t
+
+       In this example, numerous symbols begin with the characters
+     `forw', and all of them begin with the word `forward', but one does
+     not contain the additional character `-'.
+
+          (try-completion "forw" obarray)
+          => "forward"
+
+       Finally, in this example, only two of the three possible matches
+     pass the predicate `test' (the string `foobaz' is too short).  Both
+     of those begin with the string `foobar'.
+
+          (defun test (s) (> (length (car s)) 6))
+          => test
+          (try-completion "foo"
+               '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4))
+               (function (lambda (s) 
+                 (> (length (car s)) 6))))
+          => "foobar"
+
+
+* Function: all-completions STRING ALIST &optional PREDICATE
+
+       The parameters to this function are the same as to
+     `try-completion'. It returns a list of all possible completions,
+     instead of the longest substring.
+
+       In the example, `test' is defined as in the examples for
+     `try-completion'.
+
+          (all-completions  "foo"
+               '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4))
+               (function test))
+          => ("foobar1" "foobar2")
+
+The two functions above have nothing to do with minibuffers. Completion
+is most often used there, though, which is why it is described in this
+chapter.  Here are the objects that deal with completion during a
+minibuffer read.
+
+
+* Function: completing-read PROMPT ALIST &optional PREDICATE REQUIRE-MATCH INITIAL
+
+       This function reads a string in the minibuffer, assisting the
+     user by providing completion.  First, it prints PROMPT, which must
+     be a string.  If INITIAL is non-`nil', `completing-read' inserts it
+     into the minibuffer as part of the input.  Then it allows the user
+     to edit the input, providing several commands to attempt
+     completion.
+
+       It performs completion using ALIST and PREDICATE in the same way
+     that `try-completion' does.
+
+     If REQUIRE-MATCH is `t', the user will not be allowed to exit
+     unless the input completes to an element of ALIST.  If it is
+     neither `nil' nor `t', then `completing-read' does not exit unless
+     the input typed is itself an element of ALIST.  To accomplish this,
+     `completing-read' calls `read-minibuffer' with the keymap
+     `minibuffer-local-completion-map' if REQUIRE-MATCH is `nil', or
+     else with `minibuffer-local-must-match-map', if REQUIRE-MATCH is
+     non-`nil'.
+
+       Case is ignored if the built-in variable `completion-ignore-case'
+     is non-`nil'.
+
+       It also binds three special variables:
+     `minibuffer-completion-table', to the ALIST argument;
+     `minibuffer-completion-predicate', to PREDICATE; and
+     `minibuffer-completion-confirm', to REQUIRE-MATCH.
+
+          (completing-read "Complete a foo: "
+               '(("foobar1" 1) ("barfoo" 2) ("foobaz" 3) ("foobar2" 4))
+               nil t "fo")
+          => "barfoo"
+
+          ---------- Buffer: Minibuffer ----------
+          Complete a foo: fo DEL DEL b RET
+          ---------- Buffer: Minibuffer ----------
+
+
+* Variable: minibuffer-local-completion-map
+
+       `completing-read' uses this global variable when an exact match
+     of one of the completions is not required.
+
+       By default, it makes the following bindings (most of these
+     functions haven't been described yet, but we'll get to them
+     shortly):
+
+     `?'
+          `minibuffer-completion-help'
+
+     `SPC'
+          `minibuffer-complete-word'
+
+     `TAB'
+          `minibuffer-complete'
+
+     `LFD'
+          `exit-minibuffer'
+
+     `RET'
+          `exit-minibuffer'
+
+     `C-g'
+          `abort-recursive-edit'
+
+
+
+* Variable: minibuffer-local-must-match-map
+
+       `completing-read' uses this global variable when an exact match
+     of one of the completions is required. Therefore, no keys are bound
+     to `exit-minibuffer'.
+
+     By default, it makes the following bindings:
+
+     `?'
+          `minibuffer-completion-help'
+
+     `SPC'
+          `minibuffer-complete-word'
+
+     `TAB'
+          `minibuffer-complete'
+
+     `LFD'
+          `minibuffer-complete-and-exit'
+
+     `RET'
+          `minibuffer-complete-and-exit'
+
+     `C-g'
+          `abort-recursive-edit'
+
+
+* Variable: minibuffer-completion-table
+
+       Alist or obarray used for completion in the minibuffer. This is
+     the global variable that contains what `completing-read' passes to
+     `read-minibuffer'.  It is used by all the minibuffer completion
+     functions, such as `minibuffer-complete-word'.
+
+
+
+* Variable: minibuffer-completion-predicate
+
+       As with `minibuffer-completion-table', this is the global that
+     `completing-read' passes to `read-minibuffer'. It also used by the
+     other minibuffer completion functions.
+
+
+So far we've dealt with some of the low-level mechanics of completion.
+Here now are the user-level functions, that actually complete in the
+minibuffer, or show possible completions.
+
+
+* Command: minibuffer-complete-word
+
+       This function completes the minibuffer contents by at most a
+     single word. Even if the minibuffer contents has only one
+     completion, `minibuffer-complete-word' will not add any characters
+     beyond the first character that is not a word constituent. *Note
+     Syntax Tables::.
+
+
+* Command: minibuffer-complete
+
+       This function completes the minibuffer contents as far as
+     possible.
+
+
+* Command: minibuffer-complete-and-exit
+
+       This function completes the minibuffer contents, and exits if
+     confirmation is not requested, i.e.,
+     `minibuffer-completion-confirm' is non-`nil'. If a confirmation
+     *is* requested, and is given, a second call on this function will
+     exit.
+
+
+* Variable: minibuffer-completion-confirm
+
+     Non-`nil' demands confirmation of completion before exiting
+     minibuffer.  The function `minibuffer-complete-and-exit' checks the
+     value of this variable before it exits.
+
+* Command: minibuffer-completion-help
+
+       This function creates a list of the possible completions of the
+     current minibuffer contents using `all-completions' with
+     `minibuffer-completion-table' and
+     `minibuffer-completion-predicate'. Then, displays the list in the
+     buffer `*Completions*'.
+
+
+* Function: display-completion-list COMPLETIONS
+
+       This function displays COMPLETIONS to the stream
+     `standard-output' (usually a buffer). (*Note Streams:: for more
+     information about streams.)  `completions' is normally the list of
+     completions just made.  Each element may be a symbol or a string,
+     either of which is simply printed, or a list of two strings, which
+     are printed as if concatenated.
+
+       This function is called by `minibuffer-completion-help'.
+
+
+* Variable: completion-ignore-case
+
+     Non-`nil' means don't consider case significant in completion.
+
+
+The above functions deal with general completion in the minibuffer.
+Emacs Lisp also provides functions to deal specifically with filename
+(*Note Filename Completion::) and Lisp symbol completion.
+
+* Command: lisp-complete-symbol
+
+     (move to sexp chapter??)
+       This function performs completion on the symbol preceding point.
+     That symbol is completed against the symbols in the global variable
+     `obarray', inserting characters from the completion into the
+     buffer.  If there is more than one completion, a list of all
+     possible completions is placed in the *Help* buffer.  It is an
+     error if there is no possible completion in `obarray'.
+
+       If the symbol starts just after the character `(', only symbols
+     with function definitions will be considered.  Otherwise, symbols
+     with any of a function definition, value, or property will be
+     considered.
+
+       `lisp-complete-symbol' returns `t' if the symbol had an exact,
+     and unique, match; otherwise, it returns `nil'.
+
+       In the example, the user already inserted `(forwa' into the
+     buffer `foo.el'. `lisp-complete-symbol' is then invoked, and
+     completes the function call to `(forward-'.
+
+          ---------- Buffer: foo.el ----------
+          (forwa
+          ---------- Buffer: foo.el ----------
+
+          (lisp-complete-symbol)
+          => nil
+
+          ---------- Buffer: foo.el ----------
+          (forward-
+          ---------- Buffer: foo.el ----------
+
+
+
+
+File: elisp  Node: Commands, Prev: Minibuffers, Up: Top, Next: Keymaps
+
+Commands
+********
+
+  A "command" is a function that may be called interactively.
+
+* Menu:
+
+* Command Overview::    
+* Interactive Declaration::     
+* Command Keys::        
+* Aborting::    
+* Prefix Command Arguments::    
+* Recursive Editing::   
+* Disabling Commands::  
+* Command History::     
+* Keyboard Macros::     
+
+
+
+File: elisp  Node: Command Overview, Up: Commands, Next: Interactive Call
+
+Command Overview
+================
+
+
+  There are two common ways to call a function interactively: it may be
+called with `execute-extended-command' (`M-x'), or if it is bound to a
+key, it may be called by entering that key from the keyboard.  Such a
+command is called a "keystroke command".  *Note Keymaps:: for the
+details on the binding of keys and how commands are looked up.
+
+  Normally, if Emacs is waiting for input, it is in the "command-level
+input loop", or "command loop".  When Emacs is in the command loop and a
+key sequence is entered that is bound to a function, Emacs then calls
+`call-interactively' with that function as argument.
+
+  If instead of a function, an `autoload' form is found, then
+autoloading is done and the newly defined function is used in the same
+way (*Note Autoload::).
+
+  In the case of Lisp functions, `call-interactively' then scans the
+body of the function in question, looking for a top-level form whose car
+is `interactive' (it need not be at the start of the function, but it
+usually is).  If an `interactive' form is not found (meaning that the
+function is not a command), then `call-interactively' signals a
+`wrong-type-argument' error.  If one is found, then `call-interactively'
+examines the arguments of the `interactive' form, and on the basis of
+that, arranges to pass the function the arguments it wants.  *Note
+Interactive Call:: for the details on how the arguments are prepared.
+
+  Commands that take arguments may get them from the interactive
+specification which may, in turn, get one argument from the prefix
+command argument (*Note Prefix Command Argument::).  Any function, even
+if it is not a command, my access the prefix command argument, or get
+input from the user in other ways (*Note Minibuffer::).
+
+  Functions may bypass command input and read keyboard input directly
+with `read-char' or discard the input with `discard-input' (*Note
+Command Keys::).  A keyboard macro inserts a string into the command
+input stream to be read as if it were normal keyboard input.
+
+  One important command is `keyboard-quit'.  In general, when `C-g' is
+entered from the keyboard, Emacs aborts whatever it is doing and returns
+to the command loop. (*Note Aborting:: for the details).
+
+
+* Function: commandp OBJECT
+
+       Return `t' if OBJECT may be called interactively.  The result is
+     `nil' if OBJECT is not a command.
+
+       Interactively callable objects are strings (treated as keyboard
+     macros), lambda expressions that contain a top-level call to
+     `interactive', autoload forms that are declared as interactive
+     (non-`nil' fourth argument to `autoload'), and some of the
+     primitive functions.  Also, a symbol is `commandp' if its function
+     definition is `commandp'.
+
+       Keys and keymaps are not commands.  Rather, they are used to look
+     up commands (*Note Keymaps::).
+
+
+
+
+File: elisp  Node: Interactive Call, Prev: Command Overview, Up: Commands, Next: Command Keys
+
+Interactive Call
+================
+
+
+* Special form: interactive ARG-DESCRIPTORS*
+
+       This special form declares that the function in which it appears
+     is a command, and therefore it may be called interactively (via
+     `M-x' or by entering a key sequence bound to it).  ARG-DESCRIPTORS,
+     which may be repeated zero or more times, declares how each
+     argument to the function in question is to be supplied when called
+     interactively.
+
+       When `interactive' is called, it performs no work, it does not
+     evaluate ARG-DESCRIPTORS, and it always returns `nil'.  Instead,
+     the `interactive' form is *used* by `call-interactively' before the
+     function is evaluated.
+
+        *   If ARG-DESCRIPTORS is not supplied, then the function is
+          called with no arguments.  It is, of course, an error if the
+          function requires one or more arguments.
+
+        *   If ARG-DESCRIPTORS is not a string, then it must be a form
+          which is evaluated to get a list of arguments to pass to the
+          function.  See example below.  (none given - need one!!)
+
+        *   If ARG-DESCRIPTORS is a string, then the string should
+          consist of a code character, followed by a prompt (if required
+          for that code character).  The prompt ends either with the end
+          of the string or with a newline.  After a newline, a second
+          code character and prompt can be supplied for the next
+          argument, etc.
+
+            If the first character in the string is `*', then an error
+          is signaled if the buffer is read-only.  The next character is
+          then used as the first code character.
+
+
+
+
+       The code character descriptions below contain a number of key
+     words with the following meanings.
+
+
+     Completion
+          Do completion.  TAB, SPC, and RET will perform name completion
+          according to the function `completing-read' (*Note
+          Completion::).
+
+     Existing
+          Require the name of an existing object.  An incorrect name
+          will not be accepted (Emacs will complain `[No Match]' and
+          continue to prompt for a name).
+
+     Default
+          A default string is supplied by Emacs, which depends on the
+          code character.
+
+     Prompt
+          A prompt immediatly follows the code character.  If no prompt
+          is required, no input is taken.  The prompt ends either with
+          the end of the string or with a newline.
+
+
+
+
+     `a'
+          A function name (i.e., a symbol which is `fboundp'). Existing,
+          Completion, Prompt.
+
+     `b'
+          The name of a buffer. Default is the current buffer (*Note
+          Buffers::).  Existing, Completion, Default, Prompt.
+
+
+     `B'
+          The name of a buffer. Completion, Prompt.
+
+     `c'
+          A character, Prompt.
+
+     `C'
+          A command name (i.e., an interactive function). Existing,
+          Completion, Prompt.
+
+     `d'
+          Use the position of the point as a number.  No I/O.
+
+     `D'
+          A directory name. Default is current directory associated with
+          the current buffer (*Note Operating System Environment::).
+          Existing, Completion, Default, Prompt.
+
+     `f'
+          A file name.  Default is the `default-directory'.  Existing,
+          Completion, Default, Prompt.
+
+     `F'
+          A file name.  The file need not exist.  Completion, Default,
+          Prompt.
+
+     `k'
+          A key sequence.  This keeps reading characters until a command
+          (or undefined command) is found in the current key maps.  The
+          key sequence is handed to the function as a string.  The
+          cursor does not move into the minibuffer.  Prompt.
+
+     `m'
+          The position of the mark as a number.  No I/O.
+
+     `n'
+          A number.  Requires a number.  Prompt.
+
+     `N'
+          The unprocessed prefix argument is passed to the function.  If
+          the prefix argument is `nil', then a number is read as with
+          `n'.  Requires a number.  Prompt.
+
+     `p'
+          (lower case) The processed prefix argument is passed to the
+          function.  No I/O.
+
+     `P'
+          (upper case) The unprocessed prefix argument is passed to the
+          function.  No I/O.  *Note Prefix Command Argument::
+
+     `r'
+          The point and the mark are passed to the function as two
+          numeric arguments, smallest first.  No I/O.
+
+     `s'
+          A string is read, without quotes, terminated with either LFD
+          or RET.  `C-q' may be used to include either into the string.
+          Prompt.
+
+     `S'
+          A string is read, without quotes, terminated with any
+          whitespace character, and it is interned as a symbol.  `C-q'
+          may be used to include whitespace into the string.  Other
+          characters which normally terminate a symbol (e.g., `()[]') do
+          not.  Prompt.
+
+     `v'
+          A variable declared to be a user option (i.e.,
+          `user-variable-p').  Existing, Completion, Prompt.
+
+     `x'
+          A Lisp form is read and terminated with a LFD or RET.  The
+          form is not evaluated.  Prompt.
+
+            If a string in the Lisp form is being read that is
+          terminated before a closing double quote is typed, then the
+          closing double quote is supplied.  If a list or vector is
+          being read, and it is terminated before the final close
+          parenthesis or bracket, then an error is signaled.
+
+     `X'
+          A Lisp form is read as with `x', but it is then evaluated and
+          the result is passed to the function.  Prompt.
+
+
+
+
+          (defun foo1 ()               ;`foo1' takes no arguments,
+              (interactive)            ;just moves forward two words.
+              (forward-word 2))
+          => foo
+
+          (defun foo2 (n)               ;`foo2' takes one argument
+              (interactive "p")         ;which is the processed prefix.
+              (forward-word (* 2 n)))
+          => foo2
+
+          (defun foo3 (n)               ;`foo3' takes one argument
+              (interactive "nCount:")   ;which is read from the Minibuffer.
+              (forward-word (* 2 n)))
+          => foo3
+
+          (defun three-b (b1 b2 b3)
+            "Select three existing buffers (prompting for them in 
+          the Minibuffer).  Put them into three windows, selecting the 
+          last one."
+              (interactive "bBuffer1:\nbBuffer2:\nbBuffer3:")
+              (delete-other-windows)
+              (split-window (selected-window) 8)
+              (switch-to-buffer b1)
+              (other-window 1)
+              (split-window (selected-window) 8)
+              (switch-to-buffer b2)
+              (other-window 1)
+              (switch-to-buffer b3)
+            )
+          => three-b
+          (three-b "*scratch*" "declarations.texinfo" "*mail*")
+          => nil
+
+     (We need a way to show interactive input and keyboard commands!!)
+
+
+
+
+* Function: call-interactively FUNCTION &optional RECORD-FLAG
+
+       This function calls FUNCTION, reading arguments according to its
+     interactive calling specs.
+
+       If RECORD-FLAG is non-`nil', then this command is unconditionally
+     added to the `command-history'.  Otherwise, this is done only if an
+     arg is read using the minibuffer.  *Note Command History::
+
+
+* Function: command-execute COMMAND &optional RECORD-FLAG
+
+       This function executes COMMAND as an editor command.  COMMAND
+     must satisfy the `commandp' predicate.  A string is executed with
+     `execute-kbd-macro'.  A function is passed to `call-interactively'
+     along with the optional RECORD-FLAG.
+
+
+* Command: execute-extended-command PREFIX-ARGUMENT
+
+       This primitive function reads a command name from the minibuffer
+     (by calling `completing-read'; *Note Completion:: for more info),
+     then executes it.  The command is executed interactively, so any
+     arguments it might require are read according to the command's
+     `interactive' specifications.
+
+       PREFIX-ARGUMENT is passed to the function that is called as its
+     prefix argument. When `execute-extended-command' is called
+     interactively, PREFIX-ARGUMENT is set to the unprocessed prefix
+     argument.
+
+       The example is equivalent to simply executing `forward-word'.
+     The `M-x ' is simply the prompt for input; it stands for `M-x',
+     which `execute-extended-command' is usually bound to. (But `M-x '
+     is printed as the prompt regardless of the key sequence that
+     invoked `execute-extended-command'.)
+
+       `execute-extended-command' returns whatever the command that it
+     reads returns.
+
+          (execute-extended-command 1)
+          => t
+
+          ---------- Buffer: minibuffer ----------
+          M-x forward-word RET
+          ---------- Buffer: minibuffer ----------
+
+
+
+* Function: interactive-p
+
+       This function returns `t' if the containing function which called
+     `interactive-p' was called interactively.  This means that the
+     containing function was called with `call-interactively' (*Note
+     Command Overview::).  A function that is called by another function
+     (that is not `call-interactively') is never `interactive-p'.
+
+       If the containing function is called via a keyboard macro, then
+     `interactive-p' returns `nil'.
+
+          (defun foo ()
+            (interactive)
+            (interactive-p))
+          => foo
+          (defun bar ()
+            (interactive)
+            (setq foobar (list (foo) (interactive-p))))
+          => bar
+
+          ;; bar is now called with `M-x bar'.
+          foobar
+          => (nil t)
+
+
+
+* Variable: last-command
+
+       This global variable is set to the name of the command executed
+     by Emacs before the current command.  Normally it is a symbol with
+     a function definition, but it may be whatever was found in the
+     keymap (*Note Keymap Entries::), or whatever the variable
+     `this-command' was set to by the previous command executed.
+
+ 
+* Variable: this-command
+
+       This global variable is set to the command now being executed by
+     Emacs.  As for `last-command', normally it is a symbol with a
+     function definition.  When the current command finishes, the
+     variable `last-command' will be set to this value.  In other words,
+     whatever is put in `this-command' will be in `last-command' at the
+     start of the following command.
+
+       Functions that kill text, for example, always set `this-command'
+     to `kill-region' so that additional kills, (via the `kill-region'
+     function) can readily tell if they should append the killed text to
+     the previous kill, or start a new kill.
+
+
+
+
+

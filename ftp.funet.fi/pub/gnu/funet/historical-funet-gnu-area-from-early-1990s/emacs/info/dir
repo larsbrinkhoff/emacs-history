@@ -1,0 +1,84 @@
+-*- Text -*-
+This is the file .../info/dir, which contains the topmost node of the
+Info hierarchy.  The first time you invoke Info you start off
+looking at that node, which is (dir)Top.
+
+File: dir	Node: Top	This is the top of the INFO tree
+  This (the Directory node) gives a menu of major topics. 
+  Typing "d" returns here, "q" exits, "?" lists all INFO commands, "h" 
+  gives a primer for first-timers, "mTexinfo<Return>" visits Texinfo topic,
+  etc.
+  --- PLEASE ADD DOCUMENTATION TO THIS TREE. (See INFO topic first.) ---
+
+
+* Menu:	 	The list of major topics begins on the next line.
+
+
+These next choices are documents describing various parts of GNU
+Emacs.  There is basic Emacs documentation, as well as further
+documentation regarding additional packages for Emacs.
+
+* Emacs: (emacs).       The portable, customizable editing environment.
+* Epoch: (epoch).       A version of Emacs that supports multiple X windows,
+* Lisp: (lispref).      Reference for the Lisp used as the base of GNU Emacs.
+* Info: (info).	        The online documentation browsing system.
+* VIP: (vip).	        A VI emulator available within Emacs.  
+* VM: (vm).	        View-Mail, a mail subsystem available within Emacs.
+* GNUS: (gnus).	        An NNTP-based network (USENET) newsreader for Emacs.
+* gnews: (gnews).       Another newsreader for Emacs.
+* CL: (cl).	        Common Lisp extensions to Emacs Lisp.
+* Calc: (calc).         An arbitrary precision calculator.
+* Calendar: (calendar). A calendar & diary lisp package.
+* TeXInfo: (texinfo).	A set of TeX macros and Emacs/C software used to
+                        create a printed manual and on-line help files
+                        from the same source.
+
+
+The GNU suite of programming tools.  These are all for the most part
+compatible with the standard Unix tools of the same name, and usually
+provide more features.
+
+* GCC: (gcc).	        GNU CC: a portable, optimizing C compiler.
+* G++: (g++).           The GNU C++ compiler.
+* libg++: (libg++).     The GNU C++ library, consisting of many classes
+                        for use by the GNU G++ compiler.  
+* Smalltalk: (mst).     The GNU SmallTalk-80 interpreter.
+* CPP: (cpp).	        The GNU C Compatible Pre-Processor
+* GDB: (gdb).	        The GNU source code level debugger.
+* GAS: (as).	        The GNU assembler (m68k, i386, ns32k, sparc, and vax).
+* Make: (make).	        The GNU Make utility, BSD & SysV compatible.
+* Bison: (bison).       A yacc-compatible parser generator.
+* Awk: (gawk).	        A text-processing language in the vein of sed and perl.
+* Indent: (indent).     A C code formatter, similar to the Berkeley tool
+* gperf: (gperf).       A perfect hash-function generator.
+* gprof: (gprof).       Run-time program profiling utility.
+* Readline: (readline). A replacement for gets(), allows command-line editing.
+* History: (history).   Command line history for the readline library.
+* Termcap: (termcap).	Write terminal-type independent code
+
+
+Some other software is documented using TeXInfo.  This is included here.
+
+* Groff: (groff).	  GNU Roff (troff/nroff) software.
+* SB-Prolog: (sbprolog).  Stony Brook Prolog, from the University of Arizona
+* DVI: (dviman).          Nelson Beebe's DVI printing utilities.
+
+* Perl: (perl).           An awk/c/etc like language from Larry Wall.
+* Quick Reference: (perlref).
+
+
+Many of the standard Un*x utilities have been redone by the GNU
+project.  These are usually upward compatible with Un*x version.
+
+* finger: (finger).  See who's logged in on other machines.
+* tar: (tar).	     Tape ARchive utility.
+
+
+These are miscellaneous items that have been documented with Info or
+TeXinfo.  
+
+* xterm: (xterm).	X window system terminal emulator escape codes.
+* Satire: (satire).	We take no responsibility for this...
+* PDP-10: (pdp10).	A PDP-10 assembly language tutorial.
+* MIDAS: (midas).	The MIT assembler for the DEC PDP-10.
+* jargon: (jargon).	A dictionary for terms used in CS and hacking modes.

@@ -1,0 +1,918 @@
+From brannon Tue Apr  7 20:48:16 1992
+Status: RO
+X-VM-v5-Data: ([nil nil nil nil nil nil nil nil nil]
+	["30346" "Tue" "7" "April" "92" "20:48:11" "PDT" "Terrence M. Brannon" "brannon " nil "902" "Object Oriented Parallel Environments" "^From:" nil nil "4"])
+Received: from stun4c.cs.caltech.edu by jove.cs.caltech.edu (4.1/1.34.1)
+	id AA16932; Tue, 7 Apr 92 20:48:11 PDT
+Message-Id: <9204080348.AA16932@jove.cs.caltech.edu>
+Received: by stun4c.cs.caltech.edu (4.1/SMI-4.1)
+	id AA26380; Tue, 7 Apr 92 20:49:17 PDT
+Comments: Hyperbole mail buttons accepted, v3.02P.
+From: brannon (Terrence M. Brannon)
+To: brannon
+Subject: Object Oriented Parallel Environments
+Date: Tue, 7 Apr 92 20:48:11 PDT
+
+Newsgroups: comp.parallel
+From: David A Dunn - Utah State University <SLHPV@cc.usu.edu>
+Subject: Concurrent Object Oriented - A Summary (long)
+Organization: Utah State University
+Date: 26 Feb 92 17:16:39 MDT
+
+I posted a question on Object-Oriented Concurrent Programming to
+this newsgroup about a month ago, several people asked for a summary
+of responses.  This is a full listing of the responses I received along
+with the original posting.
+
+It is LONG! (About 900 lines due to included bibliography entries...)
+
+
+-------------------------------Original Post----------------------
+
+I am currently writing a paper on Object-Oriented Concurrent
+Programming.  As part of this paper I would like to include some
+information on what researchers and developers are currently
+pursuing in this area, both in industry and education.
+
+If you are using, or have used, Object-Oriented methods to
+implement some form of parallelism (distributed, true parallel,
+or concurrent on one CPU), I would appreciate it if you could
+answer a few short questions and email me your responses.
+
+1.  What kind of system are you developing/using?  Is it intended
+for production or for research?
+
+2.  What language/methodology are you using to implement this
+system?
+
+3.  Why did you choose an object-oriented methodology over the
+more traditional methods for concurrent programming?
+
+4.  Anything else you can tell me about your project would be
+very useful and appreciated.
+
+
+Thank you for your time,
+
+David A Dunn             Utah State University
+slhpv@cc.usu.edu         Computer Science Dept.
+(801)755-0675            Logan, UT  84322
+
+
+------------------------------------------------------------------------
+
+From:   IN%"kthanasi@cs.rochester.edu"  6-FEB-1992 15:21:18.64
+
+Object Oriented Concurrency
+
+1. I am developing an object oriented environment for light weight threads
+with built in mechanisms for locality management. It is part of my area
+paper work and hope :-) that it is research
+
+2. The implementation is in C++.
+
+3. Mainly because of the clean interface that I can have to the data.
+I know that data can be touched only via well define methods which can
+be augmented to save and use location information.
+
+4. Basicly I want to provide an integrated package with a simple a definition
+for a computation on top of which one can build a number of different
+abstractions (lw threads, generators, chores etc). I also want to exploit
+locality in programs by augmenting objects with location information
+
+Leonidas Kontothanassis               | Internet: kthanasi@cs.rochester.edu
+Dept. of Computer Science             | UUCP: ..!rutgers!rochester!kthanasi
+University of Rochester               | Phone: (716) 275-2569
+Rochester NY 14627-0226               | FAX:   (716) 461-2018
+
+------------------------------------------------------------------------
+
+From:   IN%"pcb@gunfight.austin.ibm.com"  6-FEB-1992 15:42:16.19
+
+1.  An object-oriented framework for concurrent graphics in heterogeneous
+environments   ph.d. dissertation April 1991  available at UMI
+
+2.  The specification syntax was GO|| (see title above: stands for concurrent
+graphics objects and pronounced "geaux" (or go for the non-cajun))
+
+3.  Demonstrate and specifiy functionality and extensibility not easily
+found in existing systems
+
+4.  combines graphics paradigms (3d,2d,gui,images,...and rendering algorithms)
+into a consistent framework..suitable for scalability into heter. envts.,
+ala. mach.
+
+/*---- Thanks in advance... ----------- These are my own opinions -----------+
+| Peter C. Bahrs                    INTERNET: pcb @ gunfight.austin.ibm.com  |
+| IBM Boca System Design                      peterb @ bcrvmpc1.vnet.ibm.com |
+| *IX, OS/X                             VNET: peterb at bcrvmpc1             |
++---------------------------------------------------------------------------*/
+
+------------------------------------------------------------------------
+
+From:   IN%"jbw5g@redwood.cs.Virginia.EDU" 10-FEB-1992 11:58:39.86
+
+Below we include our brief description of what our system, Mentat
+provides.  If you want to receive some papers, please let us know.
+
+
+Mentat: Object-Oriented Parallelism for MIMD Architectures
+
+Mentat Objectives
+
+        o       Easy-to-use parallelism
+        o       Scalable software architecture
+        o       Portable
+        o       High performance
+
+Mentat Features
+
+        o       Object-oriented (extended C++)
+        o       Medium grain
+        o       Compiled parallelism
+        o       User specified granularity
+
+Mentat addresses two problems
+
+        o       Programming MIMD architectures is difficult.
+        o       Lack of applications portability between architectures.
+
+The Programming Problem - Explicit Control
+
+In extended C or FORTRAN with shared memory and semaphores or message
+passing (send/receive), the programmer has total control over granularity, but:
+
+        o       Programmer must manage
+                o       problem decomposition
+                o       scheduling
+                o       communication
+                o       synchronization
+        o       Programmer may be overwhelmed by complexity and "Heisenbugs"
+
+The Programming Problem - Compiler Control
+
+The compiler manages complexity for the programmer, but:
+
+        o       Programmer intervention may be necessary to eliminate
+                artificial dependencies
+        o       Granularity is too fine for message passing machines
+
+What's Needed?
+
+        o       Safety (correctness) of compiler control
+        o       Granularity control of explicit approaches
+        o       Portability - a virtual machine that the compiler
+                can work with and that maps well to a variety of
+                MIMD architectures
+
+The Solution - Mentat
+
+Mentat combines the best aspects of both explicit and compiler based
+approaches.  The programmer makes granularity and encapsulation decisions
+exploiting domain knowledge.  The compiler manages communication
+and synchronization.
+
+Computation Model Underlying Mentat
+
+        o       Not directly visible to programmers - only the compiler
+        o       Medium grain
+        o       Graph based
+        o       Graph expansion via node elaboration
+        o       Node elaboration is a local operation, no communication
+                is required
+        o       Scalable
+
+Mentat Programming Language (MPL)
+
+        o       An extended C++
+        o       Mentat Classes are the units of granularity
+        o       Mentat objects used as C++ objects
+        o       Compiler manages communication and synchronization
+        o       Compiler translates to C++ with calls to perform run-time
+                data flow detection and build program graphs
+
+Mentat Run-Time System
+
+        o       Scalable
+        o       Portable
+        o       Performs run-time data flow detection
+        o       Automatic scheduling with optional programmer placement
+        o       Layered approach
+
+System Availability - FREE
+
+        o       Sun 3 & Sun 4
+        o       Intel iPSC/2
+
+Ports in Progress
+
+        o       Mach (using Mach IPC)
+        o       Intel iPSC/860
+        o       IBM RS/6000
+        o       Silicon Graphics Iris
+
+Is Your Application
+
+        o       Computation bound?
+        o       IO bound?
+
+------------------------------------------------------------------------
+
+From:   IN%"Dietrich.Boles@arbi.informatik.uni-oldenburg.de"  "Dietrich Boles" 12-FEB-1992 07:41:18.
+
+                     Ol, 12/02/92
+
+Hello,
+
+i read your questions in the newsgroup comp.parallel. I am working
+at the University of Oldenburg (Germany) in the group of
+Prof. Appelrath. My name is Dietrich Boles.
+
+At University of Oldenburg (Germany) we are developing a parallel
+extension of C++, called QPC++ (Quasi-Parallel C++, because processes
+will be realised as lightweight-process, which share a common virtual
+address-space and will run on one CPU).
+
+A short summary of the language:
+
+aims:
+----
++  upward-compatibility to C++
++  availability of all C++-libraries without recompilation
++  only a few new language constructs
++  realising the processes as lightweight-processes
+
+process concepts:
+-----------------
++  there exist process classes with inheritance mechanisms (identical to
+   normal object classes)
++  dynamical process creation
++  single-threaded processes (with a body)
++  process sets
++  implicit scheduling (but it can be done explicit too)
+
+communication:
+--------------
++  via shared variables
+   +  atomic operations
+   +  semaphores (realised as process class)
+
++  via message-passing
+   +  extended rendezvous-concept (remote procedure calls)
+   +  synchronous and asynchronous communication
+   +  multicasting facilities.
+
+
+State of work:
+--------------
+
+There exists a language definition (about 150 pages) (but it is written in the
+german language).
+
+A first run-time-system (prototype) has been written in C++
+(on SUN-4, UNIX BSD 4.3, gnu-c++-compiler).
+
+We will write a compiler which translates QPC++-code into C++-code using
+LEX and YACC (or LEX++ and YACC++).
+
+
+Answering your questions:
+-------------------------
+
+1. QPC++ is intended for research; we will use it in devellopping an
+   user-interface toolkit and an user-interface management system.
+   (but it can be used in other projects too)
+
+2. The run-time-system of QPC++ is modelled in a full object-oriented
+   way. We use C++ as programming language.
+
+3/4. I think it is a natural way to combine object-oriented with
+   concurrent programming. Objects in object-oriented languages
+   can be seen as processes which can send requests to other objects,
+   waiting for response. But objects are passiv. Processes in an parallel
+   object-oriented language can be seen as active objects, which will
+   communicate with other processes but each process has an own thread of
+   controll. Synchronisation mechanisms are necessary.
+   With an normal object-oriented language it is sometimes very
+   hard to transfer a system which has been modelled in an object-oriented
+   way into code. Just in the field of user-interface toolkits or simulation
+   objects are often active objects. With an parallel object-oriented language
+   such a system can be transfered into code 1:1.
+
+Ok, I hope I could help you a little bit.
+
+   Dietrich.
+
+
+PS: Sorry, but my english is not very good.
+
+
+/* * * * * * * * * * * * * * * * * * * * * * * * */
+             Dietrich Boles
+             Universitaet Oldenburg
+             Fachbereich Informatik
+             Postfach 2503
+             D-2900 Oldenburg
+             Germany
+             e-mail: boles@uniol.uucp
+/* * * * * * * * * * * * * * * * * * * * * * * * */
+
+------------------------------------------------------------------------
+
+From:   IN%"grivas@inf.ethz.ch" 12-FEB-1992 09:03:05.11
+
+Hi David,
+
+I am a PhD student, and I use C++ for the Implementation of Symbolic Computation Systems. Especially
+resp. unifier of such a system. I'm still in the beginning, so I think there are
+three levels, where I can parallelize:
+        - matching in a many(patterns) to one(expression) way
+        - inside an expression
+        - inside the associative-commutative operation
+Can you please, email me your list of references about Conc. OOP?
+I am new in this area. The only reference that I have is from Oscar Nierstraz
+"The Next 700 Conc. OO Languages" I' m interested also in your paper.
+Can I get it from a server?
+
+Thanks in advance.
+
+George Grivas
+Theoretical Computer Science
+ETH Zentrum, IFW
+8092 Zurich
+Switzerland
+
+Phone:  +41 1 254 7391
+Fax:    +41 1 262 3973
+
+Email: grivas@inf.ethz.ch
+George Grivas
+Theoretical Computer Science
+ETH Zentrum, IFW
+8092 Zurich
+Switzerland
+
+Phone:  +41 1 254 7391
+Fax:    +41 1 262 3973
+
+Email: grivas@inf.ethz.ch
+
+------------------------------------------------------------------------
+
+From:   IN%"Paulo.Borba@prg.oxford.ac.uk" 14-FEB-1992 20:27:50.00
+
+Dear David,
+
+I am currently working with OO concurrent programming. The
+project consists basically in the extension of FOOPS (see
+references below) to support concurrency. I would be grateful
+if you could make me available the results of your research.
+
+>1.  What kind of system are you developing/using?  Is it intended
+>for production or for research?
+
+We are trying to specify communication protocols in FOOPS,
+since this should be a good experiment to the suitability of
+the language for this kind of application.
+
+>2.  What language/methodology are you using to implement this
+>system?
+
+We are using FOOPS and OOZE which are OO languages based on
+OBJ. The languages are described in the papers below:
+
+@incollection(foops,
+title = "Unifying Functional, Object-Oriented and Relational Programming,
+  with Logical Semantics",
+author = "Joseph Goguen and Jos\'e Meseguer",
+booktitle = "Research Directions in Object-Oriented Programming",
+editor = "Bruce Shriver and Peter Wegner",
+year = 1987,
+pages = "417-477",
+publisher = "MIT",
+note = "Preliminary version in {\it SIGPLAN Notices}, Volume 21, Number 10,
+  pages 153-162, October 1986",
+comment = "Also, Report CSLI-87-93, Center for the Study of
+  Language and Information, Stanford University, March 1987")
+
+@incollection(types-foops,
+title = "On Types and {FOOPS}",
+author = "Joseph Goguen and David Wolfram",
+booktitle = "Object Oriented Databases: Analysis, Design and Construction",
+editor = "Robert Meersman, William Kent and Samit Khosla",
+publisher = "North Holland",
+year = 1991,
+pages = "1-22",
+note = "Proceedings, IFIP TC2 Conference, Windermere, UK, 2-6 July 1990")
+
+@inproceedings(ooze,
+author = "Antonio Alencar and Joseph Goguen",
+title = "{OOZE}: An Object-Oriented {Z} Environment",
+booktitle = "European Conference on Object Oriented Programming",
+editor = "Pierre America",
+note = "Lecture Notes in Computer Science, Volume 512",
+publisher = "Springer",
+page = "180-199",
+year = 1991)
+
+>3.  Why did you choose an object-oriented methodology over the
+>more traditional methods for concurrent programming?
+
+Actually, we are trying to compare different approaches and
+verify if there are advantages using an OO methodology.
+
+>4.  Anything else you can tell me about your project would be
+>very useful and appreciated.
+
+Please, if you want to know anything else don't hesitate to
+contact me.
+
+Thank you,
+
+Paulo.
+______________________________________
+Paulo Borba
+Oxford University Computing Laboratory
+Programming Research Group
+11 Keble Road, Oxford
+England, OX1 3QD
+Paulo.Borba@prg.ox.ac.uk
+
+------------------------------------------------------------------------
+
+From:   IN%"Laurent.Thomas@loria.fr"  "Laurent Thomas" 18-FEB-1992 00:49:40.52
+
+David,
+
+   I wrote a paper to appear in the proceedings of the ACM Symposium
+   on Applied Computing at Kansas City in the beginning of March.
+   This paper is :
+
+@INPROCEEDINGS{thomas92b,
+  AUTHOR = {L. Thomas},
+  TITLE = {{A generic object-oriented concurrency mechanism for
+extensibility and reuse of Synchronization components (Revised Version)}},
+  BOOKTITLE = {{ACM SIGAPP Symposium on Applied Computing}},
+  ADDRESS = {Kansa City},
+  MONTH = {March},
+  YEAR = 1992,
+  KEYWORDS = {concurrence, synchronisation, heritage, langage objet}}
+
+   It deals with the interfering aims of synchronization expressions
+   and inheritance.  A refined version will appear in the LNCS Series:
+
+@INCOLLECTION{thomas92c,
+  AUTHOR = {L. Thomas},
+  TITLE = {{Extensibility and Reuse of Object-Oriented Synchronization Components}},
+  BOOKTITLE ="Proceedings of the Parallel Architecture and Language Europe (PARLE'92)",
+  PUBLISHER = {Springer-Verlag, Lecture Notes in Computer Science, Vol. ???},
+  ADDRESS = {Paris, France},
+  MONTH = {Juin},
+  YEAR = 1992,
+  EDITOR = {???},
+  PAGES = {0--0},
+  KEYWORDS = {}}
+
+  I may send you a Postscript version by e-mail, if you want.
+
+
+  The basic problem is that the synchronization of a method M in a
+class C may not be the same as its synchronization should be in a derived
+subclass C' of C. We have to found some mechanisms to express only the
+changes between the synchronization of M in C and in C'.
+
+>   1.  What kind of system are you developing/using?  Is it intended
+>   for production or for research?
+
+I'm developing a new language wich includes the propositions i made in
+the two mentionned articles. It is intended (at the moment) for
+research purpose only.
+
+>   3.  Why did you choose an object-oriented methodology over the
+>   more traditional methods for concurrent programming?
+
+That's a good question ! I feel that the extensibility and reusabilty
+are of primary interest in the development of quality sofware. At the
+same time parallel programming needs methodology to not reinvent the
+wheel ... So OOP seems a promising way to achieve extensibility and
+reusability in the parallel framework.
+
+Please, keep me in touch. It would be kind to have an exchange
+of our papers on the subject, wouldn'it?
+
+PS: I will be on vacation from the 22 to the 29 and then i'am going to
+go to Kansas City from the 1rst to the 8 of March.
+
+Laurent Thomas
+EMAIL : thomas@loria.fr
+POST : Centre de Recherche en Informatique de Nancy.
+       Campus Universitaire. BP 239.
+       F-54506 Vandoeuvre-les-Nancy CEDEX, France
+FAX : (+33) 83413079
+------------------------------------------------------------------------
+
+From:   IN%"thomas@cs.rochester.edu"  6-FEB-1992 08:48:00.22
+
+I too, am interested in OO parallelism.  Although it is not exactly
+what you asked for in your posting, I am sending you the (slightly)
+annotated bibliography for a paper I recently wrote on this topic.  I
+would very much appreciate it if you could either post or mail me a
+summary of the responses you recieve.
+
+Thanks,
+-Jeff
+
+@BOOK{Agha86,
+    AUTHOR = "Gul A. Agha",
+    TITLE = "ACTORS: A Model of Concurrent Computation in Distributed Systems",
+    PUBLISHER = "MIT Press",
+    YEAR = 1986,
+    ANNOTE = "ACTORS"
+}
+@INCOLLECTION{Agha87,
+    AUTHOR = "Gul A. Agha and Carl Hewitt",
+    TITLE = "Concurrent Programming Using Actors",
+    EDITOR = "Akinori Yonezawa and Mario Tokoro",
+    BOOKTITLE = "Object-Oriented Concurrent Programming",
+    PAGES = "9--36",
+    PUBLISHER = "MIT Press",
+    YEAR = 1987,
+    ANNOTE = "Act3"
+}
+@PROCEEDINGS{Agha88,
+    TITLE = "Proceedings of the ACM SIGPLAN Workshop on Object-Based Concurrent Programming",
+    EDITOR = "Gul Agha and Peter Wegner and Akinori Yonezawa",
+    PUBLISHER = "ACM Press",
+    MONTH = "September",
+    YEAR = 1988
+}
+@ARTICLE{Ahuja86,
+    AUTHOR = "Sudhir Ahuja and Nicholas Carriero and David Gelernter",
+    TITLE = "Linda and Friends",
+    JOURNAL = "IEEE Computer Magazine",
+    PAGES = "26--34",
+    VOLUME = 19,
+    NUMBER = 8,
+    MONTH = "August",
+    YEAR = 1986,
+    ANNOTE = "Linda"
+}
+@ARTICLE{Andrews83,
+    AUTHOR = "Gregory R. Andrews and Fred B. Schneider",
+    TITLE = "Concepts and Notations for Concurrent Programming",
+    JOURNAL = "ACM Computing Surveys",
+    PAGES = "3--44",
+    VOLUME = 15,
+    NUMBER = 1,
+    MONTH = "March",
+    YEAR = 1983,
+    ANNOTE = "Previously Cornell TR 82-520"
+}
+@INPROCEEDINGS{Arvind86,
+    AUTHOR = "R. S. Arvind and K. K. Pingali",
+    TITLE = "I-Structures: Data Structures for Parallel Computing",
+    BOOKTITLE = "Proceedings of the Workshop on Graph Reduction",
+    PUBLISHER = "Springer-Verlag",
+    MONTH = "September/October",
+    YEAR = 1986
+}
+@BOOK{Birtwistle80,
+    AUTHOR = "Graham M. Birtwistle and Ole-John Dahl and Bjorn Myhrhaug and Kristen Nygaard",
+    TITLE = "Simula Begin",
+    PUBLISHER = "Studentlitteratur",
+    YEAR = 1980,
+    ANNOTE = "Simula Language Description and Tutorial"
+}
+@BOOK{Budd87,
+    AUTHOR = "Timothy Budd",
+    TITLE = "A Little Smalltalk",
+    PUBLISHER = "Addison-Wesley",
+    YEAR = 1987,
+    ANNOTE = "Little Smalltalk"
+}
+@BOOK{Budd91,
+    AUTHOR = "Timothy Budd",
+    TITLE = "An Introduction to Object-Oriented Programming",
+    PUBLISHER = "Addison-Wesley",
+    YEAR = 1991,
+    ANNOTE = "Smalltalk, C++, Object Pascal (Macintosh), and Objective-C (NeXT)"
+}
+@TECHREPORT{Cox90,
+    AUTHOR = "Alan L. Cox and Robert J. Fowler and Jack E. Veenstra",
+    TITLE = "Interprocessor Invocation on a NUMA Multiprocessor",
+    INSTITUTION = "University of Rochester Department of Computer Science",
+    NUMBER = 356,
+    MONTH = "October",
+    YEAR = 1990,
+    ANNOTE = "OSMIUM"
+}
+@ARTICLE{Caromel89,
+    AUTHOR = "Denis Caromel",
+    TITLE = "Service, Asynchrony, and Wait-by-Necessity",
+    JOURNAL = "Journal of Object-Oriented Programming",
+    PAGES = "12--22",
+    MONTH = "November/December",
+    YEAR = 1989,
+    ANNOTE = "Futures for Eiffel"
+}
+@INPROCEEDINGS{Crowl88,
+    AUTHOR = "Lawrence A. Crowl",
+    TITLE = "A Uniform Model for Parallel Programming",
+    BOOKTITLE = "Proceedings of the ACM SIGPLAN Workshop on Object-Based Concurrent Programming",
+    PAGES = "25--27",
+    YEAR = 1988,
+    ANNOTE = "Matroshka"
+}
+@PHDTHESIS{Crowl91,
+    AUTHOR = "Lawrence A. Crowl",
+    TITLE = "Architectural Adaptability in Parallel Programming",
+    SCHOOL = "University of Rochester",
+    MONTH = "May",
+    YEAR = 1991,
+    ANNOTE = "Matroshka"
+}
+@ARTICLE{Flynn72,
+    AUTHOR = "M. J. Flynn",
+    TITLE = "Some Computer Organizations and Their Effectiveness",
+    JOURNAL = "IEEE Transactions on Computers",
+    PAGES = "948--960",
+    MONTH = "September",
+    YEAR = 1972,
+    ANNOTE = "Flynn's Taxonomy"
+}
+@ARTICLE{Gelernter86,
+    AUTHOR = "David Gelernter",
+    TITLE = "Domesticating Parallelism",
+    JOURNAL = "IEEE Computer Magazine",
+    PAGES = "12--16",
+    VOLUME = 19,
+    NUMBER = 8,
+    MONTH = "August",
+    YEAR = 1986,
+    ANNOTE = "Parallel languages vs. parallelizing transformations"
+}
+@BOOK{Goldberg83,
+    AUTHOR = "A. Goldberg and D. Robson",
+    TITLE = "Smalltalk-80: The Language and its Implementation",
+    PUBLISHER = "Addison-Wesley",
+    YEAR = 1983,
+    ANNOTE = "Smalltalk-80"
+}
+@ARTICLE{Halstead86,
+    AUTHOR = "Robert H. Halstead, Jr.",
+    TITLE = "Parallel Symbolic Computing",
+    JOURNAL = "IEEE Computer Magazine",
+    PAGES = "35--43",
+    VOLUME = 19,
+    NUMBER = 8,
+    MONTH = "August",
+    YEAR = 1986,
+    ANNOTE = "Multilisp"
+}
+@ARTICLE{Hoare74,
+    AUTHOR = "C. A. R. Hoare",
+    TITLE = "Monitors: An Operating System Structuring Concept",
+    JOURNAL = "Communications of the ACM",
+    PAGES = "549--557",
+    VOLUME = 17,
+    NUMBER = 10,
+    MONTH = "October",
+    YEAR = 1974,
+    ANNOTE = "Monitors"
+}
+@INCOLLECTION{Lieberman87,
+    AUTHOR = "Henry Lieberman",
+    TITLE = "Concurrent Object-Oriented Programming in Act 1",
+    EDITOR = "Akinori Yonezawa and Mario Tokoro",
+    BOOKTITLE = "Object-Oriented Concurrent Programming",
+    PAGES = "9--36",
+    PUBLISHER = "MIT Press",
+    YEAR = 1987,
+    ANNOTE = "Act 1"
+}
+@BOOK{Kernighan78,
+    AUTHOR = "Brian W. Kernighan and Dennis M. Ritchie",
+    TITLE = "The C Programming Language",
+    PUBLISHER = "Prentice-Hall",
+    YEAR = 1978,
+    ANNOTE = "C"
+}
+@ARTICLE{Nelson91,
+    AUTHOR = "Michael L. Nelson",
+    TITLE = "Concurrency and Object-Oriented Programming",
+    JOURNAL = "ACM SIGPLAN Notices",
+    PAGES = "63--73",
+    VOLUME = 26,
+    NUMBER = 10,
+    MONTH = "October",
+    YEAR = 1991,
+    ANNOTE = "Survey of concurrent and distributed object-oriented languages"
+}
+@ARTICLE{Pancake91,
+    AUTHOR = "Cherri M. Pancake",
+    TITLE = "Software Support for Parallel Computing: Where Are We Headed?",
+    JOURNAL = "Communications of the ACM",
+    PAGES = "53--64",
+    VOLUME = 34,
+    NUMBER = 11,
+    MONTH = "November",
+    YEAR = 1991,
+    ANNOTE = "Scientific computing"
+}
+@ARTICLE{Scott90,
+    AUTHOR = "Michael L. Scott",
+    TITLE = "The LYNX Distributed Programming Language: Motivation, Design, and Experience",
+    JOURNAL = "Computer Languages",
+    PAGES = "209--233",
+    VOLUME = 16,
+    NUMBER = "3/4",
+    YEAR = 1990,
+    ANNOTE = "LYNX"
+}
+@BOOK{Silberschatz91,
+    AUTHOR = "Abraham Silberschatz and James L. Peterson and Peter Galvin",
+    TITLE = "Operating Systems Concepts",
+    EDITION = "Third Edition",
+    PUBLISHER = "Addison-Wesley",
+    YEAR = 1991,
+    ANNOTE = "Introductory Operating Systems Text"
+}
+@BOOK{Ellis90,
+    AUTHOR = "Margaret A. Ellis and Bjarne Stroustrup",
+    TITLE = "The Annotated C++ Reference Manual",
+    PUBLISHER = "Addison-Wesley",
+    YEAR = 1990,
+    ANNOTE = "C++ ANSI Base Document"
+}
+@BOOK{Stroustrup91,
+    AUTHOR = "Bjarne Stroustrup",
+    TITLE = "The C++ Programming Language",
+    EDITION = "Second Edition",
+    PUBLISHER = "Addison-Wesley",
+    YEAR = 1991,
+    ANNOTE = "C++"
+}
+@BOOK{Yonezawa87,
+    EDITOR = "Akinori Yonezawa and Mario Tokoro",
+    TITLE = "Object-Oriented Concurrent Programming",
+    PUBLISHER = "MIT Press",
+    YEAR = 1987,
+    ANNOTE = "Actor based languages"
+}
+
+------------------------------------------------------------------------
+
+From:   IN%"tb06@PL118f.CC.Lehigh.EDU"  7-FEB-1992 04:49:46.23
+
+Yasuhiko Yokote wrote a dissertation on Concurrent Smalltalk. He is
+currently at the Sony Computer Science Laboratories. After emailing to
+him, he mailed me a copy of his dissertation. He also has contacts at
+his Ph.D university, Keio University where I understand a
+multiprocessor version of his uniprocessor ConcurrentSmalltalk is
+being developed.
+
+One of these email addresses should work and the other should bounce:
+
+ykt@csl.sony.co.jp
+jkt@csl.sony.co.jp
+
+One question: where do you plan to publish the paper and how will you
+notify the general public of its publication?
+
+  \ ! /       Terrence Brannon, PO Box 5027, Bethlehem, PA 18015 , USA
+ -- O --  internet: tb06@pl118f.cc.lehigh.edu  (215) 758-1720 (215) 758-2104
+  / ! \    computational biology . yoga . acupuncture . qi gong . tai chi
+       Happiness!  Happiness!  Happiness!  Happiness!  Happiness!  Happiness!
+
+------------------------------------------------------------------------
+
+From:   IN%"kasper@iesd.auc.dk"  "Kasper Osterbye" 10-FEB-1992 04:20:46.35
+
+A side note,
+
+It you hear from anyone who examines inheritance in connection
+with concurrency, I am most interested. I attended the workshop
+on concurrency in connection with the ECOOP'91, and from the
+30-40 researchers gathered there, there were none doing research
+with respect to processes and inheritance.
+
+So in my view there is not any work in Object-oriented concurrency,
+only in object based concurrency (Difference according to Wegner)
+
+--Kasper
+
+------------------------------------------------------------------------
+
+From:   IN%"harbison@bert.pinecreek.com"  7-FEB-1992 14:20:10.81
+
+FYI, the Modula-3 language has facilities for both object-oriented
+and concurrency, although the two are not connected in any conceptual way.
+
+Sam Harbison
+Pine Creek Software; Suite 300; 305 South Craig Street; Pittsburgh, PA 15213;
+USA. Phone&FAX: +1 412 681 9811. E-mail: harbison@bert.pinecreek.com.
+
+------------------------------------------------------------------------
+
+From:   IN%"colbrook@concerto.lcs.mit.edu"  5-FEB-1992 15:53:44.02
+
+I have sent you a copy of a paper that will appear in the PARLE'92
+conference.  You might find it of interest.
+
+ - Adrian Colbrook
+
+------------------------------------------------------------------------
+
+From:   IN%"levine@segur.ICS.UCI.EDU"  "David L. Levine"  5-FEB-1992 13:20:03.63
+
+Would I be able to get a copy when it is finished, even if you
+don't plan to publish?
+
+Thanks,
+--
+to accept the universal responsibility of doing | David L. Levine
+good to all sentient beings, and if that is not | Internet: levine@ics.uci.edu
+possible, to do no harm                         | UUCP: uunet!ucivax!levine
+  -- paraphrased from the Fourteenth Dalai Lama | BITNET: levine@uci
+
+------------------------------------------------------------------------
+
+From:   IN%"deshpande-ashish@CS.YALE.EDU"  "Ashish Deshpande"  8-FEB-1992 19:49:12.78
+
+Would you please, please forward any information you receive to me too?
+Especially, any offers of ftp'able or e-mail'able papers or anything of
+the sort ...
+
+I'd really appreciate it. I'm seriously considering the field as a possible
+research area and need to find out as much as possible about it as quickly
+as possible. This would help a great deal.
+
+Thanks,
+Ashish
+
+------------------------------------------------------------------------
+
+From:   IN%"dm_devaney@pnlg.pnl.gov"  5-FEB-1992 14:25:11.53
+
+Please forward or post a summary of responses.  Thanks in advance - Mike
+
+********************************************************
+*  Mike DeVaney                 *    (509) 375-2435    *
+*  Pacific Northwest Laboratory *                      *
+*  906 Battelle Boulevard       *  FAX (509) 375-6631  *
+*  mailstop K1-87               *                      *
+*  Richland, WA  99352          *  dm_devaney@pnl.gov  *
+********************************************************
+
+------------------------------------------------------------------------
+
+From:   IN%"terry@wag.caltech.edu"  "Terry R. Coley"  5-FEB-1992 15:25:10.09
+
+I would be interested in a copy of your net-summary when the responses
+come in.  Also - your paper sounds very interesting, if you would care
+to forward a copy, I would enjoy reading it.  My interest is in using
+Object oriented programming and parallism for high performance computational
+chemistry problems.
+
+Thanks.
+        - Terry
+
+terry@wag.caltech.edu 818-397-2724 818-585-0918 (FAX)
+Terry Coley, Caltech 139-74, Pasadena, CA  91125
+
+------------------------------------------------------------------------
+
+From:   IN%"marsh@cec.mtu.edu"  6-FEB-1992 06:18:55.50
+
+Could you please forward any responses that you get on this topic to me?
+I am working on my Master's thesis in this area, and I would greatly
+appreciate this.
+
+Thank you very much.
+Dianne Marsh
+Michigan Technological University
+Houghton, Michigan 49931
+-- marsh@cec.mtu.edu
+
+------------------------------------------------------------------------
+
+Return-path: <ide!ide.com!sukan@uunet.UU.NET>
+
+Dave,
+
+Would you mind sharing a copy of your paper when it becomes available?
+
+Thanks,
+
+Sukan
+
+*******************************************************************************
+Sukan Makmuri                                   Phone: (415) 543-0900
+                                                FAX:   (415) 543-3716
+Interactive Development Environment             sukan@ide.com
+595 Market Street, San Fransisco, CA 94105      uucp: ...!{sun,uunet}!ide!sukan
+*******************************************************************************
+
+
+
+

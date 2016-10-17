@@ -1,0 +1,1905 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Functions that Evaluate Several Expressions, Prev: Writing Simple Commands, Up: GNU Emacs Lisp for the Non-Hacker, Next: Real Functions Evaluate their Arguments
+
+Functions that Evaluate Several Expressions
+===========================================
+
+Like `backward-2', `forward-word-2' is not a very useful function.  It
+doesn't do anything that we couldn't do easier with other functions, and
+it can't be executed by a key sequence.
+
+To write a function that does something new, we really need to combine
+several functions.  Just as in the example using `let', a function can
+evaluate several expressions.  Here is a function that has three
+expressions in its body.  The expressions will be evaluated in the order
+they appear.
+
+     (defun capitalize-last-letter ()
+       (forward-word 1)
+       (backward-char 1)
+       (capitalize-word 1))
+
+Type this definition into your buffer and evaluate it.  Now position the
+point in front of some word in the buffer and call this function with
+`M-ESC'.  It should capitalize the last letter of that word; something
+we had no command to do before!
+
+Is it clear how this function works?  It moves point forward to the end
+of the word with `(forward-word 1)'.  Then it moves backward one
+character with `(backward-char 1)' so that point is positioned on the
+last letter of the word.  Finally it capitalizes that word, starting
+with the letter point is on.
+
+The effect is the same as typing `M-f C-b M-c'.  This is no surprise,
+because (as `C-h c' will confirm for you) `M-f' runs `forward-word',
+`C-b' runs `backward-char' and `M-c' runs `capitalize-word'.
+
+The second thing we want to do is to make it possible to execute our new
+function via a key sequence.  To do so, we need to introduce a new
+concept: that of function which are "interactive".
+
+All functions can be executed by typing their names in an expression and
+executing it (with `eval-last-expression' or several similar commands).
+But only some functions can be executed by defining key sequences for
+them.  This is what we mean by interactive.  Interactive functions are
+also called "commands".
+
+Whenever you define a function, you can make it interactive if you want
+to trouble to do so.  Usually we do so only when we can see that users
+would want to use the function interactively.  For example, the function
+`forward-word' was made interactive because users want to have a key to
+move forward a word.  But the function `+' was not made interactive,
+because it is not useful as an interactive function.
+
+
+The way we make a function interactive is to put the expression
+`(interactive)' in its definition as the first expression to be
+evaluated.  Here is our function made interactive, followed by an
+expression that will bind it to the key sequence `C-x !':
+
+     (defun capitalize-last-letter ()
+       (interactive)
+       (forward-word 1)
+       (backward-char 1)
+       (capitalize-word 1))
+     => capitalize-last-letter
+
+     (define-key global-map "\C-x!" 'capitalize-last-letter)
+     => capitalize-last-letter
+
+Evaluate these expressions and then try out the function using its new
+key binding.
+
+
+
+
+File: elisp  Node: Real Functions Evaluate their Arguments, Prev: Functions that Evaluate Several Expressions, Up: GNU Emacs Lisp for the Non-Hacker
+
+Real Functions Evaluate their Arguments
+=======================================
+
+...
+
+
+
+
+File: elisp  Node: GNU Emacs Internals, Prev: GNU Emacs Lisp for the Non-Hacker, Up: Top, Next: Standard Errors
+
+GNU Emacs Internals
+*******************
+
+This chapter describes many internal aspects of GNU Emacs that might
+only be interesting to a few programmers.
+
+* Menu:
+
+* Building Emacs::      
+* Object Internals::    
+* Writing Emacs Primitives
+* Garbage Collection::  
+* Pure Storage::        
+
+
+
+File: elisp  Node: Building Emacs, Up: GNU Emacs Internals, Next: Object Internals
+
+Building Emacs
+==============
+
+
+When Emacs is built, several files may be loaded automatically and
+stored in the Emacs binary to save startup time.  After you have
+compiled the Emacs C sources, an executable file called `temacs' is
+produced.  When `temacs' is run, the environment is called a "Bare
+impure Emacs".  This version of Emacs contains the Emacs Lisp
+interpreter and IO routines, but not the editing features.
+
+To create a working Emacs binary, you give the command `temacs -l
+loadup'.  This causes `temacs' to evaluate the Lisp files named in the
+`loadup.el' file.  These create the normal Emacs editing environment.
+
+It takes long time for `temacs' to evaluate the Lisp files.  However, by
+dumping a complete Emacs to an executable called `xemacs', you can
+create a version that starts more quickly since the Lisp code does not
+have be evaluated again.  This is what is usually done.  Renamed
+`emacs', the `xemacs' executable is what most people use for Emacs.
+
+
+* Function: dump-emacs FILENAME SYMFILE
+
+       This function dumps the current state of Emacs into an executable
+     file FILENAME.  It takes symbols from SYMFILE (this is normally the
+     file `temacs').  (??)  *Note Snarf-documentation:: You could use
+     `dump-emacs' to create another Emacs executable that ...
+          ??
+
+
+* Variable: emacs-build-time
+
+       This global variable's value is the time at which Emacs was built
+     at the local site.
+
+          emacs-build-time
+          => "Fri Feb 27 14:55:57 1987"
+
+
+* Function: emacs-version
+
+       This function returns a string describing the version of Emacs
+     that is running.  It is useful to include this string in bug
+     reports.
+
+          (emacs-version)
+          => "GNU Emacs 18.36.1 of Fri Feb 27 1987 on slug (berkeley-unix)"
+
+
+* Variable: emacs-version
+
+       The value of this variable is the version of Emacs being run.  It
+     is a string, e.g. `"18.36.1"'.
+
+
+* Variable: system-type
+
+       This global variable's value is a symbol indicating the type of
+     operating system it is operating on.  Here is a table of the
+     symbols for the operating systems that Emacs can run on up to
+     version 18.51.
+
+          system-type
+          => berkeley-unix
+
+
+     `berkeley-unix'
+          Berkeley BSD 4.1, 4.2, or 4.3
+
+     `hpux'
+          Hewlet Packard release 5.0
+
+     `silicon-graphics-unix'
+          Silicon Graphics Iris 3.5 or 3.6
+
+     `rtu'
+          RTU 3.0, ucb universe
+
+     `unisoft-unix'
+          UniSoft's UniPlus 5.0 or 5.2
+
+     `usg-unix-v'
+          AT&T's System V.0, System V Release 2.0, 2.2, or 3
+
+     `vax-vms'
+          VMS VMS 4.0, 4.2, 4.4
+
+     `xenix'
+          SCO Xenix 386 Release 2.2
+
+
+
+
+File: elisp  Node: Object Internals, Prev: Building Emacs, Up: GNU Emacs Internals, Next: Writing Emacs Primitives
+
+Object Internals
+================
+
+
+GNU Emacs Lisp manipulates numerous different types. The actual data is
+stored in a heap and the only access that programs have to the data is
+through pointers.  Pointers are thirty-two bits wide in most
+implementations.  Depending on the operating system and machine make you
+compile Emacs for, twenty-four to twenty-six bits are used to indicate
+the object in question, and the remaining six to eight bits make up a
+tag which identifies the object's type.  (List the types of tags!!)
+
+Because all access to data is through tagged pointers, it is always
+possible to determine the type of any object.  This allows variables to
+be untyped, and the values assigned to them to be changed without regard
+to type.  Function arguments also can be of any type; if you want a
+function to accept only a certain type of argument, you must check the
+type explicitly using a suitable predicate (*Note Predicates::).
+
+* Menu:
+
+* Buffer Internals::    
+* Syntax Tables::       
+* Window Internals::    
+* Process Internals::   
+
+
+
+File: elisp  Node: Buffer Internals, Up: Object Internals, Next: Syntax Tables
+
+Buffer Internals
+----------------
+
+
+ Buffers have a set of variables associated with them which are not
+directly accessible by the programmer.  The names given to them are not
+usable by the programmer in any way, but there are often functions which
+can access and change their values.  They are (as of Emacs 18):
+
+`name'
+     The buffer name is a string which names the buffer.  It is
+     guaranteed to be unique.  *Note Buffer Names::.
+
+`save_modified'
+     This variable contains the time when the buffer was last saved.
+     *Note Buffer Modification::.
+
+`modtime'
+     This variable contains modification time of the visited file.  It
+     is set when the file is written or read.  Every time the buffer is
+     written to the file, this variable is compared to the modification
+     of the file. *Note Buffer Modification::.
+
+`auto_save_modified'
+     This variable contains the time when the buffer was last
+     auto-saved.
+
+`last_window_start'
+     This variable contains the position in the buffer at which the
+     display started the last time the buffer was displayed in a window.
+
+`undodata'
+     This variable contains records which tell Emacs how it can undo the
+     last set of changes to the buffer *Note Undo::.
+
+`syntax_table_v'
+     This variable contains the syntax table for the buffer. *Note
+     Syntax Tables::.
+
+`markers'
+     This variable contains the list of all markers that point into the
+     buffer.  Whenever the contents of the buffer is modified, all of
+     these markers must be updated. *Note Markers::.
+
+`backup_up'
+     This variable is a flag which tells if the visited file has been
+     backed up.
+
+`mark'
+     This variable contains the mark for the buffer.  The mark is a
+     marker, hence it is also included on the list `markers'.
+
+`local_var_alist'
+     This variable contains the association list containing all of the
+     local variables and their associated values.  A copy of this list
+     is returned by the function `buffer-local-variables'.
+
+`mode_line_format'
+     *Note Mode Line Format::.
+
+
+
+File: elisp  Node: Syntax Tables, Prev: Buffer Internals, Up: Object Internals, Next: Window Internals
+
+Syntax Tables
+-------------
+
+
+The actual interpretation of syntax table entries is described here.
+
+`Integer'
+     Class
+`0'
+     whitespace
+`1'
+     punctuation
+`2'
+     word
+`3'
+     symbol
+`4'
+     open paren
+`5'
+     close paren
+`6'
+     expression prefix
+`7'
+     string quote
+`8'
+     ??
+`9'
+     character quote
+`10'
+     ??
+`11'
+     comment-start
+`12'
+     comment-end
+
+
+
+File: elisp  Node: Window Internals, Prev: Syntax Tables, Up: Object Internals, Next: Process Internals
+
+Window Internals
+----------------
+
+
+Windows have the following accessible attributes:
+
+
+`height'
+       The height of the window, measured in lines.  All windows (save
+     the minibuffer window) have a minimum height of two lines, one of
+     which is the mode line.
+
+`width'
+       The width of the window, measured in columns.  There is no limit
+     on the width of a window, although a width of less than 2 does not
+     allow for any characters at all to be displayed (as one line is
+     devoted to the horizontal division line).
+
+`buffer'
+       The buffer which the window is displaying.  This may change often
+     during the life of the window.
+
+`start'
+      The position in the buffer which is the first character to be
+     displayed in the buffer.  This is always located in the upper left
+     corner (location `(0,0)').  There is no restriction on which
+     character in a buffer this is, although it is common for it to be
+     the first character on a line.
+
+`pointm'
+       This is the point of the current buffer when this window is
+     selected; when it is not selected, it retains its previous value.
+     When reselected, this once again becomes the point for the current
+     buffer (assuming that the buffer associated with the window has not
+     changed).
+
+       This allows Emacs to maintain different points in different
+     windows, even when they display the same buffer.  (This variable is
+     only useful when there are multiple windows displaying the same
+     buffer.)
+
+`left'
+       This is the left-hand edge of the window, measured in columns.
+     (The left-most column on the screen is column 0.)
+
+`top'
+       This is the top edge of the window, measured in lines.  (The top
+     line on the screen is line 0.)
+
+`next'
+       This is the window that will be returned when `next-window' is
+     called.
+
+`prev'
+       This is the window that will be returned when `previous-window'
+     is called.
+
+`force-start'
+       This determines if the next redisplay may move the start of
+     display.
+
+`hscroll'
+       This is the number of columns that the display in the window is
+     scrolled horizontally to the left.  Normally this is 0.
+
+`use-time'
+       This is the last time that the window was selected.  This field
+     is used by `get-lru-window'.
+
+
+
+
+File: elisp  Node: Process Internals, Prev: Window Internals, Up: Object Internals
+
+Process Internals
+-----------------
+
+
+The fields of a process are:
+
+`name'
+     A string: the name used when creating the process, or a variant of
+     it.  The name is normally created from the name of the program
+     which it is running. (true??)
+
+`command'
+     A list: the command arguments that this process was created with.
+
+`filter'
+     A function (or a symbol which names it): used to accept output from
+     the process instead of a buffer.
+
+`sentinel'
+     A function: to be called whenever the process receives a signal.
+
+`buffer'
+     A buffer: where standard output is directed to if filter does not
+     exist.
+
+`pid'
+     An integer: the Unix process ID.
+
+`command_channel_p'
+      A flag: Non-`nil' if this is really a command channel instead of a
+     process.
+
+`childp'
+     A flag: Non-`nil' if this is really a child process.
+
+`flags'
+     A symbol: representing the state of the process, `run', `stop',
+     `closed', etc.
+
+`reason'
+     A number: the Unix signal that the process received that caused the
+     process to stop (The process is not necessarily dead).  If the
+     process has died, and was not killed by a signal, then this is the
+     code the process exited with.
+
+`mark'
+     A Marker: set to end of last output from this process inserted into
+     the buffer.  Normally this will be the end of the buffer.
+
+`kill_without_query'
+     A flag: Non-`nil' means kill silently if Emacs is exited.
+
+
+
+
+
+
+File: elisp  Node: Writing Emacs Primitives, Prev: Object Internals, Up: GNU Emacs Internals, Next: Garbage Collection
+
+Writing Emacs Primitives
+========================
+
+
+Certain functions, and all special forms, are written in C.  A
+convenient interface is provided via a set of macros.  The only way to
+really understand how to write new C code is to read the source;
+however, some information will be provided here.
+
+An example of a special form (an ordinary function would have the same
+general appearance) is the definition of `or', from `eval.c'.
+
+     /* NOTE!!! Every function that can call EVAL must protect its args
+      and temporaries from garbage collection while it needs them.
+      The definition of `For' shows what you have to do.  */
+
+     DEFUN ("or", For, Sor, 0, UNEVALLED, 0,
+       "Eval args until one of them yields non-NIL, then return that value.\n\
+     The remaining args are not evalled at all.\n\
+     If all args return NIL, return NIL.")
+       (args)
+          Lisp_Object args;
+     {
+       register Lisp_Object val;
+       Lisp_Object args_left;
+       struct gcpro gcpro1;
+
+       if (NULL(args))
+         return Qnil;
+
+       args_left = args;
+       GCPRO1 (args_left);
+
+       do
+         {
+           val = Feval (Fcar (args_left));
+           if (!NULL (val))
+             break;
+           args_left = Fcdr (args_left);
+         }
+       while (!NULL(args_left));
+
+       UNGCPRO;
+       return val;
+     }
+
+Here is a precise explanation of the arguments to the `DEFUN' macro.
+
+The first argument is the name of the function in Lisp; it will be named
+`or'.
+
+The second argument is the C function name for this function.  This is
+the name that is used in C code for calling the function.  The name is,
+by convention, `F' prepended to the Lisp name, with all dashes (-) in
+the Lisp name changed to underscores.  Thus, if your C code wishes to
+call this function, it will call For(...).  Remember that the arguments
+must be Lisp_Objects; various macros and functions for creating
+Lisp_Objects are provided in the file lisp.h.
+
+The third argument is the name of the C variable representing the Lisp
+primitive that this function codes.  This name is by convention "S"
+prepended to the name, in the same manner that the function name is
+created.
+
+The fourth argument is the minimum number of arguments that must be
+provided; i.e., the number of required arguments.  In this case, no
+arguments are required.
+
+The fifth argument is the maximum number of arguments that can be
+provided.  This is a special form because this number is the macro
+`UNEVALLED', indicating that the arguments are not to be evaluated.  A
+function with the equivalent of an `&rest' argument would have the macro
+`MANY' in this position.  This argument must be one of these macros or a
+number at least as large as the fourth argument.
+
+The sixth argument is an interactive specification exactly like the one
+provided in Lisp.  In this case it is 0 (a null pointer), indicating
+that this function cannot be called interactively.  A value of ""
+indicates an interactive function not taking arguments.
+
+The last argument is the documentation string.
+
+A list of arguments must be provided, and their types (all Lisp objects)
+must be declared.
+
+If you are modifying a file that already has Lisp primitives defined in
+it, find the function near the end of the file named
+syms-of-<something>, and add a line of the form
+
+     defsubr (&Sname);
+
+If the file doesn't have this function, or you have created a new file,
+add a `syms_of_FILENAME', e.g., `syms_of_eval', and find the spot in
+`emacs.c' where all of these functions are called.  Add a call to your
+symbol initialization function there.  This makes all the subroutines
+(primitives) available from Lisp.
+
+Here is another function, with more complicated arguments.  This comes
+from the code for the X window system, and it demonstrates the use of
+macros and functions to manipulate Lisp objects.
+
+     DEFUN ("coordinates-in-window-p", Fcoordinates_in_window_p,
+       Scoordinates_in_window_p, 2, 2,
+       "xSpecify coordinate pair: \nXExpression which evals to window: ",
+       "Return non-nil if POSITIONS (a list, (SCREEN-X SCREEN-Y))\n\
+        is in WINDOW.  Returned value is list of positions expressed\n\
+     relative to window upper left corner.")
+       (coordinate, window)
+          register Lisp_Object coordinate, window;
+     {
+       register Lisp_Object xcoord, ycoord;
+
+       if (!LISTP  (coordinate)) wrong_type_argument (Qlistp, coordinate);
+       CHECK_WINDOW (window, 2);
+       xcoord = Fcar (coordinate);
+       ycoord = Fcar (Fcdr (coordinate));
+       CHECK_NUMBER (xcoord, 0);
+       CHECK_NUMBER (ycoord, 1);
+       if ((XINT (xcoord) < XINT (XWINDOW (window)->left)) ||
+           (XINT (xcoord) >= (XINT (XWINDOW (window)->left) +
+                              XINT (XWINDOW (window)->width))))
+         {
+           return Qnil;
+         }
+       XFASTINT (xcoord) -= XFASTINT (XWINDOW (window)->left);
+       if (XINT (ycoord) == (screen_height - 1))
+         return Qnil;
+       if ((XINT (ycoord) < XINT (XWINDOW (window)->top)) ||
+           (XINT (ycoord) >= (XINT (XWINDOW (window)->top) +
+                              XINT (XWINDOW (window)->height)) - 1))
+         {
+           return Qnil;
+         }
+       XFASTINT (ycoord) -= XFASTINT (XWINDOW (window)->top);
+       return (Fcons (xcoord, Fcons (ycoord, Qnil)));
+     }
+
+There are similar equivalents for `defvar' and `defconst', as well as a
+few others that have no equivalent in the Lisp interpreter.
+
+Note that you cannot directly call functions defined in Lisp as, for
+example, the primitive function `Fcons' is called above.  You must
+create the appropriate Lisp form, protect everything from garbage
+collection, and `Feval' the form, as was done in `For' above.
+
+`eval.c' is a very good file to look through for examples; `lisp.h'
+contains the definitions for some important macros and functions.
+
+
+
+
+
+
+File: elisp  Node: Garbage Collection, Prev: Writing Emacs Primitives, Up: GNU Emacs Internals, Next: Pure Storage
+
+Garbage Collection
+==================
+
+  All functions which build new structures (be they lists, strings,
+buffers, etc.) require storage space for those structures.  As it is
+quite common to use some storage for a while, and then release it (e.g.,
+by killing a buffer or deleting the last pointer to an object), a
+"garbage collector" is provided to reclaim this abandoned storage.
+
+  This garbage collector operates by scanning over all objects which are
+accessible by the user (e.g., all symbols, their values and associated
+function definitions, and any data presently on the stack), and marking
+those as being in use.  Any objects which are accessible through them
+are also marked as being in use, and all the rest are must therefore be
+garbage.
+
+  Unused cons cells are simply strung together onto a "free list" for
+future allocation.  Strings are first ``compacted'', and then all unused
+string space is made available to the string creation functions.
+
+
+     Common Lisp Note: Unlike other Lisps, the garbage collector is not
+     called when storage is exhausted.  Instead, GNU Emacs Lisp simply
+     requests the Operating System to allocate more storage, and
+     processing continues until `gc-cons-threshold' bytes have been used
+
+
+* Command: garbage-collect
+
+       This function reclaims storage used by Lisp objects that are no
+     longer needed.  It returns information on the amount of space in
+     use.  Garbage collection happens automatically if you use more than
+     `gc-cons-threshold' bytes of Lisp data since the previous garbage
+     collection.
+
+       This function returns a list containing the following
+     information:
+
+          ((USED-CONSES . FREE-CONSES)
+           (USED-SYMS . FREE-SYMS)
+           (USED-MARKERS . FREE-MARKERS)
+           USED-STRING-CHARS 
+           USED-VECTOR-SLOTS)
+
+          (Explain this!!)
+
+          (garbage-collect)
+          => ((3435 . 2332) (1688 . 0) (57 . 417) 24510 3839)
+
+
+
+* User Option: gc-cons-threshold
+
+       The value of this variable is the number of bytes of storage that
+     may be used after one garbage collection before another one is
+     automatically called.  Storage is ``used'' by "consing" (a cons
+     cell is eight bytes), creating strings (one byte per character plus
+     a few bytes of overhead), adding text to a buffer, etc.
+
+       This variable may be set to a value above 10,000 to reduce the
+     frequency of garbage collections.  The initial value is 100,000.
+     Setting it to a value less than 10,000 will only have effect until
+     the subsequent garbage collection, at which time `garbage-collect'
+     will set it back to 10,000.
+
+
+
+
+File: elisp  Node: Pure Storage, Prev: Garbage Collection, Up: GNU Emacs Internals
+
+Pure Storage
+============
+
+  There are two types of storage in GNU Emacs Lisp for user-created Lisp
+objects: "normal storage" and "pure storage".  Normal storage is where
+all the new data which is created by any session with Emacs is kept.
+When a program conses up a list or the user defines a new function (or
+loads a package), then that is placed in normal storage.
+
+  If normal storage runs low, then Emacs requests the Operating System
+to allocate more memory in blocks of 1k bytes.  Each block is allocated
+for one type only, meaning that symbols, conses, vectors, etc. are
+segregated in distinct blocks in memory.
+
+  After a certain amount of storage has been allocated (determined by
+the user variable `gc-cons-threshold'), the garbage collector is called
+to collect all storage which has been used and abandoned.
+
+  Pure storage is unique in that it is not expandable, it will not be
+collected by the garbage collector, and it is also sharable --- meaning
+that if two people are running Emacs, the operating system may choose to
+let them share the exact same memory for all the sharable portions of
+Emacs.
+
+  In essence, pure storage is used when initially building Emacs from
+the sources, loading all of the normal files which everyone will want.
+Normal storage is used during sessions with Emacs.
+
+
+* Function: purecopy OBJECT
+
+       This function makes a copy of OBJECT in pure storage and returns
+     it.  It copies strings by simply making a new string with the same
+     characters in pure storage.  It recursively copies the contents of
+     vectors and cons cells.
+
+       It does not make copies of symbols, or any other objects, but
+     just returns them unchanged.  It signals an error if asked to copy
+     markers.  This function is used only while Emacs is being built and
+     dumped.
+
+
+* Variable: pure-bytes-used
+
+       The value of this variable is the number of bytes of pure storage
+     allocated so far.  During a session, this number will be very close
+     to the total amount of pure storage that exists.
+
+
+* Variable: purify-flag
+
+       This variable determines if `defun' should make a copy of the
+     function definition in pure storage.  If it is non-`nil', then the
+     function definition is copied into pure storage.
+
+       This flag is `t' while loading all of the basic functions for
+     building Emacs initially (allowing those functions to be sharable
+     and non-collectible.  It is set to `nil' when Emacs is saved out as
+     a runnable program.
+
+       There is a finite amount of space allocated to pure storage, and
+     this amount is based upon the number of functions there are that
+     are normally loaded when building Emacs.  You should not change
+     this flag in a running Emacs.
+
+
+
+
+
+
+File: elisp  Node: Standard Errors, Prev: GNU Emacs Internals, Up: Top, Next: Standard Buffer Local Variables
+
+Standard Errors
+***************
+
+
+Below is the complete list, grouped by concept, (could be alphabetical)
+of the error symbols in standard Emacs, their messages (`error-message'
+property)}, and a cross reference to a description of how the error can
+occur.
+
+Each of them have an `error-conditions' property} that includes the
+error itself, and the `error' condition, with two exceptions.  `quit'
+does not have the `error' condition, and the three file related errors
+have the `file-error' condition.
+
+*Note Errors:: for an explanation of how errors are generated and
+handled.
+
+
+`Symbol'
+     Conditions
+
+`error'
+     `"error"', See `error' in *Note Errors::.
+
+`quit'
+     `"Quit"', *Note Aborting::.
+
+`no-catch'
+     `"No catch for tag"', *Note Explicit Jumps::.
+
+`invalid-read-syntax'
+     `"Invalid read syntax"', *Note Input Functions::.
+
+`end-of-file'
+     `"End of file during parsing"' This is not a `file-error'.  *Note
+     Input Functions::.
+
+`setting-constant'
+     `"Attempt to set a constant symbol"' The symbols `nil' and `t' may
+     not be changed.
+
+`void-function'
+     `"Symbol's function definition is void"', `symbol-function' in
+     *Note Accessing Function Definitions::.
+
+`void-variable'
+     `"Symbol's value as variable is void"', `symbol-value' in *Note
+     Accessing Variable Values::.
+
+`invalid-function'
+     `"Invalid function"', *Note List Forms::.
+
+`wrong-type-argument'
+     `"Wrong type argument"', *Note Type Predicates::.
+
+`args-out-of-range'
+     `"Args out of range"', *Note Sequences::.
+
+`wrong-number-of-arguments'
+     `"Wrong number of arguments"', *Note List Forms::.
+
+`search-failed'
+     `"Search failed"', *Note Searching and Matching::.
+
+`invalid-regexp'
+     `"Invalid regexp"', *Note Syntax of Regular Expressions::.
+
+`arith-error'
+     `"Arithmetic error"', `/' and `%'in *Note Numbers::.
+
+`end-of-buffer'
+     `"End of buffer"', *Note Buffer Contents::.
+
+`beginning-of-buffer'
+     `"Beginning of buffer"', *Note Buffer Contents::.
+
+`buffer-read-only'
+     `"Buffer is read-only"', *Note Read Only Buffers::.
+
+`file-error'
+     `"File error"', *Note Files::.
+
+`file-locked     '
+     *Note File Locks::.
+
+`file-already-exists'
+     `"File already exists"', *Note Writing to Files::.
+
+`file-supersession'
+     *Note Buffer Modification::.
+
+
+
+File: elisp  Node: Standard Buffer Local Variables, Prev: Standard Errors, Up: Top, Next: Standard Keymaps
+
+Standard Buffer Local Variables
+*******************************
+
+
+  The table below shows all of the buffer-local variables for Emacs
+version 18 with the common packages loaded.
+
+
+`fill-column'
+      *Note Auto Filling::
+`truncate-lines'
+      *Note Truncation::
+`ctl-arrow'
+      *Note Miscellaneous Display Variables::
+`selective-display'
+      *Note Selective Display::
+`selective-display-ellipses'
+      *Note Selective Display::
+`minor-modes'
+      *Note Minor Modes::
+`overwrite-mode'
+      *Note Insertion::
+`abbrev-mode'
+      *Note Abbreviations::
+`tab-width'
+      *Note Tab Stops::
+`auto-fill-hook'
+      *Note Auto Filling::
+`case-fold-search'
+      *Note Searching and Case::
+`left-margin'
+      *Note Indenting::
+`local-abbrev-table'
+      *Note Abbreviations::
+`mode-name'
+      *Note Information about Major Modes::
+`major-mode'
+      *Note Information about Major Modes::
+`buffer-read-only'
+      *Note Read Only Buffers::
+`buffer-auto-save-file-name'
+      *Note Auto Saving::
+`buffer-saved-size'
+      *Note Buffer Contents::
+`buffer-backed-up'
+      *Note Backup Files::
+`default-directory'
+      *Note Operating System Environment::
+`buffer-file-name'
+      *Note Buffer File Name::
+`mark-ring'
+      *Note The Mark::
+`paragraph-start'
+      *Note Paragraphs::
+`paragraph-separate'
+      *Note Paragraphs::
+`require-final-newline'
+      *Note Insertion::
+
+
+
+File: elisp  Node: Standard Keymaps, Prev: Standard Buffer Local Variables, Up: Top, Next: Standard Hooks
+
+Standard Keymaps
+****************
+
+The following symbols are used as the names for various keymaps.  Some
+of these exist when Emacs is first started, others are only loaded when
+their respective mode is used.  This is not an exhaustive list (and not
+very useful either!!).
+
+Almost all of these maps are used as local maps.  Indeed, of the modes
+that presently exist, only (font??) ``vip mode'' and ``terminal emulator
+mode'' ever change the global keymap.
+
+
+
+`Helper-help-map'
+     A full keymap used by the help utility package. It has the same
+     keymap in its value cell and in its function cell.
+
+`Buffer-menu-mode-map'
+     A full keymap used by Buffer mode.
+
+`Info-edit-map'
+     A sparse keymap used by the `e' command of Info.
+
+`Info-mode-map'
+     A sparse keymap containing Info commands.
+
+`c-mode-map'
+     A sparse keymap used in C mode as a local map.
+
+`ctl-x-4-map'
+     A sparse keymap for subcommands of the prefix `C-x 4'.
+
+`ctl-x-map'
+     A default keymap for `C-x' commands.
+
+`dired-mode-map'
+     A full keymap for `dired-mode' buffers.
+
+`edit-abbrevs-map'
+     A sparse keymap used in `edit-abbrevs'.
+
+`edit-tab-stops-map'
+     A sparse keymap used in `edit-tab-stops'.
+
+`emacs-lisp-mode-map'
+     A sparse keymap used in Emacs Lisp Mode.
+
+`function-keymap'
+     The keymap for the definitions of keypad and function keys.  If
+     there are none, then it contains an empty sparse keymap.
+
+`mouse-map'
+     A sparse keymap for mouse commands from the X window system.
+
+`occur-mode-map'
+     A local keymap used in occur mode.
+
+`text-mode-map'
+     A sparse keymap used by text mode.
+
+`view-mode-map'
+     A full keymap used by view mode.
+
+`debugger-mode-map'
+     A full keymap used by Debugger mode.
+
+`command-history-map'
+     A full keymap used by Command History mode.
+
+`doctor-mode-map'
+     A sparse keymap used by doctor mode.
+
+`electric-buffer-menu-mode-map'
+     A full keymap used by Electric buffer menu mode.
+
+`electric-history-map'
+     A full keymap used by electric command history mode.
+
+`fundamental-mode-map'
+       The local keymap for fundamental mode.  It is empty unless
+     changed by the user.
+
+
+`mode-specific-map'
+       The keymap for characters following `C-c'.
+
+
+
+File: elisp  Node: Standard Hooks, Prev: Standard Keymaps, Up: Top, Next: Index
+
+Standard Hooks
+**************
+
+The following is a list of hooks available with the distributed 18.52
+version of GNU Emacs.  Some of these hooks are called with `run-hooks'
+and can be a list of functions.  Others are not called with `run-hooks'
+and may or may not allow a list of functions.  For example, the
+`suspend-hook' can only reference a single function.  *Note Hooks:: for
+more info on using hooks.
+
+(xref to where documented or document it!!
+  specify what is expected, when it is called relative to
+  mode initialization.)
+
+`auto-fill-hook'
+`blink-paren-hook'
+`c-mode-hook'
+`command-history-hook'
+`comment-indent-hook'
+`define-hooked-global-abbrev'
+`define-hooked-local-abbrev'
+`dired-mode-hook'
+`disabled-command-hook'
+`edit-picture-hook'
+`edit-picture-hook'
+`electric-buffer-menu-mode-hook'
+`electric-command-history-hook'
+`electric-help-mode-hook'
+`emacs-lisp-mode-hook'
+`find-file-hooks'
+`find-file-not-found-hooks'
+`fortran-comment-hook'
+`fortran-mode-hook'
+`ftp-setup-write-file-hooks'
+`ftp-write-file-hook'
+`indent-mim-hook'
+`LaTeX-mode-hook'
+`ledit-mode-hook'
+`lisp-indent-hook'
+`lisp-interaction-mode-hook'
+`lisp-mode-hook'
+`m2-mode-hook'
+`mail-mode-hook'
+`mail-setup-hook'
+`medit-mode-hook'
+`mh-compose-letter-hook'
+`mh-folder-mode-hook'
+`mh-letter-mode-hook'
+`mim-mode-hook'
+`news-mode-hook'
+`news-reply-mode-hook'
+`news-setup-hook'
+`nroff-mode-hook'
+`outline-mode-hook'
+`plain-TeX-mode-hook'
+`prolog-mode-hook'
+`protect-innocence-hook'
+`rmail-edit-mode-hook'
+`rmail-mode-hook'
+`rmail-summary-mode-hook'
+`scheme-indent-hook'
+`scheme-mode-hook'
+`scribe-mode-hook'
+`shell-mode-hook'
+`shell-set-directory-error-hook'
+`suspend-hook'
+`suspend-resume-hook'
+`temp-buffer-show-hook'
+`term-setup-hook'
+`terminal-mode-hook'
+`terminal-mode-break-hook'
+`TeX-mode-hook'
+`text-mode-hook'
+`vi-mode-hook'
+`view-hook'
+`write-file-hooks'
+`x-process-mouse-hook'
+
+
+
+
+
+
+
+
+
+
+File: elisp  Node: Index, Prev: Standard Hooks, Up: Top
+
+Index
+*****
+
+
+Try finding concepts in the function index before the concept index
+since concept index is intended to be combined with the function index.
+
+
+* Menu:
+
+* Function Index::	
+* Variable Index::	
+* Concept Index::	
+* Key Index::	
+* Program Index::	
+* Data Type Index::	
+
+
+File: elisp  Node: Function Index, Next: Variable Index, Up: Index
+
+Function Index
+==============
+
+This index includes primitive and Lisp functions, and special forms.
+
+
+* Menu:
+
+* %: Arithmetic Operations.
+* *: Arithmetic Operations.
+* +: Arithmetic Operations.
+* -: Arithmetic Operations.
+* /: Arithmetic Operations.
+* ,: Backquote.
+* ,@: Backquote.
+* `: Backquote.
+* /=: Comparison of Numbers.
+* <: Comparison of Numbers.
+* <=: Comparison of Numbers.
+* =: Comparison of Numbers.
+* >: Comparison of Numbers.
+* >=: Comparison of Numbers.
+* ': Identity and Quoting.
+* 1+: Arithmetic Operations.
+* 1-: Arithmetic Operations.
+* abbrev-expansion: Abbreviations.
+* abbrev-symbol: Abbreviations.
+* abort-recursive-edit: Recursive Editing.
+* accept-process-output: Receiving Information from Processes.
+* accessible-keymaps: Global and Local Keymaps.
+* add-abbrev: Abbreviations.
+* add-name-to-file: Modifying the File System.
+* after-find-file: Finding and Visiting Files.
+* all-completions: Completion.
+* and: Conditional Expressions.
+* append: Building Cons Cells and Lists.
+* append example: Function Invocation.
+* append-to-file: Writing to Files.
+* append-to-register: Registers.
+* apply debugging: Debug Functions.
+* apply example: Mapping Functions.
+* apply: Function Invocation.
+* apropos: Help Functions.
+* aref: Arrays.
+* arrayp: Arrays.
+* aset: Arrays.
+* ash: Bitwise Operations on Integers.
+* ask-user-about-lock: File Locks.
+* ask-user-about-supersession-threat: Buffer Modification.
+* assoc: Association Lists.
+* assq: Association Lists.
+* atom: Predicates on Lists.
+* auto-fill-mode example: Minor Modes.
+* auto-justify-mode example: Minor Modes.
+* autoload: Autoload.
+* auto-save-file-name-p: Auto Saving.
+* auto-save-mode: Auto Saving.
+* back-to-indentation: Indenting.
+* backtrace call stack: Evaluation.
+* backtrace: Debug Functions.
+* backtrace-debug: Debug Functions.
+* backup-buffer: How to make Backup files.
+* backup-extract-version: Backup Files.
+* backup-file-name-p: Backup Files.
+* backward-char: Motion.
+* backward-delete-char-untabify: Deletion.
+* backward-kill-sexp: Lisp Expressions.
+* backward-list: Lisp Expressions.
+* backward-prefix-chars: Regular Expression Searching.
+* backward-sexp: Lisp Expressions.
+* backward-to-indentation: Indenting.
+* backward-up-list: Lisp Expressions.
+* backward-word: Motion.
+* barf-if-buffer-read-only: Read Only Buffers.
+* batch-byte-compile: Byte Compilation.
+* baud-rate: Terminal Output.
+* beep: Beeping.
+* beginning-of-buffer: Motion.
+* beginning-of-line: Lines.
+* blink-matching-open: Blinking.
+* bobp: Point.
+* bolp: Point.
+* boundp: Local Variables.
+* buffer-enable-undo: Undo.
+* buffer-end: Buffer Contents.
+* buffer-file-name: Buffer File Name.
+* buffer-flush-undo: Undo.
+* buffer-list: The Buffer List.
+* buffer-local-variables: Buffer Local Variables.
+* buffer-modified-p: Buffer Modification.
+* buffer-modified-p example: Mode Line Format.
+* buffer-name: Buffer Names.
+* bufferp: Buffers.
+* buffer-size: Buffer Contents.
+* buffer-string: Buffer Contents.
+* buffer-substring: Buffer Contents.
+* bury-buffer: The Buffer List.
+* byte-code: Byte Compilation.
+* byte-compile: Byte Compilation.
+* byte-compile-file: Byte Compilation.
+* byte-recompile-directory: Byte Compilation.
+* call-interactively: Interactive Call.
+* call-process: Creating a Synchronous Process.
+* call-process-region: Creating a Synchronous Process.
+* cancel-debug-on-entry: Debug Functions.
+* capitalize: Character Case.
+* capitalize-region: Case Changes.
+* capitalize-word: Case Changes.
+* car: Accessing Elements of Lists.
+* car-safe: Accessing Elements of Lists.
+* catch: Explicit Jumps.
+* cd: Operating System Environment.
+* cdr: Accessing Elements of Lists.
+* cdr-safe: Accessing Elements of Lists.
+* char-after: Point.
+* char-equal: Comparison of Characters and Strings.
+* char-or-string-p: Predicates on Strings.
+* char-syntax: Syntax Table Functions.
+* char-to-string: Conversion of Characters and Strings.
+* clear-abbrev-table: Abbreviations.
+* clear-visited-file-modtime: Buffer Modification.
+* command-execute: Interactive Call.
+* command-history-mode: Command History.
+* command-line: Command Line Arguments.
+* commandp: Command Overview.
+* commandp example: Documentation Strings.
+* commandp example: Reading Text or Objects.
+* completing-read: Completion.
+* concat: Creating Strings.
+* cond: Conditionals.
+* condition-case: Errors.
+* condition-case example: Byte Compilation.
+* condition-case example: Errors.
+* cons: Building Cons Cells and Lists.
+* consp: Predicates on Lists.
+* continue-process: Sending Signals to Processes.
+* Control-X-prefix: Prefix Keys.
+* copy-alist: Association Lists.
+* copy-file: Modifying the File System.
+* copy-keymap: Creating Keymaps.
+* copy-marker: Functions which Create Markers.
+* copy-rectangle-to-register: Registers.
+* copy-region-as-kill: The Kill Ring.
+* copy-sequence: Sequences.
+* copy-syntax-table: Syntax Table Functions.
+* copy-to-buffer: Insertion.
+* copy-to-register: Registers.
+* count-lines: Lines.
+* count-matches: Regular Expression Searching.
+* create-file-buffer: Finding and Visiting Files.
+* current-buffer: Buffers.
+* current-column: Columns.
+* current-column example: Lines.
+* current-global-map: Global and Local Keymaps.
+* current-indentation: Indenting.
+* current-local-map: Global and Local Keymaps.
+* current-time-string: Operating System Environment.
+* current-window-configuration: Window Configurations.
+* debug: Debug Functions.
+* debug-end-pos: Debugger Mode Commands.
+* debugger-continue: Debugger Mode Commands.
+* debugger-eval-expression: Debugger Mode Commands.
+* debugger-frame: Debugger Mode Commands.
+* debugger-frame-clear: Debugger Mode Commands.
+* debugger-return-value: Debugger Mode Commands.
+* debugger-step-through: Debugger Mode Commands.
+* debug-on-entry: Debug Functions.
+* default-subprocess-input-handler: Subprocess Functions for VMS.
+* default-value: Buffer Local Variables.
+* defconst: Global Variables.
+* define-abbrev: Abbreviations.
+* define-abbrev-table: Abbreviations.
+* define-key: Changing Key Bindings.
+* define-key sparse keymaps: Creating Keymaps.
+* define-logical-name: File Names.
+* define-prefix-command: Prefix Keys.
+* defmacro: Macro Declarations.
+* defstruct: Types of Lisp Objects.
+* defun example: Writing Simple Functions.
+* defun: Function Declarations.
+* defvar: Global Variables.
+* delete-auto-save-file-if-necessary: Auto Saving.
+* delete-backward-char: Deletion.
+* delete-blank-lines: Deletion.
+* delete-char: Deletion.
+* delete-file: Modifying the File System.
+* delete-horizontal-space: Deletion.
+* delete-indentation: Deletion.
+* delete-matching-lines: Regular Expression Searching.
+* delete-non-matching-lines: Regular Expression Searching.
+* delete-other-windows: Deleting Windows.
+* delete-process: Deleting Processes.
+* delete-region: Deletion.
+* delete-window bug: Deleting Windows.
+* delete-window: Deleting Windows.
+* delete-windows-on: Deleting Windows.
+* delq: Using Lists as Sets.
+* describe-bindings: Global and Local Keymaps.
+* describe-mode: Information about Major Modes.
+* describe-syntax: Syntax Table Functions.
+* digit-argument: Prefix Command Arguments.
+* ding: Beeping.
+* ding used: Key Lookup.
+* directory-file-name: File Names.
+* directory-files: Directories.
+* disable-command: Disabling Commands.
+* disassemble: Byte Compilation.
+* discard-input: Command Keys.
+* display-buffer: Buffers and Windows.
+* display-buffer option: Splitting Windows.
+* display-buffer option: Splitting Windows.
+* display-completion-list: Completion.
+* do-auto-save: Auto Saving.
+* documentation: Documentation Strings.
+* documentation-property: Documentation Strings.
+* documentation-property example: Documentation Strings.
+* dot-marker: Functions which Create Markers.
+* downcase: Character Case.
+* downcase-region: Case Changes.
+* downcase-word: Case Changes.
+* downcasing in lookup-key: Command Keys.
+* down-list: Lisp Expressions.
+* dump-emacs: Building Emacs.
+* edit-and-eval-command: Reading Text or Objects.
+* electric-command-history: Electric Command History Mode.
+* elt: Sequences.
+* emacs-version: Building Emacs.
+* enable-command: Disabling Commands.
+* end-of-buffer: Motion.
+* end-of-line: Lines.
+* enlarge-window: Window Size.
+* enlarge-window-horizontally: Window Size.
+* eobp: Point.
+* eolp: Point.
+* eq: Equality Predicates.
+* equal: Equality Predicates.
+* erase-buffer: Deletion.
+* error: Errors.
+* ESC-prefix: Prefix Keys.
+* eval debugging: Debug Functions.
+* eval: Eval.
+* eval-current-buffer: Eval.
+* eval-last-sexp: Lisp Expressions.
+* eval-minibuffer: Reading Text or Objects.
+* eval-print-last-sexp: Lisp Expressions.
+* eval-region: Eval.
+* exchange-point-and-mark: The Mark.
+* execute-extended-command: Interactive Call.
+* execute-kbd-macro: Keyboard Macros.
+* exit-minibuffer: Minibuffer Basics.
+* exit-recursive-edit: Recursive Editing.
+* expand-file-name: Functions that Expand Filenames.
+* fboundp: Accessing Function Definitions.
+* featurep: Features.
+* file-attributes: Information about Files.
+* file-directory-p: Information about Files.
+* file-exists-p: Information about Files.
+* file-locked-p: File Locks.
+* file-modes: Information about Files.
+* file-name-absolute-p: File Names.
+* file-name-all-completions: Filename Completion.
+* file-name-all-versions: Information about Files.
+* file-name-as-directory: File Names.
+* file-name-completion: Filename Completion.
+* file-name-directory: File Names.
+* file-name-nondirectory: File Names.
+* file-name-sans-versions: File Names.
+* file-newer-than-file-p: Information about Files.
+* file-nlinks: Information about Files.
+* file-readable-p: Information about Files.
+* file-symlink-p: Information about Files.
+* file-writable-p: Information about Files.
+* fillarray: Arrays.
+* find-alternate-file: Finding and Visiting Files.
+* find-backup-file-name: Backup Files.
+* find-file: Finding and Visiting Files.
+* find-file-noselect: Finding and Visiting Files.
+* find-file-other-window: Finding and Visiting Files.
+* find-file-read-only: Finding and Visiting Files.
+* fixup-whitespace: Deletion.
+* flush-lines: Regular Expression Searching.
+* fmakunbound: Accessing Function Definitions.
+* following-char: Point.
+* foo: A Sample Function Description.
+* for: Backquote.
+* for: Writing a Macro.
+* format: Conversion of Characters and Strings.
+* forward-char: Motion.
+* forward-line: Lines.
+* forward-list: Lisp Expressions.
+* forward-sexp: Lisp Expressions.
+* forward-to-indentation: Indenting.
+* forward-word: Motion.
+* fset: Accessing Function Definitions.
+* fset example: List Forms.
+* ftp-find-file: Editing Files on Remote Machines.
+* ftp-list-directory: Editing Files on Remote Machines.
+* ftp-login example: Non-local Exits.
+* ftp-write-file: Editing Files on Remote Machines.
+* funcall debugging: Debug Functions.
+* funcall: Function Invocation.
+* function example: Documentation Strings.
+* function: Function Declarations.
+* function quoting: Identity and Quoting.
+* fundamental-mode: Setting the Major Mode.
+* garbage-collect: Garbage Collection.
+* generate-new-buffer: Creating Buffers.
+* get: Property Lists.
+* get-buffer: Buffer Names.
+* get-buffer-create: Creating Buffers.
+* get-buffer-process: Process Buffers.
+* get-buffer-window: Buffers and Windows.
+* getenv: Operating System Environment.
+* get-file-buffer: Buffer File Name.
+* get-file-char: Output Streams.
+* get-largest-window: Selecting Windows.
+* get-lru-window: Selecting Windows.
+* get-process: Process Information.
+* get-register: Registers.
+* global-key-binding: Global and Local Keymaps.
+* global-set-key: Changing Key Bindings.
+* global-set-key example: Changing Key Bindings.
+* global-unset-key: Changing Key Bindings.
+* goto-char: Motion.
+* goto-line: Lines.
+* hack-local-variables: Setting the Major Mode.
+* help-command: Help Functions.
+* Helper-describe-bindings: Help Functions.
+* Helper-help: Help Functions.
+* how-many: Regular Expression Searching.
+* identity: Identity and Quoting.
+* if: Conditionals.
+* ignore in keymap: Key Lookup.
+* ignore: Key Lookup.
+* inc: Writing a Macro.
+* indent-according-to-mode: Indenting.
+* indent-for-tab-command: Indenting.
+* indent-region: Indenting.
+* indent-relative: Indenting.
+* indent-relative-maybe: Indenting.
+* indent-rigidly: Indenting.
+* indent-sexp: Lisp Expressions.
+* indent-to: Indenting.
+* indent-to-left-margin: Indenting.
+* input-pending-p: Command Keys.
+* insert: Insertion.
+* insert-abbrev-table-description: Abbreviations.
+* insert-before-markers: Insertion.
+* insert-buffer: Insertion.
+* insert-buffer-substring: Insertion.
+* insert-char: Insertion.
+* insert-file: Finding and Visiting Files.
+* insert-file-contents: Finding and Visiting Files.
+* insert-register: Registers.
+* integer-or-marker-p: Predicates on Markers.
+* integerp: Predicates on Numbers.
+* interactive: Interactive Call.
+* interactive-p: Interactive Call.
+* intern: Creating and Interning Symbols.
+* intern-soft: Creating and Interning Symbols.
+* interrupt-process: Sending Signals to Processes.
+* int-to-string: Conversion of Characters and Strings.
+* isearch-forward quitting: Aborting.
+* justify-current-line: Auto Filling.
+* just-one-space: Deletion.
+* keep-lines: Regular Expression Searching.
+* key-binding: Global and Local Keymaps.
+* keyboard-quit: Aborting.
+* key-description: Documentation Strings.
+* keymapp: Creating Keymaps.
+* kill-all-local-variables: Buffer Local Variables.
+* kill-buffer: Killing Buffers.
+* kill-emacs: Getting out of Emacs.
+* kill-line: The Kill Ring.
+* kill-local-variable: Buffer Local Variables.
+* kill-process: Sending Signals to Processes.
+* kill-region: The Kill Ring.
+* kill-sexp: Lisp Expressions.
+* kill-some-buffers: Killing Buffers.
+* length: Sequences.
+* let example: Binding Variables Locally.
+* let*: Local Variables.
+* let: Local Variables.
+* lisp-complete-symbol: Completion.
+* list: Building Cons Cells and Lists.
+* list-buffers: The Buffer List.
+* list-directory: Directories.
+* list-matching-lines: Regular Expression Searching.
+* listp: Predicates on Lists.
+* list-processes: Process Information.
+* load error: Features.
+* load: Load Function.
+* load-average: Operating System Environment.
+* load-file: Load Function.
+* load-library: Load Function.
+* local-key-binding: Global and Local Keymaps.
+* local-set-key: Changing Key Bindings.
+* local-set-key example: Changing Key Bindings.
+* local-unset-key: Changing Key Bindings.
+* lock-buffer: File Locks.
+* logand: Bitwise Operations on Integers.
+* logior: Bitwise Operations on Integers.
+* lognot: Bitwise Operations on Integers.
+* logxor: Bitwise Operations on Integers.
+* looking-at: Regular Expression Searching.
+* lookup-key: Key Lookup.
+* lsh: Bitwise Operations on Integers.
+* macroexpand: Macro Declarations.
+* make-abbrev-table: Abbreviations.
+* make-auto-save-file-name: Auto Saving.
+* make-backup-file-name: Backup Files.
+* make-keymap: Creating Keymaps.
+* make-list: Building Cons Cells and Lists.
+* make-local-variable: Buffer Local Variables.
+* make-marker: Functions which Create Markers.
+* make-sparse-keymap: Creating Keymaps.
+* make-string: Creating Strings.
+* make-symbol: Creating and Interning Symbols.
+* make-symbolic-link: Modifying the File System.
+* make-syntax-table: Syntax Table Functions.
+* make-temp-name: File Names.
+* make-variable-buffer-local: Buffer Local Variables.
+* make-vector: Vectors.
+* makunbound: Local Variables.
+* mapatoms: Creating and Interning Symbols.
+* mapatoms example: Documentation Strings.
+* mapcar*: Mapping Functions.
+* mapcar: Mapping Functions.
+* mapconcat: Mapping Functions.
+* mark: The Mark.
+* marker-buffer: Information from Markers.
+* markerp: Predicates on Markers.
+* marker-position: Information from Markers.
+* mark-marker: The Mark.
+* mark-sexp: Lisp Expressions.
+* match-beginning: Match Data.
+* match-data: Match Data.
+* match-end: Match Data.
+* max: Comparison of Numbers.
+* memq: Using Lists as Sets.
+* message: The Echo Area.
+* min: Comparison of Numbers.
+* minibuffer-complete: Completion.
+* minibuffer-complete-and-exit: Completion.
+* minibuffer-complete-word: Completion.
+* minibuffer-completion-help: Completion.
+* minibuffer-depth: Minibuffer Basics.
+* minibuffer-window: Minibuffer Basics.
+* modify-syntax-entry: Syntax Table Functions.
+* momentary-string-display: Temporary Displays.
+* move-marker: Changing Markers.
+* move-to-column: Columns.
+* move-to-window-line: Vertical Scrolling.
+* narrow-to-page: Clipping Restrictions.
+* narrow-to-region: Clipping Restrictions.
+* natnump: Predicates on Numbers.
+* nconc: Alteration of List Structure.
+* negative-argument: Prefix Command Arguments.
+* newline: Insertion.
+* newline-and-indent: Indenting.
+* next-line: Lines.
+* next-window: Selecting Windows.
+* nlistp: Predicates on Lists.
+* normal-mode: Setting the Major Mode.
+* not: Conditional Expressions.
+* not-modified: Buffer Modification.
+* novice: Disabling Commands.
+* nreverse: Alteration of List Structure.
+* nth: Accessing Elements of Lists.
+* nthcdr: Accessing Elements of Lists.
+* null: Predicates on Lists.
+* one-window-p: Splitting Windows.
+* open-dribble-file: Terminal Input.
+* open-line: Insertion.
+* open-network-stream: TCP.
+* open-termscript: Terminal Output.
+* or: Conditional Expressions.
+* other-buffer: The Buffer List.
+* other-window: Selecting Windows.
+* overwrite-mode: Insertion.
+* parse-partial-sexp: Input Functions.
+* point: Point.
+* point-marker: Functions which Create Markers.
+* point-max: Buffer Contents.
+* point-max-marker: Functions which Create Markers.
+* point-min: Buffer Contents.
+* point-min-marker: Functions which Create Markers.
+* point-to-register: Registers.
+* pop-mark: The Mark.
+* pop-to-buffer example: Process Filters.
+* pop-to-buffer: Selecting Buffers.
+* pos-visible-in-window-p: Window Point.
+* preceding-char: Point.
+* prefix-numeric-value: Prefix Command Arguments.
+* prepend-to-register: Registers.
+* previous-line: Lines.
+* previous-window: Selecting Windows.
+* prin1: Output Functions.
+* prin1-to-string: Output Functions.
+* princ: Output Functions.
+* print example: Output Streams.
+* print: Output Functions.
+* print-help-return-message: Help Functions.
+* process-buffer: Process Buffers.
+* process-command: Process Information.
+* process-exit-status: Process Information.
+* process-filter: Process Filters.
+* process-id: Process Information.
+* process-kill-without-query: Deleting Processes.
+* process-list: Process Information.
+* process-mark example: Process Filters.
+* process-mark: Process Information.
+* process-name: Process Information.
+* processp: Processes.
+* process-send-eof: Sending Input to Processes.
+* process-send-region: Sending Input to Processes.
+* process-send-string: Sending Input to Processes.
+* process-sentinel: Process Sentinels.
+* process-status: Process Information.
+* prog1: Sequencing.
+* prog2: Sequencing.
+* progn: Sequencing.
+* provide: Features.
+* purecopy: Pure Storage.
+* push-mark: The Mark.
+* put: Property Lists.
+* quietly-read-abbrev-file: Abbreviations.
+* quit-process: Sending Signals to Processes.
+* quote evaluation: Self-Evaluating Forms.
+* quote: Identity and Quoting.
+* quoted-insert: Insertion.
+* quote-insert suppression: Changing Key Bindings.
+* random: Random Numbers.
+* rassq: Association Lists.
+* read example: Input Streams.
+* read: Input Functions.
+* read-buffer: Reading Text or Objects.
+* read-char: Command Keys.
+* read-command: Reading Text or Objects.
+* read-file-name: Filename Completion.
+* read-file-name-internal: Filename Completion.
+* read-from-minibuffer: Reading Text or Objects.
+* read-from-string: Input Functions.
+* read-key-sequence: Command Keys.
+* read-minibuffer: Reading Text or Objects.
+* read-no-blanks-input: Reading Text or Objects.
+* read-quoted-char: Command Keys.
+* read-string: Reading Text or Objects.
+* read-variable: Reading Text or Objects.
+* recent-auto-save-p: Auto Saving.
+* recenter: Vertical Scrolling.
+* recent-keys: Terminal Input.
+* recover-file: Reverting.
+* recursion-depth: Recursive Editing.
+* recursive-edit: Recursive Editing.
+* redraw-display: Emacs Display.
+* regexp-quote: Regular Expressions.
+* region-beginning: The Region.
+* region-end: The Region.
+* register-to-point: Registers.
+* reindent-then-newline-and-indent: Indenting.
+* rename-auto-save-file: Auto Saving.
+* rename-buffer: Buffer Names.
+* rename-file: Modifying the File System.
+* repeat-matching-complex-command: Electric Command History Mode.
+* replace-buffer-in-windows: Buffers and Windows.
+* replace-match: Replacements.
+* replace-regexp: Replacements.
+* replace-string: Replacements.
+* require: Byte Compilation.
+* require: Features.
+* re-search-backward: Regular Expression Searching.
+* re-search-forward: Regular Expression Searching.
+* reverse: Alteration of List Structure.
+* revert-buffer: Reverting.
+* revert-buffer use: Finding and Visiting Files.
+* rotate-yank-pointer: The Kill Ring.
+* run-hooks: Hooks.
+* save-buffer: Writing to Files.
+* save-buffers-kill-emacs: Writing to Files.
+* save-excursion: Excursions.
+* save-restriction: Clipping Restrictions.
+* save-some-buffers: Writing to Files.
+* save-window-excursion: Window Configurations.
+* scan-lists: Input Functions.
+* scan-sexps: Input Functions.
+* screen-height: Screen Attributes.
+* screen-width: Screen Attributes.
+* scroll-down: Vertical Scrolling.
+* scroll-left: Horizontal Scrolling.
+* scroll-other-window: Vertical Scrolling.
+* scroll-right: Horizontal Scrolling.
+* scroll-up: Vertical Scrolling.
+* search-backward: Searching for Strings.
+* search-forward: Searching for Strings.
+* selected-window: Selecting Windows.
+* select-window: Selecting Windows.
+* self-insert-and-exit: Minibuffer Basics.
+* self-insert-command example: Minor Modes.
+* self-insert-command: Insertion.
+* self-insert-command override: Changing Key Bindings.
+* send-command-to-subprocess: Subprocess Functions for VMS.
+* send-string-to-terminal: Terminal Output.
+* sequencep: Sequences.
+* server-edit: Emacs Server.
+* server-start: Emacs Server.
+* set: Accessing Variable Values.
+* set-auto-mode: Setting the Major Mode.
+* set-buffer: Selecting Buffers.
+* set-buffer-auto-saved: Auto Saving.
+* set-buffer-modified-p: Buffer Modification.
+* setcar: Alteration of List Structure.
+* setcdr: Alteration of List Structure.
+* set-default: Buffer Local Variables.
+* set-file-modes: Modifying the File System.
+* set-goal-column: Goal Column.
+* set-input-mode: Terminal Input.
+* set-mark: The Mark.
+* set-mark-command: The Mark.
+* set-marker: Changing Markers.
+* setplist: Property Lists.
+* set-process-buffer: Process Buffers.
+* set-process-filter: Process Filters.
+* set-process-sentinel: Process Sentinels.
+* setprv: Subprocess Functions for VMS.
+* setq: Accessing Variable Values.
+* setq example: Names and Symbols.
+* setq-default: Buffer Local Variables.
+* set-register: Registers.
+* set-screen-height: Screen Attributes.
+* set-screen-width: Screen Attributes.
+* set-syntax-table: Syntax Table Functions.
+* set-visited-file-name: Buffer File Name.
+* set-window-buffer: Buffers and Windows.
+* set-window-configuration: Window Configurations.
+* set-window-hscroll: Horizontal Scrolling.
+* set-window-point: Window Point.
+* set-window-start: Window Point.
+* shell-mode example: Mode Line Format.
+* shrink-window: Window Size.
+* shrink-window-horizontally: Window Size.
+* signal: Errors.
+* single-key-description: Documentation Strings.
+* sit-for example: Byte Compilation.
+* sit-for: Sitting.
+* skip-chars-backward: Regular Expression Searching.
+* skip-chars-forward: Regular Expression Searching.
+* sleep-for example: Command Keys.
+* sleep-for: Sitting.
+* Snarf-documentation: Documentation Strings.
+* sort: Alteration of List Structure.
+* sort example: Documentation Strings.
+* sort-columns: Sorting.
+* sort-fields: Sorting.
+* sort-lines: Sorting.
+* sort-numeric-fields: Sorting.
+* sort-pages: Sorting.
+* sort-paragraphs: Sorting.
+* sort-regexp-fields: Sorting.
+* sort-subr: Sorting.
+* spawn-subprocess: Subprocess Functions for VMS.
+* split-line: Insertion.
+* split-window: Splitting Windows.
+* split-window-horizontally: Splitting Windows.
+* split-window-vertically: Splitting Windows.
+* standard-syntax-table: Some Standard Syntax Tables.
+* start-process: Creating an Asynchronous Process.
+* stop-process: Sending Signals to Processes.
+* stop-subprocess: Subprocess Functions for VMS.
+* store-match-data: Match Data.
+* string=: Comparison of Characters and Strings.
+* string-equal: Comparison of Characters and Strings.
+* string-lessp: Comparison of Characters and Strings.
+* string-match: Regular Expression Searching.
+* stringp: Predicates on Strings.
+* string-to-char: Conversion of Characters and Strings.
+* string-to-int: Conversion of Characters and Strings.
+* subrp: Accessing Function Definitions.
+* subst-char-in-region: Deletion.
+* substitute-command-keys: Documentation Strings.
+* substitute-in-file-name: Functions that Expand Filenames.
+* substitute-key-definition: Changing Key Bindings.
+* substring: Creating Strings.
+* suppress-keymap: Changing Key Bindings.
+* suspend-emacs resume: Miscellaneous Display Variables.
+* suspend-emacs: Suspending Emacs.
+* switch-to-buffer: Selecting Buffers.
+* switch-to-buffer-other-window: Selecting Buffers.
+* symbol-function: Accessing Function Definitions.
+* symbol-name: Creating and Interning Symbols.
+* symbolp: Symbols.
+* symbol-plist: Property Lists.
+* symbol-value: Accessing Variable Values.
+* syntax-table: Syntax Table Functions.
+* syntax-table-p: Syntax Tables.
+* sysnetunam: Editing Files on Remote Machines.
+* system-name: Operating System Environment.
+* tabify: Tab Stops.
+* tab-to-tab-stop: Tab Stops.
+* telnet: Telnet.
+* terminal-emulator: Terminal Emulator.
+* terpri: Output Functions.
+* text-char-description: Documentation Strings.
+* this-command-keys: Command Keys.
+* throw example: Recursive Editing.
+* throw: Explicit Jumps.
+* toggle-read-only: Read Only Buffers.
+* top-level: Recursive Editing.
+* transpose-sexps: Lisp Expressions.
+* try-completion: Completion.
+* unbound in keymap: Key Lookup.
+* undefined in keymap: Key Lookup.
+* undefined: Key Lookup.
+* underline-region: Underlining.
+* undo: Undo.
+* undo-boundary: Undo.
+* undo-more: Undo.
+* undo-start: Undo.
+* universal-argument: Prefix Command Arguments.
+* unlock-buffer: File Locks.
+* untabify: Tab Stops.
+* ununderline-region: Underlining.
+* unwind-protect example: Byte Compilation.
+* unwind-protect: Non-local Exits.
+* upcase: Character Case.
+* upcase-region: Case Changes.
+* upcase-word: Case Changes.
+* up-list: Lisp Expressions.
+* use-global-map: Global and Local Keymaps.
+* use-local-map: Global and Local Keymaps.
+* user-full-name: Operating System Environment.
+* user-login-name: Operating System Environment.
+* user-real-login-name: Operating System Environment.
+* user-real-uid: Operating System Environment.
+* user-uid: Operating System Environment.
+* user-variable-p: Global Variables.
+* vconcat: Vectors.
+* vector: Vectors.
+* vectorp: Vectors.
+* verify-visited-file-modtime: Buffer Modification.
+* vertical-motion: Lines.
+* view-file: Finding and Visiting Files.
+* view-register: Registers.
+* waiting-for-user-input-p: Receiving Information from Processes.
+* where-is-internal: Global and Local Keymaps.
+* while: Iteration.
+* widen: Clipping Restrictions.
+* window-buffer: Buffers and Windows.
+* window-edges: Window Size.
+* window-height: Window Size.
+* window-hscroll: Horizontal Scrolling.
+* windowp: Window Basics.
+* window-point example: Deleting Windows.
+* window-point: Window Point.
+* window-start example: Lines.
+* window-start: Window Point.
+* window-width: Window Size.
+* with-output-to-temp-buffer: Temporary Displays.
+* word-search-backward: Searching for Strings.
+* word-search-forward: Searching for Strings.
+* write-char: Output Functions.
+* write-file: Writing to Files.
+* write-region: Writing to Files.
+* yank suppression: Changing Key Bindings.
+* yank: The Kill Ring.
+* yank-pop: The Kill Ring.
+* yes-or-no-p: Reading Text or Objects.
+* y-or-n-p: Reading Text or Objects.
+* zap-to-char: The Kill Ring.
+* zerop: Predicates on Numbers.
+
+

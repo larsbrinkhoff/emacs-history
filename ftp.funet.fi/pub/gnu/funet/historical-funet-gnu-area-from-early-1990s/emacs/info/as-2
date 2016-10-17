@@ -1,0 +1,1799 @@
+Info file: as,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: gas.texinfo
+
+
+File: as  Node: Unops, Prev: Primary, Up: Expressions
+`as' has the following "unary operators".  They each take one
+primary, which must be absolute.
+-
+     Hyphen.  "Negation".  Two's complement negation.
+~
+     Tilde.  "Complementation".  Bitwise not.
+
+
+Binary Operators
+----------------
+"Binary operators" are infix.  Operators are prioritized, but
+equal priority operators are performed left to right.
+Apart from `+' or `-', both primaries must be absolute,
+and the result is absolute, else one primary can be either
+undefined or pass1 and the result
+is pass1.
+  1. Highest Priority
+     `*'
+          "Multiplication".
+     `/'
+          "Division".  Truncation is the same as the C operator `/'
+          of the compiler that compiled `as'.
+     `%'
+          "Remainder".
+     `<'
+     `<<'
+          "Shift Left".  Same as the C operator `<<' of
+          the compiler that compiled `as'.
+     `>'
+     `>>'
+          "Shift Right".  Same as the C operator `>>' of
+          the compiler that compiled `as'.
+  2. Intermediate priority
+     |
+          "Bitwise Inclusive Or".
+     &
+          "Bitwise And".
+     ^
+          "Bitwise Exclusive Or".
+     !
+          "Bitwise Or Not".
+  3. Lowest Priority
+     +
+          "Addition".  If either primary is absolute, the result
+          has the segment of the other primary.
+          If either primary is pass1 or undefined, result is pass1.
+          Otherwise + is illegal.
+     -
+          "Subtraction".  If the right primary is absolute, the
+          result has the segment of the left primary.
+          If either primary is pass1 the result is pass1.
+          If either primary is undefined the result is difference segment.
+          If both primaries are in the same segment, the result is absolute; provided
+          that segment is one of text, data or bss.
+          Otherwise - is illegal.
+
+The sense of the rules is that you can't add or subtract quantities
+from two different segments.  If both primaries are in
+one of these segments, they must be in the same segment:
+text, data or bss, and the operator must be
+`-'.
+
+
+File: as  Node: PseudoOps, Prev: Expressions, Up: top, Next: MachineDependent
+
+Assembler Directives
+********************
+All assembler directives begin with a symbol that begins with a period (`.').
+The rest of the symbol is letters: their case does not matter.
+
+
+File: as  Node: Abort, Prev: PseudoOps, Up: PseudoOps, Next: Align
+
+.abort
+======
+This directive stops the assembly immediately.  It is for
+compatibility with other assemblers.  The original idea was
+that the assembler program would be piped into the
+assembler.  If the source of program wanted to quit, then
+this directive tells `as' to quit also.  One day
+`.abort' will not be supported.
+
+
+File: as  Node: Align, Prev: Abort, Up: PseudoOps, Next: Ascii
+
+.align ABSOLUTE-EXPRESSION , ABSOLUTE-EXPRESSION
+================================================
+Pad the location counter (in the current subsegment) to
+a word, longword or whatever boundary.
+The first expression is the number of low-order zero bits
+the location counter will have after advancement.  For
+example `.align 3' will advance the location counter until
+it a multiple of 8.  If the location counter is already a multiple
+of 8, no change is needed.
+
+The second expression gives the value to be stored in the
+padding bytes.  It (and the comma) may be omitted.  If it is
+omitted, the padding bytes are zeroed.
+
+
+File: as  Node: Ascii, Prev: Align, Up: PseudoOps, Next: Asciz
+
+.ascii STRINGS
+==============
+Expects zero or more string literals (*Note Strings::.) separated by commas.
+Assembles each string (with no automatic trailing zero byte) into
+consecutive addresses.
+
+
+File: as  Node: Asciz, Prev: Ascii, Up: PseudoOps, Next: Byte
+
+.asciz STRINGS
+==============
+Just like .ascii, but each string is followed by a zero byte.
+The `z' in `.asciz' stands for `zero'.
+
+
+File: as  Node: Byte, Prev: Asciz, Up: PseudoOps, Next: Comm
+
+.byte EXPRESSIONS
+=================
+Expects zero or more expressions, separated by commas.
+Each expression is assembled into the next byte.
+
+
+File: as  Node: Comm, Prev: Byte, Up: PseudoOps, Next: Data
+
+.comm SYMBOL , LENGTH
+=====================
+
+Declares a named common area in the bss segment.  Normally
+`ld' reserves memory addresses for it during linking, so
+no partial program defines the location of the symbol.
+Tell `ld' that it must be at least LENGTH bytes long.
+`ld' will allocate space that is at least as long as the
+longest `.comm' request
+in any of the partial programs linked.  LENGTH is an
+absolute expression.
+
+
+File: as  Node: Data, Prev: Comm, Up: PseudoOps, Next: Desc
+
+.data SUBSEGMENT
+================
+Tells `as' to assemble the following statements onto the end of
+the data subsegment numbered SUBSEGMENT (which
+is an absolute expression).  If SUBSEGMENT is omitted, it
+defaults to zero.
+
+
+File: as  Node: Desc, Prev: Data, Up: PseudoOps, Next: Double
+
+.desc SYMBOL, ABSOLUTE-EXPRESSION
+=================================
+Set `n_desc' of the symbol to the low 16 bits of ABSOLUTE-EXPRESSION.
+
+
+File: as  Node: Double, Prev: Desc, Up: PseudoOps, Next: File
+
+.double FLONUMS
+===============
+Expect zero or more flonums, separated by commas.  Assemble floating point
+numbers.  The exact kind of floating point numbers emitted depends
+on what computer `as' is assembling for.  See the machine-specific
+part of the manual for the machine the assembler is running on for
+more information.
+
+
+File: as  Node: File, Prev: Double, Up: PseudoOps, Next: Fill
+
+.file STRING
+============
+Tells `as' that we are about to start a new logical
+file.  STRING is the new file name.  An empty file name
+is OK, but you must still give the quotes: `""'.  This
+statement may go away in future: it is only recognized to
+be compatible with old `as' programs.
+
+
+File: as  Node: Fill, Prev: File, Up: PseudoOps, Next: Float
+
+.fill REPEAT , SIZE , VALUE
+===========================
+RESULT, SIZE and VALUE are absolute expressions.
+Emit REPEAT copies of SIZE bytes.
+REPEAT may be zero or more.
+SIZE may be zero or more, but if it is more than 8, then
+it is deemed to have the value 8, compatible with other people's
+assemblers.
+The contents of each REPEAT bytes is taken from an 8-byte number.
+The highest order 4 bytes are zero.  The lowest order 4 bytes are VALUE
+rendered in the byte-order of an integer on the computer `as' is assembling for.
+Each SIZE bytes in a repetition is taken from the lowest order
+SIZE bytes of this number.
+Again, this bizarre behavior is compatible with other people's
+assemblers.
+
+SIZE and VALUE are optional.
+If the second comma and VALUE are absent, VALUE is assumed zero.
+If the first comma and following tokens are absent, SIZE is assumed to be 1.
+
+
+File: as  Node: Float, Prev: Fill, Up: PseudoOps, Next: Gdbbeg
+
+.float FLONUMS
+==============
+Expect zero or more flonums, separated by commas.  Assemble floating point
+numbers.  The exact kind of floating point numbers emitted depends
+on what computer `as' is assembling for.  See the machine-specific
+part of the manual for the machine the assembler is running on for
+more information.
+
+
+File: as  Node: Gdbbeg, Prev: Float, Up: PseudoOps, Next: Gdbblock
+
+.gdbbeg ABSOLUTE-EXPRESSION
+===========================
+(This pseudo-op may go away without warning.)
+ABSOLUTE-EXPRESSION must be at least zero.
+`as' will remember that a block numbered ABSOLUTE-EXPRESSION
+began where the location count is when this statement is read.
+
+
+File: as  Node: Gdbblock, Prev: Gdbbeg, Up: PseudoOps, Next: Gdbend
+
+.gdbblock BLOCK-NUMBER , OFFSET
+===============================
+(This pseudo-op may go away without warning.)
+BLOCK-NUMBER is a `gdb' block number, at least zero, an absolute expression.
+OFFSET is an offset into the `gdb' symbolic
+file named in the `-G' switch;
+an absolute expression; the lowest offset written by this directive.
+Two C `int's are written in the symbolic file: first
+the object-file address of the `.gdbbeg'
+statement of BLOCK NUMBER; then the object-file address
+of the `.gdbend' statement of BLOCK NUMBER.
+
+
+File: as  Node: Gdbend, Prev: Gdbblock, Up: PseudoOps, Next: Gdbsym
+
+.gdbend ABSOLUTE-EXPRESSION
+===========================
+(This pseudo-op may go away without warning.)
+ABSOLUTE-EXPRESSION must be at least zero.
+`as' will remember that a block numbered ABSOLUTE-EXPRESSION
+ended where the location count is when this statement is read.
+
+
+File: as  Node: Gdbsym, Prev: Gdbend, Up: PseudoOps, Next: Global
+
+.gdbsym SYMBOL , OFFSET
+=======================
+(This pseudo-op may go away without warning.)
+If the `-G' switch named a file of `gdb' symbolic information
+then the `n_value' of SYMBOL is written as a C `int'
+starting at OFFSET in the symbolic file.
+OFFSET is an absolute expression.  SYMBOL may be defined
+after the `.gdbsym' statement.
+
+
+File: as  Node: Global, Prev: Gdbsym, Up: PseudoOps, Next: Int
+
+.global SYMBOL
+==============
+Makes the symbol visible to `ld'.
+If you define SYMBOL in your partial program, its value is made
+available to other partial programs that are linked with it.
+Otherwise, SYMBOL will take
+its attributes from a symbol of the same name from another partial
+program it is linked with.
+
+This is done by setting the `N_EXT' bit
+of that symbol's `n_type' to 1.
+
+
+File: as  Node: Int, Prev: Global, Up: PseudoOps, Next: Lcomm
+
+.int EXPRESSIONS
+================
+Expect zero or more EXPRESSIONS, of any segment, separated by commas.
+For each expression, emit a 32-bit number that will, at run time, be
+the value of that expression.
+The byte order of the expression depends on what kind of computer
+will run the program.
+
+
+File: as  Node: Lcomm, Prev: Int, Up: PseudoOps, Next: Line
+
+.lcomm SYMBOL , LENGTH
+======================
+Reserve LENGTH (an absolute expression) bytes for a local common
+and denoted by SYMBOL, whose segment and value
+are those of the new local common.  The addresses are allocated in the
+`bss' segment, so at run-time the bytes will start off zeroed.
+SYMBOL is not declared global (*Note Global::.),
+so is normally not visible to `ld'.
+
+
+File: as  Node: Line, Prev: Lcomm, Up: PseudoOps, Next: Long
+
+.line LOGICAL LINE NUMBER
+=========================
+This tells `as' to change the logical line number.
+LOGICAL LINE NUMBER is an absolute expression.
+The next line will have that
+logical line number.  So any other statements on the current line (after a `;')
+will be reported as on logical line number LOGICAL LINE NUMBER - 1.
+One day this directive will be unsupported: it is used only for compatibility
+with existing assembler programs.
+
+
+File: as  Node: Long, Prev: Line, Up: PseudoOps, Next: Lsym
+
+.long EXPRESSIONS
+=================
+The same as `.int', *Note Int::.
+
+
+File: as  Node: Lsym, Prev: Long, Up: PseudoOps, Next: Octa
+
+.lsym SYMBOL, EXPRESSION
+========================
+Create a new symbol named SYMBOL, but do not put it
+in the hash table, ensuring it cannot be referenced by name during the rest
+of the assembly.  Set the attributes of the symbol to be the same as the
+expression value.  `n_other' = `n_desc' = 0.  `n_type' =
+(whatever segment the expression has); the `N_EXT' bit of `n_type'
+is zero.  `n_value' = (expression's value).
+
+
+File: as  Node: Octa, Prev: Lsym, Up: PseudoOps, Next: Org
+
+.octa BIGNUMS
+=============
+Expect zero or more bignums, separated by commas.
+For each bignum, emit an 16-byte (octa-word) integer.
+
+
+File: as  Node: Org, Prev: Octa, Up: PseudoOps, Next: Quad
+
+.org NEW-LC , FILL
+==================
+This will advance the location counter of the current segment to
+NEW-LC.  NEW-LC is either an absolute expression or
+an expression with the same segment as the current subsegment.
+That is, you can't use `.org' to cross segments.
+Because `as' tries to assemble programs in one pass NEW-LC must be defined.
+If you really detest this restriction
+we eagerly await a chance to share your improved assembler.
+To be compatible with former assemblers, if the segment of
+NEW-LC is absolute then we pretend the segment of NEW-LC
+is the same as the current subsegment.
+
+Beware that the origin is relative to the start of the segment, not
+to the start of the subsegment.  This is compatible with other
+people's assemblers.
+
+If the location counter (of the current subsegment) is advanced, the intervening
+bytes are filled with FILL which should be an absolute expression.
+If the comma and FILL are omitted, FILL defaults to zero.
+
+
+File: as  Node: Quad, Prev: Org, Up: PseudoOps, Next: Set
+
+.quad BIGNUMS
+=============
+Expect zero or more bignums, separated by commas.
+For each bignum, emit an 8-byte (quad-word) integer.
+If the bignum won't fit in a quad-word, warn; just take the lowest order
+8 bytes of the bignum.
+
+
+File: as  Node: Set, Prev: Quad, Up: PseudoOps, Next: Short
+
+.set SYMBOL, EXPRESSION
+=======================
+Set the value of SYMBOL to expression.
+This will change `n_value' and `n_type' to conform to the EXPRESSION.
+
+It is OK to `.set' a symbol many times in the same assembly.
+If the expression's segment is unknowable during pass 1, a second pass
+over the source program will be forced.  The second pass is
+currently not implemented.  `as' will abort with an error
+message if one is required.
+
+If you `.set' a global symbol, the value stored in the
+object file is the last value stored into it.
+
+
+File: as  Node: Short, Prev: Set, Up: PseudoOps, Next: Space
+
+.short EXPRESSIONS
+==================
+The same as `.word'.  *Note Word::.
+
+
+File: as  Node: Space, Prev: Short, Up: PseudoOps, Next: Stab
+
+.space SIZE , FILL
+==================
+Emit SIZE bytes, each of value FILL.
+Both SIZE and FILL are absolute expressions.
+If the comma and FILL are omitted, FILL is assumed to be zero.
+
+
+File: as  Node: Stab, Prev: Space, Up: PseudoOps, Next: Text
+
+.stabd, .stabn, .stabs
+======================
+There are three directives that begin `.stab...'.
+All emit symbols, for use by symbolic debuggers.
+The symbols are not entered in `as'' hash table: they
+cannot be referenced elsewhere in the source file.
+Up to five fields are required:
+STRING
+     This is the symbol's name.  It may contain any character except `\000',
+     so is more general than ordinary symbol names.  Old debuggers used to
+     code arbitrarily complex structures into symbol names using this technique.
+TYPE
+     An absolute expression.  The symbol's `n_type' is set to the low 8
+     bits of this expression.
+     Any bit pattern is permitted, but `ld' and debuggers will choke on
+     silly bit patterns.
+OTHER
+     An absolute expression.
+     The symbol's `n_other' is set to the low 8 bits of this expression.
+DESC
+     An absolute expression.
+     The symbol's `n_desc' is set to the low 16 bits of this expression.
+VALUE
+     An absolute expression which becomes the symbol's `n_value'.
+
+If a warning is detected while reading the `.stab...' statement
+the symbol has probably already been created and you will get a half-formed
+symbol in your object file.  This is compatible with earlier assemblers (!)
+
+.stabd TYPE , OTHER , DESC
+
+The "name" of the symbol generated is not even an empty string.
+It is a null pointer, for compatibility.  Older assemblers
+used a null pointer so they didn't waste space in object files
+with empty strings.
+
+The symbol's `n_value' is set to the location counter, relocatably.
+When your program is linked, the value of this symbol will be where
+the location counter was when the `.stabd' was assembled.
+
+.stabn TYPE , OTHER , DESC , VALUE
+
+The name of the symbol is set to the empty string `""'.
+
+.stabs STRING ,  TYPE , OTHER , DESC , VALUE
+
+
+File: as  Node: Text, Prev: Stab, Up: PseudoOps, Next: Word
+
+.text SUBSEGMENT
+================
+Tells `as' to assemble the following statements onto the end of
+the text subsegment numbered SUBSEGMENT, which is an
+absolute expression.  If SUBSEGMENT is omitted,
+subsegment number zero is used.
+
+
+File: as  Node: Word, Prev: Text, Up: PseudoOps
+
+.word EXPRESSIONS
+=================
+Expect zero or more EXPRESSIONS, of any segment, separated by commas.
+For each expression, emit a 16-bit number that will, at run time, be
+the value of that expression.
+The byte order of the expression depends on what kind of computer
+will run the program.
+
+
+Deprecated Directives
+=====================
+One day these directives won't work.
+They are included for compatibility with older assemblers.
+.abort
+.file
+.line
+
+
+File: as  Node: MachineDependent, Prev: PseudoOps, Up: top, Next: Maintenance
+
+Machine Dependent Features
+**************************
+
+Vax
+===
+
+Floating Point
+--------------
+Conversion of flonums to floating point is correct, and
+compatible with previous assemblers.  Rounding is
+towards zero if the remainder is exactly half the least significant bit.
+
+`D', `F', `G'
+and `H' floating point formats are understood.
+
+Immediate floating literals (e.g. `S`$6.9')
+are rendered correctly.  Again, rounding is towards zero in the
+boundary case.
+
+The floating point formats generated by directives are these.
+`.float'
+`.ffloat'
+     `F' format floating point numbers.
+`.double'
+`.dfloat'
+     `D' format floating point numbers.
+`.gfloat'
+     `G' format floating point numbers.
+`.hfloat'
+     `H' format floating point numbers.
+
+
+Machine Directives
+------------------
+The Vax version of the assembler supports four pseudo-ops for
+generating Vax floating point constants.
+
+
+.dfloat FLONUMS
+...............
+Expect zero or more flonums, separated by commas.
+Assemble Vax d format floating point constants.
+
+
+.ffloat FLONUMS
+...............
+Expect zero or more flonums, separated by commas.
+Assembles Vax f format floating point constants.
+
+
+.gfloat FLONUMS
+...............
+Expect zero or more flonums, separated by commas.
+Assembles Vax g format floating point constants.
+
+
+.hfloat FLONUMS
+...............
+Expect zero or more flonums, separated by commas.
+Assembles Vax h format floating point constants.
+
+
+Opcodes
+-------
+All DEC mnemonics are supported.
+Beware that `case...' instructions have
+exactly 3 operands.  The dispatch table that follows
+the `case...' instruction should be
+made with `.word' statements.
+This is compatible with all un*x assemblers we know of.
+
+
+Branch Improvement
+------------------
+Certain pseudo opcodes are permitted.  They are for branch
+instructions.  They expand to the shortest branch instruction that will
+reach the target.  Generally these mnemonics are made by substituting
+`j' for `b' at the start of a DEC mnemonic.
+This feature is included both for compatibility and to help
+compilers.  If you don't need this feature, don't use these opcodes.
+Here are the mnemonics, and
+the code they can expand into.
+
+`jbsb'
+     `Jsb' is already an instruction mnemonic, so we chose `jbsb'.
+     (byte displacement)
+          `bsbb ...'
+     (word displacement)
+          `bsbw ...'
+     (long displacement)
+          `jsb ...'
+`jbr'
+`jr'
+     Unconditional branch.
+     (byte displacement)
+          `brb ...'
+     (word displacement)
+          `brw ...'
+     (long displacement)
+          `jmp ...'
+`jCOND'
+     COND may be any one of the conditional branches
+     `neq nequ eql eqlu gtr geq lss gtru lequ vc vs gequ cc lssu cs'.
+     COND may also be one of the bit tests
+     `bs bc bss bcs bsc bcc bssi bcci lbs lbc'.
+     NOTCOND is the opposite condition to COND.
+     (byte displacement)
+          `bCOND ...'
+     (word displacement)
+          `bUNCOND foo ; brw ... ; foo:'
+     (long displacement)
+          `bUNCOND foo ; jmp ... ; foo:'
+`jacbX'
+     X may be one of `b d f g h l w'.
+     (word displacement)
+          `OPCODE ...'
+     (long displacement)
+          `OPCODE ..., foo ; brb bar ; foo: jmp ... ; bar:'
+`jaobYYY'
+     YYY may be one of `lss leq'.
+`jsobZZZ'
+     ZZZ may be one of `geq gtr'.
+     (byte displacement)
+          `OPCODE ...'
+     (word displacement)
+          `OPCODE ..., foo ; brb bar ; foo: brw DESTINATION ; bar:'
+     (long displacement)
+          `OPCODE ..., foo ; brb bar ; foo: jmp DESTINATION ; bar: '
+`aobleq'
+`aoblss'
+`sobgeq'
+`sobgtr'
+     (byte displacement)
+          `OPCODE ...'
+     (word displacement)
+          `OPCODE ..., foo ; brb bar ; foo: brw DESTINATION ; bar:'
+     (long displacement)
+          `OPCODE ..., foo ; brb bar ; foo: jmp DESTINATION ; bar:'
+
+
+operands
+--------
+The immediate character is `$' for Un*x compatibility,
+not `#' as DEC writes it.
+
+The indirect character is `*' for Un*x compatibility,
+not `@' as DEC writes it.
+
+The displacement sizing character is ``' (an
+accent grave) for Un*x compatibility,
+not `^' as DEC writes it.
+The letter preceding ``' may have either case.
+`G' is not understood, but all other letters
+(`b i l s w') are understood.
+
+Register names understood are `r0 r1 r2 ... r15
+ap fp sp pc'.  Any case of letters will do.
+
+For instance
+     tstb *w`$4(r5)
+
+Any expression is permitted in an operand.
+Operands are comma separated.
+
+
+
+68020
+=====
+
+Syntax
+------
+The 68020 version of `as' uses syntax similar to the Sun assembler.
+Size modifieres are appended directly to the end of the opcode without an
+intervening period.  Thus, `move.l' is written `movl', etc.
+Explicit size modifiers for branch instructions are ignored; `as'
+automatically picks the smallest size that will reach the destination.
+
+If `as' is compiled with SUN_ASM_SYNTAX defined, it will also allow
+Sun-style local labels of the form `1$' through `$9'.
+
+In the following table "apc" stands for any of the address registers
+(`a0' through `a7'), nothing, (`'), the Program Counter
+(`pc'), or the zero-address relative to the program counter (`zpc').
+
+The following addressing modes are understood:
+"Immediate"
+     `#DIGITS'
+
+"Data Register"
+     `d0' through `d7'
+
+"Address Register"
+     `a0' through `a7'
+
+"Address Register Indirect"
+     `a0@' through `a7@'
+
+"Address Register Postincrement"
+     `a0@+' through `a7@+'
+
+"Address Register Predecrement"
+     `a0@-' through `a7@-'
+
+"Indirect Plus Offset"
+     `APC@(DIGITS)'
+
+"Index"
+     `APC@(DIGITS,REGISTER:SIZE:SCALE)'
+     or `APC@(REGISTER:SIZE:SCALE)'
+
+"Postindex"
+     `APC@(DIGITS)@(DIGITS,REGISTER:SIZE:SCALE)'
+     or `APC@(DIGITS)@(REGISTER:SIZE:SCALE)'
+
+"Preindex"
+     `APC@(DIGITS,REGISTER:SIZE:SCALE)@(DIGITS)'
+     or `APC@(REGISTER:SIZE:SCALE)@(DIGITS)'
+
+"Memory Indirect"
+     `APC@(DIGITS)@(DIGITS)'
+
+"Absolute"
+     `SYMBOL', or `DIGITS', or either of the above followed
+     by `:b', `:w', or `:l'.
+
+
+Floating Point
+--------------
+The floating point code is not well tested, and may have subtle bugs in it.
+
+X and P format floating literals are not supported.   Feel free to add
+the code yourself.
+
+The floating point formats generated by directives are these.
+`.float'
+     `Single' precision floating point constants.
+`.double'
+     `Double' precision floating point constants.
+
+
+Machine Directives
+------------------
+In order to be compatible with the Sun assembler the 68020 assembler
+understands the following directives.
+`.data1'
+     This directive is identical to a `.data 1' directive.
+`.data2'
+     This directive is identical to a `.data 2' directive.
+`.even'
+     This directive is identical to a `.align 2' directive.
+`.skip'
+     This directive is identical to a `.space' directive.
+
+
+Opcodes
+-------
+Danger:  Several bugs have been found in the opcode table (and fixed).
+More bugs may exist.  The floating point code is especially untested.
+
+The assembler automatically chooses the proper size for branch
+instructions.  Any attempt to force a short displacement will be
+silently ignored.
+
+The immediate character is `#' for Sun compatibility.  The
+line-comment character is `|'.  If a `#' appears at the
+beginning of a line, it is treated as a comment unless it looks like
+`# line file', in which case it is treated normally.
+
+
+32xxx
+=====
+`as' for the 32xxx computer family has not been written yet.
+
+
+Intel 80386
+===========
+
+AT&T Syntax versus Intel Syntax
+-------------------------------
+
+In order to maintain compatibility with the output of `GCC',
+`as' supports AT&T System V/386 assembler syntax.  This is quite
+different from Intel syntax.  We mention these differences because
+almost all 80386 documents used only Intel syntax.  Notable differences
+between the two syntaxes are:
+   * AT&T immediate operands are preceded by `$'; Intel immediate
+     operands are undelimited (Intel `push 4' is AT&T `pushl $4').
+     AT&T register operands are preceded by `%'; Intel register operands
+     are undelimited.  AT&T absolute (as opposed to PC relative) jump/call
+     operands are prefixed by `*'; they are undelimited in Intel syntax.
+
+   * AT&T and Intel syntax use the opposite order for source and destination
+     operands.  Intel `add eax, 4' is `addl $4, %eax'.  The
+     `source, dest' convention is maintained for compatibility with
+     previous Un*x assemblers.
+
+   * In AT&T syntax the size of memory operands is determined from the last
+     character of the opcode name.  Opcode suffixes of `b', `w',
+     and `l' specify byte (8-bit), word (16-bit), and long (32-bit)
+     memory references.  Intel syntax accomplishes this by prefixes memory
+     operands (*not* the opcodes themselves) with `byte ptr',
+     `word ptr', and `dword ptr'.  Thus, Intel `mov al, byte
+     ptr FOO' is `movb FOO, %al' in AT&T syntax.
+
+   * Immediate form long jumps and calls are
+     `lcall/ljmp $SEGMENT, $OFFSET' in AT&T syntax; the
+     Intel syntax is
+     `call/jmp far SEGMENT:OFFSET'.  Also, the far return
+     instruction 
+     is `lret $STACK-ADJUST' in AT&T syntax; Intel syntax is
+     `ret far STACK-ADJUST'.
+
+   * The AT&T assembler does not provide support for multiple segment
+     programs.  Un*x style systems expect all programs to be single segments.
+
+
+Opcode Naming
+-------------
+
+Opcode names are suffixed with one character modifiers which specify the
+size of operands.  The letters `b', `w', and `l' specify
+byte, word, and long operands.  If no suffix is specified by an
+instruction and it contains no memory operands then `as' tries to
+fill in the missing suffix based on the destination register operand
+(the last one by convention).  Thus, `mov %ax, %bx' is equivalent
+to `movw %ax, %bx'; also, `mov $1, %bx' is equivalent to
+`movw $1, %bx'.  Note that this is incompatible with the AT&T Un*x
+assembler which assumes that a missing opcode suffix implies long
+operand size.  (This incompatibility does not affect compiler output
+since compilers always explicitly specify the opcode suffix.)
+
+Almost all opcodes have the same names in AT&T and Intel format.  There
+are a few exceptions.  The sign extend and zero extend instructions need
+two sizes to specify them.  They need a size to sign/zero extend
+*from* and a size to zero extend *to*.  This is accomplished
+by using two opcode suffixes in AT&T syntax.  Base names for sign extend
+and zero extend are `movs...' and `movz...' in AT&T
+syntax (`movsx' and `movzx' in Intel syntax).  The opcode
+suffixes are tacked on to this base name, the *from* suffix before
+the *to* suffix.  Thus, `movsbl %al, %edx' is AT&T syntax for
+"move sign extend *from* %al *to* %edx."  Possible suffixes,
+thus, are `bl' (from byte to long), `bw' (from byte to word),
+and `wl' (from word to long).
+
+The Intel syntax conversion instructions
+   * `cbw' --- sign-extend byte in `%al' to word in `%ax',
+   * `cwde' --- sign-extend word in `%ax' to long in `%eax',
+   * `cwd' --- sign-extend word in `%ax' to long in `%dx:%ax',
+   * `cdq' --- sign-extend dword in `%eax' to quad in `%edx:%eax',
+are called `cbtw', `cwtl', `cwtd', and `cltd' in
+AT&T naming.  `as' accepts either naming for these instructions.
+
+Far call/jump instructions are `lcall' and `ljmp' in
+AT&T syntax, but are `call far' and `jump far' in Intel
+convention.  
+
+
+Register Naming
+---------------
+
+Register operands are always prefixes with `%'.  The 80386 registers
+consist of
+   * the 8 32-bit registers `%eax' (the accumulator), `%ebx',
+     `%ecx', `%edx', `%edi', `%esi', `%ebp' (the
+     frame pointer), and `%esp' (the stack pointer).
+
+   * the 8 16-bit low-ends of these: `%ax', `%bx', `%cx',
+     `%dx', `%di', `%si', `%bp', and `%sp'.
+
+   * the 8 8-bit registers: `%ah', `%al', `%bh',
+     `%bl', `%ch', `%cl', `%dh', and `%dl' (These
+     are the high-bytes and low-bytes of `%ax', `%bx',
+     `%cx', and `%dx')
+
+   * the 6 segment registers `%cs' (code segment), `%ds'
+     (data segment), `%ss' (stack segment), `%es', `%fs',
+     and `%gs'.
+
+   * the 3 processor control registers `%cr0', `%cr2', and
+     `%cr3'.
+
+   * the 6 debug registers `%db0', `%db1', `%db2',
+     `%db3', `%db6', and `%db7'.
+
+   * the 2 test registers `%tr6' and `%tr7'.
+
+   * the 8 floating point register stack `%st' or equivalently
+     `%st(0)', `%st(1)', `%st(2)', `%st(3)',
+     `%st(4)', `%st(5)', `%st(6)', and `%st(7)'.
+
+
+Opcode Prefixes
+---------------
+
+Opcode prefixes are used to modify the following opcode.  They are used
+to repeat string instructions, to provide segment overrides, to perform
+bus lock operations, and to give operand and address size (16-bit
+operands are specified in an instruction by prefixing what would
+normally be 32-bit operands with a "operand size" opcode prefix).
+Opcode prefixes are usually given as single-line instructions with no
+operands, and must directly precede the instruction they act upon.  For
+example, the `scas' (scan string) instruction is repeated with:
+     	repne
+     	scas
+
+Here is a list of opcode prefixes:
+   * Segment override prefixes `cs', `ds', `ss', `es',
+     `fs', `gs'.  These are automatically added by specifying
+     using the SEGMENT:MEMORY-OPERAND form for memory references.
+
+   * Operand/Address size prefixes `data16' and `addr16'
+     change 32-bit operands/addresses into 16-bit operands/addresses.  Note
+     that 16-bit addressing modes (i.e. 8086 and 80286 addressing modes)
+     are not supported (yet).
+
+   * The bus lock prefix `lock' inhibits interrupts during
+     execution of the instruction it precedes.  (This is only valid with
+     certain instructions; see a 80386 manual for details).
+
+   * The wait for coprocessor prefix `wait' waits for the
+     coprocessor to complete the current instruction.  This should never be
+     needed for the 80386/80387 combination.
+
+   * The `rep', `repe', and `repne' prefixes are added
+     to string instructions to make them repeat `%ecx' times.
+
+
+Memory References
+-----------------
+
+An Intel syntax indirect memory reference of the form
+     SEGMENT:[BASE + INDEX*SCALE + DISP]
+is translated into the AT&T syntax
+     SEGMENT:DISP(BASE, INDEX, SCALE)
+where BASE and INDEX are the optional 32-bit base and
+index registers, DISP is the optional displacement, and
+SCALE, taking the values 1, 2, 4, and 8, multiplies INDEX
+to calculate the address of the operand.  If no SCALE is
+specified, SCALE is taken to be 1.  SEGMENT specifies the
+optional segment register for the memory operand, and may override the
+default segment register (see a 80386 manual for segment register
+defaults). Note that segment overrides in AT&T syntax *must* have
+be preceded by a `%'.  If you specify a segment override which
+coincides with the default segment register, `as' will *not*
+output any segment register override prefixes to assemble the given
+instruction.  Thus, segment overrides can be specified to emphasize which
+segment register is used for a given memory operand.
+
+Here are some examples of Intel and AT&T style memory references:
+
+AT&T: `-4(%ebp)', Intel:  `[ebp - 4]'
+     BASE is `%ebp'; DISP is `-4'. SEGMENT is
+     missing, and the default segment is used (`%ss' for addressing with
+     `%ebp' as the base register).  INDEX, SCALE are both missing.
+
+AT&T: `foo(,%eax,4)', Intel: `[foo + eax*4]'
+     INDEX is `%eax' (scaled by a SCALE 4); DISP is
+     `foo'.  All other fields are missing.  The segment register here
+     defaults to `%ds'.
+
+AT&T: `foo(,1)'; Intel `[foo]'
+     This uses the value pointed to by `foo' as a memory operand.
+     Note that BASE and INDEX are both missing, but there is only
+     *one* `,'.  This is a syntactic exception.
+
+AT&T: `%gs:foo'; Intel `gs:foo'
+     This selects the contents of the variable `foo' with segment
+     register SEGMENT being `%gs'.
+	
+
+Absolute (as opposed to PC relative) call and jump operands must be
+prefixed with `*'.  If no `*' is specified, `as' will
+always choose PC relative addressing for jump/call labels.  
+
+Any instruction that has a memory operand *must* specify its size (byte,
+word, or long) with an opcode suffix (`b', `w', or `l',
+respectively).
+
+
+Handling of Jump Instructions
+-----------------------------
+
+Jump instructions are always optimized to use the smallest possible
+displacements.  This is accomplished by using byte (8-bit) displacement
+jumps whenever the target is sufficiently close.  If a byte displacement
+is insufficient a long (32-bit) displacement is used.  We do not support
+word (16-bit) displacement jumps (i.e. prefixing the jump instruction
+with the `addr16' opcode prefix), since the 80386 insists upon masking
+`%eip' to 16 bits after the word displacement is added.
+
+Note that the `jcxz', `jecxz', `loop', `loopz',
+`loope', `loopnz' and `loopne' instructions only come in
+byte displacements, so that it is possible that use of these
+instructions (`GCC' does not use them) will cause the assembler to
+print an error message (and generate incorrect code).  The AT&T 80386
+assembler tries to get around this problem by expanding `jcxz foo' to
+              jcxz cx_zero
+              jmp cx_nonzero
+     cx_zero: jmp foo
+     cx_nonzero:
+
+
+Floating Point
+--------------
+
+All 80387 floating point types except packed BCD are supported.
+(BCD support may be added without much difficulty).
+These data types are 16-, 32-, and 64- bit integers, and single (32-bit), double
+(64-bit), and extended (80-bit) precision floating point.
+Each supported type has an opcode suffix and a constructor associated
+with it.  Opcode suffixes specify operand's data types.  Constructors
+build these data types into memory.
+   * Floating point constructors are `.float' or `.single',
+     `.double', and `.tfloat' for 32-, 64-, and 80-bit formats.
+     These correspond to opcode suffixes `s', `l', and `t'.
+     `t' stands for temporary real, and that the 80387 only supports
+     this format via the `fldt' (load temporary real to stack top) and
+     `fstpt' (store temporary real and pop stack) instructions.
+
+   * Integer constructors are `.word', `.long' or `.int', and
+     `.quad' for the 16-, 32-, and 64-bit integer formats.  The corresponding
+     opcode suffixes are `s' (single), `l' (long), and `q'
+     (quad).  As with the temporary real format the 64-bit `q' format is
+     only present in the `fildq' (load quad integer to stack top) and
+     `fistpq' (store quad integer and pop stack) instructions.
+
+Register to register operations do not require opcode suffixes,
+so that `fst %st, %st(1)' is equivalent to `fstl %st, %st(1)'.
+
+Since the 80387 automatically synchronizes with the 80386 `fwait'
+instructions are almost never needed (this is not the case for the
+80286/80287 and 8086/8087 combinations).  Therefore, `as' supresses
+the `fwait' instruction whenever it is implicitly selected by one
+of the `fn...' instructions.  For example, `fsave' and
+`fnsave' are treated identically.  In general, all the `fn...'
+instructions are made equivalent to `f...' instructions.  If
+`fwait' is desired it must be explicitly coded.
+
+
+Notes
+-----
+
+There is some trickery concerning the `mul' and `imul'
+instructions that deserves mention.  The 16-, 32-, and 64-bit expanding
+multiplies (base opcode `0xf6'; extension 4 for `mul' and 5
+for `imul') can be output only in the one operand form.  Thus,
+`imul %ebx, %eax' does *not* select the expanding multiply;
+the expanding multiply would clobber the `%edx' register, and this
+would confuse `GCC' output.  Use `imul %ebx' to get the
+64-bit product in `%edx:%eax'.
+
+We have added a two operand form of `imul' when the first operand
+is an immediate mode expression and the second operand is a register.
+This is just a shorthand, so that, multiplying `%eax' by 69, for
+example, can be done with `imul $69, %eax' rather than `imul
+$69, %eax, %eax'.
+
+
+File: as  Node: Maintenance, Prev: MachineDependent, Up: top, Next: Retargeting
+
+Maintaining the Assembler
+*************************
+[[this chapter is still being built]]
+
+
+Design
+======
+We had these goals, in descending priority:
+Accuracy.
+     For every program composed by a compiler, `as'
+     should emit "correct" code.  This leaves some latitude
+     in choosing addressing modes, order of `relocation_info'
+     structures in the object file, etc.
+Speed, for usual case.
+     By far the most common use of `as' will be assembling
+     compiler emissions.
+Upward compatibility for existing assembler code.
+     Well ... we don't support bit fields but everything
+     else seems to be upward compatible.  Bit fields could
+     be implemented if someone really cared.
+Readability.
+     The code should be maintainable with few surprises.
+
+We assumed that disk I/O was slow and expensive while memory was
+fast and access to memory was cheap.  We expect the in-memory
+data structures to be less than 10 times the size of the emitted
+object file.  (Contrast this with the C compiler where in-memory
+structures might be 100 times object file size!)
+This suggests:
+   * Try to read the source file from disk only one time.
+     For other reasons, we do keep the entire source file in
+     memory during assembly so this is not a problem.
+     Also the assembly algorithm should only scan the
+     source text once if the compiler composed the text
+     according to a few simple rules.
+   * Emit the object code bytes only once.  Don't store values and
+     then backpatch later.
+   * Build the object file in memory and do direct
+     writes to disk of large buffers.
+
+RMS suggested a one-pass algorithm which seems to
+work well.  By not parsing text during a second pass
+considerable time is saved on large programs (e.g.
+the sort of C program `yacc' would emit).
+
+It happened that the data structures needed to emit
+relocation information to the object file were
+neatly subsumed into the data structures that
+do backpatching of addresses after pass 1.
+
+Many of the functions began life as re-usable modules,
+loosely connected.  RMS changed this to gain speed.
+For example, input parsing routines which used to
+work on pre-sanitized strings now must parse raw data.
+Hence they have to import knowledge of the assemblers'
+comment conventions etc.
+
+
+Deprecated Feature(?)s
+======================
+We have stopped supporting some features:
+   * `.org' statements must have defined expressions.
+   * VAX Bit fields (`:' operator) are entirely unsupported.
+
+It might be a good idea to not support these features in a future release:
+   * `#' should begin a comment, even in column 1.
+   * Why support the logical line & file concept any more?
+   * `.gdb...' directives will be abandoned in favor of
+     `.stab...' directives.
+   * Subsegments are a good candidate for flushing.
+     Depends on which compilers need them I guess.
+
+
+Bugs, Ideas, Further Work
+=========================
+Clearly the major improvement is DON'T USE A TEXT-READING ASSEMBLER
+for the back end of a compiler.  It is much faster to interpret binary
+gobbledygook from a compiler's tables than to ask the compiler
+to write out human-readable code just so the assembler can parse
+it back to binary.
+
+Assuming you use `as' for human written programs: here are
+some ideas:
+   * Document (here) `APP'.
+   * Take advantage of knowing no spaces except after opcode
+     to speed up `as'.  (Modify `app.c' to flush useless spaces:
+     only keep space/tabs at begin of line or between 2
+     symbols.)
+   * Put pointers in this documentation to `a.out' documentation.
+   * Split the assembler into parts so it can gobble direct binary
+     from e.g. `cc'.  It is silly for`cc' to compose text
+     just so `as' can parse it back to binary.
+   * Rewrite hash functions: I want a more modular, faster library.
+   * Clean up LOTS of code.
+   * Include all the non-`.c' files in the maintenance chapter.
+   * Document flonums.
+   * Implement flonum short literals.
+   * Change all talk of expression operands to expression quantities,
+     or perhaps to expression primaries.
+   * Implement pass 2.
+   * Whenever a `.text' or `.data' statement is seen,
+     we close of the current frag with an imaginary `.fill 0'.
+     This is because we only have one obstack for frags, and we
+     can't grow new frags for a new subsegment, then go back to
+     the old subsegment and append bytes to the old frag.
+     All this nonsense goes away if we give each subsegment
+     its own obstack.  It makes code simpler in about 10 places, but
+     nobody has bothered to do it because C compiler output
+     rarely changes subsegments (compared to ending frags with
+     relaxable addresses, which is common).
+
+
+Sources
+=======
+
+Here is a list of the source files in the `as' directory.
+
+`app.c'
+     The pre-processing phase, which deletes comments, handles
+     whitespace, etc.  This was recently re-written, since app used
+     to be a separate program, but RMS wanted it to be inline.
+
+`append.c'
+     A subroutine to append a string to another string
+     returning a pointer just after the last `char' appended.
+     (JF:  All these little routines should probably all be put in one file.)
+
+`as.c'
+     Main program of the assembler `as'.
+
+`expr.c'
+     A branch office of `read.c'.
+     Understands expressions, primaries.
+     Inside `as', primaries are called (expression) operands.
+     This is confusing, because we also talk (elsewhere) about
+     instruction operands.  Also, expression operands are
+     called quantities explicitly to avoid confusion with
+     instruction operands.  What a mess.
+
+`frags.c'
+     Implements the frag concept.  Without frags, finding the
+     right size for branch instructions would be a lot harder.
+
+`gdb_blocks.c'
+     Implement `.gdbbeg', `.gdbend', `.gdbblock' statements.
+     This file should go away when `-G' is flushed.
+
+`gdb_file.c'
+     Operating system dependent functions to
+     read the file named in a `-G' switch.  This file should go away someday.
+
+`gdb_symbols.c'
+     Implement the `.gdbsym' statement.  Remembers all `.gdbsym'
+     statements then executes them after assembly when
+     gdb symbols are being built.  This file should go away someday.
+
+`gdb.c'
+     Some more functions for the GDB dependent stuff.  This file should go
+     away someday.
+
+`hash.c'
+     The symbol table, opcode table etc. hashing functions.
+
+`hex_value.c'
+     Table of values of digits, for use in atoi() type functions.
+     Could probably be flushed by using calls to strtol(), or
+     something similar.
+
+`input-file.c'
+     Operating system dependent source file reading routines.
+     Since error messages often say where we are in reading the
+     source file, they live here too.  Since Gas is intended to run
+     under GNU and UN*X only, this might be worth flushing.  Anyway,
+     almost all C compilers support stdio.
+
+`input-scrub.c'
+     Deals with calling the pre-processor (if needed) and feeding the
+     chunks back to the rest of the assembler the right way.
+
+`messages.c'
+     Operating system independent parts of
+     fatal and warning message reporting.
+
+`output-file.c'
+     Operating system dependent functions that write an
+     object file for `as'.  See `input-file.c' above.
+
+`read.c'
+     Implements all the directives of `as'.  Also passing input
+     lines to the machine dependent part of the assembler.
+
+`strstr.c'
+     A C library function that isn't in my C library yet.
+
+`subsegs.c'
+     Implements subsegments.
+
+`symbols.c'
+     Implements symbols.
+
+`write.c'
+     Operating system independent functions to
+     emit an object file for `as'.
+
+`xmalloc.c'
+     Implements `malloc()' or bust.  Should be combined into some
+     other file somewhere.  (misc.c?)
+
+`xrealloc.c'
+     Implements `realloc()' or bust.  See `xmalloc.c'.
+
+`atof-generic.c'
+     The following files were taken from a machine-independent
+     subroutine library for manipulating floating point numbers and
+     very large integers.
+
+     `atof-generic.c' turns a string into a flonum internal
+     format floating-point number.
+
+`flonum-const.c'
+     Some potentially useful floating point numbers in flonum format.
+
+`flonum-copy.c'
+     Copies a flonum.
+
+`flonum-multip.c'
+     Multiplies two flonums together.
+
+`bignum-copy.c'
+     Copies a bignum.
+
+
+Here is a table of all the machine-specific files (this
+includes both source and header files).  Typically,
+there is a MACHINE.c file, a MACHINE-opcode.h file, and an
+atof-MACHINE.c file.  The MACHINE-opcode.h file should be
+identical to the one used by gdb (which uses it for disassembly.)
+
+
+`m-generic.h'
+     generic 68020 header file.  To be linked to m68k.h on a
+     non-sun3, non-hpux system.
+
+`m-sun3.h'
+     68020 header file for Sun3 workstations.  To be linked to m68k.h before
+     compiling on a Sun3 system.  This also works (somewhat) on a sun2 system,
+     if you call the assembler with `-m68010'.
+
+`m-hpux.h'
+     68020 header file for a HPUX (system 5?) box.  Which box, which
+     version of HPUX, etc?  I don't know.
+
+`m68k.h'
+     A hard- or symbolic- link to either m-generic.h, m-hpux.h or m-sun3.h
+     depending on which kind of 68020 you are compiling for.
+
+`m68k-opcode.h'
+     Opcode table for 68020.  Should be identical to the one used by
+     `gdb', but may contain more mnemonics.
+
+`pmmu.h'
+     Information for the M68851 Memory-managment-unit which is a
+     companion chip to the 68020.  68851 support can be optionally
+     compiled into the assembler.  Check the code for details.
+
+`m68k.c'
+     All the mc68020 code, in one huge, slow-to-compile file.
+
+`atof-m68k.c'
+     Turns a flonum into a 68020 literal constant.
+
+`vax-inst.h'
+     Vax specific file for describing Vax operands and other Vax-ish things.
+
+`vax-opcode.h'
+     Vax opcode table.
+
+`vax.c'
+     Vax specific parts of `as'.  Also includes the former files
+     `vax-ins-parse.c', `vax-reg-parse.c' and `vip-op.c'.
+
+`atof-vax.c'
+     Turns a flonum into a Vax constant.
+
+Here is a list of the header files in the source directory.
+(Warning:  This section may not be very accurate.  I didn't write
+the header files; I just report them.)  Also note that I think
+many of these header files could be cleaned up or eliminated.
+
+`a.out.h'
+     Describes the structures used to create the binary header data inside the
+     object file.  Perhaps we should use the one in `/usr/include'?
+
+`as.h'
+     Defines all the globally useful things, and pulls in <stdio.h> and <assert.h>.
+
+`bignum.h'
+     Macros useful for dealing with bignums.
+
+`expr.h'
+     Structure and macros for dealing with expression()
+
+`flonum.h'
+     Structure for dealing with floating point numbers.  Includes bignum.h
+
+`frags.h'
+     Macro for appending a byte to the current frag.
+
+`hash.h'
+     Structures and function definitions for the hashing functions.
+
+`input-file.h'
+     Function headers for the input-file.c functions.
+
+`md.h'
+     structures and function headers for things defined in the machine
+     dependent part of the assembler.
+
+`obstack.h'
+     GNU systemwide include file for manipulating obstacks.  Since
+     nobody is running under real GNU yet, we include this file.
+
+`read.h'
+     Macros and function headers for reading in source files.
+
+`struct-symbol.h'
+     Structure definition and macros for dealing with the gas
+     internal form of a symbol.
+
+`subsegs.h'
+     structure definition for dealing with the numbered subsegments of
+     the text and data segments.
+
+`symbols.h'
+     Macros and function headers for dealing with symbols.
+
+`write.h'
+     Structure for doing segment fixups.
+
+
+File: as  Node: Retargeting, Prev: Maintenance, Up: top
+
+Teaching the Assembler about a New Machine
+******************************************
+
+This chapter describes the steps required in order to make the assembler work
+with another machine's assembly language.  This chapter is not complete, and
+only describes the steps in the broadest terms.  You should look at the
+source for the currently supported machine in order to discover some of the
+details that aren't mentioned here.
+
+You should create a new file called `MACHINE.c', and add the
+appropriate lines to the file `Makefile' so that you can compile
+your new version of the assembler.  This should be straighforward; simply add
+lines similar to the ones there for the four current versions of the
+assembler.
+
+If you want to be compatable with GDB, (and the current machine-dependent
+versions of the assembler), you should create a file called
+`MACHINE-opcode.h' which should contain all the information about
+the names of the machine instructions, their opcodes, and what addressing
+modes they support.  If you do this right, the assembler and GDB can share
+this file, and you'll only have to write it once.
+
+
+Functions You will Have to Write
+================================
+
+Your file `MACHINE.c' should contain definitions for the following
+functions and variables.  It will need to include some header files in order
+to use some of the structures defined in the machine-independent part of the
+assembler.  The needed header files are mentioned in the descriptions of the
+functions that will need them.
+
+
+`long omagic;'
+     This long integer holds the value to place at the beginning of the
+     `a.out' file.  It is usually `OMAGIC', except on machines that
+     store additional information in the magic-number.
+
+`char comment_chars[];'
+     This character array holds the values of the characters that start a
+     comment anywhere in a line.  Comments are stripped off automatically by the
+     machine independent part of the assembler.  Note that the `/*' will
+     always start a comment, and that only `*/' will end a comment started by
+     `*/'.  
+
+`char line_comment_chars[];'
+     This character array holds the values of the chars that start a comment
+     only if they are the first (non-whitespace) character on a line.  If the
+     character `#' does not appear in this list, you may get unexpected
+     results.  (Various machine-independent parts of the assembler treat the
+     comments `#APP' and `#NO_APP' specially, and assume that lines that start
+     with `#' are comments.)
+
+`char EXP_CHARS[];'
+     This character array holds the letters that can separate the
+     mantissa and the exponent of a floating point number.  Typical values are
+     `e' and `E'.
+
+`char FLT_CHARS[];'
+     This character array holds the letters that--when they appear
+     immediately after a leading zero--indicate that a number
+     is a floating-point number.  (Sort of how 0x indicates that a
+     hexadecimal number follows.)
+
+`pseudo_typeS md_pseudo_table[];'
+     (PSEUDO_TYPES is defined in `md.h')
+     This array contains a list of the machine_dependent pseudo-ops the
+     assembler must support.  It contains the name of each pseudo op
+     (Without the leading `.'), a pointer to a function to be called
+     when that pseudo-op is encountered, and an integer argument to be passed to
+     that function.
+
+`void md_begin(void)'
+     This function is called as part of the assembler's initialization.
+     It should do any initialization required by any of your other routines.
+
+`int md_parse_option(char **optionPTR, int *argcPTR, char ***argvPTR)'
+     This routine is called once for each option on the command line that the
+     machine-independent part of `as' does not understand.  This function
+     should return non-zero if the option pointed to by OPTIONPTR is a valid
+     option.  If it is not a valid option, this routine should return zero.
+     The variables ARGCPTR and ARGVPTR are provided in case the option
+     requires a filename or something similar as an argument.  If the option is
+     multi-character, OPTIONPTR should be advanced past the end of the
+     option, otherwise every letter in the option will be treated as a separate
+     single-character option.
+
+`void md_assemble(char *string)'
+     This routine is called for every machine-dependent non-pseudo-op line in the
+     source file.  It does all the real work involved in reading the opcode,
+     parsing the operands, etc.  STRING is a pointer to a null-terminated
+     string, that comprises the input line, with all excess whitespace and
+     comments removed.
+
+`void md_number_to_chars(char *outputPTR,long value,int nbytes)'
+     This routine is called to turn a C long int, short int, or char into the
+     series of bytes that represents that number on the target machine.
+     OUTPUTPTR points to an array where the result should be stored;
+     VALUE is the value to store; and
+     NBYTES is the number of bytes in 'value' that should be stored.
+
+`void md_number_to_imm(char *outputPTR,long value,int nbytes)'
+     This routine is identical to `md_number_to_chars',
+     except on NS32K machines.
+
+`void md_number_to_disp(char *outputPTR,long value,int nbytes)'
+     This routine is identical to `md_number_to_chars',
+     except on NS32K machines.
+
+`void md_number_to_field(char *outputPTR,long value,int nbytes)'
+     This routine is identical to `md_number_to_chars',
+     except on NS32K machines.
+
+`void md_ri_to_chars(struct relocation_info *riPTR,ri)'
+     (`struct relocation_info' is defined in `a.out.h')
+     This routine emits the relocation info in RI
+     in the appropriate bit-pattern for the target machine.
+     The result should be stored in the location pointed
+     to by RIPTR.
+
+`char *md_atof(char type,char *outputPTR,int *sizePTR)'
+     This routine turns a series of digits into the appropriate internal
+     representation for a floating-point number.
+     TYPE is a character from FLT_CHARS[] that describes
+     what kind of floating point number is wanted; OUTPUTPTR is a
+     pointer to an array that the result should be stored in;
+     and SIZEPTR is a pointer to an integer where the size (in bytes)
+     of the result should be stored.  This routine should return an error
+     message, or an empty string (not (char *)0) for success.
+
+`int md_short_jump_size;'
+     This variable holds the (maximum) size in bytes of a short (16 bit or so)
+     jump created by `md_create_short_jump()'.  This variable is used as part
+     of the broken-word function, and isn't needed if the assembler is compiled
+     with `-DWORKING_DOT_WORD'.
+
+`int md_long_jump_size;'
+     This variable holds the (maximum) size in bytes of a long (32 bit or so)
+     jump created by `md_create_long_jump()'.    This variable is used as part
+     of the broken-word function, and isn't needed if the assembler is compiled
+     with `-DWORKING_DOT_WORD'.
+
+`void md_create_short_jump(char *resultPTR,long from_addr,'
+     `long to_addr,fragS *frag,symbolS *to_symbol)'
+     This function creates (stores) a jump from FROM_ADDR to TO_ADDR
+     in the array of bytes pointed to by RESULTPTR.
+     If this uses a type of jump that must be relocated, this function
+     should call `fix_new()' with FRAG and TO_SYMBOL.
+     The jump created by this function may be smaller than
+     MD_SHORT_JUMP_SIZE, but it must never create a larger one.  This
+     function is used as part of the broken-word function, and isn't needed if
+     the assembler is compiled with `-DWORKING_DOT_WORD'.
+
+`void md_create_long_jump(char *ptr,long from_addr,'
+     `long to_addr,fragS *frag,symbolS *to_symbol)'
+     This function is similar to the previous function, `md_create_short_jump()',
+     except that it creates a long jump instead of a short one.  This function
+     is used as part of the broken-word function, and isn't needed if the
+     assembler is compiled with `-DWORKING_DOT_WORD'.
+
+`int md_estimate_size_before_relax(fragS *fragPTR,int segment_type)'
+     This function does the initial setting up for
+     relaxation.  This includes forcing references to
+     still-undefined symbols to the appropriate addressing modes.
+
+`relax_typeS md_relax_table[];'
+     (relax_typeS is defined in md.h)
+     This array describes the various machine dependent states a frag may be
+     in before relaxation.  You will need one group of entries for each type of
+     addressing mode you intend to relax.
+
+`void md_convert_frag(fragS *fragPTR)'
+     (FRAGS is defined in `as.h')
+     This routine does the required cleanup after relaxation.  Relaxation has
+     changed the type of the frag to a type that can reach its destination.
+     This function should adjust the opcode of the frag to use the appropriate
+     addressing mode.  FRAGPTR points to the frag to clean up.
+
+`void md_end(void)'
+     This function is called just before the assembler exits.  It need not
+     free up memory unless the operating system doesn't do it
+     automatically on exit.  (In which case you'll also have to track down
+     all the other places where the assembler allocates space but never frees it.)
+
+
+
+External Variables You will Need to Use
+=======================================
+
+You will need to refer to or change the following external variables
+from within the machine-dependent part of the assembler.
+
+`extern char flagseen[];'
+     This array holds non-zero values in locations corresponding to the options
+     that were on the command line.  Thus, if the assembler was called with
+     `-W', FLAGSEEN['W'] would be non-zero.
+
+`extern fragS *frag_now;'
+     This pointer points to the current frag--the frag that bytes are currently
+     being added to.  If nothing else, you will need to pass it as an argument to
+     various machine-independent functions.  It is maintained automatically by the
+     frag-manipulating functions; you should never have to change it yourself.
+
+`extern LITTLENUM_TYPE generic_bignum[];'
+     (LITTLENUM_TYPE is defined in `bignum.h'.
+     This is where "bignums"--numbers larger than 32 bits--are returned
+     when they are encountered in an expression. You will need to use this
+     if you need to implement pseudo-ops (or anything else) that must deal
+     with these large numbers.  `Bignums' are of `segT' `SEG_BIG'
+     (defined in `as.h', and have a positive `X_add_number'.
+     The `X_add_number' of a `bignum' is the number of
+     `LITTLENUMS' in GENERIC_BIGNUM that the number takes up.
+
+`extern FLONUM_TYPE generic_floating_point_number;'
+     (FLONUM_TYPE is defined in `flonum.h'.
+     The is where "flonums"--floating-point numbers within expressions--are
+     returned.  `Flonums' are of `segT' `SEG_BIG', and have a
+     negative `X_add_number'.  `Flonums' are returned in a generic
+     format.  You will have to write a routine to turn this generic format into
+     the appropriate floating-point format for your machine.
+
+`extern int need_pass_2;'
+     If this variable is non-zero, the assembler has encountered an expression
+     that cannot be assembled in a single pass.  Since the second pass isn't
+     implemented, this flag means that the assembler is punting, and is only
+     looking for additional syntax errors.  (Or something like that.)
+
+`extern segT now_seg;'
+     This variable holds the value of the segment the assembler is currently
+     assembling into.
+
+
+
+External functions will you need
+================================
+
+You will find the following external functions useful (or indispensable)
+when you're writing the machine-dependent part of the assembler.
+
+
+`char *frag_more(int bytes)'
+     This function allocates BYTES more bytes in the current frag
+     (or starts a new frag, if it can't expand the current frag any more.)
+     for you to store some object-file bytes in.  It returns a pointer
+     to the bytes, ready for you to store data in.
+
+`void fix_new(fragS *frag, int where, short size, symbolS *add_symbol, symbolS *sub_symbol, long offset, int pcrel)'
+     This function stores a relocation fixup to be acted on later.
+     FRAG points to the frag the relocation belongs in;
+     WHERE is the location within the frag where the relocation begins;
+     SIZE is the size of the relocation, and is usually 1 (a single byte),
+       2 (sixteen bits), or 4 (a longword).  The value ADD_SYMBOL -
+     SUB_SYMBOL + OFFSET, is added to the byte(s) at
+     FRAG->LITERAL[WHERE].  If PCREL is non-zero, the address of the
+     location is subtracted from the result.  A relocation entry is also
+     added to the `a.out' file.  ADD_SYMBOL, SUB_SYMBOL, and/or OFFSET
+     may be NULL.
+
+`char *frag_var(relax_stateT type, int max_chars, int var,'
+     `relax_substateT subtype, symbolS *symbol, char *opcode)' This
+     function creates a machine-dependent frag of type TYPE (usually
+     `rs_machine_dependent').  MAX_CHARS is the maximum size in bytes
+     that the frag may grow by; VAR is the current size of the variable
+     end of the frag; SUBTYPE is the sub-type of the frag.  The sub-type
+     is used to index into MD_RELAX_TABLE[] during `relaxation'.  SYMBOL
+     is the symbol whose value should be used to when relax-ing this
+     frag.  OPCODE points into a byte whose value may have to be
+     modified if the addressing mode used by this frag changes.  It
+     typically points into the FR_LITERAL[] of the previous frag, and is
+     used to point to a location that `md_convert_frag()', may have to
+     change.
+
+`void frag_wane(fragS *fragPTR)'
+     This function is useful from within `md_convert_frag'.  It
+     changes a frag to type rs_fill, and sets the variable-sized piece of the
+     frag to zero.  The frag will never change in size again.
+
+`segT expression(expressionS *retval)'
+     (SEGT is defined in `as.h'; EXPRESSIONS is defined in `expr.h')
+     This function parses the string pointed to by the external char pointer
+     INPUT_LINE_POINTER, and returns the segment-type of the expression.
+     It also stores the results in the EXPRESSIONS pointed to by RETVAL.
+     INPUT_LINE_POINTER is advanced to point past the end of the expression.
+     (INPUT_LINE_POINTER is used by other parts of the assembler.
+     If you modify it, be sure to restore it to its original value.)
+
+`as_warn(char *message,...)'
+     If warning messages are disabled, this function does nothing.  Otherwise,
+     it prints out the current file name, and the current line number, then
+     uses `fprintf' to print the MESSAGE and any arguments it was
+     passed.
+
+`as_fatal(char *message,...)'
+     This function prints out the current file name and line number, prints
+     the word `FATAL:', then uses `fprintf' to print the MESSAGE
+     and any arguments it was passed.  Then the assembler exits.  This function
+     should only be used for serious, unrecoverable errors.
+
+`void float_const(int float_type)'
+     This function reads floating-point constants from the current input line,
+     and calls `md_atof' to assemble them.  It is useful as the function
+     to call for the pseudo-ops `.single', `.double', `.float', etc.
+     FLOAT_TYPE must be a character from FLT_CHARS.
+
+`void demand_empty_rest_of_line(void);'
+     This function can be used by machine-dependent pseudo-ops to make sure the
+     rest of the input line is empty.  It prints a warning message if there
+     are additional characters on the line.
+
+`long int get_absolute_expression(void)'
+     This function can be used by machine-dependent pseudo-ops to read an absolute
+     number from the current input line.  It returns the result.  If it isn't given
+     an absolute expression, it prints a warning message and returns zero.
+
+
+
+
+The concept of Frags
+====================
+
+This assembler works to optimize the size of certain addressing
+modes.  (e.g. branch instructions) This means the size of many
+pieces of object code cannot be determined until after assembly
+is finished.  (This means that the addresses of symbols cannot be
+determined until assembly is finished.)  In order to do this,
+`as' stores the output bytes as "frags".
+
+Here is the definition of a frag (from `as.h')
+     struct frag
+     {
+             long int fr_fix;
+             long int fr_var;
+             relax_stateT fr_type;
+             relax_substateT fr_substate;
+             unsigned long fr_address;
+             long int fr_offset;
+             struct symbol *fr_symbol;
+             char *fr_opcode;
+             struct frag *fr_next;
+             char fr_literal[];
+     }
+
+FR_FIX
+     is the size of the fixed-size piece of the frag.
+
+FR_VAR
+     is the maximum (?) size of the variable-sized piece of the frag.
+
+FR_TYPE
+     is the type of the frag.
+     Current types are:
+     rs_fill
+     rs_align
+     rs_org
+     rs_machine_dependent
+
+FR_SUBSTATE
+     This stores the type of machine-dependent frag this is.  (what
+     kind of addressing mode is being used, and what size is being
+     tried/will fit/etc.
+
+FR_ADDRESS
+     FR_ADDRESS is only valid after relaxation is finished.
+     Before relaxation, the only way to store an address is (pointer
+     to frag containing the address) plus (offset into the frag).
+
+FR_OFFSET
+     This contains a number, whose meaning depends on the type of
+     the frag.
+     for machine_dependent frags, this contains the offset from
+     fr_symbol that the frag wants to go to.  Thus, for branch
+     instructions it is usually zero.  (unless the instruction was
+     `jba foo+12'  or something like that.)
+
+FR_SYMBOL
+     for machine_dependent frags, this points to the symbol the frag
+     needs to reach.
+
+FR_OPCODE
+     This points to the location in the frag (or in a previous frag)
+     of the opcode for the instruction that caused this to be a frag.
+     FR_OPCODE is needed if the actual opcode must be changed
+     in order to use a different form of the addressing mode.
+     (For example, if a conditional branch only comes in size tiny,
+     a large-size branch could be implemented by reversing the sense
+     of the test, and turning it into a tiny branch over a large jump.
+     This would require changing the opcode.)
+
+     FR_LITERAL is a variable-size array that contains the
+     actual object bytes.
+     A frag consists of a fixed size piece of object data, (which may be zero bytes
+     long), followed by a piece of object data whose size may not
+     have been determined yet.  Other information includes the type of the frag (which controls
+     how it is relaxed), 
+
+FR_NEXT
+     This is the next frag in the singly-linked list.  This is
+     usually only needed by the machine-independent part of
+     `as'.
+
+
+
+
+
+

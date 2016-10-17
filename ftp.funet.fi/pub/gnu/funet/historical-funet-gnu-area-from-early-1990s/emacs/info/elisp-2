@@ -1,0 +1,1640 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Predicates on Numbers, Up: Numbers, Next: Comparison of Numbers
+
+Predicates on Numbers
+=====================
+
+Version 19 has a `floatp' predicate.
+
+
+* Function: integerp OBJECT
+
+     This predicate tests to see if its argument is an integer (number)
+     and returns `t' if so, `nil' otherwise.
+
+
+* Function: zerop INTEGER
+
+     This predicate tests to see if its argument is zero, and returns
+     `t' if so, `nil' otherwise.  These two forms are equivalent:
+     `(zerop x) == (= x 0)'.
+
+
+
+* Function: natnump OBJECT
+
+
+     This predicate (pronounced ``natural number-p'') tests to see if
+     its argument is a nonnegative (i.e., natural) number, and returns
+     `t' if so, `nil' otherwise. 0 is non-negative.
+
+     Markers are not converted, hence `natnump' of a marker is always
+     `nil'.
+
+
+
+
+File: elisp  Node: Comparison of Numbers, Prev: Predicates on Numbers, Up: Numbers, Next: Arithmetic Operations
+
+Comparison of Numbers
+=====================
+
+Integers are implemented by storing the value in the ``pointer part'' of
+a Lisp object pointer (which, in the canonical case, has 24 bits of
+pointer, 7 bits of type and 1 bit for the garbage collector).  Because
+of this fact, the function `eq' will return `t' for two numbers with the
+same value.  *Note Equality Predicates::.
+
+
+     Common Lisp Note: In Common Lisp, there are many different types of
+     numbers, many of which must be "boxed"; separate storage must be
+     allocated for them.  Because GNU Emacs Lisp does not need very
+     large integers, it is possible to restrict them to the size of a
+     single word, allowing `eq' to be used, whereas in Common Lisp,
+     ``='' would be required.
+
+
+
+* Function: = M-INTEGER1 M-INTEGER2
+
+     This function tests to see if its arguments are the same number,
+     and returns `t' if so, `nil' otherwise.
+
+* Function: /= M-INTEGER1 M-INTEGER2
+
+     This function tests to see if its arguments are not the same
+     number, and returns `t' if so, `nil' otherwise.
+
+* Function: < M-INTEGER1 M-INTEGER2
+
+       This function tests to see if its first argument is strictly less
+     than its second argument.  It returns `t' if so, `nil' otherwise.
+
+* Function: <= M-INTEGER1 M-INTEGER2
+
+       This function tests to see if its first argument is less than or
+     equal to its second argument.  It returns `t' if so, `nil'
+     otherwise.
+
+* Function: > M-INTEGER1 M-INTEGER2
+
+       This function tests to see if its first argument is strictly
+     greater than its second argument.  It returns `t' if so, `nil'
+     otherwise.
+
+* Function: >= M-INTEGER1 M-INTEGER2
+
+       This function tests to see if its first argument is greater than
+     or equal to its second argument.  It returns `t' if so, `nil'
+     otherwise.
+
+
+* Function: max M-INTEGER &rest M-INTEGERS
+
+     This function returns the maximum of its arguments.
+
+          (max 20)
+               => 20
+          (max 1 2)
+               => 2
+          (max 1 3 2)
+               => 3
+
+* Function: min M-INTEGER &rest M-INTEGERS
+
+     This function returns the minimum of its arguments.
+
+
+
+File: elisp  Node: Arithmetic Operations, Prev: Comparison of Numbers, Up: Numbers, Next: Bitwise Operations on Integers
+
+Arithmetic Operations
+=====================
+
+* Function: 1+ M-INTEGER
+
+     This function adds one to M-INTEGER.
+
+
+* Function: 1- M-INTEGER
+
+       This function subtracts one from M-INTEGER.
+
+* Function: + &rest INTEGERS
+
+       This function adds its arguments together.  When given no
+     arguments, `+' returns 0.  It does not check for overflow.
+
+          (+)
+               => 0
+          (+ 1)
+               => 1
+          (+ 1 2 3 4)
+               => 10
+
+
+* Function: - &optional INTEGER &rest OTHER-INTEGERS
+
+     The function `-' serves two purposes: negation and subtraction.
+
+     When `-' has a single argument, the value is the negative of the
+     argument.
+
+     When there are multiple arguments, each of the OTHER-INTEGERS is
+     subtracted from INTEGER, cumulatively.  If there are no arguments,
+     the result is `0'.
+
+          (- 10 1 2 3 4)
+               => 0
+          (- 10)
+               => -10
+          (-)
+               => 0
+
+
+* Function: * &rest INTEGERS
+
+       This function multiplies its arguments together.  When given no
+     arguments, `*' returns `1'.  It does not check for overflow.
+
+          (*)
+               => 1
+          (* 1)
+               => 1
+          (* 1 2 3 4)
+               => 24
+
+
+
+* Function: / INTEGER1 INTEGER2 &rest OTHER-INTEGERS
+
+       This function divides INTEGER1 by INTEGER2.  If there are more
+     arguments, then they are each used to divide the previous result.
+     The result is always rounded down after each division.  However,
+     the Emacs Lisp interpreter is implemented in C, and according to
+     draft ANSI C: if either operand is negative, then it is
+     *implementation-defined* as to whether the result of the `/'
+     operator is the largest integer less than the true quotient, or the
+     smallest integer greater than the true quotient.
+
+     An `arith-error' results if you divide by `0'.
+
+          (/ 6 2)
+               => 3
+          (/ 5 2)
+               => 2
+          (/ 25 3 2)
+               => 4
+          (/ -17 6)
+               => -2 (could be -3 on some machines)
+
+
+
+* Function: % INTEGER1 INTEGER2
+
+     This function returns the value of INTEGER1 modulo INTEGER2, or in
+     other words, the integer remainder after division of INTEGER1 by
+     INTEGER2.  The sign of the result is the sign of INTEGER1.  The
+     sign of INTEGER2 is ignored.
+
+     An `arith-error' results if INTEGER2 = `0'.
+
+
+          (% 9 4)
+               => 1
+          (% -9 4)
+               => -1
+          (% 9 -4)
+               => 1
+          (% -9 -4)
+               => -1
+
+
+
+File: elisp  Node: Bitwise Operations on Integers, Prev: Arithmetic Operations, Up: Numbers, Next: Random Numbers
+
+Bitwise Operations on Integers
+==============================
+
+The following bitwise operations apply only to integers.
+
+* Function: lsh INTEGER1 INTEGER2
+
+     `lsh' ("logical shift") shifts the bits in INTEGER1 to the left
+     INTEGER2 places, or to the right if INTEGER2 is negative.  If both
+     arguments are negative, `lsh' shifts in zeros.  See `ash' below.
+
+
+* Function: ash INTEGER1 INTEGER2
+
+     `ash' ("arithmetic shift") shifts the bits in INTEGER1 to the left
+     INTEGER2 places, or to the right INTEGER2 is negative.  This gives
+     the same results as `lsh' except when INTEGER1 and INTEGER2 are
+     both negative.  In that case, `ash' shifts in the sign bit from the
+     left, while `lsh' shifts in zeros.
+
+
+                            ;         24-bit binary values
+          (lsh 5 2)         ;For 5:   00000000 00000000 00000101
+               => 20        ;For 20:  00000000 00000000 00010100
+          (ash 5 2)
+               => 20
+          (lsh -5 2)        ;For -5:  11111111 11111111 11111011
+               => -20       ;For -20: 11111111 11111111 11101100
+          (ash -5 2)
+               => -20
+
+          (lsh 5 -2)        ;For 5:   00000000 00000000 00000101
+               => 1         ;For 1:   00000000 00000000 00000001
+          (ash 5 -2)
+               => 1
+          (lsh -5 -2)       ;For -5:  11111111 11111111 11111011
+               => 4194302   ;For <-:  00111111 11111111 11111110
+          (ash -5 -2)       ;For -5:  11111111 11111111 11111011
+               => -2        ;For -2:  11111111 11111111 11111110
+
+
+
+* Function: logand &rest M-INTEGERS
+
+       This function returns the ``logical and'' of the arguments: the
+     nth bit is set in the result iff the nth bit is set in all the
+     arguments.
+
+     If there is no argument, the result is `-1'.
+
+     For `logand', `logior', and `logxor', if there is only one
+     argument, that argument is the result.  For two or more arguments,
+     the operation is performed cumulatively with each additional
+     argument.
+
+                                    ;       24-bit binary values
+          (logand 14 13)            ;14   = 00000000 00000000 00001110
+                                    ;13   = 00000000 00000000 00001101
+               => 12                ;12   = 00000000 00000000 00001100
+
+          (logand 14 13 4)          ;14   = 00000000 00000000 00001110
+                                    ;13   = 00000000 00000000 00001101
+               => 4                 ;4    = 00000000 00000000 00000100
+
+          (logand)
+          -1                        ;-1   = 11111111 11111111 11111111
+
+
+
+* Function: logior &rest M-INTEGERS
+
+       This function returns the ``inclusive or'' of it arguments: the
+     nth bit is set in the result iff the nth bit is set in at least one
+     of the arguments.  If there is no argument, the result is `0'.
+
+                                    ;       24-bit binary values
+          (logior 12 5)             ;12   = 00000000 00000000 00001100
+                                    ;5    = 00000000 00000000 00000101
+               => 13                ;13   = 00000000 00000000 00001101
+
+          (logior 12 5 7)           ;12   = 00000000 00000000 00001100
+                                    ;5    = 00000000 00000000 00000101
+                                    ;7    = 00000000 00000000 00000111
+               => 15                ;15   = 00000000 00000000 00001111
+
+
+* Function: logxor &rest M-INTEGERS
+
+       This function returns the ``exclusive or'' of its arguments: the
+     nth bit is set in the result iff the nth bit is set in an odd
+     number of the arguments.  If there is no argument, the result is
+     `0'.
+
+                                    ;       24-bit binary values
+          (logxor 12 5)             ;12   = 00000000 00000000 00001100
+                                    ;5    = 00000000 00000000 00000101
+               => 9                 ;9    = 00000000 00000000 00001001
+
+          (logxor 12 5 7)           ;12   = 00000000 00000000 00001100
+                                    ;5    = 00000000 00000000 00000101
+                                    ;7    = 00000000 00000000 00000111
+               => 14                ;14   = 00000000 00000000 00001110
+
+
+* Function: lognot INTEGER
+
+       This function returns the logical complement of its argument: the
+     nth bit is set in the result iff the nth bit is not set in INTEGER.
+
+
+          (lognot 5)                ;5    = 00000000 00000000 00000101
+               => -6                ;-6   = 11111111 11111111 11111010
+
+
+
+
+
+
+File: elisp  Node: Random Numbers, Prev: Bitwise Operations on Integers, Up: Numbers
+
+Random Numbers
+==============
+
+
+* Function: random &optional FLAG
+
+     This function returns a pseudo-random number.
+
+     On some machines, any integer representable in Lisp may be the
+     result of `random'.  On other machines, the result can never be
+     larger than a certain maximum or less than a certain (negative)
+     minimum.
+
+     All the possible values are equally likely.
+
+     If you want random numbers that are different each time you run
+     Emacs, use `(random t)' at least once.  This reinitializes the
+     pseudo-random number seed based on the current time of day and on
+     Emacs' process ID number.
+
+     The sequence of numbers returned by `random' is the same in each
+     Emacs run, unless you use `(random t)'.  For example, on one
+     version of Sun Microsystems' operating system, the first call to
+     `(random)' after you start Emacs always returns `-1457731', and the
+     second one always returns `-7692030'.  Therefore, programs that use
+     `random' are repeatable, unless you call `(random t)'.  This is
+     helpful when you are debugging.
+
+File: elisp  Node: Strings and Characters, Up: Top
+
+Strings and Characters
+**********************
+
+
+  Strings are implemented as arrays of characters, which in turn are
+eight-bit bytes.  In addition to a big savings in space (8 bits per
+element vs. 32), strings are very convenient because of the way the Lisp
+reader and printer treat them, and because a large number of functions
+are written expressly for manipulating them.
+
+  The length of a string (like any array) is fixed, and cannot be
+altered.  In particular, strings in Lisp are *not* `nil'-terminated as
+they are in C.  Thus, the character ASCII 0 is a perfectly valid element
+of a string.
+
+  All of the array functions work for strings (*Note Arrays::), as do
+the sequence functions (*Note Sequences::).  Functions that copy strings
+into buffers or display them are in the chapters on text.  The syntax of
+characters and strings is described in the chapter on Data Types (*Note
+Character Type:: and *Note String Type::.
+
+  In particular, to access or change individual characters in a string,
+use `aref' and `aset', respectively (*Note Arrays::).
+
+* Menu:
+
+* Predicates on Strings::      
+* Creating Strings::    
+* Comparison of Characters and Strings::        
+* Conversion of Characters and Strings::        
+* Character Case::      
+
+
+
+File: elisp  Node: Predicates on Strings, Up: Strings and Characters, Next: Creating Strings
+
+Predicates on Strings
+=====================
+
+Also *Note Arrays:: and *Note Sequences::.
+
+
+* Function: stringp OBJECT
+
+       This function returns `t' if the object is a string, `nil'
+     otherwise.
+
+* Function: char-or-string-p OBJECT
+
+       This function returns `t' if the object is a string or character
+     (i.e., an integer), `nil' otherwise.
+
+
+
+File: elisp  Node: Creating Strings, Prev: Predicates on Strings, Up: Strings and Characters, Next: Comparison of Characters and Strings
+
+Creating Strings
+================
+
+  Many functions create a string as a result.
+
+
+* Function: make-string INTEGER CHARACTER
+
+       This function returns a string made up of INTEGER repetitions of
+     CHARACTER.
+
+          (make-string 5 ?x)
+          => "xxxxx"
+          (make-string 0 ?x)
+          =>      ""
+
+
+* Function: substring STRING START &optional END
+
+       This function returns a new string which consists of the
+     characters from STRING, starting with character START (inclusive)
+     and ending with character END (exclusive).  The first character is
+     numbered zero.  A negative number counts from the end of the
+     string, with -1 being the last character of the string.
+
+       If END is `nil' or missing, the length of the string is used.
+
+       A `wrong-type-argument' error results if either START or END are
+     non-integers.  An `args-out-of-range' error results if START
+     indicates a character following END, or if either integer is out of
+     range for the string.
+
+          (substring "abcdefg" 0)
+          => "abcdefg"
+          (substring "abcdefg" 0 2)
+          => "ab"
+          (substring "abcdefg" 5 nil)
+          => "fg"
+          (substring "abcdefg" -1 nil)
+          => "g"
+
+
+* Function: concat &rest SEQUENCES
+
+       This function returns a new string consisting of the characters
+     in the argument SEQUENCES.  The arguments are not changed.  The
+     SEQUENCES may be lists, vectors, strings, or integers.
+
+       A new string is always constructed which is not `eq' to any
+     existing string.  If no SEQUENCES are given, an empty string is
+     returned.
+
+       It is a `wrong-type-argument' error unless all the elements of
+     the SEQUENCES are characters or integers.
+
+       As a feature, in the special case where one of the SEQUENCES is
+     an integer (not a sequence of integers), it is first converted to a
+     string of digits making up the decimal print representation of the
+     integer.
+
+       For other concatenation functions, `mapconcat' in *Note Mapping
+     Functions::, `vconcat' in *Note Vectors::, and `append' in *Note
+     Building Cons Cells and Lists::.
+
+
+          (concat "abc" "-def")
+          => "abc-def"
+          (concat "abc" -123 (list 120 (+ 256 121)) [122])
+          => "abc-123xyz"
+          (concat)
+          => ""
+
+
+
+File: elisp  Node: Comparison of Characters and Strings, Prev: Creating Strings, Up: Strings and Characters, Next: Conversion of Characters and Strings
+
+Comparison of Characters and Strings
+====================================
+
+
+* Function: char-equal CHARACTER1 CHARACTER2
+
+       This function returns `t' if the arguments represent the same
+     character, `nil' otherwise.  The comparison is done modulo 256.
+
+          (char-equal ?x ?x)
+          => t
+          (char-to-string (+ 256 ?x))
+          => "x"
+          (char-equal ?x  (+ 256 ?x))
+          => t
+
+
+* Function: string= STRING1 STRING2
+
+       This function returns `t' if the characters of the two strings
+     match exactly.  Case is significant.  See `string-match' in *Note
+     Regular Expression Searching:: for another way to compare strings.
+     `string=' is the same as `string-equal'.
+
+          (string-equal "abc" "abc")
+          => t
+          (string-equal "abc" "ABC")
+          => nil
+          (string-equal "ab" "ABC")
+          => nil
+
+
+* Function: string-lessp STRING1 STRING2
+
+       This function returns `t' if the first character of the two
+     strings which is not identical has a lower ASCII value in STRING1
+     than STRING2.  The string of no characters is the smallest string.
+     (Lower case letters have higher ASCII values than their upper case
+     counterparts.)  When the strings have different lengths, and they
+     match up to the length of STRING1, then the result is `t'.  If they
+     match up to the length of STRING2, the result is `nil'.  (simplify
+     this!!)  `string-lessp' is identical to `string<'.
+
+          (string-lessp "ABCD" "ABCE")
+          => t
+          (string-lessp "ABCE" "ABCD")
+          => nil
+          (string-lessp "ABC" "ABCD")
+          => t
+          (string-lessp "ABCD" "ABC")
+          => nil
+          (string-lessp "abcc" "ABCD")
+          => nil
+
+
+
+
+File: elisp  Node: Conversion of Characters and Strings, Prev: Comparison of Characters and Strings, Up: Strings and Characters, Next: Character Case
+
+Conversion of Characters and Strings
+====================================
+
+  Characters and strings may be converted into each other and into
+integers.  `format' and `prin1-to-string' (*Note Output Functions::) may
+also be used to convert Lisp objects into strings.  `read-from-string'
+(*Note Input Functions::) may be used to ``convert'' a string
+representation of a Lisp object into an object.  Also `concat',
+`append', and `vconcat' perform conversion of an integer to decimal
+representation as a special feature.
+
+  *Note Documentation:: for a description of the functions
+`single-key-description' and `text-char-description' which return a
+string representing the Emacs standard notation of the argument
+character.  These functions are used primarily for on-line
+documentation.
+
+
+* Function: char-to-string CHARACTER
+
+       This function returns a new string of one character.  The value
+     of CHARACTER modulo 256 is used.
+
+          (char-to-string ?x)
+          => "x"
+          (char-to-string (+ 256 ?x))
+          => "x"
+
+
+* Function: string-to-char STRING
+
+       This function returns the first character in the string.  If the
+     string is empty, it returns 0, which is identical to the result if
+     the string begins with the character ASCII 0.
+
+          (string-to-char "xyz")
+          120
+          (string-to-char "")
+          => 0
+          (string-to-char "\000")
+          => 0
+
+
+* Function: int-to-string INTEGER
+
+       This function returns a string consisting of the digits of
+     INTEGER, base ten.  Positive integers will return strings that are
+     unsigned, negative integers will return strings with a leading
+     minus sign.
+
+          (int-to-string 256)
+          "256"
+          (int-to-string -23)
+          => "-23"
+
+
+* Function: string-to-int STRING
+
+       This function returns the integer value of the characters in
+     STRING, read as a number, base ten.
+
+       The string is read starting from the first character, and it is
+     read until a non-digit is encountered.  If the first character is
+     not a digit, it returns 0.
+
+          (string-to-int "256")
+          => 256
+          (string-to-int "25 is a perfect square.")
+          => 25
+          (string-to-int "X256")
+          => 0
+
+
+
+* Function: format STRING &rest OBJECTS
+
+       This function returns a new string that is made up from the
+     characters in STRING with any conversion specification sequences
+     replaced by the print representations for OBJECTS.  Each of the
+     conversion specifications is used in the order they are found with
+     the corresponding object.  Any extra conversion specifications will
+     have unpredictable behavior.  Any extra objects will be ignored.
+     No error is reported about mismatch of the conversion format with
+     the types of the objects.
+
+       The character `%' begins a "conversion specification".  The
+     characters following it indicate how the object should be
+     represented.  The characters recognized are described below.
+
+     `s'
+          Replace the specification with the print representation of the
+          object.  If there is no corresponding object, the empty string
+          is used.
+
+     `b'
+          Replace the specification with the base two representation of
+          an integer.  (But it always looks like "b" to me!!)
+
+     `o'
+          Replace the specification with the base eight representation
+          of an integer.
+
+     `d'
+          Replace the specification with the base ten representation of
+          an integer.
+
+     `x'
+          Replace the specification with the base sixteen representation
+          of an integer.
+
+     `c'
+          Replace the specification with the print representation of a
+          character.
+
+     `%'
+          A single `%' is placed in the string.
+
+
+       Any other conversion character results in an `Invalid format
+     operation' error.
+
+       All of these specification characters allow an optional numeric
+     prefix (before the character) which defines the minimum number of
+     characters that must be printed for the object.  If the print
+     representation of the object contains fewer characters than this,
+     then it is padded.  The padding character is normally a space, but
+     if the numeric prefix starts with a zero, `0' is used for padding.
+     The padding is on the left if the prefix is positive (or starts
+     with zero) and on the right if the prefix is negative.  No matter
+     what the prefix, nothing will be truncated.  This allows the
+     programmer to specify spacing exactly without knowing how many
+     characters there are in the object's print representation.
+
+          (format "The length of %s is: %2d" '(a b c) (length '(a b c)))
+          "The length of (a b c) is:  3"
+
+          (format "The character `%0c' (formatted with %%0c) has value %d" 
+                  ?x ?x)
+          => "The character `x' (formatted with %0c) has value 120"
+
+
+
+
+
+File: elisp  Node: Character Case, Prev: Conversion of Characters and Strings, Up: Strings and Characters
+
+Character Case
+==============
+
+  The following three functions change the case of characters.  They
+only convert alphabetic characters (`A-Z' and `a-z'); any other
+characters are not converted.  The argument is always copied.
+
+  The character examples below use the characters `X' and `x' which have
+ASCII values 88 and 120 respectively.
+
+
+* Function: downcase STRING-OR-CHAR
+
+       This function makes characters lower case.  If STRING-OR-CHAR is
+     a string, it creates a new string with each character in
+     STRING-OR-CHAR, converted to lower case.
+
+       When STRING-OR-CHAR is a character, `downcase' returns the lower
+     case of that character if it is a letter, or the character itself
+     if not.
+
+          (downcase "The cat in the hat")
+          => "the cat in the hat"
+          (downcase ?X)
+          => 120
+
+
+* Function: upcase STRING-OR-CHAR
+
+       This function makes things upper case.  If STRING-OR-CHAR is a
+     string, it creates a new string with each character in
+     STRING-OR-CHAR, converted to upper case.
+
+       When STRING-OR-CHAR is a character, `upcase' returns the upper
+     case of that character if it is a letter, or the character itself
+     if not.
+
+          (upcase "The cat in the hat")
+          => "THE CAT IN THE HAT"
+          (upcase ?x)
+          => 88
+
+
+* Function: capitalize STRING-OR-CHAR
+
+       This function capitalizes things.  If STRING-OR-CHAR is a string,
+     it creates a new string with each word in STRING-OR-CHAR,
+     capitalized.  This means that the first character of each word is
+     upper case and the rest are lower case.
+
+       The definition of a word is any sequence of consecutive
+     characters that are assigned to the `word' category in the current
+     syntax table (*Note Syntax Classes::).
+
+       When STRING-OR-CHAR is a character, `capitalize' returns the
+     capital of that character if it is a letter, or the character
+     itself if not.
+
+          (capitalize "The cat in the hat")
+          => "The Cat In The Hat"
+
+          (capitalize "THE 77TH-HATTED CAT")
+          => "The 77th-Hatted Cat"
+
+          (capitalize ?x)
+          => 88
+
+
+
+File: elisp  Node: Lists, Prev: Strings and Characters, Up: Top, Next: Sequences Arrays Vectors
+
+Lists
+*****
+
+  A "cons cell" in Lisp is a data object containing two pointers, a
+"car" pointer and a "cdr" pointer.  A "list" is either the distinguished
+symbol `nil' (which denotes the empty list), or one or more cons cells
+linked together.  *Note List Type:: for the read and print syntax of
+lists.
+
+* Menu:
+
+* Predicates on Lists::	
+* Building Cons Cells and Lists::	
+* Accessing Elements of Lists::	
+* Alteration of List Structure::	
+* Using Lists as Sets::	
+* Association Lists::	
+
+
+
+File: elisp  Node: Predicates on Lists, Up: Lists, Next: Building Cons Cells and Lists
+
+Predicates on Lists
+===================
+
+
+* Function: consp OBJECT
+
+       This function returns `t' if the object is a cons cell, `nil'
+     otherwise.  `nil' is not a cons cell, although it *is* a list.
+
+
+* Function: atom OBJECT
+
+       This function returns `t' if OBJECT is an atom, `nil' otherwise.
+     All objects except cons cells are atoms.
+
+          (atom OBJECT)
+          ==
+          (not (consp OBJECT))
+
+
+
+* Function: listp OBJECT
+
+       This function returns `t' if OBJECT is a cons cell or `nil'.
+     Otherwise, it returns `nil'.
+
+          (listp '(1))
+          => t
+          (listp '())
+          => t
+
+
+* Function: nlistp OBJECT
+
+       This function is the opposite of `listp': it returns `t' if
+     OBJECT is not a list.  Otherwise, it returns `nil'.
+
+          (listp OBJECT)
+          ==
+          (not (nlistp OBJECT))
+
+
+* Function: null OBJECT
+
+       This function returns `t' if OBJECT is `nil'.  It returns `nil'
+     otherwise.  This function is identical to `not', but by convention,
+     `null' is used when OBJECT refers to a list, and `not' is used when
+     it refers to a truth value (see `not' in *Note Conditional
+     Expressions::).
+
+          (null '(1))
+          => nil
+          (null '())
+          => t
+
+
+
+File: elisp  Node: Building Cons Cells and Lists, Prev: Predicates on Lists, Up: Lists, Next: Accessing Elements of Lists
+
+Building Cons Cells and Lists
+=============================
+
+  Many functions implicitly build lists, but they ultimately build lists
+from cons cells with `cons' (true??).
+
+* Function: cons OBJECT1 OBJECT2
+
+       This function is the primary function used to build new lists.
+     It creates a new cons cell, making OBJECT1 the `car', and OBJECT2
+     the `cdr'.  It then returns a pointer to the new cons cell.  There
+     is no requirement for OBJECT2 to be of any particular type,
+     although it is normally a list.
+
+          (cons 1 '(2))
+          => (1 2)
+          (cons 1 '())
+          => (1)
+          (cons 1 2)
+          => (1 . 2)
+
+
+* Function: list &rest OBJECTS
+
+       This function creates a list with OBJECTS as its elements.  The
+     resulting list is always `nil'-terminated.  If no OBJECTS are
+     given, the empty list is returned.
+
+          (list 1 2 3 4 5)
+          => (1 2 3 4 5)
+          (list)
+          => nil
+
+
+* Function: make-list INTEGER OBJECT
+
+       This function creates a list of length INTEGER, with each element
+     being OBJECT.
+
+          (make-list 3 'pigs)
+          => (pigs pigs pigs)
+          (make-list 0 'pigs)
+          => nil
+
+
+* Function: append &rest SEQUENCES
+
+       This function returns a list containing all the elements of
+     SEQUENCES.  The SEQUENCES may be lists, vectors, strings, or
+     integers.  All arguments except the last one are copied, so none of
+     them are altered.  Note that an empty sequence contributes nothing
+     to the result, but a final `nil' argument forces a copy of the
+     previous argument.
+
+       As a feature, in the special case where one of the SEQUENCES is
+     an integer (not a sequence of integers), it is first converted to a
+     string of digits making up the decimal print representation of the
+     integer.
+
+       The final argument may be any object but it is typically a list;
+     it is not copied or converted.  If no SEQUENCES are given, `nil' is
+     returned.
+
+     See `nconc' in *Note Alteration of List Structure:: for another way
+     to join lists without copying.  See `copy-sequence' in *Note
+     Sequences:: for another way to copy sequences.
+
+          (setq x '(1 2 3))                => (1 2 3)
+          (append x '(4 5))                => (1 2 3 4 5)
+          x                                => (1 2 3)
+          (eq x (append x nil))            => nil
+          (append nil x [4 5] "67" 89 nil) => (1 2 3 4 5 54 55 56 57)
+          (append)                         => nil
+
+
+
+File: elisp  Node: Accessing Elements of Lists, Prev: Building Cons Cells and Lists, Up: Lists, Next: Alteration of List Structure
+
+Accessing Elements of Lists
+===========================
+
+* Function: car LIST
+
+       This function returns the first pointer of the cons cell, LIST.
+     If LIST is `nil', then `car' is defined to return `nil'.  It is an
+     error if the argument is not a list.
+
+          (car '(a b c))
+          => a
+          (car '())
+          => nil
+
+
+* Function: cdr LIST
+
+       This function returns the second pointer of the cons cell, LIST.
+     If LIST is `nil', then `cdr' is defined to return `nil'.  It is an
+     error if the argument is not a list.
+
+          (cdr '(a b c))
+          => (b c)
+          (cdr '())
+          => nil
+
+
+* Function: car-safe OBJECT
+
+       This function allows the programmer to call it on any argument
+     without worrying about its type.  It returns the `car' of OBJECT if
+     OBJECT is a cons cell, `nil' otherwise.
+
+          (car-safe OBJECT)
+          ==
+          (let ((x OBJECT))
+            (if (consp x)
+                (car x)
+              nil))
+
+
+
+* Function: cdr-safe OBJECT
+
+       This function allows the programmer to call it on any argument
+     without worrying about its type.  It returns the `cdr' of OBJECT if
+     OBJECT is a cons cell, `nil' otherwise.
+
+          (cdr-safe OBJECT)
+          ==
+          (let ((x OBJECT))
+            (if (consp x)
+                (cdr x)
+              nil))
+
+
+* Function: nth INTEGER LIST
+
+       This function returns the element of LIST indexed by INTEGER,
+     where the index of the first element is zero.  If LIST has fewer
+     than INTEGER elements, `nil' is returned.  If INTEGER is less than
+     zero, then the first element is returned.
+
+          (nth 2 '(1 2 3 4))
+          => 3
+          (nth 10 '(1 2 3 4))
+          => nil
+          (nth -3 '(1 2 3 4))
+          => 1
+          (nth n x)
+          ==
+          (car (nthcdr n x))
+
+
+* Function: nthcdr INTEGER LIST
+
+       This function returns the INTEGER'th cdr of LIST.  If INTEGER is
+     less than or equal to zero, then all of LIST is returned.  If LIST
+     has fewer than INTEGER elements, `nil' is returned.
+
+          (nthcdr 1 '(1 2 3 4))
+          => (2 3 4)
+          (nthcdr 10 '(1 2 3 4))
+          => nil
+          (nthcdr -3 '(1 2 3 4))
+          => (1 2 3 4)
+
+
+
+File: elisp  Node: Alteration of List Structure, Prev: Accessing Elements of Lists, Up: Lists, Next: Using Lists as Sets
+
+Alteration of List Structure
+============================
+
+  The car and cdr pointers of a cons cell are ultimately modified by
+`setcar' and `setcdr'. (true?? should we list them all.)  See `delq' in
+*Note Using Lists as Sets:: for another function that modifies cons
+cells.
+
+     Common Lisp Note: In Common Lisp, the functions `rplaca' and
+     `rplacd' are similar to `setcar' and `setcdr', but the Common Lisp
+     functions return the cons cell while `setcar' and `setcdr' return
+     the `car' or `cdr'.
+
+
+* Function: setcar CONS OBJECT
+
+       This function replaces the `car' pointer of the cons cell with
+     `object'.  The result is OBJECT, not CONS.
+
+          (setq x '(1 2))
+          => (1 2)
+          (setcar x '4)
+          => 4
+          x
+          => (4 2)
+
+
+* Function: setcdr CONS OBJECT
+
+       This function replaces the `cdr' pointer of the cons cell with
+     `object'.  The result is OBJECT, not CONS.
+
+          (setq x '(1 2))
+          => (1 2)
+          (setcdr x '(4))
+          => (4)
+          x
+          => (1 4)
+
+
+
+* Function: nconc &rest LISTS
+
+       This function returns a list containing all the elements of
+     LISTS.  Unlike `append' (*Note Building Cons Cells and Lists::),
+     the LISTS are *not* copied; instead, the last cdr pointer of each
+     of the LISTS is changed to point to the next list.  The final
+     argument may be any object.
+
+          (setq x '(1 2 3))
+          => (1 2 3)
+          (nconc x '(4 5))
+          => (1 2 3 4 5)
+          x
+          => (1 2 3 4 5)
+
+
+* Function: reverse LIST
+
+       This function creates a new list with the elements of LIST in
+     reverse order.  LIST is *not* altered.
+
+          (setq x '(1 2 3 4))
+          => (1 2 3 4)
+          (reverse x)
+          => (4 3 2 1)
+          x
+          => (1 2 3 4)
+
+
+* Function: nreverse LIST
+
+       This function returns the elements of LIST in reverse order.
+     Unlike `reverse', however, LIST is destructively altered by
+     changing its `cdr' pointers.  The result is a pointer to the last
+     cons cell of LIST, and thus LIST is *not* generally `eq' to its own
+     `nreverse'.
+
+          (setq x '(1 2 3 4))
+          => (1 2 3 4)
+          x
+          => (1 2 3 4)
+          (nreverse x)
+          => (4 3 2 1)
+          x
+          => (1)
+
+
+* Function: sort LIST PREDICATE
+
+       This function sorts LIST stably, though destructively, and
+     returns the sorted list.  It compares elements using PREDICATE.  A
+     stable sort is one in which elements with equal sort keys maintain
+     their relative order before and after the sort.  Stability is
+     important when successive sorts are used to order elements
+     according to different sets of keys.
+
+       The destructive aspect of `sort' is that it alters LIST by
+     changing `cdr' pointers.  Therefore, it does *not* just alter `car'
+     pointers to rearrange elements.
+
+       PREDICATE must be a function of two arguments.  It is called with
+     two elements of LIST.  To get an increasing order sort, the
+     PREDICATE should return `t' if the first element is ``less than''
+     the second, or `nil' if not.
+
+     *Note Sorting:: for more functions that perform sorting.
+
+          (setq nums '(1 3 2 6 5 4 0))
+          => (1 3 2 6 5 4 0)
+          (sort nums '<)
+          => (0 1 2 3 4 5 6)
+          nums
+          => (1 2 3 4 5 6)
+
+
+
+
+
+File: elisp  Node: Using Lists as Sets, Prev: Alteration of List Structure, Up: Lists, Next: Association Lists
+
+Using Lists as Sets
+===================
+
+  Lists may be used as mathematical sets by making use of `memq' and
+`delq'.  But `union', `intersection', and other set related functions
+are not defined in GNU Emacs Lisp. (we could offer them as examples
+here!! contributions welcomed)
+
+
+* Function: memq OBJECT LIST
+
+       This function tests to see if OBJECT is a member of LIST.  If it
+     is, `memq' returns a list starting with the first occurrence of
+     OBJECT.  Otherwise, it returns `nil'.  `memq' tests with `eq',
+     hence the ```q'''.
+
+          (memq 2 '(1 2 3 2 1))
+          => (2 3 2 1)
+          (memq '(2) '((1) (2)))
+          => nil
+
+
+* Function: delq OBJECT LIST
+
+       This function removes all elements `eq' to OBJECT from LIST.  It
+     alters LIST unless the only occurrence of OBJECT is as the first
+     element(s) of the list (in which case `delq' simply returns the
+     `cdr'(s) of LIST).  Alteration is accomplished by replacing the cdr
+     of the cons cell before each matching element with the cons cell
+     that follows the element.
+
+          (setq sample-list '(1 2 3 (4)))
+          => (1 2 3 (4))
+          (delq 1 sample-list)
+          => (2 3 (4))
+          sample-list
+          => (1 2 3 (4))
+          (delq 2 sample-list)
+          => (1 3 (4))
+          sample-list
+          => (1 3 (4))
+          (delq '(4) sample-list)
+          => (1 3 (4))
+
+
+
+File: elisp  Node: Association Lists, Prev: Using Lists as Sets, Up: Lists
+
+Association Lists
+=================
+
+  An "association list", or "alist" for short, is a list of pairs (cons
+cells), where the car of each pair is the key, and the cdr is the
+associated value.  Association lists are often used to record
+information that one might otherwise keep on a stack since new pairs may
+be simply added to the front of the list.
+
+  An example alist is shown below; the symbol `A' is associated with the
+number `1', and the string `"B"' is associated with the *list* `(2 3)'.
+
+     ((A . 1) ("B" 2 3))
+
+  When searching an association list for a pair with a given key, the
+first pair with that key is returned, even if there are several such
+pairs.  The key may be any Lisp object.  It is *not* an error if an
+element of an association list is not a cons cell.
+
+  Note that property lists are similar to association lists in several
+respects.  A property list behaves like an association list in which
+each key can occur only once.  *Note Property Lists:: for a discussion
+of when you would want to use property lists or association lists.
+
+
+
+* Function: assoc KEY ALIST
+
+       This function returns the first pair associated with KEY in
+     ALIST.  It returns `nil' if no pair in ALIST has a car `equal' to
+     KEY.
+
+          (setq x '((a . 1) ((b) 2 3) (a . 99)))
+          => ((a . 1) ((b) 2 3) (a . 99))
+          (assoc 'a x)
+          => (a . 1)
+          (assoc '(b) x)
+          => ((b) 2 3)
+
+
+* Function: assq KEY ALIST
+
+       Like `assoc', this function also returns the first pair
+     associated with KEY in ALIST.  It returns `nil' if no pair in ALIST
+     has a car `eq' to KEY.  This function is used more often than
+     `assoc', since `eq' is faster than `equal' and most alists use
+     symbols as keys.
+
+          (setq x '((a . 1) ((b) 2 3) (a . 99)))
+          => ((a . 1) ((b) 2 3) (a . 99))
+          (assq 'a x)
+          => (a . 1)
+          (assq '(b) x)
+          => nil
+
+
+* Function: rassq ALIST VALUE
+
+       `rassq' is like `assq' except that the *cdr* of the ALIST pairs
+     is tested instead of the car.  This function returns the first pair
+     associated with VALUE in ALIST.  It returns `nil' if no pair in
+     ALIST has a *cdr* `eq' to VALUE.
+
+          (setq x '((a . 1) ((b) 2 3) (99 . 1)))
+          => ((a . 1) ((b) 2 3) (99 . 1))
+          (rassq 1 x)
+          => (a . 1)
+
+
+
+* Function: copy-alist ALIST
+
+       This function returns a two-level deep copy of ALIST: it creates
+     a new copy of each pair, so that you can alter the associations of
+     the new alist without changing the old one.
+
+          (setq alist '((a . 1) (b (2 3))))
+          => ((a . 1) (b (2 3)))
+          (setq copy (copy-alist alist))
+          => ((a . 1) (b (2 3)))
+          (eq alist copy)
+          => nil
+          (eq (car alist) (car copy))
+          => nil
+          (cdr (car (cdr alist)))
+          => ((2 3))
+          (eq (cdr (car (cdr alist)))
+              (cdr (car (cdr copy))))
+          => t
+
+
+
+File: elisp  Node: Sequences Arrays Vectors, Prev: Lists, Up: Top, Next: Symbols
+
+Sequences, Arrays, and Vectors
+******************************
+
+
+  Two supertypes are described in this chapter, sequences and arrays.
+The primitive type, vector, is also described here.
+
+  The "sequence" type is a supertype of three other Lisp types: lists,
+vectors, and strings.  In other words, lists, vectors, and strings are
+sequences.  The common property that all sequences have is that each is
+an ordered collection of elements.
+
+  The "array" type is a supertype of two other Lisp types: vectors and
+strings.  An array is a sequence (an ordered collection of elements) in
+which any element is accessible in equal time.  Strings and vectors are
+arrays.  The following diagram shows the relationship between all these
+types.
+
+                 ___________________________________
+                |                                   |
+                |          Sequence                 |
+                |  ______   ______________________  |
+                | |      | |                      | |
+                | | List | |         Array        | |
+                | |      | |  ________   _______  | |   
+                | |______| | |        | |       | | |
+                |          | | String | | Vector| | |
+                |          | |________| |_______| | |
+                |          |______________________| |
+                |___________________________________|
+
+        The Relationship between Sequences, Arrays, and Vectors
+
+  Note that a list is not an array because the elements of a list are
+not all accessible in equal time.  In fact, the access time of an
+element of a list is proportional to its position in the list.
+
+  The elements of vectors and lists may be any Lisp objects.  The
+elements of strings are all characters.
+
+
+* Menu:
+
+* Sequences::	
+* Arrays::	
+* Vectors::	
+
+
+
+File: elisp  Node: Sequences, Up: Sequences, Next: Arrays
+
+Sequences
+=========
+
+  The "sequence" type is a supertype of three other Lisp types: lists,
+vectors, and strings.  The common property that all sequences have is
+that each is an ordered collection of elements.
+
+  Functions are provided to test whether an object is a sequence, to
+return the length of a sequence, to return an element of a sequence, and
+to return a copy of a sequence.  The `concat' function (*Note Creating
+Strings::) can be used to copy several sequences of characters into a
+new string.
+
+
+* Function: sequencep OBJECT
+
+       This function returns `t' if OBJECT is a list, vector, or string,
+     `nil' otherwise.
+
+
+* Function: copy-sequence SEQUENCE
+
+       This function returns a copy of SEQUENCE; a change of the copy
+     does not affect the original.  However, it copies only the top
+     level of the sequence, not any deeper level.  In other words, the
+     elements of SEQUENCE and the corresponding elements of the copy
+     will be `eq' to each other.  The types of the copy and the original
+     are the same.  Also see `append' in *Note Building Cons Cells and
+     Lists:: and `concat' in *Note Creating Strings:: for others ways to
+     copy sequences.
+
+          (setq bar '(1 2))
+               => (1 2)
+          (setq x (vector 'foo bar))
+               => [foo (1 2)]
+          (setq y (copy-sequence x))
+               => [foo (1 2)]
+
+          (eq x y)
+               => nil
+          (equal x y)
+               => t
+          (eq (elt x 1) (elt y 1))
+               => t
+
+
+* Function: length SEQUENCE
+
+       This function returns the number of elements in SEQUENCE.  If
+     SEQUENCE is a list that does not end with `nil', the
+     `wrong-type-argument' error results.
+
+
+* Function: elt SEQUENCE INTEGER
+
+       This function returns the element of SEQUENCE indexed by INTEGER.
+     This function duplicates the work of `aref' (*Note Arrays::) and
+     `nth' (*Note Accessing Elements of Lists::), but works for any
+     sequence.  The index of the first element of a sequence is zero.
+
+       It is an `args-out-of-range' error if INTEGER is less than zero
+     or greater than or equal to the length of the sequence.
+
+          (elt [1 2 3 4] 2)
+               => 3
+          (elt '(1 2 3 4) 2)
+               => 3
+          (char-to-string (elt "1234" 2))
+               => "3"
+          (elt [1 2 3 4] 4)
+               -> ERROR: Args out of range: [1 2 3 4], 4
+          (elt [1 2 3 4] -1)
+               -> ERROR: Args out of range: [1 2 3 4], -1
+
+
+
+
+File: elisp  Node: Arrays, Prev: Sequences, Up: Sequences, Next: Vectors
+
+Arrays
+======
+
+  Arrays in Lisp, like arrays in most languages, are blocks of memory
+whose elements can be accessed in equal time.  All Emacs Lisp arrays are
+single dimensional and zero-based (their first element is indexed with
+zero).
+
+  A "vector" is an array whose elements are pointers to any kind of Lisp
+object at all.
+
+  The elements of a "string" must be characters (i.e., integers between
+0 and 255).  Strings are covered in a separate chapter (*Note Strings
+and Characters::).
+
+
+* Function: arrayp OBJECT
+
+       This function returns `t' if the object is an array (i.e., either
+     a vector or a string).
+
+          (arrayp [a])
+          => t
+          (arrayp "asdf")
+          => t
+
+
+* Function: aref ARRAY INTEGER
+
+     This function returns the INTEGER'th element of the ARRAY The first
+     element is indexed with zero.  Also see `elt' in *Note Sequences::.
+     In the example, the character `b' is ASCII 98.
+
+          (setq primes [2 3 5 7 11 13])
+          => [2 3 5 7 11 13]
+          (aref primes 4)
+          => 11
+          (aref "abcdefg" 1)
+          => 98
+          (elt primes 4)
+          => 11
+
+
+* Function: aset ARRAY INTEGER OBJECT
+
+       This function sets the INTEGER'TH element of the array to be
+     OBJECT.  It returns OBJECT. It is not an error if ARRAY is a string
+     and OBJECT is not a character -???but it should be!!  This is
+     different behavior than the `fillarray' function below.
+
+          (setq w [foo bar baz])
+          => [foo bar baz]
+          (aset w 0 'fu)
+          => fu
+          w
+          => [fu bar baz]
+
+          (setq x "asdfasfd")
+          => "asdfasfd"
+          (aset x 3 ?Z)
+          => 90
+          x
+          => "asdZasfd"
+
+
+* Function: fillarray ARRAY OBJECT
+
+       This function fills the array with pointers to OBJECT, replacing
+     any previous values.  It is a `wrong-type-argument' error if the
+     array is a string and OBJECT is not a character.  It returns ARRAY.
+
+          (setq a [a b c d e f g])
+          => [a b c d e f g]
+          (fillarray a 0)
+          => [0 0 0 0 0 0 0]
+          a
+          => [0 0 0 0 0 0 0]
+          (setq s "When in the course")
+          => "When in the course"
+          (fillarray s ?-)
+          => "------------------"
+
+
+
+File: elisp  Node: Vectors, Prev: Arrays, Up: Sequences
+
+Vectors
+=======
+
+  A "vector" is an array whose elements are pointers to any kind of Lisp
+object at all.  *Note Vector Type:: for the read and print syntax of
+vectors.  When evaluating a vector, the elements are *not* evaluated and
+the result of the evaluation is the same vector.
+
+For example:
+
+     (setq avector
+           [1 two '(three) "four" [five]])
+     => [1 two (quote (three)) "four" [five]]
+     (eq avector (eval avector))
+     => t
+
+  Functions are provided to create vectors from other objects.  The
+`append' function may be used to convert a vector into a list (*Note
+Building Cons Cells and Lists::).
+
+     (append avector nil)
+     => (1 two (quote (three)) "four" [five])
+
+
+* Function: vectorp OBJECT
+
+       This function returns `t' if the object is a vector.
+
+          (vectorp [a])
+          => t
+          (vectorp "asdf")
+          => nil
+
+
+* Function: vector &rest OBJECTS
+
+       This function returns a vector made from OBJECTS.
+
+          (vector 'foo 23 [bar baz] "rats")
+          => [foo 23 [bar baz] "rats"]
+          (vector)
+          => []
+
+
+* Function: make-vector INTEGER OBJECT
+
+       This function returns a new vector consisting of INTEGER
+     elements, all initialized to OBJECT.
+
+          (make-vector 9 'Z)
+          => [Z Z Z Z Z Z Z Z Z]
+
+
+* Function: vconcat &rest SEQUENCES
+
+       This function returns a new vector consisting of all the elements
+     of the argument SEQUENCES.  The SEQUENCES may be lists, vectors,
+     strings, or integers.
+
+       A new vector is always constructed which is not `eq' to any
+     existing vector (see the last example).  If no SEQUENCES are given,
+     an empty vector is returned.
+
+       As a feature, in the special case where one of the SEQUENCES is
+     an integer (not a sequence of integers), it is first converted to
+     the string of digits making up the decimal print representation of
+     the integer.  In the second example below, the number 123 is
+     divided into three digits.  The ASCII value for the character ``1''
+     is 49.
+
+       For other concatenation functions, `mapconcat' in *Note Mapping
+     Functions::, `concat' in *Note Creating Strings::, and `append' in
+     *Note Building Cons Cells and Lists::.
+
+          (setq a (vconcat '(A B C) '(D E F)))
+               => [A B C D E F]
+          (vconcat [A B C] 123 "45" '((6 7)))
+               => [A B C 49 50 51 52 53 (6 7)]
+          (vconcat)
+               => []
+          (eq a (vconcat a))
+               => nil
+
+
+
+
+File: elisp  Node: Symbols, Prev: Sequences Arrays Vectors, Up: Top, Next: Variables
+
+Symbols
+*******
+
+  This chapter describes how symbols may be used, what the components of
+symbols are, and how symbols are created and interned.  Property lists
+are also described here.
+
+  A "symbol" is a unique name which may be used in several ways
+simultaneously.  These are listed below with references to were these
+uses are described.
+
+
+   * It can be used simply as a unique symbol.  *Note Creating and
+     Interning Symbols::
+   * It can be used as a global variable.  *Note Global Variables::
+   * It can be used as a local variable.  *Note Local Variables::
+   * It can be used to reference a function or macro.  *Note List
+     Forms::
+   * It can be used to reference a property list of global information.
+     *Note Property Lists::
+
+  You may test whether an arbitrary Lisp object is a symbol with
+`symbolp'.
+
+
+* Function: symbolp OBJECT
+
+       This function returns `t' if OBJECT is a symbol, `nil' otherwise.
+
+
+* Menu:
+
+* Symbol Components::	
+* Definitions and Declarations::	
+* Creating and Interning Symbols::	
+* Property Lists::	
+
+
+

@@ -1,0 +1,1103 @@
+Info file: calc,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: calc.texinfo
+
+
+
+This file documents Calc, the GNU Emacs calculator.
+
+Copyright (C) 1990 Dave Gillespie
+
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+section entitled "GNU General Public License" is included exactly as in
+the original, and provided that the entire resulting derived work is
+distributed under the terms of a permission notice identical to this
+one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the section entitled "GNU General Public License" may be
+included in a translation approved by the author instead of in the
+original English.
+
+
+
+
+File: calc  Node: C Fortran Pascal, Prev: Normal Language Modes, Up: Language Modes, Next: Tex Language Mode
+
+C, Fortran, and Pascal Modes
+----------------------------
+
+The `d C' (`calc-c-language') command selects the conventions of the C
+language for display and entry of formulas.  This differs from the
+normal language mode in a variety of (mostly minor) ways.  In
+particular, C language operators and operator precedences are used in
+place of Calc's usual ones.  For example, `a^b' means `xor(a,b)' in C
+mode; a value raised to a power is written as a function call,
+`pow(a,b)'.
+
+In C mode, vectors and matrices use curly braces instead of brackets.
+Octal and hexadecimal values are written with leading `0' or `0x' rather
+than using the `#' symbol.  Some operators, such as array subscripting
+and assignments, are translated into functions like `subscr' which the
+rest of Calc will leave alone.
+
+The variables `var-pi' and `var-e' would be displayed `pi' and `e' in
+normal mode, but in C mode they are displayed as `M_PI' and `M_E',
+corresponding to the names of constants typically provided in the
+`<math.h>' header.  Functions whose names are different in C are
+translated automatically for entry and display purposes.  For example,
+entering `asin(x)' will push the formula `arcsin(x)' onto the stack;
+this formula will be displayed as `asin(x)' as long as C mode is in
+effect.
+
+The `d P' (`calc-pascal-language') command selects Pascal conventions.
+Like C, Pascal mode interprets array brackets and uses a different table
+of operators.  No special provisions are made for non-decimal numbers,
+vectors, and so on, since there is no universally accepted standard way
+of handling these in Pascal.
+
+The `d F' (`calc-fortran-language') command selects Fortran conventions.
+Various function names are transformed into Fortran equivalents.
+Vectors are written as `/1, 2, 3/', though they must still be entered
+using square brackets.  Since Fortran uses round parentheses for both
+function calls and array subscripts, Calc treats both as if they were
+function calls.
+
+Fortran and Pascal modes normally do not adjust the case of letters in
+formulas.  All built-in Calc names use lower-case letters.  If you use a
+positive numeric prefix argument with `d P' or `d F', these modes will
+use upper-case letters exclusively for display, and will convert to
+lower-case on input.  With a negative prefix, these modes convert to
+lower-case for display and input.
+
+
+File: calc  Node: Tex Language Mode, Prev: C Fortran Pascal, Up: Language Modes, Next: Mathematica Language Mode
+
+TeX Language Mode
+-----------------
+
+The `d T' (`calc-tex-language') command selects the conventions of "math
+mode" in the TeX typesetting language, by Donald Knuth.  Formulas are
+entered and displayed in TeX notation, as in `\sin\left( a \over b
+\right)'.  Math formulas are usually enclosed by `$ $' signs in TeX;
+these should be omitted when interfacing with Calc.  To Calc, the `$'
+sign has the same meaning it always does in algebraic formulas (a
+reference to an existing entry on the stack).
+
+Complex numbers are displayed as in `3 + 4i'.  Subscripts (`subscr(a,
+i)', written `a[i]' in C and Pascal modes) are written `a_i' in TeX
+mode.  Fractions and quotients are written using `\over'; binomial
+coefficients are written with `\choose'.  Interval forms are written
+with `\dots', and error forms are written with `\pm'.  Absolute values
+are written as in `|x + 1|', and the floor and ceiling functions are
+written with `\lfloor', `\rfloor', etc.  The words `\left' and `\right'
+are ignored when reading formulas in TeX mode.
+
+Function calls are written the usual way, with the function name
+followed by the arguments in parentheses.  However, functions for which
+TeX has special names (like `\sin') will use curly braces instead of
+parentheses for very simple arguments.  During input, curly braces and
+parentheses work equally well for grouping, but when the document is
+formatted the curly braces will be invisible.  Thus the printed result
+is `sin 2x' but `sin(2 + x)'.
+
+Function and variable names not treated specially by TeX are simply
+written out as-is, which will cause them to come out in italic letters
+in the printed document.  If you invoke `d T' with any numeric prefix
+argument, names of more than one character will instead be written
+`\hbox{NAME}'.  The `\hbox{ }' notation is ignored during reading.
+
+
+File: calc  Node: Mathematica Language Mode, Prev: TeX Language Mode, Up: Language Modes
+
+Mathematica Language Mode
+-------------------------
+
+The `d M' (`calc-mathematica-language') command selects the conventions
+of Mathematica, a powerful and popular mathematical tool from Wolfram
+Research, Inc.  Notable differences in Mathematica mode are that the
+names of built-in functions are capitalized, and function calls use
+square brackets instead of parentheses.  Thus the Calc formula `sin(2
+x)' is entered and displayed `Sin[2 x]' in Mathematica mode.
+
+Vectors and matrices use curly braces in Mathematica.  Complex numbers
+are written `3 + 4 I'.  The standard special constants in Calc are
+written `Pi', `E', and `I' in Mathematica mode.  Non-decimal numbers are
+written, e.g., `16^^7fff'.  Floating-point numbers in scientific
+notation are written `1.23*10^3'.
+
+
+File: calc  Node: Arithmetic, Prev: Mode Settings, Up: Top, Next: Scientific Functions
+
+Arithmetic Functions
+********************
+
+This chapter describes the Calc commands for doing simple calculations
+on numbers, such as addition, absolute value, and square roots.  These
+commands work by removing the top one or two values from the stack,
+performing the desired operation, and pushing the result back onto the
+stack.  If the operation cannot be performed, the result pushed is a
+formula instead of a number, such as `2/0' (because division by zero is
+illegal) or `sqrt(x)' (because the argument `x' is a formula).
+
+*Note Prefix Arguments::, for a discussion of the effect of numeric
+prefix arguments on commands in this chapter which do not otherwise
+interpret a prefix argument.
+
+* Menu:
+
+* Basic Arithmetic::
+* Integer Truncation::
+* Complex Number Functions::
+* Conversions::
+
+
+File: calc  Node: Basic Arithmetic, Prev: Arithmetic, Up: Arithmetic, Next: Integer Truncation
+
+Basic Arithmetic
+================
+
+The `+' (`calc-plus') command adds two numbers.  The numbers may be any
+of the standard Calc data types.  The resulting sum is pushed back onto
+the stack.
+
+If both arguments of `+' are vectors or matrices (of matching
+dimensions), the result is a vector or matrix sum.  If one argument is a
+vector and the other a scalar (i.e., a non-vector), the scalar is added
+to each of the elements of the vector to form a new vector.  If the
+scalar is not a number, the operation is left in symbolic form: Suppose
+you added `x' to the vector `[1,2]'.  You may want the result
+`[1+x,2+x]', or you may plan to substitute a 2-vector for `x' in the
+future.  Since the Calculator can't tell which interpretation you want,
+it makes the safest assumption.  *Note Reducing and Mapping::, for a way
+to add `x' to every element of a vector.
+
+If either argument of `+' is a complex number, the result will in
+general be complex.  If one argument is in rectangular form and the
+other polar, the current Polar Mode determines the form of the result.
+If Symbolic Mode is enabled, the sum may be left as a formula if the
+necessary conversions for polar addition are non-trivial.
+
+If both arguments of `+' are HMS forms, the forms are added according to
+the usual conventions of hours-minutes-seconds notation.  If one
+argument is an HMS form and the other is a number, that number is
+converted from degrees or radians (depending on the current Angular
+Mode) to HMS format and then the two HMS forms are added.
+
+If both arguments of `+' are error forms, the result is an error form
+with an appropriately computed standard deviation.  If one argument is
+an error form and the other is a number, the number is taken to have
+zero error.  Error forms may have symbolic formulas as their mean and/or
+error parts; adding these will produce a symbolic error form result.
+However, adding an error form to a plain symbolic formula (as in `(a +/-
+b) + c') will not work, for the same reasons just mentioned for vectors.
+Instead you must write `(a +/- b) + (c +/- 0)'.
+
+If both arguments of `+' are modulo forms with equal values of `M', or
+if one argument is a modulo form and the other a plain number, the
+result is a modulo form which represents the sum, modulo `M', of the two
+values.
+
+If both arguments of `+' are intervals, the result is an interval which
+describes all possible sums of the possible input values.  If one
+argument is a plain number, it is treated as the interval `[x .. x]'.
+
+The `-' (`calc-minus') command subtracts two values.  The top number on
+the stack is subtracted from the one behind it, so that the computation
+`5 RET 2 -' produces 3, not -3.  All options available for `+' are
+available for `-' as well.
+
+The `*' (`calc-times') command multiplies two numbers.  If one argument
+is a vector and the other a scalar, the scalar is multiplied by the
+elements of the vector to produce a new vector.  If both arguments are
+vectors, the interpretation depends on the dimensions of the vectors: If
+both arguments are matrices, a matrix multiplication is done.  If one
+argument is a matrix and the other a plain vector, the vector is
+interpreted as a row vector or column vector, whichever is dimensionally
+correct.  If both arguments are plain vectors, the result is a single
+scalar number which is the dot product of the two vectors.
+
+If one argument of `*' is an HMS form and the other a number, the HMS
+form is multiplied by that amount.  It is an error to multiply two HMS
+forms together.  Error forms, modulo forms, and intervals can also be
+multiplied; see the comments for addition of those forms.  When two
+error forms or intervals are multiplied they are considered to be
+independent; thus, `[-2 .. 3] * [-2 .. 3]' is `[-6 .. 9]', whereas `[-2
+.. 3] ^ 2' is `[0 .. 9]'.
+
+The `/' (`calc-divide') command divides two numbers.  When dividing a
+scalar `B' by a square matrix `A', the computation performed is `B'
+times the inverse of `A'.  This also occurs if `A' is itself a vector or
+matrix, in which case the effect is to solve the set of linear equations
+represented by `B'.  If `A' is a matrix with the same number of rows as
+`B', or a plain vector (which is interpreted here as a column vector),
+then the equation `A X = B' is solved for the vector or matrix `X'.
+Otherwise, if `A' is a non-square matrix with the same number of
+*columns* as `B', the equation `X A = B' is solved.  If you wish a
+vector `A' to be interpreted as a row vector to be solved as `X A = B',
+make it into a one-row matrix with `C-u 1 v p' first.  To force a
+left-handed solution with a square matrix `A', transpose `A' and `B'
+before dividing, then transpose the result.
+
+HMS forms can be divided by real numbers or by other HMS forms.  Error
+forms can be divided in any combination of ways.  Modulo forms where
+both values and the modulo are integers can be divided to get an integer
+modulo form result.  Intervals can be divided, except that it is not
+possible to divide by an interval that encompasses zero or has zero as a
+limit, since this would result in an infinite interval.
+
+The `^' (`calc-power') command raises a number to a power.  If the power
+is an integer, an exact result is computed using repeated
+multiplications.  For non-integer powers, Calc uses logarithms and
+exponentials.  Square matrices can be raised to integer powers.  If
+either argument is an error (or interval or modulo) form, the result is
+also an error (or interval or modulo) form.
+
+The `%' (`calc-mod') command performs a "modulo" (or "remainder")
+operation.  Mathematically, `a%b = a - floor(a/b)*b', and is defined for
+all real numbers `a' and `b' (except `b'=0).  For positive `b', the
+result will always be between 0 (inclusive) and `b' (exclusive).  Modulo
+does not work for HMS forms and error forms.  if `a' is a modulo form,
+its modulo is changed to `b', which must be positive real number.
+
+The `\' (`calc-idiv') command divides two numbers on the stack to
+produce an integer result.  It is equivalent to dividing with /, then
+rounding down with `F' (`calc-floor'), only a bit more convenient and
+efficient.
+
+The `:' (`calc-fdiv') command [`fdiv' function in a formula] divides the
+two integers on the top of the stack to produce a fractional result.
+This is a convenient shorthand to enabling Fraction Mode (with
+`calc-frac-mode') temporarily and using `/'.  Note that during numeric
+entry the `:' key is interpreted as a fraction separator, so to divide 8
+by 6 you would have to type `8 RET 6 RET :'.  (Of course, in this case,
+it would be much easier simply to enter the fraction directly as `8:6
+RET'!)
+
+The `n' (`calc-change-sign') command negates the number on the top of
+the stack.  It works on numbers, vectors and matrices, HMS forms, error
+forms, and modulo forms.
+
+The `A' (`calc-abs') [`abs'] command computes the absolute value of a
+number.  The result of `abs' is always a nonnegative real number: With a
+complex argument, it computes the complex magnitude.  With a vector or
+matrix argument, it computes the Frobenius norm, i.e., the square root
+of the sum of the squares of the absolute values of the elements.  The
+absolute value of an error form is defined by replacing the mean part
+with its absolute value and leaving the error part the same.  The
+absolute value of a modulo form is undefined.
+
+The `calc-abssqr' [`abssqr'] command computes the absolute value squared
+of a number, vector or matrix, or error form.
+
+The `sign' algebraic function returns 1 if its argument is positive, -1
+if its argument is negative, or 0 if its argument is zero.
+
+The `&' (`calc-inv') [`inv'] command computes the reciprocal of a
+number.  It is also available as the `V I' key sequence, where it would
+normally be used to invert a matrix.
+
+The `Q' (`calc-sqrt') [`sqrt'] command computes the square root of a
+number.  For a negative real argument, the result will be a complex
+number whose form is determined by the current Polar Mode.
+
+The `calc-hypot' [`hypot'] command computes the square root of the sum
+of the squares of two numbers.  That is, `hypot(a,b)' is the length of
+the hypotenuse of a right triangle with sides `a' and `b'.
+
+The `calc-min' [`min'] and `calc-max' [`max'] commands take the minimum
+or maximum of two real numbers, respectively.  These commands also work
+on HMS forms.  (In algebraic expressions, these functions take any
+number of arguments and return the maximum or minimum among all the
+arguments.)
+
+
+File: calc  Node: Integer Truncation, Prev: Basic Arithmetic, Up: Arithmetic, Next: Complex Number Functions
+
+Integer Truncation
+==================
+
+There are four commands for truncating a real number to an integer,
+differing mainly in their treatment of negative numbers.  All of these
+commands have the property that if the argument is an integer, the
+result is the same integer.  An integer-valued floating-point argument
+is converted to integer form.
+
+If you press `H' (`calc-hyperbolic') first, the result will be expressed
+as an integer-valued floating-point number.
+
+The `F' (`calc-floor') [`floor' or `ffloor'] command truncates a real
+number to the next lower integer, i.e., toward minus infinity.  Thus
+`3.6 F' produces 3, but `_3.6 F' produces -4.
+
+The `I F' (`calc-ceiling') [`ceil' or `fceil'] command truncates toward
+positive infinity.  Thus `3.6 I F' produces 4, and `_3.6 I F' produces
+-3.
+
+The `R' (`calc-round') [`round' or `fround'] command rounds to the
+nearest integer.  When the fractional part is .5 exactly, this command
+rounds away from zero.  (All other rounding in the Calculator uses this
+convention as well.)  Thus `3.5 R' produces 4 but `3.4 R' produces 3;
+`_3.5 R' produces -4.
+
+The `I R' (`calc-trunc') [`trunc' or `ftrunc'] command truncates toward
+zero.  In other words, it "chops off" everything after the decimal
+point.  Thus `3.6 I R' produces 3 and `_3.6 I R' produces -3.
+
+These functions may not be applied meaningfully to error forms, but they
+do work for intervals.  As a convenience, applying `floor' to a modulo
+form floors the value part of the form.
+
+To compute the fractional part of a number (i.e., the amount which, when
+added to `floor(N)', will produce `N') just take `N' modulo 1 using the
+`%' command.
+
+
+File: calc  Node: Complex Number Functions, Prev: Integer Truncation, Up: Arithmetic, Next: Conversions
+
+Complex Number Functions
+========================
+
+The `J' (`calc-conj') [`conj'] command computes the complex conjugate of
+a number.  For complex number `a+bi', the complex conjugate is `a-bi'.
+If the argument is a real number, this command leaves it the same.  If
+the argument is a vector or matrix, this command replaces each element
+by its complex conjugate.
+
+The `G' (`calc-argument') [`arg'] command computes the "argument" or
+polar angle of a complex number.  For a number in polar notation, this
+is simply the second component of the pair `(r,theta)'.  The result is
+expressed according to the current angular mode and will be in the range
+-180 degrees (exclusive) to +180 degrees (inclusive), or the equivalent
+range in radians.
+
+The `calc-imaginary' command multiplies the number on the top of the
+stack by the imaginary number `i = (0,1)'.
+
+The `calc-re' [`re'] command replaces a complex number by its real part.
+This command has no effect on real numbers.  (As an added convenience,
+`re' applied to an error or modulo form extracts the value part.)
+
+The `calc-im' [`im'] command replaces a complex number by its imaginary
+part; real numbers are converted to zero.  With a vector or matrix
+argument, these functions operate element-wise.
+
+The `v p' (`calc-pack') command takes the top two numbers on the the
+stack and packs them into a complex number according to the current
+Polar mode.  With a prefix argument of -1, it always produces a
+rectangular complex number; with an argument of -2, it produces a polar
+complex number.  (Also, *Note Building Vectors::.)
+
+The `v u' (`calc-unpack') command takes the complex number (or other
+composite object) on the top of the stack and unpacks it into its
+separate components.
+
+
+File: calc  Node: Conversions, Prev: Complex Number Functions, Up: Arithmetic
+
+Conversions
+===========
+
+The commands described in this section are two-key sequences beginning
+with the letter `c'.
+
+The `c f' (`calc-float') [`float'] command converts the number on the
+top of the stack to floating-point form.  For example, `23' is converted
+to `23.0', `3:2' is converted to `1.5', and `2.3' is left the same.  If
+the value is a composite object such as a complex number or vector, each
+of the components is converted to floating-point.  Note that depending
+on the current floating-point precision, conversion to floating-point
+format may lose information.
+
+The `c F' (`calc-fraction') [`frac'] command converts a floating-point
+number into a fractional approximation.  By default, it produces a
+fraction whose decimal representation is the same as the input number,
+to within the current precision.  You can also give a numeric prefix
+argument to specify a tolerance, either directly, or, if the prefix
+argument is zero, by using the number on top of the stack as the
+tolerance.  If the tolerance is a positive integer, the fraction is
+correct to within that many significant figures.  If the tolerance is a
+non-positive integer, it specifies how many digits fewer than the
+current precision to use.  If the tolerance is a floating-point number,
+the fraction is correct to within that absolute amount.
+
+The `c d' (`calc-to-degrees') [`deg'] command converts a number into
+degrees form.  The value on the top of the stack may be an HMS form
+(interpreted as degrees-minutes-seconds), or a real number which will be
+interpreted in radians regardless of the current angular mode.
+
+The `c r' (`calc-to-radians') [`rad'] command converts an HMS form or
+angle in degrees into an angle in radians.
+
+The `c h' (`calc-to-hms') [`hms'] command converts a real number,
+interpreted according to the current angular mode, to an HMS form
+describing the same angle.
+
+The `calc-from-hms' command converts the HMS form on the top of the
+stack into a real number according to the current angular mode.
+
+The `c p' (`calc-polar') command converts the complex number on the top
+of the stack from polar to rectangular form, or from rectangular to
+polar form, whichever is appropriate.  Real numbers are left the same.
+This command is equivalent to the `rect' or `polar' functions in
+algebraic formulas, depending on the direction of conversion.
+
+The `c c' (`calc-clean') [`clean'] command "cleans" the number on the
+top of the stack.  Floating point numbers are re-rounded according to
+the current precision.  Polar numbers whose angular components have
+strayed from the -180 to +180 degree range are normalized.  (Note that
+results will be undesirable if the current angular mode is different
+from the one under which the number was produced!)  Integers and
+fractions are generally unaffected by this operation.
+
+If the simplification mode is set below the default level, it is raised
+to the default level for the purposes of this command.  Thus, you can
+use `c c' to apply the default simplifications manually when their
+automatic application is disabled.  *Note Simplification Modes::.
+
+A numeric prefix argument to `c c' sets the floating-point precision to
+that value for the duration of the command.  A positive prefix (of at
+least 3) sets the precision to the specified value; a negative prefix
+decreases the precision by the specified amount.
+
+The keystroke sequences `c 1', `c 2' and `c 3' are equivalent to `c c'
+with the corresponding negative prefix argument.  If roundoff errors
+have changed 2.0 into 1.999999, typing `c 1' to clip off one decimal
+place often conveniently does the trick.
+
+
+File: calc  Node: Scientific Functions, Prev: Arithmetic, Up: Top, Next: Binary Functions
+
+Scientific Functions
+********************
+
+The functions described here perform trigonometric and other
+transcendental calculations.  They generally produce floating-point
+answers correct to the full current precision.  The `H' (Hyperbolic) and
+`I' (Inverse) flag keys must be used to get some of these functions from
+the keyboard.
+
+One miscellanous command is shift-`P' (`calc-pi'), which pushes the
+value of `pi' (at the current precision) onto the stack.  With the
+Hyperbolic flag, it pushes the value `e', the base of natural
+logarithms.  In Symbolic mode, these commands push the actual variables
+`pi' and `e' instead of their values; *Note Symbolic Mode::.
+
+The `Q' (`calc-sqrt') [`sqrt'] function is described elsewhere; *Note
+Basic Arithmetic::.  With the Inverse flag [`sqr'], this command
+computes the square of the argument.
+
+*Note Prefix Arguments::, for a discussion of the effect of numeric
+prefix arguments on commands in this chapter which do not otherwise
+interpret a prefix argument.
+
+* Menu:
+
+* Logarithmic Functions::
+* Trigonometric and Hyperbolic Functions::
+* Branch Cuts::
+* Random Numbers::
+* Combinatorial Functions::
+
+
+File: calc  Node: Logarithmic Functions, Prev: Scientific Functions, Up: Scientific Functions, Next: Trigonometric and Hyperbolic Functions
+
+Logarithmic Functions
+=====================
+
+The shift-`L' (`calc-ln') [`ln'] command computes the natural logarithm
+of the real or complex number on the top of the stack.  With the Inverse
+flag it computes the exponential function instead.  With the Hyperbolic
+flag it computes the common (base-10) logarithm.  With both flags, it
+computes 10 to a given power.
+
+The shift-`E' (`calc-exp') [`exp'] command computes the exponential,
+i.e., `e' raised to the power of the number on the stack.  The meanings
+of the Inverse and Hyperbolic flags follow from those for the `calc-ln'
+command.
+
+The `H L' (`calc-log10') [`log10'] command computes the common (base-10)
+logarithm of a number.  The meanings of the Inverse [`pow10'] and
+Hyperbolic flags follow from those for the `calc-ln' command.  Note that
+the common logarithm of a complex number is computed by taking the
+natural logarithm and dividing by `ln(10)'.
+
+The `B' (`calc-log') [`log'] command computes a logarithm to any base.
+For example, `1024 RET 2 B' produces 10, since `2^10 = 1024'.  With the
+Inverse flag [`ilog'], this is similar to `^' except that the order of
+the arguments is reversed.
+
+The `calc-expm1' [`expm1'] command computes `exp(x)-1', but using an
+algorithm that produces a more accurate answer when the result is close
+to zero, i.e., when `exp(x)' is close to one.
+
+The `calc-lnp1' [`lnp1'] command computes `ln(x+1)', producing a more
+accurate answer when `x' is close to zero.
+
+
+File: calc  Node: Trigonometric and Hyperbolic Functions, Prev: Logarithmic Functions, Up: Scientific Functions, Next: Branch Cuts
+
+Trigonometric and Hyperbolic Functions
+======================================
+
+The shift-`S' (`calc-sin') [`sin'] command computes the sine of an angle
+or complex number.  If the input is an HMS form, it is interpreted as
+degrees-minutes-seconds; otherwise, the input is interpreted according
+to the current angular mode.  It is best to use Radians mode when
+operating on complex numbers.
+
+With the Inverse flag, `calc-sin' computes an arcsine.  This is also
+available as the `calc-arcsin' command or `arcsin' algebraic function.
+The returned argument is converted to degrees, radians, or HMS notation
+depending on the current angular mode.
+
+With the Hyperbolic flag, `calc-sin' computes the hyperbolic sine, also
+available as `calc-sinh' [`sinh'].  With the Hyperbolic and Inverse
+flags, it computes the hyperbolic arcsine (`calc-arcsinh') [`arcsinh'].
+
+The shift-`C' (`calc-cos') [`cos'] command computes the cosine of an
+angle or complex number, and shift-`T' (`calc-tan') [`tan'] computes the
+tangent, along with all the various inverse and hyperbolic variants of
+these functions.
+
+The `calc-arctan2' [`arctan2'] command takes two numbers from the stack
+and computes the arc tangent of their ratio.  The result is in the full
+range from -180 (exclusive) to +180 (inclusive) degrees, or the
+analogous range in radians.  A similar result would be obtained with `/'
+followed by `I T', but the value would only be in the range from -90 to
+90 degrees since the division loses information about the signs of the
+two components, and an error might result from an explicit division by
+zero which `arctan2' would avoid.  By (arbitrary) definition,
+`arctan2(0,0)=0'.
+
+The `calc-sincos' [`sincos'] command computes the sine and cosine of a
+number, returning them as a vector of the form `[COS, SIN]'.  With the
+Inverse flag [`arcsincos'], this command takes a two-element vector as
+an argument and computes `arctan2' of the elements.  (This command does
+not accept the Hyperbolic flag.)
+
+
+File: calc  Node: Branch Cuts, Prev: Trigonometric and Hyperbolic Functions, Up: Scientific Functions, Next: Random Numbers
+
+Branch Cuts and Principal Values
+================================
+
+All of the logarithmic, trigonometric, and hyperbolic functions are
+defined for complex numbers as well as for reals.  This section
+describes the values returned in cases where the general result is a
+family of possible values.  Calc follows section 12.5.3 of Steele's
+`Common Lisp, the Language' in these matters.  This section will
+describe each function briefly; for a more detailed discussion, consult
+Steele's book.  Except as noted below, these branch cuts also exactly
+match those implemented by the HP-28C calculator.
+
+Note: The current implementations of these functions with complex
+arguments are designed with proper behavior around the branch cuts in
+mind, *not* efficiency or accuracy.  You may need to increase the
+floating precision and wait a while to get suitable answers from them.
+
+For `sqrt(a+bi)': When `a<0' and `b' is small but positive or zero, the
+result is close to the `+i' axis.  For `b' small and negative, the
+result is close to the `-i' axis.  The result always lies in the right
+half of the complex plane.
+
+For `ln(a+bi)': The real part is defined as `ln(abs(a+bi))'.  The
+imaginary part is defined as `arg(a+bi) = arctan2(b,a)'.
+
+For `z1^z2': This is defined by `exp(ln(z1)*z2)'.
+
+For `arcsin(z)': This is defined by `-i*ln(i*z + sqrt(1-z^2))'.
+
+For `arccos(z)': This is defined by `-i*ln(z + i*sqrt(1-z^2))', or
+equivalently by `pi/2 - arcsin(z)'.
+
+For `arctan(z)': This is defined by `-i*ln((1+i*z) * sqrt(1/(1+z^2)))'.
+The HP-28C differs in that the branch cuts are continuous on the
+opposite sides.
+
+For `arcsinh(z)': This is defined by `ln(z + sqrt(1+z^2))'.
+
+For `arccosh(z)': This is defined by `ln(z + (z+1)*sqrt((z-1)/(z+1)))'.
+
+For `arctanh(z)': This is defined by `ln((1+z) * sqrt(1/(1-z^2)))'.
+Again this differs from the HP-28C in that the values exactly on the
+branch cuts are continuous with the opposite sides.
+
+
+File: calc  Node: Random Numbers, Prev: Branch Cuts, Up: Scientific Functions, Next: Combinatorial Functions
+
+Random Numbers
+==============
+
+The `k r' (`calc-random') [`random'] command produces random numbers of
+various sorts.
+
+Given a positive numeric prefix argument `M', it produces a random
+integer `N' in the range `0 <= N < M'.  Each of the `M' values appears
+with equal probability.
+
+With no numeric prefix argument, the `k r' command takes its argument
+from the stack instead.  Once again, if this is a positive integer `M'
+the result is a random integer less than `M'.  However, note that while
+numeric prefix arguments are limited to six digits or so, an `M' taken
+from the stack can be arbitrarily large.
+
+If the value on the stack is a real number `M', the result is a random
+real number `N' in the range `0 <= N < M' or `M < N <= 0', according to
+the sign of `M'.
+
+If `M' is zero, the result is a Gaussian-distributed random real number;
+the distribution has a mean of zero and a variance of one.  The
+algorithm used generates random numbers in pairs; thus, every other call
+to this function will be especially fast.
+
+If `M' is an interval form, the lower and upper bounds specify the
+acceptable limits of the random numbers.  If both bounds are integers,
+the result is a random integer in the specified range.  If either bound
+is floating-point, the result is a random real number in the specified
+range.
+
+The `calc-rrandom' command produces a random real number between zero
+and one.  It is equivalent to `random(1.0)'.
+
+The `k a' (`calc-random-again') command produces another random number,
+re-using the most recent value of `M'.
+
+
+File: calc  Node: Combinatorial Functions, Prev: Random Numbers, Up: Scientific Functions
+
+Combinatorial Functions
+=======================
+
+Commands relating to combinatorics and number theory begin with the `k'
+key prefix.
+
+The `k g' (`calc-gcd') [`gcd'] command computes the Greatest Common
+Divisor of two integers.  (For non-integer arguments the operation is
+left in symbolic form.)
+
+The `k l' (`calc-lcm') [`lcm'] command computes the Least Common
+Multiple of two integers.  The product of the LCM and GCD of two
+integers is equal to the product of the integers.
+
+The `k G' (`calc-extended-gcd') [`egcd'] command computes the GCD of two
+integers `x' and `y' and returns a vector `[g, a, b]' where `g =
+gcd(x,y) = a x + b y'.
+
+The `!' (`calc-factorial') [`fact'] command computes the factorial of
+the number at the top of the stack.  If the number is an integer, the
+result is an exact integer.  If the number is an integer-valued float,
+the result is a floating-point approximation.  If the number is a
+non-integral real number, the generalized factorial is used, as defined
+by the Euler Gamma function.  Please note that computation of large
+factorials can be slow; using floating-point format will help since
+fewer digits must be maintained.
+
+The `calc-gamma' [`gamma'] command computes the Euler Gamma function
+explicitly, according to the rule `gamma(x+1) = fact(x)'.
+
+The `k d' (`calc-double-factorial') [`dfact'] command computes the
+"double factorial" of an integer.  For an even integer, this is the
+product of even integers from 2 to `N'.  For an odd integer, this is the
+product of odd integers from 3 to `N'.  If the argument is an
+integer-valued float, the result is a floating-point approximation.
+
+The `k b' (`calc-choose') [`choose'] command computes the binomial
+coefficient `N'-choose-`M', where `M' is the number on the top of the
+stack and `N' is second-to-top.  If both arguments are integers, the
+result is an exact integer.  Otherwise, the result is a floating-point
+approximation.  The binomial coefficient is defined for all real numbers
+by `N! / M! (N-M)!'.
+
+The `H k b' (`calc-perm') [`perm'] command computes the
+number-of-permutations function `N! / M!'.
+
+The `k p' (`calc-prime-test') command checks if the integer on the top
+of the stack is prime.  For integers less than eight million, the answer
+is always exact and reasonably fast.  For larger integers, a
+probabilistic method is used (See Knuth vol. II, section 4.5.4,
+algorithm P).  The number is first checked against small prime factors
+(up to 13).  Then, any number of iterations of the algorithm are
+performed.  Each step either discovers that the number is non-prime, or
+substantially increases the certainty that the number is prime.  After a
+few steps, the chance that a number was mistakenly described as prime
+will be less than one percent.  (Indeed, this is the worst case; in
+practice even a single iteration is quite reliable.)  After the `k p'
+command, the number will be reported as definitely prime or non-prime if
+possible, or otherwise "probably" prime with a certain probability of
+error.
+
+The normal `k p' command performs one iteration of the primality test.
+Pressing `k p' repeatedly for the same integer will perform additional
+iterations.  Also, `k p' with a numeric prefix performs the specified
+number of iterations.
+
+The `k f' (`calc-prime-factors') [`prfac'] command attempts to decompose
+an integer into its prime factors.  For numbers up to 25 million, the
+answer is exact although it may take some time.  The result is a vector
+of the prime factors in increasing order.  For larger inputs, prime
+factors above 5000 may not be found, in which case the last number in
+the vector will be an unfactored integer greater than 25 million.
+
+The `k n' (`calc-next-prime') [`nextprime'] command finds the next prime
+above a given number.  Essentially, it searches by calling
+`calc-prime-test' on successive integers until it finds one that passes
+the test.  This is quite fast for integers less than eight million, but
+once the probabilistic test comes into play the search may be rather
+slow.  Ordinarily this command stops for any prime that passes one
+iteration of the primality test.  With a numeric prefix argument, a
+number must pass the specified number of iterations before the search
+stops.  (This only matters when searching above eight million.)  You can
+always use additional `k p' commands to increase your certainty that the
+number is indeed prime.
+
+The `I k n' (`calc-prev-prime') [`prevprime'] command analogously finds
+the next prime less than a given number.
+
+The `k t' (`calc-totient') [`totient'] command computes the Euler
+"totient" function, the number of integers less than `n' which are
+relatively prime to `n'.
+
+The `k m' (`calc-moebius') [`moebius'] command computes the Moebius "mu"
+function.  If the input number is a product of `k' distinct factors,
+this is `(-1)^k'.  If the input number has any duplicate factors (i.e.,
+can be divided by the same prime more than once), the result is zero.
+
+
+File: calc  Node: Binary Functions, Prev: Scientific Functions, Up: Top, Next: Matrix Functions
+
+Binary Number Functions
+***********************
+
+The commands in this chapter all use two-letter sequences beginning with
+the `b' prefix.
+
+The "binary" operations actually work regardless of the currently
+displayed radix, although their results make the most sense in a radix
+like 2, 8, or 16 (as obtained by the `d 2', `d 8', or `d 6' commands,
+respectively).  You may also wish to enable display of leading zeros
+with `d z'.  *Note Radix Modes::.
+
+The Calculator maintains a current "word size" `w', an arbitrary
+positive or negative integer.  For a positive word size, all of the
+binary operations described here operate modulo `2^w'.  In particular,
+negative arguments are converted to positive integers modulo `2^w' by
+all binary functions.
+
+If the word size is negative, binary operations produce 2's complement
+integers from `-(2^(-w-1))' to `2^(-w-1)-1' inclusive.  Either mode
+accepts inputs in any range; the sign of `w' affects only the results
+produced.
+
+The `b c' (`calc-clip') [`clip'] command can be used to clip a number by
+reducing it modulo `2^w'.  The commands described in this chapter
+automatically clip their results to the current word size.  Note that
+other operations like addition do not use the current word size, since
+integer addition generally is not "binary."  (However, *Note
+Simplification Modes::, `calc-bin-simplify-mode'.)
+
+The default word size is 32 bits.  All operations except the shifts and
+rotates allow you to specify a different word size for that one
+operation by giving a numeric prefix argument: `C-u 8 b c' clips the top
+of stack to the range 0 to 255 regardless of the current word size.  To
+set the word size permanently, use `b w' (`calc-word-size').  By default
+this command displays the current word size; with a numeric prefix, it
+sets the word size to that value.
+
+When the binary operations are written in symbolic form, they take an
+optional second (or third) word-size parameter.  When a formula like
+`and(a,b)' is finally evaluated, the word size current at that time will
+be used, but when `and(a,b,-8)' is evaluated, a word size of -8 will
+always be used.  A symbolic binary function will be left in symbolic
+form unless the all of its argument(s) are integers or integer-valued
+floats.
+
+If either or both arguments are modulo forms for which `M' is a power of
+two, that power of two is taken as the word size unless a numeric prefix
+argument overrides it.  The current word size is never consulted when
+modulo-power-of-two forms are involved.
+
+The `b a' (`calc-and') [`and'] command computes the bitwise AND of the
+two numbers on the top of the stack.  In other words, for each of the
+`w' binary digits of the two numbers (pairwise), the corresponding bit
+of the result is 1 if and only if both input bits are 1.
+
+The `b o' (`calc-or') [`or'] command computes the bitwise inclusive OR
+of two numbers.  A bit is 1 if either of the input bits, or both, are 1.
+
+The `b x' (`calc-xor') [`xor'] command computes the bitwise exclusive OR
+of two numbers.  A bit is 1 if exactly one of the input bits is 1.
+
+The `b d' (`calc-diff') [`diff'] command computes the bitwise difference
+of two numbers; this is defined by `diff(a,b) = and(a,not(b))'.
+
+The `b n' (`calc-not') [`not'] command computes the bitwise NOT of a
+number.  A bit is 1 if the input bit is 0 and vice-versa.
+
+The `b l' (`calc-lshift-binary') [`lsh'] command shifts a number left by
+one bit, or by the number of bits specified in the numeric prefix
+argument.  A negative prefix argument performs a logical right shift, in
+which zeros are shifted in on the left.  In symbolic form, `lsh(a)' is
+short for `lsh(a,1)', which in turn is short for `lsh(a,n,w)'.  Bits
+shifted "off the end," according to the current word size, are lost.
+
+The `b r' (`calc-rshift-binary') [`rsh'] command shifts a number right
+by one bit, or by the number of bits specified in the numeric prefix
+argument: `rsh(a,n) = lsh(a,-n)'.
+
+The `b s' (`calc-shift-binary') [`ash'] command shifts a number left in
+the same way as `lsh'.  However, if shifting right, it performs an
+"arithmetic" shift, in which the leftmost bit (according to the current
+word size) is duplicated rather than shifting in zeros.  This
+corresponds to dividing by two where the input is interpreted as a
+signed, twos-complement number.  (The distinction between the `lsh' and
+`ash' operations is totally independent from whether the word size is
+positive or negative.)
+
+The `b R' (`calc-rotate-binary') [`rot'] command rotates a number one
+bit to the left.  The leftmost bit (according to the current word size)
+is dropped off the left and shifted in on the right.  With a numeric
+prefix argument, the number is rotated the specified number of bits to
+the left or right.
+
+
+File: calc  Node: Matrix Functions, Prev: Binary Functions, Up: Top, Next: Algebra
+
+Vector and Matrix Functions
+***************************
+
+Many of the commands described here begin with the `v' prefix.  (For
+convenience, the shift-`V' prefix is equivalent to `v'.)  The commands
+usually apply to both plain vectors and matrices; some apply only to
+matrices or only to square matrices.  If the argument has the wrong
+dimensions the operation is left in symbolic form.
+
+* Menu:
+
+* Building Vectors::
+* Extracting Elements::
+* Vector and Matrix Arithmetic::
+* Reducing and Mapping::
+* Vector and Matrix Formats::
+
+
+File: calc  Node: Building Vectors, Prev: Matrix Functions, Up: Matrix Functions, Next: Extracting Elements
+
+Building Vectors
+================
+
+Vectors are entered and displayed using `[a,b,c]' notation.  Matrices
+are vectors of which all elements are vectors of equal length.  (Though
+none of the standard Calc commands use this concept, a three-dimensional
+matrix or rank-3 tensor could be defined as a vector of matrices, and so
+on.)  Vectors and matrices can be added, subtracted, multiplied, and
+divided; *Note Basic Arithmetic::.
+
+The `|' (`calc-concat') command "concatenates" two vectors together.
+For example, after `[ 1 , 2 ] [ 3 , 4 ] |', the stack will contain the
+single vector `[1, 2, 3, 4]'.  If the arguments are matrices, the rows
+of the first matrix are concatenated with the rows of the second.  (In
+other words, two matrices are just two vectors of row-vectors as far as
+`calc-concat' is concerned.)
+
+If either argument to `|' is a scalar (a non-vector), it is treated like
+a one-element vector for purposes of concatenation: `1 [ 2 , 3 ] |'
+produces the vector `[1, 2, 3]'.  Likewise, if one argument is a matrix
+and the other is a plain vector, the vector is treated as a one-row
+matrix.
+
+The `v p' (`calc-pack') command collects several elements from the stack
+into a matrix, complex number, HMS form, or error form.  By itself, it
+collects two stack elements into a complex number according to the
+current Polar Mode.  With a numeric prefix argument of -1 or -2, it
+builds a rectangular or polar number (respectively) regardless of the
+polar mode.  With an argument of -3 it builds an HMS form from the top
+three elements on the stack.  With an argument of -4 it builds an error
+form from the top two elements on the stack.  With an argument of -5 it
+builds a modulo form.  With a positive numeric prefix, it collects the
+specified number of stack elements into a vector.
+
+The same effect can be had by pressing `[' or `(' to push an incomplete
+vector or complex number on the stack, using `calc-roll-down' to sneak
+the incomplete object up past a certain number of elements, and then
+pressing the matching `]' or `)'.
+
+The `v u' (`calc-unpack') command takes the vector, complex number, HMS
+form, or other composite object on the top of the stack and "unpacks"
+it, pushing each of its elements onto the stack as separate objects.
+Thus, it is the "inverse" of `calc-pack'.  If the value at the top of
+the stack is a formula, `calc-unpack' unpacks it by pushing each of the
+arguments of the top-level operator onto the stack.
+
+The `v d' (`calc-diag') [`diag'] function builds a diagonal square
+matrix.  The optional numeric prefix gives the number of rows and
+columns in the matrix.  If the value at the top of the stack is a
+vector, the elements of the vector are used as the diagonal elements;
+the prefix, if specified, must match the size of the vector.  If the
+value on the stack is a scalar, it is used for each element on the
+diagonal, and the prefix argument is required.
+
+To build a constant square matrix, e.g., a 3x3 matrix filled with ones,
+use `0 M-3 v d 1 +', i.e., build a zero matrix first and then add a
+constant value to that matrix.  (Another alternative would be to use
+`calc-build-vector' and `calc-arrange-vector'; see below.)
+
+The `v i' (`calc-ident') function builds an identity matrix of the
+specified size.  It is a convenient form of `calc-diag' where the
+diagonal element is always one.
+
+The `v x' (`calc-index') [`index'] function builds a vector of
+consecutive integers from 1 to N, where N is the numeric prefix
+argument.  If you do not provide a prefix argument, you will be prompted
+to enter a suitable number.
+
+The `v b' (`calc-build-vector') [`cvec'] function builds a vector of N
+copies of the value on the top of the stack, where N is the numeric
+prefix argument.  In algebraic formulas, `cvec(x,n,m)' can also be used
+to build an N-by-M matrix of copies of X.
+
+The `v a' (`calc-arrange-vector') [`arrange'] function rearranges a
+vector to have a certain number of columns and rows.  The numeric prefix
+argument specifies the number of columns; if you do not provide an
+argument, you will be prompted for the number of columns.  The vector or
+matrix on the top of the stack is "flattened" into a plain vector.  If
+the number of columns is nonzero, this vector is then formed into a
+matrix by taking successive groups of N elements.  If the number of
+columns does not evenly divide the number of elements in the vector, the
+last row will be short and the result will not be suitable for use as a
+matrix.  For example, with the matrix `[[1, 2], [3, 4]]' on the stack,
+`v a 4' produces `[[1, 2, 3, 4]]' (a 1x4 matrix), `v a 1' produces
+`[[1], [2], [3], [4]]' (a 4x1 matrix), `v a 2' produces `[[1, 2], [3,
+4]]' (the original 2x2 matrix), `v a 3' produces `[[1, 2, 3], [4]]' (not
+a matrix), and `v a 0' produces the flattened list `[1, 2, 3, 4]'.
+
+The `v s' (`calc-sort') [`sort'] function sorts the elements of a vector
+into increasing order.  Non-real vector elements are sorted according to
+a kind of lexicographic ordering.  The `I v s' [`rsort'] function sorts
+a vector into decreasing order.
+
+The `v h' (`calc-histogram') [`histogram'] function builds a histogram
+of a vector of numbers.  Vector elements are assumed to be integers or
+real numbers in the range [0..N) for some "number of bins" N, which is
+the numeric prefix argument given to the command.  The result is a
+vector of N counts of how many times each value appeared in the original
+vector.  Non-integers in the input are rounded down to integers.  Any
+vector elements outside the specified range are ignored.  (You can tell
+if elements have been ignored by checking that the elements in the
+result vector add up to the length of the input vector.)
+
+With the Hyperbolic flag, `v h' pulls two vectors from the stack.  The
+second-to-top vector is the list of numbers as before.  The top vector
+is an equal-sized list of "weights" to attach to the elements of the
+data vector.  For example, if the first data element is 4.2 and the
+first weight is 10, then 10 will be added to bin 4 of the result vector.
+Without the hyperbolic flag, every element has a weight of one.
+
+
+File: calc  Node: Extracting Elements, Prev: Building Vectors, Up: Matrix Functions, Next: Vector and Matrix Arithmetic
+
+Extracting Vector and Matrix Elements
+=====================================
+
+The `v r' (`calc-mrow') [`mrow'] command extracts one row of the matrix
+on the top of the stack, or one element of the plain vector on the top
+of the stack.  The row or element is specified by the numeric prefix
+argument; the default is to prompt for the row or element number.  The
+matrix or vector is replaced by the specified row or element in the form
+of a vector or scalar, respectively.
+
+Given a negative prefix argument, `v r' instead deletes one row or
+element from the matrix or vector on the top of the stack.  Thus `C-u 2
+v r' replaces a matrix with its second row, but `C-u -2 v r' replaces
+the matrix with the same matrix with its second row removed.  In
+algebraic form this function is called `mrrow'.
+
+Given a prefix argument of zero, `v r' extracts the diagonal elements of
+a square matrix in the form of a vector.  In algebraic form this
+function is called `getdiag'.
+
+The `v c' (`calc-mcol') [`mcol' or `mrcol'] command is the analogous
+operation on columns of a matrix.  Given a plain vector it extracts (or
+removes) one element, just like `v r'.
+
+To extract a matrix element at a given row and column, use `v r' to
+extract the row as a vector, then `v c' to extract the column element
+from that vector.
+
+The `v l' (`calc-vlength') [`vlen'] command computes the length of a
+vector.  The length of a non-vector is considered to be zero.  Note that
+matrices are just vectors of vectors for the purposes of this command.
+
+
+File: calc  Node: Vector and Matrix Arithmetic, Prev: Extracting Elements, Up: Matrix Functions, Next: Reducing and Mapping
+
+Vector and Matrix Arithmetic
+============================
+
+Basic arithmetic operations like addition and multiplication are defined
+for vectors and matrices as well as for numbers.  Division of matrices,
+in the sense of multiplying by the inverse, is supported.  (Division by
+a matrix actually uses LU-decomposition for greater accuracy and speed.)
+*Note Basic Arithmetic::.
+
+The following functions are applied element-wise if their arguments are
+vectors or matrices: `change-sign', `conj', `arg', `re', `im', `polar',
+`rect', `clean', `float', `frac'.  *Note Function Index::.
+
+The `v t' (`calc-transpose') [`trn'] command computes the transpose of
+the matrix at the top of the stack.  If the argument is a plain vector,
+it is treated as a row vector and transposed into a one-column matrix.
+
+The `V J' (`calc-conj-transpose') [`ctrn'] command computes the
+conjugate transpose of its argument, i.e., `conj(trn(x))'.
+
+The `A' (`calc-abs') [`abs'] command computes the Frobenius norm of a
+vector or matrix argument.  This is the square root of the sum of the
+squares of the absolute values of the elements of the vector or matrix.
+
+The `v n' (`calc-rnorm') [`rnorm'] command computes the row norm, or
+infinity-norm, of a vector or matrix.  For a plain vector, this is the
+maximum of the absolute values of the elements.  For a matrix, this is
+the maximum of the row-absolute-value-sums, i.e., of the sums of the
+absolute values of the elements along the various rows.
+
+The `V N' (`calc-cnorm') [`cnorm'] command computes the column norm, or
+one-norm, of a vector or matrix.  For a plain vector, this is the sum of
+the absolute values of the elements.  For a matrix, this is the maximum
+of the column-absolute-value-sums.  General `k'-norms for `k' other than
+one or infinity are not provided.
+
+The `V C' (`calc-cross') [`cross'] command computes the right-handed
+cross product of two vectors, each of which must have exactly three
+elements.
+
+The `V I' (`calc-inv') [`inv'] command computes the inverse of a square
+matrix.  If the matrix is singular, the inverse operation is left in
+symbolic form.  Matrix inverses are recorded so that once an inverse (or
+determinant) of a particular matrix has been computed, the inverse and
+determinant of the matrix can be recomputed quickly in the future.
+
+If the argument to `V I' is a plain number `x', this command simply
+computes `1/x'.  The same operation is also available on the `&' key.
+
+The `V D' (`calc-mdet') [`det'] command computes the determinant of a
+square matrix.
+
+The `V L' (`calc-mlud') [`lud'] command computes the LU decomposition of
+a matrix.  The result is a list of three matrices which, when multiplied
+together left-to-right, form the original matrix.  The first is a
+permutation matrix that arises from pivoting in the algorithm, the
+second is lower-triangular with ones on the diagonal, and the third is
+upper-triangular.
+
+The `V T' (`calc-mtrace') [`tr'] command computes the trace of a square
+matrix.  This is defined as the sum of the diagonal elements of the
+matrix.
+
+

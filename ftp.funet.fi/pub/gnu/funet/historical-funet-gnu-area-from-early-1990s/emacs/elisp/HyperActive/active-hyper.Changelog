@@ -1,0 +1,25 @@
+Wed Apr 29 09:49:56 1992  Terrence M. Brannon  (brannon at stun4g)
+
+	* Modified the Installation Code so that people who already have
+	the base installation will just have to get the new pertinent files.
+
+Wed Mar 25 09:21:45 1992  Terrence M. Brannon  (brannon at stun4f)
+
+	* Modified the hyper-install to correctly find the pathname of
+	active-hyper.el. thanks to t.v. raman
+
+	* Thanks to information from T. V. Raman I am now aware that my
+	shorthand notation for FTP sites can cause problems for people who
+	have ange-ftp setup differently than me. I will now provide
+	pathnames with all information necessary for connection explicity
+	stated. 
+
+Tue Mar 24 20:36:22 1992  TERRENCE BRANNON  (tb06 at PL118d)
+
+	* Prepared for first public release decided to try the first hyper
+	software installation ever. The plan is to place the source code
+	on the tmp directory of scam.berkeley.edu and write an elisp
+	script to install the software for who ever wants it. I wonder
+	what the people on the ftp+ mailing list will feel like since I am
+	going to subordinate that program to this new program.
+

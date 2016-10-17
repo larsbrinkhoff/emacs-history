@@ -1,0 +1,1439 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Forms, Prev: Eval, Up: Evaluation, Next: Identity and Quoting
+
+Forms
+=====
+
+  As mentioned in the introduction, a "form" is any Lisp object.
+
+  We have three kinds of forms to consider: symbols, lists, and all
+other types. The details of evaluation depend on the type.  We'll start
+with the ``all other types'' which are called self-evaluating forms.
+
+
+* Menu:
+
+* Self-Evaluating Forms::	Forms that evaluate to themselves
+* Symbol Forms::	Symbols evaluate as variables
+* List Forms::		Function and macro calls, and special forms
+
+
+
+File: elisp  Node: Self-Evaluating Forms, Up: Forms, Next: Symbol Forms
+
+Self-Evaluating Forms
+---------------------
+
+  A "self-evaluating form" is any form that is not a list or symbol.
+Self-evaluating forms evaluate to their internal representation, i.e.,
+themselves. In particular, evaluation of a vector does not cause
+evaluation of the elements of the vector.
+
+  In these examples, the function `eval' (*Note Eval::) is used to
+explicitly evaluate a form that has been read but not evaluated.  The
+special form `quote' (*Note Identity and Quoting::) is used to return
+(but *not* evaluate) the form that follows it.
+
+  Note the examples themselves are lists, so you actually need to know
+something about how lists are evaluated to fully understand them.  *Note
+List Forms::.  All the examples prove is that, indeed, some forms
+evaluate to themselves.
+
+     123
+     -> 123
+     (eval '123)
+     -> 123
+     (eval (eval '123))
+     -> 123
+     (eval '[(1+ 2) 3])
+     -> [(1+ 2) 3]
+
+  If you are new to Emacs Lisp, skip the rest of this section.
+
+  It is common to evaluate numbers, characters, strings, and vectors by
+writing them in Lisp code. It is quite unusual, but still possible, to
+evaluate any other Lisp object, even those without a read syntax. For
+example, the way to evaluate a buffer object is to build a form with a
+reference to a buffer in it and then evaluate the form.
+
+     (setq buf (list 'print (current-buffer)))
+     -> (print #<buffer evaluation.texinfo>)
+     (eval buf)
+     => #<buffer evaluation.texinfo>)
+     -> #<buffer evaluation.texinfo>)
+
+
+
+File: elisp  Node: Symbol Forms, Prev: Self-Evaluating Forms, Up: Forms, Next: List Forms
+
+Symbol Forms
+------------
+
+  In this section, we are concerned with the use of symbols as
+variables.  When a symbol (not a quoted symbol) is evaluated, it is
+treated as a variable.  Emacs Lisp has two special symbols, `nil' and
+`t', that always evaluate to themselves. These symbols cannot be
+rebound, nor can their value cells be changed.  An attempt to change the
+value results in a `setting-constant' error.
+
+  Variable lookup involves several steps.  (This is entirely redundant
+with the Variables chapter!!)  First the call stack is examined,
+innermost frame first, for a binding of the symbol. If a binding for the
+symbol is found, the value in the binding is returned as the result of
+the evaluation; the stack is not examined further for another binding.
+(For a special case, see `makunbound' in *Note Binding Local
+Variables::.)
+
+  If the stack has no binding for the symbol, the value cell of the
+symbol is examined. (*Note Symbol Type:: for an overview of the
+composition of symbol objects.) If the value cell is not void, it is
+returned as the result of the evaluation. If it is void, then the error
+`void-variable' is signaled.  (*Note Variables:: for more information on
+the binding of variables.)
+
+  The example shows the value cell of a symbol being set to a value
+(with `setq'), and then that value is returned as the result of
+evaluating the symbol (since no stack frame exists with that symbol
+bound).
+
+     (setq a 123)
+     -> 123
+     (eval 'a)
+     -> 123
+     a
+     -> 123
+
+
+
+File: elisp  Node: List Forms, Prev: Symbol Forms, Up: Forms
+
+List Forms
+----------
+
+  When a "list form" is evaluated, it is assumed to be either a Lisp
+function call, a Lisp macro call, or a primitive function call.  The
+first element of the list is used to determine which; the remaining
+elements are the arguments of the call.  For a Lisp function call, the
+`eval' function is called recursively on each argument.  But for a Lisp
+macro call or primitive function call, the arguments are not necessarily
+evaluated.  See the following sections for the details.
+
+  The first step in evaluating a list is examining its first element.
+(The empty list, which has no elements, is instead evaluated as the
+symbol `nil'.)  Note that the first element of the list is *not*
+evaluated, as it is in some Lisp-like languages (e.g., Scheme).
+
+  If the first element of the list is a symbol, as it most commonly is,
+then the symbol's function cell is examined.  If the object referenced
+by the function cell is another symbol, the function cell of that symbol
+is examined, and used exactly as if it had been the original symbol.
+This process, called "symbol indirection dereferencing", continues until
+a non-symbol is found, and that object is called the "function
+definition" of all the symbols found along the way.  But if a void
+function cell is encountered, the error `void-function' is signaled.
+(One possible consequence of this process is an infinite loop, if a
+symbol's function cell refers to the same symbol.)
+
+  Once the symbol's function cell is finally dereferenced to an object
+that is not a symbol, it should be a primitive function, a Lisp
+function, a Lisp macro, or an autoload object.  (One of these objects
+may appear *as* the first element of the list, and it will be used in
+the same way. *Note Lisp Function Type:: and subsequent sections for the
+structure of these objects.) If any other kind of object is found, the
+error `invalid-function' is signaled.  *Note Autoload:: to find out how
+autoloading is done.
+
+  This example illustrates the dereferencing process.  `fset' is used to
+set the function cell of a symbol and `symbol-function' is used to get
+the function cell of a symbol (*Note Accessing Function Definitions::
+for the descriptions).  The symbol `car' is entered into the function
+cell of `first', and the symbol `first' is entered into the function
+cell of `erste'.
+
+     ;; Build this function cell linkage:
+     ;;    -------------       -----        -------        -------
+     ;;   | #<subr car> | <-- | car |  <-- | first |  <-- | erste |
+     ;;    -------------       -----        -------        -------
+
+     (symbol-function 'car)
+     => #<subr car>
+     (fset 'first 'car)
+     => car
+     (fset 'erste 'first)
+     => first
+     (erste '(1 2 3))              ; call the function referenced by erste.
+     => 1
+     ((lambda (arg) 
+         (erste arg)) '(1 2 3))    ; call an anonymous Lisp function.
+     => 1
+
+* Menu:
+
+* Lisp Function Evaluation::	
+* Lisp Macro Evaluation::	
+* Primitive Function Evaluation::	
+* Special Forms::	
+
+
+
+File: elisp  Node: Lisp Function Evaluation, Up: List Forms, Next: Lisp Macro Evaluation
+
+Lisp Function Evaluation
+........................
+
+  If the first element of a list being evaluated is a Lisp function
+object, then that form is called a "Lisp function call", or simply a
+"function call".  *Note Lambda Expressions:: for the complete
+description of Emacs Lisp functions.
+
+  When a function call is evaluated, first the elements of the rest of
+the list are evaluated in the order they appear.  Next, they are bound
+to the formal arguments of the function (*Note Local Variables:: and
+*Note Lambda Expressions:: for a complete description of the binding
+process).  Last, each form in the function body is evaluated in order,
+and the result of the function call is the value of the last form.
+
+  Since the actual arguments are evaluated in order, you could rely on
+this fact to produce side effects.  This is poor programming style;
+instead, you should use an explicit sequential execution construct, such
+as `progn'. The two examples below produce the same results; the second
+one is far more readable.
+
+     (list (setq x 1) (nth x '(cat rat mat)))
+     -> (1 rat)
+     (progn (setq x 1)
+            (list x (nth x '(cat rat mat))))
+     -> (1 rat)
+
+
+
+File: elisp  Node: Lisp Macro Evaluation, Prev: Lisp Function Evaluation, Up: List Forms, Next: Primitive Function Evaluation
+
+Lisp Macro Evaluation
+.....................
+
+  If the first element of a list being evaluated is a macro object, then
+that form is called a "macro call".  *Note Macros:: for the complete
+description of Emacs Lisp macros.
+
+  When a macro call is evaluated, the elements of the rest of the list
+are *not* initially evaluated; instead, they are bound to the formal
+arguments of the macro (*Note Macros:: and *Note Lambda Expressions::
+for how this binding is done).  Then the body of the macro is evaluated
+and the result is a new form, called the "macro expansion".  The macro
+expansion is then evaluated to produce the end result of the marco call.
+Since the macro expansion is evaluated, if it is itself another macro
+call, the process will be repeated.  This recursive macro expansion can
+continue until `max-lisp-eval-depth' (*Note Eval::) is exceeded.
+
+  To repeat, actual arguments to a macro are *not* evaluated when the
+macro is called, but only if the macro body evaluates them explicitly,
+or if they are evaluated when the macro expansion is evaluated. This is
+the primary difference between functions and macros.
+
+
+
+File: elisp  Node: Primitive Function Evaluation, Prev: Lisp Macro Evaluation, Up: List Forms, Next: Special Forms
+
+Primitive Function Evaluation
+.............................
+
+  If the first element of a list being evaluated is a primitive function
+object, then that form is called a "primitive function call".  When a
+primitive function call is evaluated, the elements of the rest of the
+list are bound, *unevaluated*, to the arguments of the primitive
+function. Then the primitive function is executed.
+
+  It so happens that any primitive function which is not a special form
+*does*, in fact, evaluate all its arguments.  Since primitive function
+calls that are not special forms behave identically to Lisp function
+calls, they are all simply called "function calls".
+
+
+
+File: elisp  Node: Special Forms, Prev: Primitive Function Evaluation, Up: List Forms
+
+Special Forms
+.............
+
+  A primitive function call for which the arguments are not necessarily
+all evaluated is known, instead, as a "special form".  Special forms
+define control structures or perform variable bindings which cannot be
+implemented via functions or macros (efficiently or, in some cases, at
+all).
+
+  The evaluation of special forms proceeds as with primitive function
+calls.  It is the function itself that is special, not the evaluation
+thereof!
+
+     Common Lisp Note: Here are some comparisons of special forms in GNU
+     Emacs Lisp and Common Lisp: `if', and `catch' are special forms in
+     both Emacs Lisp and Common Lisp.  `defun' is a special form in
+     Emacs Lisp, but a macro in Common Lisp.  `save-excursion' is a
+     special form in Emacs Lisp, but doesn't exist in Common Lisp.
+     `throw' is a special form in Common Lisp (because it must be able
+     to throw multiple values), but it is a function in Emacs Lisp
+     (which doesn't have multiple values).
+
+  Here is a list, in alphabetical order, of all of the special forms in
+Emacs Lisp with a reference to where each is described.
+
+`and'
+     *Note Conditional Expressions::
+`catch'
+     *Note Explicit Jumps::
+`cond'
+     *Note Conditionals::
+`condition-case'
+     *Note Errors::
+`defconst'
+     *Note Global Variables::
+`defmacro'
+     *Note Macro Declarations::
+`defun'
+     *Note Function Declarations::
+`defvar'
+     *Note Global Variables::
+`if'
+     *Note Conditionals::
+`function'
+     *Note Function Declarations::
+`interactive'
+     *Note Interactive Call::
+`let'
+     *Note Local Variables::
+`let*'
+     *Note Local Variables::
+`or'
+     *Note Conditional Expressions::
+`progn'
+     *Note Sequencing::
+`prog1'
+     *Note Sequencing::
+`prog2'
+     *Note Sequencing::
+`quote'
+     *Note Quoting and Identity::
+`save-excursion'
+     *Note Excursions::
+`save-restriction'
+     *Note Clipping Restrictions::
+`save-window-excursion'
+     *Note Window Configurations::
+`setq'
+     *Note Accessing Variable Values::
+`setq-default'
+     *Note Buffer Local Variables::
+`unwind-protect'
+     *Note Non-local Exits::
+`while'
+     *Note Iteration::
+`with-output-to-temp-buffer'
+     *Note Temporary Displays::
+
+
+
+
+File: elisp  Node: Identity and Quoting, Prev: Forms, Up: Evaluation
+
+Identity and Quoting
+====================
+
+  The function `identity' and the special forms `quote' and `function'
+return their single argument ``unchanged''.  They differ in whether they
+evaluate their argument (that's why they're described here).  For the
+description of `function' *Note Function Declarations::.
+
+
+* Function: identity OBJECT
+
+       This function returns OBJECT.  But OBJECT is evaluated when
+     `identity' is called.
+
+
+* Special form: quote OBJECT*
+
+       This special form returns OBJECT, without evaluating it.  This
+     allows symbols and lists, which would normally be evaluated, to be
+     included literally in a program.  (Note: It is not necessary to
+     quote vectors since they are self-evaluating.)  Use `function'
+     instead of `quote' when quoting lambda expressions (*Note Function
+     Declarations::).
+
+       Any extra OBJECTs are acceptable, but ignored.
+
+       Because `quote' is used so often in programs, a convenient read
+     syntax is defined.  An apostrophe character (``''') followed by a
+     form expands to a list whose first element is `quote', and whose
+     second element is the form.
+
+
+          (quote (+ 1 2))
+          => (+ 1 2)
+          (quote foo)
+          => foo
+          'foo
+          => foo
+          ''foo
+          => (quote foo)
+          ['foo]
+          => [(quote foo)]
+          "'foo"
+          => "'foo"
+
+
+
+File: elisp  Node: Loading, Prev: Evaluation, Up: Top, Next: Byte Compilation
+
+Loading
+*******
+
+  Loading a file of Lisp code is a straight forward task that consists
+of the following steps: find and open the file in question, tell the
+Lisp reader to use that file as the input stream, evaluate each form as
+it is read, then exit the read loop when the end of file is reached, and
+finally close the file.
+
+  Each form in the file is called a "top-level form".  There is no
+special format of the top-level forms; any form in a file could equally
+well be typed directly into a buffer and evaluated there.  Indeed, most
+code is tested this way.  Typically, most top-level forms are function
+and variable declarations.
+
+  When writing top-level forms, be aware that a file may be loaded more
+than once in an Emacs session.  It may be useful for top-level forms to
+test the value of `load-in-progress'.  Also see `noninteractive' in
+*Note When Emacs Starts Up::.
+
+  Several functions can cause a load, but ultimately, `load' performs
+the load.  The function `autoload' sets up an autoload object that, when
+evaluated, causes a file to be loaded (*Note Autoload::).  Features are
+another way to cause automatic loading (*Note Features::).
+
+  Any errors that are encountered while loading a file cause `load' to
+abort.  `autoload' partially undoes the effect of the load in the event
+of an error.
+
+  *Note Building Emacs:: to learn how `load' is used to build Emacs.
+
+  (Define "libraries"!!).
+
+* Menu:
+
+* Load Function::	
+* Autoload::	
+* Features::	
+
+
+
+File: elisp  Node: Load Function, Up: Loading, Next: Autoload
+
+Load Function
+=============
+
+* Function: load FILENAME &optional MISSING-OK NOMESSAGE NOSUFFIX
+
+       This function loads a file of Lisp code, executing the forms in
+     it as it loads.
+
+       If FILENAME is an absolute pathname (preceded by `/'), then it is
+     used as is.  Otherwise (if FILENAME is a relative path, e.g.,
+     `foo.bar' or `baz/foo.bar'), the paths in the list `load-path' will
+     be used.  The current working directory is never used unless it is
+     in `load-path' represented as `nil'.
+
+       `load' first looks for a file named FILENAME with ``.elc''
+     appended.  If it exists, it is loaded.  If there is no file by that
+     name, then the filename with ``.el'' appended is tried, finally,
+     the filename itself (with nothing appended) is tried.  (`load' is
+     not clever about looking at `filename'.  In the perverse case of a
+     file named `foo.el.el', `(load "foo.el")' will indeed find it.)
+
+       When FILENAME is a relative pathname, all three possible
+     filenames are tried in the first directory in `load-path', then in
+     the second directory in `load-path', etc.
+
+       The error `file-error' is signaled (with `"Cannot open load file
+     F"' where F is the file) if no file is found.  No error is signaled
+     if MISSING-OK is non-`nil'.
+
+       Messages like `Loading foo.el ...' and `Loading foo.el ... done.'
+     are printed in the echo area while loading unless NOMESSAGE is
+     non-`nil'.
+
+       If NOSUFFIX is non-`nil', then the suffixes `.elc' and `.el' are
+     not tried.  In this case, the filename must be specified precisely.
+
+       `load' returns `t' if the file loads successfully.  It returns
+     `nil' if the file does not exist and MISSING-OK is non-`nil'.
+
+
+* Command: load-file FILENAME
+
+       This function loads the file FILENAME.  If FILENAME is an
+     absolute pathname, then it is loaded.  If it is relative, then the
+     current working directory is assumed.  `load-path' is not used, and
+     suffixes are not appended.  Use this function if you wish to
+     specify the file to be loaded exactly.
+
+
+* Command: load-library LIBRARY
+
+       This function loads the library named LIBRARY.  A library is
+     nothing more than a file that may be loaded as described earlier.
+     This function is identical to `load', save that it is interactive.
+     In particular, `load-library' looks for `LIBRARY.elc',
+     `LIBRARY.el', and `LIBRARY' in that order in each directory in
+     `load-path'.
+
+
+* User Option: load-path
+
+       The value of this global variable is a list of directories to
+     search when loading files with `load'.  Each element is a string
+     (which must be a directory name) or `nil' (which translates to the
+     current working directory).  `load-path' is initialized to the
+     environment variable `EMACSLOADPATH', if it exists, otherwise to
+     the default specified in the file `paths.h' when Emacs was built.
+
+       The syntax of `EMACSLOADPATH' is the same as for `PATH'; each
+     field is separated by `:' (but "." is used for the current working
+     directory??).  Here is an example of setting the variable from a
+     `.login' file.
+
+          set EMACSLOADPATH .:/user/liberte/emacs:/usr/local/lib/emacs/lisp
+
+       Here is an example of setting `load-path' in a `.emacs' file so
+     that it adds several directories to front of the default
+     `load-path'.
+
+          (setq load-path
+                (append
+                 (list nil
+                       "/user/liberte/emacs/"
+                       "/usr/local/lib/emacs/local")
+                 load-path))
+
+
+* Variable: load-in-progress
+
+       This global variable is non-`nil' if Emacs is in the process of
+     loading a file, and it is `nil' otherwise.  It may be useful to
+     test the value of this variable in top-level forms.
+
+
+
+File: elisp  Node: Autoload, Prev: Load Function, Up: Loading, Next: Features
+
+Autoload
+========
+
+  The "autoload" capability allows you to name a file to be loaded when
+a function or macro is called.  The file should contain a definition of
+the function or macro which will then be called after the load is
+completed.
+
+  To set up a function or macro for autoloading, call the `autoload'
+function with the function or macro symbol and the file to load.
+`autoload' builds an autoload object with the name of the file and some
+other information and puts it in the function cell for the symbol.  When
+the function or macro is later called, the `autoload' form is found and
+the file is loaded.  After the load, the function cell of the symbol
+should reference a Lisp function or macro, which is then called as if it
+had been there originally.
+
+  If a Lisp function or macro is not found after the load, the error
+`error' is signaled (with data `"Autoloading failed to define function
+F"' where F is the function).
+
+  An autoloaded file may, of course, contain other definitions and may
+require or provide one or more features.  If the file is not completely
+loaded (due to some error in the evaluation of the contents) any
+function definitions or `provide' calls that occurred during the load
+are undone.  This is to ensure that another `autoload' attempt will be
+made after the error is corrected.
+
+
+* Function: autoload SYMBOL FILENAME &optional DOCSTRING INTERACTIVE MACRO
+
+       This function defines the function (or macro) named SYMBOL to
+     automatically load from FILENAME.  FILENAME is a pathname which
+     will be passed to `load' when the function is called.
+
+       DOCSTRING is the documentation string for the function.  This is
+     normally the same string that is in the function definition itself.
+
+       If INTERACTIVE is non-`nil', then the function can be called
+     interactively.  The complete interactive specification need not be
+     given here.  If MACRO is non-`nil', then the function is really a
+     macro.
+
+       If SYMBOL already has a non-`nil' function cell that is not an
+     `autoload' form, `autoload' does nothing and returns `nil'.  If the
+     function cell of SYMBOL, it is set to an `autoload' form that looks
+     like: `(autoload FILENAME DOCSTRING INTERACTIVE MACRO)'.  This form
+     is not evaluated; rather, it is used in performing the autoload as
+     described above.
+
+
+
+File: elisp  Node: Features, Prev: Autoload, Up: Loading
+
+Features
+========
+
+  Features are another way to automatically load files.  While autoload
+is tied to particular functions, features are loaded whenever required,
+typically when another file is loaded.
+
+  The use of features simplifies the task of determining whether
+required definitions have been defined.  A program that needs a set of
+definitions (functions, macros, variables, etc.), called a "feature",
+may ensure that they are defined by "requiring" them.  If the file that
+contains the feature has not yet been loaded, then it will be loaded (or
+an error will be signaled if it cannot be loaded).  The file thus loaded
+must "provide" the feature or an error will be signaled.
+
+  A program may require that a feature be present by calling `require'
+with the name of the feature.  `require' looks in the global `features'
+list to see if the desired feature has been provided.  If not, it loads
+the associated file.  The file that contains the feature should call
+`provide' at the top-level to add the feature to `features' once it is
+loaded.
+
+  Features are normally named after the files they are provided in so
+that `require' need not be given the file name.
+
+  Top-level calls to `require' are evaluated by the byte-compiler, but
+`provide' calls are not.  Therefore, you can ensure that a file of
+definitions is loaded before it is byte-compiled by including a
+`provide' followed by a `require' for the same feature, as in the
+following example.
+
+     (provide 'my-feature)  ; ignored by byte compiler, evaluated by load
+     (require 'my-feature)  ; evaluated by byte compiler
+
+
+* Function: provide FEATURE
+
+       This function announces that FEATURE is now loaded (or will be as
+     soon as the load is done) in the current Emacs session.  This means
+     that the definitions associated with FEATURE are available.
+
+       The FEATURE is added to the front of the list `features' if it is
+     not already in the list.  FEATURE must be a symbol.  `provide'
+     returns FEATURE.
+
+          (provide 'foo)
+          => foo
+          features
+          => (foo)
+
+
+* Function: require FEATURE &optional FILENAME
+
+       This function looks to see if FEATURE is present in the current
+     Emacs session (i.e., `(featurep FEATURE)' is true).  If it is not,
+     then `require' loads FILENAME with `load'.  If FILENAME is not
+     supplied, then FEATURE is used as the file name to load.
+
+       It is an error (`error' with data "Required feature F was not
+     provided.", for feature F) if feature is not provided after the
+     file has been loaded.
+
+
+
+* Function: featurep FEATURE
+
+       This function returns `t' if FEATURE has been provided in the
+     current Emacs session (i.e., FEATURE is a member of `features'.)
+
+
+* Variable: features
+
+       The value of this global variable is a list of symbols which are
+     the features provided in the current Emacs session.
+
+
+
+File: elisp  Node: Byte Compilation, Prev: Loading, Up: Top, Next: Debugging
+
+Byte Compilation
+****************
+
+  GNU Emacs Lisp has a compiler which translates functions from
+lambda-expressions into a special form called "byte code" which can be
+executed more efficiently.  The compiler replaces each function
+definition with byte code.  When a byte code file is loaded, a function
+defined in the file is then evaluated by the "byte interpreter".
+
+  An individual function definition may be byte-compiled with the
+`byte-compile' function.  A whole file may be byte-compiled with
+`byte-compile-file' and several files may be byte-compiled with
+`byte-recompile-directory' or `batch-byte-compile'.
+
+  Macros are also byte compiled, although macro expansions are byte
+compiled independently.  But be careful when byte compiling code that
+uses macros since macro calls are expanded when they are compiled and
+therefore the macros must already be defined.  *Note Macros:: for more
+details.
+
+  Only `defun' and `defmacro' forms are byte-compiled; no other
+top-level forms are byte-compiled.  While byte-compiling a file, any
+`require' calls are evaluated.  This is to ensure that required
+definitions are provided.  *Note Features::.
+
+  Because the byte compiled code is evaluated by the byte-code
+interpreter, instead of being executed directly by the machine's
+hardware (which is what most compiled code runs on), byte-code is
+completely transportable from machine to machine without re-compilation.
+
+  A byte compiled function is not as efficient as a primitive function
+written in C, but it will run much faster than the interpreted version.
+As a rough comparison, consider the example below:
+
+     (defun silly-loop (n)
+       "Return time before and after N iterations of a loop."
+       (let ((t1 (current-time-string)))
+         (while (> (setq n (1- n))
+                   0))
+         (list t1 (current-time-string))
+         ))
+     => silly-loop
+
+     (silly-loop 100000)
+     => ("Thu Jan 12 20:18:38 1989" 
+         "Thu Jan 12 20:19:29 1989")  ; 51 sec
+
+     (byte-compile 'silly-loop)
+     => [Compiled code not shown]
+
+     (silly-loop 100000)
+     => ("Thu Jan 12 20:21:04 1989" 
+         "Thu Jan 12 20:21:17 1989")  ; 13 sec
+
+  In this example, the interpreted code required 51 seconds to run,
+whereas the byte compiled code required 13 seconds.  These results are
+representative, but there will be great variability depending upon the
+specific functions called.
+
+
+* Function: byte-compile SYMBOL
+
+       This function byte-compiles the function definition of SYMBOL,
+     replacing the previous definition with the compiled one.  The
+     function cell of SYMBOL must contain the actual code for the
+     function; i.e., the compiler will not follow indirection to another
+     symbol.  `byte-compile' does not compile macros.
+
+       `byte-compile' is not autoloaded as are `byte-compile-file' and
+     `byte-recompile-directory'.
+
+       (which function calls are specially handled by byte-compile??
+     list in an appendix)
+
+
+* Command: byte-compile-file FILENAME
+
+       This function compiles a file of Lisp code named FILENAME into a
+     file of byte code.  Comments are removed to shorten the file and
+     speed loading.  The output file's name is made by appending "c" to
+     the end of FILENAME.
+
+       When called interactively, the filename is prompted for in the
+     minibuffer.
+
+          lewis@slug[3] % ls -l push*
+          -rw-r--r--  1 lewis    0             791 Oct  5 20:31 push.el
+
+          (byte-compile-file "~/emacs/push.el")
+          => t
+
+          lewis@slug[3] % ls -l push*
+          -rw-r--r--  1 lewis    0             791 Oct  5 20:31 push.el
+          -rw-rw-rw-  1 lewis    0             638 Oct  8 20:25 push.elc
+
+
+* Command: byte-recompile-directory DIRECTORY FLAG
+
+       This function recompiles every `.el' file in DIRECTORY that needs
+     recompilation.  A file needs recompilation if a `.elc' file exists
+     but is older than the `.el' file.
+
+       If a `.el' file exists, but there is not a corresponding `.elc'
+     file, then FLAG is examined.  If it is `nil', the file is ignored.
+     If it is non-`nil', the user is asked if the file should be
+     compiled.
+
+
+* Function: batch-byte-compile
+
+       This function runs `byte-compile-file' on the files remaining on
+     the command line.  This function must be used only in a batch
+     execution of Emacs, as it kills Emacs on completion.  Each file
+     will be processed, even if an error occurs while compiling a
+     previous file.  (The file with the error will not produce any
+     compiled code, of course.)
+
+          lewis@slug[6] % emacs -batch -f batch-byte-compile $emacs/ ~/*.el"
+
+
+* Function: byte-code CODE-STRING DATA-VECTOR N
+
+       This is the function that actually interprets the byte code.  It
+     is called by the Lisp interpreter when a compiled function is
+     encountered.  It is not generally called by any user code.
+
+          (defun func-tester (func &rest args)
+            "Call FUNC with ARGS but trap errors and display their data."
+            (condition-case err
+                (unwind-protect
+                    (apply func args)
+                  (sit-for 1)
+                  (message "unwinding")
+                  (sit-for 1)
+                  )
+              (quit (message "%s" err)
+                    (sit-for 2))
+              (error (message "%s" err)
+                     (sit-for 3))
+              ))
+          => func-tester
+
+          (byte-compile 'func-tester)
+          => (lambda (func &rest args) 
+              "Call FUNC with ARGS but trap errors and display their data."
+                (byte-code 
+                 "ÀÁÂ‡"
+                 [err 
+                 (byte-code "ÂŽÃ     \")‡"
+                            [func args 
+                            ((byte-code 
+                               "ÀÁ!ˆÂÃ!ˆÀÁ!‡"
+                               [sit-for 1 message "unwinding"] 
+                               4)) 
+                            apply] 
+                            3)
+                 ((quit 
+                   (byte-code "ÁÂ\"ˆÃÄ!‡"
+                              [err message "%s" sit-for 2] 
+                              3))
+                  (error 
+                   (byte-code "ÁÂ\"ˆÃÄ!‡" 
+                              [err message "%s" sit-for 3] 
+                              3))) 
+                 ]
+                 3))
+
+
+* Function: disassemble OBJECT &optional STREAM
+
+       This function prints the disassembled code for OBJECT.  If STREAM
+     is supplied, then output goes there.  Otherwise, the disassembled
+     code is printed to the standard output.  OBJECT can be a function
+     name, a lambda expression or any function object returned by
+     `symbol-function'.
+
+       If OBJECT is not already compiled, it will be compiled, but if
+     OBJECT is a symbol, its function cell is not changed.
+
+       The comments added to the example below do not appear in the
+     output of `disassemble'.
+
+          (disassemble 'silly-loop)
+          -> byte code for silly-loop:
+           doc: Return time before and after N iterations of a loop.
+           args: (n)
+
+          0   constant current-time-string
+          1   call     0            ; call current-time-string with no arg
+          2   varbind  t1           ; store result in t1
+          3   varref   n            ; get value of n
+          4   sub1                  ; subtract 1
+          5   dup                   ; duplicate for result
+          6   varset   n            ; store dup in n
+          7   constant 0
+          8   gtr                   ; compare n with 0
+          9   goto-if-nil-else-pop 17 ; if n > 0 continue else goto 17
+          12  constant nil          ; body of while loop
+          13  discard               ; discard result of body of while loop
+          14  goto     3            ; end of while loop
+          17  discard               ; discard result of while loop
+          18  varref   t1           ; get value of t1 for list
+          19  constant current-time-string
+          20  call     0            ; call current-time-string again
+          21  list2                 ; create a list of two elements
+          22  unbind   1            ; unbind t1
+          23  return                ; exit byte code
+
+
+          => nil
+
+          (disassemble 'func-tester)
+          ->
+          byte code for func-tester:
+           doc: Call FUNC with ARGS but trap errors.
+           args: (func &rest args)
+
+          0   constant err               ; stack name of error variable: err
+          1   constant <byte code>       ; stack byte code for body
+                                         ; of condition-case which follows
+
+             0   constant (<byte code>...)  ; stack byte code for body of 
+                                            ; unwind-protect which follows
+
+                0   constant sit-for     ; code for unwinding
+                1   constant 1
+                2   call     1           ; call sit-for with one arg 1
+                3   discard              ; discard result
+                4   constant message
+                5   constant "unwinding"
+                6   call     1           ; call message with arg "unwinding"
+                7   discard
+                8   constant sit-for
+                9   constant 1
+                10  call     1
+                11  return               ; exit this level of byte code
+
+             1   unwind-protect          ; start unwind-protect
+             2   constant apply
+             3   varref   func
+             4   varref   args
+             5   call     2         ; call apply with two args, func and args.
+             6   unbind   1         ; unbind (what??)
+             7   return
+
+              ;; disassemble doesn't do the following condition-case handlers
+          2   constant ((quit (byte-code 
+                               "ÁÂ\"ˆÃÄ!‡" 
+                               [err message "%s" sit-for 2] 3)) 
+                        (error (byte-code 
+                               "ÁÂ\"ˆÃÄ!‡" 
+                               [err message "%s" sit-for 3] 3)))
+          3   condition-case      ; start condition-case with body and handlers
+          4   return
+
+          => nil
+
+
+File: elisp  Node: Debugging, Prev: Byte Compilation, Up: Top, Next: Streams
+
+Debugging
+*********
+
+  The Lisp Debugger provides programmers with the ability to suspend a
+computation in the middle and do a number of things to assist them in
+debugging their Lisp code.  While in such a state (commonly known as a
+"break"), you may examine the runtime stack, examine the values of
+variables (local or global) and/or change those values.  As a break is
+really nothing more than a recursive edit while in the middle of a
+function call, it is possible to do absolutely anything, including
+calling the debugger again.
+
+  The actions of the debugger are well documented in the GNU Emacs
+Manual, so that will not be repeated here, and the rest of this section
+will assume that the programmer is familiar with that section.
+
+  The operation of the debugger is actually quite simple, and involves
+only a small amount of C code -- the majority of the debugger being
+written in Lisp.
+
+  There is one basic operation which the debugger performs.  It enters a
+break under a number of different conditions: when a chosen function is
+entered or exited, when a error occurs, or when a `quit' signal is not
+handled by user code.  Once inside of a break, the debugger prints out
+information about the status of the stack, and waits for the user to
+type one of a number of commands.  Unless the user specifically requests
+an abnormal termination of a computation, the debugger will arrange for
+the function called to continue to a normal conclusion, returning the
+value it would when called normally.
+
+* Menu:
+
+* Debug Functions::      
+* Debugger Mode Commands::      
+
+
+
+File: elisp  Node: Debug Functions, Up: Debugging, Next: Debugger Mode Commands
+
+Debug Functions
+===============
+
+* Function: debug &rest ARGS
+
+       This function enters the debugger.  It switches buffers to a
+     buffer named `*Backtrace*' (or `*Backtrace*<2>' if it is the second
+     recursive edit, etc.) and prints out information about the stack.
+     It then enters a recursive edit, leaving the programmer in that
+     buffer which is in Debugger Mode.
+
+       One of the commands defined in Debugger mode is `continue', which
+     will exit the recursive edit, switch back to the previous buffer,
+     and allow the computation to continue normally.  The other commands
+     in Debugger mode are defined below (*Note Debugger Mode Commands::.
+
+       If ARGS is non-`nil', then there are several values which have
+     special significance when they are the first argument.  These
+     values are normally only used by the debugger functions and not by
+     programmers calling `debug'.  If the first argument is `nil' (or a
+     non-`nil' value which is not one of the following special values),
+     then the rest of the arguments to `debug' are simply printed at the
+     top of the Backtrace buffer; this is used to display a message to
+     the user.
+
+       The special values are:
+
+     `debug'
+            This is used to indicate that a function that is being
+          debugged is being entered.  The debugger prints out
+          `Entering:' as a line of text at the top of the buffer.  It
+          also marks the function that called `debug' so that it will
+          also break on exit.
+
+     `lambda'
+            This is used to indicate that a function that is being
+          debugged is being entered.??
+
+     `error'
+            This is used to indicate that the debugger was entered
+          because an error or `quit' was signaled and not handled.
+          Presumably the variable `debug-on-error' is non-`nil' if an
+          error was signaled.  If it was `quit' that was signaled, then
+          presumably the variable `debug-on-quit' is non-`nil'.
+
+            It prints out `Signaling:' followed by the error signaled
+          and any arguments to `signal'.
+
+               (let ((debug-on-error t))
+                    (/ 1 0))
+
+               ---------- Buffer: *Backtrace* ----------
+               Signaling: (arith-error)
+                 /(1 0)
+               ...
+
+     `t'
+            Is this used when??  It prints out `Beginning evaluation of
+          function call form:' as the top line in the buffer.
+
+     `nil'
+            This is used when the programmer wants to enter the debugger
+          directly and wishes to have the rest of the arguments printed
+          on the top line of the buffer.
+
+     `exit'
+            This is used to indicate that a function that was being
+          debugged is returning a value.  It prints out `Return value:'
+          on the top line of the buffer, followed by the returned value.
+
+
+* Variable: debugger
+
+       The value of this variable is the function to call in order to
+     invoke debugger.  Its value must be a function (or, more typically,
+     the name of a function) of any number of arguments.  Presumably
+     this function will enter some kind of debugger.
+
+       The first argument that Lisp hands to the function indicates how
+     it was called.  The convention for arguments is detailed in the
+     description of `debug'.
+
+
+
+* Command: backtrace
+
+       This function prints a trace of Lisp function calls currently
+     active.  This is the function used by `debug' to create the
+     `*Backtrace*' buffer.  It is written in C, as it must have access
+     to the stack in order to determine which function calls are active.
+     The result is always `nil'.
+
+       In the example, `backtrace' is called explicitly in a Lisp
+     expression.  When the expression is evaluated, the backtrace is
+     printed to `standard-output', in this case the buffer
+     backtrace-output.  Each line of the backtrace represents one
+     function call.  If the arguments of the function call are all
+     known, they are displayed; if they are being computed, that fact is
+     displayed.  The arguments of special forms are elided.
+
+          (with-output-to-temp-buffer "backtrace-output"
+            (let ((var 1))
+              (save-excursion
+                (setq var (eval '(progn
+                                   (1+ var)
+                                   (list 'testing (backtrace))
+                                   ))))))
+
+          => nil
+          ----------- Buffer backtrace-output ------------
+            backtrace()
+            (list ...computing arguments...)
+            (progn ...)
+            eval((progn (1+ var) (list (quote testing) (backtrace))))
+            (setq ...)
+            (save-excursion ...)
+            (let ...)
+            (with-output-to-temp-buffer ...)
+            eval-region(1973 2142 #<buffer *scratch*>)
+            byte-code("...  for eval-print-last-sexp ...")
+            eval-print-last-sexp(nil)
+          * call-interactively(eval-print-last-sexp)
+          ----------- Buffer backtrace-output ------------
+
+
+* Command: debug-on-entry FUNCTION-NAME
+
+       This function requests FUNCTION-NAME to invoke the debugger each
+     time it is called.  It works by inserting the form `(debug 'debug)'
+     into the function definition as the first form.
+
+       Any function defined by Lisp code may be debugged, interpreted
+     code or compiled code.  Even functions which are commands may be
+     debugged.  They will enter the debugger when called inside of a
+     function, or when called interactively.  Primitive functions (i.e.,
+     those written in C) may not be debugged.
+
+       When called interactively, FUNCTION-NAME is prompted for in the
+     minibuffer.
+
+       It returns FUNCTION-NAME.  If `debug-on-entry' is called more
+     than once on the same function, the second call does nothing (??A
+     bug report has been sent, as presently it kills the function def if
+     called twice??)
+
+          (defun fact (n)
+            (if (zerop n) 1
+                (* n (fact (1- n)))))
+          => fact
+          (debug-on-entry 'fact)
+          => fact
+          (fact 3)
+          => 6
+
+          ---------- Buffer: *Backtrace* ----------
+          Entering:
+          * fact(3)
+            eval-region(4870 4878 t)
+            byte-code("...")
+            eval-last-sexp(nil)
+            (let ...)
+            eval-insert-last-sexp(nil)
+          * call-interactively(eval-insert-last-sexp)
+          ---------- Buffer: *Backtrace* ----------
+
+          (symbol-function 'fact)
+          => (lambda (n)
+               (debug (quote debug))
+               (if (zerop n) 1 (* n (fact (1- n)))))
+
+
+* Command: cancel-debug-on-entry FUNCTION-NAME
+
+       This function undoes the effect of `debug-on-entry' on
+     FUNCTION-NAME.
+
+       It returns FUNCTION-NAME.  If `debug-on-entry' is called more
+     than once on the same function, the second call does nothing ??A
+     bug report has been sent, as presently it kills the function def if
+     called twice??
+
+       When called interactively, FUNCTION-NAME is prompted for in the
+     minibuffer.
+
+
+
+* User Option: debug-on-error
+
+       This variable determines if the debugger shall be called when a
+     error is signaled which is not handled.  If it is non-`nil' then
+     the debugger is called on every error (`quit' is not an error).  If
+     it is `nil', then the debugger is not called.
+
+
+* User Option: debug-on-quit
+
+       This variable determines if the debugger shall be called when
+     `quit' is signaled and not handled.  If it is non-`nil' then the
+     debugger is called on every `quit' signal.  If it is `nil', then
+     the debugger is not called.  (`quit' is the signal that `C-g'
+     signals.)
+
+
+
+* User Option: stack-trace-on-error
+
+       This variable determines if Lisp shall automatically display a
+     backtrace buffer after every error that is not handled.  A quit
+     signal counts as an error for this variable.  If it is non-`nil'
+     then a backtrace is shown in a pop-up buffer named `*Backtrace*' on
+     every error.  If it is `nil', then a backtrace is not shown.
+
+       When a backtrace is shown, that buffer is not selected.  If
+     either `debug-on-quit' or `debug-on-error' is also non-`nil', then
+     a backtrace is shown in one buffer, and the debugger is popped up
+     in another buffer with its own backtrace.
+
+
+* Variable: debug-on-next-call
+
+       This variable determines if the debugger shall be called before
+     next `eval', `apply' or `funcall'.  It is automatically reset to
+     `nil' when the debugger is entered.
+
+
+* Function: backtrace-debug LEVEL FLAG
+
+       This function sets the `debug-on-exit' flag of the eval frame
+     LEVEL levels down to FLAG, causing the debugger to be entered when
+     that frame exits, assuming FLAG is non-`nil'.
+
+       The `debug-on-exit' flag is an entry in the stack frame of a
+     function call.  This flag is examined on every exit from a
+     function.
+
+       Normally this function is only called by the debugger.
+
+
+
+
+File: elisp  Node: Debugger Mode Commands, Prev: Debug Functions, Up: Debugging
+
+Debugger Mode Commands
+======================
+
+  The commands defined in Debugger Mode are:
+
+b
+     debugger-frame
+c
+     debugger-continue
+r
+     debugger-return-value
+u
+     debugger-frame-clear
+d
+     debugger-step-through
+h
+     describe-mode
+q
+     top-level
+e
+     debugger-eval-expression
+SPC
+     next-line
+
+
+
+* Command: debugger-frame
+
+       This function marks the stack frame for the function entry which
+     the point is on.  Each stack frame corresponds to a function call
+     and is represented as one line in the backtrace.  When the function
+     in question returns a value, the debugger will be called.
+
+
+* Command: debugger-continue
+
+       This function exits the debugger and continues the computation
+     from the point which it was broken at.
+
+
+* Command: debugger-return-value
+
+       This function exits the debugger, returning a value which is
+     prompted for in the Minibuffer.  This is only useful when the value
+     returned from the debugger will be used, such as in a debug on exit
+     from a frame.
+
+
+* Command: debugger-frame-clear
+
+       This function unmarks the stack frame for the function entry
+     which the point is on.  When the function in question returns a
+     value, the debugger will not be called.
+
+
+* Command: debugger-step-through
+
+       This function exits the debugger, but it sets
+     `debug-on-next-call' to `t', so that the very next call to `eval',
+     `apply', or `funcall' will break.  As soon as the debugger is
+     re-entered, `debug-on-next-call' will be reset to `nil'.
+
+     Repeatedly calling this function has the effect of stepping through
+     subexpressions of the current expression.
+
+* Command: debugger-eval-expression
+
+       This function reads an S-Expression in the Minibuffer and
+     evaluates it, printing the result in the Echo Area.  It is little
+     more than a call to `eval-expression'.
+
+
+* Command: debug-end-pos
+
+     Don't ask
+
+
+
+File: elisp  Node: Streams, Prev: Debugging, Up: Top, Next: Minibuffers
+
+Streams
+*******
+
+  Many of the Input/Output functions in GNU Emacs Lisp use "streams" as
+sources and sinks for the characters they read and print.  A stream is
+simply a Lisp object that can either supply characters on demand, or
+accept them for ``output''.  Input streams are free to obtain characters
+in any method desired, and output streams are free to do anything at all
+with the characters they are given.
+
+  Normally, of course, input streams obtain their characters from the
+keyboard, a buffer, or a file, while output streams either print their
+characters in the minibuffer (echo area??) or insert them into a buffer.
+
+  Most of the functions which use streams are described in this chapter.
+
+* Menu:
+
+* Input Streams::	
+* Output Streams::	
+
+
+
+File: elisp  Node: Input Streams, Up: Streams, Next: Output Streams
+
+Input Streams
+=============
+
+  The argument of a function which takes an "input stream" may be any of
+the following objects:
+
+
+BUFFER
+       The input characters are read from BUFFER, starting with the
+     character directly after the point, which is advanced as characters
+     are read.
+
+MARKER
+       The input characters are read from the buffer that MARKER is in,
+     starting with the character directly after the marker, which is
+     advanced as characters are read.
+
+FUNCTION
+       The input characters are generated by FUNCTION, one per call.  In
+     version 19, the function must be declared with an optional argument
+     that, if non-`nil', is a character to unread.
+
+STRING
+       The input characters are taken from STRING, starting at the first
+     character in the string and advancing through as many character as
+     required.
+
+`t'
+       `t' used as a stream means that the input characters are read as
+     user input from the minibuffer.
+
+`nil'
+       `nil' used as a stream means that the value of `standard-input'
+     should be used instead; that value must be a non-`nil' input
+     stream.
+
+
+  In the example below, the point in buffer foo is located between the
+first space and the letter `i'.  The `read' causes it to move forward to
+the end of the word `is' (*Note Input Functions::). It also reads (and
+ignores) the space.  The next call to `read', then reads the word `the',
+leaving the point right after the next space.
+
+     ---------- Buffer: foo ----------
+     This is the contents of foo.
+     ---------- Buffer: foo ----------
+
+     (read (get-buffer "foo"))
+     => is
+     (read (get-buffer "foo"))
+     => the
+
+  In the example below, the marker `m' is set to the top of the buffer.
+The `read' reads the first word, `This', as a symbol, and moves the
+marker forward past the first space.
+
+     ---------- Buffer: foo ----------
+     This is the contents of foo.
+     ---------- Buffer: foo ----------
+
+     (setq m (set-marker (make-marker) 1 (get-buffer "foo")))
+     => #<marker at 1 in foo>
+     (read m)
+     => This
+     m
+     => #<marker at 6 in foo>
+
+  In the example below, the first nine characters of the string are
+read, building up a list.
+
+     (read "(When in) the course")
+     => (When in)
+
+  In the next example, which reads from the minibuffer, Lisp prints out
+the prompt `Lisp expression:', and the user types the number `23',
+terminated with a RET.
+
+     (read t)
+     => 23
+     ---------- Buffer: Minibuffer ----------
+     Lisp expression: 23 RET
+
+  In the next example, the variable `useless-stream' is initialized to a
+list of characters.  Each call to the function `useless-stream' produces
+the next letter in the list.  It is useful to note that in the second
+call to `read', an error signaled.  This is because `read' does not
+``unread'' characters that have been read which should be part of the
+next S-expression.
+
+  Thus, `read' called `useless-stream' three times in the first read
+form.  When the third character, `(' was read, it terminated the symbol
+being formed (`XY'), and it was then forgotten.  The next read therefore
+started with the character `)', which is invalid without an open
+parentheses.
+
+     (setq useless-list (append "XY()" nil))
+     => (88 89 40 41)
+
+     (defun useless-stream ()
+       (prog1 (car useless-list)
+              (setq useless-list (cdr useless-list))))
+     => useless-stream
+
+     (read 'useless-stream)
+     => XY
+
+     (read 'useless-stream))
+     -> ERROR: Unbalanced parentheses
+
+  As shown in the above example, when reading a lisp expression, the
+reader must sometimes read one character too many so that it can
+determine when certain tokens have ended.  In version 19, this extra
+character is automatically unread for streams that are buffers, markers,
+strings, and minibuffers.  But function streams are called with the
+character as argument so that the function may store it for later use.
+A function stream will never be called more than once in succession with
+a non-`nil' argument.
+
+(show correction for useless-stream!!)
+
+
+

@@ -1,0 +1,43 @@
+Paragon is a collection of data-parallel program constructs
+implemented in C++.  Paragon is intended to be a research vehicle for
+investigating issues for parallel execution of large-scale scientific
+programs.  We use it to develop and evaluate parallel programming
+constructs and techniques.  We also use it in the Parallel Processing
+course at Cornell to demonstrate the data-parallel programming
+paradigm. 
+
+What does it run on?
+There are two versions of the Paragon library.  The uniprocessor
+version should run on any machine with a working C++ compiler.  It is
+known to work on Sun workstations with either AT&T's Cfront 2.0
+compiler or GNU's g++ 1.39.0  The uniprocessor version has also been
+tested on, the IBM RS 6000 and 3090 computers.
+
+The multiprocessor version should run on the Intel iPSC/2 and iPSC/860
+hypercube.  The multiprocessor version has also been ported to the
+Parallel Virtual Machine (PVM).  This release of Paragon supports PVM
+to provide parallel execution on heterogeneous networks of
+workstations. 
+
+How do I get it?
+The paragon release is provided in three tar files.  The complete
+distribution is available on tesla.ee.cornell.edu in:
+pub/paragon/paragon-1.1.tar.Z
+
+If you're just interested in the serial version, get
+pub/paragon/uniproc.tar.Z
+
+If you're just interested in some reading material, the LaTeX source
+and raw postscript for the Paragon User's Guide is available in
+
+pub/paragon/uguide.tar.Z.  
+
+The Paragon paper presented at the 1991 International Conference on
+Parallel Processing is available as 
+pub/paragon/ICPP-91.ps.Z 
+
+and an updated version of this paper is included as
+pub/paragon/ICPP-91_revised.ps.Z
+
+Please send all comments, suggestions, bug reports, and complaints to
+paragon@ee.cornell.edu

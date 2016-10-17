@@ -1,0 +1,52 @@
+--- INTRODUCTION ---
+DEMO            - Demonstration of basic Hyperbole button capabilities.
+README          - Intro information on Hyperbole.  
+REDISTRIB       - Optional Info on redistributing Hyperbole. 
+ChangeLog       - Summary of changes in recent Hyperbole releases.
+
+--- DOCUMENTATION ---
+hypb.info       - The Hyperbole Manual  (online version, top-level).
+hypb.info-N     - The Hyperbole Manual  (online version, subpart N).
+hypb.ps         - The Hyperbole Manual  (Postscript form).
+hypb.texinfo    - The Hyperbole Manual  (source form).
+hmouse-doc      - Summarizes Smart Key behaviors in different contexts.
+
+--- SYSTEM ---
+hact.el         - Hyperbole button action handling.
+hactypes.el     - Default action types for Hyperbole.
+hargs.el        - Obtains user input through Emacs for Hyperbole.
+hbdata.el       - Hyperbole button attribute accessor methods.
+hbmap.el        - Hyperbole button map maintenance for queries and lookups.
+hbut.el         - Hyperbole button constructs.
+hhist.el        - Maintains history of Hyperbole buttons selected.
+hibtypes.el     - Hyperbole System Implicit Button Types.
+hib-kbd.el      - Implicit button type for key sequences delimited with {}.
+hinit.el        - Standard initializations for Hyperbole hypertext system.
+hlvar.el        - Permits use of Hyperbole variables in local variable lists.
+hmoccur.el      - Multi-buffer or multi-file regexp occurrence location.
+hpath.el        - Hyperbole support routines for handling UNIX paths.  
+hsite-ex.el     - Site-specific setup template for Hyperbole.
+htz.el          - Timezone-based time and date support for Hyperbole.
+hypb.el         - Miscellaneous Hyperbole support features.
+set.el          - Provide general mathematical operators on unordered sets.
+
+--- MAIL SUPPORT ---
+hmail.el        - Support for Hyperbole buttons embedded in e-mail messages.
+hrmail.el       - Support for Hyperbole buttons in mail reader: Rmail.
+hsmail.el       - Support for Hyperbole buttons in mail composer: mail.
+
+--- USER INTERFACE ---
+hmous-info.el   - Walks through Info networks using one key.
+hmouse-drv.el   - Smart Key/Mouse driver functions.
+hmouse-key.el   - Key bindings for Hyperbole mouse control.
+hui-ep-but.el   - Shared support for highlighting/flashing buttons under Epoch.
+hui-epV3-b.el   - Epoch V3-specific button support.
+hui-epV4-b.el   - Epoch V4-specific button support.
+hui-menus.el    - One line command menus for Hyperbole.
+hui-mouse.el    - Use key or mouse key for Hyperbole menus and arguments.
+hui.el          - GNU Emacs User Interface to Hyperbole.
+
+--- SYSTEM ENCAPSULATIONS ---
+hsys-hbase.el   - Hyperbole support for the Hyperbase system.
+hsys-wais.el    - Hyperbole support for WAIS browsing.
+hsys-www.el     - Hyperbole support for WorldWide Web (WWW) document browsing.

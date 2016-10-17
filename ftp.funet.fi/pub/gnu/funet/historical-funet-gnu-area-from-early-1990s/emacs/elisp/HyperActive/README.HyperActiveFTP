@@ -1,0 +1,33 @@
+# --- HyperActiveFTP Overview 		<(Top Level)>  
+
+HyperActiveFTP is a hypertext database which makes use of the ange-ftp
+and Hyperbole packages for GNU Emacs. It comprises a database of
+popular FTP sites and a point-and-click method for connection.
+
+# --- Its Purpose
+
+- Allow for fast ftp connections to frequently used sites.
+- Allow for browsing of a small subset of the information on archie
+and Usenet's comp.archives with a lean towards Parallel Computing, Unix
+Utilties, Gnu software, X-Windows, TeX, and Primitive Religion.
+- Provide hypertext links to other popular ftp lists such a Tom Czarnik's
+
+# --- Requirements for Use or Trying out HyperActiveFTP
+
+After installing
+
+- GNU Emacs
+- Hyperbole, obtainable from "/anonymous@wilma.cs.brown.edu:/pub/hyperbole"
+- ange-ftp, obtainable from  "/anonymous@nic.funet.fi:/pub/gnu/emacs/elisp/ange-ftp-4.2.tar.Z"
+
+You may try out or install my package by simply reading either of the
+following files and following the directions.
+
+Official Site:
+"/anonymous@nic.funet.fi:/pub/gnu/emacs/elisp/HyperActive/active-hyper.menu.main.otl"
+Mirror Site:
+"/anonymous@archive.cis.ohio-state.edu:/pub/gnu/emacs/elisp-archive/packages/HyperActiveFTP/active-hyper.menu.main.otl"
+
+
+
+

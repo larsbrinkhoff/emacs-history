@@ -1,0 +1,72 @@
+Yale University is developing an electronic network for the
+distribution of mathematics preprints.  Abstracts  of the preprints
+are stored in a database, available via the Internet.  Currently
+abstracts are available from various mathematicians at Yale
+University, the University of Texas at Austin, Oklahoma State
+University, Washington University in St. Louis, and the University of
+Paris.   The full text of the preprints exist on a series of files at
+participating universities which can be downloaded via anonymous FTP
+(File Transfer Protocol).     
+
+The file of abstracts for preprints from all participating universities has
+been mounted on an IBM3083 at the Yale Computer Center, using the Documaster
+text management software.  Once the abstracts are entered into the Documaster
+file, they can be searched by author, title, author's address, date, the status
+of the preprint (accepted for publication, preliminary draft, class notes, book
+draft, etc), words in the abstract, keywords supplied by the author, and the
+Math Reviews subject classification code.   Mathematicians interested in
+obtaining the full text of the preprint will download directly from the
+originating university.
+
+TO SEARCH THE IMP DATABASE
+
+To use IMP via Internet, you need a copy of TN3270.  Telnet to
+yalevm.ycc.yale.edu .  
+
+You can also dial up using standard long distance lines, if you have ASCII
+terminal emulation.  Set your communications software for even parity, 7 data
+bits, and 1 stop bit (1200 baud, 203-432-5800; 2400 baud 203-432-5804)
+
+PASSWORDS
+
+After the connection is made, you will be prompted:
+
+USERID:		Math1 (or Math2, 3, 4, or 5)
+PASSWORD: 	Math1 (or Math2, 3, 4, or 5)
+
+OPERATOR ID:	Math1  
+
+After this point, the screen menus will guide your search.
+
+FOR INSTITUTIONAL PARTICIPATION
+
+We are actively encouraging more institutions to begin submitting abstracts to
+IMP.  Each participating institution should designate a local coordinator. 
+This person should be responsible for certain aspects of coordinating their
+institution's participation and needs an electronic mail account that can be
+used to send and receive electronic mail via BITNET or the Internet.  The
+coordinator needs to make sure that the following tasks are delegated or
+assigned:
+
+--Submitting abstracts of your university's preprints via electronic mail to
+Yale University.  
+--Arranging for the storage of the full text of their institution's preprints
+on a computer that is accessible via the Internet through anonymous FTP. 
+--Writing a README file, based on a sample that Yale will provide, so that
+mathematicians at other institutions can download electronic copies of your
+institution's preprints.   
+--Obtaining a copy of tn3270 and distributing it appropriately to those
+individuals at your institution who wish to use IMP.
+--Distributing for signature and retaining signed copies of the IMP License
+Agreement for all original authors of abstracts.
+
+FOR MORE INFORMATION
+
+A brochure (electronic or printed) describing IMP is available from Katherine
+Branch, Kline Science Library, Yale University, New Haven CT  06511,
+katherine_branch@yccatsmtp.ycc.yale.edu.
+
+General suggestions/inquiries/policies/participation:  Katherine Branch,
+katherine_branch @yccatsmtp.ycc.yale.edu, 203-432-3439 (voice);
+Search System Bugs:  David Bruce, bruce@yalevm (Abstract searching only);
+Problems:  Victor Wickerhauser, victor@jezebel.wustl.edu 	

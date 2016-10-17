@@ -1,0 +1,559 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Command Keys, Prev: Interactive Call, Up: Commands, Next: Aborting
+
+Command Keys
+============
+
+(intro text!!)
+
+  See `waiting-for-user-input-p' in *Note Receiving Information from
+Processes::.  See `sit-for' in *Note Sitting::.  Also *Note Terminal
+Input:: for other functions and variables related to command key input.
+
+
+* Function: input-pending-p
+
+       This function determines whether command input is currently
+     available.  It returns immediately and the result is `t' if so,
+     `nil' otherwise.
+
+       Actually, the value is `nil' only if we can be sure that no input
+     is available.  That is, there are times when the value is `t' even
+     if there may not be any command input available.  (true??)
+
+
+* Function: discard-input
+
+       This function discards the contents of the terminal input buffer
+     and flushs any keyboard macro that might be in the process of
+     definition.  It returns `nil'.
+
+       In the example, the user may type a bunch of characters right
+     after starting the evaluation of the form.  After the `sleep-for'
+     finishes sleeping, any characters that have been typed are
+     discarded.  (anyone have a useful example??)
+
+          (progn (sleep-for 2)
+            (discard-input))
+          => nil
+
+
+* Function: read-char
+
+       This function reads a character from the command input (which is
+     either direct keyboard input or characters coming from an executing
+     keyboard macro), and returns it.  It does not move the cursor or
+     provide any sort of a prompt or other indication that it is waiting
+     to read a character.
+
+       In the first example, the user types a `1' (which is ASCII 49).
+     The second example shows a keyboard macro definition which calls
+     `read-char' from the minibuffer.  The keyboard macro's very next
+     character is the digit 1.  This is the character read by
+     `read-char'.
+
+          (read-char)
+          => 49
+
+          (symbol-function 'foo)
+          => "^[^[(read-char)^M1"
+          (call-last-kbd-macro)
+          -> 49
+          => nil
+
+
+* Function: read-quoted-char &optional PROMPT
+
+       This function is like `read-char', except that if the first
+     character read is an octal digit, it reads up to two more octal
+     digits (0-7) until a non-octal digit is found and returns the
+     character represented by the octal number consisting of those
+     digits.
+
+       If PROMPT is supplied, it specifies a string to use to prompt the
+     user.  The prompt string is always printed in the echo area and
+     followed by a single `-'.
+
+       In the example, the user types in the octal number 177.  This is
+     127 in decimal.
+
+          (read-quoted-char "What character")
+          => 127
+
+          ---------- Buffer: Echo Area ----------
+          What character-177
+          ---------- Buffer: Echo Area ----------
+
+
+* Function: read-key-sequence PROMPT
+
+       This function reads a key sequence and returns it as a string.
+     Characters are read until the sequence is sufficient to specify a
+     (non-prefix) command using the current local and global keymaps.
+
+       For each character, if it is an uppercase letter that does not
+     have a binding in either the local or global keymaps, then the
+     corresponding lowercase letter is tried; if that is successful, the
+     character is converted.  This function is used to read command
+     input; the key lookup is different from that of `lookup-key'
+     because of this automatic downcasing.
+
+       A `C-g' typed while reading with this function is treated like
+     any other character, and `quit-flag' is not set.
+
+       PROMPT is either a string that is displayed in the echo area as a
+     prompt, or `nil', in which case no prompt is displayed.
+
+       In the example, the prompt `?' is displayed in the echo area, and
+     the user types `C-x C-f'.
+          (read-key-sequence "?")
+          => "^X^F"
+
+          ---------- Buffer: Echo Area ----------
+          ?C-x C-f
+          ---------- Buffer: Echo Area ----------
+
+
+* Variable: unread-command-char
+
+       This global variable is set to the character to be read as the
+     next input from the command input stream, or `-1' if there is no
+     such character.  Basically, this is the character that is
+     ``unread'', when an input function has to read an extra character
+     to finish parsing its input.
+
+       For example, the function that governs prefix arguments reads any
+     number of digits.  The first non-digit character it reads must be
+     unread so that it becomes input for the next command.
+
+
+* Function: this-command-keys
+
+       This function returns a string of the key sequence that invoked
+     the present command.  It includes the characters that generated the
+     prefix argument, if any.
+
+          (this-command-keys)
+          => "^U^X^E"
+
+
+* Variable: last-command-char
+
+       This global variable is set to the last character that was typed
+     on the terminal and was part of a command.
+
+        In the example, the variable was evaluated by typing `C-u C-x
+     C-e'.  The ASCII value of `C-e' is 5.
+          last-command-char
+          => 5
+
+
+
+
+* Variable: echo-keystrokes
+
+       This global variable determines how much time should elapse
+     before command characters are echoed.  If the user has typed a
+     prefix key (say `C-x') and then delays this many seconds before
+     continuing, then the key `C-x' will be echoed in the echo area.
+     Any subsequent keys will be echoed as well.
+
+       If its value is 0, then prefix keys are never echoed.  Its value
+     must be a number.
+
+
+
+
+File: elisp  Node: Aborting, Prev: Command Keys, Up: Commands, Next: Prefix Command Arguments
+
+Aborting
+========
+
+  Normally, `C-g' causes Emacs to "abort" whatever it is doing.  If
+aborted, Emacs returns to the currently active command loop.  If `C-g'
+is entered while waiting for command input, the `keyboard-quit' command
+is executed instead.
+
+  Abort can only occur between atomic computations or while waiting for
+input from the keyboard or a process. (but maybe not in read-char!!
+true??)  `C-g' does not cause an abort if input occurs while evaluating
+a call to `read-key-sequence' or `read-quoted-char'.  (others??)
+`read-char' *does* let `C-g' quit.
+
+  Typing `C-g' sets `quit-flag' to a non-`nil' value.  Note that
+changing the keybinding of `C-g' would not prevent quitting.  Use
+`inhibit-quit' when, for various reasons, you do not want `quit-flag' to
+abort the current computation.  The incremental search package, for
+example, binds `inhibit-quit' to `t' so that it can intercept `C-g'.
+
+
+* Variable: quit-flag
+
+       If this variable is non-`nil', then Emacs aborts immediately,
+     unless `inhibit-quit' is non-`nil'.  Typing `C-g' sets `quit-flag'
+     non-`nil', regardless of `inhibit-quit'.
+
+
+* Variable: inhibit-quit
+
+       This variable determines if Emacs should abort when `quit-flag'
+     is set to `t'.  If `inhibit-quit' is non-`nil', then `quit-flag' is
+     ignored.
+
+       Note that `quit-flag' is still set by typing `C-g', so a quit
+     will be signaled as soon as `inhibit-quit' becomes `nil'.  To
+     prevent this from happening, set `quit-flag' to `nil' before making
+     `inhibit-quit' `nil'.
+
+     (need example!!)
+
+
+* Command: keyboard-quit
+
+       This function signals a quit condition which has the same effect
+     as typing `C-g' (except when waiting for a command, `C-g' does
+     something different - what? what?).
+
+
+
+
+File: elisp  Node: Prefix Command Arguments, Prev: Aborting, Up: Commands, Next: Recursive Editing
+
+Prefix Command Arguments
+========================
+
+  One of the ways of providing arguments to commands called
+interactively, is the "prefix argument". (Don't confuse prefix arguments
+with prefix keys.)  This is a value that is always available and that
+commands can choose to use or ignore.  Initially the prefix argument is
+`nil', but there are a number of functions that may change its value.
+
+  These functions change its value in two ways.  The
+`universal-argument' conses up a list whose `car' represents the number
+of times `universal-argument' was called (`4' for one call, `16' for
+two, etc.).  This list may then be converted to numeric form using
+`prefix-numeric-value', if desired.
+
+  The `digit-argument' (normally it has ESC - DIGIT bound to it)
+actually builds up a number for the prefix argument.
+
+  The prefix argument is called a "raw prefix argument" or "unprocessed
+prefix argument" when it is not yet converted.  It is called a
+"processed prefix argument" when the function `prefix-numeric-value' is
+used to convert the list form into a number.
+
+  Normally, commands specify which kind of the argument they want to
+see, either processed or unprocessed, in the `interactive' declaration.
+Alternatively, functions may look at the value of the prefix argument
+directly in the variable `current-prefix-arg'.  Don't call
+`universal-argument', `digit-argument', or `negative-argument' unless
+you intend to let the user enter the prefix argument for the *next*
+command.
+
+
+* Command: universal-argument
+
+       This function begins a numeric argument for the next command.  It
+     immediatly starts reading characters from the command input.  It
+     uses `digit-argument' and `negative-argument' to build up the raw
+     prefix argument.
+
+       If the first character it reads is a minus sign, then the sign of
+     the numeric argument being built up is toggled (multiple minus
+     signs continue to toggle the sign of the argument).  Any digits it
+     reads are used to build the argument as a decimal number.
+
+       The first non-digit, non-minus-sign it reads, is unread and
+     becomes the first character in the key of the command to execute
+     with the prefix argument now completed.
+
+       If no digits or minus sign follow, this command by itself
+     provides `(4)' as the argument.
+
+       When used interactively, it looks for the character it is bound
+     to; it is normally bound to C-u, and it must be bound to a single
+     character key to work as intended.  Each time the character is
+     typed again, `universal-argument' multiplies the argument by 4.
+     Thus typing C-u C-u C-u C-f moves the point forward 64 characters.
+
+
+* Command: digit-argument ARG
+
+       This function constructs part of the numeric argument for the
+     next command.  If ARG is `nil' (the usual case), then this function
+     proceeds to read in digits, building up a decimal number.  The
+     first non-digit it reads (starting with the last character typed to
+     invoke `digit-argument') is unread and becomes the first character
+     in the key of the command to execute with the prefix argument now
+     completed.
+
+       If ARG is numeric, then it is used as the base upon which to
+     build the numeric argument.  The digits that are read in then form
+     the lower decimal part of the argument.  (For example, if ARG is
+     `20', and the digits read in are `5' and `6', then the numeric
+     argument is `2056'.)
+
+       When called interactively (and this function is virtually
+     worthless unless called interactively), ARG is the unprocessed
+     prefix argument.  Thus `C-u ESC 5' provides a numeric argument of
+     `5', not `45' (`C-u' must be processed to become `4').
+
+       Normally this function has `ESC <DIGIT>' bound to it.
+
+
+* Command: negative-argument ARG
+
+       This function constructs part of the numeric argument for the
+     next command.  It makes the prefix argument being constructed
+     negative, but otherwise behaves exactly like `digit-argument'.
+
+       Normally this function has `ESC -' bound to it.
+
+
+* Function: prefix-numeric-value ARG
+
+       This function returns the numeric meaning of the raw prefix
+     argument, ARG.  A raw prefix argument may be a symbol, a number, or
+     a list.  If it is `nil', then the value `1' is returned.  If it is
+     any other symbol, then the value `-1' is returned.  If it is a
+     number, that number is returned, and if it is a list, then the
+     `car' of that list (which must be a number) is returned.
+
+
+* Variable: current-prefix-arg
+
+       This variable is the value of the prefix argument for the
+     *current* command.  It may be a number, the symbol `-' (indicating
+     a negative value), a list whose car is a number (if one or more
+     `C-u' had been typed), or `nil' if no argument has been specified.
+     This is the raw prefix argument, what `(interactive "P")' provides.
+
+
+* Variable: prefix-arg
+
+       The value of this variable is the prefix argument for the *next*
+     editing command.  It may be a number, or the symbol `-' for just a
+     minus sign as arg, or a list whose car is a number for just one or
+     more `C-u''s or `nil' if no argument has been specified.
+
+       You cannot examine this variable to find the argument for this
+     command since it has been set to `nil' by the time you can look.
+     Instead, you should use the variable `current-prefix-arg', although
+     normally commands can get this prefix argument with `(interactive
+     "P")'.
+
+
+
+
+File: elisp  Node: Recursive Editing, Prev: Prefix Command Arguments, Up: Commands, Next: Disabling Commands
+
+Recursive Editing
+=================
+
+  It is possible to create a Emacs command loop from inside of a
+program, allowing the user to perform arbitrary editing before returning
+to the program that created the command loop.  The functions and
+variables below control the entry to and exit from command loops.
+
+Minibuffer input is a special kind of recursive editing.  (say more!!)
+
+  A command loop is created with `recursive-edit'.  `recursive-edit'
+sets up a tag (on the stack) named `exit', which you may `throw' to
+(*Note Explicit Jumps::) in order to exit the recursive edit.  If you
+throw the value non-`t', then `recursive-edit' returns normally.
+Throwing a `t' value causes `recursive-edit' to signal a `quit' error
+(with `nil' data).  (anything else??) You can also exit from
+`recursive-edit' by calling `exit-recursive-edit',
+`abort-recursive-edit', or `top-level'.
+
+  Any `unwind-protect' unwind forms are still evaluated no matter how
+`recursive-edit' is exited.
+
+
+* Command: recursive-edit
+
+       This function invokes the editor command loop recursively,
+     allowing the user to suspend in the middle of a function to let the
+     user do some editing before returning to the function in the midst
+     of being executed.
+
+       This function is called by the editor initialization to begin
+     editing at the top level.
+
+       In the example, the function `simple-rec' first advances the
+     point one word, then enters a recursive edit, printing out a
+     message in the echo area.  The user can then do any editing
+     desired.  When the recursive edit is exited (`ESC C-c' is normally
+     bound to `exit-recursive-edit'), the function then advances the
+     point one more word.
+
+          (defun simple-rec ()
+            (forward-word 1)
+            (message "Recursive edit in progress.")
+            (recursive-edit)
+            (forward-word 1))
+          => simple-rec
+          (simple-rec)
+          => nil
+
+
+* Command: exit-recursive-edit
+
+       This function exits from the innermost recursive edit or
+     minibuffer input.  Its definition is nothing more than a call to
+     `throw' with `nil' value.
+
+
+* Command: abort-recursive-edit
+
+       This function aborts the command that requested this recursive
+     edit or minibuffer input, signaling a `quit' error.
+
+
+* Command: top-level
+
+       This function exits all recursive editing levels.  It does not
+     return a value, as it essentially jumps completely out of any
+     computation directly back into the main command loop.
+
+
+* Function: recursion-depth
+
+       This function returns the current depth of recursive edits that
+     have been invoked.  When in the command loop at the top level, it
+     returns 0.
+
+
+
+File: elisp  Node: Disabling Commands, Prev: Recursive Editing, Up: Commands, Next: Command History
+
+Disabling Commands
+==================
+
+  Disabling a command marks the command as requiring confirmation before
+it can be executed.  The purpose of disabling a command is to prevent
+users from executing it by accident which could be confusing or
+damaging.
+
+  The direct mechanism for disabling a command is to have a non-`nil'
+`disabled' property on the Lisp symbol for the command.  These
+properties are normally set up by the user's `.emacs' file with Lisp
+expressions such as
+
+     (put 'upcase-region 'disabled t)
+
+  If the value of the `disabled' property is a string, that string is
+included in the message printed when the command is used:
+
+     (put 'delete-region 'disabled
+          "Text deleted this way cannot be yanked back!\n")
+
+  *Note Disabling Commands:: for the details on what happens when a
+disabled command is invoked.  Disabling a command has no effect on
+calling it as a function from Lisp programs.
+
+  Typically there are just a few commands that are disabled when Emacs
+is initialized.  These are disabled by forms in the files `loaddefs.el'
+and `simple.el' which are loaded when Emacs is built.
+
+     (put 'narrow-to-region 'disabled t)
+     (put 'narrow-to-page 'disabled t)
+     (put 'eval-expression 'disabled t)
+
+
+
+* Function: enable-command COMMAND
+
+       Allow COMMAND to be executed without special confirmation from
+     now on.  The user's `.emacs' file is altered so that this will
+     apply to future sessions.
+
+
+* Function: disable-command COMMAND
+
+       Require special confirmation to execute COMMAND from now on.  The
+     user's `.emacs' file is altered so that this will apply to future
+     sessions.
+
+
+* Variable: disabled-command-hook
+
+       The value of this variable is called instead of any command that
+     is disabled (has a non-`nil' disabled property).
+
+
+
+File: elisp  Node: Command History, Prev: Disabling Commands, Up: Commands, Next: Keyboard Macros
+
+Command History
+===============
+
+  Emacs keeps a history of the complex commands that have been executed
+by the user, so that similar (or corrected) versions of the commands can
+be executed more easily.  A "complex command" is defined to be one which
+uses the minibuffer.  Hence any `M-x' command, any `ESC ESC' command,
+and any command that just reads an argument from the minibuffer is
+included.
+
+  There are a number of commands and even two entire modes devoted to
+facilitating the editing and recall of previous commands.
+
+  The command history is allowed to grow unbounded, but during garbage
+collection, it is trimmed to thirty entries.
+
+The commands, `repeat-complex-command', `next-complex-command',
+`previous-complex-command', and `list-command-history' are described in
+the user manual (*Note Command History::).
+
+
+* Variable: repeat-complex-command-map
+
+       The value of this variable is a sparse keymap used by the
+     minibuffer when attempting to repeat a ``complex'' command.  These
+     are commands that use the minibuffer.
+
+
+* Variable: command-history
+
+       This global variable's value is a list of recent commands.  Each
+     command is represented as a form to evaluate.  There is no limit to
+     the length that this list may reach.  It continues to accumulate
+     `all' complex commands for the duration of the editing session.
+
+          command-history
+          => ((switch-to-buffer "chistory.texinfo")
+              (describe-key "^X^[")
+              (visit-tags-table "~/emacs/src/")
+              (find-tag "repeat-complex-command"))
+
+
+* User Option: list-command-history-max
+
+     (should be in user manual!!)
+       This global variable's value determines the maximum length that
+     the listing created by `list-command-history' may reach.  It should
+     be a positive number if a limit is desired, or `nil' if it is
+     desired to see all complex commands.
+
+
+* Function: command-history-mode
+
+     (should be in user manual!!)
+       This function defines the major mode for examining commands from
+     `command-history'.  The number of commands listed is controlled by
+     `list-command-history-max'.  The command history is filtered by
+     `list-command-history-filter' if non-`nil'.
+
+       It is like Emacs-Lisp Mode except that characters do not insert
+     themselves and digits provide prefix

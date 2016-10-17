@@ -1,0 +1,410 @@
+#!/bin/sh
+# shar:	Shell Archiver  (v1.22)
+#
+#	Run the following text with /bin/sh to create:
+#	  latin1-mode.el
+#	  latin1-names.el
+#	  latin1-seq.el
+#	  tr.el
+#	  swechar.el
+#
+sed 's/^X//' << 'SHAR_EOF' > latin1-mode.el &&
+X;;;
+X;;; Copyright (C) 1990 Mark Leisher.
+X;;;
+X;;; Author: Mark Leisher (mleisher@nmsu.edu)
+X;;;
+X;;; This program is free software; you can redistribute it and/or modify
+X;;; it under the terms of the GNU General Public License as published by
+X;;; the Free Software Foundation; either version 1, or (at your option)
+X;;; any later version.
+X;;;
+X;;; This program is distributed in the hope that it will be useful,
+X;;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+X;;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+X;;; GNU General Public License for more details.
+X;;;
+X;;; A copy of the GNU General Public License can be obtained from this
+X;;; program's author (send electronic mail to mleisher@nmsu.edu) or from
+X;;; the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA
+X;;; 02139, USA.
+X
+X;;;
+X;;; The latin1 code depends on some for of 8 bit patches to GNU Emacs that
+X;;; use the ctl-arrow variable.  This should be relatively easy to change.
+X;;;
+X;;; Support for easier input of the characters whose values are above 160.
+X;;;
+X;;;
+X;;; Loading latin1-mode.el
+X;;;   The simplest way to load the latin1-mode is:
+X;;;   (load "latin1-mode")
+X;;;
+X;;;   Make sure gemacs knows where to find the latin1-mode.el file.
+X;;; 
+X;;;   DO NOT FORGET to change the user varibles to tell the mode where to load
+X;;;   the data files.
+X;;;
+X
+X(provide 'latin1-mode)
+X
+X(defvar latin1-name-file "latin1-names.el"                    ;; User option
+X  "*Name of file containing the cons pairs of ISO-Latin1 character names and
+Xtheir ascii codes")
+X
+X(defvar latin1-sequence-file "latin1-seq.el"                  ;; User option
+X  "*Name of file containing the cons pairs of ISO-Latin1 character access
+Xsequences and their ascii codes")
+X
+X(defvar latin1-load-path "/usr/share/src/local/gnu/emacs/lisp"   ;; User option
+X  "*Location of the ISO-Latin1 name and sequence files.")
+X
+X(defvar latin1-keymap nil
+X  "Keymap for ISO-Latin1 character selection sequences.")
+X
+X(defconst latin1-prefix "\C-|"
+X  "Prefix for accessing ISO-Latin1 character values 160-255.")
+X
+X(defvar original-key nil
+X  "Stores the original definition of the latin1 prefix in the 
+X(current-local-map).")
+X
+X;;Add minor mode to minor-mode-alist
+X(or (assq 'latin1-mode minor-mode-alist)
+X    (setq minor-mode-alist (cons '(latin1-mode " ISOL1")
+X                                 minor-mode-alist)))
+X
+X;;build ISO-Latin1 keymap, load key files and set display variable
+X(if (null latin1-keymap)
+X    (progn
+X      (setq ctl-arrow 'latin1)
+X      (load (concat latin1-load-path "/" latin1-sequence-file) nil t t)
+X      (load (concat latin1-load-path "/" latin1-name-file) nil t t)
+X      (setq latin1-keymap (make-keymap))
+X      (mapcar '(lambda (x)
+X                 (define-key latin1-keymap (car x) 'insert-latin1-seq-code))
+X              latin1-sequence-list)
+X      (define-key latin1-keymap latin1-prefix 'get-latin1-char-by-name)
+X      (define-key minibuffer-local-map latin1-prefix latin1-keymap)
+X      (define-key minibuffer-local-ns-map latin1-prefix latin1-keymap)))
+X
+X;; checks and modifies the syntax table to look at super-ascii characters
+X;; as word constituents as opposed to whitespace characters
+X(defun check-syntax-table ()
+X  (interactive)
+X  (let ((count 160))
+X    (if (= (char-syntax count) 32)
+X        (progn
+X          (while (<= count 255)
+X            (modify-syntax-entry count "w")
+X            (setq count (1+ count)))))))
+X
+X(defun get-latin1-char-by-name ()
+X  "Gets ISO-Latin1 character by its full ISO name (see latin1-names.el)."
+X  (interactive)
+X  (barf-if-buffer-read-only)
+X  (let ((s (completing-read "ISO-Latin1 character name: " latin1-name-list)))
+X    (if (not (assoc s latin1-name-list))
+X        (error "Invalid ISO-Latin1 character name: \"%s\"." s)
+X      (insert-char (cdr (assoc s latin1-name-list)) 1))))
+X
+X(defun insert-latin1-seq-code (arg)
+X  "Inserts character code associated with a sequence typed after the
+Xlatin1-prefix (see latin1-seq.el)."
+X  (interactive "*p")
+X  (insert-char (cdr (assoc (substring (this-command-keys) 1) 
+X                           latin1-sequence-list)) arg))
+X
+X(defun latin1-mode ()
+X  "ISO-Latin1 mode is accessed by <Ctrl>-| followed by another <Ctrl>-|
+Xto enter the character by its ISO name, or by a character sequence.
+XThe character sequences are described in the latin1-mode.doc file."
+X  (interactive)
+X  (if (not (boundp 'latin1-mode))
+X      (progn
+X        (make-variable-buffer-local 'latin1-mode)
+X        (set-default 'latin1-mode nil)))
+X  (setq latin1-mode (not latin1-mode))
+X  (cond (latin1-mode
+X         (check-syntax-table)
+X         (setq ctl-arrow 'latin1)
+X         (setq original-key (lookup-key (current-local-map) latin1-prefix))
+X         (define-key (current-local-map) latin1-prefix latin1-keymap)
+X         (message "ISO-Latin1 input mode is on."))
+X        (t
+X         (setq ctl-arrow t)
+X         (define-key (current-local-map) latin1-prefix original-key)
+X         (message "ISO-Latin1 input mode off."))))
+SHAR_EOF
+chmod 0664 latin1-mode.el || echo "restore of latin1-mode.el fails"
+sed 's/^X//' << 'SHAR_EOF' > latin1-names.el &&
+X;;; Full ISO-Latin1 names and their codes
+X(defvar latin1-name-list
+X  '(("nobreakspace" . 160) ("exclamdown" . 161) ("cent" . 162)
+X    ("sterling" . 163) ("currency" . 164) ("yen" . 165)
+X    ("brokenbar" . 166) ("section" . 167) ("diaeresis" . 168)
+X    ("copyright" . 169) ("ordfeminine" . 170) ("guillemotleft" . 171)
+X    ("notsign" . 172) ("hyphen" . 173) ("registered" . 174)
+X    ("macron" . 175) ("degree" . 176) ("plusminus" . 177)
+X    ("twosuperior" . 178) ("threesuperior" . 179) ("acute" . 180)
+X    ("mu" . 181) ("paragraph" . 182) ("periodcentered" . 183)
+X    ("cedilla" . 184) ("onesuperior" . 185) ("masculine" . 186)
+X    ("guilletmotright" . 187) ("onequarter" . 188) ("onehalf" . 189)
+X    ("threequarters" . 190) ("questiondown" . 191) ("Agrave" . 192)
+X    ("Aacute" . 193) ("Acircumflex" . 194) ("Atilde" . 195)
+X    ("Adiaeresis" . 196) ("Aring" . 197) ("AE" . 198)
+X    ("Ccedilla" . 199) ("Egrave" . 200) ("Eacute" . 201)
+X    ("Ecircumflex" . 202) ("Ediaeresis" . 203) ("Igrave" . 204)
+X    ("Iacute" . 205) ("Icircumflex" . 206) ("Idiaeresis" . 207)
+X    ("Eth" . 208) ("Ntilde" . 209) ("Ograve" . 210)
+X    ("Oacute" . 211) ("Ocircumflex" . 212) ("Otilde" . 213)
+X    ("Odiaeresis" . 214) ("multiply" . 215) ("Ooblique" . 216)
+X    ("Ugrave" . 217) ("Uacute" . 218) ("Ucircumflex" . 219)
+X    ("Udiaeresis" . 220) ("Yacute" . 221) ("Thorn" . 222)
+X    ("ssharp" . 223) ("agrave" . 224) ("aacute" . 225)
+X    ("acircumflex" . 226) ("atilde" . 227) ("adiaeresis" . 228)
+X    ("aring" . 229) ("ae" . 230) ("ccedilla" . 231)
+X    ("egrave" . 232) ("eacute" . 233) ("ecircumflex" . 234)
+X    ("ediaeresis" . 235) ("igrave" . 236) ("iacute" . 237)
+X    ("icircumflex" . 238) ("idiaeresis" . 239) ("eth" . 240)
+X    ("ntilde" . 241) ("ograve" . 242) ("oacute" . 243)
+X    ("ocircumflex" . 244) ("otilde" . 245) ("odiaeresis" . 246)
+X    ("division" . 247) ("oslash" . 248) ("ugrave" . 249)
+X    ("uacute" . 250) ("ucircumflex" . 251) ("udiaeresis" . 252)
+X    ("yacute" . 253) ("thorn" . 254) ("ydiaeresis" . 255))
+X  "ISO-Latin1 character name/key code pairs.")
+SHAR_EOF
+chmod 0664 latin1-names.el || echo "restore of latin1-names.el fails"
+sed 's/^X//' << 'SHAR_EOF' > latin1-seq.el &&
+X;;; Character sequences to get the ISO-Latin1 characters
+X(defvar latin1-sequence-list
+X  '((" " . 160) ("!" . 161) ("|c" . 162) ("po" . 163) ("cu" . 164)
+X    ("Y" . 165) ("bb" . 166) ("se" . 167) ("di" . 168) ("co" . 169)
+X    ("of" . 170) ("<" . 171) ("not" . 172) ("-" . 173) ("re" . 174)
+X    ("ma" . 175) ("de" . 176) ("+-" . 177) ("ts" . 178) ("ths" . 179)
+X    ("ac" . 180) ("mu" . 181) ("pa" . 182) ("pc" . 183) ("ce" . 184)
+X    ("os" . 185) ("om" . 186) (">" . 187) ("14" . 188) ("12" . 189)
+X    ("34" . 190) ("?" . 191) ("`A" . 192) ("'A" . 193) ("^A" . 194)
+X    ("~A" . 195) (":A" . 196) ("oA" . 197) ("AE" . 198) (",C" . 199)
+X    ("`E" . 200) ("'E" . 201) ("^E" . 202) (":E" . 203) ("`I" . 204)
+X    ("'I" . 205) ("^I" . 206) (":I" . 207) ("Eth" . 208) ("~N" . 209)
+X    ("`O" . 210) ("'O" . 211) ("^O" . 212) ("~O" . 213) (":O" . 214)
+X    ("x" . 215) ("/O" . 216) ("`U" . 217) ("'U" . 218) ("^U" . 219)
+X    (":U" . 220) ("'Y" . 221) ("Thorn" . 222) ("S" . 223) ("`a" . 224)
+X    ("'a" . 225) ("^a" . 226) ("~a" . 227) (":a" . 228) ("oa" . 229)
+X    ("ae" . 230) (",c" . 231) ("`e" . 232) ("'e" . 233) ("^e" . 234)
+X    (":e" . 235) ("`i" . 236) ("'i" . 237) ("^i" . 238) (":i" . 239)
+X    ("eth" . 240) ("~n" . 241) ("`o" . 242) ("'o" . 243) ("^o" . 244)
+X    ("~o" . 245) (":o" . 246) ("dv" . 247) ("/o" . 248) ("`u" . 249)
+X    ("'u" . 250) ("^u" . 251) (":u" . 252) ("'y" . 253) ("thorn" . 254)
+X    (":y" . 255))
+X  "ISO-Latin1 character selection sequences/character codes.")
+SHAR_EOF
+chmod 0664 latin1-seq.el || echo "restore of latin1-seq.el fails"
+sed 's/^X//' << 'SHAR_EOF' > tr.el &&
+X;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+X;;
+X;;	This file handles replacements to be done when reading or writing
+X;;	a file.
+X;;	The variable 'my-auto-replacements' is assigned a list of the
+X;;	format:
+X;;		( (<major mode 1> . <replacements 1>)
+X;;		  (<major mode 2> . <replacements 2>)
+X;;			       ........
+X;;		  (<major mode n> . <replacements n>) )
+X;;
+X;;	    where  <replacements i> is a list of the format:
+X;;		( (<string 1 for user> <string 1 for file>)
+X;;		  (<string 2 for user> <string 2 for file>)
+X;;			       ........
+X;;		  (<string m for user> <string m for file>) )
+X;;
+X;;	For example, if we have:
+X;;	(setq my-auto-replacements '(
+X;;			(LaTeX-mode.(("å" "{\\aa}")
+X;;				     ("ä" "\\\"a")
+X;;				     ("ö" "\\\"o")))))
+X;;	all å, ä and ö will be stored as {\aa}, \"a and \"o on the file,
+X;;	respectively, if we are in LaTeX-mode.
+X
+X(require 'cl)
+X
+X(setq my-auto-replacements '(
+X     (LaTeX-mode.(("å" "{\\aa}")
+X		  ("ä" "\\\"a")
+X		  ("ö" "\\\"o")
+X		  ("Å" "{\\AA}")
+X		  ("Ä" "\\\"A")
+X		  ("Ö" "\\\"O")))
+X     (swetex-mode.(("å" "}")
+X		  ("ä" "{")
+X		  ("ö" "|")
+X		  ("Å" "]")
+X		  ("Ä" "[")
+X		  ("Ö" "\\")
+X		  ("é" "/'e")))
+X     ))
+X
+X;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+X;;
+X;; 	The hooks. They first lookup the list of replacements for
+X;;	the current major mode. Then they do "replace-string" on
+X;;	the buffer.
+X;;
+X
+X(defun my-read-hook nil
+X     " "
+X     (my-read-hook1 (cdr (assoc major-mode my-auto-replacements))))
+X
+X(defun my-write-hook nil
+X     " "
+X     (my-write-hook1 (cdr (assoc major-mode my-auto-replacements))))
+X
+X(defun my-read-hook1 (r)
+X     (and r
+X          (replace-string (cadar r) (caar r))
+X	  (goto-char (point-min))  ; Top of file
+X          (my-read-hook1 (cdr r))))
+X
+X(defun my-write-hook1 (r)
+X     (and r
+X          (replace-string (caar r) (cadar r))
+X	  (goto-char (point-min))  ; Top of file
+X          (my-write-hook1 (cdr r))))
+X
+X;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+X;;
+X;;	Push the read and write hooks onto the proper hook-lists
+X;;
+X
+X(and (not (member 'my-read-hook find-file-hooks))
+X     (setq find-file-hooks (cons 'my-read-hook find-file-hooks)))
+X
+X(and (not (member 'my-write-hook write-file-hooks))
+X     (setq write-file-hooks (cons 'my-write-hook write-file-hooks)))
+X
+X
+X
+SHAR_EOF
+chmod 0664 tr.el || echo "restore of tr.el fails"
+sed 's/^X//' << 'SHAR_EOF' > swechar.el &&
+X;;---------------------------------------------------------------------------
+X;;
+X;; Functions to change the characterset from English to Swedish and vice versa
+X;; TeX added.
+X;;
+X;;---------------------------------------------------------------------------
+X(defun toswe nil
+X     "Swedish chars without esc"
+X      (local-set-key "[" 'iso-adieresis-insert)
+X      (local-set-key "]" 'iso-aring-insert)
+X      (local-set-key "\\" 'iso-odieresis-insert)
+X      (local-set-key "{" 'iso-Adieresis-insert)
+X      (local-set-key "}" 'iso-Aring-insert)
+X      (local-set-key "|" 'iso-Odieresis-insert))
+X
+X(defun totex nil
+X     "Swedish chars without esc"
+X      (local-set-key "[" 'TeX-adieresis-insert)
+X      (local-set-key "]" 'TeX-aring-insert)
+X      (local-set-key "\\" 'TeX-odieresis-insert)
+X      (local-set-key "{" 'TeX-Adieresis-insert)
+X      (local-set-key "}" 'TeX-Aring-insert)
+X      (local-set-key "|" 'TeX-Odieresis-insert))
+X
+X(defun toeng nil
+X       "  "
+X       (local-set-key "[" 'self-insert-command)
+X       (local-set-key "]" 'self-insert-command)
+X       (local-set-key "\\" 'self-insert-command)
+X       (local-set-key "{" 'self-insert-command)
+X       (local-set-key "}" 'self-insert-command)
+X       (local-set-key "|" 'self-insert-command))
+X
+X;;---------------------------------------------------------------------------
+X;;
+X;; Always have Swedish characters as Meta-[ ] \
+X;;
+X;;---------------------------------------------------------------------------
+X(define-key esc-map "[" 'iso-adieresis-insert)
+X(define-key esc-map "]" 'iso-aring-insert)
+X(define-key esc-map "\\" 'iso-odieresis-insert)
+X(define-key esc-map "{" 'iso-Adieresis-insert)
+X(define-key esc-map "}" 'iso-Aring-insert)
+X(define-key esc-map "|" 'iso-Odieresis-insert)
+X(define-key esc-map "e" 'iso-eacute-insert)
+X
+X;;---------------------------------------------------------------------------
+X;;
+X;; The character-inserting functions
+X;;
+X;;---------------------------------------------------------------------------
+X(defun iso-Aring-insert nil
+X  "Insert AA."
+X  (interactive)
+X  (insert "\305"))
+X
+X(defun iso-aring-insert nil
+X  "Insert aa."
+X  (interactive)
+X  (insert "\345"))
+X
+X(defun iso-Adieresis-insert nil
+X  "Insert AE."
+X  (interactive)
+X  (insert "\304"))
+X
+X(defun iso-adieresis-insert nil
+X  "insert ae."
+X  (interactive)
+X  (insert "\344"))
+X
+X(defun iso-Odieresis-insert nil
+X  "Insert OE."
+X  (interactive)
+X  (insert "\326"))
+X
+X(defun iso-odieresis-insert nil
+X  "insert oe."
+X  (interactive)
+X  (insert "\366"))
+X
+X(defun iso-eacute-insert nil
+X  "insert eacute."
+X  (interactive)
+X  (insert "\351"))
+X
+X
+X;;;;;
+X(defun TeX-Aring-insert nil
+X  "Insert AA."
+X  (interactive)
+X  (insert "{\\AA}"))
+X
+X(defun TeX-aring-insert nil
+X  "Insert aa."
+X  (interactive)
+X  (insert "{\\aa}"))
+X
+X(defun TeX-Adieresis-insert nil
+X  "Insert AE."
+X  (interactive)
+X  (insert "\\\"A"))
+X
+X(defun TeX-adieresis-insert nil
+X  "insert ae."
+X  (interactive)
+X  (insert "\\\"a"))
+X
+X(defun TeX-Odieresis-insert nil
+X  "Insert OE."
+X  (interactive)
+X  (insert "\\\"O"))
+X
+X(defun TeX-odieresis-insert nil
+X  "insert oe."
+X  (interactive)
+X  (insert "\\\"o"))
+SHAR_EOF
+chmod 0644 swechar.el || echo "restore of swechar.el fails"
+exit 0

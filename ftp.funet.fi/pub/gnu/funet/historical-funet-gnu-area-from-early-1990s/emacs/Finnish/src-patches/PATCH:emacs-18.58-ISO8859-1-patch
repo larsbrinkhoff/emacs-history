@@ -1,0 +1,190 @@
+*** buffer.c.orig	Tue Oct 22 04:05:12 1991
+--- buffer.c	Mon Aug 31 12:45:04 1992
+***************
+*** 1266,1274 ****
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("ctl-arrow", &current_buffer->ctl_arrow,
+!     "*Non-nil means display control chars with uparrow.\n\
+  Nil means use backslash and octal digits.\n\
+! Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("truncate-lines", &current_buffer->truncate_lines,
+      "*Non-nil means do not display continuation lines;\n\
+--- 1266,1277 ----
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("ctl-arrow", &current_buffer->ctl_arrow,
+!     "*t means display control chars with uparrow.\n\
+  Nil means use backslash and octal digits.\n\
+! Otherwise assume that control and meta chars are printable.\n\
+! Automatically becomes local when set in any fashion.\n\
+! \n\
+! This is a local feature.");
+  
+    DEFVAR_PER_BUFFER ("truncate-lines", &current_buffer->truncate_lines,
+      "*Non-nil means do not display continuation lines;\n\
+*** indent.c.orig	Thu Jan 16 08:08:39 1992
+--- indent.c	Tue Oct  6 17:28:21 1992
+***************
+*** 78,84 ****
+    register int tab_seen;
+    register int post_tab;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+  
+    if (point == last_known_column_point
+        && MODIFF == last_known_column_modified)
+--- 78,85 ----
+    register int tab_seen;
+    register int post_tab;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                   + (EQ (current_buffer->ctl_arrow, Qt));
+  
+    if (point == last_known_column_point
+        && MODIFF == last_known_column_modified)
+***************
+*** 133,139 ****
+  	  tab_seen = 1;
+  	}
+        else
+! 	col += (ctl_arrow && c < 0200) ? 2 : 4;
+      }
+  
+    if (tab_seen)
+--- 134,148 ----
+  	  tab_seen = 1;
+  	}
+        else
+! 	  /* Length of characters
+! 	   * ctl-arrow	0-037	040-176	177	200-237	240-277
+! 	   *	nil	4 \001	1 A	4 \177	4 \201	4 \241
+! 	   *	t	2 ^A	1 A	2 ^?	4 \201	4 \241
+! 	   *	'other	2 ^A	1 A	2 ^?	4 \201	1 !
+! 	   */
+! 	col += (ctl_arrow == 1 && c >= 0240) ? 1 :
+! 	       (c >= 0200) ? 4 :
+! 	       (ctl_arrow && c < 0200) ? 2 : 4;
+      }
+  
+    if (tab_seen)
+***************
+*** 297,303 ****
+    register int goal;
+    register int end = ZV;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   register int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+  
+    Lisp_Object val;
+  
+--- 306,313 ----
+    register int goal;
+    register int end = ZV;
+    register int tab_width = XINT (current_buffer->tab_width);
+!   register int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                            + (EQ (current_buffer->ctl_arrow, Qt));
+  
+    Lisp_Object val;
+  
+***************
+*** 324,329 ****
+--- 334,341 ----
+  	  col += tab_width - 1;
+  	  col = col / tab_width * tab_width;
+  	}
++       else if (ctl_arrow == 1 && c >= 040 && c != 0177)
++         continue;
+        else if (ctl_arrow && (c < 040 || c == 0177))
+          col++;
+        else if (c < 040 || c >= 0177)
+***************
+*** 354,360 ****
+    register int pos;
+    register int c;
+    register int tab_width = XFASTINT (current_buffer->tab_width);
+!   register int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+    int selective
+      = XTYPE (current_buffer->selective_display) == Lisp_Int
+        ? XINT (current_buffer->selective_display)
+--- 366,373 ----
+    register int pos;
+    register int c;
+    register int tab_width = XFASTINT (current_buffer->tab_width);
+!   register int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                          + (EQ (current_buffer->ctl_arrow, Qt));
+    int selective
+      = XTYPE (current_buffer->selective_display) == Lisp_Int
+        ? XINT (current_buffer->selective_display)
+***************
+*** 429,436 ****
+  	    }
+  	}
+        else
+! 	hpos += (ctl_arrow && c < 0200) ? 2 : 4;
+! 
+        /* Handle right margin.  */
+        if (hpos >= width
+  	  && (hpos > width
+--- 442,452 ----
+  	    }
+  	}
+        else
+! 	hpos += (c >= 0200 && c <= 0237) ? 4 :
+! 		(ctl_arrow == 1 && c >= 0240) ? 1 :
+! 		(c >= 240) ? 4 :
+! 		(ctl_arrow && (c <= 037 || c == 0177)) ? 2 :
+! 		(c <= 037 || c == 0177) ? 4 : 1;
+        /* Handle right margin.  */
+        if (hpos >= width
+  	  && (hpos > width
+*** xdisp.c.orig	Fri Oct 25 21:45:32 1991
+--- xdisp.c	Tue Oct  6 19:27:10 1992
+***************
+*** 1264,1270 ****
+    register unsigned char *startp;
+    register unsigned char *p1prev;
+    int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = !NULL (current_buffer->ctl_arrow);
+    int width = XFASTINT (w->width) - 1
+      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+    struct position val;
+--- 1264,1271 ----
+    register unsigned char *startp;
+    register unsigned char *p1prev;
+    int tab_width = XINT (current_buffer->tab_width);
+!   int ctl_arrow = (!NULL (current_buffer->ctl_arrow))
+!                 + (EQ (current_buffer->ctl_arrow, Qt));
+    int width = XFASTINT (w->width) - 1
+      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+    struct position val;
+***************
+*** 1391,1396 ****
+--- 1392,1403 ----
+  	    *p1 = c ^ 0100;
+  	  p1++;
+  	}
++       else if (ctl_arrow == 1 && c >= 0240)
++         {
++           if (p1 >= startp)
++             *p1 = c;
++           p1++;
++         }
+        else
+  	{
+  	  if (p1 >= startp)
+***************
+*** 1985,1990 ****
+--- 1992,2003 ----
+  	    *p1 = c ^ 0100;
+  	  p1++;
+  	}
++       else if (buffer_defaults.ctl_arrow == 1 & c >= 0240)
++         {
++           if (p1 >= start)
++             *p1 = c;
++           p1++;
++         }
+        else
+  	{
+  	  if (p1 >= start)

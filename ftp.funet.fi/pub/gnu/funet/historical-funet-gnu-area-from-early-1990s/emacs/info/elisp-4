@@ -1,0 +1,1418 @@
+Info file: elisp,    -*-Text-*-
+produced by texinfo-format-buffer
+from file: elisp.texinfo
+
+
+This info file documents GNU Emacs Lisp.
+
+Copyright (C) 1989 Richard M. Stallman.
+
+
+
+
+File: elisp  Node: Accessing Function Definitions, Prev: Function Declarations, Up: Functions, Next: Other Function Related Functions
+
+Accessing Function Definitions
+==============================
+
+  The "function definition" of a symbol is the object stored in the
+function cell of the symbol.  The functions described here access, test,
+and set the function cell of symbols.
+
+
+* Function: symbol-function SYMBOL
+
+       Returns the object in the function cell of the symbol.  It is a
+     `void-function' error if the symbol's function cell is void,
+     although it does not check to verify that the object is a
+     legitimate function.
+
+          (defun bar (n) (+ n 2))
+          => bar
+          (symbol-function 'bar)
+          => (lambda (n) (+ n 2))
+          (fset 'baz 'bar)
+          => bar
+          (symbol-function 'baz)
+          => bar
+
+
+* Function: subrp OBJECT
+
+       This function returns `t' if OBJECT is a built-in function (i.e.,
+     subroutine or primitive).
+
+          (subrp 'message)
+          => nil
+          (subrp (symbol-function 'message))
+          => t
+
+
+
+* Function: fboundp SYMBOL
+
+       Returns `t' if the symbol has some value (any non-void object) in
+     its function cell, `nil' otherwise.  It does not check to verify
+     that the value is a legitimate function.
+
+
+
+* Function: fmakunbound SYMBOL
+
+       This function sets the symbol's function pointer to be ``void''
+     (not the *symbol* `void'), causing any attempt to access this cell
+     to be a `void-function' error.  (Also `makunbound' in *Note Local
+     Variables::)
+
+
+* Function: fset SYMBOL OBJECT
+
+       This function sets the symbol's function cell to be OBJECT.
+     OBJECT is assumed to be a function or the name of one, but this is
+     not checked.  OBJECT is returned.  The normal use is for copying
+     one symbol's function definition to another.  Note that `fset'
+     stores the OBJECT itself in the symbol's function cell.
+
+          (fset 'first (symbol-function 'car))
+          => #<subr car>
+          (first '(1 2 3))
+          => 1
+
+          ;; Or, this time put the symbol car in the function cell.
+          (fset 'first 'car)
+          => car
+          (first '(1 2 3))
+          => 1
+          (symbol-function 'first)
+          => car
+          (symbol-function (symbol-function 'first))
+          => #<subr car>
+
+
+
+
+
+File: elisp  Node: Other Function Related Functions, Prev: Accessing Function Definitions, Up: Functions
+
+Other Function Related Functions
+================================
+
+  Here is a table of several other function related functions and where
+they are described.
+
+`apply'
+     *Note Function Invocation::
+`funcall'
+     *Note Function Invocation::
+`eval'
+     *Note Eval::
+`mapatoms'
+     *Note Creating and Interning Symbols::
+`mapcar'
+     *Note Mapping Functions::
+`mapconcat'
+     *Note Mapping Functions::
+`documentation'
+     *Note Documentation::
+`interactive'
+     *Note Interactive Call::
+`call-interactively'
+     *Note Interactive Call::
+`interactive-p'
+     *Note Interactive Call::
+`commandp'
+     *Note Command Overview::
+`autoload'
+     *Note Autoload::
+`ignore'
+     *Note Key Lookup::
+`undefined'
+     *Note Key Lookup::
+`identity'
+     *Note Identity and Quoting::
+
+File: elisp  Node: Macros, Prev: Functions, Up: Top, Next: Control Structures
+
+Macros
+******
+
+
+A "macro" is a Lisp form which does not produce the desired result
+directly, but rather it first creates another form that is evaluated to
+produce the result.  Since the arguments to a macro call are not
+initially evaluated, macros may be used to provide a shorthand notation
+for some operation, or to implement new control structures.
+
+* Menu:
+
+* Writing a Macro::	
+* Predicates for Macros::	
+* Macro Declarations::	
+* Backquote::	
+
+
+
+File: elisp  Node: Writing a Macro, Up: Macros, Next: Predicates for Macros
+
+Writing a Macro
+===============
+
+As an example of a place where one would like to use a macro, consider
+the following: It is quite often the case that we have a variable that
+we are using for counting something, and we wish to increment it. C has
+the construct `x++' to save the programmer from writing `x = x + 1;'.
+GNU Emacs Lisp has nothing like this, so we have to write `(setq x (1+
+x))' all the time.
+
+As a convenience, we could write a macro that would allow us to write
+`(inc x)', which would be simpler and shorter.  Here is a macro to do
+exactly that:
+
+     (defmacro inc (var)
+        (list 'setq var (list '1+ var)))
+
+When called as `(inc x)', this macro first creates a list `(setq x (1+
+x))', which is exactly the form which we want to evaluate in order to
+obtain the proper result.  Lisp `does' evaluate it and we get the
+desired result, that of incrementing the variable.
+
+The evaluation of a macro call proceeds like this: The arguments of the
+form are passed to the macro unevaluated.  The macro then binds them to
+its parameters and evaluates its body.  The expression returned by the
+macro is is called the "macro expansion".  The macro expansion is then
+evaluated by Lisp as if that had been the form originally given.
+
+Since the returned expression is evaluated normally, there is nothing
+preventing it from containing calls to other macros.  Even recursive
+macro calls are legitimate (though unusual).
+
+Here is a more complex example of a macro that might be written to
+facilitate iteration:
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple \"for\" loop, e.g.,
+         (for i from 1 to 10 do (print i))."
+
+       (list 'let (list (list var init))
+             (cons 'while (cons (list '<= var final)
+                                (append body (list (list 'inc var)))
+                                ))))
+     => for
+
+     (for i from 1 to 3 do
+        (setq square (* i i))
+        (princ (format "\n%d %d" i square)))
+
+     ==> (let ((i 1))
+           (while (<= i 3)
+             (setq square (* i i))
+             (princ (format "%d      %d" i square))
+             (inc i)))
+
+     ->
+     1       1
+     2       4
+     3       9
+     => nil
+
+This macro allows us to write a simple ``for'' loop such as one might
+find in Pascal.  Notice that the symbols `from', `to', and `do' are all
+"syntactic sugar" in this macro; they are entirely ignored.
+
+However, this macro suffers from the defect that FINAL is evaluated on
+every iteration.  If FINAL is a constant, there's no problem.  If it had
+been a more complex form, say `(long-complex-calculation x)', it would
+slow down the execution significantly.  If FINAL produced side effects,
+it could be disastrous.
+
+In writing macros then, one has to be cautious and ensure that the
+arguments are not going to be evaluated more times than the programmer
+expects.  A better expansion for the `for' macro would be:
+
+     (let ((i 1)
+           (max 3))
+       (while (<= i max)
+         (setq square (* i i))
+         (princ (format "%d      %d" i square))
+         (inc i)))
+
+where `max' is an uninterned symbol (*Note Creating and Interning
+Symbols::).
+
+A macro definition that creates this expansion is given later since it
+uses backquote (*Note Backquote::).
+
+
+
+
+File: elisp  Node: Predicates for Macros, Prev: Writing a Macro, Up: Macros, Next: Macro Declarations
+
+Predicates for Macros
+=====================
+
+No predicates are provided for macros.  However, you can test whether a
+symbol has a non-void function cell with `fboundp'.  Here is a function
+which tests whether its argument is a macro or references a macro
+through the function cell.
+
+     (defun macrop (object)
+       "Return true if OBJECT function is a Lisp macro."
+       (while (and (symbolp object) (fboundp object))  ; follow indirection
+         (setq object (symbol-function object)))
+       (and (listp object)
+            (eq 'macro (car object)))
+       )
+
+
+
+File: elisp  Node: Macro Declarations, Prev: Predicates for Macros, Up: Macros, Next: Backquote
+
+Macro Declarations
+==================
+
+  Lisp macro objects are usually created with the built-in function
+`defmacro'.  Any list that begins with `macro', however, is a macro as
+far as Emacs is concerned.  The remainder of the list is the same as a
+Lisp function object, including the `lambda' symbol.
+
+
+* Special form: defmacro SYMBOL PARAMETER-LIST BODY-FORMS
+
+     In a manner similar to `defun', `defmacro' defines a macro.  A
+     macro, or "macro expression", is created that looks like: `(macro
+     lambda PARAMETER-LIST BODY-FORMS)'.  The function cell of SYMBOL is
+     then changed to point to the macro.  SYMBOL is returned as the
+     result of evaluating `defmacro'.
+
+     The form and meaning of PARAMETER-LIST is the same as for `defun'
+     (*Note Lambda Expressions::).  Macros may have a documentation
+     string, but any `interactive' form is ignored since macros cannot
+     be executed interactively.
+
+     If you must explicitly evaluate an argument of a macro (using
+     `eval', for example), be careful to arrange that the actual
+     argument does not use the names of any of the macro's formal
+     arguments or any variables declared in `let' constructs unless it
+     is intended that the values of those local variables should be used
+     instead of any previous values.
+
+     A byte-compiled macro call (*Note Byte Compilation::) is expanded
+     at compile time rather than at run time.  So a byte-compiled macro
+     call is faster than a function call which performs the same
+     operation.  But be careful that any macros are defined before they
+     are called in byte-compiled code.  If there is a circular
+     dependency in your macro definitions, it may be simplest to cause
+     the whole file of definitions to be loaded first.  For one way to
+     this, *Note Features::.  Also, symbols used within macros are
+     expanded to their values at compile time, so you cannot safely make
+     use of dynamic binding in macros.
+
+
+
+* Function: macroexpand FORM &optional ENVIRONMENT
+
+     This function looks at the car of FORM.  If it is a macro,
+     `macroexpand' will return the expanded form.  `macroexpand' expands
+     its forms recursively, so that if the car of the form obtained is
+     also a macro, that too will be expanded.  However, subexpressions
+     which are macro forms will *not* be expanded, since this is
+     normally done when the macro expansion is evaluated.
+
+     If ENVIRONMENT is provided, it specifies an alist of macro
+     definitions that shadow the currently defined macros.  This is used
+     by byte-compilation.
+
+     The procedure used by `macroexpand' is similar to that used to
+     expand a macro call (*Note Macro Calls::).  So you may use of
+     `macroexpand' to test what a macro call will expand into.
+     `byte-compile' uses `macroexpand' to expand macro calls.  The
+     difference with `macroexpand' is that there is no limit on the
+     number of recursive macro expansions, and an ENVIRONMENT of macro
+     definitions may be provided.
+
+          (defmacro inc (var)
+              (list 'setq var (list '1+ var)))
+          => inc
+
+          (macroexpand '(inc r))
+          => (setq r (1+ r))
+
+          (defmacro inc2 (var1 var2)
+              (list 'progn (list 'inc var1) (list 'inc var2)))
+          => inc2
+
+          (macroexpand '(inc2 r s))
+          => (progn (inc r) (inc s))        ; `inc' not expanded here..
+
+
+
+File: elisp  Node: Backquote, Prev: Macro Declarations, Up: Macros
+
+Backquote
+=========
+
+It can prove rather awkward to write macros of significant size, simply
+due the number of times the function `list' needs to be called.  The
+`for' example above has about the maximum depth of lists that is
+legible.  To make writing these forms easier, a macro ``' (pronounced
+"backquote") exists.
+
+  Backquote allows you to quote a list, but selectively evaluate
+elements of that list.  In its simplest form, it is identical to the
+special form `quote'.  In the example below, the two forms yield
+identical results.
+
+     (` (a list of (+ 2 3) elements))
+     => (a list of (+ 2 3) elements)
+     (quote (a list of (+ 2 3) elements))
+     => (a list of (+ 2 3) elements)
+
+By inserting a special marker (`,') inside of the argument to backquote,
+it is possible to evaluate desired portions of the argument:
+
+     (list 'a 'list 'of (+ 2 3) 'elements)
+     => (a list of 5 elements)
+     (` (a list of (, (+ 2 3)) elements))
+     => (a list of 5 elements)
+
+It is also possible to have an evaluated list "spliced" into the
+resulting list by using the special marker `,@'.  The elements of the
+spliced list become elements at the same level as the other elements of
+the resulting list.  The equivalent code without using ``' is often
+unreadable.
+
+     (setq some-list '(2 3))
+     => (2 3)
+     (cons 1 (append some-list (list 4)))
+     => (1 2 3 4)
+     (` (1 (,@ some-list) 4))
+     => (1 2 3 (4))  ???? bug ????
+
+     ;; A nastier example:
+     (cons 'a
+       (cons 'list
+         (cons 'of (append (list (+ 2 3)) '(elements)))))
+     => (a list of 5 elements)
+     (` (a list of (,@ (list (+ 2 3))) elements))
+     => (a list of 5 (elements)) ; this is a bug!! who has fixed backquote??
+     => (a list of 5 elements)   ; should be this
+
+Using ``', our improved `for' macro could therefore be rewritten more
+clearly as:
+
+     (defmacro for (var from init to final do &rest body)
+       "Execute a simple for loop: (for i from 1 to 10 do (print i))."
+       (` (let (( (, var) (, init) )
+                ( max (, final) ))
+            (while (<= (, var) max)
+                   (,@ body)
+                   (inc (, var))
+                   ))))
+     => for
+
+
+* Macro: ` LIST
+
+     This macro returns LIST as quote would, except any sublist
+     beginning with the special marker `,' will have its second element
+     evaluated, and any sublist beginning with the special marker `,@'
+     will have its second element evaluated, and the result spliced into
+     the list being created.
+
+     If any of these specially marked sublists contain more than two
+     elements, those elements will be ignored.
+
+     There are several subtle bugs that should simply be avoided.
+     (Where is that fixed version of ` ??)  The following forms do not
+     work as one would expect:
+
+          (` (a . (, 1)))
+          => (a \, 1)                                ; Not (a . 1)
+          (` [a (, 1) c])
+          -> ERROR: Wrong type argument              ; Not [a 1 c]
+          (` (, 2))
+          => (\, 2)                                  ; Not 2
+
+          (` (a list of (, (list (+ 2 3))) elements xx))
+           => (a list of (5) elements xx)
+
+
+
+
+File: elisp  Node: Control Structures, Prev: Macros, Up: Top, Next: Evaluation
+
+Control Structures
+******************
+
+  Emacs Lisp programs consist of a sequence of forms. The "control
+structures" in the language determine the order of evaluation of those
+forms. (Recall that a ``form'' is just another name for an object; *Note
+Forms:: for more details.)  At the top level of a sequence of forms in a
+buffer, the order of evaluation in Emacs Lisp, as in most Lisp
+languages, is the same order in which the forms appear in the text.  We
+will call this the "textual order".  For example, if a program consists
+of two forms A B, evaluation of the program causes A to be evaluated
+before B, and the result is the value of B.
+
+  Naturally, Emacs Lisp has other kinds of control structures, including
+other varieties of sequencing, function calls, conditionals, iteration,
+and (controlled) jumps.  In most cases, these control structures are
+special forms since all of the arguments are not necessarily evaluated.
+Macros can be used to introduce new control structures (*Note Macros::).
+
+* Menu:
+
+* Sequencing::          Evaluation in textual order
+* Function Invocation:: Calling a function with arguments
+* Mapping Functions::   Repeated calling of a function
+* Conditionals::        if, cond
+* Conditional Expressions:: and, or, not
+* Iteration::           while
+* Non-local Exits::     Jumping out of a sequence
+
+
+
+File: elisp  Node: Sequencing, Up: Control Structures, Next: Function Invocation
+
+Sequencing
+==========
+
+  Evaluating a "sequence" of forms in the order they are written in the
+program is certainly very common.  Emacs Lisp provides three control
+structures for explicit sequential evaluation of forms: `prog1',
+`prog2', and `progn'.  The forms are evaluated in textual order, but the
+result of the whole control structure is the value of the first, second,
+or last form in the sequence, respectively.
+
+  An explicit sequencing control structure can be written anywhere a
+single form can. In addition, some control structures allow a sequence
+of forms, without an explicit sequencing command, as an argument. This
+so-called "implicit sequence" is equivalent to an explicit `progn'; it
+is merely a convenience.  An example of an implicit sequence is the body
+of a `defun'.
+
+     Note: Other instances of sequential evaluation exist that cannot be
+     relied on.  For example, the arguments of a function call are
+     evaluated in textual order, but this order should not be relied on
+     (*Note Lisp Function Evaluation::).  However, the order of
+     evaluation of value forms for local variables in a `let*' is well
+     defined.
+
+
+* Special form: progn FORM*
+
+       This special form evaluates all of its arguments, in textual
+     order, returning the result of the final FORM.  This is the most
+     common sequencing form.
+
+          (progn (print "The first form")
+                 (print "The second form")
+                 (print "The third form"))
+          -> "The first form"
+          -> "The second form"
+          -> "The third form"
+          => "The third form"
+
+
+* Special form: prog1 FORM*
+
+       This special form evaluates all of its arguments in textual
+     order, returning the result of the first FORM.
+
+          (prog1 (print "The first form")
+                 (print "The second form")
+                 (print "The third form"))
+          -> "The first form"
+          -> "The second form"
+          -> "The third form"
+          => "The first form"
+
+
+* Special form: prog2 FORM*
+
+       This special form evaluates all of its arguments in textual
+     order, returning the result of the second FORM.
+
+          (prog2 (print "The first form")
+                 (print "The second form")
+                 (print "The third form"))
+          -> "The first form"
+          -> "The second form"
+          -> "The third form"
+          => "The second form"
+
+
+
+File: elisp  Node: Function Invocation, Prev: Sequencing, Up: Control Structures, Next: Mapping Functions
+
+Function Invocation
+===================
+
+  Function invocation is certainly very fundamental to a Lisp language,
+and Emacs Lisp is no exception.  The most common way of invoking a
+function is simply to evaluate a list.  *Note List Forms:: for a
+complete description of this sort of function invocation.
+
+  Two functions described here, `apply' and `funcall', handle the less
+common case where you do not know until runtime what function you want
+to call.  The mapping functions described in the next section also
+invoke functions, but multiple times.
+
+
+* Function: funcall FUNCTION &rest ARGUMENTS
+
+       `funcall' calls FUNCTION with ARGUMENTS.  Since `funcall' is a
+     function, all of its arguments, including FUNCTION, are evaluated
+     before `funcall' is called.  `funcall' then calls the FUNCTION with
+     the ARGUMENTS, as though they had appeared in a list form.
+     However, the ARGUMENTS are not evaluated a second time by this
+     call.  `funcall' returns the result of that call to FUNCTION.
+  
+       FUNCTION must either be a Lisp function or a primitive function,
+     and not a special form or macro.
+
+       Compare this example with that of `apply'.
+
+          (setq f 'list)
+          => list
+          (funcall f 'x 'y 'z)
+          => (x y z)
+          (funcall f 'x 'y '(z))
+          => (x y (z))
+          (funcall 'and t nil)
+          -> Invalid function: #<subr and>
+
+
+* Function: apply FUNCTION &rest ARGUMENTS
+
+       `apply' calls FUNCTION with ARGUMENTS, as with `funcall' but with
+     one difference.  The last argument to `apply' must be a list; it is
+     *spliced in* or *appended* to the rest of arguments.  `apply'
+     returns the result of that call to FUNCTION.
+
+       As with `funcall', FUNCTION must either be a Lisp function or a
+     primitive function.
+
+          (setq f 'list)
+          => list
+          (apply f 'x 'y 'z)
+          -> Wrong type argument: listp, z
+          (apply f 'x 'y '(z))
+          => (x y z)
+          (apply f '(x y z))
+          => (x y z)
+
+          ;; remove empty lists from a list of possibly empty lists.
+          (apply 'append '((a b c) nil (x y z) nil))
+          => (a b c x y z)
+
+
+
+
+File: elisp  Node: Mapping Functions, Prev: Function Invocation, Up: Control Structures, Next: Conditionals
+
+Mapping Functions
+=================
+
+  A "mapping function" applies a given function to each element of some
+collection.  Standard Emacs Lisp has three such functions: `mapcar' and
+`mapconcat', which are described here, and `mapatoms', for which *Note
+Creating and Interning Symbols::.
+
+
+* Function: mapcar FUNCTION SEQUENCE
+
+       `mapcar' applies FUNCTION to each element of SEQUENCE in turn.
+     The results are made into a `nil'-terminated list.
+
+       If SEQUENCE is a list, it must be `nil'-terminated.  The SEQUENCE
+     may be a vector or string.
+
+          (mapcar 'car '((a b) (c d) (e f)))
+          => (a c e)
+          (mapcar '1+ [1 2 3])
+          => (2 3 4)
+          (mapcar char-to-string "abc")
+          => ("a" "b" "c")
+
+          ;; call each function in my-hooks
+          (mapcar 'funcall my-hooks)
+
+          (defun mapcar* (f &rest args)
+            "Apply FUNCTION to successive cars of all ARGS, until one ends.
+          Return the list of results."
+            (cons (apply f (mapcar 'car args))       ; Apply function to cars
+                  (let ((rest (mapcar 'cdr args)))
+                    (if (not (memq 'nil rest))
+                        (apply 'mapcar* f rest)))))  ; Do the same for cdrs
+
+          (mapcar* 'cons '(a b c) '(1 2 3 4))
+          => ((a . 1) (b . 2) (c . 3))
+
+
+
+* Function: mapconcat FUNCTION SEQUENCE SEPARATOR
+
+       `mapconcat' applies FUNCTION to each element of SEQUENCE: the
+     results, which must be strings, are concatenated.  Between each
+     pair of results, `mapconcat' inserts the string SEPARATOR.
+
+       FUNCTION must be a function that can take one argument and
+     returns a string.
+  
+          (mapconcat 'symbol-name
+                     '(The cat in the hat)
+                     " ")
+          => "The cat in the hat"
+
+          (mapconcat (function (lambda (x) (format "%c" (1+ x))))
+                     "HAL-8000"
+                     "")
+          => "IBM.9111"
+
+
+
+File: elisp  Node: Conditionals, Prev: Mapping Functions, Up: Control Structures, Next: Conditional Expressions
+
+Conditionals
+============
+
+  Conditional control structures choose among alternatives. Emacs Lisp
+has two conditional forms: `if', which is much the same as in other
+languages, and `cond', which is a generalized case statement.
+
+
+* Special form: if CONDITION THEN-FORM ELSE-FORMS*
+
+       `if' chooses between the THEN-FORM and the ELSE-FORMS based on
+     the value of CONDITION. If the evaluated CONDITION is non-`nil',
+     THEN-FORM is evaluated and the result returned.  Otherwise, the
+     ELSE-FORMS are evaluated in textual order, and the value of the
+     last one is returned. (The ELSE part of `if' is an example of an
+     implicit `progn'; *Note Sequencing::.)
+
+       If CONDITION is `nil' and no ELSE-FORMS are given, `if' returns
+     `nil'.
+
+       `if' is a special form because the branch which is not selected
+     is not evaluated and then ignored; it is only ignored.  Thus,
+     `true' is not printed in the second example.
+
+          (if nil 'true)
+          => nil
+          (if nil 
+              (print 'true) 
+            (print 'false) 
+            'very-false)
+          -> false
+          => very-false
+
+
+* Special form: cond CLAUSE*
+
+       `cond' chooses among an arbitrary number of alternatives. Each
+     CLAUSE in the `cond' must be a list; empty clauses are ignored.
+     The `car' of this list is the CONDITION; the remaining elements, if
+     any, the BODY-FORMS.  Thus, a clause looks like `(CONDITION
+     BODY-FORM*)'.
+
+       `cond' evaluates the condition of each clause, in textual order.
+     If the CONDITION is non-`nil', the BODY-FORMS are evaluated, and
+     the value of the last form in the body returned. If the clause has
+     no BODY-FORMS, the value of the CONDITION is returned.
+
+       If no CONDITION evaluates to non-`nil', `cond' returns `nil'.
+     This is usually undesirable; therefore, the last clause of most
+     `cond' forms is `(t BODY-FORMS)', which will of course always
+     succeed.
+
+          (cond
+            (nil (print 1))
+            ((eq 'a 1) (print a))
+            (t "default"))
+          => "default"
+
+       Both `cond' and `if' can be written in terms of the other.
+     Therefore, the choice of using one or the other is strictly taste
+     and style.  For example:
+
+          (if A B C)
+          ==
+          (cond ((A B) (t C))
+
+
+
+File: elisp  Node: Conditional Expressions, Prev: Conditionals, Up: Control Structures, Next: Iteration
+
+Conditional Expressions
+=======================
+
+  This section describes three operators for building "conditional
+expressions" for use with `if' and `cond'. They are operators like any
+other, and so can be used anywhere, but they are almost exclusively
+useful in conditions.
+
+
+* Function: not OBJECT
+
+       This function returns `t' if OBJECT is `nil', and `nil'
+     otherwise.  `not' is identical to `null', but `null' is preferred
+     if the test is for an empty list.
+
+
+
+* Special form: and FORM*
+
+       `and' implements the so-called short-circuit logical and
+     operator. It evaluates each argument FORM in order. If a FORM
+     evaluates to `nil', `and' returns `nil' and does not evaluate any
+     remaining forms. If all the forms evaluate to non-`nil', `and'
+     returns the value of the last FORM.
+
+          (and (print 1) nil (print 2) (print 3))
+          -> 1
+          => nil
+
+       `and' can be written using either `if' or `cond'.  For example:
+
+          (and ARG1 ARG2 ARG3)
+          ==
+          (if ARG1 (if ARG2 ARG3))
+
+
+* Special form: or FORM*
+
+       `or' implements the short-circuit logical or operator. It
+     evaluates each argument FORM in order. If a FORM evaluates to
+     non-`nil', `or' returns the value of that form. If all the forms
+     evaluate to `nil', `or' naturally returns `nil'.
+
+          (or 1 (eq 1 2) (progn (print 'x) nil))
+          => 1
+
+     `or', like `and', can be written in terms of `cond' or `if'. For
+     example:
+
+          (or ARG1 ARG2 ARG3)
+          ==
+          (cond (ARG1)
+                (ARG2)
+                (ARG3))
+
+
+
+File: elisp  Node: Iteration, Prev: Conditional Expressions, Up: Control Structures, Next: Non-local Exits
+
+Iteration
+=========
+
+  Iteration is a means of repeating code until some condition becomes
+true (or false). It is therefore not strictly necessary: a loop can
+always be changed into a recursive function call. In fact, early Lisp
+systems tended to not support iteration very much, if at all. These
+days, however, iteration is usually built into Lisp. Emacs Lisp has one
+iterative form: `while'.
+
+
+* Special form: while CONDITION FORMS*
+
+       `while' first evaluates CONDITION.  If the result is non-`nil',
+     it evaluates FORMS in textual order. Then it re-evaluates
+     CONDITION, repeating this process until CONDITION evaluates to
+     `nil'. (There is no limit on the number of iterations that may
+     occur.  Of course, an explicit `throw' (*Note Explicit Jumps::) as
+     one of the FORMS will exit the loop.)
+
+       `while' always returns `nil'.
+
+          (setq num 0)
+          => 0
+          (while (< num 2)
+            (princ (format "Iteration %d." num))
+            (setq num (1+ num)))
+          -> Iteration 0.
+          -> Iteration 1.
+          => nil
+
+
+
+File: elisp  Node: Non-local Exits, Prev: Iteration, Up: Control Structures
+
+Non-local Exits
+===============
+
+  Most control structures only affect the flow of control within a
+function.  This is a good thing, because a reader can understand, and
+you can debug, code with purely local effects much easier than code with
+unrestricted jumps. Nevertheless, sometimes it is clearest to make such
+a jump out of a function, particularly when handling errors.  Such
+transfers are called "non-local exits".  The destination of an exit is
+another form, either a `catch' or a `condition-case'.  But if no
+destination form is found, Emacs exits to the current command loop
+(*Note Commands::).
+
+  In all cases, when a non-local exit occurs, "exit cleanup" is
+performed.  This means that local variables bound by `let' and function
+or macro calls are automatically unbound up to the destination of the
+exit (*Note Local Variables::).  As another part of exit cleanup,
+`unwind-protect' cleanup is performed (described below) and any contexts
+that were saved with `save-excursion' (*Note Excursions::),
+`save-window-excursion' (*Note Window Configurations::), and
+`save-restriction' (*Note Clipping Restrictions::) are restored as the
+stack is unwound.  When the special-form `with-output-to-temp-buffer' is
+exited, the `temp-buffer-show-hook' is called (*Note Temporary
+Displays::).
+
+  In addition to the functions described below, other functions may
+cause non-local exits by calling these functions.  For example, the
+functions `exit-recursive-edit', `abort-recursive-edit', and `top-level'
+perform explicit jumps with `throw' (*Note Recursive Editing::).
+
+     Common Lisp Note: Most other versions of Lisp, including Common
+     Lisp, have many exiting forms available: `return', `return-from',
+     and `go', for example. Emacs Lisp has only `throw' and `signal'.
+
+
+
+* Special form: unwind-protect PROTECTED-FORM CLEANUP-FORMS*
+
+       `unwind-protect' guarantees that CLEANUP-FORMS is evaluated no
+     matter how PROTECTED-FORM exits.  It is therefore used in those
+     cases where it is essential that some task be completed after a
+     particular computation.  PROTECTED-FORM may complete normally, or
+     execute a `throw' over the `unwind-protect', or cause an error; in
+     all cases, CLEANUP-FORMS will be evaluated.
+
+       Only the PROTECTED-FORM is actually protected by the
+     `unwind-protect'.  If any of the CLEANUP-FORMS themselves exit
+     (e.g., via a `throw' or an error), it is *not* guaranteed that the
+     rest of them will be executed.  If the failure of one of the
+     CLEANUP-FORMS has the potential to cause trouble, then it should be
+     protected by another `unwind-protect' around that form.
+
+       The number of currently active `unwind-protect' forms is limited
+     by `max-specpdl-size' (*Note Eval::).
+
+       In this example, where the `throw' has no matching `catch', the
+     cleanup form `(print (setq x 0))' is still evaluated, even though
+     the computation results in an error.
+
+          (unwind-protect 
+            (progn
+              (setq x 1)
+              (throw 'the-tag 'thrown-value))
+            (print (setq x 0)))
+          -> 0
+          -> No catch for tag: the-tag, thrown-value
+
+       As a more realistic example, consider the code below, taken from
+     the file `ftp.el'. It creates a process (*Note Processes::) to try
+     to establish a connection to a remote machine.  It is essential
+     that the process be deleted, in case the FTP login fails.  As the
+     function `ftp-login' is highly susceptible to numerous problems
+     which the writer of the function cannot anticipate, it is protected
+     with a form that guarantees that the process will be deleted on any
+     type of failure.
+
+          (let ((win nil))
+            (unwind-protect
+               (if (setq win (ftp-login process host user password))
+                   (message "Logged in")
+                   (error "Ftp login lost"))
+               (or win (delete-process process))))
+
+* Menu:
+
+* Explicit Jumps::      
+* Errors::      
+
+
+
+File: elisp  Node: Explicit Jumps, Up: Non-local Exits, Next: Errors
+
+Explicit Jumps
+--------------
+
+  The pair of functions described here, `catch' and `throw', provide
+explicit non-local control transfers.  Errors, which can be thought of
+as implicit, or at least unintended, control transfers, are described in
+the next section.
+
+
+* Special form: catch TAG FORM*
+
+       `catch' puts a special marker, called a "tag", on the runtime
+     stack to allow any FORM to return immediately to the `catch',
+     without returning from any intermediate function calls.
+
+       `catch' first evaluates TAG, which may be any Lisp object.  Then
+     it evaluates each FORM in textual order.  The value of the final
+     FORM is returned as the value of the `catch', unless one of the
+     FORMS executes a `throw' to this TAG, for which case, see `throw'
+     below.
+
+
+
+* Function: throw TAG VALUE
+
+       As you might expect, `throw' looks for a tag previously set by
+     `catch'.  Specifically, if a tag is on the runtime stack which is
+     `eq' (*Note Equality Predicates::) to TAG, then control is
+     immediately transferred to the `catch' form, which exits, returning
+     VALUE.
+
+       If no tag `eq' to TAG is on the stack, then the error `no-catch'
+     (with data: TAG VALUE) is signaled from the same point in the stack
+     as the `throw' was started.  *Note Errors::to learn how error
+     signals are processed.  If a tag is found, exit cleanup is
+     performed for all intermediate function calls, as described above.
+
+       Because `throw' searches the stack for a tag specifically
+     matching TAG, any number of intermediate `catch' invocations with
+     different tags will be ignored.  If multiple instances of tags `eq'
+     to TAG are on the stack, the one closest to the `throw' (i.e., the
+     most recently evaluated `catch') will be chosen.
+
+       Here is a simple example of using `catch' and `throw'.  The two
+     identical forms perform differently because the value of the global
+     variable `x' is changed.
+
+          (setq x 0)
+          => 0
+          (catch 'tag1 (setq x (1+ x))        ; x is now 1.
+                       (if (= x 2)
+                          (throw 'tag1 'two)) ; throw is not executed.
+                       (list x))
+          => (1)
+          (catch 'tag1 (setq x (1+ x))        ; x is now 2.
+                       (if (= x 2) 
+                          (throw 'tag1 'two)) ; throw is executed.
+                       (list x))              ; So this is not executed.
+          => two
+
+       The more complicated set of examples below establish two tags on
+     the stack.  The first example has two tags named `tag2' on the
+     stack, and the `throw' goes to the closer one.  The calling form
+     prints the result of calling `catch2' (namely, `yes'), then
+     continues evaluating forms, returning the value of the second form
+     (`no').
+
+          (defun catch2 (tag)
+            (catch tag
+              (setq x 0)
+              (throw 'tag2 'yes)
+              (setq x 1)))
+          => catch2
+
+          (catch 'tag2 
+            (print (catch2 'tag2)) 'no)
+          -> yes
+          => no
+
+       The second example, using the above function `catch2', also has
+     two tags on the stack.  The shallower one is `tag2', the deeper is
+     `tag3'.  The `throw' looks for `tag2', and so bypasses the `catch'
+     established in `catch2'.  The throw will instead go to the outside
+     `catch', and return the value `yes', not executing the `print', not
+     evaluating `'no'.
+
+       Note that the last form in the function `catch2' (i.e., `(setq x
+     1)') can never be evaluated, no matter how `catch2' is called.
+
+          (catch 'tag2 
+            (print (catch2 'tag3)) 'no)
+          => yes
+
+
+
+File: elisp  Node: Errors, Prev: Explicit Jumps, Up: Non-local Exits
+
+Errors
+------
+
+  When an error has occured, you will usually want to terminate
+execution, display an error message to the user, and return to the
+command loop (*Note Commands::).  The `error' function serves this
+purpose.  Other times you will need to handle an error generated by some
+other function, or signal an error.  For these tasks, you will need to
+learn more about how Emacs processes errors.
+
+  In general, when Emacs Lisp attempts to evaluate a form that, for some
+reason, cannot be evaluated, it signals an error.  An "error" has an
+associated "error symbol" or "error name" which identifies the event
+that caused the problem.  When a "signal" of an error occurs, Emacs
+suspends the normal evaluation sequence and attempts to find a handler
+for the error.  The error must either be handled by a specific "error
+handler", or else the entire computation is aborted and Emacs returns to
+the command loop.  If an error handler for the error is found, it is
+given control and the normal evaluation sequence resumes from there.
+Exit cleanup is performed for all intermediate function calls.
+
+  Error "handling" or "trapping" should not be confused with catching a
+tag.  You cannot `throw' or `catch' an error and you cannot `signal' or
+handle a tag.  *Note Explicit Jumps::.  You explicitly signal errors
+within Lisp functions (and primitive functions) by calling `signal', as
+described below.  You establish handlers with `condition-case', also
+described below.
+
+     Common Lisp Note: The function `signal' is the sole function that
+     can signal an error (the `error' function calls it).  This implies
+     that Emacs Lisp has nothing like the Common Lisp concept of
+     continuable errors.
+
+  An error handler is an arbitrary form, as we will see.  It may simply
+evaluate to a result which is returned normally, or it may signal
+another error.  What it *cannot* do is resume the aborted computation.
+By the time the handler gets control, the stack has already been popped
+to the point of the error handler, and everything below has been lost.
+
+
+* Function: error FORMAT-STRING &rest ARGS
+
+       This function signals an error, by calling `signal' with the
+     error `error' and the string constructed by applying `format'
+     (*Note Conversion of Characters and Strings::) to FORMAT-STRING and
+     ARGS.
+
+       A typical use of `error' is shown in the following example.
+
+          (error "You have committed an error. Try doing something different.")
+          ---------- Echo Area ----------
+          You have committed an error. Try doing something different.
+          -------------------------------
+
+       The next example shows a more complex use of `error' and handling
+     of an error with `condition-case'.
+
+          (setq BAZ 34)
+          => 34
+
+          (condition-case ERR
+              (if (eq BAZ 35)
+                  t
+                (error "Rats!  The variable %s was %s, not 35." 'BAZ BAZ))
+            (error (princ (format "The error was: %s" ERR)) 
+                   2))
+
+          -> The error was: (error "Rats!  The variable BAZ was 34, not 35.")
+          => 2
+
+
+* Function: signal ERROR-SYMBOL DATA
+
+       This function signals an error named by ERROR-SYMBOL.  When
+     called, `signal' searches up the runtime stack, looking for a
+     handler that specifies one of the error conditions that
+     ERROR-SYMBOL is associated with.  If one is found, control resumes
+     there; otherwise, Emacs displays an error message constructed using
+     DATA and it returns to the command loop at the current
+     `recursive-edit' level (*Note Recursive Editing::).
+
+       On the other hand, if `debug-on-error' (*Note Debug Functions::)
+     is non-`nil', the debugger will be invoked instead of aborting to
+     the command loop.  *Note Debugging:: for the details.
+
+       ERROR-SYMBOL must have an `error-conditions' property in its
+     property list whose value is a list of condition names (*Note Error
+     Conditions:: for a description of how to set up your own error
+     conditions).  Otherwise, the untrappable `peculiar error' is
+     signaled.
+
+       DATA must evaluate to a list: its elements will be printed as
+     part of the error message if no `condition-case' handler is found.
+     If a handler *is* found, then DATA will be consed to the
+     ERROR-SYMBOL and bound to the `condition-case' variable specified
+     (see below). If DATA does not evaluate to a list, it is ignored.
+
+          (signal 'wrong-number-of-arguments '(x y))
+
+          ---------- Echo Area ----------
+          Wrong number of arguments: x, y
+          -------------------------------
+
+          (signal 'no-such-error '("My unknown error condition."))
+          ---------- Echo Area ----------
+          peculiar error: "My unknown error condition."
+          -------------------------------
+
+
+* Special form: condition-case VAR FORM HANDLERS*
+
+       This special form allows you to handle errors when they are
+     signaled, instead of forcing the entire computation to be aborted.
+     When a `condition-case' form is evaluated, it puts a special marker
+     on the runtime stack for which `signal' looks.  It then evaluates
+     the single FORM.  If FORM evaluates with no errors, then its result
+     is the result of `condition-case'.
+
+       If an error is signaled during the evaluation of FORM, however,
+     then `signal' looks in the stack for a `condition-case' mark.  Then
+     it looks at each of the HANDLERS in the order they appear.  Each
+     handler has the form `(CONDITION-NAME BODY*)'.
+
+       If the CONDITION-NAME in a handler is one of the conditions
+     (*Note Error Conditions::) with which the error symbol is
+     associated, then that handler is used as follows.  The variable VAR
+     is bound to a list of the form `(ERROR-SYMBOL DATA)', exactly the
+     arguments `signal' was provided.  Notice that the error symbol is
+     used and *not* the CONDITION-NAME.  Then the handler's BODY forms
+     are evaluated, and the last value is the result.
+
+       If the `condition-case' does not have a handler for any of the
+     conditions, then `signal' continues searching up the stack to see
+     if there might be another `condition-case' which will handle the
+     error.  If none is found, then the computation is aborted, as
+     described under `signal'.
+
+       In the example below, division by zero signals the error
+     `arith-error', which has two associated conditions: `arith-error'
+     and `error'.  The error is handled by printing out a warning
+     message and returning a very large number.
+
+          (condition-case ERR
+            (/ 3 0)
+            (error 
+              (princ (format "Arithmetic error: %s" ERR))
+              1000000))
+          -> The error was: (arith-error)
+          => 1000000
+
+       `condition-case' may be used to trap errors that are unexpected
+     so that some cleanup or recovery may be attempted.  It may also be
+     used to trap errors that are expected and consequently add some
+     functionality to the use of a standard Emacs function.  By
+     convention, the `quit' condition is intended to abort the current
+     computation, and so should not be trapped without extreme caution.
+
+
+* Menu:
+
+* Error Conditions::    
+
+
+
+File: elisp  Node: Error Conditions, Up: Errors
+
+Error Conditions
+................
+
+
+  Each "error" is identified by an "error symbol" or "error name".  But
+for an error symbol to be a legitimate name for an error, it must have
+an `error-conditions' property on its property list (*Note Property
+Lists::).  This property value must be a list of symbols called the
+"error condition symbols" or simply "conditions".  When an error is
+signaled, if there is a `condition-case' handler that specifies any one
+of the error symbol's associated *conditions*, then that handler is
+given control (`condition-case' in *Note Errors::). If the
+`error-conditions' property exists, but is not a list, the symbol won't
+be recognized as an error.
+
+  In addition to the `error-conditions' list, the error symbol should
+have an `error-message' property whose value is a string to be printed
+when that error is signaled but not handled. If the `error-message'
+property exists, but is not a string, the untrappable `peculiar error'
+will be signaled.
+
+  It is important to understand that handlers must use the error
+*conditions*, and not the error symbols.  It is common, however, for a
+symbol which is used as the name of an error to also be used as one of
+its associated conditions. The examples in the previous section
+illustrate this.
+
+  Here is an example of creating a new error symbol, `new-error'.
+Naturally, Emacs will never signal a `new-error' on its own; an explicit
+call to `signal' (*Note Errors::) must be in your code. As illustrated
+here, it is typical to have `error' be one of the conditions. This
+allows you to trap any error (except `quit') by trapping `error'.
+
+     (put 'new-error 'error-conditions '(error new-error))
+     => (error new-error)
+     (put 'new-error 'error-message "A new error")
+     => "A new error"
+     (signal 'new-error '(x y))
+
+     ---------- Echo Area ----------
+     A new error: x, y
+     -------------------------------
+
+  In the appendix (*Note Standard Errors::) is a list of all the
+standard error symbols and their conditions.
+
+
+File: elisp  Node: Evaluation, Prev: Control Structures, Up: Top, Next: Loading
+
+Evaluation
+**********
+
+  The "evaluation" of objects in Emacs Lisp invokes the "Lisp
+interpreter".  The Lisp interpreter, which is actually the `eval'
+function described below, looks at the object it is given, and depending
+on its type, it may return the object, or recursively evaluate parts of
+the object.
+
+  But rather than say that objects are evaluated, we say "forms" are
+evaluated.  This is to emphasize the view of objects as code, rather
+than as data.  This treatment of objects as code and code as objects is
+one of the fundamental differences between Lisp-like languages and most
+other programming languages.
+
+  Evaluation is a recursive process.  That is, evaluation of a form may
+cause `eval' to be called again to evaluate parts of the form.  For
+example, evaluation of a function call first causes evaluation of each
+argument of the function call, and then evaluation of each form in the
+function.
+
+  The evaluation of forms must take place in a context. This context is
+called the "environment". It consists of the set of global symbols and
+the call stack. The "call stack" or "runtime stack" is simply a list of
+stack frames, one for each nested function call or special form call.
+(The call stack is displayed by the `backtrace' command of the debugger
+(*Note Debugging::)).  Each "stack frame" contains, among other things,
+a list of variable bindings local to the corresponding function or
+special form.  (Local variables are described in *Note Local
+Variables::, and global symbols are described in *Note Symbols::).
+
+  Emacs Lisp is much more than a language for writing programs; it is
+the extension language for an editor.  Consequently, the environment of
+Emacs Lisp includes many internal structures related to editing that are
+not directly accessible to Emacs Lisp, e.g., buffers and windows.
+However, these structures may be affected when the appropriate primitive
+functions are called.
+
+  Evaluation of a form may change the environment for subsequent calls
+to eval, by binding variables or affecting the flow of control (*Note
+Non-local Exits::.  The affect of these changes is usually undone when
+the evaluation of the form is completed by popping the associated stack
+frame.  However, the changes that result from the evaluation of some
+forms may persist even after the evaluation is completed; these forms
+are said to produce "side-effects".  An example of a form that produces
+side-effects is `(setq foo 1)'.
+
+  It may be helpful to know what evaluation is *not*.  First, evaluation
+is not command key interpretation.  The command loop interprets keyboard
+input using the current keymaps, and then `call-interactively' uses
+`eval' to evaluate the command.  *Note Commands:: for the details.
+
+  Second, evaluation does not result from simply reading a form.  The
+point is that forms are not evaluated *when* they are read; rather, they
+may be evaluated *after* they have been read.
+
+  Finally, evaluation of one particular function call, `byte-code',
+invokes the "byte-code interpreter" on its arguments.  Although the
+byte-code interpreter is not the same as the Lisp interpreter, it uses
+the same environment as the Lisp interpreter, and it may invoke the Lisp
+interpreter. *Note Byte Compilation:: for the details.
+
+
+* Menu:
+
+* Eval::	The Lisp interpreter
+* Forms::	The objects to be evaluated
+* Identity and Quoting::	Avoiding evaluation
+
+
+
+File: elisp  Node: Eval, Up: Evaluation, Next: Forms
+
+Eval
+====
+
+  The functions and variables described in this section call the Lisp
+evaluator and define limits on the evaluation process itself.
+Evaluation is also performed by calling `apply' and `funcall' (*Note
+Function Invocation::) and `load' (*Note Loading::).  The details of
+what evaluation means for each kind of form are described later; *Note
+Forms::.
+
+
+* Function: eval FORM
+
+       This is the basic function that performs evaluation. It evaluates
+     FORM in the current environment, and returns the result.  How the
+     evaluation proceeds depends on the type of the object.  (*Note
+     Forms::.
+
+       Since `eval' is a function, the argument is evaluated twice: once
+     when the argument of the function call is evaluated, and again by
+     the `eval' function itself.  The example illustrates this.
+
+       The number of currently active calls to `eval' is limited by
+     `max-lisp-eval-depth'.
+
+          (setq foo 'bar)
+          -> bar
+          (setq bar 'baz)
+          -> baz
+          (eval foo)
+          -> baz
+
+
+
+* Command: eval-current-buffer &optional STREAM
+
+       This function evaluates the forms in the current buffer.  `eval'
+     is called repeatedly on successive forms until either the end of
+     the buffer is reached or an error is signaled that is not handled
+     (*Note Errors::).
+
+       If STREAM is supplied, it is bound to `standard-output' (*Note
+     Output Functions::) during the evaluation.
+
+       `eval-current-buffer' always returns `nil'.
+
+
+* Command: eval-region START END &optional STREAM
+
+       This function evaluates forms in the current buffer in the region
+     defined by the positions START and END.  `eval' is called
+     repeatedly on successive forms in the region until either the end
+     of the region is reached, or an error is signaled that is not
+     handled.
+
+       If STREAM is supplied, `standard-output' is bound to it for the
+     duration of the evaluation.
+
+       `eval-region' always returns `nil'.
+
+
+* Variable: max-specpdl-size
+
+       This variable defines the limit on the number of Lisp variable
+     bindings and `unwind-protect's (*Note Non-local Exits::) that are
+     allowed before the error `error' is signaled (with data `"Variable
+     binding depth exceeds max-specpdl-size"').  This is one way that
+     Lisp avoids infinite recursion on an ill-defined function.
+
+       The default value is 600.
+
+
+* Variable: max-lisp-eval-depth
+
+       This variable defines the maximum depth allowed in calls to
+     `eval', `apply', and `funcall' before the error `error' is signaled
+     (with data `"Lisp nesting exceeds max-lisp-eval-depth"').  `eval'
+     is called recursively to evaluate the arguments of Lisp function
+     calls.  This is one way that Lisp avoids infinite recursion on an
+     ill-defined function.
+
+       The default value is 200. If you set it to a value less than 100,
+     Lisp will reset it to 100.
+
+
+* Variable: values
+
+       The value of this variable is a list of values returned by all
+     expressions which were read, evaluated and printed.  (how long can
+     the list be??) The order is reverse chronological.  (What is the
+     use or purpose of values??  How does it relate to the debugger??)
+
+          (setq x 1)
+          => 1
+          (list 'A (1+ 2) selective-display-ellipses)
+          => (A 3 t)
+          values
+          => ((A 3 t) 1 ...)
+
+
+

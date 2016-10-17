@@ -1,0 +1,1370 @@
+From pnr@innopoli.ajk.tele.fi Thu Nov  5 12:59:17 1992
+Newsgroups: sfnet.atk.gnu,finet.atk.suometus
+From: pnr@innopoli.ajk.tele.fi (Pekka Nikander)
+Subject: Re: 8-bittisyytt{ emacsiin?
+In-Reply-To: jkp@cs.HUT.FI's message of Wed, 4 Nov 1992 15:45:48 GMT
+Nntp-Posting-Host: innopoli.ajk.tele.fi
+Organization: Telecom Finland
+Date: Thu, 5 Nov 1992 10:23:11 GMT
+
+T{ss{ diffit emacs-18.59:aa varten.  Mukana *saattaa* olla jotain
+tarpeettomia muutoksia, joten olisi hyv{ jos joku kampaa l{pi. 
+
+Patching:
+  cd .../emacs-18.59
+  patch -p1 -s < this-file
+  cd elisp
+  emacs 
+  M-x byte-recompile-directory<ret><ret>
+
+Pekka Nikander
+----------------------------------------------------------------
+*** emacs-18.59/etc/emacstool.c	Thu Oct 22 00:23:10 1992
+--- emacs-18.59-modified/etc/emacstool.c	Sun Nov  1 16:37:06 1992
+***************
+*** 309,314 ****
+--- 315,336 ----
+        if (event_meta_is_down(event))
+  	  event_set_id(event, 128 | event_id(event));
+  #endif /* NO_META_BIT */
++ 
++       /* Characters with a character code >= 128, and which are
++        * entered using the meta key, are translated into a two-character
++        * code with an ESC prefix. This makes it possible to distinguish
++        * between meta commands, and characters in the ISO 8859-1
++        * standard that are entered using dedicated keys.
++        */
++       if ((event_is_meta(event) && event_meta_is_down(event)))
++ 	{
++ 	  char buffer[4];
++ 	    
++ 	  sprintf (buffer, "\033%c", event_id(event) - 128);
++ 	  ttysw_input(tty_win, buffer, 2);
++ 	    
++ 	  return NOTIFY_IGNORED;
++ 	}
+    }
+    return notify_next_event_func (window, event, arg, type);
+  }
+*** emacs-18.59/lisp/isearch.el	Tue Sep 24 09:24:39 1991
+--- emacs-18.59-modified/lisp/isearch.el	Sun Nov  1 15:51:34 1992
+***************
+*** 107,117 ****
+  			 ?\C-g
+  		       (read-char))))
+  	   (setq quit-flag nil adjusted nil)
+! 	   ;; Meta character means exit search.
+! 	   (cond ((and (>= char 128)
+! 		       search-exit-option)
+! 		  (setq unread-command-char char)
+! 		  (throw 'search-done t))
+  		 ((eq char search-exit-char)
+  		  ;; Esc means exit search normally.
+  		  ;; Except, if first thing typed, it means do nonincremental
+--- 107,118 ----
+  			 ?\C-g
+  		       (read-char))))
+  	   (setq quit-flag nil adjusted nil)
+! 	   ;; Meta character no longer means exit search.
+! 	   (cond
+! 		  ;;((and (>= char 128)
+! 		  ;;     search-exit-option)
+! 		  ;;(setq unread-command-char char)
+! 		  ;;(throw 'search-done t))
+  		 ((eq char search-exit-char)
+  		  ;; Esc means exit search normally.
+  		  ;; Except, if first thing typed, it means do nonincremental
+*** emacs-18.59/lisp/x-mouse.el	Sat Mar 14 07:39:44 1992
+--- emacs-18.59-modified/lisp/x-mouse.el	Sun Nov  1 16:10:00 1992
+***************
+*** 84,89 ****
+--- 84,96 ----
+  (defconst x-button-c-m-s-middle-up (char-to-string 117))
+  (defconst x-button-c-m-s-left-up (char-to-string 118))
+  
++ (defvar last-mouse-x 0)
++ (defvar last-mouse-y 0)
++ 
++ (defvar ange-last-window nil)
++ (defvar ange-last-point nil)
++ 
++ (defvar highlight-point nil)
+  (defvar x-process-mouse-hook nil
+    "Hook to run after each mouse event is processed.  Should take two
+  arguments; the first being a list (XPOS YPOS) corresponding to character
+***************
+*** 132,137 ****
+--- 139,169 ----
+    (if (x-mouse-select arg)
+        (split-window-vertically nil)))
+  
++ (defun x-mouse-extend-region (arg)
++   "Extend the mouse selected region, highlighting from the starting point of \
++    the last highlighted region, instead on the current mouse position"
++   (if (x-mouse-select arg)
++       (if highlight-point
++ 	  (if (< highlight-point (window-start))
++ 	      (do-highlight (selected-window) 0 0)
++ 	    (do-highlight (selected-window) last-mouse-x last-mouse-y)))))
++ 
++ (defun x-mouse-set-point-and-highlight (arg)
++   "Select Emacs window mouse is on, move point to mouse position, and track \
++    the mouse motion, highlighting between the point and mouse position until \
++    the mouse button is released"
++   (let* ((relative-coordinate (x-mouse-select arg))
++ 	 (rel-x (car relative-coordinate))
++ 	 (rel-y (car (cdr relative-coordinate))))
++     (if relative-coordinate
++ 	(progn
++           (setq last-mouse-x rel-x)
++           (setq last-mouse-y rel-y)
++           (setq highlight-point (point))
++           (do-highlight (selected-window) rel-x rel-y)
++ 	  (move-to-window-line rel-y)
++ 	  (move-to-column (+ rel-x (current-column)))))))
++ 
+  (defun x-mouse-set-point (arg)
+    "Select Emacs window mouse is on, and move point to mouse position."
+    (let* ((relative-coordinate (x-mouse-select arg))
+***************
+*** 194,199 ****
+--- 226,265 ----
+    "Kill text between point and mouse; also copy to window system cut buffer."
+    (x-cut-text arg t))
+  
++ (defun ange-x-mouse-highlight (arg)
++   (setq ange-last-window (selected-window))
++   (setq ange-last-point (point))
++   (x-mouse-set-point-and-highlight arg))
++ 
++ (defun ange-x-cut-text (arg)
++   "If there is a region, then cut the text from the region, and restore
++ the window and point to the saved position. If there is no region, then 
++ do nothing at all."
++   (if (and ange-last-window ange-last-point)
++       (progn
++ 	(if (coordinates-in-window-p arg (selected-window))
++ 	    (progn
++ 	      (let (beg end (opoint (point)))
++ 		(setq opoint (point))
++ 		(save-excursion
++ 		  (x-mouse-set-point arg)
++ 		  (setq beg (min opoint (point))
++ 			end (max opoint (point)))
++ 		  (if (eq beg end)
++ 		      (progn
++ 			(setq ange-last-window (selected-window))
++ 			(setq ange-last-point (point)))
++ 		    (x-store-cut-buffer (buffer-substring beg end))
++ 		    (copy-region-as-kill beg end)))))
++ 	  (message "Mouse not in selected window"))
++ 	(select-window ange-last-window)
++ 	(goto-char ange-last-point)
++ 	(setq ange-last-window nil)
++ 	(setq ange-last-point nil))))
++ 
++ (defun ange-x-paste-text-at-text-cursor (arg)
++   (insert (x-get-cut-buffer)))
++ 
+  (defun x-mouse-ignore (arg)
+    "Don't do anything.")
+  
+***************
+*** 290,295 ****
+        (define-key mouse-map x-button-right 'x-mouse-select)
+        (define-key mouse-map x-button-left 'x-mouse-set-mark)
+        (define-key mouse-map x-button-middle 'x-mouse-set-point))
+!   (define-key mouse-map x-button-right 'x-cut-text)
+!   (define-key mouse-map x-button-left 'x-mouse-set-point)
+!   (define-key mouse-map x-button-middle 'x-paste-text))
+--- 356,366 ----
+        (define-key mouse-map x-button-right 'x-mouse-select)
+        (define-key mouse-map x-button-left 'x-mouse-set-mark)
+        (define-key mouse-map x-button-middle 'x-mouse-set-point))
+!   (define-key mouse-map x-button-left 'ange-x-mouse-highlight)
+!   (define-key mouse-map x-button-left-up 'ange-x-cut-text)
+!   (define-key mouse-map x-button-middle 'ange-x-paste-text-at-text-cursor)
+!   (define-key mouse-map x-button-middle-up 'x-mouse-ignore)
+!   (define-key mouse-map x-button-right 'x-help)
+! )
+! 
+! 
+*** emacs-18.59/src/buffer.c	Wed May 13 22:39:33 1992
+--- emacs-18.59-modified/src/buffer.c	Sun Nov  1 16:10:25 1992
+***************
+*** 1069,1074 ****
+--- 1069,1075 ----
+    XFASTINT (buffer_defaults.tab_width) = 8;
+    buffer_defaults.truncate_lines = Qnil;
+    buffer_defaults.ctl_arrow = Qt;
++   buffer_defaults.meta_printable = Qt;
+  
+    XFASTINT (buffer_defaults.fill_column) = 70;
+    XFASTINT (buffer_defaults.left_margin) = 0;
+***************
+*** 1107,1112 ****
+--- 1108,1114 ----
+    XFASTINT (buffer_local_flags.left_margin) = 0x800;
+    XFASTINT (buffer_local_flags.abbrev_table) = 0x1000;
+    XFASTINT (buffer_local_flags.syntax_table) = 0x2000;
++   XFASTINT (buffer_local_flags.meta_printable) = 0x4000;
+  
+    Vbuffer_alist = Qnil;
+    current_buffer = 0;
+***************
+*** 1175,1180 ****
+--- 1177,1187 ----
+      "Default ctl-arrow for buffers that do not override it.\n\
+  This is the same as (default-value 'ctl-arrow).");
+  
++   DEFVAR_LISP_NOPRO ("default-meta-printable",
++ 	      &buffer_defaults.meta_printable,
++     "Default meta-printable for buffers that do not override it.\n\
++ This is the same as (default-value 'meta-printable).");
++ 
+    DEFVAR_LISP_NOPRO ("default-truncate-lines",
+  	      &buffer_defaults.truncate_lines,
+      "Default truncate-lines for buffers that do not override it.\n\
+***************
+*** 1263,1270 ****
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("ctl-arrow", &current_buffer->ctl_arrow,
+!     "*Non-nil means display control chars with uparrow.\n\
+  Nil means use backslash and octal digits.\n\
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("truncate-lines", &current_buffer->truncate_lines,
+--- 1270,1283 ----
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("ctl-arrow", &current_buffer->ctl_arrow,
+!      "*t means display control chars with uparrow.\n\
+  Nil means use backslash and octal digits.\n\
++ Automatically becomes local when set in any fashion.");
++ 
++   DEFVAR_PER_BUFFER ("meta-printable", &current_buffer->meta_printable,
++      "*Non-nil means meta characters, that is characters in the range \n\
++ 0240..0377, are printable.\n\
++ Nil means display meta chars with backslash and octal digits.\n\
+  Automatically becomes local when set in any fashion.");
+  
+    DEFVAR_PER_BUFFER ("truncate-lines", &current_buffer->truncate_lines,
+*** emacs-18.59/src/buffer.h	Sat Jan  5 02:12:49 1991
+--- emacs-18.59-modified/src/buffer.h	Sun Nov  1 15:52:19 1992
+***************
+*** 208,213 ****
+--- 208,215 ----
+      Lisp_Object truncate_lines;
+      /* Non-nil means display ctl chars with uparrow */
+      Lisp_Object ctl_arrow;
++     /* Non-nil means meta chars are printable. */
++     Lisp_Object meta_printable;
+      /* Non-nil means do selective display;
+         See doc string in syms_of_buffer (buffer.c) for details.  */
+      Lisp_Object selective_display;
+***************
+*** 268,270 ****
+--- 270,275 ----
+  #define BufferSafeFloor(n) (BEGV <= GPT && GPT <= (n) ? GPT : BEGV)
+  
+  extern void reset_buffer ();
++ 
++ #define is_control_char(c)   (((c) >= 0 && (c) < 040) || (c) == 0177)
++ #define is_meta_char(c) ((c) >= 0240 && (c) <= 0377)
+*** emacs-18.59/src/cmds.c	Sat Oct 19 17:39:00 1991
+--- emacs-18.59-modified/src/cmds.c	Sun Nov  1 15:52:21 1992
+***************
+*** 335,340 ****
+--- 335,342 ----
+    ndefkey (Vglobal_map, Ctl('I'), "self-insert-command");
+    for (n = 040; n < 0177; n++)
+      ndefkey (Vglobal_map, n, "self-insert-command");
++   for (n = 0240; n <= 0377; n++)
++     ndefkey (Vglobal_map, n, "self-insert-command");
+  
+    ndefkey (Vglobal_map, Ctl ('A'), "beginning-of-line");
+    ndefkey (Vglobal_map, Ctl ('B'), "backward-char");
+*** emacs-18.59/src/dispnew.c	Fri Jul 24 22:31:36 1992
+--- emacs-18.59-modified/src/dispnew.c	Sun Nov  1 16:10:29 1992
+***************
+*** 1304,1312 ****
+    /* If we can't deal with the change now, queue it for later.  */
+    if (delayed)
+      {
+!       delayed_screen_width = newwidth;
+!       delayed_screen_height = newlength;
+!       delayed_size_change = 1;
+      }
+    else
+      {
+--- 1304,1315 ----
+    /* If we can't deal with the change now, queue it for later.  */
+    if (delayed)
+      {
+!       if ((newlength != screen_height) || (newwidth != screen_width)) 
+! 	{
+! 	  delayed_screen_width = newwidth;
+! 	  delayed_screen_height = newlength;
+! 	  delayed_size_change = 1;
+! 	}
+      }
+    else
+      {
+***************
+*** 1319,1326 ****
+       register int newlength, newwidth, pretend, force;
+  {
+    if ((newlength == 0 || newlength == screen_height)
+!       && (newwidth == 0 || newwidth == screen_width))
+      return;
+    if (newlength && newlength != screen_height)
+      {
+        set_window_height (XWINDOW (minibuf_window)->prev, newlength - 1, 0);
+--- 1322,1333 ----
+       register int newlength, newwidth, pretend, force;
+  {
+    if ((newlength == 0 || newlength == screen_height)
+!       && (newwidth == 0 || newwidth == screen_width)) {
+! #ifdef XDEBUG
+!     fprintf(stderr, "change_screen_size_1: quick return\n");
+! #endif
+      return;
++   }
+    if (newlength && newlength != screen_height)
+      {
+        set_window_height (XWINDOW (minibuf_window)->prev, newlength - 1, 0);
+*** emacs-18.59/src/indent.c	Sat Apr 18 19:01:07 1992
+--- emacs-18.59-modified/src/indent.c	Sun Nov  1 16:10:34 1992
+***************
+*** 79,84 ****
+--- 79,85 ----
+    register int post_tab;
+    register int tab_width = XINT (current_buffer->tab_width);
+    int ctl_arrow = !NULL (current_buffer->ctl_arrow);
++   int meta_printable = !NULL (current_buffer->meta_printable);
+  
+    if (point == last_known_column_point
+        && MODIFF == last_known_column_modified)
+***************
+*** 132,139 ****
+  	  col = 0;
+  	  tab_seen = 1;
+  	}
+        else
+! 	col += (ctl_arrow && c < 0200) ? 2 : 4;
+      }
+  
+    if (tab_seen)
+--- 133,144 ----
+  	  col = 0;
+  	  tab_seen = 1;
+  	}
++       else if (is_control_char(c))
++ 	col += ctl_arrow ? 2 : 4;
++       else if (is_meta_char(c))
++ 	col += meta_printable ? 1 : 4;
+        else
+! 	col += 4;
+      }
+  
+    if (tab_seen)
+***************
+*** 298,303 ****
+--- 303,309 ----
+    register int end = ZV;
+    register int tab_width = XINT (current_buffer->tab_width);
+    register int ctl_arrow = !NULL (current_buffer->ctl_arrow);
++   register int meta_printable = !NULL (current_buffer->meta_printable);
+  
+    Lisp_Object val;
+  
+***************
+*** 324,333 ****
+  	  col += tab_width - 1;
+  	  col = col / tab_width * tab_width;
+  	}
+!       else if (ctl_arrow && (c < 040 || c == 0177))
+!         col++;
+        else if (c < 040 || c >= 0177)
+!         col += 3;
+      }
+  
+    SET_PT (pos);
+--- 330,341 ----
+  	  col += tab_width - 1;
+  	  col = col / tab_width * tab_width;
+  	}
+!       else if (is_control_char(c))
+!         col += ctl_arrow ? 1 : 3;
+!       else if (is_meta_char(c))
+!         col += meta_printable ? 0 : 3;
+        else if (c < 040 || c >= 0177)
+! 	col += 3;
+      }
+  
+    SET_PT (pos);
+***************
+*** 355,360 ****
+--- 363,370 ----
+    register int c;
+    register int tab_width = XFASTINT (current_buffer->tab_width);
+    register int ctl_arrow = !NULL (current_buffer->ctl_arrow);
++   register int meta_printable = !NULL (current_buffer->meta_printable);
++ 
+    int selective
+      = XTYPE (current_buffer->selective_display) == Lisp_Int
+        ? XINT (current_buffer->selective_display)
+***************
+*** 430,437 ****
+  		hpos = width;
+  	    }
+  	}
+        else
+! 	hpos += (ctl_arrow && c < 0200) ? 2 : 4;
+  
+        /* Handle right margin.  */
+        if (hpos >= width
+--- 440,451 ----
+  		hpos = width;
+  	    }
+  	}
++       else if (is_control_char(c))
++ 	hpos += ctl_arrow? 2 : 4;
++       else if (is_meta_char(c))
++ 	hpos += meta_printable? 1 : 4;
+        else
+! 	hpos += 4;
+  
+        /* Handle right margin.  */
+        if (hpos >= width
+*** emacs-18.59/src/keyboard.c	Sun May 17 09:57:15 1992
+--- emacs-18.59-modified/src/keyboard.c	Sun Nov  1 16:10:35 1992
+***************
+*** 1535,1545 ****
+  
+        if (c < 0)
+  	return 0;
+-       if (c >= 0200)
+- 	{
+- 	  nextc = c & 0177;
+- 	  c = meta_prefix_char;
+- 	}
+  
+        keybuf[i] = c;
+  
+--- 1535,1540 ----
+*** emacs-18.59/src/keymap.c	Sat Jul 27 20:43:27 1991
+--- emacs-18.59-modified/src/keymap.c	Sun Nov  1 15:52:22 1992
+***************
+*** 58,74 ****
+  /* A char over 0200 in a key sequence
+     is equivalent to prefixing with this character.  */
+  
+! extern int meta_prefix_char;
+  
+  static void insert_first_line ();
+  
+  DEFUN ("make-keymap", Fmake_keymap, Smake_keymap, 0, 0, 0,
+!   "Construct and return a new keymap, a vector of length 128.\n\
+  All entries in it are nil, meaning \"command undefined\".")
+    ()
+  {
+    register Lisp_Object val;
+!   XFASTINT (val) = 0200;
+    return Fmake_vector (val, Qnil);
+  }
+  
+--- 58,75 ----
+  /* A char over 0200 in a key sequence
+     is equivalent to prefixing with this character.  */
+  
+! /* All 8-bit characters are allowed. */
+! /* extern int meta_prefix_char; */
+  
+  static void insert_first_line ();
+  
+  DEFUN ("make-keymap", Fmake_keymap, Smake_keymap, 0, 0, 0,
+!   "Construct and return a new keymap, a vector of length 256.\n\
+  All entries in it are nil, meaning \"command undefined\".")
+    ()
+  {
+    register Lisp_Object val;
+!   XFASTINT (val) = 0400;
+    return Fmake_vector (val, Qnil);
+  }
+  
+***************
+*** 112,118 ****
+  
+  DEFUN ("keymapp", Fkeymapp, Skeymapp, 1, 1, 0,
+    "Return t if ARG is a keymap.\n\
+! A keymap is a vector of length 128, or a list (keymap . ALIST),\n\
+  where alist elements look like (CHAR . DEFN).\n\
+  A symbol whose function definition is a keymap is itself a keymap.")
+    (object)
+--- 113,119 ----
+  
+  DEFUN ("keymapp", Fkeymapp, Skeymapp, 1, 1, 0,
+    "Return t if ARG is a keymap.\n\
+! A keymap is a vector of length 256, or a list (keymap . ALIST),\n\
+  where alist elements look like (CHAR . DEFN).\n\
+  A symbol whose function definition is a keymap is itself a keymap.")
+    (object)
+***************
+*** 128,134 ****
+        QUIT;
+      }
+  
+!   if ((XTYPE (tem) == Lisp_Vector && XVECTOR (tem)->size == 0200)
+        || (CONSP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
+      return Qt;
+    return Qnil;
+--- 129,135 ----
+        QUIT;
+      }
+  
+!   if ((XTYPE (tem) == Lisp_Vector && XVECTOR (tem)->size == 0400)
+        || (CONSP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
+      return Qt;
+    return Qnil;
+***************
+*** 149,155 ****
+  	  tem = XSYMBOL (tem)->function;
+  	  QUIT;
+  	}
+!       if ((XTYPE (tem) == Lisp_Vector && XVECTOR (tem)->size == 0200)
+  	  || (CONSP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
+  	return tem;
+        if (error)
+--- 150,156 ----
+  	  tem = XSYMBOL (tem)->function;
+  	  QUIT;
+  	}
+!       if ((XTYPE (tem) == Lisp_Vector && XVECTOR (tem)->size == 0400)
+  	  || (CONSP (tem) && EQ (XCONS (tem)->car, Qkeymap)))
+  	return tem;
+        if (error)
+***************
+*** 191,198 ****
+       register int idx;
+  {
+    register Lisp_Object val;
+!   if (idx < 0 || idx >= 0200)
+!     error ("Command key out of range 0-127");
+  
+    /* Get definition for character `idx' proper.  */
+    if (CONSP (map))
+--- 192,199 ----
+       register int idx;
+  {
+    register Lisp_Object val;
+!   if (idx < 0 || idx >= 0400)
+!     error ("Command key out of range 0-255");
+  
+    /* Get definition for character `idx' proper.  */
+    if (CONSP (map))
+***************
+*** 211,218 ****
+  {
+    register Lisp_Object tem;
+  
+!   if (idx < 0 || idx >= 0200)
+!     error ("Command key out of range 0-127");
+  
+    if (CONSP (keymap))
+      {
+--- 212,219 ----
+  {
+    register Lisp_Object tem;
+  
+!   if (idx < 0 || idx >= 0400)
+!     error ("Command key out of range 0-255");
+  
+    if (CONSP (keymap))
+      {
+***************
+*** 289,295 ****
+    register int c;
+    register Lisp_Object tem;
+    register Lisp_Object cmd;
+-   int metized = 0;
+  
+    keymap = get_keymap (keymap);
+  
+--- 290,295 ----
+***************
+*** 301,317 ****
+    while (1)
+      {
+        c = XSTRING (key)->data[idx];
+!       if (c >= 0200 && !metized)
+! 	{
+! 	  c = meta_prefix_char;
+! 	  metized = 1;
+! 	}
+!       else
+! 	{
+! 	  c &= 0177;
+! 	  metized = 0;
+! 	  idx++;
+! 	}
+  
+        if (idx == XSTRING (key)->size)
+  	return store_in_keymap (keymap, c, def);
+--- 301,307 ----
+    while (1)
+      {
+        c = XSTRING (key)->data[idx];
+!       idx++;
+  
+        if (idx == XSTRING (key)->size)
+  	return store_in_keymap (keymap, c, def);
+***************
+*** 349,355 ****
+    register Lisp_Object tem;
+    register Lisp_Object cmd;
+    register int c;
+-   int metized = 0;
+  
+    keymap = get_keymap (keymap);
+  
+--- 339,344 ----
+***************
+*** 361,377 ****
+    while (1)
+      {
+        c = XSTRING (key)->data[idx];
+!       if (c >= 0200 && !metized)
+! 	{
+! 	  c = meta_prefix_char;
+! 	  metized = 1;
+! 	}
+!       else
+! 	{
+! 	  c &= 0177;
+! 	  metized = 0;
+! 	  idx++;
+! 	}
+  
+        cmd = get_keyelt (access_keymap (keymap, c));
+        if (idx == XSTRING (key)->size)
+--- 350,356 ----
+    while (1)
+      {
+        c = XSTRING (key)->data[idx];
+!       idx++;
+  
+        cmd = get_keyelt (access_keymap (keymap, c));
+        if (idx == XSTRING (key)->size)
+***************
+*** 577,583 ****
+      {
+        thisseq = Fcar (Fcar (tail));
+        thismap = Fcdr (Fcar (tail));
+!       for (i = 0; i < 0200; i++)
+  	{
+  	  cmd = get_keyelt (access_keymap (thismap, i));
+  	  if (NULL (cmd)) continue;
+--- 556,562 ----
+      {
+        thisseq = Fcar (Fcar (tail));
+        thismap = Fcdr (Fcar (tail));
+!       for (i = 0; i < 0400; i++)
+  	{
+  	  cmd = get_keyelt (access_keymap (thismap, i));
+  	  if (NULL (cmd)) continue;
+***************
+*** 617,623 ****
+       register unsigned int c;
+       register char *p;
+  {
+!   if (c >= 0200)
+      {
+        *p++ = 'M';
+        *p++ = '-';
+--- 596,604 ----
+       register unsigned int c;
+       register char *p;
+  {
+!   register int meta_printable = !NULL (current_buffer->meta_printable);
+! 
+!   if (is_meta_char(c) && !meta_printable)
+      {
+        *p++ = 'M';
+        *p++ = '-';
+***************
+*** 698,709 ****
+       register unsigned int c;
+       register char *p;
+  {
+-   if (c >= 0200)
+-     {
+-       *p++ = 'M';
+-       *p++ = '-';
+-       c -= 0200;
+-     }
+    if (c < 040)
+      {
+        *p++ = '^';
+--- 679,684 ----
+***************
+*** 770,776 ****
+        /* If the MAP is a vector, I increments and eventually reaches 0200.
+  	 Otherwise I remains 0; MAP is cdr'd and eventually becomes nil.  */
+  
+!       while (!NULL (map) && i < 0200)
+  	{
+  	  register Lisp_Object elt, dummy;
+  
+--- 745,751 ----
+        /* If the MAP is a vector, I increments and eventually reaches 0200.
+  	 Otherwise I remains 0; MAP is cdr'd and eventually becomes nil.  */
+  
+!       while (!NULL (map) && i < 0400)
+  	{
+  	  register Lisp_Object elt, dummy;
+  
+*** emacs-18.59/src/regex.c	Tue Jul  7 18:35:33 1992
+--- emacs-18.59-modified/src/regex.c	Sun Nov  1 16:10:48 1992
+***************
+*** 1621,1630 ****
+      0310, 0311, 0312, 0313, 0314, 0315, 0316, 0317,
+      0320, 0321, 0322, 0323, 0324, 0325, 0326, 0327,
+      0330, 0331, 0332, 0333, 0334, 0335, 0336, 0337,
+!     0340, 0341, 0342, 0343, 0344, 0345, 0346, 0347,
+!     0350, 0351, 0352, 0353, 0354, 0355, 0356, 0357,
+!     0360, 0361, 0362, 0363, 0364, 0365, 0366, 0367,
+!     0370, 0371, 0372, 0373, 0374, 0375, 0376, 0377
+    };
+  
+  main (argc, argv)
+--- 1621,1630 ----
+      0310, 0311, 0312, 0313, 0314, 0315, 0316, 0317,
+      0320, 0321, 0322, 0323, 0324, 0325, 0326, 0327,
+      0330, 0331, 0332, 0333, 0334, 0335, 0336, 0337,
+!     0300, 0301, 0302, 0303, 0304, 0305, 0306, 0307,
+!     0310, 0311, 0312, 0313, 0314, 0315, 0316, 0317,
+!     0320, 0321, 0322, 0323, 0324, 0325, 0326, 0367,
+!     0330, 0331, 0332, 0333, 0334, 0335, 0336, 0377
+    };
+  
+  main (argc, argv)
+*** emacs-18.59/src/search.c	Tue Oct  8 06:07:38 1991
+--- emacs-18.59-modified/src/search.c	Sun Nov  1 15:52:29 1992
+***************
+*** 1275,1289 ****
+  
+    for (i = 0; i < 0400; i++)
+      {
+!       downcase_table[i] = (i >= 'A' && i <= 'Z') ? i + 040 : i;
+  /* We do this instead of using compute_trt_inverse to save space. */
+   /* Does it? */
+!       downcase_table[0400+i]
+! 	= ((i >= 'A' && i <= 'Z')
+! 	   ? i + ('a' - 'A')
+! 	   : ((i >= 'a' && i <= 'z')
+! 	      ? i + ('A' - 'a')
+! 	      : i));
+      }
+  /* Use this instead when there come to be multiple translation tables. 
+    compute_trt_inverse (downcase_table);    */
+--- 1275,1310 ----
+  
+    for (i = 0; i < 0400; i++)
+      {
+!       /*
+!        * Table updated to handle extended character set.
+!        */
+!       if (i >= 'A' && i <= 'Z')
+! 	downcase_table[i] = i + 'a' - 'A';
+!       else if (i >= 0300 && i <= 0326)
+! 	downcase_table[i] = i + 040;
+!       else if (i >= 0330 && i <= 0336)
+! 	downcase_table[i] = i + 040;
+!       else
+! 	downcase_table[i] = i;
+! 
+  /* We do this instead of using compute_trt_inverse to save space. */
+   /* Does it? */
+! 
+!       if (i >= 'A' && i <= 'Z')
+! 	downcase_table[0400+i] = i + 'a' - 'A';
+!       else if (i >= 0300 && i <= 0326)
+! 	downcase_table[0400+i] = i + 040;
+!       else if (i >= 0330 && i <= 0336)
+! 	downcase_table[0400+i] = i + 040;
+!       else if (i >= 'a' && i <= 'z')
+! 	downcase_table[0400+i] = i + 'A' - 'a';
+!       else if (i >= 0340 && i <= 0366)
+! 	downcase_table[0400+i] = i - 040;
+!       else if (i >= 0370 && i <= 0376)
+! 	downcase_table[0400+i] = i - 040;
+!       else
+! 	downcase_table[0400+i] = i;
+! 
+      }
+  /* Use this instead when there come to be multiple translation tables. 
+    compute_trt_inverse (downcase_table);    */
+*** emacs-18.59/src/syntax.c	Sat Sep 12 11:07:25 1992
+--- emacs-18.59-modified/src/syntax.c	Sun Nov  1 16:11:01 1992
+***************
+*** 1100,1105 ****
+--- 1100,1132 ----
+  
+    for (i = 0; i < 12; i++)
+      XFASTINT (v->contents[".,;:?!#@~^'`"[i]]) = (int) Spunct;
++ 
++   /*
++    * Syntax table entries for extended character set:
++    */
++ 
++   for (i = 0300; i <= 0326; i++)
++     XFASTINT (v->contents[i]) = (int) Sword;
++   for (i = 0330; i <= 0337; i++)
++     XFASTINT (v->contents[i]) = (int) Sword;
++   for (i = 0340; i <= 0366; i++)
++     XFASTINT (v->contents[i]) = (int) Sword;
++   for (i = 0370; i <= 0377; i++)
++     XFASTINT (v->contents[i]) = (int) Sword;
++ 
++   XFASTINT (v->contents[0240]) = (int) Swhitespace;
++   
++   for (i = 0242; i <= 0245; i++)
++     XFASTINT (v->contents[i]) = (int) Sword;
++ 
++   for (i = 0246; i <= 0276; i++)
++     XFASTINT (v->contents[i]) = (int) Ssymbol;
++ 
++   XFASTINT (v->contents[0327]) = (int) Ssymbol;
++   XFASTINT (v->contents[0367]) = (int) Ssymbol;
++ 
++   XFASTINT (v->contents[0241]) = (int) Spunct;
++   XFASTINT (v->contents[0277]) = (int) Spunct;
+  }
+  
+  syms_of_syntax ()
+*** emacs-18.59/src/x11fns.c	Wed Jul 15 22:38:49 1992
+--- emacs-18.59-modified/src/x11fns.c	Sun Nov  1 16:27:59 1992
+***************
+*** 117,123 ****
+  
+  extern XFontStruct *fontinfo;
+  extern Font XXfid;
+! extern GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp,XXgc_curs_rev;
+  extern XGCValues XXgcv;
+  extern int XXfontw,XXfonth,XXbase,XXisColor;
+  extern Colormap XXColorMap;
+--- 117,123 ----
+  
+  extern XFontStruct *fontinfo;
+  extern Font XXfid;
+! extern GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp,XXgc_curs_rev,XXgc_highlight;
+  extern XGCValues XXgcv;
+  extern int XXfontw,XXfonth,XXbase,XXisColor;
+  extern Colormap XXColorMap;
+***************
+*** 218,224 ****
+  
+  	XSetForeground(XXdisplay, XXgc_norm, fore);
+  	XSetBackground(XXdisplay, XXgc_rev, fore);
+! 	
+  	Fredraw_display ();
+  	UNBLOCK_INPUT ();
+  
+--- 218,227 ----
+  
+  	XSetForeground(XXdisplay, XXgc_norm, fore);
+  	XSetBackground(XXdisplay, XXgc_rev, fore);
+! 	 
+!  	XSetForeground(XXdisplay, XXgc_highlight, back ^ fore);
+!   	XSetBackground(XXdisplay, XXgc_highlight, back ^ fore);	
+!  
+  	Fredraw_display ();
+  	UNBLOCK_INPUT ();
+  
+***************
+*** 268,273 ****
+--- 271,280 ----
+  
+  	XSetBackground (XXdisplay, XXgc_norm, back);
+  	XSetForeground (XXdisplay, XXgc_rev, back);
++ 
++         XSetForeground(XXdisplay, XXgc_highlight, back ^ fore);
++         XSetBackground(XXdisplay, XXgc_highlight, back ^ fore);
++ 
+  	XSetForeground (XXdisplay, XXgc_curs, back);
+  	XSetBackground (XXdisplay, XXgc_curs_rev, back);
+  	XSetWindowBackground(XXdisplay, XXwindow, back);
+***************
+*** 564,569 ****
+--- 571,577 ----
+       Lisp_Object arg;
+  {
+  	register char *newfontname;
++ 	extern int screen_garbaged;
+  	
+  	CHECK_STRING (arg, 1);
+  	check_xterm ();
+***************
+*** 576,581 ****
+--- 584,590 ----
+  	if (!XNewFont (newfontname)) {
+  		free (XXcurrentfont);
+  		XXcurrentfont = newfontname;
++ 		++screen_garbaged;
+  		return Qt;
+  	}
+  badfont:
+***************
+*** 964,969 ****
+--- 973,1117 ----
+  #endif				/* subprocesses */
+  }
+  
++ #define BACKWARD 0
++ #define FORWARD 1
++ #define	Cdt(r,c)		((r) * width + (c))
++ #define	CdRow(c)    		((c) / width)
++ #define	CdCol(c)               ((c) % width)
++  
++ DEFUN("do-highlight", Fdo_highlight, Sdo_highlight, 3, 3, 0, 
++       "Track the mouse and highlight until button is released. \
++         This just highlights a rectangular region between the \
++         specified row and column and the mouse position.")
++      (window, Col, Row)
++      Lisp_Object window, Col, Row;
++ {
++   int col, row, last_x, last_y, rx, ry, wx,wy, mask;
++   int last_highlight_pos, fake_mark, highlight_direction;
++   Window w, child;
++   int moved = 0;
++   int left,top,width,height;
++   BLOCK_INPUT_DECLARE ();
++ 
++   CHECK_WINDOW (window, 2);
++ 
++   left = XWINDOW (window)->left; /* window edges in the X window */
++   top = XWINDOW (window)->top;
++   width = XWINDOW (window)->width;
++   height = XWINDOW (window)->height;
++ 
++   col = XINT(Col);
++   row = XINT(Row);
++   last_highlight_pos = fake_mark =  Cdt(row,col);
++   last_x = col;
++   last_y = row;
++   highlight_direction = -1;
++   BLOCK_INPUT ();
++ 
++   XQueryPointer(XXdisplay,XXwindow,&w, &child, &rx, &ry, &wx,&wy,&mask);
++   while(mask != 0) {
++     row = wy  / XXfonth - top;
++     col = wx  / XXfontw - left;
++ 
++     if (row < 0) row = 0;
++     if (col < 0) col = 0;
++     if (row > height-2) row = height-2;
++     if (col > width-1) col = width-1;
++ 
++     if (!moved && Cdt(row,col) != last_highlight_pos){
++       moved = 1;
++       if (CursorExists) CursorToggle ();
++     };
++ 
++     Track_Text(left,top,width,row,col,last_x,last_y,&last_highlight_pos,&highlight_direction,fake_mark);
++     XQueryPointer(XXdisplay,XXwindow,&w, &child, &rx, &ry, &wx, &wy,&mask);
++   }; /* while */
++ 
++   Text_Hiliter(left,top,width,last_y,last_x,row,col); /* remove highlighted text */
++ 
++   UNBLOCK_INPUT ();
++ 
++   if (!CursorExists)
++     CursorToggle ();
++ }
++ 
++ Track_Text(left,top,width,trow,tcol,last_x,last_y,last_highlight_pos,highlight_direction,fake_mark)
++      int left,top,width;
++      register int trow, tcol;
++      int  *last_highlight_pos, *highlight_direction, fake_mark;
++ {
++   int  tpos;
++   int new_dir;
++   tpos = Cdt(trow, tcol);
++   
++   if(tpos == *last_highlight_pos)
++     return;
++   
++   if(*highlight_direction == -1)  
++     if(tpos > fake_mark)
++       *highlight_direction = FORWARD;
++     else
++       *highlight_direction = BACKWARD;
++   
++   if(tpos > fake_mark) 
++     new_dir = FORWARD;
++   else
++     new_dir = BACKWARD;
++   
++   if(new_dir != *highlight_direction){ 
++     Text_Hiliter(left,top,width,last_y, last_x,
++ 		 CdRow (*last_highlight_pos),CdCol (*last_highlight_pos));
++     *last_highlight_pos = fake_mark;
++     *highlight_direction = new_dir;
++   }           
++   Text_Hiliter(left,top,width,trow, tcol, CdRow (*last_highlight_pos), CdCol (*last_highlight_pos));
++   *last_highlight_pos = tpos;
++ }
++ 
++ Text_Hiliter(left,top,width,frow, fcol, trow, tcol)
++      int left,top,width;
++      int frow, fcol, trow, tcol;
++ {
++   int i;
++   if (frow == trow){
++     if(fcol > tcol){
++       i = fcol; fcol = tcol; tcol = i;
++     }
++     XFillRectangle( XXdisplay, XXwindow, XXgc_highlight,
++ 		   (left + fcol) * XXfontw + XXInternalBorder,
++ 		   (top + frow) * XXfonth + XXInternalBorder,
++ 		   (tcol - fcol) * XXfontw,
++ 		   XXfonth);
++   }
++   else{
++     if(frow > trow){
++       i = fcol; fcol = tcol; tcol = i;
++       i = frow; frow = trow; trow = i;
++     } 
++     
++     if(width > fcol)    /* If statements due to some bug in X11? */
++       XFillRectangle( XXdisplay, XXwindow, XXgc_highlight,
++ 		     (left + fcol) * XXfontw + XXInternalBorder,
++ 		     (top + frow) * XXfonth + XXInternalBorder,
++ 		     (width - fcol) * XXfontw,
++ 		     XXfonth);
++     
++     if(trow - frow > 1)
++       XFillRectangle( XXdisplay, XXwindow, XXgc_highlight,
++ 		     left * XXfontw + XXInternalBorder,
++  		     (top + (1 + frow)) * XXfonth + XXInternalBorder,
++  		     width * XXfontw,
++  		     (trow - frow - 1) * XXfonth);
++     if(tcol != 0)    
++       XFillRectangle( XXdisplay, XXwindow, XXgc_highlight,
++  		     left * XXfontw + XXInternalBorder, 
++  		     (top + trow) * XXfonth + XXInternalBorder,
++  		     tcol * XXfontw,
++  		     XXfonth);
++     
++   }
++ } 
++ 
+  syms_of_xfns ()
+  {
+    /* If not dumping, init_display ran before us, so don't override it.  */
+***************
+*** 1014,1019 ****
+--- 1162,1168 ----
+    defsubr (&Sx_rebind_keys);
+  #endif notdef
+    defsubr (&Sx_debug);
++   defsubr (&Sdo_highlight);
+  }
+  
+  #endif /* HAVE_X_WINDOWS */
+*** emacs-18.59/src/x11term.c	Sat Oct 24 06:31:56 1992
+--- emacs-18.59-modified/src/x11term.c	Mon Nov  2 11:14:47 1992
+***************
+*** 210,216 ****
+  Display *XXdisplay;
+  int XXscreen;
+  Window XXwindow;
+! GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp,XXgc_curs_rev;
+  XGCValues XXgcv;
+  Cursor EmacsCursor;
+  Pixmap SinkPixmap, SinkMaskPixmap;
+--- 210,216 ----
+  Display *XXdisplay;
+  int XXscreen;
+  Window XXwindow;
+! GC XXgc_norm,XXgc_rev,XXgc_curs,XXgc_temp,XXgc_curs_rev,XXgc_highlight;
+  XGCValues XXgcv;
+  Cursor EmacsCursor;
+  Pixmap SinkPixmap, SinkMaskPixmap;
+***************
+*** 242,247 ****
+--- 242,249 ----
+  static char  *temp_internalBorder;
+  static char  *temp_useBitmap;
+  
++ static XComposeStatus status;
++ 
+  struct _xdeftab 
+  {
+    char *iname;			/* instance name */
+***************
+*** 323,328 ****
+--- 325,332 ----
+  
+  	InUpdate = 0;
+  	stuffpending = 0;
++ 	status.compose_ptr = NULL;
++ 	status.chars_matched = 0;
+  	if (!initialized) {
+  		CursorExists = 0;
+  		CursorOutline = 1;
+***************
+*** 1304,1312 ****
+    char mapping_buf[20];
+    BLOCK_INPUT_DECLARE ();
+    XEvent event;
+-   /* Must be static since data is saved between calls.  */
+-   static XComposeStatus status;
+    KeySym keysym;
+    SIGMASKTYPE oldmask;
+  
+    BLOCK_INPUT ();
+--- 1308,1315 ----
+    char mapping_buf[20];
+    BLOCK_INPUT_DECLARE ();
+    XEvent event;
+    KeySym keysym;
++   extern int meta_prefix_char;
+    SIGMASKTYPE oldmask;
+  
+    BLOCK_INPUT ();
+***************
+*** 1374,1379 ****
+--- 1377,1386 ----
+        break;
+  
+      case Expose:
++ #ifdef XDEBUG
++       fprintf(stderr, "Expose (delayed_size_change = %d)\n",
++ 	      delayed_size_change);
++ #endif
+        if (!delayed_size_change)
+  	dumprectangle (event.xexpose.y-XXInternalBorder,
+  		       event.xexpose.x-XXInternalBorder,
+***************
+*** 1444,1450 ****
+      case KeyPress:
+        nbytes = XLookupString (&event.xkey,
+  			      mapping_buf, 20, &keysym,
+! 			      0);
+  
+  #ifndef AIX
+        /* Someday this will be unnecessary as we will
+--- 1451,1457 ----
+      case KeyPress:
+        nbytes = XLookupString (&event.xkey,
+  			      mapping_buf, 20, &keysym,
+! 			      &status);
+  
+  #ifndef AIX
+        /* Someday this will be unnecessary as we will
+***************
+*** 1451,1457 ****
+  	 be able to use XRebindKeysym so XLookupString
+  	 will have already given us the string we want. */
+        if (IsFunctionKey(keysym)
+! 	  || IsMiscFunctionKey(keysym)
+  	  || keysym == XK_Prior
+  	  || keysym == XK_Next) {
+  	strcpy(mapping_buf,"[");
+--- 1458,1464 ----
+  	 be able to use XRebindKeysym so XLookupString
+  	 will have already given us the string we want. */
+        if (IsFunctionKey(keysym)
+! 	  || (IsMiscFunctionKey(keysym) && (keysym != XK_Mode_switch))
+  	  || keysym == XK_Prior
+  	  || keysym == XK_Next) {
+  	strcpy(mapping_buf,"[");
+***************
+*** 1487,1496 ****
+        }
+  #endif  /* not AIX */
+        if (nbytes) {
+! 	if ((nbytes == 1) && (event.xkey.state & Mod1Mask))
+! 	  *mapping_buf |= METABIT;
+  	if ((nbytes == 1) && (event.xkey.state & ControlMask))
+  	  *mapping_buf &= 0x9F;		/* mask off bits 1 and 2 */
+  	if (numchars-nbytes > 0) {
+  	  bcopy (mapping_buf, bufp, nbytes);
+  	  bufp += nbytes;
+--- 1494,1519 ----
+        }
+  #endif  /* not AIX */
+        if (nbytes) {
+! 	if ((nbytes == 1) && (event.xkey.state & Mod1Mask)) {
+! 	  /* Character typed with META-shift key held down is split
+! 	     into META-prefix + ASCII-character. */
+! 	  mapping_buf[1] = mapping_buf[0] & 0x7F;
+! 	  mapping_buf[0] = meta_prefix_char;
+! 	  nbytes = 2;
+! 	}
+! 	else if ((nbytes == 1) && (event.xkey.state & Mod2Mask)) {
+! 	  KeySym ks;
+! #define KeysymToChar(k) (k & 0xFF)
+! 
+! 	  if ((ks = XLookupKeysym(&event.xkey,
+! 				  (event.xkey.state & ShiftMask) ? 3 : 2))
+! 	      != NoSymbol) {
+! 	    *mapping_buf = KeysymToChar(ks);
+! 	  }
+! 	}
+  	if ((nbytes == 1) && (event.xkey.state & ControlMask))
+  	  *mapping_buf &= 0x9F;		/* mask off bits 1 and 2 */
++ 
+  	if (numchars-nbytes > 0) {
+  	  bcopy (mapping_buf, bufp, nbytes);
+  	  bufp += nbytes;
+***************
+*** 2181,2186 ****
+--- 2204,2212 ----
+  	BLOCK_INPUT ();
+  	XFlush (XXdisplay);
+  
++ #ifdef XDEBUG
++ 	fprintf(stderr, "XNewFont(%s)\n", newname);
++ #endif
+  
+  	temp = XT_CalcForFont(newname);
+  
+***************
+*** 2448,2453 ****
+--- 2474,2484 ----
+      XWindowChanges changes;
+      unsigned int change_mask = 0;
+      
++ #ifdef XDEBUG
++     fprintf(stderr, "XT_Set_Size_Hints(w, %d, %d, %d, %d, ...)\n",
++ 	    x, y, width, height, do_resize, pr);
++ #endif
++ 
+      sizehints.flags = 0;
+      
+      if (! do_resize) {
+***************
+*** 2579,2584 ****
+--- 2610,2618 ----
+  XSetWindowSize(rows, cols)
+      int rows, cols;
+  {
++ #ifdef XDEBUG
++     fprintf(stderr, "XSetWindowSize(%d, %d)\n", rows, cols);
++ #endif
+      XT_Set_Size_Hints(XXwindow, 0, 0, cols, rows, NO_MANAGER, 0);
+  }
+  
+***************
+*** 2660,2666 ****
+--- 2694,2707 ----
+    XXgc_curs_rev = XCreateGC(XXdisplay, XXwindow,
+  			    GCFont|GCForeground|GCBackground,
+  			    &XXgcv);
++   XXgcv.foreground = back ^ fore;
++   XXgcv.background = fore ^ back;
++   XXgc_highlight = XCreateGC(XXdisplay, XXwindow,
++ 			     GCForeground|GCBackground,
++ 			     &XXgcv);
+  
++   XSetFunction(XXdisplay,XXgc_highlight, GXxor);
++ 
+    EmacsCursor = XCreateFontCursor(XXdisplay, XC_left_ptr);
+  
+    x_set_cursor_colors ();
+*** emacs-18.59/src/xdisp.c	Fri Jul 24 22:08:13 1992
+--- emacs-18.59-modified/src/xdisp.c	Sun Nov  1 16:11:10 1992
+***************
+*** 1291,1296 ****
+--- 1291,1297 ----
+    register unsigned char *p1prev = 0;
+    int tab_width = XINT (current_buffer->tab_width);
+    int ctl_arrow = !NULL (current_buffer->ctl_arrow);
++   int meta_printable = !NULL (current_buffer->meta_printable);
+    int width = XFASTINT (w->width) - 1
+      - (XFASTINT (w->width) + XFASTINT (w->left) != screen_width);
+    struct position val;
+***************
+*** 1408,1414 ****
+  	    }
+  	  break;
+  	}
+!       else if (c < 0200 && ctl_arrow)
+  	{
+  	  if (p1 >= startp)
+  	    *p1 = '^';
+--- 1409,1415 ----
+  	    }
+  	  break;
+  	}
+!       else if (ctl_arrow && is_control_char(c))
+  	{
+  	  if (p1 >= startp)
+  	    *p1 = '^';
+***************
+*** 1417,1422 ****
+--- 1418,1429 ----
+  	    *p1 = c ^ 0100;
+  	  p1++;
+  	}
++       else if (meta_printable && is_meta_char(c))
++ 	{
++ 	  if (p1 >= startp)
++ 	    *p1 = c;
++ 	  p1++;
++ 	}
+        else
+  	{
+  	  if (p1 >= startp)
+***************
+*** 2010,2016 ****
+  	    }
+  	  while ((p1 - start + hscroll - (hscroll > 0)) % tab_width);
+  	}
+!       else if (c < 0200 && buffer_defaults.ctl_arrow)
+  	{
+  	  if (p1 >= start)
+  	    *p1 = '^';
+--- 2017,2023 ----
+  	    }
+  	  while ((p1 - start + hscroll - (hscroll > 0)) % tab_width);
+  	}
+!       else if (buffer_defaults.ctl_arrow && is_control_char(c))
+  	{
+  	  if (p1 >= start)
+  	    *p1 = '^';
+***************
+*** 2017,2022 ****
+--- 2024,2035 ----
+  	  p1++;
+  	  if (p1 >= start && p1 < end)
+  	    *p1 = c ^ 0100;
++ 	  p1++;
++ 	}
++       else if (buffer_defaults.meta_printable && is_meta_char(c))
++ 	{
++ 	  if (p1 >= start)
++ 	    *p1 = c;
+  	  p1++;
+  	}
+        else
+*** emacs-18.59/src/xmenu.c	Fri Oct 25 04:19:54 1991
+--- emacs-18.59-modified/src/xmenu.c	Sun Nov  1 15:52:18 1992
+***************
+*** 37,42 ****
+--- 37,43 ----
+  
+  /* On 4.3 this loses if it comes after xterm.h.  */
+  #include <signal.h>
++ #include <stdio.h>
+  #include "config.h"
+  
+  /* This may include sys/types.h, and that somehow loses
+
+--
+Pekka Nikander
+

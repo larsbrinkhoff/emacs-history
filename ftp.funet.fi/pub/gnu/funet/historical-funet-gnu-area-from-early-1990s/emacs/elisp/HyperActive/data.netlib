@@ -1,0 +1,88 @@
+NETLIB is a network-based facility for the automated distribution of the
+source code for public domain scientific software.  Most of this software is
+written in FORTRAN, but some software is available in C, C++, and PASCAL.
+Software is available for a wide variety of applications.  The following
+list -- which is far from exhaustive -- should give the reader an idea of
+the scope of the NETLIB collection.
+
+
+NUMERICAL METHODS:
+
+   * Linear Algebra (basic linear algebra subroutines, eigenvalue and
+       eigenvector computations, matrix factorizations, least squares)
+   * Sparse Matrix Calculations
+   * Numerical Optimization
+   * Spline Interpolation
+   * Ordinary Differential Equations
+   * Fast Fourier Transforms
+   * Special Functions
+
+
+WELL-KNOWN SOFTWARE:
+
+   * Collected algorithms of the Association of Computing Machinery
+       (ACM) Transactions on Mathematical Software (TOMS)
+   * LINPACK and EISPACK subroutine libraries
+   * AMS TeX and SIAM typesetting macros
+   * MATLAB applications packages
+
+
+SOFTWARE FOR ADVANCED COMPUTER ARCHITECTURES:
+
+   * Libraries for supporting parallel computation
+   * Libraries for computation on vector-processor machines
+
+
+MISCELLANEOUS:
+
+   * Multiple-precision floating-point arithmetic packages (e.g.,
+       Brents MP; Smiths FM, from TOMS algorithms)
+   * Benchmark programs for comparing computing platforms
+   * Collections of problems for testing numerical software
+   * Programming aids such as single-precision-to-double-precision and
+       FORTRAN-to-C conversion utilities
+   * Companion software to various textbooks (e.g., Cheney & Kincaid;
+       Forsythe, Malcolm, and Moler)
+   * Bibliographies
+
+
+Information and software (e.g., an index of available software, or the
+source code to LINPACK) are obtained by sending requests -- via electronic
+mail -- to a NETLIB mail server at one of the following Internet addresses:
+
+     netlib@research.att.com          (AT&T Bell Labs, New Jersey, USA)
+     netlib@ornl.gov                  (Oak Ridge Nat. Lab, Tenn., USA)
+     netlib@ukc.ac.uk                 (Univ. of Kent, UK)
+     netlib@nac.no                    (Oslo, Norway)
+     netlib@draci.cs.uow.edu.au       (Univ. of Wollongong, NSW, Australia)
+
+Upon receipt of an appropriately worded request, the NETLIB mail server
+responds by sending the information or software requested to the electronic
+mail address of the requestor.  Depending on your location, the amount of
+network traffic, and other factors, you may actually receive a reply within
+minutes of submitting your request!
+
+Note that the software available and services provided may differ somewhat
+>from one NETLIB site to another.  For example, the AT&T Bell Labs site,
+research.att.com, also provides:  (1) access to the NETLIB software via FTP
+(login with username netlib), and (2) access to an interactive biblio-
+graphic search system via TELNET (login with username walk).
+
+To obtain more detailed instructions on the use of NETLIB, as well as an
+index of the software currently available from a particular NETLIB site,
+send the following one-line message to a NETLIB mail server (selected from
+the above list -- usually the geographically closest site):
+
+     send index
+
+Note that some mail trailers may possibly confuse the NETLIB mail servers.
+If you encounter problems, you might want to suppress the use of your usual
+signature file when sending requests to NETLIB via electronic mail.
+
+
+ //////////////////////////////////////\\\\\\\\\\\\\\\\\\\
+|  Frederick W. Chapman |   Campus Phone:  8-3218   | Junior Adult Mens     |
+|  User Services Group  |   fc03@ns1.cc.lehigh.edu  | Free-Skating Bronze    |
+|  Computing Center     |     -.-. --.-   -.. .     | Medalist, Mid-Atlantic |
+|  Lehigh University    | N3IJC (2m band, FM voice) | Competition, 1991!     |
+ \\\\\\\\\\\\\\\\\\\//////////////////////////////////////
