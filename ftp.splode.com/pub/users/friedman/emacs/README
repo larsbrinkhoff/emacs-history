@@ -1,0 +1,34 @@
+2004-06-08
+
+Packages and patches
+--------------------
+
+* emacs-19.34-1.rh9.src.rpm
+  emacs-19.34-1.rh9.i386.rpm
+
+  Red Hat 9 RPMS for Emacs 19.34.
+  Since RH9 comes with Emacs 21 preinstalled, the executables installed by
+  this 19.34 rpm have `-19.34' appended to them to avoid conflicts.
+
+
+The following patches provide ELF executable support on Linux-based
+systems.  These patches are mutually exclusive; apply the one appropriate
+for your system.
+
+* emacs-18.59-linux22x-elf-glibc21.diff.gz
+
+    Patches for Emacs 18.59 to run on systems with GNU Libc 2.1 and
+    linux 2.2.x or newer kernels, e.g. Red Hat 6.1.
+
+* emacs-18.59-linuxelf-glibc2.diff.gz
+
+    Patches for Emacs 18.59 to run on systems with GNU Libc 2.0 and
+    linux 2.0.x kernels, e.g. Red Hat 5.2.
+
+* emacs-18.59-linuxelf-libc5.diff.gz
+
+    Patches for Emacs 18.59 to run on systems with Linux libc 5.4.x.
+
+* emacs-19.34-linux24x-elf-glibc23.diff.gz
+
+    Patches for Emacs 19.34 to build on Red Hat 9.
