@@ -1,0 +1,97 @@
+Version 4.0 of Epoch, GNU Emacs for the X windowing system has now
+been formally released.  Epoch is based on GNU Emacs version 18.58,
+and adds the following functionality:
+
+    o Multiple X-Window support.
+    o Marked and attributed regions of text
+    o Support for proportional and variably-sized fonts
+    o Support for display of 8-bit clean fonts (ISO, etc.)
+    o Asynchronous communication with other X Clients
+    o Mouse-dragging with hilighting to support cut & paste using Selections
+    o Access to raw X-Window objects
+    o Support for restoring attributed regions following undo operations
+
+Changes from Epoch 3.2
+----------------------
+    Details on all of these changes are discussed in the file
+`README-Epoch4.0' in the distribution, including comments on
+converting 3.2 Elisp code to run under 4.0. 
+
+    o Based on 18.58 rather than 18.55
+    o Multiple minibuffer modes
+    o Epoch "buttons" have been renamed to "zones"
+    o Epoch 4.0 supports a fully style-based display
+    o Proportional font support
+    o Mouse support based on extensions to 3.2 mouse handling
+    o Selections rather than cut-buffers are used for cut & paste.
+    o "Ascii" support equivalent to running ASCII GNU Emacs
+    o Support for sharing directories between Epoch and GNU Emacs 18.58
+      installed elsewhere.
+    o $HOME/.Xdefaults is not read upon startup for ICCCM compliance.
+
+Getting Epoch
+-------------
+Epoch is available by anonymous ftp from cs.uiuc.edu (128.174.252.1)
+in the directory pub/epoch-files/epoch, either as a full distribution
+or as patches from the most recent Beta release (Epoch 4.0b1).
+Epoch is available in the UK from uk.ac.ic.doc.src (00000510200001) in
+the directory /gnu/epoch.  Epoch is also available from
+aix370.rrz.uni-koeln.de (134.95.132.2) in /gnu/emacs/epoch.  No
+patches are available from the 3.2 release because of size constraints
+(too much has changed).
+
+Epoch is available on tape: The cost at the time of creating version
+4.0 was $175.00 for cartridge tapes.  We can currently make 1600 BPI
+reel tapes and cartridge tapes for SUN and HP 9000 series machines.
+The price covers the cost of purchasing, making and shipping the
+tapes.  You should contact the epoch-request mailing list to confirm
+these rates.  Payment should be by cheque made payable to the
+University of Illinois, and sent to:
+
+        Epoch Distribution, attn: R. Canaday
+        Department of Computer Science
+        University of Illinois at Urbana-Champaign
+        1304 W. Springfield Avenue, Urbana
+        Illinois 61801, USA
+
+The files available via ftp are:
+
+ANNOUNCE4.0		    	this file
+epoch-4.0p0.tar.Z		the entire release
+epoch-4.0.epoch-man.tar.Z	just the manual
+epoch-4.0.epoch-man.ps.Z	postscript version of manual
+epoch-4.0.epoch-man.dvi.Z	dvi version of manual
+
+epoch-4.0-update6.tar.Z		4.0p0 in patch form from 4.0b1
+
+Installing Epoch
+----------------
+Because of the added ascii support and potential lisp directory
+sharing, please refer to the file `INSTALL', which fully discusses the
+steps to get Epoch 4.0 up and running.
+
+Ideas and Support
+-----------------
+There is a newsgroup and gatewayed mailing list for discussing ideas
+about Epoch applications as well as reporting bugs.  Submissions can
+be posted directly the group gnu.epoch.misc, or send via mail to
+`epoch@cs.uiuc.edu' (alternatively `uunet!uiucdcs!epoch' or
+`epoch%cs.uiuc.edu@uiucvmd.bitnet').  Mailing list requests (additions or
+deletions from the list) should be sent to `epoch-request'.
+
+Announcements regarding official (i.e. supported) patches and any
+subsequent releases will be made through this channel; patches will be
+available via ftp and email upon request.
+
+Many common questions are answered in the Epoch FAQ (Frequently Asked
+Questions) file, which may be found in `etc/EPOCH-FAQ' in the
+distribution.  The manual also is available in info format, by
+pressing C-h i.
+
+At this time, many thanks are due to members of the `epoch-design'
+mailing list and to all Alpha/Beta users; they have contributed much
+to the utility and stability of Epoch 4.0.
+
+
+
+

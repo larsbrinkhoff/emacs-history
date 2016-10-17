@@ -1,0 +1,12 @@
+Epoch and XEmacs (formerly Lucid Emacs) are in the process of merging.
+The latest release of XEmacs (19.11) is now using the Epoch redisplay
+engine.  Additional functionality only available in Epoch will be
+merged into XEmacs over the next several months.
+
+For additional future information on the merger, watch the newsgroup
+alt.lucid-emacs.help.  If you are using XEmacs, please report bugs to
+alt.lucid-emacs.bug.  Support for Epoch proper has been dropped.  All
+efforts are going towards merging Epoch functionality into XEmacs.
+
+The current version of XEmacs is located in the directoyr /pub/xemacs.
+The last Epoch release, 4.2, is in /pub/epoch-files/epoch.

@@ -1,0 +1,1349 @@
+----------------------------------------------------------------------
+*               Epoch FAQ (Frequently Asked Questions)
+*        (or at least Occasionally Wondered-About Questions)
+
+*        Maintained by Marc Andreessen (marca@ncsa.uiuc.edu)
+*     Last Modified Mon May 18 22:17:07 1992 -- Marc Andreessen
+
+If you are viewing this text in a GNU Emacs buffer, you can type
+"M-2 C-x $" to get an overview of just the questions.  Then, when
+you want to look at the text of the answers, just type "C-x $".
+
+To search for a question numbered XXX, type "M-C-s ^XXX:", followed by
+a C-r if that doesn't work; type ESC to end the search.
+
+The latest version of this file will be always available via anonymous
+FTP to ftp.ncsa.uiuc.edu (141.142.20.50) in /outgoing/marca/epoch.
+
+Please feel free to send comments, suggestions, additions, and
+corrections to marca@ncsa.uiuc.edu.
+
+*                   === REALLY IMPORTANT NOTE ===
+
+Unless otherwise attributed, information below is based only on Yours
+Truly's use and experience with Epoch and is BY NO MEANS GUARANTEED to
+be correct, complete, or even coherent.  If it works for you, great;
+if it doesn't, let me know, but there are no guarantees.
+
+*             === CHANGES IN THIS VERSION OF THE FAQ ===
+  
+  Here is a list of changes made since the FAQ's last monthly
+  posting to gnu.epoch.misc and news.answers:
+  
+  a) Addition of this section of the FAQ.
+  b) F-1: Two more ways to fix the backspace key.
+  c) G-2: Patch to make drag style always display.
+  d) Z-3: Only applies to X11R5 multiscreen servers, plus workaround.
+
+*                       === PREREQUISITES ===
+  
+  In the answers that follow, I assume at least a little familiarity
+  with GNU Emacs Lisp (elisp).  Suggested resources that could be
+  considered necessary references for material in this FAQ are:
+ 
+--> The GNU Emacs and Epoch manuals (available online via C-h i).  
+  
+--> The GNU Elisp manual (available via anonymous FTP from
+    prep.ai.mit.edu (18.71.0.38) as /pub/gnu/elisp-manual-1.03.tar.Z).
+  
+--> The gnu.emacs.help FAQ in the file etc/FAQ (the latest version
+    is available in the gnu.emacs.help Usenet newsgroup or via FTP from
+    pit-manager.mit.edu (18.172.1.27) in /pub/usenet/gnu.emacs.help).
+
+*                          === CAVEATS ===
+  
+  Many of the answers given herein APPLY ONLY to Epoch 4.0 (and also may
+  only apply to 4.0 beta level 0 or later).  When I know about them,
+  3.2'isms and 4.0-alpha'isms are mentioned also.  Also, my Epoch
+  platform is an SGI IRIS Indigo XS running IRIX 4.0.2; other
+  configurations may behave differently.  Please let me know of any such
+  differences.  (Now that an official release of 4.0 has been made,
+  details about previous versions will be removed at some point in the
+  future.)
+
+*                    === EPOCH AND GNU EMACS ===
+
+A-1: What is Epoch?
+  
+  Epoch is GNU Emacs on steroids: an adaptation of GNU Emacs with lots
+  of additional support for features made possible by the X11 windowing
+  system.  These features include multiple editing windows, arbitrary
+  colors and fonts (fixed-width and proportional), selectable zones per
+  buffer with arbitrary display styles (font, color, underline, stipple,
+  pixmap), an optional separate minibuffer window, improved keyboard and
+  mouse handling, full 8-bit character set support, and more.
+  
+  Epoch, like GNU Emacs, is very customizable; much of this FAQ
+  describes ways to customize Epoch for specific purposes.
+  
+A-2: How can I get Epoch?
+  
+  Epoch is available via anonymous FTP to cs.uiuc.edu (128.174.252.1)
+  in pub/epoch-files/epoch.  The main file of interest is currently
+  epoch-4.0p1.tar.Z.
+  
+  According to Simon Marshall (S.Marshall@sequent.cc.hull.ac.uk):
+  
+  Like GNU & X11 stuff, epoch is available in the UK from
+  uk.ac.ic.doc.src (00000510200001).  You can log on; there's help to
+  tell you the different ways of getting source.  Epoch is in
+  /gnu/epoch.
+  
+  Epoch is also available from aix370.rrz.uni-koeln.de (134.95.132.2)
+  in /gnu/emacs/epoch.
+  
+  Volunteers for other FTP sites outside the United States, or for
+  mail access to Epoch source, please step forward.
+  
+A-3: What is the latest version of Epoch?
+  
+  The latest version is 4.0 patchlevel 1.  Previous versions still in
+  use by some people include 4.0 patchlevel 0, the 4.0 alpha and beta
+  levels, and version 3.2.
+  
+  Epoch 4.0p1 (a.k.a. 4.0 patchlevel 1) is based on GNU Emacs 18.58,
+  which is the most recent version of GNU Emacs.
+  
+A-4: What are the differences between the various versions of Epoch?
+  
+  NOTE: Many bugs were also fixed from version to version; for the
+  most part, those fixes aren't mentioned here.)
+  
+  Important differences between 3.2 and 4.0-alpha include:
+     [From initial announcement of Epoch 4.0a0.]
+  
+  a)  Based on 18.57 GNU Emacs.  [3.2 was based on 18.55.]
+  b)  Completely rebuilt display code: now supports proper proportional
+      fonts.
+  c)  Changes from attributes to styles.
+  d)  Minibuffer can now be in its own window (traditional Epoch) or in the
+      same window as the epoch screens (traditional GNU Emacs).
+  e)  Mouse maps now based on Ken Laprade's mouse package.
+  f)  Selections rather than cut-buffers (but cut-buffers still work).
+  g)  Runs on more platforms.
+  
+  Important differences between 4.0-alpha and 4.0-beta include:
+     [From 4.0-beta README.]
+  
+  h)  Includes code to build ASCII version of GNU Emacs 18.57.
+  i)  Support for sharing lisp directory between Epoch and GNU Emacs
+      18.57 installed elsewhere.
+  j)  "Buttons" became "zones".  (See question A-5 below.)
+  k)  Performance enhancements.
+  
+  Important differences between 4.0b0 and 4.0b1 include:
+     [From 4.0b1 README.]
+  
+  l)  Based on 18.58 GNU Emacs.
+  m)  Bug-fixes for graphical zone support.
+  n)  Epoch no longer reads $HOME/.Xdefaults on its own; it assumes
+      that Epoch resources are available in the X server's resource
+      database.  (This is ICCCM-compliant behavior, which makes Epoch
+      more like other X applications).
+  
+  Important differences between 4.0b1 and 4.0p0 include:
+     [From preliminary announcement of 4.0p0.]
+  
+  o)  Epoch will read $HOME/.Xdefaults on its own if the '-ud' command
+      line option is used; otherwise, it uses the X resource database
+      only.
+  p)  Additional support for 8-bit fonts and hypertext info in the
+      contrib directory.
+  
+  Important differences between 4.0p0 and 4.0p1 include:
+     [From announcement of 4.0p1.]
+  
+  q)  Added support for pasting from Epoch to Open Windows clients.
+  r)  Ability to set cursor foreground/background.
+  s)  Ability to load standard X bitmap files as well as XPM pixmap
+      files.
+  t)  Replacement contrib/hyper/info.el for broken 4.0p0 version.
+  
+A-5: I recently moved to Epoch 4.0b0 (or later), and elisp code that
+ worked before has stopped working.  Why?
+  
+  Change c) for Epoch 4.0b0 is probably the culprit; the term "zone" was
+  chosen to replace the term "button", changing the names of all the
+  button-related function names and variables.  There are two ways to
+  deal with this change:
+  
+  METHOD #1:
+  
+    Put the following command at the head of each file of elisp code
+    that uses buttons:
+    
+    (require 'button)
+    
+    (This simply does a series of fset's to replace the "button" names
+    with the new "zone" names.)
+    
+  METHOD #2:
+    
+    Convert all references of "button" to "zone".  You can use the
+    function convert-current-buffer in epoch-lisp/convert-buttons.el
+    (in the Epoch distribution) to do this automatically.
+    
+    NOTE: There may be additional problems; in particular, since
+    attributes were eliminated in Epoch 4.0a0, any use of them will
+    have to be eliminated also.  This is less simple than switching
+    from buttons to zones.  Fortunately, most Epoch packages on the
+    net now support 4.0.  Therefore, I won't bother to come up with an
+    answer for this one (unless someone actually needs to know).
+    
+A-6: I recently moved to Epoch 4.0b1 (or later), and my X resources are
+ suddenly being ignored.  Why?
+  
+  Change n) for Epoch 4.0b1 above has caused some trouble for people
+  moving to 4.0b1 (or later).  Previous to 4.0b1, Epoch would always
+  extract its X default resources from the user's .Xdefaults file by
+  hand; this is no longer the case.  If Epoch 4.0b1 (or later) isn't
+  picking up resources like previous versions did on your system, prior
+  to starting Epoch do this:
+  
+    xrdb -merge $HOME/.Xdefaults
+  
+  This makes the X server's database pick up and maintain all of the
+  resource definitions found in $HOME/.Xdefaults.
+  
+  If you are running Epoch 4.0p0 or later you can use the '-ud'
+  command line flag to force Epoch to manually scan $HOME/.Xdefaults.
+  
+  A second problem is that Epoch 4.0b1 (or later) uses the first word
+  in the command that executed Epoch (argument 0) to search the X
+  resource database for Epoch resources.  Thus, if you invoke Epoch
+  with the name:
+  
+    epoch-4.0.1
+  
+  ...Epoch will use the string 'epoch-4.0.1' to search the resource
+  database, thereby missing the resources specified by the name
+  'epoch'.  The workaround is to use the '-rn' command-line option
+  like so:
+  
+    epoch-4.0.1 -rn epoch
+  
+  If you are running Epoch 4.0p1 or later you can use the '-name' flag
+  (which is standard for X applications) in place of '-rn', like so:
+  
+    epoch-4.0.1 -name epoch
+  
+  [From Martin Boyer (mboyer@ireq-robot.hydro.qc.ca).]
+  
+A-7: What's the difference between Epoch and GNU Emacs version 19?
+  
+  To quote directly from the GNU 'status' file (obtained via anonymous
+  FTP to prep.ai.mit.edu (18.71.0.38) as /pub/gnu/status):
+  
+  -- BEGIN QUOTE -----------------------------------------------------
+  Emacs 18 maintenance continues for simple bug fixes.  Version 19
+  approaches release, counting among its new features before and after
+  change hooks, source-level debugging of Emacs Lisp programs, X
+  selection processing, including CLIPBOARD selections, scrollbars,
+  support for European character sets, floating point numbers,
+  per-buffer mouse commands, interfacing with the X resource manager,
+  mouse-tracking, lisp-level binding of function keys, and multiple X
+  windows (`screens' to emacs).
+  
+  Thanks go to Alan Carroll and the people who worked on Epoch for
+  generating initial feedback to a multi-windowed emacs.  Emacs 19
+  supports two styles of multiple windows, one with a separate screen
+  for the minibuffer, and another with a minibuffer attached to each
+  screen.
+  
+  A couple of other features of Version 19 are buffer allocation, which
+  uses a new mechanism capable of returning storage to the system when a
+  buffer is killed, and a new input system--all input now arrives in the
+  form of Lisp objects.
+  
+  Other features under consideration for later releases of Version 19
+  include:
+  
+  ** Associating property lists with regions of text in a buffer.
+  ** Multiple font, color, and pixmaps defined by those properties.
+  ** Different visibility conditions for the regions, and for various
+     windows showing one buffer.
+  ** Hooks to be run if point or mouse moves outside a certain range.
+  ** Incrementally saving undo history in a file, so that recover-file
+     also reinstalls buffer's undo history.
+  ** Static menu bars, and better pop-up menus.
+  -- END QUOTE -------------------------------------------------------
+  
+  Epoch currently supports much of the new functionality of GNU Emacs
+  v19, including some features that apparently won't be immediately
+  available in GNU Emacs v19 (notably, associating property lists with
+  regions of text, and multiple fonts/colors/pixmaps defined by those
+  properties).
+  
+  A postscript to this answer is a message that Richard Stallman
+  (Mr. Gnu himself) posted to gnu.emacs.help in Apr 1992:
+  
+  -- BEGIN QUOTE -----------------------------------------------------
+  Emacs 19 won't support text highlighting, but a later version will.
+  
+  We have code basically working for attaching arbitrary properties to
+  parts of the text, including choice of font and color.
+  
+  This feature is designed for attributes which are considered part of
+  the text itself.  What Epoch provides is highlighting that is part
+  of the presentation of the text, not logically part of the text itself.
+  That is useful also; I hope we will find the wherewithal to implement
+  that along with the other highlighting features.
+  -- END QUOTE -------------------------------------------------------
+
+*                     === CONFIGURING EPOCH ===
+
+B-1: How can my .emacs file deal with both GNU Emacs and Epoch?
+  
+  An easy way to handle both GNU Emacs and Epoch within the same .emacs
+  file is to define a variable 'running-epoch' as follows:
+  
+  (defvar running-epoch (boundp 'epoch::version))
+  
+  Then, the rest of your .emacs file can look like this:
+  
+    (if running-epoch
+      (progn
+        ... [Epoch-specific code here] ...
+    ))
+  
+  ... [Emacs code here] ...
+  
+  (After this, when I refer to 'your .emacs file', read that as 'the
+  Epoch-specific portion of your .emacs file', under the assumption that
+  you have both general and Epoch-specific parts as detailed above.)
+  
+  If you have a large amount of Epoch-specific code it may be better to
+  put it in a separate file (e.g., "epoch-specific.el"), possibly
+  byte-compile it, then load it from your .emacs file like so:
+  
+    (if (boundp 'epoch::version) (load "epoch-specific"))
+  
+B-2: What if I want to have separate sections for Epoch 3.2 and 4.0 in
+ my .emacs file?
+  
+  The variable 'epoch::version' is a string that contains the current
+  Epoch version ID.  For instance, evaluating epoch::version under
+  Emacs4.0b0 (the first beta level) gives:
+  
+  "Epoch 4.0 Beta Patchlevel 0"
+  
+  A simple way to determine if version 4.x is running is to do something
+  like this:
+  
+    (string-match " 4" epoch::version)
+  
+  This will result in 't' if the string " 4" is a substring of
+  epoch::version (as would be the case when epoch::version is
+  "Epoch 4.0 ..."), and 'nil' otherwise.
+  
+B-3: How can I configure Epoch to support full 8-bit character sets?
+  
+  The variable 'ctl-arrow', which is a buffer-local variable, controls
+  how control characters are displayed.  By setting this variable to
+  something non-nil and non-t, you get full 8-bit characters.  To get
+  8-bit characters in all buffers, put this in your .emacs file:
+  
+    (setq-default ctl-arrow 'foo)
+  
+  [Thanks to Pierre Bondono (bondono@vnet.ibm.com) and Tor Lillqvist
+   (tml@tik.vtt.fi) for the following:]
+  
+  There is also a package in the Epoch contrib directory that deals
+  with 8-bit characters better than the above technique.  See the
+  directory contrib/keriven in the Epoch distribution.
+
+*                          === WINDOWS ===
+
+C-1: How do I get the minibuffer back at the bottom of my edit window?
+  
+  Start Epoch with the command-line option '-nm'.  Alternately, in your
+  general .Xdefaults file, specify:
+  
+    epoch.nonlocal.minibuf: False
+  
+  (These techniques only work in Epoch 4.0.)
+  
+C-2: How do I prevent the initial edit window from appearing?  (In
+ other words, how do I get only the minibuffer upon startup?)
+  
+  There is an undocumented variable that controls whether or not an
+  initial edit window will be provided.  (This variable is documented as
+  of 4.0p0.)  By default, of course, one is; to stop this from
+  happening, put the following in your .emacs:
+  
+    (setq inhibit-initial-screen-mapping t)
+  
+  This will have no effect if you're using local minibuffers (i.e. when
+  the minibuffer is a part of each edit window), as described above.
+  
+  [Thanks to Chris Love (love@cs.uiuc.edu).]
+  
+C-3: How do I stop the windows from automatically raising upon entry?
+  
+  The easiest way to do this, if you're running Epoch 4.0b0 or later, is
+  to specify the following in your .emacs file:
+  
+    (setq auto-raise-screen 'minibuf)
+  
+  If you're running a version of Epoch prior to Epoch 4.0b0, the
+  following code also works:
+  
+    (setq auto-raise-screen nil)
+    (push (function (lambda () (raise-screen (minibuf-screen)))) 
+      *select-screen-hook*)
+  
+  Both of the above solutions still make the minibuffer raise when an
+  Epoch edit window is entered; if you don't want the minibuffer to
+  raise itself either, just do the following instead:
+  
+    (setq auto-raise-screen nil)
+  
+C-4: How do I change the cursor?
+  
+  Another noticeable change from GNU Emacs is the cursor glyph (which is
+  a pencil shape).  To change this to a more normal-appearing arrow
+  shape, put this in your .emacs file:
+  
+    (cursor-glyph 68)
+    (cursor-glyph 68 (epoch::minibuf-screen))
+    (push '(cursor-glyph . 68) epoch::screen-properties)
+  
+  NOTE: You can specify a different cursor glyph for the minibuffer,
+  if you like.
+  
+  There are also X resources for the screen and minibuffer cursor
+  glyphs; equivalent to the above elisp code would be the following (in
+  your .Xdefaults file):
+  
+    epoch.screen.cursor.glyph: 68
+    epoch.minibuf.cursor.glyph: 68
+  
+  For either of these approaches, any valid cursor ID number will do; to
+  see the available cursors and their ID numbers, take a look at the
+  file /usr/include/X11/cursorfont.h.
+  
+  (See below for details on how to customize the cursor glyph based on
+  the mode of a screen's initial buffer.)
+  
+C-5: How do I define edit screen attributes on a per-mode basis?  Or,
+ how do I make my C++ edit windows come up with 48 lines and a big
+ round dot for a cursor?
+  
+  You can define styles for new edit screens created with
+  find-file-other-screen (which is, by default, bound to 'C-z 4 C-f' and
+  'C-z 4 f') based on the initial buffer's mode like so:
+  
+    (setq epoch-mode-alist
+      (append (list
+          (cons 'c-mode
+            (list
+              (cons 'geometry "80x52")
+              (cons 'cursor-glyph 94)))
+          (cons 'LaTeX-mode
+            (list
+              (cons 'geometry "90x48")
+              (cons 'cursor-glyph 58)))
+          (cons 'c++-mode
+            (list
+              (cons 'geometry "80x48")
+              (cons 'cursor-glyph 38))))
+        epoch-mode-alist))
+  
+C-6: How do I make Epoch manage edit window and icon names based on the
+ name of the current buffer(s)?
+  
+  The base Epoch distribution doesn't support this, but there have been
+  a number of small packages written that accomplish this.  The one
+  Yours Truly uses was written by Derek Ney (derek@boingo.med.jhu.edu)
+  and is up for anonymous FTP at ftp.ncsa.uiuc.edu (141.142.20.50) as
+  /outgoing/marca/epoch/derek-title.el.Z.
+  
+C-7: How do I iconify my entire Epoch session at once?
+  
+  By default, 'C-z i' is bound to iconify-screen, which only iconifies
+  the current edit window.  To iconify everything, define a small
+  function iconify-everything in your .emacs file like so:
+  
+    (defun iconify-everything () 
+      "Iconify entire Epoch session at once."
+      (interactive)
+      (dolist (s (screen-list))
+        (iconify-screen s))
+      (iconify-screen 0)
+    )
+  
+  Then bind it to a key sequence (e.g. 'C-z C-i') like so:
+  
+    (global-set-key "\C-z\C-i" 'iconify-everything)
+  
+C-8: Does Epoch support scrollbars?
+  
+  No; native support for scrollbars is a technical challenge that so far
+  no one has taken up for either GNU Emacs or Epoch.
+  
+  [Thanks to Pierre Bondono (bondono@vnet.ibm.com) for the following:]
+  
+  Related to this, there is a ``scrolling concept'' inside the IMOUSE
+  packages that may be of interest.  IMOUSE can be found in
+  contrib/boyer in the Epoch distribution or via anonymous FTP from
+  ireq-robot.hydro.qc.ca (131.195.2.130); see question H-1 below.
+  
+C-9: My workstation's screen area is overwhelmed by all the windows I
+ create in my Epoch editing sessions.  How can I squeeze more windows
+ into my working environment?
+  
+  This is only a half-facetious question; there's only room on most
+  workstation screens (usually 1024x768 or 1280x1024 pixels in area) for
+  a couple of windows with decent-sized fonts.  To help alleviate the
+  discomfort of cramped space, try the 'tvtwm' window manager.  (I sound
+  like a cough-drop commercial.)
+  
+  Tvtwm, a superset of the twm window manager, allows windows to be
+  placed on a virtual root window that can be of any size (for example,
+  3000 by 3000 pixels).  This virtual root can be navigated via tvtwm's
+  'panner', a reduced-size overview of your entire environment.
+  
+  Tvtwm can be found on your local comp.sources.x archive or in the
+  X11R4 and X11R5 distributions.  Try anonymous FTP to ftp.uu.net
+  (137.39.1.9) in /usenet/comp.sources.x.
+
+*                      === COLORS AND FONTS ===
+
+D-1: How do I interactively select my foreground color.
+  
+  First, define a style for each of your desired foreground colors in
+  your .emacs file, like so:
+  
+    (setq red-style (make-style))
+    (set-style-foreground red-style "red")
+  
+  Then, define a short command 'goto-style' like so:
+  
+    (defun goto-style (newstyle)
+      "Set current buffer to a given font NEWSTYLE."
+      (setq buffer-style newstyle)
+      (redraw-display))
+  
+  Next, bind commands to keys like so:
+  
+    (global-set-key "\C-c1" (definteractive (goto-style red-style)))
+  
+  This binds a command that changes the current foreground color to red
+  to the key sequence C-c 1.
+  
+  The following function allows you to interactive specify a new color
+  for the current buffer's foreground:
+  
+    (defun set-foreground (newfg)
+      "Set current foreground color to NEWFG."
+      (interactive "sForeground color: ")
+      (set-style-foreground buffer-style newfg)
+      (redraw-display))
+  
+  This function is activated by typing:
+  
+    M-x set-foreground
+  
+  Or, it can be bound to a key like so:
+  
+    (global-set-key "\C-z\C-s" 'set-foreground)
+  
+D-2: How do I switch fonts interactively?
+  
+  To change fonts, you don't have to define new styles.  Just define a
+  short command 'goto-font', like so:
+  
+    (defun goto-font (newfont)
+      "Set current buffer to a given font NEWFONT."
+      (font newfont)
+      (redraw-display))
+  
+  Then, bind commands to keys like so:
+  
+    (global-set-key "\C-c1" (definteractive (goto-font "8x13")))
+  
+  This changes the current edit window's font to "8x13" when the key
+  sequence 'C-c 1' is entered.
+  
+  The following function allows you to interactively input a font name:
+  
+    (defun set-font (newfont)
+      "Set current font to NEWFONT."
+      (interactive "sFont name: ")
+      (font newfont)
+      (redraw-display))
+  
+  This function is activated by typing:
+  
+    M-x set-font
+  
+  Or, it can be bound to a key like so:
+  
+    (global-set-key "\C-z\C-s" 'set-font)
+  
+  If the font you specify with either of these methods isn't valid for
+  your X server (i.e. if the font doesn't exist in a directory listed in
+  your X server's font path and in that directory's fonts.dir file, or
+  isn't available from the font server if you're running X11R5), you
+  will get this message in your minibuffer:
+   
+  Bad font name
+  
+  Font names are ordinary X font names; for example, a 14-point non-bold
+  non-italic Helvetica font can be referred to as:
+  
+  "*helvetica-medium-r-normal--14*"
+  
+  The standard X client 'xlsfonts' will give you a list of the fonts
+  registered with your X server.  The standard X client 'xfontsel' lets
+  you interactively put together an X font specification string based on
+  individual attributes (e.g., family, size).
+  
+D-3: How can I associate a certain foreground color with a file
+ so that every time I load that file my foreground color is
+ automatically set?
+  
+  You can easily do this by using GNU Emacs' ability to handle file
+  variables.  For example, if you have defined style 'red-style' to
+  specify a red foreground color, and want file 'foobar.c' to always
+  have the foreground color red, add this to the bottom of 'foobar.c':
+  
+    ^L
+    /*
+    Local Variables:
+    buffer-style: red-style
+    End:
+    */
+  
+  NOTE: '^L' is a newline character; you can enter one in an edit
+  buffer by typing 'C-q C-l'.
+  
+  Then, whenever 'foobar.c' is loaded, the variable 'buffer-style' will
+  be set to 'red-style', and as a result the foreground color for that
+  buffer will be red.
+  
+D-4: How do I design my own really funky technicolor modeline?
+  
+  Using the tried-and-true Learning By Example(tm) educational method,
+  I'll just give the (heavily commented) elisp code I use to define my
+  own customized modeline:
+  
+  ;; Define styles for the modeline.
+  (setq cyan-style (make-style))
+  (set-style-foreground cyan-style "#6fcfef")
+  (setq red-style (make-style))
+  (set-style-foreground red-style "red")
+  (setq yellow-style (make-style))
+  (set-style-foreground yellow-style "yellow")
+  
+  ;; Make display-time display day and date also.
+  (setq display-time-day-and-date t)
+  
+  ;; Display time, day, and date in modeline.
+  (display-time)
+  
+  ;; List full filename, with path.
+  (set-default 'mode-line-buffer-identification
+             '(buffer-file-name ("%f") ("%b")))
+  
+  ;; This actually turns inverse-video _off_ for the modeline.
+  (setq mode-line-inverse-video t)
+  
+  ;; Set the modeline itself.
+  (setq default-mode-line-format
+    (list red-style "--" 
+          ;; Buffer name.
+          yellow-style 'mode-line-buffer-identification 
+          red-style "-" 
+          ;; Buffer status (read-only, unchanged, changed).
+          cyan-style "%*%*" 
+          red-style "-" 
+          ;; Position in buffer.
+          cyan-style "%[%3p%]" 
+          red-style "--"  
+          ;; Current time.
+          yellow-style "%M" 
+          red-style "--("
+          ;; Mode name.
+          cyan-style 'mode-name 'minor-mode-alist "%n"
+            'mode-line-process 
+          red-style ")-%-"))
+  
+D-5: How do I replace the mouse region selection underlining with a
+ different style?
+  
+  You can override the variable 'motion::style' with your own style,
+  like so:
+  
+    (setq motion::style (make-style))
+  
+  Now, you can set the various elements of this style as you please.
+  Several examples follow.
+  
+  To have just the text foreground color change on mouse selection, do:
+  
+    (set-style-foreground motion::style "yellow")
+    (set-style-background motion::style (background))
+    
+  NOTE: Replace "yellow" with any desired X color name.
+  
+  To have the selected region appear as reverse video, try:
+  
+    (set-style-foreground motion::style (background))
+    (set-style-background motion::style (foreground))
+  
+  To have the selected region appear with an overlayed diagonal stipple
+  pattern, try:
+  
+    (set-style-background motion::style "red")
+    (set-style-background-stipple motion::style
+      (make-bitmap 4 4 "\167\273\335\356"))
+  
+  Also note that, if you like, you can just modify the style bound by
+  default to motion::style instead of actually creating a new style.
+  The style bound to motion::style has default settings as follows:
+  
+    (set-style-foreground motion::style (foreground))
+    (set-style-background motion::style (background))
+    (set-style-underline motion::style (foreground))
+  
+  So, for instance, to get yellow underlining, you could just do:
+  
+    (set-style-underline motion::style "yellow")
+
+*                           === MENUS ===
+
+E-1: Does Epoch support popup menus or menubars?
+  
+  The base Epoch distribution does not have native support for popup
+  menus or menubars.  However, there are other ways to use menus with
+  Epoch.
+  
+  METHOD #1:
+  
+  If you're running the window manager GWM (available via anonymous FTP
+  to export.lcs.mit.edu (18.24.0.12) in /contrib/gwm), you can use the
+  Epoch contrib 'wm-menu' package (found in the contrib directory in the
+  Epoch distribution) to have GWM provide menus that pass messages to
+  Epoch.
+  
+  METHOD #2:
+  
+  If you're running a window manager that has user-specifiable menus (as
+  all of the common window managers do), you can use the xsendevent to
+  send events (e.g. keystrokes) to Epoch by activating window
+  manager-produced menu entries.
+  
+  An example menu (in twm format) is as follows:
+  
+  menu "epoch"
+  {
+    "Epoch Menu"   f.title
+    "Undo"         ! "xse -window ClickWindow 'Ctrl<Key>x' '<Key>u'"
+    "Quit"         ! "xse -window ClickWindow 'Ctrl<Key>x' 'Ctrl<Key>c'"
+  }
+  
+  Button3 = c : root : f.menu "epoch"
+  
+  The epoch menu is activated when Ctrl-Btn3 is pressed on the root
+  window.  You theoretically will have to point at an Epoch window and
+  click with the left mouse button (after activating a menu entry) for a
+  command to take effect.  However, I [Marc] haven't been able to
+  actually get the ClickWindow option to work; xsendevent (version 2.0)
+  always wants to send the event to the window that contains the
+  pointer.  So what I do instead is define a twm titlebutton for the
+  epoch menu like so:
+  
+  menu "epoch"
+  {
+    "Epoch Menu"   f.title
+    "Undo"         ! "xse 'Ctrl<Key>x' '<Key>u'"
+    "Quit"         ! "xse 'Ctrl<Key>x' 'Ctrl<Key>c'"
+  }
+  
+  LeftTitleButton "~/epochbitmap.bm" = f.menu "epoch"
+  
+  ("~/epochbitmap.bm" is a little X bitmap that displays as the button's
+  label.)  Now pulling down the menu and activating an entry will send
+  the keystrokes to the current window.  This is not an ideal solution,
+  since all windows (Epoch or not) in the session will have the menu
+  attached to them, but it does work and is quite convenient for use
+  with Epoch.
+  
+  To bind arbitrary commands to menu entries in this manner, you need to
+  define a unique keystroke pattern (with global-set-key) for each
+  command and then send that keystroke pattern with xsendevent via the
+  menu.  See the section on rebind-key (below) for more information on
+  this technique.  (Of course, you are also free to have xsendevent send
+  a key sequence like 'ESC x u n d o RET' directly to Epoch.)
+  
+  You can get xsendevent at export.lcs.mit.edu (18.24.0.12) in /contrib
+  or at ftp.uu.net (137.39.1.9) in /packages/X/contrib.
+  
+  [From Philippe Bondono (bondono@vnet.ibm.com).]
+  
+  METHOD #3:
+  
+  A completely different technique involves using a separate X client
+  that posts a menu and has Epoch (or for that matter, GNU Emacs)
+  receive commands from it.  One example of this technique is
+  /gnu/emacs/buttons.tar.Z from anonymous FTP to aix370.rrz.uni-koeln.de
+  (134.95.132.2).
+  
+  METHOD #4:
+  
+  Another method uses xmenu or xmenu2, which are available at any
+  comp.sources.x archive.  (If you don't know of such an archive, try
+  anonymous FTP to ftp.uu.net (137.39.1.9) in /usenet/comp.sources.x.)
+  After you have compiled xmenu or xmenu2, define the following function
+  in your .emacs file:
+  
+  (defun interpret-output (process output)
+    (command-execute (car (read-from-string output))))
+  
+  Then you can define other functions that make specific menus, with
+  menu entries bound to commands, like the following example shows:
+  
+  (defun make-menu ()
+    (interactive)
+    (set-process-filter (start-process "xmenu" nil
+        "/usr/local/bin/xmenu" "-heading" "Epoch Menu"
+        "Undo=undo")
+      'interpret-output))
+  
+  This example uses /usr/local/bin/xmenu to post a one-entry menu to the
+  screen; the menu entry's label is "Undo" and the action it triggers in
+  Epoch is 'undo'.  Specify as many "Label=action" pairs as you like as
+  part of the start-process command.
+  
+  [From Philippe Bondono (bondono@vnet.ibm.com).]
+  
+  If you use XView/Open Windows, Dev Joneja (dj7@cunixf.cc.columbia.edu)
+  has written a menu/button client similar to xmenu; it's available via
+  anonymous FTP from ftp.ncsa.uiuc.edu (141.142.20.50) as
+  /outgoing/marca/epoch/xvmenu.tar.Z.
+  
+  Bob Weiner (rsw@cs.brown.edu) says the following concerning menus
+  within Hyperbole:
+  
+  ----------------------------------------------------------------------
+  If you use Hyperbole, you know what the Smart Key system is, context
+  sensitive key bindings for many Emacs modes and subsystems.  There is
+  a Smart Menu system that goes along with this but has not been
+  released because it needs some additional menus and some integration
+  work.  It is window manager and window system independent, works under
+  Emacs, with a slightly customized version that can highlight selected
+  menu items and display menus in a separate Epoch screen, and is
+  written entirely in Elisp, so no patching is needed.  It provides much
+  easier subsystem access for novices and experienced users and has been
+  in use at a few sites for the last several years.
+  
+  I'd like to get it in a form for release but won't have the time for
+  several months.  If an experienced Elisp programmer wanted to
+  integrate it with Hyperbole and make any other changes, I [Bob, not
+  Marc] would be willing to send it out and coordinate on and test the
+  final changes.
+  ----------------------------------------------------------------------
+  
+  See the list of FTP sites below for more information on Hyperbole.
+
+*                          === KEYBOARD ===
+
+F-1: How do I make the backspace key work properly?
+  
+  This is actually a GNU Emacs question, but it's included in this FAQ
+  because it's probably more important to more people than all the
+  other questions here.  (One of the great mysteries of GNU Emacs is
+  why the backspace key _still_ doesn't do its job.)
+  
+  Here are four ways to fix this:
+  
+  METHOD #1:
+  
+  Put this in your .emacs file:
+  
+    (rebind-key "BackSpace" nil "\C-?")
+  
+  This is the cleanest Epoch-specific solution.  It rebinds 
+  the X representation for the backspace key directly to that
+  of the delete key.
+  
+  [Thanks to Joe Wells (jbw@bigbird.bu.edu).]
+  
+  METHOD #2:
+  
+  Put this in your .emacs file:
+  
+    (global-set-key "\C-^bdc" 'backward-delete-char-untabify)
+    (rebind-key "BackSpace" nil "\C-^bdc")
+  
+  This rebinds the X representation for the backspace key to the
+  appropriate command for deleting a character backward.  Like the
+  first method, this is Epoch-specific.
+  
+  If you don't like to have your backspace key also untabify (i.e.,
+  convert tags to spaces on the fly), use this instead of the previous
+  global-set-key:
+  
+    (global-set-key "\C-^bdc" 'backward-delete-char)
+  
+  METHOD #3:
+  
+  Put this in your .emacs file:
+  
+    (global-set-key "\C-h" 'backward-delete-char-untabify)
+    (global-set-key "\C-xh" 'help-command) ; override mark-whole-buffer
+    
+  This makes C-h (the backspace key as well as the Control-h key
+  sequence) delete characters backward, and shifts responsibility for
+  help to C-x h.  This fix will work for GNU Emacs as well as Epoch.
+  
+  If you don't like to have your backspace key also untabify (i.e.,
+  convert tabs to spaces on the fly), use this instead of the previous
+  global-set-key for C-h:
+  
+    (global-set-key "\C-h" 'backward-delete-char)
+  
+  METHOD #4:
+  
+  Outside of Epoch, you can change the X representation of the
+  BackSpace key into a Delete by doing this:
+  
+    xmodmap -e "keysym BackSpace = Delete"
+  
+  This approach has the disadvantage of not being done inside
+  of Epoch for those who prefer customizing lisp code to
+  customizing their system environments.
+  
+  [Thanks to Joe Wells (jbw@bigbird.bu.edu).]
+  
+F-2: How do I make the keys marked "Page Up" and "Page Down" on an IBM
+ Selectric-style keyboard do their jobs?
+  
+  Using the key rebinding facility discussed below, you can put the
+  following two lines in your .emacs file:
+  
+    (rebind-key "Prior" nil "\M-v") ; Note Prior, not Page Up.
+    (rebind-key "Next" nil "\C-v")  ; Note Next, not Page Down.
+  
+  Similarly, if you want "Home" and "End" to go to the beginning and end
+  of the current buffer respectively, do:
+  
+    (rebind-key "Home" nil "\M-<")
+    (rebind-key "End" nil "\M->")
+  
+F-3: How do I bind keys in the numeric keypad on an IBM Selectric-style
+ keyboard to their obvious functions (arrow movement, home, end, etc.)?
+  
+  Put these lines in your .emacs file:
+  
+    (rebind-key "KP_Home" nil "\M-<")
+    (rebind-key "KP_Up" nil "\C-p")
+    (rebind-key "KP_Prior" nil "\M-v")
+    (rebind-key "KP_Left" nil "\C-b")
+    (rebind-key "KP_Begin" nil "\C-l")
+    (rebind-key "KP_Right" nil "\C-f")
+    (rebind-key "KP_End" nil "\M->")
+    (rebind-key "KP_Down" nil "\C-n")
+    (rebind-key "KP_Next" nil "\C-v")
+    
+  NOTE: This makes the keypad arrow keys work, the keypad PgUp/PgDown
+  work, and the keypad Home/End go to the beginning/end of the
+  buffer.
+  
+  Other keys appropriate for rebinding in a Selectric-style numeric
+  keypad include KP_Divide, KP_Multiply, KP_Subtract, KP_Add, KP_Enter,
+  KP_Insert, and KP_Delete; see below for more details.
+  
+F-4: What general facilities does Epoch provide for rebinding function
+ keys, and how do I use them?
+  
+  The rebind-key function allows you to rebind any keycode to a new
+  string.  An example is probably best to show how this works.  To make
+  the key marked "Page Up" (on IBM Selectric-style keyboards) actually
+  move the current buffer up a page (like M-v), do:
+  
+    (rebind-key "Prior" nil "\M-v")
+  
+  Note that "Prior" is the actual X keysym name for the "Page Up" key;
+  to see the X keysym names, refer to /usr/include/X11/keysymdef.h (or
+  $OPENWINHOME/include/X11/keysymdef.h on OpenWindows systems).
+  (Disregard the leading XK_ in keysymdef.h's definitions for Epoch's
+  purposes; thus, X11's "XK_Prior" becomes Epoch's "Prior".  To find out
+  which keys are actually active for your keyboard and server, use the
+  command "xmodmap -pk".)
+  
+  The standard function keys are named F1 through F12, the function keys
+  on the left side of a Sun-style keyboard are named L1 through L10, and
+  so on.  The keypad apparently cannot be addressed by KP_0 through KP_9
+  but must be referenced by names like KP_Left, KP_Up, and so on.
+  
+  A simple two-step approach for binding function keys to commands
+  involves binding a key to an arbitrary GNU Emacs key encoding (in the
+  following example, C-^ k 1) and then binding that encoding to the
+  command.  An example that binds the function key marked "End" to an
+  arbitrary command (in this case, end-of-line) follows:
+  
+    (rebind-key "End" 0 "\C-^k1")
+    (global-set-key "\C-^k1" 'end-of-line)
+    
+  Note that the above is only an example of the two-step method; if you
+  really want "End" to do 'end-of-line, do the obvious instead:
+  
+    (rebind-key "End" 0 "\C-e")
+  
+  The rebind-key command allows modifiers (e.g. shift, control) to be
+  specified; the following example binds Control-"End" to an arbitrary
+  command (in this case, end-of-buffer):
+  
+    (rebind-key "End" 'control "\C-^Ck1")
+    (global-set-key "\C-^Ck1" 'end-of-buffer)
+  
+  For an example of these principles in action, see the file
+  'amc/keys.el' in the 3.2 contrib directory (which is still up for
+  anonymous ftp at cs.uiuc.edu as a separate .tar.Z file) or at
+  ftp.ncsa.uiuc.edu in /outgoing/marca/epoch.
+  
+  [Thanks to Alan Carroll (carroll@cs.uiuc.edu).]
+  
+F-5: I want Epoch to disregard accidental presses of function keys that
+ insert spurious characters (e.g., "-1~") into the buffer.  Does Epoch
+ perchance have some magical way to make this happen?
+  
+  Perchance, Epoch does.  The variable epoch::function-key-mapping, if
+  set to nil, makes Epoch disregard such keys, unless they're explicitly
+  rebound with rebind-key.  You can set this in your .emacs file like
+  so:
+  
+    (setq epoch::function-key-mapping nil)
+  
+  [Thanks to Alan Carroll (carroll@cs.uiuc.edu).]
+  
+F-6: How do I turn the keyboard bell off?
+  
+  The easy answer is to put the following line in your .emacs file:
+  
+    (setq epoch::bell-volume -50)
+  
+  Another possibility, if you like visual bells (i.e., having the
+  entire edit window flash reverse video instead of hearing an audible
+  beep), is to put the following in your .emacs file:
+  
+    (epoch::set-bell t)
+  
+  The malicious answer, for those who, like myself, never want to hear
+  another beep for the rest of time, is to modify src/x11term.c in the
+  Epoch distribution; just change the line that reads:
+  
+    XBell (xs->display,volume);
+  
+  To:
+  
+    /* XBell (xs->display,volume); */
+  
+  Then recompile.
+
+*                        === HIGHLIGHTING ===
+
+G-1: How do I highlight regions of text in a buffer with different styles?
+  
+  While the current Epoch distribution contain plenty of support for
+  zones and styles, the enabling mechanisms that make syntax-directed
+  highlighting possible, no intrinsic support for such highlighting is
+  provided.  This situation may change in subsequent releases of Epoch.
+  
+  Three packages that provide varying degrees of support for
+  syntax-directed highlighting are:
+  
+  tek-epoch-stuff-1.1.tar.Z (available from archive.cis.ohio-state.edu
+  or ftp.ncsa.uiuc.edu, see below), which supports comment highlighting
+  in source code as well as support for the Info documentation browser,
+  various mail and news packages, and manual pages.
+  
+  marc-hilite.tar.Z (available from ftp.ncsa.uiuc.edu, see below), which
+  is an extension to tek-epoch-stuff made by Yours Truly to allow
+  per-mode regexp-based highlighting.  Thus, you can have all
+  #define's/#endif's in red, setq's and defun's in green,
+  int/float/double's in yellow, '-->'s in purple, and so on.
+  (A very preliminary version of a reimplementation of marc-hilite,
+  called Lightbrite, can be found here also; it includes partial
+  documentation.  Hopefully Lightbrite proper will be completed
+  sometime this summer.)
+  
+  hilit.el.Z (most recent version was posted to gnu.emacs.souces and is
+  available from ftp.ncsa.uiuc.edu, see below), which provides
+  source-code comment and regexp highlighting.
+  
+G-2: When I use one of the highlighting packages to highlight comments,
+ why doesn't the mouse region selection style always take precedence
+ over the comment style?
+  
+  This question refers to the following: if you highlight all comments
+  in blue and the mouse region selection style is the default
+  (underlining), the comments will be blue and not underlined when they
+  are within the selection zone.
+  
+  For the full technical explanation, refer to the Epoch online info
+  section entitled Epoch->Zones->Zone Plotting.  In short, Epoch has to
+  have some way to decide which style takes precedence for a given
+  character when that character is in two or more zones (since merging
+  styles in that case is neither supported nor particularly logical).
+  
+  Essentially, the algorithm Epoch uses to decide which style is used
+  will only have the 'proper' results (i.e., the underlining will take
+  precedence) if the selected region lies entirely within a comment;
+  the selected area will be underlined and the rest of the comment will
+  be blue.  In a different case, e.g. if the selected region starts
+  before the comment, the comment will be blue and not underlined even
+  though it's selected.
+  
+  Following is a patch devised by Renaud Marlet 
+  (Renaud.Marlet@sophia.inria.fr) that may be useful to people who
+  want to try hacking Epoch's C source to make the drag style always
+  come out on top; as usual, your mileage may vary.  (This patch will
+  work as-is with 4.0b0 or later; if you're still using a 4.0 alpha
+  level you'll have to change "drag-zone" to "drag-button".)
+  
+  -- BEGIN PATCH -----------------------------------------------------
+  *** button.c.old        Sat Mar 28 01:55:11 1992
+  --- button.c    Sat May  9 23:14:19 1992
+  ***************
+  *** 695,700 ****
+  --- 695,709 ----
+      register Lisp_Object buttons, next_b = Qnil;
+      register int first = -1,last = -1;
+    
+  + #if 1
+  +   /* DRAG-BUTTON */
+  +   struct Lisp_Button *drag_button;
+  +   Lisp_Object drag_button_value;
+  +   
+  +   drag_button_value = XSYMBOL(intern("drag-zone"))->value;
+  +   drag_button = XBUTTON(BUTTONP(drag_button_value) ? drag_button_value : Qnil);
+  + #endif
+  + 
+      /* Possible start in list */
+      if (b_first) next_b = *b_first;
+      if (NIL(next_b)) next_b = b->buttons;
+  ***************
+  *** 722,727 ****
+  --- 731,742 ----
+              if (b_end)    *b_end    = last;
+              if (b_return) *b_return = buttons;
+            if (b_first)  *b_first = buttons;
+  +   
+  + #if 1
+  +         /* DRAG-BUTTON */
+  +         if (button == drag_button)
+  +           return button->style;
+  + #endif
+    
+              for (buttons2 = button->next; !NIL(buttons2); buttons2 = button2->next)
+                {
+  -- END PATCH -------------------------------------------------------
+
+*               === EPOCH-SPECIFIC ELISP PACKAGES ===
+
+H-1: Where can I find Epoch-specific elisp packages?
+  
+  Try the following anonymous FTP sites for Epoch-specific elisp
+  packages:
+  
+  aix370.rrz.uni-koeln.de (134.95.132.2)
+    /gnu/emacs
+  
+  archive.cis.ohio-state.edu (128.146.8.52)
+    /pub/gnu/emacs/elisp-archive/elisp
+    [This is main elisp-archive site; it is mirrored at
+     ftp.uu.net (137.39.1.9) in /languages/elisp, among other places.
+     Not much Epoch code exists here; in particular, a much more 
+     recent version of hilit.el.Z is at ftp.ncsa.uiuc.edu, below.]
+  
+  ftp.cs.buffalo.edu (128.205.32.3)
+    /pub
+    [This is the distribution site for the new Dired, which will
+     be included in Emacs v19; it includes support for Epoch.]
+  
+  ftp.ncsa.uiuc.edu (141.142.20.50)
+    /outgoing/marca/epoch
+    [This is Yours Truly's archive of Epoch code; the
+     README file gives an overview of what I consider to be
+     'essential' Epoch packages, and all of those packages
+     are available there.  If I get out of date on any of
+     these and you notice it, please let me know.]
+  
+  icsi-ftp.berkeley.edu (128.32.201.55)
+    /pub/elisp
+  
+  ireq-robot.hydro.qc.ca (131.195.2.130)
+    /pub/emacs/lisp
+    [This is the distribution site for the IMOUSE package.]
+  
+  wilma.cs.brown.edu (128.148.31.66)
+    /pub/hyperbole
+    [This is the distribution site for the Hyperbole hypertext
+     system, which includes support for Epoch.  Also available
+     separately from here is the wrolo 'rolodex' package, one of the
+     components of Hyperbole.]
+  
+  Also see the contrib directory in the actual Epoch distribution.
+  
+  Also watch the gnu.emacs.sources Usenet newsgroup, as well as the
+  epoch newsgroup/mailing list (see below).
+  
+  Please volunteer the names of any sites not on this list.
+  
+H-2: Where can I get a PostScript version of the Epoch manual?
+  
+  Use anonymous ftp to cs.uiuc.edu (128.174.252.1) in 
+  /pub/epoch-files/epoch; get epoch-4.0.epoch-man.ps.Z.
+
+*                      === OTHER RESOURCES ===
+
+I-1: What Epoch newsgroups/mailing lists are out there?
+  
+  The Usenet newsgroup gnu.epoch.misc and the mailing list
+  epoch@cs.uiuc.edu are one and the same.  To join the mailing list,
+  send a request to epoch-request@cs.uiuc.edu.  (It is best to read the
+  newsgroup if you have access to it, to save on network resources and
+  the mailing list maintainer's time.)
+  
+  For more general information about Epoch and GNU Emacs, see the list
+  of resources at the start of this file.
+
+*                     === ADVANCED QUESTIONS ===
+  
+  [NOTE: This section is at the bottom since the questions involve actual
+  source-code hacking or problems with specific machine configurations
+  that Yours Truly cannot personally verify and whose solutions will
+  probably involve some sort of hacking.]
+
+Z-1: Under tvtwm, when I create a new screen, it is mapped relative to
+ the origin on the virtual desktop, not the window I currently have on
+ the desktop.  How do I fix this?
+  
+  This problem is present in Epoch4.0 beta level 0, although it appears
+  to be fixed as of beta level 1.  The simple solution for beta level 0
+  is to change the line in src/screen.c from
+  
+     size_hints.flags |= (gmask & (XValue|YValue)) ? USPosition : PPosition;
+  to
+     size_hints.flags |= PPosition;
+  
+  And set:
+  
+        UsePPosition "on"
+  
+  in your .twmrc or .tvtwmrc file.
+  
+  [From Philippe Bondono (bondono@vnet.ibm.com).]
+  
+Z-2: Epoch 4.0b1 (or later) (as well as GNU Emacs 18.58) built under
+ HP-UX 8.0 and 8.05 apparently don't recognize the Meta key as Alt.
+ How can this be fixed?
+  
+  Bob Fisher (bob@fisher.depaul.edu) suggests the following command,
+  executed once per session, prior to starting Epoch:
+  
+          xmodmap -e "clear mod1"        \
+                  -e "add mod1 = Meta_R" \
+                  -e "add mod1 = Meta_L"
+  
+Z-3: Why do all of Epoch's colors go away when Epoch is run on an X11R5
+ server with multiple screens?
+  
+  Dana Chee (dana@thumper.bellcore.com) reports that X11R5 has a new
+  SCREEN_RESOURCES property that allows/forces colors to only appear for
+  color screens, but Epoch doesn't look at this property.  This bug
+  will only bite you if you're running on a multi-screen system.  If it
+  happens, there is a workaround; see the xrdb manpage and the xrdb
+  option '-all'.
+  
+Z-4: Even though Epoch 4.0b1 includes fixes to keep the cursor from
+ disappearing (as it does on occasion, especially in a shell, in
+ Epoch 4.0b0), the cursor still disappears sometimes.  Is there a fix
+ for this?
+  
+  First, Epoch 4.0p0 has additional fixes for this problem which
+  presumably will supersede the fix given below.
+  
+  According to Michael Thome (mthome@bbn.com), activating the XFlush
+  code at the end of the CursorToggle routine in 4.0b1's x11term.c seems
+  to fix the problem.  (In other words, '#if 0' on line 737 of x11term.c
+  should be changed to '#if 1'.)
+  
+Z-5: I want Epoch to iconify itself immediately upon starting.  To this
+ end, in my .emacs file I have (epoch::iconify-screen).  But most
+ (~95%) of the time this doesn't work.  How can I make it work all the
+ time?
+  
+  The technical explanation appears to be that the initial Epoch
+  minibuffer and edit screen are unmapped after creation to set some
+  properties for ICCCM purposes and then remapped, and this interferes
+  with the iconification process.
+  
+  One workaround (that may or may not work for you) is to add a sit-for
+  command to your .emacs file right before epoch::iconify-screen; for
+  example:
+  
+    (sit-for 15)
+    (epoch::iconify-screen)
+    
+  [Thanks to Bobby Bodenheimer (bobby@hot.caltech.edu), Simon Kaplan
+  (kaplan@cs.uiuc.edu), and Chris Love (love@cs.uiuc.edu).]
+  
+Z-6: I'm running Epoch on an IBM RISC System/6000 under AIX 3.1 or 3.2
+ and the arrow keys don't work.  How do I fix this?
+  
+  Marc's solution is to hack the Epoch source code; GNU Emacs and Epoch
+  have, for a reason which I have not yet determined, decided to exclude
+  AIX users specifically from those who are entitled to use arrow keys.
+  Go into src/x11term.c and search for 'case KeyPress'.  Shortly
+  thereafter you will see '#ifndef AIX'.  Remove this directive and its
+  corresponding #endif, and the arrow keys will work.
+  
+  It should also be possible (although I have not tried it since I don't
+  use RS/6000's currently) to rebind the arrow keys with rebind-key to
+  C-n/C-p/C-b/C-f without modifying the source code.
+  
+Z-7: Every once in a while Epoch seemingly loses control of the mouse;
+ I can no longer move from window to window or move the cursor within
+ a window with the mouse.  How do I fix this?
+  
+  A temporary fix for this problem is to enter the following elisp code
+  directly into Epoch (via M-x eval-expression):
+  
+    (setq epoch::event-handler 'event::handler)
+  
+  [Thanks to Chris Love (love@cs.uiuc.edu).]
+
+*                        === CONTRIBUTORS ===
+
+--> Thanks to the following people for contributing to this FAQ
+    (whether knowingly or not :-) as well as anyone else I may have
+    inadvertently forgotten to list:
+  
+  Bobby Bodenheimer (bobby@hot.caltech.edu)
+  Philippe Bondono (bondono@vnet.ibm.com)
+  Martin Boyer (mboyer@ireq-robot.hydro.qc.ca)
+  Alan Carroll (carroll@cs.uiuc.edu)
+  Nhi Casey (nhi@ariel.aero.org)
+  Dana Chee (dana@thumper.bellcore.com)
+  Alice Chen (alice@innerdoor.austin.ibm.com)
+  Bob Fisher (bob@fisher.depaul.edu)
+  Jerry Graves (jerry@math.ep.utexas.edu)
+  Dev Joneja (dj7@cunixf.cc.columbia.edu)
+  Simon Kaplan (kaplan@cs.uiuc.edu)
+  Tor Lillqvist (tml@tik.vtt.fi)
+  Chris Love (love@cs.uiuc.edu)
+  Simon Marshall (S.Marshall@sequent.cc.hull.ac.uk)
+  Rob McCool (robm@ncsa.uiuc.edu)
+  Michael Thome (mthome@bbn.com)
+  Bob Weiner (rsw@cs.brown.edu)
+  Joe Wells (jbw@bigbird.bu.edu)  
+  
+    Thanks particularly to Jerry Graves for much FAQ work.
+  
+    Thanks also to all the people who have spent time and effort
+    developing Epoch and associated packages.
+----------------------------------------------------------------------

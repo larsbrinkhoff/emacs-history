@@ -1,0 +1,121 @@
+This README file tries to explain how to install the Epoch Scrollbar
+system.  Unlike "normal" X apps, we're experimenting with a new idea, viz.
+that facilities like scrollbars should be provided by an external "server".
+This helps to reduce the size of applications and makes it possible to
+build UIs that are constructed collaboratively by several applications.  As
+apps become more integrated, knowing how to do this kind of thing is
+becoming more important.  So, in addition to Epoch, you need 3 things:
+
+1.  A way for tools to communicate.  We have developed a daemon called the
+message bus that does suchlike things.  The mbus can be used for many other
+things besides epoch/widget server integration, and can be used to allow
+any "knowledgable" (ie knows about the mbus) tools to communicate.  It's
+conceptually a lot like Sun ToolTalk, or the Field BMS, or the HP SoftBench
+message service.  All of those facilities could substitute for our Mbus, if
+you have them and are prepared to do a little programming.   In the
+future we'll allow you to plug your favorite tool interconnection model in.
+
+2.  A server that provides widgets (like scrollbars) to applications;  ours
+is called Biscuit or the widget server.
+
+3.  A widget set.  For now, you MUST use Motif.  We plan to support
+OpenWindows widgets soon, and perhaps eventually a scaled-back widget
+server with Aw widgets.  Unfortunately, we cannot distribute Motif, or
+binaries with Motif, so for now you need Motif to test/play with this code.
+(actually, to make biscuit).
+
+Actually, the widget server can be used to do almost anything widgety, so
+you can put menus, dialog boxes, etc on your epoch and control it from
+elisp.  For the moment, the code only shows you how to do the scrollbars,
+but the biscuit manual does cover the gamut of what you can do.  Menubar
+examples will follow shortly.
+
+INSTALLATION:
+
+1.  From cs.uiuc.edu, get pub/epoch-files/widgets/widgets.tar.Z, and
+	also get this README file 
+
+    This will unpack into these directories:
+
+       mbus - source code for the message bus
+
+       ws - source code for biscuit, the widget server
+
+       doc - documentation for the mbus and biscuit.
+
+       bin - an (initially empty) bin directory
+
+       elisp - some elisp libraries for scrollbars, interaction with the
+		message bus, and so on.
+
+       config - config information
+
+    also some Makefiles, and a README.
+
+Follow the instructions in the README file.  This will produce, in 
+the bin directory, the executables mbus and biscuit.  It will also produce
+libmb.a for linking with other applications that may want to use the
+Message Bus (if you want to write them;  and we have some others, like
+graph browsers, that we will be releasing soon).
+
+A. You must modify your .emacs as follows:
+
+	0. ensure that the elisp directory of this distribution is in your
+		load-path (you could also do this by changing
+		EMACSLOADPATH), or copy the files therein to a directory
+		that is in your load-path.
+	
+	1. execute the code in elisp/add-to-dot-emacs (you might as well
+		just include this in your .emacs file).
+
+B.  set the following environment variables:
+
+	MBUS_HOST.	The value should be the machine on which you're
+		going to run the mbus.  An mbus can be shared amongst
+		multiple users, but this does sometimes cause small
+		performance degradations.  Default is your local machine.
+	
+	MBUS_PORT.	The port at which the mbus should listen.  Default
+		is 2390.
+
+
+C.  start the message bus.
+
+	$ mbus &
+
+	arguments allow you to override environment variables, turn on
+	tracing, etc.  See the mbus doc for more info.
+
+D.  start biscuit
+
+	$ biscuit &
+
+	this will give you a little control panel.  The only interesting
+	buttons are "quit" and "destroy shells".  The others do things that
+	related to CB, a collaborative work environment (contact
+	kaplan@cs.uiuc.edu for more info if this interests you).  Destroy
+	shells will destroy all "shells" the widget server creates,
+	including all  epoch windows.  Quit does the same thing and then
+	kills the server.
+
+E.  start epoch, as usual.
+
+We should wrap all this into a shell script.  Anyone want to do that?
+
+SOME NOTES:
+
+The Mbus and Widget Server are NOT distributed under the GNU CopyLeft, but
+under a license like the X license.  There are effectively no restrictions
+on how you use the code, and no warantee either.
+
+The following are known bugs with the scrollbar interface:
+
+1.	If Epoch crashes, biscuit does not correctly clean up the widget
+"wrappers" it creates.  Use the "destroy shells" button to get rid of them.
+
+2.	If you are running multiple epochs with the same mbus/biscuit
+configuration, sometimes things get a bit wierd.  We need to clear this up.
+
+Please use the epoch-design list for discussion of scrollbar related issues
+for the moment.  When the code is stable enough, we'll move this discussion
+to the full epoch list.
