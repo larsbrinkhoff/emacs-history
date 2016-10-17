@@ -1,21 +1,22 @@
 # Historical Emacs tarballs
 
-Run the `build.sh` script to create a git repository with all Emacs
-releases.
+Run the `build.sh` script to create a git repository with all GNU
+Emacs releases.  TECO EMACS, Gosling Emacs, Lucid Emacs and XEmacs are
+not included.
 
 ## Provenance
 
 - emacs-v170.tap from Richard Alderson.
 
-  TOPS-20 `DUMP` tape image of TECO EMACS.  Not included in the git
-  repository.  Extracted in http://github.com/PDP-10/emacs/tree/extracted
+  TOPS-20 `DUMP` tape image of TECO EMACS.  Extracted in
+  http://github.com/PDP-10/emacs/tree/extracted
 
-- emacs-16.56.tar.gz from Noah Friedman.
+- emacs-16.56.tar.gz from ftp://ftp.splode.com/pub/users/friedman/emacs/
 
-  "In 1993 I recovered a copy of the Emacs 16.56 sources from backup
-  tapes at MIT because rms needed it in a court case with Unisys.  I
-  put it back up for ftp a couple of years later and it's relatively
-  easy to find these days."
+  Noah Friedman: "In 1993 I recovered a copy of the Emacs 16.56
+  sources from backup tapes at MIT because rms needed it in a court
+  case with Unisys.  I put it back up for ftp a couple of years later
+  and it's relatively easy to find these days."
 
 - emacs_18.41.tar.gz from http://bitsavers.org/bits/MIT/gnu/
 
