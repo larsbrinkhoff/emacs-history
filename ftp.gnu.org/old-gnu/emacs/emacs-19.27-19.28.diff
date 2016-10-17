@@ -1,0 +1,1363 @@
+#!/bin/sh
+#### Patch script - GNU Emacs - version 19.27 to 19.28
+
+#### This file contains patches to turn version 19.27 of GNU Emacs into
+#### 19.28.  To apply them, cd to the top of the Emacs source tree, and
+#### then type 'sh <this file>'.
+
+#### After you apply the patches, you should run Emacs (an earlier 19 will do)
+#### and type M-x byte-recompile-directory RET lisp RET
+#### to recompile the changed Emacs Lisp files.
+#### Then you can build the new Emacs version.
+
+#### We don't include patches for Info files since you can
+#### regenerate them from the Texinfo files that we do include.
+#### To update the changed info files, do
+#### (cd man; makeinfo dired-x.texi)
+
+### Patchmaker's checklist:
+### - update version numbers in comments and version.el tweak
+### - diff -u ls -R listings, and decide on rm's and mv's.
+### - apply rm's and mv's, and then do a diff -cprP --exclude=\*.elc 
+###   to generate the body.
+### - insert the body just before the line saying `end-of-emacs-patch-kit'.
+
+if [ -d lisp ] ; then
+  true
+else
+  if [ -d emacs-19.27/lisp ] ; then
+    cd emacs-19.27
+  else
+    (echo "$0: In order to apply this patch, the current directory"
+     echo "must be the top of the Emacs distribution tree.") >&2
+    exit 1
+  fi
+fi
+
+### We can't patch version.el, because it contains some random dump
+### number.  So we'll be a little more relaxed about this edit.
+sed < lisp/version.el > t-$$ \
+  -e 's/defconst emacs-version "[^"]*"/defconst emacs-version "19.28.0"/'
+mv lisp/version.el lisp/version.el~
+mv t-$$ lisp/version.el
+
+### Put moves and renames here.
+rm -f etc/TO-DO
+rm -f info/info-1 info/info-2
+
+
+patch -p1 << \end-of-emacs-patch-kit
+diff -rc2P --exclude-from=exceptions emacs-19.27/ChangeLog emacs-19.28/ChangeLog
+*** emacs-19.27/ChangeLog	Sun Sep 11 14:58:23 1994
+--- emacs-19.28/ChangeLog	Thu Oct  6 01:11:29 1994
+***************
+*** 1,2 ****
+--- 1,8 ----
++ Thu Oct  6 01:11:08 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
++ 
++ 	* Version 19.28 released.
++ 
++ 	* configure.in: Determine HAVE_X11R6.
++ 
+  Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/README emacs-19.28/README
+*** emacs-19.27/README	Sun Sep 11 21:15:36 1994
+--- emacs-19.28/README	Wed Oct 26 08:24:51 1994
+***************
+*** 1,12 ****
+! This directory tree holds version 19.27 of GNU Emacs, the extensible,
+  customizable, self-documenting real-time display editor.
+  
+! Please note that version 19 of Emacs is still in beta-test.  Although
+! you may well encounter bugs in this release, we encourage you to use
+! it, find the bugs, and report them; your bug reports are valuable
+! contributions to the FSF, since they allow us to notice and fix
+! problems on machines we don't have, or in code we don't use often.
+! See the "Bugs" node of the info tree for more information on how to
+! report bugs.
+  
+  See the files `etc/NEWS' and `etc/news.texi' for information on new
+--- 1,11 ----
+! This directory tree holds version 19.28 of GNU Emacs, the extensible,
+  customizable, self-documenting real-time display editor.
+  
+! Version 19.28 is quite stable; most users do not encounter any bugs.
+! But if you do encounter bugs in this version, we encourage you to
+! report them; your bug reports are valuable contributions to the FSF,
+! since they allow us to notice and fix problems on machines we don't
+! have, or in code we don't use often.  See the "Bugs" node of the info
+! tree for more information on how to report bugs.
+  
+  See the files `etc/NEWS' and `etc/news.texi' for information on new
+diff -rc2P --exclude-from=exceptions emacs-19.27/configure emacs-19.28/configure
+*** emacs-19.27/configure	Sun Sep  4 23:17:30 1994
+--- emacs-19.28/configure	Sun Oct 16 04:17:37 1994
+***************
+*** 2341,2344 ****
+--- 2341,2376 ----
+  fi
+  
++ if test "${HAVE_X11}" = "yes"; then
++   test -n "$silent" || echo "checking for X11 version"
++ cat > conftest.${ac_ext} <<EOF
++ #include "confdefs.h"
++ #include <X11/Xlib.h>
++ int main() { return 0; }
++ int t() { 
++ #if XlibSpecificationRelease < 6
++ fail;
++ #endif
++ ; return 0; }
++ EOF
++ if eval $ac_compile; then
++   rm -rf conftest*
++   
++ {
++ test -n "$verbose" && \
++ echo "	defining HAVE_X11R6"
++ echo "#define" HAVE_X11R6 "1" >> confdefs.h
++ DEFS="$DEFS -DHAVE_X11R6=1"
++ ac_sed_defs="${ac_sed_defs}\${ac_dA}HAVE_X11R6\${ac_dB}HAVE_X11R6\${ac_dC}1\${ac_dD}
++ \${ac_uA}HAVE_X11R6\${ac_uB}HAVE_X11R6\${ac_uC}1\${ac_uD}
++ \${ac_eA}HAVE_X11R6\${ac_eB}HAVE_X11R6\${ac_eC}1\${ac_eD}
++ "
++ }
++ 
++ 
++ fi
++ rm -f conftest*
++ 
++ fi
++ 
+  if test "${USE_X_TOOLKIT}" != "none"; then
+    test -n "$silent" || echo "checking for X11 toolkit version"
+diff -rc2P --exclude-from=exceptions emacs-19.27/configure.in emacs-19.28/configure.in
+*** emacs-19.27/configure.in	Sun Sep  4 03:02:03 1994
+--- emacs-19.28/configure.in	Thu Oct  6 01:09:24 1994
+***************
+*** 1495,1498 ****
+--- 1495,1509 ----
+  fi
+  
++ if test "${HAVE_X11}" = "yes"; then
++   AC_COMPILE_CHECK(X11 version,
++ 		   [#include <X11/Xlib.h>],
++ 		   [
++ #if XlibSpecificationRelease < 6
++ fail;
++ #endif
++ ],
++ 		   AC_DEFINE(HAVE_X11R6))
++ fi
++ 
+  if test "${USE_X_TOOLKIT}" != "none"; then
+    AC_COMPILE_CHECK(X11 toolkit version,
+diff -rc2P --exclude-from=exceptions emacs-19.27/etc/MACHINES emacs-19.28/etc/MACHINES
+*** emacs-19.27/etc/MACHINES	Tue Sep 13 18:53:58 1994
+--- emacs-19.28/etc/MACHINES	Sun Oct 30 15:09:36 1994
+***************
+*** 207,211 ****
+  
+    This machine is the older Mips-based DECstation.
+!   Emacs does not support the Alpha CPU.  We hope to support that in 19.27.
+  
+    19.25 works on Ultrix 4.2.  The 19.26 pretest was reported to work
+--- 207,211 ----
+  
+    This machine is the older Mips-based DECstation.
+!   Emacs does not support the Alpha CPU.  We hope to support that in 19.29.
+  
+    19.25 works on Ultrix 4.2.  The 19.26 pretest was reported to work
+diff -rc2P --exclude-from=exceptions emacs-19.27/etc/NEWS emacs-19.28/etc/NEWS
+*** emacs-19.27/etc/NEWS	Tue Sep 13 00:32:13 1994
+--- emacs-19.28/etc/NEWS	Wed Oct 26 08:26:32 1994
+***************
+*** 5,8 ****
+--- 5,10 ----
+  Please send Emacs bug reports to bug-gnu-emacs@prep.ai.mit.edu.
+  For older news, see the file ONEWS.
++ 
++ Emacs 19.28 has no changes except bug fixes.
+  
+  * Changes in Emacs 19.27
+diff -rc2P --exclude-from=exceptions emacs-19.27/lib-src/ChangeLog emacs-19.28/lib-src/ChangeLog
+*** emacs-19.27/lib-src/ChangeLog	Fri Sep 16 20:01:21 1994
+--- emacs-19.28/lib-src/ChangeLog	Sun Sep 11 14:57:09 1994
+***************
+*** 1,12 ****
+- Fri Sep 16 20:00:38 1994  Karl Heuer  <kwzh@churchy.gnu.ai.mit.edu>
+- 
+- 	* emacsserver.c (FD_*) [HAVE_SOCKETS & !HAVE_SYSVIPC]: If not already
+- 	defined, use simple 32-bit versions of these macros.
+- 	(main) [HAVE_SOCKETS & !HAVE_SYSVIPC]: Use these macros.
+- 
+- Fri Sep 16 17:15:13 1994  Andreas Schwab <schwab@issan.informatik.uni-dortmund.de>
+- 
+- 	* etags.c (etags_getcwd): Use getcwd if available.
+- 
+  Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+  
+--- 1,2 ----
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/ChangeLog emacs-19.28/lisp/ChangeLog
+*** emacs-19.27/lisp/ChangeLog	Wed Sep 14 04:31:15 1994
+--- emacs-19.28/lisp/ChangeLog	Thu Oct  6 01:42:11 1994
+***************
+*** 1,2 ****
+--- 1,19 ----
++ Thu Oct  6 01:06:27 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
++ 
++ 	* Version 19.28 released.
++ 
++ 	* imenu.el (imenu--cleanup): Use mapcar, not mapc.
++ 
++ 	* isearch.el (isearch-mode-map): Explicitly bind to nil
++ 	the Alt characters that iso-transl defines translators for.
++ 
++ 	* ispell.el (ispell-highlight-spelling-error): 
++ 	Don't use faces if wondow-system is nil.
++ 
++ Fri Sep 23 10:08:09 1994  Boris Goldowsky  <boris@cs.rochester.edu>
++ 
++ 	* fill.el (justify-current-line): Do insertion with text-prop
++ 	inheritance. 
++ 
+  Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/fill.el emacs-19.28/lisp/fill.el
+*** emacs-19.27/lisp/fill.el	Wed Jul 27 16:07:31 1994
+--- emacs-19.28/lisp/fill.el	Thu Oct  6 01:41:12 1994
+***************
+*** 296,300 ****
+        (while (re-search-forward "[.?!][])\"']*\n" nil t)
+  	(forward-char -1)
+! 	(insert ? ))
+        (goto-char (point-max))
+        ;; Note that the buffer bounds start after the indentation,
+--- 296,300 ----
+        (while (re-search-forward "[.?!][])\"']*\n" nil t)
+  	(forward-char -1)
+! 	(insert-and-inherit ? ))
+        (goto-char (point-max))
+        ;; Note that the buffer bounds start after the indentation,
+***************
+*** 311,318 ****
+  		(skip-chars-backward " ")
+  		(setq nmove (1- nmove))))
+! 	    (insert " ")
+  	    (skip-chars-backward " ")
+  	    (setq ncols (1- ncols)))))))
+    nil)
+  
+  (defun fill-nonuniform-paragraphs (min max &optional justifyp mailp)
+--- 311,319 ----
+  		(skip-chars-backward " ")
+  		(setq nmove (1- nmove))))
+! 	    (insert-and-inherit " ")
+  	    (skip-chars-backward " ")
+  	    (setq ncols (1- ncols)))))))
+    nil)
++ 
+  
+  (defun fill-nonuniform-paragraphs (min max &optional justifyp mailp)
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/imenu.el emacs-19.28/lisp/imenu.el
+*** emacs-19.27/lisp/imenu.el	Sat Jul 30 03:55:11 1994
+--- emacs-19.28/lisp/imenu.el	Thu Oct  6 01:47:58 1994
+***************
+*** 306,310 ****
+    ;; if alist is provided use that list.
+    (and imenu--index-alist
+!        (mapc 
+  	(function
+  	 (lambda (item)
+--- 306,310 ----
+    ;; if alist is provided use that list.
+    (and imenu--index-alist
+!        (mapcar 
+  	(function
+  	 (lambda (item)
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/isearch.el emacs-19.28/lisp/isearch.el
+*** emacs-19.27/lisp/isearch.el	Tue Aug 30 17:20:16 1994
+--- emacs-19.28/lisp/isearch.el	Thu Oct  6 01:32:50 1994
+***************
+*** 234,237 ****
+--- 234,244 ----
+        (define-key map "\C-y" 'isearch-yank-line)
+  
++       (define-key map [?\A-\"] nil)
++       (define-key map [?\A-'] nil)
++       (define-key map [?\A-`] nil)
++       (define-key map [?\A-,] nil)
++       (define-key map [?\A-^] nil)
++       (define-key map [?\A-_] nil)
++       (define-key map [?\A-~] nil)
+        ;; Bind the ASCII-equivalent "function keys" explicitly to nil
+        ;; so that the default binding does not apply.
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/ispell.el emacs-19.28/lisp/ispell.el
+*** emacs-19.27/lisp/ispell.el	Sun Sep 11 01:41:12 1994
+--- emacs-19.28/lisp/ispell.el	Thu Oct  6 01:06:02 1994
+***************
+*** 1302,1306 ****
+  	((string-match "Lucid" emacs-version)
+  	 'ispell-highlight-spelling-error-lucid)
+! 	((and (string-lessp "19" emacs-version) (featurep 'faces))
+  	 'ispell-highlight-spelling-error-overlay)
+  	(t 'ispell-highlight-spelling-error-generic))))
+--- 1302,1308 ----
+  	((string-match "Lucid" emacs-version)
+  	 'ispell-highlight-spelling-error-lucid)
+! 	((and (string-lessp "19" emacs-version)
+! 	      (featurep 'faces)
+! 	      window-system)
+  	 'ispell-highlight-spelling-error-overlay)
+  	(t 'ispell-highlight-spelling-error-generic))))
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/loaddefs.el emacs-19.28/lisp/loaddefs.el
+*** emacs-19.27/lisp/loaddefs.el	Wed Sep 14 14:36:30 1994
+--- emacs-19.28/lisp/loaddefs.el	Tue Oct 18 03:51:49 1994
+***************
+*** 3228,3240 ****
+  ;;;***
+  
+- ;;;### (autoloads (set-gosmacs-bindings) "gosmacs" "gosmacs.el" (11190 10276))
+- ;;; Generated autoloads from gosmacs.el
+- 
+- (autoload (quote set-gosmacs-bindings) "gosmacs" "\
+- Rebind some keys globally to make GNU Emacs resemble Gosling Emacs.
+- Use \\[set-gnu-bindings] to restore previous global bindings." t nil)
+- 
+- ;;;***
+- 
+  ;;;### (autoloads (perldb xdb dbx sdb gdb) "gud" "gud.el" (11711 26140))
+  ;;; Generated autoloads from gud.el
+--- 3228,3231 ----
+***************
+*** 4602,4605 ****
+--- 4593,4603 ----
+  The text previously in the region is overwritten by the blanks.
+  When called from a program, requires two args which specify the corners." t nil)
++ 
++ ;;;***
++ 
++ ;;;### (autoloads (reporter-submit-bug-report) "reporter" "reporter.el" (11818 52911))
++ ;;; Generated autoloads from reporter.el
++ 
++ (autoload (quote reporter-submit-bug-report) "reporter" nil nil nil)
+  
+  ;;;***
+diff -rc2P --exclude-from=exceptions emacs-19.27/lisp/version.el emacs-19.28/lisp/version.el
+*** emacs-19.27/lisp/version.el	Sun Sep 11 21:12:27 1994
+--- emacs-19.28/lisp/version.el	Thu Oct  6 01:06:53 1994
+***************
+*** 24,28 ****
+  ;;; Code:
+  
+! (defconst emacs-version "19.27" "\
+  Version numbers of this version of Emacs.")
+  
+--- 24,28 ----
+  ;;; Code:
+  
+! (defconst emacs-version "19.28" "\
+  Version numbers of this version of Emacs.")
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/man/custom.texi emacs-19.28/man/custom.texi
+*** emacs-19.27/man/custom.texi	Sun Sep 11 13:22:03 1994
+--- emacs-19.28/man/custom.texi	Thu Oct  6 00:56:55 1994
+***************
+*** 1580,1584 ****
+  
+  @example
+! (setq user-mail-address "coon@yoyodyne.com")
+  @end example
+  
+--- 1580,1584 ----
+  
+  @example
+! (setq user-mail-address "coon@@yoyodyne.com")
+  @end example
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/man/emacs.texi emacs-19.28/man/emacs.texi
+*** emacs-19.27/man/emacs.texi	Sun Sep 11 14:53:41 1994
+--- emacs-19.28/man/emacs.texi	Thu Oct  6 01:47:07 1994
+***************
+*** 4,8 ****
+  @c The edition number appears in several places in this file
+  This corresponds to the tenth edition of the @cite{GNU Emacs Manual},
+! for Emacs version 19.27.
+  @c Please REMEMBER to update edition number in *three* places in this file.
+  
+--- 4,8 ----
+  @c The edition number appears in several places in this file
+  This corresponds to the tenth edition of the @cite{GNU Emacs Manual},
+! for Emacs version 19.28.
+  @c Please REMEMBER to update edition number in *three* places in this file.
+  
+***************
+*** 64,68 ****
+  @center @titlefont{GNU Emacs Manual}
+  @sp 4
+! @center Tenth Edition, Updated for Emacs version 19.27
+  @sp 5
+  @center Richard Stallman
+--- 64,68 ----
+  @center @titlefont{GNU Emacs Manual}
+  @sp 4
+! @center Tenth Edition, Updated for Emacs version 19.28
+  @sp 5
+  @center Richard Stallman
+***************
+*** 72,76 ****
+  @sp 2
+  Tenth Edition @*
+! Updated for Emacs Version 19.27, @*
+  July 1994
+  
+--- 72,76 ----
+  @sp 2
+  Tenth Edition @*
+! Updated for Emacs Version 19.28, @*
+  July 1994
+  
+***************
+*** 111,115 ****
+  display editor.  This Info file describes how to edit with Emacs
+  and some of how to customize it, but not how to extend it.  It
+! corresponds to GNU Emacs version 19.27.
+  
+  @end ifinfo
+--- 111,115 ----
+  display editor.  This Info file describes how to edit with Emacs
+  and some of how to customize it, but not how to extend it.  It
+! corresponds to GNU Emacs version 19.28.
+  
+  @end ifinfo
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/ChangeLog emacs-19.28/src/ChangeLog
+*** emacs-19.27/src/ChangeLog	Wed Sep 14 04:29:54 1994
+--- emacs-19.28/src/ChangeLog	Wed Oct 26 09:47:03 1994
+***************
+*** 1,2 ****
+--- 1,67 ----
++ Sun Oct 23 16:25:48 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
++ 
++ 	* Version 19.28 released.
++ 
++ 	* s/linux.h (LD_SWITCH_SYSTEM): Definition deleted.
++ 
++ 	* s/freebsd.h (LD_SWITCH_SYSTEM): New definition.
++ 
++ 	* s/freebsd.h (BSD): Have two definitions according to version number.
++ 
++ 	* s/freebsd.h (DECLARE_GETPWUID_WITH_UID_T): Defined.
++ 	[NO_SHARED_LIBS and __FreeBSD__]:
++ 	(LD_SWITCH_SYSTEM, A_TEXT_OFFSET, A_TEXT_SEEK): Alternate definitions.
++ 
++ 	* xfns.c (x_real_positions): Catch errors and retry if error happens.
++ 
++ 	* textprop.c (Fset_text_properties): Special case for getting
++ 	rid of all properties of a string.
++ 
++ 	* xterm.c (x_new_font): Don't use the FONT property
++ 	unless it has enough dashes to be an official font name.
++ 
++ 	* keyboard.c (read_char): Add local variable key_already_recorded.
++ 	If an event comes from read_char_minibuf_menu_prompt,
++ 	return as early as we safely can.
++ 
++ 	* textprop.c (Fset_text_properties): Don't let validate_interval_range
++ 	increment START and END twice.
++ 
++ 	* xfaces.c (Fset_face_attribute_internal): Mark frame garbaged whenever
++ 	any face's font or color is changed.
++ 
++ 	* m/hp9000s300.h [not BSD4_3] [__GNUC__] (HAVE_ALLOCA): Defined.
++ 
++ 	* m/dpx2.h (POSIX_SIGNALS): Define it.
++ 	(sigsetmask): Add #undef.
++ 
++ 	* s/linux.h: Don't include signal.h, values.h.
++ 	(signal): Definition deleted.
++ 
++ 	* s/sco4.h (POSIX_SIGNALS): Defined.
++ 
++ 	* config.h.in (HAVE_X11R6): Add #undef.
++ 	* s/sol2.h (REL_ALLOC): Test HAVE_X11 and HAVE_X11R6.
++ 	Don't test USE_X_TOOLKIT.
++ 
++ 	* emacs.c (shut_down_emacs): Don't call Fx_close_current_connection.
++ 
++ 	* s/hpux9.h (HAVE_TERMIO, HAVE_TERMIOS, NO_TERMIO): Undo Jul 28 change.
++ 
++ 	* unexsunos4.c [SUNOS4]: Include link.h.
++ 	(unexec) [SUNOS4]: Turn off relocations that ld.so did.
++ 
++ 	* s/sunos4-0.h (SUNOS4): Defined.
++ 
++ 	* unexec.c (make_hdr): Undo June 16 change.
++ 
++ 	* s/bsd386.h (__bsdi__): Define, unless already defined.
++ 	(DECLARE_GETPWUID_WITH_UID_T): Define.
++ 
++ 	* filelock.c (getpwuid): Test just DECLARE_GETPWUID_WITH_UID_T,
++ 	not __bsdi__.
++ 	* xrdb.c (getpwuid, getpwnam): Test just DECLARE_GETPWUID_WITH_UID_T,
++ 	not __bsdi__.
++ 
+  Sun Sep 11 14:56:01 1994  Richard Stallman  <rms@mole.gnu.ai.mit.edu>
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/config.h.in emacs-19.28/src/config.h.in
+*** emacs-19.27/src/config.h.in	Sun Sep  4 03:00:16 1994
+--- emacs-19.28/src/config.h.in	Thu Oct  6 01:09:04 1994
+***************
+*** 48,51 ****
+--- 48,54 ----
+  #undef HAVE_X11
+  
++ /* Define if we have the X11R6 or newer.  */
++ #undef HAVE_X11R6
++ 
+  /* Define if using an X toolkit.  */
+  #undef USE_X_TOOLKIT
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/emacs.c emacs-19.28/src/emacs.c
+*** emacs-19.27/src/emacs.c	Sun Sep  4 23:14:55 1994
+--- emacs-19.28/src/emacs.c	Thu Oct  6 01:07:12 1994
+***************
+*** 859,862 ****
+--- 859,863 ----
+  #endif
+  
++ #if 0 /* This triggers a bug in XCloseDisplay and is not needed.  */
+  #ifdef HAVE_X_WINDOWS
+    /* It's not safe to call intern here.  Maybe we are crashing.  */
+***************
+*** 867,870 ****
+--- 868,872 ----
+      Fx_close_current_connection ();
+  #endif /* HAVE_X_WINDOWS */
++ #endif
+  
+  #ifdef SIGIO
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/filelock.c emacs-19.28/src/filelock.c
+*** emacs-19.27/src/filelock.c	Tue May  3 22:30:14 1994
+--- emacs-19.28/src/filelock.c	Thu Oct  6 01:02:41 1994
+***************
+*** 60,64 ****
+  extern char *strcpy ();
+  
+! #if defined (__bsdi__) || defined (DECLARE_GETPWUID_WITH_UID_T)
+  extern struct passwd *getpwuid (uid_t);
+  #else
+--- 60,64 ----
+  extern char *strcpy ();
+  
+! #ifdef DECLARE_GETPWUID_WITH_UID_T
+  extern struct passwd *getpwuid (uid_t);
+  #else
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/getpagesize.h emacs-19.28/src/getpagesize.h
+*** emacs-19.27/src/getpagesize.h	Mon Oct 10 17:35:16 1994
+--- emacs-19.28/src/getpagesize.h	Fri Jul 30 18:30:50 1993
+***************
+*** 28,35 ****
+  #ifdef NBPC
+  #define getpagesize() NBPC
+- #else /* no NBPC */
+- #ifdef PAGESIZE
+- #define getpagesize() PAGESIZE
+- #endif
+  #endif /* NBPC */
+  #endif /* no NBPG */
+--- 28,31 ----
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/keyboard.c emacs-19.28/src/keyboard.c
+*** emacs-19.27/src/keyboard.c	Sat Sep 10 01:09:59 1994
+--- emacs-19.28/src/keyboard.c	Thu Oct  6 01:19:25 1994
+***************
+*** 1477,1480 ****
+--- 1477,1481 ----
+    int count;
+    jmp_buf save_jump;
++   int key_already_recorded = 0;
+  
+    if (CONSP (Vunread_command_events))
+***************
+*** 1597,1601 ****
+        c = read_char_minibuf_menu_prompt (commandflag, nmaps, maps);
+        if (! NILP (c))
+! 	goto non_reread;
+      }
+  
+--- 1598,1605 ----
+        c = read_char_minibuf_menu_prompt (commandflag, nmaps, maps);
+        if (! NILP (c))
+! 	{
+! 	  key_already_recorded = 1;
+! 	  goto non_reread;
+! 	}
+      }
+  
+***************
+*** 1733,1736 ****
+--- 1737,1743 ----
+       so don't show them to the user.  */
+    if (XTYPE (c) == Lisp_Buffer)
++     return c;
++ 
++   if (key_already_recorded)
+      return c;
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/m/dpx2.h emacs-19.28/src/m/dpx2.h
+*** emacs-19.27/src/m/dpx2.h	Fri Aug 13 15:08:17 1993
+--- emacs-19.28/src/m/dpx2.h	Thu Oct  6 01:37:05 1994
+***************
+*** 232,235 ****
+--- 232,240 ----
+  #undef HAVE_SYSV_SIGPAUSE
+  
++ #define POSIX_SIGNALS
++ 
++ /* We don't need the definition from usg5-3.h with POSIX_SIGNALS.  */
++ #undef sigsetmask
++ 
+  
+  /* on bos2.00.45 there is a bug that makes the F_SETOWN fcntl() call
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/m/hp9000s300.h emacs-19.28/src/m/hp9000s300.h
+*** emacs-19.27/src/m/hp9000s300.h	Fri Jul 23 03:47:44 1993
+--- emacs-19.28/src/m/hp9000s300.h	Thu Oct  6 01:45:07 1994
+***************
+*** 162,165 ****
+--- 162,169 ----
+  #define LOAD_AVE_CVT(x) ((int) ((x) * 100.0))
+  
++ #ifdef __GNUC__
++ #define HAVE_ALLOCA
++ #endif
++ 
+  /* This library is needed with -g, on the 200/300 only.  */
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/m/nh3000.h emacs-19.28/src/m/nh3000.h
+*** emacs-19.27/src/m/nh3000.h	Sun Sep 18 16:37:03 1994
+--- emacs-19.28/src/m/nh3000.h	Wed Jan 12 23:53:29 1994
+***************
+*** 37,40 ****
+--- 37,45 ----
+  #define LONGBITS 32		/* Number of bits in a long */
+  
++ /* Define BIG_ENDIAN iff lowest-numbered byte in a word
++    is the most significant byte.  */
++ 
++ #define BIG_ENDIAN
++ 
+  /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
+   * group of arguments and treat it as an array of the arguments.  */
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/m/nh4000.h emacs-19.28/src/m/nh4000.h
+*** emacs-19.27/src/m/nh4000.h	Sun Sep 18 16:37:02 1994
+--- emacs-19.28/src/m/nh4000.h	Wed Jan 12 23:53:11 1994
+***************
+*** 36,39 ****
+--- 36,44 ----
+  #define LONGBITS 32		/* Number of bits in a long */
+  
++ /* Define BIG_ENDIAN iff lowest-numbered byte in a word
++    is the most significant byte.  */
++ 
++ #define BIG_ENDIAN
++ 
+  /* Define NO_ARG_ARRAY if you cannot take the address of the first of a
+   * group of arguments and treat it as an array of the arguments.  */
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/bsd386.h emacs-19.28/src/s/bsd386.h
+*** emacs-19.27/src/s/bsd386.h	Sun Jun  5 14:05:17 1994
+--- emacs-19.28/src/s/bsd386.h	Thu Oct  6 01:02:59 1994
+***************
+*** 3,6 ****
+--- 3,12 ----
+  #include "bsd4-3.h"
+  
++ #ifndef __bsdi__
++ #define __bsdi__ 1
++ #endif
++ 
++ #define DECLARE_GETPWUID_WITH_UID_T
++ 
+  #define SIGNALS_VIA_CHARACTERS
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/freebsd.h emacs-19.28/src/s/freebsd.h
+*** emacs-19.27/src/s/freebsd.h	Sat May 21 19:16:00 1994
+--- emacs-19.28/src/s/freebsd.h	Tue Oct 25 00:18:02 1994
+***************
+*** 2,6 ****
+  
+  /* '__FreeBSD__' is defined by the preprocessor on FreeBSD-1.1 and up.
+!    Earlier versions do not have shared libraries, so inhibit them.  */
+  #ifndef __FreeBSD__
+  #define NO_SHARED_LIBS
+--- 2,8 ----
+  
+  /* '__FreeBSD__' is defined by the preprocessor on FreeBSD-1.1 and up.
+!    Earlier versions do not have shared libraries, so inhibit them.
+!    You can inhibit them on newer systems if you wish
+!    by defining NO_SHARED_LIBS.  */
+  #ifndef __FreeBSD__
+  #define NO_SHARED_LIBS
+***************
+*** 30,40 ****
+  #define PENDING_OUTPUT_COUNT(FILE) ((FILE)->_p - (FILE)->_bf._base)
+  
+- #if 0 /* These appear to be unnecessary for 1.1, and they break
+- 	 emacs when compiled under FreeBSD-1.0.
+- 	 Shawn M. Carey <smcarey@mailbox.syr.edu>  */
+- #define A_TEXT_OFFSET(x) (sizeof (struct exec))
+- #define A_TEXT_SEEK(hdr) (N_TXTOFF(hdr) + A_TEXT_OFFSET(hdr))
+- #endif
+- 
+  #define LIBS_DEBUG
+  #define LIBS_SYSTEM -lutil
+--- 32,35 ----
+***************
+*** 51,56 ****
+  
+  #ifndef NO_SHARED_LIBS
+! /* These definitions should work for either dynamic or static linking,
+!    whichever is the default for `cc -nostdlib'. */
+  #define HAVE_TEXT_START		/* No need to define `start_of_text'. */
+  #define START_FILES pre-crt0.o /usr/lib/crt0.o
+--- 46,50 ----
+  
+  #ifndef NO_SHARED_LIBS
+! #define LD_SWITCH_SYSTEM -e start
+  #define HAVE_TEXT_START		/* No need to define `start_of_text'. */
+  #define START_FILES pre-crt0.o /usr/lib/crt0.o
+***************
+*** 63,67 ****
+  #define N_TRELOFF(x) N_RELOFF(x)
+  #endif
+! #endif /* not NO_SHARED_LIBS */
+  
+  #define HAVE_WAIT_HEADER
+--- 57,68 ----
+  #define N_TRELOFF(x) N_RELOFF(x)
+  #endif
+! #else /* NO_SHARED_LIBS */
+! #ifdef __FreeBSD__  /* shared libs are available, but the user prefers
+!                      not to use them.  */
+! #define LD_SWITCH_SYSTEM -Bstatic
+! #define A_TEXT_OFFSET(x) (sizeof (struct exec))
+! #define A_TEXT_SEEK(hdr) (N_TXTOFF(hdr) + A_TEXT_OFFSET(hdr))
+! #endif /* __FreeBSD__ */
+! #endif /* NO_SHARED_LIBS */
+  
+  #define HAVE_WAIT_HEADER
+***************
+*** 69,72 ****
+--- 70,74 ----
+  #define HAVE_TERMIOS
+  #define NO_TERMIO
++ #define DECLARE_GETPWUID_WITH_UID_T
+  
+  /* freebsd uses OXTABS instead of the expected TAB3. */
+***************
+*** 76,80 ****
+--- 78,86 ----
+  /* this silences a few compilation warnings */
+  #undef BSD
++ #if __FreeBSD__ == 1
+  #define BSD 199103
++ #elif __FreeBSD__ == 2
++ #define BSD 199306
++ #endif
+  
+  #define WAITTYPE int
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/hpux9.h emacs-19.28/src/s/hpux9.h
+*** emacs-19.27/src/s/hpux9.h	Thu Jul 28 15:44:16 1994
+--- emacs-19.28/src/s/hpux9.h	Thu Oct  6 01:07:53 1994
+***************
+*** 19,24 ****
+--- 19,28 ----
+  #endif
+  
++ #if 0 /* These definitions run into a bug in hpux
++ 	 whereby trying to disable the vdsusp character has no effect.
++ 	 supposedly there is no particular need for this.  */
+  /* neal@ctd.comsat.com */
+  #undef HAVE_TERMIO
+  #define HAVE_TERMIOS
+  #define NO_TERMIO
++ #endif
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/linux.h emacs-19.28/src/s/linux.h
+*** emacs-19.27/src/s/linux.h	Thu Aug 25 21:41:21 1994
+--- emacs-19.28/src/s/linux.h	Wed Oct 26 09:46:22 1994
+***************
+*** 172,185 ****
+  #define START_FILES pre-crt0.o /usr/lib/crt0.o
+  
+! /* Linux has SIGIO defined, but not implemented, as of version 0.99.8
+!  * What an ugly kludge!  This will not be necessary if the
+!  * INTERRUPT_INPUT define gets fully implemented.
+!  */
+  #ifdef emacs
+- #include <signal.h>
+  #undef SIGIO
+- #undef signal
+- #define signal sys_signal
+- #include <values.h>
+  #endif
+  
+--- 172,179 ----
+  #define START_FILES pre-crt0.o /usr/lib/crt0.o
+  
+! /* As of version 1.1.51, Linux does not actually implement SIGIO.  */
+! /* Here we assume that signal.h is already included.  */
+  #ifdef emacs
+  #undef SIGIO
+  #endif
+  
+***************
+*** 210,216 ****
+  #define LIBS_TERMCAP -ltermcap -lcurses /* save some space with shared libs*/
+  #define LIB_STANDARD -lc /* avoid -lPW */
+- #ifdef HAVE_X11
+- #define LD_SWITCH_SYSTEM -L/usr/X386/lib
+- #endif
+  
+  /* Don't use -g in test compiles in configure.
+--- 204,207 ----
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/sco4.h emacs-19.28/src/s/sco4.h
+*** emacs-19.27/src/s/sco4.h	Sun May  8 23:29:36 1994
+--- emacs-19.28/src/s/sco4.h	Thu Oct  6 01:12:27 1994
+***************
+*** 127,128 ****
+--- 127,131 ----
+  /* Tell process_send_signal to use VSUSP instead of VSWTCH.  */
+  #define PREFER_VSUSP
++ 
++ /* wjs@wang.com (William Smith) says this is needed on 3.2.4.2.  */
++ #define POSIX_SIGNALS
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/sol2.h emacs-19.28/src/s/sol2.h
+*** emacs-19.27/src/s/sol2.h	Mon Sep  5 21:33:40 1994
+--- emacs-19.28/src/s/sol2.h	Thu Oct  6 01:09:40 1994
+***************
+*** 43,49 ****
+  #undef SOLARIS_BROKEN_ACCESS
+  
+! /* We can't use Xt from X11R6 with ralloc.c, because Xt
+     includes libthread.so and that calls sbrk directly.  */
+! #if defined (USE_X_TOOLKIT) && defined (HAVE_X11XTR6)
+  #undef REL_ALLOC
+  #endif
+--- 43,49 ----
+  #undef SOLARIS_BROKEN_ACCESS
+  
+! /* We can't use libX11 from X11R6 with ralloc.c, because libX11
+     includes libthread.so and that calls sbrk directly.  */
+! #if defined (HAVE_X11) && defined (HAVE_X11R6)
+  #undef REL_ALLOC
+  #endif
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/s/sunos4-0.h emacs-19.28/src/s/sunos4-0.h
+*** emacs-19.27/src/s/sunos4-0.h	Wed Apr 27 18:30:24 1994
+--- emacs-19.28/src/s/sunos4-0.h	Thu Oct  6 00:57:21 1994
+***************
+*** 1,4 ****
+--- 1,8 ----
+  #include "bsd4-2.h"
+  
++ #ifndef SUNOS4
++ #define SUNOS4
++ #endif
++ 
+  #if 0  /* This may have been needed for an earlier version of Sun OS 4.
+  	  It seems to cause warnings in 4.0.3 and 4.1.  */
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/textprop.c emacs-19.28/src/textprop.c
+*** emacs-19.27/src/textprop.c	Fri Sep  2 19:26:19 1994
+--- emacs-19.28/src/textprop.c	Sun Oct 16 03:57:22 1994
+***************
+*** 882,885 ****
+--- 882,889 ----
+    register INTERVAL prev_changed = NULL_INTERVAL;
+    register int s, len;
++   Lisp_Object ostart, oend;
++ 
++   ostart = start;
++   oend = end;
+  
+    props = validate_plist (props);
+***************
+*** 888,891 ****
+--- 892,905 ----
+      XSET (object, Lisp_Buffer, current_buffer);
+  
++   /* If we want no properties for a whole string,
++      get rid of its intervals.  */
++   if (NILP (props) && STRINGP (object)
++       && XFASTINT (start) == 0
++       && XFASTINT (end) == XSTRING (object)->size)
++     {
++       XSTRING (object)->intervals = 0;
++       return Qt;
++     }
++ 
+    i = validate_interval_range (object, &start, &end, soft);
+    if (NULL_INTERVAL_P (i))
+***************
+*** 894,897 ****
+--- 908,916 ----
+        if (NILP (props))
+  	return Qnil;
++ 
++       /* Restore the original START and END values
++ 	 because validate_interval_range increments them for strings.  */
++       start = ostart;
++       end = oend;
+  
+        i = validate_interval_range (object, &start, &end, hard);
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/unexec.c emacs-19.28/src/unexec.c
+*** emacs-19.27/src/unexec.c	Thu Jun 16 19:45:28 1994
+--- emacs-19.28/src/unexec.c	Thu Oct  6 03:12:46 1994
+***************
+*** 794,803 ****
+      }
+  
+    /* This adjustment was done above only #ifndef NO_REMAP,
+       so only undo it now #ifndef NO_REMAP.  */
+! #ifndef NO_REMAP
+  #ifdef A_TEXT_OFFSET
+    hdr.a_text -= A_TEXT_OFFSET (ohdr);
+- #endif
+  #endif
+  
+--- 794,804 ----
+      }
+  
++ #if 0 /* This #ifndef caused a bug on Linux when using QMAGIC.  */
+    /* This adjustment was done above only #ifndef NO_REMAP,
+       so only undo it now #ifndef NO_REMAP.  */
+!   /* #ifndef NO_REMAP  */
+! #endif
+  #ifdef A_TEXT_OFFSET
+    hdr.a_text -= A_TEXT_OFFSET (ohdr);
+  #endif
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/unexsunos4.c emacs-19.28/src/unexsunos4.c
+*** emacs-19.27/src/unexsunos4.c	Wed Apr 13 19:24:44 1994
+--- emacs-19.28/src/unexsunos4.c	Thu Oct  6 00:59:26 1994
+***************
+*** 1,2 ****
+--- 1,21 ----
++ /* Unexec for Sunos 4 using shared libraries.
++    Copyright (C) 1990, 1994 Free Software Foundation, Inc.
++ 
++ This file is part of GNU Emacs.
++ 
++ GNU Emacs is free software; you can redistribute it and/or modify
++ it under the terms of the GNU General Public License as published by
++ the Free Software Foundation; either version 2, or (at your option)
++ any later version.
++ 
++ GNU Emacs is distributed in the hope that it will be useful,
++ but WITHOUT ANY WARRANTY; without even the implied warranty of
++ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ GNU General Public License for more details.
++ 
++ You should have received a copy of the GNU General Public License
++ along with GNU Emacs; see the file COPYING.  If not, write to
++ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
++ 
+  /* Contributed by Viktor Dukhovni.  */
+  /*
+***************
+*** 38,41 ****
+--- 57,68 ----
+  #endif
+  
++ #if defined (SUNOS4) || defined (__FreeBSD__)
++ #define UNDO_RELOCATION
++ #endif
++ 
++ #ifdef UNDO_RELOCATION
++ #include <link.h>
++ #endif
++ 
+  #ifdef HAVE_UNISTD_H
+  #include <unistd.h>
+***************
+*** 184,187 ****
+--- 211,272 ----
+    write (new, old + N_TRELOFF (ohdr), stat.st_size - N_TRELOFF (ohdr));
+  
++   /* Some other BSD systems use this file.
++      We don't know whether this change is right for them.  */
++ #ifdef UNDO_RELOCATION
++   /* Undo the relocations done at startup by ld.so.
++      It will do these relocations again when we start the dumped Emacs.
++      Doing them twice gives incorrect results.  */
++   {
++     unsigned long daddr = N_DATADDR (ohdr);
++     unsigned long rel, erel;
++ #ifdef SUNOS4
++     extern struct link_dynamic _DYNAMIC;
++ 
++     /*  SunOS4.x's ld_rel is relative to N_TXTADDR. */
++     if (_DYNAMIC.ld_version < 2)
++       {
++ 	rel = _DYNAMIC.ld_un.ld_1->ld_rel + N_TXTADDR (ohdr);
++ 	erel = _DYNAMIC.ld_un.ld_1->ld_hash + N_TXTADDR (ohdr);
++       }
++     else
++       {
++ 	rel = _DYNAMIC.ld_un.ld_2->ld_rel + N_TXTADDR (ohdr);
++ 	erel = _DYNAMIC.ld_un.ld_2->ld_hash + N_TXTADDR (ohdr);
++       }
++ #ifdef sparc
++ #define REL_INFO_TYPE		struct reloc_info_sparc
++ #else
++ #define REL_INFO_TYPE		struct reloc_info_m68k
++ #endif /* sparc */
++ #define REL_TARGET_ADDRESS(r)	(((REL_INFO_TYPE *)(r))->r_address)
++ #endif /* SUNOS4 */
++ #ifdef __FreeBSD__
++     extern struct _dynamic _DYNAMIC;
++ 
++     /*  FreeBSD's LD_REL is a virtual address itself. */
++     rel = LD_REL (&_DYNAMIC);
++     erel = rel + LD_RELSZ (&_DYNAMIC);
++ #define REL_INFO_TYPE		struct relocation_info
++ #define REL_TARGET_ADDRESS(r)	(((REL_INFO_TYPE *)(r))->r_address)
++ #endif
++ 
++     for (; rel < erel; rel += sizeof (REL_INFO_TYPE))
++       {
++ 	/*  This is the virtual address where ld.so will do relocation.  */
++ 	unsigned long target = REL_TARGET_ADDRESS (rel);
++ 	/*  This is the offset in the data segment.  */
++ 	unsigned long segoffset = target - daddr;
++ 
++ 	/*  If it is located below data_start, we have to do nothing here,
++ 	    because the old data has been already written to the location. */
++ 	if (target < (unsigned long)&data_start)
++ 	    continue;
++ 
++ 	lseek (new, N_DATOFF (nhdr) + segoffset, L_SET);
++ 	write (new, old + N_DATOFF (ohdr) + segoffset, sizeof (unsigned long));
++       }
++   }
++ #endif /* UNDO_RELOCATION */
++ 
+    fchmod (new, 0755);
+  }
+***************
+*** 246,263 ****
+  }
+  
+! is_it (path)
+!   char *path;
+  {
+    int fd;
+!   long paths_cookie;
+    struct exec hdr;
+  
+    /*
+     * Open an executable  and check for a valid header!
+!    * Can't bcmp() the header with what we had,  it may have been stripped!
+     * so we may save looking at non executables with the same name, mostly
+     * directories.
+     */
+!   fd = open (path, O_RDONLY);
+    if (fd != -1)
+      {
+--- 331,348 ----
+  }
+  
+! is_it (filename)
+!   char *filename;
+  {
+    int fd;
+!   long filenames_cookie;
+    struct exec hdr;
+  
+    /*
+     * Open an executable  and check for a valid header!
+!    * Can't bcmp the header with what we had,  it may have been stripped!
+     * so we may save looking at non executables with the same name, mostly
+     * directories.
+     */
+!   fd = open (filename, O_RDONLY);
+    if (fd != -1)
+      {
+***************
+*** 268,273 ****
+  	  /* compare cookies */
+  	  lseek (fd, N_DATOFF (hdr) + (int)&cookie - N_DATADDR (hdr), L_SET);
+! 	  read (fd, &paths_cookie, sizeof (paths_cookie));
+! 	  if (paths_cookie == cookie)
+  	    {			/* Eureka */
+  
+--- 353,358 ----
+  	  /* compare cookies */
+  	  lseek (fd, N_DATOFF (hdr) + (int)&cookie - N_DATADDR (hdr), L_SET);
+! 	  read (fd, &filenames_cookie, sizeof (filenames_cookie));
+! 	  if (filenames_cookie == cookie)
+  	    {			/* Eureka */
+  
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/xfaces.c emacs-19.28/src/xfaces.c
+*** emacs-19.27/src/xfaces.c	Sun Aug  7 00:51:40 1994
+--- emacs-19.28/src/xfaces.c	Thu Oct  6 01:38:17 1994
+***************
+*** 994,997 ****
+--- 994,998 ----
+    int magic_p;
+    int id;
++   int garbaged = 0;
+  
+    CHECK_FRAME (frame, 0);
+***************
+*** 1018,1021 ****
+--- 1019,1025 ----
+        if (frame_update_line_height (f))
+  	x_set_window_size (f, 0, f->width, f->height);
++       /* Must clear cache, since it might contain the font
++ 	 we just got rid of.  */
++       garbaged = 1;
+      }
+    else if (EQ (attr_name, intern ("foreground")))
+***************
+*** 1024,1027 ****
+--- 1028,1032 ----
+        unload_color (f, face->foreground);
+        face->foreground = new_color;
++       garbaged = 1;
+      }
+    else if (EQ (attr_name, intern ("background")))
+***************
+*** 1030,1033 ****
+--- 1035,1039 ----
+        unload_color (f, face->background);
+        face->background = new_color;
++       garbaged = 1;
+      }
+  #if 0
+***************
+*** 1056,1069 ****
+      recompute_basic_faces (f);
+  
+!   /* If we're modifying either of the frame's display faces, that
+!      means that we're changing the parameters of a fixed face code;
+!      since the color/font/whatever is changed but the face ID hasn't,
+!      redisplay won't know to redraw the affected sections.  Give it a
+!      kick.  */
+!   if (id == 0 || id == 1)
+      SET_FRAME_GARBAGED (f);
+-   else
+-     /* Otherwise, it's enough to tell it to redisplay the text.  */
+-     windows_or_buffers_changed = 1;
+  
+    return Qnil;
+--- 1062,1072 ----
+      recompute_basic_faces (f);
+  
+!   /* We must redraw the frame whenever any face font or color changes,
+!      because it's possible that a merged (display) face
+!      contains the font or color we just replaced.
+!      And we must inhibit any Expose events until the redraw is done,
+!      since they would try to use the invalid display faces.  */
+!   if (garbaged)
+      SET_FRAME_GARBAGED (f);
+  
+    return Qnil;
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/xfns.c emacs-19.28/src/xfns.c
+*** emacs-19.27/src/xfns.c	Sun Aug 28 16:21:20 1994
+--- emacs-19.28/src/xfns.c	Sun Oct 23 16:21:21 1994
+***************
+*** 606,639 ****
+    int tmp_nchildren;
+  
+!   XQueryTree (x_current_display, outer, &tmp_root_window,
+! 	      &f->display.x->parent_desc,
+! 	      &tmp_children, &tmp_nchildren);
+!   xfree (tmp_children);
+! 
+!   /* Find the position of the outside upper-left corner of
+!      the inner window, with respect to the outer window.  */
+!   if (f->display.x->parent_desc != ROOT_WINDOW)
+      {
+!       BLOCK_INPUT;
+!       XTranslateCoordinates (x_current_display,
+  			       
+! 			     /* From-window, to-window.  */
+  #ifdef USE_X_TOOLKIT
+! 			     XtWindow (f->display.x->widget),
+  #else
+! 			     f->display.x->window_desc,
+  #endif
+! 			     f->display.x->parent_desc,
+  
+! 			     /* From-position, to-position.  */
+! 			     0, 0, &win_x, &win_y,
+  
+! 			     /* Child of win.  */
+! 			     &child);
+!       UNBLOCK_INPUT;
+  
+!       win_x += f->display.x->border_width;
+!       win_y += f->display.x->border_width;
+      }
+    *xptr = f->display.x->left_pos - win_x;
+    *yptr = f->display.x->top_pos - win_y;
+--- 606,654 ----
+    int tmp_nchildren;
+  
+!   x_catch_errors ();
+!   while (1)
+      {
+!       win_x = 0, win_y = 0;
+!       XQueryTree (x_current_display, outer, &tmp_root_window,
+! 		  &f->display.x->parent_desc,
+! 		  &tmp_children, &tmp_nchildren);
+!       xfree (tmp_children);
+! 
+!       /* Find the position of the outside upper-left corner of
+! 	 the inner window, with respect to the outer window.  */
+!       if (f->display.x->parent_desc != ROOT_WINDOW)
+! 	{
+! 	  BLOCK_INPUT;
+! 	  XTranslateCoordinates (x_current_display,
+  			       
+! 				 /* From-window, to-window.  */
+  #ifdef USE_X_TOOLKIT
+! 				 XtWindow (f->display.x->widget),
+  #else
+! 				 f->display.x->window_desc,
+  #endif
+! 				 f->display.x->parent_desc,
+  
+! 				 /* From-position, to-position.  */
+! 				 0, 0, &win_x, &win_y,
+  
+! 				 /* Child of win.  */
+! 				 &child);
+! 	  UNBLOCK_INPUT;
+  
+! 	  win_x += f->display.x->border_width;
+! 	  win_y += f->display.x->border_width;
+! 	}
+! 
+!       /* It is possible for the window returned by the XQueryNotify
+! 	 to become invalid by the time we call XTranslateCoordinates.
+! 	 That can happen when you restart some window managers.
+! 	 If so, we get an error in XTranslateCoordinates.
+! 	 Detect that and try the whole thing over.  */
+!       if (!x_had_errors_p ())
+! 	break;
+      }
++   x_uncatch_errors ();
++ 
+    *xptr = f->display.x->left_pos - win_x;
+    *yptr = f->display.x->top_pos - win_y;
+***************
+*** 1841,1847 ****
+  #ifdef USE_X_TOOLKIT
+  
+! /* If the WM_PROTOCOLS property does not already contain WM_TAKE_FOCUS
+!    and WM_DELETE_WINDOW, then add them.  (They may already be present
+!    because of the toolkit (Motif adds them, for example, but Xt doesn't).  */
+  
+  static void
+--- 1856,1863 ----
+  #ifdef USE_X_TOOLKIT
+  
+! /* If the WM_PROTOCOLS property does not already contain WM_TAKE_FOCUS,
+!    WM_DELETE_WINDOW, and WM_SAVE_YOURSELF, then add them.  (They may
+!    already be present because of the toolkit (Motif adds some of them,
+!    for example, but Xt doesn't).  */
+  
+  static void
+***************
+*** 1853,1856 ****
+--- 1869,1873 ----
+    int need_delete = 1;
+    int need_focus = 1;
++   int need_save = 1;
+  
+    BLOCK_INPUT;
+***************
+*** 1869,1874 ****
+  	{
+  	  nitems--;
+! 	  if (atoms [nitems] == Xatom_wm_delete_window)   need_delete = 0;
+! 	  else if (atoms [nitems] == Xatom_wm_take_focus) need_focus = 0;
+  	}
+      if (atoms) XFree ((char *) atoms);
+--- 1886,1892 ----
+  	{
+  	  nitems--;
+!  	  if (atoms[nitems] == Xatom_wm_delete_window)      need_delete = 0;
+! 	  else if (atoms[nitems] == Xatom_wm_take_focus)    need_focus = 0;
+! 	  else if (atoms[nitems] == Xatom_wm_save_yourself) need_save = 0;
+  	}
+      if (atoms) XFree ((char *) atoms);
+***************
+*** 1877,1882 ****
+      Atom props [10];
+      int count = 0;
+!     if (need_delete) props [count++] = Xatom_wm_delete_window;
+!     if (need_focus)  props [count++] = Xatom_wm_take_focus;
+      if (count)
+        XChangeProperty (dpy, w, Xatom_wm_protocols, XA_ATOM, 32, PropModeAppend,
+--- 1895,1901 ----
+      Atom props [10];
+      int count = 0;
+!     if (need_delete) props[count++] = Xatom_wm_delete_window;
+!     if (need_focus)  props[count++] = Xatom_wm_take_focus;
+!     if (need_save)   props[count++] = Xatom_wm_save_yourself;
+      if (count)
+        XChangeProperty (dpy, w, Xatom_wm_protocols, XA_ATOM, 32, PropModeAppend,
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/xrdb.c emacs-19.28/src/xrdb.c
+*** emacs-19.27/src/xrdb.c	Wed Jul 20 03:19:11 1994
+--- emacs-19.28/src/xrdb.c	Thu Oct  6 01:02:42 1994
+***************
+*** 72,76 ****
+  #endif
+  
+! #if defined (__bsdi__) || defined (DECLARE_GETPWUID_WITH_UID_T)
+  extern struct passwd *getpwuid (uid_t);
+  extern struct passwd *getpwnam (const char *);
+--- 72,76 ----
+  #endif
+  
+! #ifdef DECLARE_GETPWUID_WITH_UID_T
+  extern struct passwd *getpwuid (uid_t);
+  extern struct passwd *getpwnam (const char *);
+diff -rc2P --exclude-from=exceptions emacs-19.27/src/xterm.c emacs-19.28/src/xterm.c
+*** emacs-19.27/src/xterm.c	Sat Sep 10 16:00:37 1994
+--- emacs-19.28/src/xterm.c	Wed Oct 12 18:57:42 1994
+***************
+*** 5243,5248 ****
+  	    = XGetAtomName (x_current_display, font->properties[i].name);
+  	  if (!strcmp (atom, "FONT"))
+! 	    full_name = XGetAtomName (x_current_display,
+! 				      (Atom) (font->properties[i].card32));
+  	  XFree (atom);
+  	}
+--- 5243,5268 ----
+  	    = XGetAtomName (x_current_display, font->properties[i].name);
+  	  if (!strcmp (atom, "FONT"))
+! 	    {
+! 	      char *name = XGetAtomName (x_current_display,
+! 					 (Atom) (font->properties[i].card32));
+! 	      char *p = name;
+! 	      int dashes = 0;
+! 
+! 	      /* Count the number of dashes in the "full name".
+! 		 If it is too few, this isn't really the font's full name,
+! 		 so don't use it.
+! 		 In X11R4, the fonts did not come with their canonical names
+! 		 stored in them.  */
+! 	      while (*p)
+! 		{
+! 		  if (*p == '-')
+! 		    dashes++;
+! 		  p++;
+! 		}
+! 
+! 	      if (dashes >= 13)
+! 		full_name = name;
+! 	    }
+! 
+  	  XFree (atom);
+  	}
+end-of-emacs-patch-kit

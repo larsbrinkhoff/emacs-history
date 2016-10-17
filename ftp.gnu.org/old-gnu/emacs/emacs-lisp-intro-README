@@ -1,0 +1,33 @@
+README for "Programming in Emacs Lisp: An Introduction"
+
+    This edition, 1.05 of 21 October 1997 only corrects typographical
+    errors in the previous editions 1.01, 1.02, 1.03, and 1.04.
+    There are no other changes.
+
+
+21 October 1997
+Robert J. Chassell, bob@gnu.ai.mit.edu
+
+    This is an elementary introduction to programming in Emacs Lisp
+    for people who are not programmers, and who are not necessarily
+    interested in programming, but who do want to customize or extend
+    their computing environment.
+
+The gzip'd tar file, `emacs-lisp-intro-1.05.tar.gz' contains the
+Texinfo source file for `emacs-lisp-intro.texi'.  You may convert
+this Texinfo file to Info to read online or typeset it to print.
+
+The Texinfo source file, `emacs-lisp-intro.texi', formats without
+error using TeX version 3.14159 and `texinfo.tex' version 2.196, and
+`makeinfo' version 1.67.  The file does not format with some obsolete
+versions of `texinfo.tex'.
+
+The tar file also contains ten optional Encapsulated Post Script
+figures.  These figures are not necessary, merely nice to look at ---
+without them, you get the same figures printed with ASCII characters.
+Whether and how you print them depends on your site.
+
+You will find instructions on formatting in the README in the tar file
+and at the beginning of the Texinfo file 'emacs-lisp-intro.texi'.
+
+Best Wishes!

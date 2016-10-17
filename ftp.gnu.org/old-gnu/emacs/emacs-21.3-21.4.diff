@@ -1,0 +1,125 @@
+diff -rc2 emacs-21.3/ChangeLog emacs-21.4/ChangeLog
+*** emacs-21.3/ChangeLog	Tue Mar 18 10:15:46 2003
+--- emacs-21.4/ChangeLog	Sun Feb  6 04:10:55 2005
+***************
+*** 1,2 ****
+--- 1,6 ----
++ 2005-02-06  Richard M. Stallman  <rms@gnu.org>
++ 
++ 	* Version 21.4 released.
++ 
+  2003-03-18  Francesco Potort,Al(B  <pot@gnu.org>
+  
+diff -rc2 emacs-21.3/README emacs-21.4/README
+*** emacs-21.3/README	Tue Mar 18 10:20:35 2003
+--- emacs-21.4/README	Wed Feb  2 02:34:12 2005
+***************
+*** 1,4 ****
+! This directory tree holds version 21.3 of GNU Emacs, the extensible,
+! customizable, self-documenting real-time display editor.
+  
+  You may encounter bugs in this release.  If you do, please report
+--- 1,7 ----
+! This directory tree holds version 21.4 of GNU Emacs, the extensible,
+! customizable, self-documenting real-time display editor.  This release
+! was made to fix a security bug, so most directories have no changes
+! from 21.3.  The documentation still identifies the version as 21.3,
+! since it has not been altered.
+  
+  You may encounter bugs in this release.  If you do, please report
+diff -rc2 emacs-21.3/etc/ChangeLog emacs-21.4/etc/ChangeLog
+*** emacs-21.3/etc/ChangeLog	Tue Mar 18 10:15:41 2003
+--- emacs-21.4/etc/ChangeLog	Sun Feb  6 04:10:16 2005
+***************
+*** 1,2 ****
+--- 1,6 ----
++ 2005-02-06  Richard M. Stallman  <rms@gnu.org>
++ 
++ 	* Version 21.4 released.
++ 
+  2003-03-18  Francesco Potort,Al(B  <pot@gnu.org>
+  
+diff -rc2 emacs-21.3/lib-src/ChangeLog emacs-21.4/lib-src/ChangeLog
+*** emacs-21.3/lib-src/ChangeLog	Tue Mar 18 10:15:30 2003
+--- emacs-21.4/lib-src/ChangeLog	Sun Feb  6 04:09:17 2005
+***************
+*** 1,2 ****
+--- 1,8 ----
++ 2005-02-06  Richard M. Stallman  <rms@gnu.org>
++ 
++ 	* Version 21.4 released.
++ 
++ 	* movemail.c (popmail): Fix call to `error'.
++ 
+  2003-03-18  Francesco Potort,Al(B  <pot@gnu.org>
+  
+diff -rc2 emacs-21.3/lib-src/movemail.c emacs-21.4/lib-src/movemail.c
+*** emacs-21.3/lib-src/movemail.c	Fri Feb 15 07:07:14 2002
+--- emacs-21.4/lib-src/movemail.c	Wed Feb  2 02:31:17 2005
+***************
+*** 788,792 ****
+        if (pop_retr (server, i, mbf) != OK)
+  	{
+! 	  error (Errmsg, 0, 0);
+  	  close (mbfi);
+  	  return (1);
+--- 788,792 ----
+        if (pop_retr (server, i, mbf) != OK)
+  	{
+! 	  error ("%s", Errmsg, 0);
+  	  close (mbfi);
+  	  return (1);
+diff -rc2 emacs-21.3/lisp/ChangeLog emacs-21.4/lisp/ChangeLog
+*** emacs-21.3/lisp/ChangeLog	Tue Mar 18 10:15:29 2003
+--- emacs-21.4/lisp/ChangeLog	Sun Feb  6 04:09:04 2005
+***************
+*** 1,2 ****
+--- 1,8 ----
++ 2005-02-06  Richard M. Stallman  <rms@gnu.org>
++ 
++ 	* Version 21.4 released.
++ 
++ 	* version.el (emacs-version): Updated to 21.4
++ 
+  2003-03-18  Francesco Potort,Al(B  <pot@gnu.org>
+  
+diff -rc2 emacs-21.3/lisp/version.el emacs-21.4/lisp/version.el
+*** emacs-21.3/lisp/version.el	Tue Mar 18 09:18:33 2003
+--- emacs-21.4/lisp/version.el	Wed Feb  2 02:32:39 2005
+***************
+*** 28,32 ****
+  ;;; Code:
+  
+! (defconst emacs-version "21.3" "\
+  Version numbers of this version of Emacs.")
+  
+--- 28,32 ----
+  ;;; Code:
+  
+! (defconst emacs-version "21.4" "\
+  Version numbers of this version of Emacs.")
+  
+diff -rc2 emacs-21.3/man/ChangeLog emacs-21.4/man/ChangeLog
+*** emacs-21.3/man/ChangeLog	Tue Mar 18 10:15:22 2003
+--- emacs-21.4/man/ChangeLog	Sun Feb  6 04:10:33 2005
+***************
+*** 1,2 ****
+--- 1,6 ----
++ 2005-02-06  Richard M. Stallman  <rms@gnu.org>
++ 
++ 	* Version 21.4 released.
++ 
+  2003-03-18  Francesco Potort,Al(B  <pot@gnu.org>
+  
+diff -rc2 emacs-21.3/src/ChangeLog emacs-21.4/src/ChangeLog
+*** emacs-21.3/src/ChangeLog	Tue Mar 18 10:15:15 2003
+--- emacs-21.4/src/ChangeLog	Sun Feb  6 04:08:48 2005
+***************
+*** 1,2 ****
+--- 1,6 ----
++ 2005-02-06  Richard M. Stallman  <rms@gnu.org>
++ 
++ 	* Version 21.4 released.
++ 
+  2003-03-18  Francesco Potort,Al(B  <pot@gnu.org>
+  
