@@ -31,6 +31,18 @@ release() {
     commit $1
 }
 
+get_dir() {
+    git rm -r * > /dev/null
+    rm -rf *
+    echo "-- Emacs $1: Deleted -----------"; ls; $bash
+    cp -r ../$2/* .
+    echo "-- Emacs $1: Moved -----------"; ls; $bash
+    patch -p1 < ../emacs-17.61-bsd.diff
+    echo "-- Emacs $1: De-BSDified -----------"; ls; $bash
+    commit $1
+    echo "-- Emacs $1: Committed -----------"; ls; $bash
+}
+
 apply_patch() {
     sh ../run/run-$1.sh
     echo "-- Emacs $1: Script -----------"; ls; $bash
@@ -41,6 +53,7 @@ apply_patch() {
 }
 
 friedman=ftp.splode.com/pub/users/friedman/emacs
+tuhs=www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD
 bitsavers=bitsavers.org/bits/MIT/gnu
 gwdg=ftp4.gwdg.de/pub/msdos/editors/emacs
 funet=ftp.funet.fi/pub/gnu/funet/historical-funet-gnu-area-from-early-1990s
@@ -49,6 +62,7 @@ sunfreeware=ftp.tiscali.nl/pub/mirrors/sunfreeware/SOURCES
 slackware=mirrors.slackware.com/slackware/slackware-3.1/source/e
 
 release 16.56 $friedman/emacs-16.56.tar.gz
+get_dir 17.61 $tuhs/emacs
 release 18.41 $bitsavers/emacs_18.41.tar.gz
 release 18.55 $gwdg/emacs-18.55.tar.gz
 release 18.57 $funet/emacs/emacs-18.57.tar.gz

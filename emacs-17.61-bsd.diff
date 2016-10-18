@@ -1,0 +1,300 @@
+diff --git a/ChangeLog b/ChangeLog
+deleted file mode 100644
+index 7657046..0000000
+--- a/ChangeLog
++++ /dev/null
+@@ -1,38 +0,0 @@
+-Sun Mar 30 14:50:02 1986  Paul Rubin  (phr at calder.berkeley.edu)
+-
+-	* CHANGES IN THE EMACS DIRECTORY FOR THE 4.3BSD DISTRIBUTION
+-	____________________________________________________________
+-
+-	* src/config.h, src/paths.h:
+-	Provide sample versions of these files (see INSTALL for details).
+-	These should work on VAXen with vanilla directories.  For other
+-	CPU's, you'll have to change config.h; if you've moved directories
+-	around, change paths.h.  If you are running the X window system,
+-	change ``#undef HAVE_X_WINDOWS'' to ``#define HAVE_X_WINDOWS''
+-	in config.h.
+-
+-	* lisp/mh-e.el (MH mail-handler front end):
+-	Replace with latest version (3.3) by ucbvax!larus.  This
+-	version incorporates some fixes/improvements that are not
+-	yet in the FSF distribution (as of the date above).
+-	Share and enjoy.
+-
+-	* etc/emacs.1 (troff'able man page):
+-	Change pathnames in FILES section to reflect where they are
+-	in this distribution.
+-
+-	* INSTALL (installation guide):
+-	Say in LOSSAGES section to disregard `BSD redefined' and
+-	`BSD4_3 redefined' warning messages.
+-
+-	* build-install (shell script to build and install emacs):
+-	Rearrange the installation part somewhat, since 4.3 systems
+-	typically have sources living in a different places from libraries.
+-	(Here at Berkeley, sources are all maintained on one machine
+-	and libraries are distributed to other machines over a local network;
+-	the script is now set up for this kind of environment).
+-
+-	* README (note to installer):
+-	Insert pointer to this file.
+-
+-	* dbx and cpp are not included on the distribution.
+diff --git a/INSTALL b/INSTALL
+index f352c00..cf73e7f 100644
+--- a/INSTALL
++++ b/INSTALL
+@@ -27,7 +27,7 @@ PREPARATION
+  
+ 1) Choose a place in the file structure for the main directory
+  of Emacs code to reside.  This will ultimately have
+- subdirectories named info, lisp, etc, etc.  Call this name
++ subdirectories named src, lisp, etc, etc.  Call this name
+  $EMACS.  Let $BUILD stand for the name the directory has now.
+ 
+ 2) Copy $BUILD/src/config.h.dist to config.h, and edit it to
+@@ -134,12 +134,6 @@ The steps below are done by the shell script `build-install'.
+ LOSSAGES
+ Known possible problems building and running GNU Emacs
+ 
+-* In the 4.3bsd distribution, you will get some spurious warning messages
+-saying `BSD redefined' or `BSD4_3 redefined' from the C compiler while
+-building Emacs.  These are due to a last minute surprise in the 4.3
+-header files which we did not have time to correct for.  For now,
+-please disregard the messages.
+-
+ * Watch out for .emacs files and EMACSLOADPATH environment vars
+ 
+ These control the actions of Emacs.
+diff --git a/README b/README
+index 3722f10..3b5431c 100644
+--- a/README
++++ b/README
+@@ -18,6 +18,3 @@ The file INSTALL in this directory says how to bring up
+ The `etc' subdirectory contains several other files,
+  named in capital letters, which you should look at
+  when installing GNU Emacs.
+-
+-For a list of the changes made at Berkeley to the FSF distribution,
+- see the file ChangeLog, in this directory.
+diff --git a/build-install b/build-install
+index ac59cc1..69feba0 100755
+--- a/build-install
++++ b/build-install
+@@ -2,8 +2,8 @@
+ #
+ #Shell script for building and installing Emacs.
+ 
+-set EMACS=/usr/new/lib/emacs
+-set BIN=/usr/new
++set EMACS=/usr/local/emacs
++set BIN=/usr/local/bin
+ 
+ (cd etc; make) || exit 1
+ (cd src; make) || exit 1
+diff --git a/etc/emacs.1 b/etc/emacs.1
+index 5e0eb6f..6325273 100644
+--- a/etc/emacs.1
++++ b/etc/emacs.1
+@@ -72,29 +72,29 @@ make and distribute copies of the Emacs manual.  The TeX source to the
+ manual is also included in the Emacs source distribution.
+ .PP
+ .SH FILES
+-/usr/src/new/emacs/src - C source files and object files
++/usr/local/emacs/src - C source files and object files
+ 
+-/usr/new/lib/emacs/lisp - Lisp source files and compiled files
++/usr/local/emacs/lisp - Lisp source files and compiled files
+ that define most editing commands.  Some are preloaded;
+ others are autoloaded from this directory when used.
+   
+-/usr/new/lib/emacs/man - sources for the Emacs reference manual.
++/usr/local/emacs/man - sources for the Emacs reference manual.
+ 
+-/usr/new/lib/emacs/etc - various programs that are used with
++/usr/local/emacs/etc - various programs that are used with
+ GNU Emacs, and some files of information.
+ 
+-/usr/new/lib/emacs/etc/DOC.* - contains the documentation
++/usr/local/emacs/etc/DOC.* - contains the documentation
+ strings for the Lisp primitives and preloaded Lisp functions
+ of GNU Emacs.  They are stored here to reduce the size of
+ Emacs proper.
+ 
+-/usr/new/lib/emacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
++/usr/local/emacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
+ .br
+-/usr/new/lib/emacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
++/usr/local/emacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
+ .br
+-/usr/new/lib/emacs/etc/GOSDIFF discusses GNU Emacs vs. Gosling Emacs.
++/usr/local/emacs/etc/GOSDIFF discusses GNU Emacs vs. Gosling Emacs.
+ .br
+-/usr/new/lib/emacs/etc/SERVICE lists people offering various services
++/usr/local/emacs/etc/SERVICE lists people offering various services
+ to assist users of GNU Emacs, including education, troubleshooting,
+ porting and customization.
+ .br
+@@ -102,20 +102,20 @@ These files also have information useful to anyone wishing to write
+ programs in the Emacs Lisp extension language, which has not yet been fully
+ documented.
+ 
+-/usr/new/lib/emacs/info - files for the Info documentation browser
++/usr/local/emacs/info - files for the Info documentation browser
+ (a subsystem of Emacs) to refer to.  Currently not much of Unix
+ is documented here, but the complete text of the Emacs reference
+ manual is included in a convenient tree structured form.
+ 
+-/usr/new/lib/emacs/lock - holds lock files that are made for all
++/usr/local/emacs/lock - holds lock files that are made for all
+ files being modified in Emacs, to prevent simultaneous modification
+ of one file by two users.
+ 
+-/usr/src/new/emacs/cpp - the GNU cpp, needed for building Emacs on
++/usr/local/emacs/cpp - the GNU cpp, needed for building Emacs on
+ certain versions of Unix where the standard cpp cannot handle long
+ names for macros.
+ 
+-/usr/src/new/emacs/shortnames - facilities for translating long names to
++/usr/local/emacs/shortnames - facilities for translating long names to
+ short names in C code, needed for building Emacs on certain versions
+ of Unix where the C compiler cannot handle long names for functions
+ or variables.
+@@ -138,7 +138,7 @@ a list of people who offer it.
+ Please do not send anything but bug reports to this mailing list.
+ Send other stuff to info-gnu-emacs-request@prep.ai.mit.edu (or the
+ corresponding UUCP address).  For more information about Emacs mailing
+-lists, see the file /usr/new/lib/emacs/etc/MAILINGLISTS.  Bugs tend
++lists, see the file /usr/local/emacs/etc/MAILINGLISTS.  Bugs tend
+ actually to be fixed if they can be isolated, so it is in your
+ interest to report them in such a way that they can be easily
+ reproduced.
+diff --git a/src/config.h b/src/config.h
+deleted file mode 100644
+index 1d157fe..0000000
+--- a/src/config.h
++++ /dev/null
+@@ -1,99 +0,0 @@
+-/* GNU Emacs site configuration file.
+-   Copyright (C) 1985 Richard M. Stallman.
+-
+-This file is part of GNU Emacs.
+-
+-GNU Emacs is distributed in the hope that it will be useful,
+-but WITHOUT ANY WARRANTY.  No author or distributor
+-accepts responsibility to anyone for the consequences of using it
+-or for whether it serves any particular purpose or works at all,
+-unless he says so in writing.  Refer to the GNU Emacs General Public
+-License for full details.
+-
+-Everyone is granted permission to copy, modify and redistribute
+-GNU Emacs, but only under the conditions described in the
+-GNU Emacs General Public License.   A copy of this license is
+-supposed to have been given to you along with GNU Emacs so you
+-can know your rights and responsibilities.  It should be in a
+-file named COPYING.  Among other things, the copyright notice
+-and this notice must be preserved on all copies.  */
+-
+-
+-/* NOTE:  This is the config file for generic 4.3BSD.
+-	  If you want to make a change to the configuration file which
+-	  is included in the Emacs distribution, the file config.h.dist must
+-	  also be modified.
+-*/
+-
+-/* Include here a s- file that describes the system type you are using.
+-   Alternatives now defined include
+-   s-bsd4.1.h, s-bsd4.2.h and s-bsd4.3.h for Berkeley systems,
+-   s-unipl5.2.h and s-unipl.5.0.h for Unisoft-modified system V,
+-   and s-usg5.2.h for ordinary losing system V.
+-   See s-template.h for documentation on writing s- files.  */
+-#include "s-bsd4.3.h"
+- 
+-/* Include here a m- file that describes the machine and system you use.
+-   Alternatives implemented so far are
+-    m-vax.h	for vaxen.
+-    m-mega68.h	for Megatest 68000's.
+-    m-sun.h	for Sun 68000's.
+-    m-ns16000.h	for 16000's (not sure how general this is yet)
+-    m-pyramid.h for pyramids.
+-    m-dual68.h  for dual 68000's (that run Unisoft port).
+-    m-apollo.h  for Apollo running their own system.
+-   See m-template.h for info on what m- files should define.
+-   */
+-#include "m-vax.h"
+-
+-
+-/* define HAVE_X_WINDOWS if you want to use the X window system */
+-
+-#undef HAVE_X_WINDOWS
+-
+-/* subprocesses should be defined if you want to
+- have code for asynchronous subprocesses
+- (as used in M-x compile and M-x shell).
+- These do not work for some USG systems yet;
+- for the ones where they work, the s-*.h file defines this flag.  */
+-
+-#ifndef USG
+-#define subprocesses
+-#endif
+-
+-/* Define USER_FULL_NAME to return a string
+- that is the user's full name.
+- It can assume that the variable `pw'
+- points to the password file entry for this user.
+-
+- At some sites, the pw_gecos field contains
+- the user's full name.  If neither this nor any other
+- field contains the right thing, use pw_name,
+- giving the user's login name, since that is better than nothing.  */
+-
+-#define USER_FULL_NAME pw->pw_gecos
+-
+-/* Define AMPERSAND_FULL_NAME if you use the convention
+-  that & in the full name stands for the login id.  */
+-
+-#define AMPERSAND_FULL_NAME
+-
+-/* Maximum screen width we handle. */
+-
+-#define MScreenWidth 300
+-
+-/* Maximum screen length we handle. */
+-
+-#define MScreenLength 300
+-
+-/* # bytes of pure Lisp code to leave space for.
+-  130000 is enough for Emacs as distributed by me, Richard Stallman,
+-  with the set of preloaded packages I set up.  */
+-
+-#define PURESIZE 130000
+-
+-/* Define HIGHPRI as a negative number
+- if you want Emacs to run at a higher than normal priority.
+- For this to take effect, you must install it as setuid root. */
+-
+-#undef HIGHPRI
+diff --git a/src/paths.h b/src/paths.h
+deleted file mode 100644
+index 64360d8..0000000
+--- a/src/paths.h
++++ /dev/null
+@@ -1,16 +0,0 @@
+-/* the default search path for Lisp function "load" */
+-#define PATH_LOADSEARCH ":/usr/new/lib/emacs/lisp"
+-
+-/* the extra search path for programs to invoke.
+- This is appended to whatever the PATH environment variable says. */
+-#define PATH_EXEC "/usr/new/lib/emacs/etc"
+-
+-/* the name of the directory that contains lock files
+- with which we record what files are being modified in Emacs.
+- This directory should be writable by everyone.
+- THE STRING MUST END WITH A SLASH!!!  */
+-#define PATH_LOCK "/usr/new/lib/emacs/lock/"
+-
+-/* the name of the file !!!SuperLock!!! in the directory
+- specified by PATH_LOCK.  Yes, this is redundant.  */
+-#define PATH_SUPERLOCK "/usr/new/lib/emacs/lock/!!!SuperLock!!!"
