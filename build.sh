@@ -3,12 +3,18 @@ mkdir build
 cd build
 git init
 
-commit()
-{
+scrub() {
+    find lisp -name '*.elc' | tee /dev/stderr | xargs rm
+    find info -type f | grep -v -e 'info/dir$' -e 'info/COPYING$' | xargs rm
+}
+
+commit() {
     changelog=`head -1 src/ChangeLog`
     date=`echo "$changelog" | sed 's/\([0-9]\)  .*$/\1/'`
     name=`echo "$changelog" | sed 's/^.*  \(.*\)  .*$/\1/'`
     email=`echo "$changelog" | sed 's/^.*  [<(]\(.*\)[)>]$/\1/' | sed 's/ at /@/'`
+
+    scrub
 
     git add -A .
     export GIT_COMMITTER_DATE="$date"
