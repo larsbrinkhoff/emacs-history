@@ -18,6 +18,8 @@ not included.
   case with Unisys.  I put it back up for ftp a couple of years later
   and it's relatively easy to find these days."
 
+- Emacs 17.61 from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD/new.tar.gz
+
 - emacs_18.41.tar.gz from http://bitsavers.org/bits/MIT/gnu/
 
 - diff-18* from http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
