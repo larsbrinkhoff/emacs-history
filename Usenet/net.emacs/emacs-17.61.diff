@@ -1,0 +1,153 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.3 4.3bsd-beta 6/6/85; site mit-eddie.MIT.EDU
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms
+From: rms@PREP.AI.MIT.EDU
+Newsgroups: net.emacs
+Subject: GNU Emacs 17.61 available.
+Message-ID: <1684@mit-eddie.MIT.EDU>
+Date: Tue, 22-Apr-86 07:19:12 EST
+Article-I.D.: mit-eddi.1684
+Posted: Tue Apr 22 07:19:12 1986
+Date-Received: Wed, 23-Apr-86 22:37:55 EST
+Sender: uu...@mit-eddie.MIT.EDU
+Organization: M.I.T. EE/CS Computer Facility, Cambridge MA
+Lines: 138
+
+From: rms@PREP.AI.MIT.EDU (Richard M. Stallman)
+
+Differences for Emacs 17.61, from 17.60.
+
+Remember to recompile the changed Lisp files with
+M-x byte-recomile-directory before building the new Emacs,
+in order for the changes to take effect.
+
+======================================================================
+diff -rc2 odist60/lisp/ChangeLog dist/lisp/ChangeLog
+*** odist60/lisp/ChangeLog	Thu Apr 10 13:37:23 1986
+--- dist/lisp/ChangeLog	Sat Apr 12 19:58:50 1986
+***************
+*** 1,2
+  Thu Apr 10 05:58:53 1986  Richard M. Stallman  (rms at prep)
+  
+
+--- 1,16 -----
++ Sat Apr 12 19:29:26 1986  Richard M. Stallman  (rms at prep)
++ 
++ 	* replace.el (perform-replace):
++ 	Save and restore the match-data around call to read-char.
++ 	Mysterious bug of replacing the wrong characters
++ 	was due to display-time-filter running inside read-char.
++ 	Also make the C-w option set `replaced' to t, not `done'.
++ 
++ Fri Apr 11 13:56:16 1986  Richard M. Stallman  (rms at prep)
++ 
++ 	* rmail.el (rmail-nuke-pinhead-header):
++ 	Deleted code to delete old Date: line, since new one is made
++ 	only if had no old one.
++ 
+  Thu Apr 10 05:58:53 1986  Richard M. Stallman  (rms at prep)
+  
+diff -rc2 odist60/lisp/replace.el dist/lisp/replace.el
+*** odist60/lisp/replace.el	Sat Mar 15 14:28:00 1986
+--- dist/lisp/replace.el	Sat Apr 12 19:58:17 1986
+***************
+*** 138,142
+  	    (while (not done)
+  	      (message "Query replacing %s with %s: " from-string to-string)
+! 	      (setq char (read-char))
+  	      (cond ((not (memq char '(?\e ?\ ?\, ?\. ?! ?\177 ?\C-r ?\C-w ?^)))
+  		     (setq keep-going nil)
+
+--- 138,146 -----
+  	    (while (not done)
+  	      (message "Query replacing %s with %s: " from-string to-string)
+! 	      ;; Preserve the match data.  Process filters and sentinels
+! 	      ;; could run inside read-char..
+! 	      (let ((data (match-data)))
+! 		(setq char (read-char))
+! 		(store-match-data data))
+  	      (cond ((not (memq char '(?\e ?\ ?\, ?\. ?! ?\177 ?\C-r ?\C-w ?^)))
+  		     (setq keep-going nil)
+***************
+*** 176,180
+  		       (prog1 (match-data)
+  			 (save-excursion (recursive-edit))))
+! 		     (setq done t))))))
+  	(setq lastrepl (point))))
+      (pop-mark)
+
+--- 180,184 -----
+  		       (prog1 (match-data)
+  			 (save-excursion (recursive-edit))))
+! 		     (setq replaced t))))))
+  	(setq lastrepl (point))))
+      (pop-mark)
+diff -rc2 odist60/lisp/rmail.el dist/lisp/rmail.el
+*** odist60/lisp/rmail.el	Fri Apr  4 16:12:02 1986
+--- dist/lisp/rmail.el	Fri Apr 11 13:55:59 1986
+***************
+*** 493,502
+  	  (goto-char start)
+  	  (setq has-date (and (search-forward "\nDate:" nil t) (point)))
+- 	  (cond ((and (not has-from) has-date)
+- 		 ;; kill "date:" line if "from:" line missing
+- 		 (goto-char has-date)
+- 		 (beginning-of-line)
+- 		 (delete-region (point)
+- 				(progn (forward-line 1) (point)))))
+  	  (goto-char start)
+  	  (setq case-fold-search nil)
+
+--- 493,496 -----
+  	  (goto-char start)
+  	  (setq has-date (and (search-forward "\nDate:" nil t) (point)))
+  	  (goto-char start)
+  	  (setq case-fold-search nil)
+diff -rc2 odist60/lisp/version.el dist/lisp/version.el
+*** odist60/lisp/version.el	Fri Apr 11 01:27:13 1986
+--- dist/lisp/version.el	Sat Apr 12 20:40:27 1986
+***************
+*** 22,26
+  ;; The following line is modified automatically
+  ;; by loading inc-version.el, each time a new Emacs is dumped.
+! (defconst emacs-version "17.60.0"
+    "Version numbers of this version of Emacs.")
+  
+
+--- 22,26 -----
+  ;; The following line is modified automatically
+  ;; by loading inc-version.el, each time a new Emacs is dumped.
+! (defconst emacs-version "17.61.0"
+    "Version numbers of this version of Emacs.")
+  
+diff -rc2 odist60/src/ChangeLog dist/src/ChangeLog
+*** odist60/src/ChangeLog	Thu Apr 10 05:48:00 1986
+--- dist/src/ChangeLog		Sat Apr 12 20:55:52 1986
+***************
+*** 1,2
+  Thu Apr 10 05:43:53 1986  Richard M. Stallman  (rms at prep)
+  
+
+--- 1,6 -----
++ Sat Apr 12 19:41:43 1986  Richard M. Stallman  (rms at prep)
++ 
++ 	* m-celerity.h: Remove spurious effectless #define BSTRINGS
++ 
+  Thu Apr 10 05:43:53 1986  Richard M. Stallman  (rms at prep)
+  
+diff -rc2 odist60/src/m-celerity.h dist/src/m-celerity.h
+*** odist60/src/m-celerity.h	Tue Feb 18 16:32:22 1986
+--- dist/src/m-celerity.h	Sat Apr 12 19:41:37 1986
+***************
+*** 45,49
+  /* celerity preprocessor defines "accel", however the following is clearer */
+  #define celerity
+- #define BSTRINGS
+  
+  /* #define NO_UNION_TYPE would be preferable,
+
+--- 45,48 -----
+  /* celerity preprocessor defines "accel", however the following is clearer */
+  #define celerity
+  
+  /* #define NO_UNION_TYPE would be preferable,

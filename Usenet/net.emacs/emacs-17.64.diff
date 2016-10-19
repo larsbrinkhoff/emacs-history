@@ -1,0 +1,227 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Path: utzoo!linus!philabs!cmcl2!harvard!husc6!panda!genrad!mit-eddie!rms
+From: rms@PREP.AI.MIT.EDU
+Newsgroups: net.emacs
+Subject: Emacs 17.64 changes
+Message-ID: <1946@mit-eddie.MIT.EDU>
+Date: Mon, 12-May-86 15:18:17 EDT
+Article-I.D.: mit-eddi.1946
+Posted: Mon May 12 15:18:17 1986
+Date-Received: Wed, 14-May-86 19:08:30 EDT
+Sender: j...@mit-eddie.MIT.EDU
+Organization: M.I.T. EE/CS Computer Facility, Cambridge MA
+Lines: 213
+
+From: rms@PREP.AI.MIT.EDU (Richard M. Stallman)
+
+GNU Emacs 17.64 is now available.
+
+Differences for GNU Emacs 17.64, from 17.63
+
+Remember to recompile the changed Lisp files with
+M-x byte-recomile-directory before building the new Emacs,
+in order for the changes to take effect.
+
+======================================================================
+diff -rc2 odist63/lisp/mh-e.el dist/lisp/mh-e.el
+*** odist63/lisp/mh-e.el	Fri May  2 19:36:32 1986
+--- dist/lisp/mh-e.el	Thu May  8 00:39:26 1986
+***************
+*** 1524,1528
+  	  ((looking-at "[\t ]*$") "")
+  	  (t
+! ! 	   (re-search-forward "[\t ]*\\([^\t \n].*\\)$" nil t)
+  	   (let ((field (buffer-substring (match-beginning 1)
+  					  (match-end 1)))
+
+--- 1524,1528 -----
+  	  ((looking-at "[\t ]*$") "")
+  	  (t
+! 	   (re-search-forward "[\t ]*\\([^\t \n].*\\)$" nil t)
+  	   (let ((field (buffer-substring (match-beginning 1)
+  					  (match-end 1)))
+diff -rc2 odist63/lisp/replace.el dist/lisp/replace.el
+*** odist63/lisp/replace.el	Sat Apr 12 19:58:17 1986
+--- dist/lisp/replace.el	Fri May  9 00:37:12 1986
+***************
+*** 50,54
+  (defun how-many (regexp)
+    "Print number of matches for REGEXP following point."
+!   (interactive "sHow many (matches for regexp): ")
+    (let ((count 0) opoint)
+      (save-excursion
+
+--- 50,54 -----
+  (defun how-many (regexp)
+    "Print number of matches for REGEXP following point."
+!   (interactive "sHow many matches for (regexp): ")
+    (let ((count 0) opoint)
+      (save-excursion
+diff -rc2 odist63/lisp/version.el dist/lisp/version.el
+*** odist63/lisp/version.el	Tue May  6 11:33:16 1986
+--- dist/lisp/version.el	Mon May 12 14:02:46 1986
+***************
+*** 22,26
+  ;; The following line is modified automatically
+  ;; by loading inc-version.el, each time a new Emacs is dumped.
+! (defconst emacs-version "17.63.0"
+    "Version numbers of this version of Emacs.")
+  
+
+--- 22,26 -----
+  ;; The following line is modified automatically
+  ;; by loading inc-version.el, each time a new Emacs is dumped.
+! (defconst emacs-version "17.64.0"
+    "Version numbers of this version of Emacs.")
+  
+diff -rc2 odist63/man/texinfo.tex dist/man/texinfo.tex
+*** odist63/man/texinfo.tex	Tue May  6 11:32:28 1986
+--- dist/man/texinfo.tex	Mon May 12 14:24:44 1986
+***************
+*** 312,315
+  \font\chapit=amti10 scaled \magstep3
+  \font\chapsl=amsl10 scaled \magstep3
+  \let\chapbf=\chaprm
+  
+
+--- 312,316 -----
+  \font\chapit=amti10 scaled \magstep3
+  \font\chapsl=amsl10 scaled \magstep3
++ \font\chaptt=amtt10 scaled \magstep3
+  \let\chapbf=\chaprm
+  
+***************
+*** 317,320
+  \font\secit=amti10 scaled \magstep2
+  \font\secsl=amsl10 scaled \magstep2
+  \let\secbf=\secrm
+  
+
+--- 318,322 -----
+  \font\secit=amti10 scaled \magstep2
+  \font\secsl=amsl10 scaled \magstep2
++ \font\sectt=amtt10 scaled \magstep2
+  \let\secbf=\secrm
+  
+***************
+*** 322,325
+  \font\ssecit=amti10 scaled \magstep1
+  \font\ssecsl=amsl10 scaled \magstep1
+  \let\ssecbf=\ssecrm
+  
+
+--- 324,328 -----
+  \font\ssecit=amti10 scaled \magstep1
+  \font\ssecsl=amsl10 scaled \magstep1
++ \font\ssectt=amtt10 scaled \magstep1
+  \let\ssecbf=\ssecrm
+  
+***************
+*** 326,332
+  \def\textfonts{\let\rm=\tenrm\let\it=\tenit\let\sl=\tensl\let\bf=\tenbf%
+  \let\sc=\tensc\let\sf=\tensf}
+! \def\chapfonts{\let\rm=\chaprm\let\it=\chapit\let\sl=\chapsl\let\bf=\chapbf}
+! \def\secfonts{\let\rm=\secrm\let\it=\secit\let\sl=\secsl\let\bf=\secbf}
+! \def\subsecfonts{\let\rm=\ssecrm\let\it=\ssecit\let\sl=\ssecsl\let\bf=\ssecbf}
+  % Count depth in font-changes, for error checks
+  \newcount\fontdepth \fontdepth=0
+
+--- 329,335 -----
+  \def\textfonts{\let\rm=\tenrm\let\it=\tenit\let\sl=\tensl\let\bf=\tenbf%
+  \let\sc=\tensc\let\sf=\tensf}
+! \def\chapfonts{\let\rm=\chaprm\let\it=\chapit\let\sl=\chapsl\let\bf=\chapbf\let\tt=\chaptt}
+! \def\secfonts{\let\rm=\secrm\let\it=\secit\let\sl=\secsl\let\bf=\secbf\let\tt=\sectt}
+! \def\subsecfonts{\let\rm=\ssecrm\let\it=\ssecit\let\sl=\ssecsl\let\bf=\ssecbf\let\tt=\ssectt}
+  % Count depth in font-changes, for error checks
+  \newcount\fontdepth \fontdepth=0
+***************
+*** 864,867
+  \chapmacro {#1}{\the\chapno}%
+  \gdef\thissection{#1}\gdef\thischapter{#1}%
+  \edef\temp{{\realbackslash chapentry {#1}{\the\chapno}{\noexpand\folio}}}%
+  \write \contentsfile \temp  %
+
+--- 867,871 -----
+  \chapmacro {#1}{\the\chapno}%
+  \gdef\thissection{#1}\gdef\thischapter{#1}%
++ \let\rawbackslash=\relax%
+  \edef\temp{{\realbackslash chapentry {#1}{\the\chapno}{\noexpand\folio}}}%
+  \write \contentsfile \temp  %
+***************
+*** 1024,1028
+  \def\subsecheading #1#2#3#4{{\advance \subsecheadingskip by \parskip %
+  \subsecheadingbreak}%
+! {\subsecfonts \line{\secrm#2.#3.#4\enspace #1\hfill}}%
+  \ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 10000 }
+  
+
+--- 1028,1032 -----
+  \def\subsecheading #1#2#3#4{{\advance \subsecheadingskip by \parskip %
+  \subsecheadingbreak}%
+! {\secfonts \line{\secrm#2.#3.#4\enspace #1\hfill}}%
+  \ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 10000 }
+  
+***************
+*** 1031,1035
+  \def\subsubsecheading #1#2#3#4#5{{\advance \subsecheadingskip by \parskip %
+  \subsecheadingbreak}%
+! {\subsubsecfonts \line{\secrm#2.#3.#4.#5\enspace #1\hfill}}%
+  \ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 10000}
+  
+
+--- 1035,1039 -----
+  \def\subsubsecheading #1#2#3#4#5{{\advance \subsecheadingskip by \parskip %
+  \subsecheadingbreak}%
+! {\secfonts \line{\secrm#2.#3.#4.#5\enspace #1\hfill}}%
+  \ifdim \parskip<10pt \kern 10pt\kern -\parskip\fi \penalty 10000}
+  
+diff -rc2 odist63/src/ChangeLog dist/src/ChangeLog
+*** odist63/src/ChangeLog	Mon May  5 14:57:50 1986
+--- dist/src/ChangeLog	Fri May  9 01:22:11 1986
+***************
+*** 1,2
+  Mon May  5 14:57:05 1986  Richard M. Stallman  (rms at prep)
+  
+
+--- 1,7 -----
++ Fri May  9 01:12:31 1986  Richard M. Stallman  (rms at prep)
++ 
++ 	* sysdep.c (get_screen_size):
++ 	Reject values of TIOCGSIZE if they are ridiculous.
++ 
+  Mon May  5 14:57:05 1986  Richard M. Stallman  (rms at prep)
+  
+diff -rc2 odist63/src/dispnew.c dist/src/dispnew.c
+*** odist63/src/dispnew.c	Mon Apr  7 23:49:32 1986
+--- dist/src/dispnew.c	Sat May 10 20:20:06 1986
+***************
+*** 746,749
+        obody = old -> body;
+        olen = old->length;
+        if (!must_write_spaces)
+  	while (obody[olen - 1] == ' ')
+
+--- 746,750 -----
+        obody = old -> body;
+        olen = old->length;
++       /* Note obody[-1] is old->physical, which is always 0 or 1.  */
+        if (!must_write_spaces)
+  	while (obody[olen - 1] == ' ')
+diff -rc2 odist63/src/sysdep.c dist/src/sysdep.c
+*** odist63/src/sysdep.c	Mon Mar 17 00:13:33 1986
+--- dist/src/sysdep.c	Fri May  9 01:21:18 1986
+***************
+*** 518,521
+    if (ioctl (0, TIOCGWINSZ, &size) < 0)
+      return;
+    *widthp = size.ws_col;
+    *heightp = size.ws_row;
+
+--- 518,524 -----
+    if (ioctl (0, TIOCGWINSZ, &size) < 0)
+      return;
++   if ((unsigned) size.ws_col > MScreenWidth
++       || (unsigned) size.ws_row > MScreenLength)
++     return;
+    *widthp = size.ws_col;
+    *heightp = size.ws_row;

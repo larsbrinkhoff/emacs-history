@@ -83,7 +83,14 @@ not included.
   case with Unisys.  I put it back up for ftp a couple of years later
   and it's relatively easy to find these days."
 
+- emacs-16.57-1.diff and emacs-16.57-2.diff from Usenet net.sources.
+
+  It seems this is not the official 16.57.  There are no ChangeLogs
+  entries.
+
 - Emacs 17.61 from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD/new.tar.gz
+
+- emacs-17.61.diff and emacs-17.64.diff from Usenet net.emacs.
 
 - Emacs "17.VMS-2" from http://decuslib.com/decus/vax86b/gnuemacs/
 

@@ -1,0 +1,1434 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.3 4.3bsd-beta 6/6/85; site ucbvax.ARPA
+Path: utzoo!watmath!clyde!burl!ulysses!ucbvax!phr
+From: p...@ucbvax.ARPA (Paul Rubin)
+Newsgroups: net.sources
+Subject: GNU Emacs diffs 16.56=>16.60, part 2 of 2
+Message-ID: <10465@ucbvax.ARPA>
+Date: Wed, 25-Sep-85 02:56:51 EDT
+Article-I.D.: ucbvax.10465
+Posted: Wed Sep 25 02:56:51 1985
+Date-Received: Thu, 26-Sep-85 08:25:00 EDT
+Organization: University of California at Berkeley
+Lines: 1420
+
+
+  
+    curlevel->prev = -1;
+
+--- 748,754 -----
+  
+        oldstate = Fcdr (oldstate);
+        tem = Fcar (oldstate);
+!       start_quoted = !NULL (tem);
+      }
+    state.quoted = 0;
+  
+***************
+*** 742,747
+        tem = Fcar (oldstate);
+        state.quoted = !NULL (tem);
+      }
+  
+    curlevel->prev = -1;
+  
+
+--- 750,756 -----
+        tem = Fcar (oldstate);
+        start_quoted = !NULL (tem);
+      }
++   state.quoted = 0;
+  
+    curlevel->prev = -1;
+  
+***************
+*** 750,756
+    if (state.incomment) goto startincomment;
+    if (state.instring >= 0)
+      {
+!       if (state.quoted) goto startquotedinstring;
+        goto startinstring;
+      }
+    if (state.quoted) goto startquoted;
+
+--- 759,765 -----
+    if (state.incomment) goto startincomment;
+    if (state.instring >= 0)
+      {
+!       if (start_quoted) goto startquotedinstring;
+        goto startinstring;
+      }
+    if (start_quoted) goto startquoted;
+***************
+*** 753,759
+        if (state.quoted) goto startquotedinstring;
+        goto startinstring;
+      }
+!   if (state.quoted) goto startquoted;
+  
+    while (from < end)
+      {
+
+--- 762,768 -----
+        if (start_quoted) goto startquotedinstring;
+        goto startinstring;
+      }
+!   if (start_quoted) goto startquoted;
+  
+    while (from < end)
+      {
+***************
+*** 847,854
+  		{
+  		case Scharquote:
+  		case Sescape:
+- 		  if (from >= end) goto endquoted;
+- 		startquotedinstring:
+  		  from++;
+  		}
+  	      from++;
+
+--- 856,861 -----
+  		{
+  		case Scharquote:
+  		case Sescape:
+  		  from++;
+  		startquotedinstring:
+  		  if (from >= end) goto endquoted;
+***************
+*** 850,855
+  		  if (from >= end) goto endquoted;
+  		startquotedinstring:
+  		  from++;
+  		}
+  	      from++;
+  	    }
+
+--- 857,864 -----
+  		case Scharquote:
+  		case Sescape:
+  		  from++;
++ 		startquotedinstring:
++ 		  if (from >= end) goto endquoted;
+  		}
+  	      from++;
+  	    }
+diff -cbr /u2/emacs/dist-16.56/src/sysdep.c /u2/emacs/dist/src/sysdep.c
+*** /u2/emacs/dist-16.56/src/sysdep.c	Mon Jul  8 01:12:40 1985
+--- /u2/emacs/dist/src/sysdep.c	Mon Sep 16 16:08:49 1985
+***************
+*** 28,33
+  #include <sgtty.h>
+  #define TERMINAL struct sgttyb
+  #define OSPEED(str) str.sg_ospeed
+  #endif
+  
+  #ifdef USG
+
+--- 28,34 -----
+  #include <sgtty.h>
+  #define TERMINAL struct sgttyb
+  #define OSPEED(str) str.sg_ospeed
++ #define TABS_OK(str) ((str.sg_flags & XTABS) != XTABS)
+  #endif
+  
+  #ifdef USG
+***************
+*** 40,45
+  #define TIOCSETP TCSETAF
+  #define TERMINAL struct termio
+  #define OSPEED(str) (str.c_cflag & CBAUD)
+  #endif
+  
+  #include "termhooks.h"
+
+--- 41,47 -----
+  #define TIOCSETP TCSETAF
+  #define TERMINAL struct termio
+  #define OSPEED(str) (str.c_cflag & CBAUD)
++ #define TABS_OK(str) ((str.c_oflag & TABDLY) != TAB3)
+  #endif
+  
+  #include "termhooks.h"
+***************
+*** 182,189
+  #ifdef TIOCGLTC
+    struct tchars tchars;
+    int lmode;
+!   static struct tchars new_tchars = {-1};
+!   static struct ltchars new_ltchars = {-1};
+  #endif
+  
+    if (noninteractive)
+
+--- 184,191 -----
+  #ifdef TIOCGLTC
+    struct tchars tchars;
+    int lmode;
+!    static struct tchars new_tchars = {-1,-1,-1,-1,-1,-1};
+!    static struct ltchars new_ltchars = {-1,-1,-1,-1,-1,-1};
+  #endif
+  
+    if (noninteractive)
+***************
+*** 242,248
+  	  tchars.t_startc = '\021';
+  	  tchars.t_stopc = '\023';
+  	}
+!       lmode = LLITOUT | old_lmode;
+  
+        ioctl (0, TIOCSETC, &tchars);
+        ioctl (0, TIOCSLTC, &new_ltchars);
+
+--- 244,250 -----
+  	  tchars.t_startc = '\021';
+  	  tchars.t_stopc = '\023';
+  	}
+!       lmode = LDECCTQ | LLITOUT | old_lmode;
+  
+        ioctl (0, TIOCSETC, &tchars);
+        ioctl (0, TIOCSLTC, &new_ltchars);
+***************
+*** 261,268
+  tabs_safe_p ()
+  {
+    TERMINAL sg;
+!   gtty (&sg);
+!   return (sg.sg_flags & XTABS) != XTABS;
+  }
+  
+  RstDsp ()
+
+--- 263,270 -----
+  tabs_safe_p ()
+  {
+    TERMINAL sg;
+!   ioctl (0, TIOCGETP, &sg);
+!   return (TABS_OK(sg));
+  }
+  
+  RstDsp ()
+diff -cbr /u2/emacs/dist-16.56/src/term.c /u2/emacs/dist/src/term.c
+*** /u2/emacs/dist-16.56/src/term.c	Mon Jul 15 14:24:28 1985
+--- /u2/emacs/dist/src/term.c	Mon Sep 16 18:18:30 1985
+***************
+*** 167,174
+  
+  set_terminal_modes ()
+  {
+!   if (reset_terminal_modes_hook)
+!     return (*reset_terminal_modes_hook) ();
+    OUTPUT_IF (TS_termcap_modes);
+    OUTPUT_IF (TS_visual_mode);
+    OUTPUT_IF (TS_keypad_mode);
+
+--- 167,174 -----
+  
+  set_terminal_modes ()
+  {
+!   if (set_terminal_modes_hook)
+!     return (*set_terminal_modes_hook) ();
+    OUTPUT_IF (TS_termcap_modes);
+    OUTPUT_IF (TS_visual_mode);
+    OUTPUT_IF (TS_keypad_mode);
+***************
+*** 178,185
+  
+  reset_terminal_modes ()
+  {
+!   if (set_terminal_modes_hook)
+!     return (*set_terminal_modes_hook) ();
+    if (TN_standout_width < 0)
+      turn_off_highlight ();
+    turn_off_insert ();
+
+--- 178,185 -----
+  
+  reset_terminal_modes ()
+  {
+!   if (reset_terminal_modes_hook)
+!     return (*reset_terminal_modes_hook) ();
+    if (TN_standout_width < 0)
+      turn_off_highlight ();
+    turn_off_insert ();
+***************
+*** 463,469
+    else
+      {			/* have to do it the hard way */
+        turn_off_insert ();
+-       cmplus (first_unused_hpos - curX);
+        for (i = curX; i < first_unused_hpos; i++)
+  	{
+  	  if (termscript)
+
+--- 463,468 -----
+    else
+      {			/* have to do it the hard way */
+        turn_off_insert ();
+        for (i = curX; i < first_unused_hpos; i++)
+  	{
+  	  if (termscript)
+***************
+*** 470,475
+  	    fputc (' ', termscript);
+  	  putchar (' ');
+  	}
+      }
+  }
+  
+
+--- 469,475 -----
+  	    fputc (' ', termscript);
+  	  putchar (' ');
+  	}
++       cmplus (first_unused_hpos - curX);
+      }
+  }
+  
+***************
+*** 498,503
+    if (RPov > len && !TF_underscore && !TF_hazeltine)
+      {
+        fwrite (start, 1, len, stdout);
+        if (termscript)
+  	fwrite (start, 1, len, termscript);
+      }
+
+--- 498,505 -----
+    if (RPov > len && !TF_underscore && !TF_hazeltine)
+      {
+        fwrite (start, 1, len, stdout);
++       if (ferror (stdout))
++ 	clearerr (stdout);
+        if (termscript)
+  	fwrite (start, 1, len, termscript);
+      }
+***************
+*** 507,513
+  	if (RPov + 1 < len && *start == start[1])
+  	  {
+  	    p = start + 1;
+! 	    n = 0;
+  	    /* Now, len is number of chars left starting at p */
+  	    while (n < len && *p++ == *start)
+  	      n++;
+
+--- 509,515 -----
+  	if (RPov + 1 < len && *start == start[1])
+  	  {
+  	    p = start + 1;
+! 
+  	    /* Now, len is number of chars left starting at p */
+  	    while (*p++ == *start);
+  	    /* n is number of identical chars in this run */
+***************
+*** 509,516
+  	    p = start + 1;
+  	    n = 0;
+  	    /* Now, len is number of chars left starting at p */
+! 	    while (n < len && *p++ == *start)
+! 	      n++;
+  	    if (n > RPov)
+  	      {
+  		buf = (char *) alloca (strlen (TS_repeat) + 10);
+
+--- 511,519 -----
+  	    p = start + 1;
+  
+  	    /* Now, len is number of chars left starting at p */
+! 	    while (*p++ == *start);
+! 	    /* n is number of identical chars in this run */
+! 	    n = p - start;
+  	    if (n > RPov)
+  	      {
+  		buf = (char *) alloca (strlen (TS_repeat) + 10);
+***************
+*** 517,522
+  		tparam (TS_repeat, buf, *start, n);
+  		tputs (buf, n, cmputc);
+  		start = p;
+  		continue;
+  	      }
+  	  }
+
+--- 520,526 -----
+  		tparam (TS_repeat, buf, *start, n);
+  		tputs (buf, n, cmputc);
+  		start = p;
++ 		len -= n - 1;
+  		continue;
+  	      }
+  	  }
+diff -cbr /u2/emacs/dist-16.56/src/xdisp.c /u2/emacs/dist/src/xdisp.c
+*** /u2/emacs/dist-16.56/src/xdisp.c	Mon Jul 15 14:46:35 1985
+--- /u2/emacs/dist/src/xdisp.c	Mon Sep 16 16:08:59 1985
+***************
+*** 1429,1436
+  	str = "Top";
+        else
+  	{
+! 	  sprintf (tbuf, "%2d%%",
+! 		   ((pos - FirstCharacter) * 100 + total - 1) / total);
+  	  str = tbuf;
+  	}
+        break;
+
+--- 1429,1440 -----
+  	str = "Top";
+        else
+  	{
+! 	  total = ((pos - FirstCharacter) * 100 + total - 1) / total;
+! 	  /* We can't normally display a 3-digit number,
+! 	     so get us a 2-digit number that is close.  */
+! 	  if (total == 100)
+! 	    total = 99;
+! 	  sprintf (tbuf, "%2d%%", total);
+  	  str = tbuf;
+  	}
+        break;
+==============================
+Changes to .el files in emacs/lisp directory
+to fix bugs in advertised features since 16.56.
+After installing these changes, do M-x byte-recompile-directory
+to make new .elc files from the .el files that are supposed
+to be compiled; then rebuild Emacs.  You will get version 16.57.
+
+The patches to .c files must be used together with these, or bad things
+will happen.
+
+This is supposed to be a long line.  If it does not end in "foo", it means you have done something to truncate it, and will lose.  Foo!
+
+diff -cbr /u2/emacs/dist-16.56/lisp/c-mode.el /u2/emacs/dist/lisp/c-mode.el
+*** /u2/emacs/dist-16.56/lisp/c-mode.el	Sat Jul  6 01:12:12 1985
+--- /u2/emacs/dist/lisp/c-mode.el	Mon Sep 16 17:18:42 1985
+***************
+*** 33,39
+    "*Indentation level of declarations of C function arguments.")
+  (defconst c-label-offset -2
+    "*Offset of C label lines and case statements relative to usual indentation.")
+! (defconst c-continued-statement-indent 2
+    "*Extra indent for lines not starting new statements.")
+  
+  (defconst c-auto-newline nil
+
+--- 33,39 -----
+    "*Indentation level of declarations of C function arguments.")
+  (defconst c-label-offset -2
+    "*Offset of C label lines and case statements relative to usual indentation.")
+! (defconst c-continued-statement-offset 2
+    "*Extra indent for lines not starting new statements.")
+  
+  (defconst c-auto-newline nil
+***************
+*** 290,296
+      (beginning-of-line)
+      (let ((indent-point (dot))
+  	  state
+- 	  parse-start
+  	  containing-sexp)
+        (if parse-start
+  	  (goto-char parse-start)
+
+--- 290,295 -----
+      (beginning-of-line)
+      (let ((indent-point (dot))
+  	  state
+  	  containing-sexp)
+        (if parse-start
+  	  (goto-char parse-start)
+***************
+*** 330,336
+  		;; indent 2 more than the previous line of the statement.
+  		(progn
+  		  (c-backward-to-start-of-if containing-sexp)
+! 		  (+ c-continued-statement-indent (current-column)))
+  	      ;; This line starts a new statement.
+  	      ;; Position following last unclosed open.
+  	      (goto-char containing-sexp)
+
+--- 329,335 -----
+  		;; indent 2 more than the previous line of the statement.
+  		(progn
+  		  (c-backward-to-start-of-if containing-sexp)
+! 		   (+ c-continued-statement-offset (current-column)))
+  	      ;; This line starts a new statement.
+  	      ;; Position following last unclosed open.
+  	      (goto-char containing-sexp)
+***************
+*** 456,462
+  		      ;; indent this line 2 more than previous.
+  		      (progn
+  			(c-backward-to-start-of-if odot)
+! 			(setq this-indent (+ 2 (current-indentation))))
+  		    ;; Preceding line ended in comma or semi;
+  		    ;; use the standard indent for this level.
+  		    (setq this-indent (car indent-stack))))
+
+--- 455,462 -----
+  		      ;; indent this line 2 more than previous.
+  		      (progn
+  			(c-backward-to-start-of-if odot)
+! 			(setq this-indent (+ c-continued-statement-offset
+! 					     (current-indentation))))
+  		    ;; Preceding line ended in comma or semi;
+  		    ;; use the standard indent for this level.
+  		    (setq this-indent (car indent-stack))))
+diff -cbr /u2/emacs/dist-16.56/lisp/chistory.el /u2/emacs/dist/lisp/chistory.el
+*** /u2/emacs/dist-16.56/lisp/chistory.el	Fri Jul 12 04:03:56 1985
+--- /u2/emacs/dist/lisp/chistory.el	Mon Sep 16 17:18:45 1985
+***************
+*** 45,51
+        (setq temp (car history))
+        (if (and (or (not pattern) (string-match pattern (symbol-name (car temp))))
+  	       (y-or-n-p (format "Redo %s? " (setq temp (prin1-to-string temp)))))
+! 	  (setq what temp)
+  	(setq history (cdr history))))
+      (if (not what)
+  	(error "Command history exhausted.")
+
+--- 45,51 -----
+        (setq temp (car history))
+        (if (and (or (not pattern) (string-match pattern (symbol-name (car temp))))
+  	       (y-or-n-p (format "Redo %s? " (setq temp (prin1-to-string temp)))))
+! 	  (setq what (car history))
+  	(setq history (cdr history))))
+      (if (not what)
+  	(error "Command history exhausted.")
+diff -cbr /u2/emacs/dist-16.56/lisp/debug.el /u2/emacs/dist/lisp/debug.el
+*** /u2/emacs/dist-16.56/lisp/debug.el	Mon Jul  8 03:08:14 1985
+--- /u2/emacs/dist/lisp/debug.el	Mon Sep 16 17:18:48 1985
+***************
+*** 34,40
+       (save-window-excursion
+        (pop-to-buffer " *Backtrace*")
+        (erase-buffer)
+!       (let ((standard-output (current-buffer)))
+  	(backtrace))
+        (goto-char (dot-min))
+        (delete-region (dot)
+
+--- 34,42 -----
+       (save-window-excursion
+        (pop-to-buffer " *Backtrace*")
+        (erase-buffer)
+! 	(let ((standard-output (current-buffer))
+! 	      (print-length 50)
+! 	      (debug-on-error nil))
+  	(backtrace))
+        (goto-char (dot-min))
+        (delete-region (dot)
+diff -cbr /u2/emacs/dist-16.56/lisp/indent.el /u2/emacs/dist/lisp/indent.el
+*** /u2/emacs/dist-16.56/lisp/indent.el	Fri Jul  5 05:39:04 1985
+--- /u2/emacs/dist/lisp/indent.el	Mon Sep 16 17:18:53 1985
+***************
+*** 119,125
+      (save-excursion
+        (beginning-of-line)
+        (if (re-search-backward "^[^\n]" nil t)
+! 	  (progn
+  	   (move-to-column start-column)
+  	   (skip-chars-forward " \t")
+  	   (setq indent (current-column)))))
+
+--- 119,125 -----
+      (save-excursion
+        (beginning-of-line)
+        (if (re-search-backward "^[^\n]" nil t)
+! 	  (let ((end (scan-buffer (dot) 1 ?\n)))
+  	   (move-to-column start-column)
+  	    (or (looking-at "[ \t]")
+  		(skip-chars-forward "^ \t" end))
+***************
+*** 121,128
+        (if (re-search-backward "^[^\n]" nil t)
+  	  (progn
+  	   (move-to-column start-column)
+! 	   (skip-chars-forward " \t")
+! 	   (setq indent (current-column)))))
+      (if indent
+  	(let ((odot (dot-marker)))
+  	  (delete-region (dot) (progn (skip-chars-backward " \t") (dot)))
+
+--- 121,130 -----
+        (if (re-search-backward "^[^\n]" nil t)
+  	  (let ((end (scan-buffer (dot) 1 ?\n)))
+  	   (move-to-column start-column)
+! 	    (or (looking-at "[ \t]")
+! 		(skip-chars-forward "^ \t" end))
+! 	    (skip-chars-forward " \t" end)
+! 	    (or (= (dot) end) (setq indent (current-column))))))
+      (if indent
+  	(let ((odot (dot-marker)))
+  	  (delete-region (dot) (progn (skip-chars-backward " \t") (dot)))
+diff -cbr /u2/emacs/dist-16.56/lisp/ledit.el /u2/emacs/dist/lisp/ledit.el
+*** /u2/emacs/dist-16.56/lisp/ledit.el	Mon Jul  8 20:16:54 1985
+--- /u2/emacs/dist/lisp/ledit.el	Mon Sep 16 17:18:56 1985
+***************
+*** 102,109
+    (load ledit-read-file t t))
+  
+  (defun ledit-setup ()
+!   "Setup key bindings for the Lisp / Emacs interface"
+!   (setq ledit-mode-map (copy-sequence lisp-mode-map))
+    (define-key ledit-mode-map "\e\^d" 'ledit-save-defun)
+    (define-key ledit-mode-map "\e\^r" 'ledit-save-region)
+    (define-key ledit-mode-map "\^xz" 'ledit-go-to-lisp)
+
+--- 102,111 -----
+    (load ledit-read-file t t))
+  
+  (defun ledit-setup ()
+!   "Set up key bindings for the Lisp / Emacs interface"
+!   (if (not ledit-mode-map)
+!       (progn (setq ledit-mode-map (make-sparse-keymap))
+! 	     (lisp-mode-commands ledit-mode-map)))
+    (define-key ledit-mode-map "\e\^d" 'ledit-save-defun)
+    (define-key ledit-mode-map "\e\^r" 'ledit-save-region)
+    (define-key ledit-mode-map "\^xz" 'ledit-go-to-lisp)
+diff -cbr /u2/emacs/dist-16.56/lisp/lisp-mode.el /u2/emacs/dist/lisp/lisp-mode.el
+*** /u2/emacs/dist-16.56/lisp/lisp-mode.el	Tue Jul  2 01:04:03 1985
+--- /u2/emacs/dist/lisp/lisp-mode.el	Mon Sep 16 17:19:09 1985
+***************
+*** 445,450
+  		     (end-of-line)
+  		     (setcar (nthcdr 4 state) nil)))
+  	  (if (car (nthcdr 3 state))
+  	      (forward-line 1)
+  	    (setq innerloop-done t)))
+  	(if (setq outer-loop-done (<= next-depth 0))
+
+--- 445,451 -----
+  		     (end-of-line)
+  		     (setcar (nthcdr 4 state) nil)))
+  	  (if (car (nthcdr 3 state))
++ 	      (progn
+  	      (forward-line 1)
+  		(setcar (nthcdr 5 state) nil))
+  	    (setq innerloop-done t)))
+***************
+*** 446,451
+  		     (setcar (nthcdr 4 state) nil)))
+  	  (if (car (nthcdr 3 state))
+  	      (forward-line 1)
+  	    (setq innerloop-done t)))
+  	(if (setq outer-loop-done (<= next-depth 0))
+  	    nil
+
+--- 447,453 -----
+  	  (if (car (nthcdr 3 state))
+  	      (progn
+  	      (forward-line 1)
++ 		(setcar (nthcdr 5 state) nil))
+  	    (setq innerloop-done t)))
+  	(if (setq outer-loop-done (<= next-depth 0))
+  	    nil
+diff -cbr /u2/emacs/dist-16.56/lisp/lisp.el /u2/emacs/dist/lisp/lisp.el
+*** /u2/emacs/dist-16.56/lisp/lisp.el	Thu Feb 28 16:32:25 1985
+--- /u2/emacs/dist/lisp/lisp.el	Mon Sep 16 17:19:14 1985
+***************
+*** 195,200
+    (interactive)
+    (up-list 1)
+    (forward-char -1)
+!   (delete-indentation)
+    (forward-char 1)
+    (newline-and-indent))
+
+--- 195,204 -----
+    (interactive)
+    (up-list 1)
+    (forward-char -1)
+!   (while (save-excursion		; this is my contribution
+! 	   (let ((before-paren (dot)))
+! 	     (back-to-indentation)
+! 	     (= (dot) before-paren)))
+!     (delete-indentation))
+    (forward-char 1)
+    (newline-and-indent))
+diff -cbr /u2/emacs/dist-16.56/lisp/lpr.el /u2/emacs/dist/lisp/lpr.el
+*** /u2/emacs/dist-16.56/lisp/lpr.el	Tue Jul  9 01:36:51 1985
+--- /u2/emacs/dist/lisp/lpr.el	Mon Sep 16 17:19:16 1985
+***************
+*** 55,61
+  	(insert-buffer-substring oldbuf)
+  	(call-process-region start end "/usr/ucb/expand"
+  			     t t nil
+! 			     (format1 "-%d" tab-width))))
+     (apply 'call-process-region
+  	  (nconc (list start end "/usr/ucb/lpr"
+  		       nil nil nil
+
+--- 55,61 -----
+  	(insert-buffer-substring oldbuf)
+  	(call-process-region start end "/usr/ucb/expand"
+  			     t t nil
+! 			     (format "-%d" tab-width))))
+     (apply 'call-process-region
+  	  (nconc (list start end "/usr/ucb/lpr"
+  		       nil nil nil
+diff -cbr /u2/emacs/dist-16.56/lisp/mh-e.el /u2/emacs/dist/lisp/mh-e.el
+*** /u2/emacs/dist-16.56/lisp/mh-e.el	Fri Jul 12 14:29:22 1985
+--- /u2/emacs/dist/lisp/mh-e.el	Mon Sep 16 17:19:33 1985
+***************
+*** 71,76
+  (defvar	mh-current-folder nil	     "Currently active folder")
+  (defvar	mh-folder-buffer nil	     "Buffer name of currently active folder")
+  (defvar mh-show-buffer nil	     "Name of buffer that displays messages")
+  
+  ;;; Macros:
+  
+
+--- 71,77 -----
+  (defvar	mh-current-folder nil	     "Currently active folder")
+  (defvar	mh-folder-buffer nil	     "Buffer name of currently active folder")
+  (defvar mh-show-buffer nil	     "Name of buffer that displays messages")
++ (defvar mh-letter-mode-map nil	"Command map for composing mail")
+  
+  ;;; Macros:
+  
+***************
+*** 596,603
+  
+  (defun mh-undo (&optional arg)
+    "undo the deletion or move of the specified message(s)."
+!   (interactive "p")
+!   (cond ((looking-at "^....d")
+  	 (let ((msgs (if arg (mh-read-seq "undelete") (mh-get-msg-num t))))
+  	   (setq mh-delete-list (delq msgs mh-delete-list))
+  	   (if arg
+
+--- 597,609 -----
+  
+  (defun mh-undo (&optional arg)
+    "undo the deletion or move of the specified message(s)."
+!   (interactive "P")
+!   (if (and (not arg) (not (looking-at "^....[D^]")))
+!       (while (and (not (looking-at "^....[D^]")) (not (bobp)))
+! 	(forward-line -1)))
+!   (cond ((and (not arg) (bobp) (not (looking-at "^....[D^]")))
+! 	 (message "Beginning of messages"))
+! 	((looking-at "^....D")
+  	 (let ((msgs (if arg (mh-read-seq "undelete") (mh-get-msg-num t))))
+  	   (setq mh-delete-list (delq msgs mh-delete-list))
+  	   (if arg
+***************
+*** 606,612
+  	   )
+  	 )
+  	((looking-at "^....^")
+! 	 (let ((msgs (if arg (mh-read-seq "unmove") (mh-get-msg-num t))))
+  	   (mapcar
+  	    (function (lambda (move) (setcdr msgs (delq msgs (cdr move)))))
+  	    mh-move-list)
+
+--- 612,619 -----
+  	   )
+  	 )
+  	((looking-at "^....^")
+! 	 (let ((msgs (if arg (mh-read-seq "unmove") (mh-get-msg-num t)))
+! 	       (temp nil))
+  	   (mapcar
+  	    (function (lambda (move) (setcdr move (delq msgs (cdr move)))
+  			(if (> (length move) 1) (push move temp)))
+***************
+*** 608,614
+  	((looking-at "^....^")
+  	 (let ((msgs (if arg (mh-read-seq "unmove") (mh-get-msg-num t))))
+  	   (mapcar
+! 	    (function (lambda (move) (setcdr msgs (delq msgs (cdr move)))))
+  	    mh-move-list)
+  	   (if arg
+  	       (mh-notate-seq msgs ?  mh-cmd-note)
+
+--- 615,623 -----
+  	 (let ((msgs (if arg (mh-read-seq "unmove") (mh-get-msg-num t)))
+  	       (temp nil))
+  	   (mapcar
+! 	    (function (lambda (move) (setcdr move (delq msgs (cdr move)))
+! 			(if (> (length move) 1) (push move temp)))
+! 		      nil)
+  	    mh-move-list)
+  	   (setq mh-move-list temp)
+  	   (if arg
+***************
+*** 610,615
+  	   (mapcar
+  	    (function (lambda (move) (setcdr msgs (delq msgs (cdr move)))))
+  	    mh-move-list)
+  	   (if arg
+  	       (mh-notate-seq msgs ?  mh-cmd-note)
+  	     (mh-notate ?  mh-cmd-note))
+
+--- 619,625 -----
+  			(if (> (length move) 1) (push move temp)))
+  		      nil)
+  	    mh-move-list)
++ 	   (setq mh-move-list temp)
+  	   (if arg
+  	       (mh-notate-seq msgs ?  mh-cmd-note)
+  	     (mh-notate ?  mh-cmd-note))
+***************
+*** 950,957
+        (auto-fill-mode 1))
+    (setq paragraph-separate "^[- \t\^L]*$")
+    (setq paragraph-start "^$\\|^\^L\\|^-+$")
+!   (local-set-key "\^N" 'mh-header-next)
+!   (local-set-key "\^P" 'mh-header-previous)
+    (setq major-mode 'mh-letter-mode)
+    (setq mode-name "mh-letter")
+    (if (and (boundp 'mh-letter-mode-hook) mh-letter-mode-hook)
+
+--- 960,971 -----
+        (auto-fill-mode 1))
+    (setq paragraph-separate "^[- \t\^L]*$")
+    (setq paragraph-start "^$\\|^\^L\\|^-+$")
+!   (if (not mh-letter-mode-map)
+!       (progn
+! 	(setq mh-letter-mode-map (copy-sequence text-mode-map))
+! 	(define-key mh-letter-mode-map "\^N" '&mh-header-next)
+! 	(define-key mh-letter-mode-map "\^P" '&mh-header-previous)))
+!   (use-local-map mh-letter-mode-map)
+    (setq major-mode 'mh-letter-mode)
+    (setq mode-name "mh-letter")
+    (if (and (boundp 'mh-letter-mode-hook) mh-letter-mode-hook)
+diff -cbr /u2/emacs/dist-16.56/lisp/mlconvert.el /u2/emacs/dist/lisp/mlconvert.el
+*** /u2/emacs/dist-16.56/lisp/mlconvert.el	Thu Jul  4 22:55:31 1985
+--- /u2/emacs/dist/lisp/mlconvert.el	Mon Sep 16 17:19:37 1985
+***************
+*** 21,26
+  (defun convert-mocklisp-buffer ()
+    "Convert buffer of mocklisp code into real lisp."
+    (interactive)
+    (message "Converting mocklisp (ugh!)...")
+    (goto-char (dot-min))
+    (insert ";;; GNU Emacs code converted from Mocklisp\n")
+
+--- 21,27 -----
+  (defun convert-mocklisp-buffer ()
+    "Convert buffer of mocklisp code into real lisp."
+    (interactive)
++   (emacs-lisp-mode)
+    (message "Converting mocklisp (ugh!)...")
+    (goto-char (dot-min))
+    (insert ";;; GNU Emacs code converted from Mocklisp\n")
+***************
+*** 125,130
+  (ml-expansion 'yank-buffer "insert-buffer")
+  (ml-expansion 'delete-white-space "delete-horizontal-space")
+  (ml-expansion 'widen-region "widen")
+  
+  (ml-expansion 'forward-paren "forward-list")
+  (ml-expansion 'backward-paren "backward-list")
+
+--- 126,138 -----
+  (ml-expansion 'yank-buffer "insert-buffer")
+  (ml-expansion 'delete-white-space "delete-horizontal-space")
+  (ml-expansion 'widen-region "widen")
++ 
++ (ml-expansion 'forward-word '(lambda ()
++ 			       (if (looking-at "forward-word[ \t\n]*)")
++ 				   (replace-match "forward-word 1)"))))
++ (ml-expansion 'backward-word '(lambda ()
++ 			       (if (looking-at "backward-word[ \t\n]*)")
++ 				   (replace-match "backward-word 1)"))))
+  
+  (ml-expansion 'forward-paren "forward-list")
+  (ml-expansion 'backward-paren "backward-list")
+diff -cbr /u2/emacs/dist-16.56/lisp/mlsupport.el /u2/emacs/dist/lisp/mlsupport.el
+*** /u2/emacs/dist-16.56/lisp/mlsupport.el	Tue Jun 11 00:41:46 1985
+--- /u2/emacs/dist/lisp/mlsupport.el	Mon Sep 16 17:19:47 1985
+***************
+*** 121,127
+  
+  (defun kill-to-end-of-line ()
+    (ml-prefix-argument-loop
+!     (if (eolp) (kill-region (dot) (1+ (dot))))))
+  
+  (defun set-auto-fill-hook (arg)
+    (setq auto-fill-hook (intern arg)))
+
+--- 121,130 -----
+  
+  (defun kill-to-end-of-line ()
+    (ml-prefix-argument-loop
+!     (if (eolp)
+! 	(kill-region (dot) (1+ (dot)))
+!       (kill-region (dot) (if (search-forward ?\n nil t)
+! 			     (1- (dot)) (dot-max))))))
+  
+  (defun set-auto-fill-hook (arg)
+    (setq auto-fill-hook (intern arg)))
+***************
+*** 200,206
+    (1+ (current-column)))
+  
+  (defun ml-current-indent ()
+!   (1+ (current-indent)))
+  
+  (defun use-abbrev-table (name)
+    (let ((symbol (intern (concat name "-abbrev-table"))))
+
+--- 203,209 -----
+    (1+ (current-column)))
+  
+  (defun ml-current-indent ()
+!   (1+ (current-indentation)))
+  
+  (defun use-abbrev-table (name)
+    (let ((symbol (intern (concat name "-abbrev-table"))))
+***************
+*** 381,383
+  	    (while (<= c lim)
+  	      (modify-syntax-entry c datastring)
+  	      (setq c (1+ c)))
+
+--- 384,387 -----
+  	    (while (<= c lim)
+  	      (modify-syntax-entry c datastring)
+  	      (setq c (1+ c)))
++ 	    (setq i (+ 2 i)))))))
+diff -cbr /u2/emacs/dist-16.56/lisp/rmail.el /u2/emacs/dist/lisp/rmail.el
+*** /u2/emacs/dist-16.56/lisp/rmail.el	Tue Jul  9 12:54:54 1985
+--- /u2/emacs/dist/lisp/rmail.el	Mon Sep 16 17:20:08 1985
+***************
+*** 795,800
+        (widen)
+        (let* ((dot-save (dot))
+  	     (total-messages 0)
+  	     (messages-head (cons (progn (goto-char (dot-min)) (dot-marker)) nil))
+  	     (messages-tail messages-head)
+  	     (deleted-head (cons ?D nil))
+
+--- 795,801 -----
+        (widen)
+        (let* ((dot-save (dot))
+  	     (total-messages 0)
++ 	     (case-fold-search nil)
+  	     (messages-head (cons (progn (goto-char (dot-min)) (dot-marker)) nil))
+  	     (messages-tail messages-head)
+  	     (deleted-head (cons ?D nil))
+***************
+*** 941,947
+  	   (apply function args)
+  	   (setq win t))
+        (if win
+! 	  (rmail-show-message (rmail-what-message))
+  	(goto-char odot)
+  	(narrow-to-region omin omax)))))
+  
+
+--- 942,948 -----
+  	   (apply function args)
+  	   (setq win t))
+        (if win
+! 	  (progn (rmail-show-message (rmail-what-message)) t)
+  	(goto-char odot)
+  	(narrow-to-region omin omax)
+  	nil))))
+***************
+*** 943,949
+        (if win
+  	  (rmail-show-message (rmail-what-message))
+  	(goto-char odot)
+! 	(narrow-to-region omin omax)))))
+  
+  ;; *** Rmail Message Deletion Commands ***
+  
+
+--- 944,951 -----
+        (if win
+  	  (progn (rmail-show-message (rmail-what-message)) t)
+  	(goto-char odot)
+! 	(narrow-to-region omin omax)
+! 	nil))))
+  
+  ;; *** Rmail Message Deletion Commands ***
+  
+***************
+*** 1035,1042
+        (message "Expunging deleted messages...done")
+        (if (not win)
+  	  (narrow-to-region (- (buffer-size) omin) (- (buffer-size) omax)))
+!       (rmail-show-message))))
+! 
+  
+  ;; *** Rmail Mailing Commands ***
+  
+
+--- 1037,1044 -----
+        (message "Expunging deleted messages...done")
+        (if (not win)
+  	  (narrow-to-region (- (buffer-size) omin) (- (buffer-size) omax)))
+!       (rmail-show-message
+!        (if (zerop rmail-current-message) 1 nil)))))
+  
+  ;; *** Rmail Mailing Commands ***
+  
+diff -cbr /u2/emacs/dist-16.56/lisp/rmailedit.el /u2/emacs/dist/lisp/rmailedit.el
+*** /u2/emacs/dist-16.56/lisp/rmailedit.el	Sat Jun 22 17:57:12 1985
+--- /u2/emacs/dist/lisp/rmailedit.el	Mon Sep 16 17:20:16 1985
+***************
+*** 32,38
+    (setq mode-line-format default-mode-line-format)
+    (and (boundp 'text-mode-hook)
+         text-mode-hook
+!        (funcall 'text-mode-hook)))
+  
+  (defun rmail-edit-current-message ()
+    "Edit the contents of this message."
+
+--- 32,38 -----
+    (setq mode-line-format default-mode-line-format)
+    (and (boundp 'text-mode-hook)
+         text-mode-hook
+!        (funcall text-mode-hook)))
+  
+  (defun rmail-edit-current-message ()
+    "Edit the contents of this message."
+diff -cbr /u2/emacs/dist-16.56/lisp/rnews.el /u2/emacs/dist/lisp/rnews.el
+*** /u2/emacs/dist-16.56/lisp/rnews.el	Wed Jul  3 12:37:12 1985
+--- /u2/emacs/dist/lisp/rnews.el	Mon Sep 16 17:20:28 1985
+***************
+*** 96,102
+      nil
+    (setq news-mode-map (make-keymap))
+    (suppress-keymap news-mode-map)
+!   (define-key news-mode-map "." 'beginning-of-article)
+    (define-key news-mode-map " " 'scroll-up)
+    (define-key news-mode-map "\177" 'scroll-down)
+    (define-key news-mode-map "n" 'news-next-message)
+
+--- 96,102 -----
+      nil
+    (setq news-mode-map (make-keymap))
+    (suppress-keymap news-mode-map)
+!   (define-key news-mode-map "." 'beginning-of-buffer)
+    (define-key news-mode-map " " 'scroll-up)
+    (define-key news-mode-map "\177" 'scroll-down)
+    (define-key news-mode-map "n" 'news-next-message)
+***************
+*** 435,441
+        (let* ((start (dot))
+  	     (end (condition-case ()
+  		      (progn (search-forward "\n\n") (dot))
+! 		    (error "Can't find eoh")))
+  	     has-from has-date)
+         (cond (end
+  	      (narrow-to-region start end)
+
+--- 435,441 -----
+        (let* ((start (dot))
+  	     (end (condition-case ()
+  		      (progn (search-forward "\n\n") (dot))
+! 		    (error nil)))
+  	     has-from has-date)
+         (cond (end
+  	      (narrow-to-region start end)
+***************
+*** 449,455
+  	      (news-delete-headers start)
+  	      (goto-char start)))))))
+  
+! (defun news-delete-headers(pos)
+    (goto-char pos)
+    (while (re-search-forward news-ignored-headers nil t)
+      (beginning-of-line)
+
+--- 449,461 -----
+  	      (news-delete-headers start)
+  	      (goto-char start)))))))
+  
+! (defun news-show-all-headers ()
+!   "Redisplay current news item with all original headers"
+!   (interactive)
+!   (let (news-ignored-headers)
+!     (news-get-back)))
+! 
+! (defun news-delete-headers (pos)
+    (goto-char pos)
+    (and (stringp news-ignored-headers)
+    (while (re-search-forward news-ignored-headers nil t)
+***************
+*** 451,456
+  
+  (defun news-delete-headers(pos)
+    (goto-char pos)
+    (while (re-search-forward news-ignored-headers nil t)
+      (beginning-of-line)
+      (delete-region (dot)
+
+--- 457,463 -----
+  
+  (defun news-delete-headers (pos)
+    (goto-char pos)
++   (and (stringp news-ignored-headers)
+    (while (re-search-forward news-ignored-headers nil t)
+      (beginning-of-line)
+      (delete-region (dot)
+***************
+*** 456,462
+      (delete-region (dot)
+  		   (progn (re-search-forward "\n[^ \t]")
+  			  (forward-char -1)
+! 			  (dot)))))
+  
+  (defun news-quit ()
+    "Quit news reading without updating newsrc file."
+
+--- 463,469 -----
+      (delete-region (dot)
+  		   (progn (re-search-forward "\n[^ \t]")
+  			  (forward-char -1)
+! 			       (dot))))))
+  
+  (defun news-quit ()
+    "Quit news reading without updating newsrc file."
+diff -cbr /u2/emacs/dist-16.56/lisp/shell.el /u2/emacs/dist/lisp/shell.el
+*** /u2/emacs/dist-16.56/lisp/shell.el	Tue Jun 18 00:57:24 1985
+--- /u2/emacs/dist/lisp/shell.el	Mon Sep 16 17:20:32 1985
+***************
+*** 154,162
+    (interactive)
+    (end-of-line)
+    (if (eobp)
+-       (let ((mark (process-mark (get-buffer-process (current-buffer)))))
+-        (newline)
+-        (if (/= (dot) mark)
+  	   (progn
+  	    (move-marker last-input-start mark)
+  	    (move-marker last-input-end (dot)))))
+
+--- 154,159 -----
+    (interactive)
+    (end-of-line)
+    (if (eobp)
+  	   (progn
+  	  (move-marker last-input-start
+  		       (process-mark (get-buffer-process (current-buffer))))
+***************
+*** 158,165
+         (newline)
+         (if (/= (dot) mark)
+  	   (progn
+! 	    (move-marker last-input-start mark)
+! 	    (move-marker last-input-end (dot)))))
+      (beginning-of-line)
+      (re-search-forward shell-prompt-pattern nil t)
+      (let ((copy (buffer-substring (dot)
+
+--- 155,164 -----
+    (end-of-line)
+    (if (eobp)
+  	   (progn
+! 	  (move-marker last-input-start
+! 		       (process-mark (get-buffer-process (current-buffer))))
+! 	  (insert ?\n)
+! 	  (move-marker last-input-end (dot)))
+      (beginning-of-line)
+      (re-search-forward shell-prompt-pattern nil t)
+      (let ((copy (buffer-substring (dot)
+diff -cbr /u2/emacs/dist-16.56/lisp/simple.el /u2/emacs/dist/lisp/simple.el
+*** /u2/emacs/dist-16.56/lisp/simple.el	Wed Jul 10 20:51:28 1985
+--- /u2/emacs/dist/lisp/simple.el	Mon Sep 16 17:20:54 1985
+***************
+*** 46,52
+  represented by the octal number consisting of those digits"
+    (let ((count 0) (code 0) char)
+      (while (< count 3)
+!       (let ((inhibit-quit (zerop count)))
+  	(and prompt (message "%s-" prompt))
+  	(setq char (read-char))
+  	(setq quit-flag nil))
+
+--- 46,53 -----
+  represented by the octal number consisting of those digits"
+    (let ((count 0) (code 0) char)
+      (while (< count 3)
+!       (let ((inhibit-quit (zerop count))
+! 	    (help-form nil))
+  	(and prompt (message "%s-" prompt))
+  	(setq char (read-char))
+  	(setq quit-flag nil))
+***************
+*** 79,84
+    (interactive "*P")
+    (beginning-of-line)
+    (if arg (forward-line 1))
+    (delete-region (dot) (1- (dot)))
+    (fixup-whitespace))
+  
+
+--- 80,87 -----
+    (interactive "*P")
+    (beginning-of-line)
+    (if arg (forward-line 1))
++   (if (not (bobp))
++       (progn
+    (delete-region (dot) (1- (dot)))
+  	(fixup-whitespace))))
+  
+***************
+*** 80,86
+    (beginning-of-line)
+    (if arg (forward-line 1))
+    (delete-region (dot) (1- (dot)))
+!   (fixup-whitespace))
+  
+  (defun fixup-whitespace ()
+    "Fixup white space between objects around dot.
+
+--- 83,89 -----
+    (if (not (bobp))
+        (progn
+    (delete-region (dot) (1- (dot)))
+! 	(fixup-whitespace))))
+  
+  (defun fixup-whitespace ()
+    "Fixup white space between objects around dot.
+***************
+*** 126,132
+  			    (not (looking-at "[ \t]*$")))))))
+      (if thisblank
+  	(progn
+! 	  (end-of-line)
+  	  (if singleblank (forward-line 1))
+  	  (delete-region (dot)
+  			 (if (re-search-backward "[^ \t\n]" nil t)
+
+--- 129,135 -----
+  			    (not (looking-at "[ \t]*$")))))))
+      (if thisblank
+  	(progn
+! 	  (beginning-of-line)
+  	  (if singleblank (forward-line 1))
+  	  (delete-region (dot)
+  			 (if (re-search-backward "[^ \t\n]" nil t)
+***************
+*** 132,137
+  			 (if (re-search-backward "[^ \t\n]" nil t)
+  			     (progn (forward-line 1) (dot))
+  			   (dot-min)))))
+      (save-excursion
+        (end-of-line)
+        (forward-line 1)
+
+--- 135,141 -----
+  			 (if (re-search-backward "[^ \t\n]" nil t)
+  			     (progn (forward-line 1) (dot))
+  			   (dot-min)))))
++     (if (not (and thisblank singleblank))
+      (save-excursion
+        (end-of-line)
+        (forward-line 1)
+***************
+*** 138,144
+        (delete-region (dot)
+  		     (if (re-search-forward "[^ \t\n]" nil t)
+  			 (progn (beginning-of-line) (dot))
+! 		       (dot-max))))))
+  
+  (defun back-to-indentation ()
+    "Move dot to the first non-whitespace character on this line."
+
+--- 142,148 -----
+        (delete-region (dot)
+  		     (if (re-search-forward "[^ \t\n]" nil t)
+  			 (progn (beginning-of-line) (dot))
+! 			   (dot-max)))))))
+  
+  (defun back-to-indentation ()
+    "Move dot to the first non-whitespace character on this line."
+***************
+*** 388,393
+  	(set-buffer buffer)
+  	(widen)
+  	(erase-buffer))
+        (unwind-protect
+  	  (call-process-region start end shell-file-name
+  			       nil buffer t
+
+--- 392,399 -----
+  	(set-buffer buffer)
+  	(widen)
+  	(erase-buffer))
++       (if (eq buffer (current-buffer))
++ 	  (setq start 1 end 1))
+        (unwind-protect
+  	  (call-process-region start end shell-file-name
+  			       nil buffer t
+***************
+*** 739,745
+  (defvar goal-column nil
+    "Semipermanent goal column for vertical motion, as set by \\[set-goal-column], or nil.")
+  
+! (defvar temporary-goal-column nil
+    "Current goal column for vertical motion.
+  It is the column where dot was at the start of current run of vertical motion commands.")
+  
+
+--- 745,751 -----
+  (defvar goal-column nil
+    "Semipermanent goal column for vertical motion, as set by \\[set-goal-column], or nil.")
+  
+! (defvar temporary-goal-column 0
+    "Current goal column for vertical motion.
+  It is the column where dot was at the start of current run of vertical motion commands.")
+  
+diff -cbr /u2/emacs/dist-16.56/lisp/spell.el /u2/emacs/dist/lisp/spell.el
+*** /u2/emacs/dist-16.56/lisp/spell.el	Thu Feb 28 16:31:57 1985
+--- /u2/emacs/dist/lisp/spell.el	Mon Sep 16 17:20:59 1985
+***************
+*** 28,34
+    (spell-region (dot-min) (dot-max) "buffer"))
+  
+  (defun spell-word ()
+!   "Check spelling of word at or after dot.
+  If it is not correct, ask user for the correct spelling
+  and query-replace the entire buffer to substitute it."
+    (interactive)
+
+--- 28,34 -----
+    (spell-region (dot-min) (dot-max) "buffer"))
+  
+  (defun spell-word ()
+!   "Check spelling of word at or before dot.
+  If it is not correct, ask user for the correct spelling
+  and query-replace the entire buffer to substitute it."
+    (interactive)
+***************
+*** 34,39
+    (interactive)
+    (let (beg end)
+      (save-excursion
+       (forward-word 1)
+       (setq end (dot))
+       (forward-word -1)
+
+--- 34,42 -----
+    (interactive)
+    (let (beg end)
+      (save-excursion
++      (if (not (looking-at "\\<"))
++ 	 (forward-word -1))
++      (setq beg (dot))
+       (forward-word 1)
+       (setq end (dot)))
+      (spell-region beg end (buffer-substring beg end))))
+***************
+*** 35,43
+    (let (beg end)
+      (save-excursion
+       (forward-word 1)
+!      (setq end (dot))
+!      (forward-word -1)
+!      (setq beg (dot)))
+      (spell-region beg end (buffer-substring beg end))))
+  
+  (defun spell-region (start end &optional description)
+
+--- 38,44 -----
+  	 (forward-word -1))
+       (setq beg (dot))
+       (forward-word 1)
+!      (setq end (dot)))
+      (spell-region beg end (buffer-substring beg end))))
+  
+  (defun spell-region (start end &optional description)
+diff -cbr /u2/emacs/dist-16.56/lisp/startup.el /u2/emacs/dist/lisp/startup.el
+*** /u2/emacs/dist-16.56/lisp/startup.el	Wed Jul  3 16:29:26 1985
+--- /u2/emacs/dist/lisp/startup.el	Mon Sep 16 17:21:03 1985
+***************
+*** 112,120
+        (while args
+  	(let ((argi (car args)))
+  	  (setq args (cdr args))
+! 	  (cond ((string-equal argi "-e")
+! 		 (setq tem (funcall (intern (car args)))
+! 		       args (cdr args)))
+  		((string-equal argi "-l")
+  		 (setq tem (load (expand-file-name (car args) dir))
+  		       args (cdr args)))
+
+--- 112,123 -----
+        (while args
+  	(let ((argi (car args)))
+  	  (setq args (cdr args))
+! 	  (cond ((or (string-equal argi "-e")
+! 		     ;; this is what the manual claims...
+! 		     (string-equal argi "-f"))
+! 		 (setq tem (intern (car args))
+! 		       args (cdr args))
+! 		 (setq tem (funcall tem)))
+  		((string-equal argi "-l")
+  		 (setq tem (load (expand-file-name (car args) dir))
+  		       args (cdr args)))
+diff -cbr /u2/emacs/dist-16.56/lisp/tags.el /u2/emacs/dist/lisp/tags.el
+*** /u2/emacs/dist-16.56/lisp/tags.el	Sun Jun  9 21:09:12 1985
+--- /u2/emacs/dist/lisp/tags.el	Mon Sep 16 17:21:08 1985
+***************
+*** 105,111
+  that matches the tagname used in the previous find-tag.
+  
+  See documentation of variable tags-file-name."
+!   (interactive "sFind tag: \nP")
+    (if (equal tagname "")
+        (setq tagname (save-excursion
+  		     (buffer-substring
+
+--- 105,113 -----
+  that matches the tagname used in the previous find-tag.
+  
+  See documentation of variable tags-file-name."
+!   (interactive (if current-prefix-arg
+! 		   '(nil t)
+! 		 (list (read-string "Find tag: "))))
+    (if (equal tagname "")
+        (setq tagname (save-excursion
+  		     (buffer-substring
+diff -cbr /u2/emacs/dist-16.56/lisp/time.el /u2/emacs/dist/lisp/time.el
+*** /u2/emacs/dist-16.56/lisp/time.el	Sun Jun  2 18:25:58 1985
+--- /u2/emacs/dist/lisp/time.el	Mon Sep 16 17:21:11 1985
+***************
+*** 52,57
+    (sit-for 0))
+  
+  (defun display-time-filter (proc string)
+    (let (idx)
+      (while (setq idx (string-match "]." string))
+        (setq string (substring string (1+ idx)))))
+
+--- 52,64 -----
+    (sit-for 0))
+  
+  (defun display-time-filter (proc string)
++   ;; Desired data can't need more than the last 30 chars,
++   ;; so save time by flushing the rest.
++   ;; This way, if we have many different times all collected at once,
++   ;; we can discard all but the last few very fast.
++   (if (> (length string) 30)
++       (setq string (substring string -30)))
++   ;; Now discard all but the very last one.
+    (let (idx)
+      (while (setq idx (string-match "]." string))
+        (setq string (substring string (1+ idx)))))
+diff -cbr /u2/emacs/dist-16.56/lisp/version.el /u2/emacs/dist/lisp/version.el
+*** /u2/emacs/dist-16.56/lisp/version.el	Mon Jul 15 15:35:36 1985
+--- /u2/emacs/dist/lisp/version.el	Mon Sep 16 20:25:27 1985
+***************
+*** 20,26
+  
+  ;; The following line is modified automatically
+  ;; by loading inc-version.el, each time a new Emacs is dumped.
+! (defconst emacs-version "16.56.0"
+    "Version numbers of this version of Emacs.")
+  
+  (defconst emacs-build-time (current-time-string)
+
+--- 20,26 -----
+  
+  ;; The following line is modified automatically
+  ;; by loading inc-version.el, each time a new Emacs is dumped.
+! (defconst emacs-version "16.57.0"
+    "Version numbers of this version of Emacs.")
+  
+  (defconst emacs-build-time (current-time-string)
