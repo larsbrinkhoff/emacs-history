@@ -61,6 +61,7 @@ apply_patch() {
 friedman=ftp.splode.com/pub/users/friedman/emacs
 tuhs=www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD
 bitsavers=bitsavers.org/bits/MIT/gnu
+decuslib=decuslib.com/decus
 gwdg=ftp4.gwdg.de/pub/msdos/editors/emacs
 funet=ftp.funet.fi/pub/gnu/funet/historical-funet-gnu-area-from-early-1990s
 gnu=ftp.gnu.org/old-gnu/emacs
@@ -70,7 +71,13 @@ slackware=mirrors.slackware.com/slackware/slackware-3.1/source/e
 release 16.56 $friedman/emacs-16.56.tar.gz
 get_dir 17.61 $tuhs/emacs
 release 18.41 $bitsavers/emacs_18.41.tar.gz
+bash=bash
+release 18.51 $decuslib/vax88a1/gnusoftware/edist_18_51.tar_z
+apply_patch 18.52 $funet/emacs/diff-18.51-18.52.gz
+apply_patch 18.53 $funet/emacs/diff-18.52-18.53.gz
+apply_patch 18.54 $funet/emacs/diff-18.53-18.54.gz
 release 18.55 $gwdg/emacs-18.55.tar.gz
+bash=""
 release 18.57 $funet/emacs/emacs-18.57.tar.gz
 release 18.58 $funet/emacs/emacs-18.58.tar.gz
 release 18.59 $gnu/emacs-18.59.tar.gz
