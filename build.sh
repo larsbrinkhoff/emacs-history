@@ -49,10 +49,17 @@ get_dir() {
     echo "-- Emacs $1: Committed -----------"; ls; $bash
 }
 
+cat_or_zcat() {
+    case "$1" in
+	*.gz) zcat "$1";;
+	*) cat "$1";;
+    esac
+}
+
 apply_patch() {
     sh ../run/run-$1.sh
     echo "-- Emacs $1: Script -----------"; ls; $bash
-    zcat ../$2 | patch -f -p1
+    cat_or_zcat ../$2 | patch -f $PATCHOPTS
     find . -name '*.orig' -o -name '*.rej' | xargs rm -f
     echo "-- Emacs $1: Patched -----------"; ls; $bash
     commit $1
@@ -68,8 +75,23 @@ gnu=ftp.gnu.org/old-gnu/emacs
 sunfreeware=ftp.tiscali.nl/pub/mirrors/sunfreeware/SOURCES
 slackware=mirrors.slackware.com/slackware/slackware-3.1/source/e
 
+PATCHOPTS=-p1
+
 release 16.56 $friedman/emacs-16.56.tar.gz
 get_dir 17.61 $tuhs/emacs
+
+# Apply the 17.60 to 17.61 diff in reverse.
+(PATCHOPTS="-R -p1" apply_patch 17.60 Usenet/net.emacs/emacs-17.61.diff)
+
+# Some git gymnastics to reverse the order of the last two commits.
+git tag -d emacs-17.60
+git tag -d emacs-17.61
+git branch tmp
+git reset HEAD~2
+rm -rf * && git checkout tmp -- . && commit 17.60
+rm -rf * && git checkout tmp~ -- . && commit 17.61
+git branch -D tmp
+
 release 17.62 $bitsavers/DEC/vax/ultrix/3.0/gnuemacs.tar.gz
 release 18.41 $bitsavers/MIT/gnu/emacs_18.41.tar.gz
 release 18.51 $decuslib/vax88a1/gnusoftware/edist_18_51.tar_z
