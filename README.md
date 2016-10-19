@@ -11,6 +11,10 @@ not included.
   TOPS-20 `DUMP` tape image of TECO EMACS.  Extracted in
   http://github.com/PDP-10/emacs/tree/extracted
 
+- Emacs 13.8 from http://decuslib.com/decus/vax85b/gnuemax/emacs/
+
+  Possibly with VMS modifications.
+
 - emacs-16.56.tar.gz from ftp://ftp.splode.com/pub/users/friedman/emacs/
 
   Noah Friedman: "In 1993 I recovered a copy of the Emacs 16.56
@@ -20,11 +24,21 @@ not included.
 
 - Emacs 17.61 from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD/new.tar.gz
 
+- Emacs "17.VMS-2" from http://decuslib.com/decus/vax86b/gnuemacs/
+
 - emacs_18.41.tar.gz from http://bitsavers.org/bits/MIT/gnu/
+
+- edist_18_51.tar_z from http://decuslib.com/decus/vax88a1/gnusoftware/
 
 - emacs.tar.Z (**modified** 18.51) from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD-Tahoe/new.tar.gz
 
+- edist_18_52.tar_lzw from http://decuslib.com/decus/vax88b2/gnusoftware/
+
 - diff-18* from http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
+
+- edist_18_51.tar_z from http://decuslib.com/decus/vax88a1/gnusoftware/
+
+- edist_18_52.tar_lzw from http://decuslib.com/decus/vax88b4/gnusoftware/
 
 - emacs-18.55.tar.gz from ftp://ftp4.gwdg.de/pub/msdos/editors/emacs/
 

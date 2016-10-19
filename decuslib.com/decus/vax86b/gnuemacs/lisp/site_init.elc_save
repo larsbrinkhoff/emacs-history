@@ -1,0 +1,12 @@
+
+(load "term_vt200")
+
+(vt200-enable-arrows)
+
+(setq term-file-prefix nil)
+
+(setq completion-ignore-case t)
+
+(setq search-exit-char 13)
+
+(define-key global-map "" (quote call-last-kbd-macro))

@@ -1,0 +1,3073 @@
+Info file emacs, produced by texinfo-format-buffer   -*-Text-*-
+from file emacs.tex
+
+This file documents the GNU Emacs editor.
+
+Copyright (C) 1985 Richard M. Stallman.
+
+Permission is granted to make and distribute verbatim copies of
+this manual provided the copyright notice and this permission notice
+are preserved on all copies.
+
+Permission is granted to copy and distribute modified versions of this
+manual under the conditions for verbatim copying, provided also that the
+sections entitled "The GNU Manifesto", "Distribution" and "GNU Emacs
+General Public License" are included exactly as in the original, and
+provided that the entire resulting derived work is distributed under the
+terms of a permission notice identical to this one.
+
+Permission is granted to copy and distribute translations of this manual
+into another language, under the above conditions for modified versions,
+except that the sections entitled "The GNU Manifesto", "Distribution"
+and "GNU Emacs General Public License" may be included in a translation
+approved by the author instead of in the original English.
+
+
+File: emacs  Node: Top, Up: (DIR), Next: Distrib
+
+The Emacs Editor
+****************
+
+Emacs is the extensible, customizable, self-documenting real-time
+display editor.  This Info file describes how to edit with Emacs
+and some of how to customize it, but not how to extend it.
+
+* Menu:
+
+* Distrib::     How to get the latest Emacs distribution.
+* License::     The GNU Emacs General Public License gives you permission
+		to redistribute GNU Emacs on certain terms; and also
+		explains that there is no warranty.
+* Intro::       An introduction to Emacs concepts.
+* Glossary::    The glossary.
+* Manifesto::   What's GNU?  Gnu's Not Unix!
+
+Indexes, nodes containing large menus
+* Key Index::      An item for each standard Emacs key sequence.
+* Command Index::  An item for each command name.
+* Variable Index:: An item for each documented variable.
+* Concept Index::  An item for each concept.
+
+Important General Concepts
+* Screen::      How to interpret what you see on the screen.
+* Characters::  Emacs's character sets for file contents and for keyboard.
+* Keys::        Key sequences: what you type to request one editing action.
+* Commands::    Commands: named functions run by key sequences to do editing.
+* Entering Emacs::  Starting Emacs from the shell.
+* Exiting::     Stopping or killing Emacs.
+* Basic::       The most basic editing commands.
+* Undo::        Undoing recently made changes in the text.
+* Minibuffer::  Entering arguments that are prompted for.
+* M-x::         Invoking commands by their names.
+* Help::        Commands for asking Emacs about its commands.
+
+Important Text-Changing Commands
+* Mark::        The mark: how to delimit a "region" of text.
+* Killing::     Killing text.
+* Yanking::     Recovering killed text.  Moving text.
+* Accumulating Text::
+                Other ways of copying text.
+* Rectangles::  Operating on the text inside a rectangle on the screen.
+* Registers::   Saving a text string or a location in the buffer.
+* Display::     Controlling what text is displayed.
+* Search::      Finding or replacing occurrences of a string.
+* Fixit::       Commands especially useful for fixing typos.
+
+Larger Units of Text
+* Files::       All about handling files.
+* Buffers::     Multiple buffers; editing several files at once.
+* Windows::     Viewing two pieces of text at once.
+
+Advanced Features
+* Major Modes:: Text mode vs. Lisp mode vs. C mode ...
+* Indentation:: Editing the white space at the beginnings of lines.
+* Text::        Commands and modes for editing English.
+* Programs::    Commands and modes for editing programs.
+* Running::     Compiling, running and debugging programs.
+* Abbrevs::     How to define text abbreviations to reduce
+                 the number of characters you must type.
+* Picture::     Editing pictures made up of characters
+                 using the quarter-plane screen model.
+* Sending Mail::Sending mail in Emacs.
+* Rmail::       Reading mail in Emacs.
+* Recursive Edit::
+                A command can allow you to do editing
+                 "within the command".  This is called a
+                 `recursive editing level'.
+* Narrowing::   Restricting display and editing to a portion
+                 of the buffer.
+* Shell::       Executing shell commands from Emacs.
+* Dissociated Press::  Dissociating text for fun.
+* Amusements::         Various games and hacks.
+* Customization::      Modifying the behavior of Emacs.
+
+Recovery from Problems.
+* Quitting::    Quitting and aborting.
+* Lossage::     What to do if Emacs is hung or malfunctioning.
+* Bugs::        How and when to report a bug.
+
+Here are some other nodes which are really inferiors of the ones
+already listed, mentioned here so you can get to them in one step:
+
+Subnodes of Screen
+* Point::	The place in the text where editing commands operate.
+* Echo Area::   Short messages appear at the bottom of the screen.
+* Mode Line::	Interpreting the mode line.
+
+Subnodes of Basic
+* Blank Lines:: Commands to make or delete blank lines.
+* Continuation Lines:: Lines too wide for the screen.
+* Position Info::      What page, line, row, or column is point on?
+* Arguments::   Giving numeric arguments to commands.
+
+Subnodes of Minibuffer
+* Minibuffer File::    Entering file names with the minibuffer.
+* Minibuffer Edit::    How to edit in the minibuffer.
+* Completion::  An abbreviation facility for minibuffer input.
+* Repetition::  Re-executing previous commands that used the minibuffer.
+
+Subnodes of Mark
+* Mark Ring::   Previous mark positions saved so you can go back there.
+
+Subnodes of Registers
+* RegPos::      Saving positions in registers.
+* RegText::     Saving text in registers.
+* RegRect::     Saving rectangles in registers.
+
+Subnodes of Display
+* Selective Display::      Hiding lines with lots of indentation.
+* Display Vars::           Information on variables for customizing display.
+
+Subnodes of Search
+* Incremental Search::     Search happens as you type the string.
+* Nonincremental Search::  Specify entire string and then search.
+* Word Search:: 	   Search for sequence of words.
+* Regexp Search::	   Search for match for a regexp.
+* Regexps::     	   Syntax of regular expressions.
+* Search Case::		   To ignore case while searching, or not.
+* Replace::     	   Search, and replace some or all matches.
+* Unconditional Replace::  Everything about replacement except for querying.
+* Query Replace::          How to use querying.
+* Other Repeating Search:: Operating on all matches for some regexp.
+
+Subnodes of Fixit
+* Kill Errors:: Commands to kill a batch of recently entered text.
+* Transpose::   Exchanging two characters, words, lines, lists...
+* Fixing Case:: Correcting case of last word entered.
+* Spelling::    Apply spelling checker to a word, or a whole file.
+
+Subnodes of Files
+* File Names::  How to type and edit file name arguments.
+* Visiting::    Visiting a file prepares Emacs to edit the file.
+* Saving::      Saving makes your changes permanent.
+* Backup::      How Emacs saves the old version of your file.
+* Interlocking::How Emacs protects against simultaneous editing
+                 of one file by two users.
+* Reverting::   Reverting cancels all the changes not saved.
+* Auto Save::   Auto Save periodically protects against loss of data.
+* ListDir::     Listing the contents of a file directory.
+* Dired::       "Editing" a directory to delete, rename, etc.
+                 the files in it.
+* Misc File Ops:: Other things you can do on files.
+
+Subnodes of Buffers
+* Select Buffer::   Creating a new buffer or reselecting an old one.
+* List Buffers::    Getting a list of buffers that exist.
+* Misc Buffer::     Renaming; changing read-only status.
+* Kill Buffer::     Killing buffers you no longer need.
+* Several Buffers:: How to go through the list of all buffers
+                     and operate variously on several of them.
+
+Subnodes of Indentation
+* Indentation Commands:: Various commands and techniques for indentation.
+* Tab Stops::   You can set arbitrary "tab stops" and then
+                 indent to the next tab stop when you want to.
+* Just Spaces:: You can request indentation using just spaces.
+
+Subnodes of Text
+* Text Mode::   The major mode for editing text files.
+* Nroff Mode::  The major mode for editing input to the formatter nroff.
+* TeX Mode::    The major mode for editing input to the formatter TeX.
+* Outline Mode::The major mode for editing outlines.
+* Words::       Moving over and killing words.
+* Sentences::   Moving over and killing sentences.
+* Paragraphs::	Moving over paragraphs.
+* Pages::	Moving over pages.
+* Filling::     Filling or justifying text
+* Case::        Changing the case of text
+
+Subnodes of Programs
+* Program Modes::       Major modes for editing programs.
+* Lists::       Expressions with balanced parentheses.
+                 There are editing commands to operate on them.
+* Defuns::      Each program is made up of separate functions.
+                 There are editing commands to operate on them.
+* Grinding::    Adjusting indentation to show the nesting.
+* Matching::    Insertion of a close-delimiter flashes matching open.
+* Comments::    Inserting, illing and aligning comments.
+* Balanced Editing::    Inserting two matching parentheses at once, etc.
+* Documentation::       Getting documentation of functions you plan to call.
+* Change Log::  Maintaining a change history for your program.
+* Tags::        Go direct to any function in your program in one
+                 command.  Tags remembers which file it is in.
+
+Subnodes of Running
+* Compilation::       Compiling programs in languages other than Lisp
+                       (C, Pascal, etc.)
+* Lisp Modes::        Various modes for editing Lisp programs, with
+                       different facilities for running the Lisp programs.
+* Lisp Libraries::    Creating Lisp programs to run in Emacs.
+* Lisp Interaction::  Executing Lisp in an Emacs buffer.
+* Lisp Eval::         Executing a single Lisp expression in Emacs.
+* Lisp Debug::        Debugging Lisp programs running in Emacs.
+* External Lisp::     Communicating through Emacs with a separate Lisp.
+
+Subnodes of Abbrevs
+* Defining Abbrevs::  Defining an abbrev, so it will expand when typed.
+* Expanding Abbrevs:: Controlling expansion: prefixes, canceling expansion.
+* Editing Abbrevs::   Viewing or editing the entire list of defined abbrevs.
+* Saving Abbrevs::    Saving the entire list of abbrevs for another session.
+
+Subnodes of Picture
+* Basic Picture::     Basic concepts and simple commands of Picture Mode.
+* Insert in Picture:: Controlling direction of cursor motion
+                       after "self-inserting" characters.
+* Tabs in Picture::   Various features for tab stops and indentation.
+* Rectangles in Picture:: Clearing and superimposing rectangles.
+
+Subnodes of Rmail::
+* Rmail Scrolling::   Scrolling through a message.
+* Rmail Motion::      Moving to another message.
+* Rmail Deletion::    Deleting and expunging messages.
+* Rmail Inbox::       How mail gets into the Rmail file.
+* Rmail Files::       Using multiple Rmail files.
+* Rmail Labels::      Classifying messages by labeling them.
+* Rmail Summary::     Summaries show brief info on many messages.
+* Rmail Reply::       Sending replies to messages you are viewing.
+* Rmail Editing::     Editing message text and headers in Rmail.
+* Rmail Digest::      Extracting the messages from a digest message.
+
+Subnodes of Customization
+* Minor Modes::       Each minor mode is one feature you can turn on
+                       independently of any others.
+* Variables::         Many Emacs commands examine Emacs variables
+                       to decide what to do; by setting variables,
+                       you can control their functioning.
+* Examining::         Examining or setting one variable's value.
+* Edit Options::      Examining or editing list of all variables' values.
+* Locals::            Per-buffer values of variables.
+* File Variables::    How files can specify variable values.
+* Keyboard Macros::   A keyboard macro records a sequence of keystrokes
+                       to be replayed with a single command.
+* Key Bindings::      The keymaps say what command each key runs.
+                       By changing them, you can "redefine keys".
+* Keymaps::           Definition of the keymap data structure.
+* Rebinding::         How to redefine one key's meaning conveniently.
+* Disabling::         Disabling a command means confirmation is required
+                       before it can be executed.  This is done to protect
+                       beginners from surprises.
+* Syntax::            The syntax table controls how words and expressions
+                       are parsed.
+* Init File::         How to write common customizations in the `.emacs' file.
+
+Subnodes of Lossage (and recovery)
+* Stuck Recursive::   `[...]' in mode line around the parentheses.
+* Screen Garbled::    Garbage on the screen.
+* Text Garbled::      Garbage in the text.
+* Unasked-for Search::Spontaneous entry to incremental search.
+* Emergency Escape::  Emergency escape---
+                       What to do if Emacs stops responding.
+* Total Frustration:: When you are at your wits' end.
+
+
+
+File: emacs  Node: Distrib, Prev: Top, Up: Top, Next: License
+
+Distribution
+************
+
+GNU Emacs is "free"; this means that everyone is free to use it and
+free to redistribute it on a free basis.  GNU Emacs is not in the public
+domain; it is copyrighted and there are restrictions on its distribution,
+but these restrictions are designed to permit everything that a good
+cooperating citizen would want to do.  What is not allowed is to try to
+prevent others from further sharing any version of GNU Emacs that they
+might get from you.  The precise conditions are found in the GNU Emacs
+General Public License that comes with Emacs and also appears following
+this section.
+
+The easiest way to get a copy of GNU Emacs is from someone else who has it.
+You need not ask for permission to do so, or tell any one else; just copy
+it.
+
+If you have access to the Internet, you can get the latest distribution
+version of GNU Emacs from host `prep.ai.mit.edu' using anonymous
+login.  See the file `/u2/emacs/GETTING.GNU.SOFTWARE' on that host
+to find out about your options for copying and which files to use.
+
+You may also eventually receive GNU Emacs when you buy a computer.
+Computer manufacturers are free to distribute copies on the same terms that
+apply to everyone else.  These terms require them to give you the full
+sources, including whatever changes they may have made, and to permit you
+to redistribute the GNU Emacs received from them under the usual terms of
+the General Public License.  In other words, the program must be free for
+you when you get it, not just free for the manufacturer.
+
+If you cannot get a copy in any of those ways, you can order one from the
+Free Software Foundation.  Though Emacs itself is free, our distribution
+service is not.  An order form is included at the end of the manual, in
+manuals printed by the Foundation.  It is also included in the file
+`etc/DISTRIB' in the Emacs distribution.  For further information,
+write to
+
+     Free Software Foundation
+     1000 Mass Ave
+     Cambridge, MA 02138
+
+The income from distribution fees goes to support the foundation's
+purpose: the development of more free software to distribute just like
+GNU Emacs.
+
+If you find GNU Emacs useful, we urge you to send a donation to the Free
+Software Foundation.  This will help support development of the rest of the
+GNU system, and other useful software beyond that.  Subject to approval of
+our application for a tax exemption, your donation will be tax deductible.
+
+
+File: emacs  Node: License, Prev: Distrib, Up: Top, Next: Intro
+
+GNU Emacs General Public License
+********************************
+
+  The license agreements of most software companies keep you at the
+mercy of those companies.  By contrast, our general public license is
+intended to give everyone the right to share GNU Emacs.  To make
+sure that you get the rights we want you to have, we need to make
+restrictions that forbid anyone to deny you these rights or to ask you
+to surrender the rights.  Hence this license agreement.
+
+  Specifically, we want to make sure that you have the right to give
+away copies of Emacs, that you receive source code or else can get it
+if you want it, that you can change Emacs or use pieces of it in new
+free programs, and that you know you can do these things.
+
+  To make sure that everyone has such rights, we have to forbid you to
+deprive anyone else of these rights.  For example, if you distribute
+copies of Emacs, you must give the recipients all the rights that you
+have.  You must make sure that they, too, receive or can get the
+source code.  And you must tell them their rights.
+
+  Also, for our own protection, we must make certain that everyone
+finds out that there is no warranty for GNU Emacs.  If Emacs is
+modified by someone else and passed on, we want its recipients to know
+that what they have is not what we distributed, so that any problems
+introduced by others will not reflect on our reputation.
+
+  Therefore we (Richard Stallman and the Free Software Foundation, Inc.)
+make the following terms which say what you must do to be allowed to
+distribute or change GNU Emacs.
+
+
+Copying Policies
+================
+
+  1. You may copy and distribute verbatim copies of GNU Emacs source
+     code as you receive it, in any medium, provided that you conspicuously
+     and appropriately publish on each file a valid copyright notice such
+     as "Copyright (C) 1985 Richard M. Stallman", containing the year of
+     last change and name of copyright holder for the file in question;
+     keep intact the notices on all files that refer to this License
+     Agreement and to the absence of any warranty; and give any other
+     recipients of the GNU Emacs program a copy of this License Agreement
+     along with the program.
+     
+  2. You may modify your copy or copies of GNU Emacs source code or
+     any portion of it, and copy and distribute such modifications under
+     the terms of Paragraph 1 above, provided that you also do the following:
+     
+       1. cause the modified files to carry prominent notices stating
+          who last changed such files and the date of any change; and
+          
+       2. cause the whole of any work that you distribute or publish,
+          that in whole or in part contains or is a derivative of GNU Emacs
+          or any part thereof, to be freely distributed
+          and licensed to all third parties on terms identical to those
+          contained in this License Agreement (except that you may choose
+          to grant more extensive warranty protection to third parties,
+          at your option).
+          
+       3. if the modified program serves as a text editor, cause it
+          when started running in the simplest and usual way, to print
+          an announcement including a valid copyright notice ("Copyright
+          (C)", the year of authorship, and all copyright owners' names),
+          saying that there is no warranty (or else, saying that you provide
+          a warranty) and that users may redistribute the program under
+          these conditions, and telling the user how to view a copy of
+          this License Agreement.
+     
+  3. You may copy and distribute GNU Emacs or any portion of it in
+     compiled, executable or object code form under the terms of Paragraphs
+     1 and 2 above provided that you do the following:
+     
+       1. cause each such copy of GNU Emacs to be accompanied by the
+          corresponding machine-readable source code; or
+          
+       2. cause each such copy of GNU Emacs to be accompanied by a written
+          offer, with no time limit, to give any third party free (except
+          for a nominal shipping charge) machine readable copy of the
+          corresponding source code; or
+          
+       3. in the case of a recipient of GNU Emacs in compiled, executable
+          or object code form (without the corresponding source code) you
+          shall cause copies you distribute to be accompanied by a copy of
+          the written offer of source code which you received along with
+          the copy of GNU Emacs.
+     
+  4. You may not copy, sublicense, distribute or transfer GNU Emacs except
+     as expressly provided under this License Agreement.  Any attempt
+     otherwise to copy, sublicense, distribute or transfer GNU Emacs is
+     void and your rights to use GNU Emacs under this License agreement
+     shall be automatically terminated.  However, parties who have received
+     computer software programs from you with this License Agreement will
+     not have their licenses terminated so long as such parties remain in
+     full compliance.
+
+Your comments and suggestions about our licensing policies and our
+software are welcome!  Please contact the Free Software Foundation, Inc.,
+1000 Mass Ave, Cambridge, MA 02138, or call (617) 876-3296.
+
+
+NO WARRANTY
+===========
+
+  BECAUSE GNU EMACS IS LICENSED FREE OF CHARGE, WE PROVIDE ABSOLUTELY
+NO WARRANTY, TO THE EXTENT PERMITTED BY APPLICABLE STATE LAW.  EXCEPT
+WHEN OTHERWISE STATED IN WRITING, FREE SOFTWARE FOUNDATION, INC,
+RICHARD M. STALLMAN AND/OR OTHER PARTIES PROVIDE GNU EMACS "AS IS"
+WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING,
+BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.  THE ENTIRE RISK AS TO THE QUALITY
+AND PERFORMANCE OF THE PROGRAM IS WITH YOU.  SHOULD THE GNU EMACS
+PROGRAM PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY
+SERVICING, REPAIR OR CORRECTION.
+
+ IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW WILL FREE SOFTWARE
+FOUNDATION, INC., RICHARD M. STALLMAN, AND/OR ANY OTHER PARTY WHO MAY
+MODIFY AND REDISTRIBUTE GNU EMACS AS PERMITTED ABOVE, BE LIABLE TO YOU
+FOR DAMAGES, INCLUDING ANY LOST PROFITS, LOST MONIES, OR OTHER
+SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR
+INABILITY TO USE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA
+BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY THIRD PARTIES OR A
+FAILURE OF THE PROGRAM TO OPERATE WITH PROGRAMS NOT DISTRIBUTED BY
+FREE SOFTWARE FOUNDATION, INC.) THE PROGRAM, EVEN IF YOU HAVE BEEN
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGES, OR FOR ANY CLAIM BY ANY
+OTHER PARTY.
+
+
+File: emacs  Node: Intro, Prev: License, Up: Top, Next: Glossary
+
+Introduction
+************
+
+  You are about to read about GNU Emacs, the Unix/GNU incarnation of the
+advanced, self-documenting, customizable, extensible real-time display
+editor Emacs.  (The `G' in `GNU' is not silent.)
+
+  We say that Emacs is a "display" editor because normally the text
+being edited is visible on the screen and is updated automatically as you
+type your commands.  *Note Display: Screen.
+
+  We call it a "real-time" editor because the display is updated very
+frequently, usually after each character or pair of characters you
+type.  This minimizes the amount of information you must keep in your
+head as you edit.  *Note Real-time: Basic.
+
+  We call Emacs advanced because it provides facilities that go beyond
+simple insertion and deletion: filling of text; automatic indentation of
+programs; viewing two or more files at once; and dealing in terms of
+characters, words, lines, sentences, paragraphs, and pages, as well as
+expressions and comments in several different programming languages.  It is
+much easier to type one command meaning "go to the end of the paragraph"
+than to find that spot with simple cursor keys.
+
+  "Self-documenting" means that at any time you can type a special
+character, `Control-h', to find out what your options are.  You can
+also use it to find out what any command does, or to find all the commands
+that pertain to a topic.  *Note Help::.
+
+  "Customizable" means that you can change the definitions of Emacs
+commands in little ways.  For example, if you use a programming language in
+which comments start with `<**' and end with `**>', you can tell
+the Emacs comment manipulation commands to use those strings
+(*Note Comments::).  Another sort of customization is rearrangement of the
+command set.  For example, if you prefer the four basic cursor motion
+commands (up, down, left and right) on keys in a diamond pattern on the
+keyboard, you can have it.  *Note Customization::.
+
+  "Extensible" means that you can go beyond simple customization and
+write entirely new commands, programs in the Lisp language to be run by
+Emacs's own Lisp interpreter.  Emacs is an "on-line extensible" system,
+which means that it is divided into many functions that call each other,
+any of which can be redefined in the middle of an editing session.  Any
+part of Emacs can be replaced without making a separate copy of all of
+Emacs.  Most of the editing commands of Emacs are written in Lisp already;
+the few exceptions could have been written in Lisp but are written in C for
+efficiency.  Although only a programmer can write an extension, anybody can
+use it afterward.
+
+
+File: emacs  Node: Screen, Prev: Concept Index, Up: Top, Next: Characters
+
+
+The Organization of the Screen
+******************************
+
+  Emacs divides the screen into several areas, each of which contains
+its own sorts of information.  The biggest area, of course, is the one
+in which you usually see the text you are editing.
+
+  When you are using Emacs, the screen is divided into a number of
+"windows".  Initially there is one text window occupying all but the
+last line, plus the special "echo area" or "minibuffer window" in
+the last line.  The text window can be subdivided horizontally or
+vertically into multiple text windows, each of which can be used for a
+different file (*Note Windows::).  The window that the cursor is in is the
+"selected window", in which editing takes place.  The other windows are
+just for reference unless you select one of them.
+
+  Each text window's last line is a "mode line" which describes what is
+going on in that window.  It is in inverse video if the terminal supports
+that, and contains text that starts like `-----Emacs: SOMETHING'.  Its
+purpose is to indicate what buffer is being displayed in the window above
+it; what major and minor modes are in use; and whether the buffer's text
+has been changed.
+
+* Menu:
+
+* Point::	The place in the text where editing commands operate.
+* Echo Area::   Short messages appear at the bottom of the screen.
+* Mode Line::	Interpreting the mode line.
+
+
+File: emacs  Node: Point, Prev: Screen, Up: Screen, Next: Echo Area
+
+Point
+=====
+
+  When Emacs is running, the terminal's cursor shows the location at
+which editing commands will take effect.  This location is called
+"point".  Other commands move point through the text, so that you
+can edit at different places in it.
+
+  While the cursor appears to point AT a character, point should be
+thought of as BETWEEN two characters; it points BEFORE the character
+that the cursor appears on top of.  Sometimes people speak of "the
+cursor" when they mean "point", or speak of commands that move point as
+"cursor motion" commands.
+
+  Terminals have only one cursor, and when output is in progress it must
+appear where the typing is being done.  This does not mean that point is
+moving.  It is only that Emacs has no way to show you the location of point
+except when the terminal is idle.
+
+  Each Emacs buffer has its own point location.  A buffer that is not being
+displayed remembers where point is so that it can be seen when you look at
+that buffer again.
+
+  When there are multiple text windows, each window has its own point
+location.  The cursor shows the location of point in the selected window.
+This also is how you can tell which window is selected.  If the same buffer
+appears in more than one window, point can be moved in each window
+independently.
+
+  The term `point' comes from the character `.', which was the
+command in TECO (the language in which the original Emacs was written)
+for accessing the value now called `point'.
+
+
+File: emacs  Node: Echo Area, Prev: Point, Up: Screen, Next: Mode Line
+
+The Echo Area
+=============
+
+  The line at the bottom of the screen (below the mode line) is the
+"echo area".  It is used to display small amounts of text for several
+purposes.
+
+  "Echoing" means printing out the characters that you type.  Emacs
+does not echo single-character keys, and does not echo any keys if you type
+the characters with no long pause, but if you pause for more than a second
+in the middle of a multi-character key, then all the characters typed so
+far are echoed.  This is intended to "prompt" you for the rest of the
+key.  Once the beginning of a key has been echoed, all the rest is echoed
+as soon as it is typed; so either the entire key or none of it is echoed.
+This behavior is designed to give confident users fast response, while
+giving hesitant users maximum feedback.  This behavior is controlled by a
+variable you can change (*Note Display Vars::).
+
+  If a command cannot be executed, it may print an "error message" in
+the echo area.  Error messages are accompanied by a beep or by flashing the
+screen.  Also, any input you have typed ahead is thrown away when an error
+happens.
+
+  Some commands print informative messages in the echo area.  These
+messages look much like error messages, but they are not announced with a
+beep and do not throw away input.  Sometimes the message tells you what the
+command has done, when it is not obvious from looking at the text being
+edited.  Sometimes the sole purpose of a command is to print a message
+giving you specific information.  For example, the command `C-x =' is
+used to print a message describing the character position of point in the
+text and its current column in the window.  Commands that take a long time
+often display messages ending in `...' while they are working, and
+add `done' at the end when they are finished.
+
+  The echo area is also used to display the "minibuffer", a window that
+is used for reading arguments to commands, such as the name of a file to be
+edited.  When the minibuffer is in use, the echo area begins with a prompt
+string that ends with a colon; also, the cursor appears in that line
+because it is the selected window.  You can always get out of the
+minibuffer by typing `C-g'.  *Note Minibuffer::.
+
+
+File: emacs  Node: Mode Line, Prev: Echo Area, Up: Screen
+
+The Mode Line
+=============
+
+  Each text window's last line is a "mode line" which describes what is
+going on in that window.  When there is only one text window, the mode line
+appears right above the echo area.  The mode line is in inverse video if
+the terminal supports that, starts and ends with dashes, and contains text
+like `Emacs: SOMETHING'.
+
+  If a mode line has something else in place of `Emacs: SOMETHING',
+then the window above it is in a special subsystem such as Rmail.  The mode
+line then indicates the status of the subsystem.
+
+  Normally, the mode line has the following appearance:
+
+     --CH-Emacs: BUF      (MAJOR MINOR)----POS------
+
+This serves to indicate various information about the buffer being
+displayed in the window: the buffer's name, what major and minor modes are
+in use, whether the buffer's text has been changed, and how far down the
+buffer you are currently looking.  The top level mode line has this format:
+
+  CH contains two stars `**' if the text in the buffer has been
+edited (the buffer is "modified"), or `--' if the buffer has not been
+edited.  Exception: for a read-only buffer, it is `%%'.
+
+  BUF is the name of the window's chosen "buffer".  The chosen buffer
+in the selected window (the window that the cursor is in) is also Emacs's
+selected buffer, the one that editing takes place in.  When we speak of
+what some command does to "the buffer", we are talking about the
+currently selected buffer.  *Note Buffers::.
+
+  MAJOR is the name of the "major mode" in effect in the buffer.  At any
+time, each buffer is in one and only one of the possible major modes.  The
+major modes available include Fundamental mode (the least specialized),
+Text mode, Lisp mode, C mode, and others.  *Note Major Modes::, for details
+of how the modes differ and how to select one.
+
+  MINOR is a list of some of the "minor modes" that are turned on at the
+moment in the window's chosen buffer.  `Fill' means that Auto Fill mode is
+on.  `Abbrev' means that Word Abbrev mode is on.  `Overwrite' means that
+Overwrite mode is on.  *Note Minor Modes::, for more information.  `Narrow'
+means that the buffer being displayed has editing restricted to only a
+portion of its text.  This is not really a minor mode, but is like one.
+*Note Narrowing::.
+
+  POS tells you whether there is additional text above the top of the
+screen, or below the bottom.  If your file is small and it is all on the
+screen, POS is `All'.  Otherwise, it is `Top' if you are looking at the
+beginning of the file, `Bot' if you are looking at the end of the file, or
+`NN%', where NN is the percentage of the file above the top of the screen.
+
+  Some other information about the state of Emacs can also be displayed
+among the minor modes.  `Def' means that a keyboard macro is being
+defined; although this is not exactly a minor mode, it is still useful to
+be reminded about.  *Note Keyboard Macros::.
+
+  In addition, if Emacs is currently inside a recursive editing level,
+square brackets (`[...]') appear around the parentheses that surround the
+modes.  If Emacs is in one recursive editing level within another, double
+square brackets appear, and so on.  Since this information pertains to
+Emacs in general and not to any one buffer, the square brackets appear in
+every mode line on the screen or not in any of them.  *Note Recursive
+Edit::.
+
+  Emacs can optionally display the time and system load in all mode lines.
+To enable this feature, type `M-x display-time'.  The information added
+to the mode line usually appears after the file name, before the mode names
+and their parentheses.  It looks like this:
+
+     HH:MMpm L.LL [D]
+
+HH and MM are the hour and minute, followed always by `am'
+or `pm'.  L.LL is the average number of running processes in the
+whole system recently.  D is an approximate index of the ratio of
+disk activity to cpu activity for all users.
+
+The word `Mail' appears after the load level if there is mail for
+you that you have not read yet.
+
+  Customization note: the variable `mode-line-inverse-video' controls
+whether the mode line is displayed in inverse video (assuming the terminal
+supports it); `nil' means no inverse video.  The default is `t'.
+
+
+
+File: emacs  Node: Characters, Prev: Screen, Up: Top, Next: Keys
+
+The Emacs Character Set
+=======================
+
+  GNU Emacs uses the ASCII character set, which defines 128 different
+character codes.  Some of these codes are assigned graphic symbols such as
+`a' and `='; the rest are control characters, such as `Control-a' (also
+called `C-a' for short).  `C-a' gets its name from the fact that you type
+it by holding down the CTRL key and then pressing `a'.  There is no
+distinction between `C-a' and `C-A'; they are the same character.
+
+  Some control characters have special names, and special keys you can type
+them with: RET, TAB, LFD, DEL and ESC.  The space character is usually
+referred to below as SPC, even though strictly speaking it is a graphic
+character whose graphic happens to be blank.
+
+  Emacs extends the 7-bit ASCII code to an 8-bit code by adding an extra
+bit to each character.  This makes 256 possible command characters.  The
+additional bit is called Meta.  Any ASCII character can be made Meta;
+examples of Meta characters include `Meta-a' (`M-a', for short), `M-A' (not
+the same character as `M-a', but those two characters normally have the
+same meaning in Emacs), `M-RET', and `M-C-a'.  For traditional reasons,
+`M-C-a' is usually called `C-M-a'; logically speaking, the order in which
+the modifier keys CTRL and META are mentioned does not matter.
+
+  Some terminals have a META key, and allow you to type Meta characters by
+holding this key down.  Thus, `Meta-a' is typed by holding down META and
+pressing `a'.  Such a key is not always labeled META, however, as it is
+usually a special option from the manufacturer.  If there is no META key,
+you can still type Meta characters using two-character sequences starting
+with ESC.  Thus, to enter `M-a', you could type `ESC a'.  To enter `C-M-a',
+you would type `ESC C-a'.  ESC is allowed on terminals with Meta keys, too,
+in case you have formed a habit of doing it.
+
+  Emacs believes the terminal has a META key if the variable
+`meta-flag' is non-`nil'.  Normally this is set automatically
+according to the termcap entry for your terminal type.  However, sometimes
+the termcap entry is wrong, and then it is useful to set this variable
+yourself.
+
+  Emacs buffers also use an 8-bit character set, because bytes have 8 bits,
+but only the ASCII characters are considered meaningful.  ASCII graphic
+characters in Emacs buffers are displayed with their graphics.  LFD
+is the same as a newline character; it is displayed by starting a new line.
+TAB is displayed by moving to the next tab stop column (usually every
+8 columns).  Other control characters are displayed as a caret (`^')
+followed by the non-control version of the character; thus, `C-a' is
+displayed as `^A'.  Non-ASCII characters 128 and up are displayed with
+octal escape sequences; thus, character code 243 (octal), also called
+`M-#' when used as an input character, is displayed as `\243'.
+
+
+File: emacs  Node: Keys, Prev: Characters, Up: Top, Next: Commands
+
+Keys
+====
+
+  A "key"---short for "key sequence"---is a sequence of characters
+that is all part of specifying a single Emacs command to be run.  If the
+characters are enough to specify a command, they form a "complete key".
+
+  A single character is always a key; whether it is complete depends on its
+meaning in Emacs.  Most single characters are complete Emacs commands.
+`C-c', `C-h', `C-x' and ESC are the only ones that are not complete.
+
+  A sequence of characters that is not enough to specify an Emacs command
+is called a "prefix key".  A prefix key is the beginning of a series of
+longer sequences that are valid keys; adding any single character to the
+end of the prefix gives a valid key, which could be defined as an Emacs
+command.  For example, `C-x' is normally defined as a prefix, so
+`C-x' and the next input character combine to make a two-character key.
+There are 256 different two-character keys starting with `C-x', one for
+each possible second character.  Many of these two-character keys starting
+with `C-x' are standardly defined as Emacs commands.  Notable examples
+include `C-x C-f' and `C-x s' (*Note Files::).
+
+  Adding one character to a prefix key does not have to form a complete
+key.  It could make another, longer prefix.  For example, `C-x 4' is
+itself a prefix that leads to 256 different three-character keys, including
+`C-x 4 f', `C-x 4 b' and so on.  It would be possible to define one
+of those three-character sequences as a prefix, creating a series of
+four-character keys, but we did not define any of them this way.
+
+  All told, the prefix keys in Emacs are `C-c', `C-x', `C-h',
+`C-x 4', and ESC.  But this is not built in; it is just a matter
+of Emacs's standard key bindings.  In customizing Emacs, you could make
+new prefix keys, or eliminate these.  *Note Key Bindings::.
+
+
+File: emacs  Node: Commands, Prev: Keys, Up: Top, Next: Entering Emacs
+
+Keys and Commands
+=================
+
+  This manual is full of passages that tell you what particular keys do.
+But Emacs does not assign meanings to keys directly.  Instead, Emacs
+assigns meanings to "functions", and then gives keys their meanings by
+"binding" them to functions. 
+
+  A function is a Lisp object that can be executed as a program.
+Usually it is a Lisp symbol which has been given a function definition;
+every symbol has a name, usually made of a few English words separated by
+dashes, such as `next-line' or `forward-word'.  It also has a
+"definition" which is a Lisp program; this is what makes the function
+do what it does.  Only some functions can be the bindings of keys; these
+are functions whose definitions use `interactive' to specify how to
+call them interactively.  Such functions are called "commands", and
+the name of a symbol that is a command is called a "command name".
+More information on this subject will appear in the GNU Emacs Lisp
+Manual (which is not yet written).
+
+  The bindings between keys and functions are recorded in various tables
+called "keymaps".  *Note Keymaps::.
+
+  When we say that "`C-n' moves down vertically one line" we are glossing
+over a distinction that is irrelevant in ordinary use but is vital in
+understanding how to customize Emacs.  It is the function `next-line' that
+is programmed to move down vertically.  `C-n' has this effect because it is
+bound to that function.  If you rebind `C-n' to the function `forward-word'
+then `C-n' will move forward by words instead.  Rebinding keys is a common
+method of customization.
+
+  In the rest of this manual, we usually ignore this subtlety to keep
+things simple.  To give the customizer the information he needs, we
+state the name of the command which really does the work in parentheses
+after mentioning the key that runs it.  For example, we will say that
+"The command `C-n' (`next-line') moves point vertically down,"
+meaning that `next-line' is a command that moves vertically down
+and `C-n' is a key that is standardly bound to it.
+
+  While we are on the subject of customization information which you should
+not be frightened of, it's a good time to tell you about "variables".
+Often the description of a command will say, "To change this, set the
+variable `mumble-foo'."  A variable is a name used to remember a
+value.  Most of the variables documented in this manual exist just to
+permit customization: the variable's value is examined by some command,
+and changing the value makes the command behave differently.  Until you
+are interested in customizing,  you can ignore this information.  When you
+are ready to be interested, read the basic information on variables, and
+then the information on individual variables will make sense.
+*Note Variables::.
+
+
+File: emacs  Node: Entering Emacs, Prev: Commands, Up: Top, Next: Exiting
+
+Entering and Exiting Emacs
+**************************
+
+  The simplest way to invoke Emacs is just to type `emacs RET'
+at the shell.
+
+  It is also possible to specify files to be visited, Lisp files to be
+loaded, and functions to be called, by giving Emacs arguments in the
+shell command line.  The command arguments are processed in the order they
+appear in the command argument list; however, certain arguments must be at
+the front of the list (`-t' or `-batch') if they are used.
+
+  Here are the arguments allowed:
+
+`FILE'     
+     Visit FILE using `find-file'.  *Note Visiting::.
+     
+`+LINENUM FILE'     
+     Visit FILE using `find-file', then go to line number
+     LINENUM in it.
+     
+`-l FILE'     
+     Load a file FILE of Lisp code with `load'.  *Note Lisp Libraries::.
+     
+`-f FUNCTION'     
+     Call Lisp function FUNCTION with no arguments.
+     
+`-kill'     
+     Exit from Emacs without asking for confirmation.
+
+  The remaining switches are recognized only at the beginning of the
+command line.  If more than one of them appears, they must appear in the
+order that they appear in this table.
+
+`-t DEVICE'     
+     Use DEVICE as the terminal for editing input and output.
+     
+`-batch'     
+     Run Emacs in "batch mode", which means that the text being edited is
+     not displayed and the standard Unix interrupt characters such as `C-z'
+     and `C-c' continue to have their normal effect.  Emacs in batch mode
+     outputs to `stdout' only what would normally be printed in the echo
+     area under program control.
+     
+     Batch mode is used for running programs written in Emacs Lisp from
+     shell scripts, makefiles, and so on.  Normally the `-l' switch
+     or `-f' switch will be used as well, to invoke a Lisp program
+     to do the batch processing.
+     
+     `-batch' implies `-q' (do not load an init file).  It also causes
+     Emacs to kill itself after all command switches have been processed.  In
+     addition, auto-saving is not done except in buffers for which it has been
+     explicitly requested.
+     
+`-q'     
+     Do not load your Emacs init file `~/.emacs'.
+     
+`-u USER'     
+     Load USER's Emacs init file `~USER/.emacs' instead of
+     your own.
+
+  One way to use command switches is to visit many files automatically:
+
+     emacs *.c
+
+passes each `.c' file as a separate argument to Emacs, so that Emacs
+visits each file (*Note Visiting::).
+  
+  Here is an advanced example that assumes you have a Lisp program
+file called `hack-c-program.el' which, when loaded, performs some
+useful operation on current buffer, expected to be a C program.
+
+     emacs -batch foo.c -l hack-c-program -f save-buffer -kill > log
+
+Here Emacs is told to visit `foo.c', load `hack-c-program.el'
+(which makes changes in the visited file), save `foo.c' (note that
+`save-buffer' is the function that `C-x C-s' is bound to), and
+then exit to the shell that this command was done with.  `-batch'
+guarantees there will be no problem redirecting output to `log',
+because Emacs will not assume that it has a display terminal to work with.
+
+
+File: emacs  Node: Exiting, Prev: Entering Emacs, Up: Top, Next: Basic
+
+Exiting Emacs
+=============
+
+  There are two commands for exiting Emacs because there are two kinds of
+exiting: "suspending" Emacs and "killing" Emacs.  "Suspending" means
+stopping Emacs temporarily and returning control to its superior (usually
+the shell), allowing you to resume editing later in the same Emacs job,
+with the same files, same kill ring, same undo history, and so on.  This is
+the usual way to exit.  "Killing" Emacs means destroying the Emacs job.
+You can run Emacs again after killing it, but you will get a fresh Emacs;
+there is no way to resume the same editing session after it has been
+killed.
+
+  To suspend Emacs, type `C-z' (`suspend-emacs').  On systems that do not
+permit programs to be suspended, `C-z' runs an inferior shell that
+communicates directly with the terminal, and Emacs waits until you exit
+the subshell.  The only way on these systems to get back to the shell from
+which Emacs was run (to log out, for example) is to kill Emacs.  `C-d' or
+`exit' are typical commands to exit a subshell.  
+
+  To kill Emacs, type `C-x C-c' (`save-buffers-kill-emacs').  A
+two-character key is used for this to make it harder to type.  Unless a
+numeric argument is used, this command first offers to save any modified
+buffers.  If you do not save them all, it asks for reconfirmation with
+`yes' before killing Emacs, since any changes not saved before that will be
+lost forever.  Also, if any subprocesses are still running, `C-x C-c'
+asks for confirmation about them, since killing Emacs will kill the
+subprocesses immediately.
+
+  In most programs running on Berkeley Unix, but not in Emacs, the
+characters `C-z' and `C-c' instantly suspend or kill, respectively.
+The meanings of `C-z' and `C-x C-c' as keys in Emacs were inspired
+by the standard Unix meanings of `C-z' and `C-c', but there is no
+causal connection.  The standard Berkeley Unix handling of `C-z' and
+`C-c' is turned off in Emacs.  You could customize these keys to do
+anything (*Note Keymaps::).
+
+
+
+File: emacs  Node: Basic, Prev: Exiting, Up: Top, Next: Undo
+
+Basic Editing Commands
+**********************
+
+  We now give the basics of how to enter text, make corrections, and
+save the text in a file.  If this material is new to you, you might
+learn it more easily by running the Emacs learn-by-doing tutorial.  To
+do this, type `Control-h t' (`help-with-tutorial').
+
+
+Inserting Text
+==============
+
+  To insert printing characters into the text you are editing, just
+type them.  Except in special modes, Emacs defines each printing
+character as a key to run the command `self-insert', which inserts
+the character that you typed to invoke it into the buffer at the
+cursor (that is, at "point"; *Note Point::).  The cursor moves
+forward.  Any characters after the cursor move forward too.  If the
+text in the buffer is `FOOBAR', with the cursor before the
+`B', then if you type `XX', you get `FOOXXBAR', with the
+cursor still before the `B'.
+
+   To "delete" text you have just inserted, you can use DEL
+(which runs the command named `delete-backward-char').  DEL
+deletes the character BEFORE the cursor (not the one that the cursor
+is on top of or under; that is the character AFTER the cursor).  The
+cursor and all characters after it move backwards.  Therefore, if you type
+a printing character and then type DEL, they cancel out.
+
+   To end a line and start typing a new one, type RET (running the
+command `newline').  RET operates by inserting a newline
+character in the buffer.  If point is in the middle of a line, RET
+splits the line.  Typing DEL when the cursor is at the beginning of a
+line rubs out the newline before the line, thus joining the line with the
+preceding line.
+
+  Direct insertion works for printing characters and SPC, but other
+characters act as editing commands and do not insert themselves.  If you
+need to insert a control character or a character whose code is above 200
+octal, you must "quote" it by typing `Control-q' (`quoted-insert') first.
+There are two ways to use `C-q':
+
+   * `Control-q' followed by any non-graphic character (even `C-g')
+     inserts that character.
+   * `Control-q' followed by three octal digits inserts the character
+     with the specified character code.
+
+A numeric argument to `C-q' specifies how many copies of the
+quoted character should be inserted (*Note Arguments::).
+
+
+Changing the Location of Point
+==============================
+
+  To do more than insert characters, you have to know how to move
+point (*Note Point::).  Here are a few of the commands for doing that.
+
+`C-a'     
+     Move to the beginning of the line (`beginning-of-line').
+`C-e'     
+     Move to the end of the line (`end-of-line').
+`C-f'     
+     Move forward one character (`forward-char').
+`C-b'     
+     Move backward one character (`backward-char').
+`C-n'     
+     Move down one line, vertically (`next-line').  This command
+     attempts to keep the horizontal position unchanged, so if you start in
+     the middle of one line, you end in the middle of the next.  When on
+     the last line of text, `C-n' creates a new line and moves onto it.
+`C-p'     
+     Move up one line, vertically (`previous-line').
+`C-l'     
+     Clear the screen and reprint everything (`recenter').
+`C-t'     
+     Transpose two characters, the ones before and after the cursor
+     (`transpose-chars').
+`M-<'     
+     Move to the top of the buffer (`beginning-of-buffer').  With numeric
+     argument N, move to N/10 of the way from the top.  *Note Arguments::,
+     for more information on numeric arguments.
+`M->'     
+     Move to the end of the buffer (`end-of-buffer').
+`M-x goto-char'     
+     Read a number N and move cursor to character number N.
+     Position 1 is the beginning of the buffer.
+`M-x goto-line'     
+     Read a number N and move cursor to line number N.  Line 1
+     is the beginning of the buffer.
+`C-x C-n'     
+     Use the current column of point as the "semipermanent goal column" for
+     `C-n' and `C-p' (`set-goal-column').  Henceforth, those
+     commands always move to this column in each line moved into, or as
+     close as possible given the contents of the line.  This goal column remains
+     in effect until canceled.
+`C-u C-x C-n'     
+     Cancel the goal column.  Henceforth, `C-n' and `C-p' once
+     again try to avoid changing the horizontal position, as usual.
+
+  If you set the variable `track-eol' to a non-`nil' value, then
+`C-n' and `C-p' when at the end of the starting line move to the
+end of the line.  Normally, `track-eol' is `nil'.
+
+
+Erasing Text
+============
+
+`DEL'     
+     Delete the character before the cursor (`delete-backward-char').
+`C-d'     
+     Delete the character after the cursor (`delete-char').
+`C-k'     
+     Kill to the end of the line (`kill-line').
+
+  You already know about the DEL key which deletes the character
+before the cursor.  Another key, `Control-d', deletes the character
+after the cursor, causing the rest of the text on the line to shift left.
+If `Control-d' is typed at the end of a line, that line and the next
+line are joined together.
+
+  To erase a larger amount of text, use the `Control-k' key, which
+kills a line at a time.  If `Control-k' is done at the beginning or
+middle of a line, it kills all the text up to the end of the line.  If
+`Control-k' is done at the end of a line, it joins that line and the
+next line.
+
+  *Note Killing::, for more flexible ways of killing text.
+
+
+Files
+=====
+
+  The commands above are sufficient for creating and altering text in an
+Emacs buffer; the more advanced Emacs commands just make things easier.
+But to keep any text permanently you must put it in a "file".  Files
+are named units of text which are stored by the operating system for you to
+retrieve later by name.  To look at or use the contents of a file in any
+way, including editing the file with Emacs, you must specify the file name.
+
+  Consider a file named `/usr/rms/foo.c'.  To edit this file in Emacs,
+type
+
+     C-x C-f /usr/rms/foo.c RET
+
+Here the file name is given as an "argument" to the command `C-x C-f'
+(`find-file').  RET is used to terminate the argument.  Emacs obeys the
+command by "visiting" the file: creating a buffer, copying the contents of
+the file into the buffer, and then displaying the buffer for you to edit.
+You can make changes in it, and then "save" the file by typing `C-x C-s'
+(`save-buffer').  This makes the changes permanent by copying the altered
+contents of the buffer back into the file `/usr/rms/foo.c'.  Until then,
+the changes are only inside your Emacs, and the file `foo.c' is not
+changed.
+
+  To create a file, just visit the file with `C-x C-f' as if it already
+existed.  Emacs will make an empty buffer in which you can insert the text
+you want to put in the file.  When you save your text with `C-x C-s',
+the file will be created.
+
+  Of course, there is a lot more to learn about using files.  *Note Files::.
+
+
+Help
+====
+
+  If you forget what a key does, you can find out with the Help character,
+which is `C-h'.  Type `C-h k' followed by the key you want to know about;
+for example, `C-h k C-n' tells you all about what `C-n' does.  `C-h' is a
+prefix key; `C-h k' is just one of its subcommands (the command
+`describe-key').  The other subcommands of `C-h' provide different kinds of
+help.  *Note Help::.
+
+* Menu:
+
+* Blank Lines::        Commands to make or delete blank lines.
+* Continuation Lines:: Lines too wide for the screen.
+* Position Info::      What page, line, row, or column is point on?
+* Arguments::	       Numeric arguments for repeating a command.
+
+
+File: emacs  Node: Blank Lines, Prev: Basic, Up: Basic, Next: Continuation Lines
+
+Blank Lines
+===========
+
+`C-o'     
+     Insert one or more blank lines after the cursor (`open-line').
+`C-x C-o'     
+     Delete all but one of many consecutive blank lines
+     (`delete-blank-lines').
+
+  When you want to insert a new line of text before an existing line, you
+can do it by typing the new line of text, followed by RET.  However,
+it may be easier to see what you are doing if you first make a blank line
+and then insert the desired text into it.  This is easy to do using the key
+`C-o' (`open-line'), which inserts a newline after point but leaves
+point in front of the newline.  After `C-o', type the text for the new
+line.  `C-o F O O' has the same effect as `F O O RET', except for
+the final location of point.
+
+  You can make several blank lines by typing `C-o' several times, or by
+giving it an argument to tell it how many blank lines to make.
+*Note Arguments::, for how.
+
+  If you have many blank lines in a row and want to get rid of them, use
+`C-x C-o' (`delete-blank-lines').  When point is on a blank line which
+is adjacent to at least one other blank line, `C-x C-o' deletes all but
+one of the consecutive blank lines, leaving exactly one.  With point on a
+blank line with no other blank line adjacent to it, the sole blank line is
+deleted, leaving none.  When point is on a nonblank line, `C-x C-o'
+deletes any blank lines following that nonblank line.
+
+
+File: emacs  Node: Continuation Lines, Prev: Blank Lines, Up: Basic, Next: Position Info
+
+Continuation Lines
+==================
+
+  If you add too many characters to one line, without breaking it with a
+RET, the line will grow to occupy two (or more) lines on the screen,
+with a `\' at the extreme right margin of all but the last of them.
+The `\' says that the following screen line is not really a distinct
+line in the text, but just the "continuation" of a line too long to fit
+the screen.  Sometimes it is nice to have Emacs insert newlines
+automatically when a line gets too long; for this, use Auto Fill mode
+(*Note Filling::).
+
+  Continuation can be turned off for a particular buffer by setting the
+variable `truncate-lines' to non-`nil' in that buffer.  Then,
+lines are "truncated": the text that goes past the right margin does
+not appear at all.  `$' is used in the last column instead of `\'
+when truncation is in effect.  Truncation instead of continuation also
+happens whenever horizontal scrolling is in use, and optionally whenever
+side-by-side windows are in use (*Note Windows::).  `truncate-lines'
+is automatically local in all buffers.  When a buffer is created, its value
+of `truncate-lines' is initialized from the value of `default-truncate-lines',
+normally `nil'.
+
+
+File: emacs  Node: Position Info, Prev: Continuation Lines, Up: Basic, Next: Arguments
+
+Cursor Position Information
+===========================
+
+  If you are accustomed to other display editors, you may be surprised that
+Emacs does not always display the page number or line number of point in
+the mode line.  This is because the text is stored in a way that makes it
+difficult to compute this information.  Displaying them all the time would
+be intolerably slow.  They are not needed very often in Emacs anyway,
+but there are commands to print them.
+
+`C-x ='     
+     Print character code of character after point, character position of
+     point, and column of point (`what-cursor-position').
+`M-x what-page'     
+     Print page number of point, and line number within page.
+`M-x what-line'     
+     Print line number of point in the buffer.
+`M-='     
+     Print number of lines in the current region (`count-lines-region').
+
+  The command `C-x =' (`what-cursor-position') can be used to find out
+the column that the cursor is in, and other miscellaneous information about
+point.  It prints a line in the echo area that looks like this:
+
+     Char: x (0170)  point=65986 of 563027(12%)  x=44
+
+(In fact, this is the output produced when point is before the `x=44'
+in the example.)
+
+  The two values after `Char:' describe the character following point,
+first by showing it and second by giving its octal character code.
+
+  `point=' is followed by the position of point expressed as a character
+count.  The front of the buffer counts as position 1, one character later
+as 2, and so on.  The next, larger number is the total number of characters
+in the buffer.  Afterward in parentheses comes the position expressed as a
+percentage of the total size.
+
+  `x=' is followed by the horizontal position of point, in columns from the
+left edge of the window.
+
+  If the buffer has been narrowed, making some of the text at the beginning and
+the end temporarily invisible, `C-x =' prints additional text describing the
+current visible range.  For example, it might say
+
+     Char: x (0170)  point=65986 of 563025(12%) <65102 - 68533>  x=44
+
+where the two extra numbers give the smallest and largest character position
+that point is allowed to assume.  The characters between those two positions
+are the visible ones.  *Note Narrowing::.
+
+  If point is at the end of the buffer (or the end of the visible part),
+`C-x =' omits any description of the character after point.
+The output looks like
+
+     point=563026 of 563025(100%)  x=0
+
+Usually `x=0' at the end, because the text usually ends with a newline.
+
+  There are two commands for printing line numbers.  `M-x what-line'
+counts lines from the beginning of the file and prints the line number
+point is on.  The first line of the file is line number 1.  By contrast,
+`M-x what-page' counts pages from the beginning of the file, and
+counts lines within the page, printing both of them.  *Note Pages::.
+
+  While on this subject, we might as well mention `M-=' (`count-lines-region'),
+which prints the number of lines in the region (*Note Mark::).
+*Note Pages::, for the command `C-x l' which counts the lines in the
+current page.
+
+
+File: emacs  Node: Arguments, Prev: Position Info, Up: Basic
+
+Numeric Arguments
+=================
+
+  Any Emacs command can be given a "numeric argument".  Some commands
+interpret the argument as a repetition count.  For example, giving an
+argument of ten to the key `C-f' (the command `forward-char', move
+forward one character) moves forward ten characters.  With these commands,
+no argument is equivalent to an argument of one.  Negative arguments are
+allowed.  Often they tell a command to move or act backwards.
+
+  If your terminal keyboard has a META key, the easiest way to
+specify a numeric argument is to type digits and/or a minus sign while
+holding down the the META key.  For example,
+     M-5 C-n
+would move down five lines.  The characters `Meta-1', `Meta-2',
+etc., and `Meta--', do this because they are keys bound to commands
+(`digit-argument' and `negative-argument') that are defined to
+contribute to an argument for the next command.
+
+  Another way of specifying an argument is to use the `C-u'
+(`universal-argument') command followed by the digits of the argument.
+With `C-u', you can type the argument digits without holding
+down shift keys.  To type a negative argument, start with a minus sign.
+Just a minus sign normally means -1.  `C-u' works on all terminals.
+
+  `C-u' followed by a character which is neither a digit nor a minus sign
+has the special meaning of "multiply by four".  It multiplies the argument
+for the next command by four.  `C-u' twice multiplies it by sixteen.  Thus,
+`C-u C-u C-f' moves forward sixteen characters.  This is a good way to move
+forward "fast", since it moves about 1/5 of a line in the usual size
+screen.  Other useful combinations are `C-u C-n', `C-u C-u C-n' (move down
+a good fraction of a screen), `C-u C-u C-o' (make "a lot" of blank lines),
+and `C-u C-k' (kill four lines).
+
+  Some commands care only about whether there is an argument, and not about
+its value.  For example, the command `M-q' (`fill-paragraph') with
+no argument fills text; with an argument, it justifies the text as well.
+(*Note Filling::, for more information on `M-q'.)  Just `C-u' is a
+handy way of providing an argument for such commands.
+
+  Some commands use the value of the argument as a repeat count, but do
+something peculiar when there is no argument.  For example, the command
+`C-k' (`kill-line') with argument N kills N lines, including their
+terminating newlines.  But `C-k' with no argument is special: it kills the
+text up to the next newline, or, if point is right at the end of the line,
+it kills the newline itself.  Thus, two `C-k' commands with no arguments
+can kill a nonblank line, just like `C-k' with an argument of one.  (*Note
+Killing::, for more information on `C-k'.)
+
+  A few commands treat a plain `C-u' differently from an ordinary
+argument.  A few others may treat an argument of just a minus sign
+differently from an argument of -1.  These unusual cases will be described
+when they come up; they are always for reasons of convenience of use of the
+individual command.
+
+
+
+File: emacs  Node: Undo, Prev: Basic, Up: Top, Next: Minibuffer
+
+Undoing Changes
+***************
+
+  Emacs allows all changes made in the text of a buffer to be undone,
+up to a certain amount of change (8000 characters).  Each buffer records
+changes individually, and the undo command always applies to the
+current buffer.  Usually each editing command makes a separate entry
+in the undo records, but some commands such as `query-replace'
+make many entries, and very simple commands such as self-inserting
+characters are often grouped to make undoing less tedious.
+
+`C-x u'     
+     Undo one batch of changes (usually, one command worth) (`undo').
+`C-_'     
+     The same.
+
+  The command `C-x u' or `C-_' is how you undo.  The first time you give
+this command, it undoes the last change.  Point moves to the beginning of
+the text affected by the undo, so you can see what was undone.
+
+  Consecutive repetitions of the `C-_' or `C-x u' commands undo
+earlier and earlier changes, back to the limit of what has been recorded.
+If all recorded changes have already been undone, the undo command gets an
+error.
+
+  Any command other than an undo command breaks the sequence of undo
+commands.  Starting at this moment, the previous undo commands are
+considered ordinary changes that can themselves be undone.  Thus, you can
+redo changes you have undone by typing `C-SPC', `C-f' or any
+other command that will have no important effect, and then using more undo
+commands.
+
+  If you notice that a buffer has been modified accidentally, the easiest
+way to recover is to type `C-_' repeatedly until the stars disappear
+from the front of the mode line.  At this time, all the modifications you
+made have been cancelled.  If you do not remember whether you changed the
+buffer deliberately, type `C-_' once, and when you see the last change
+you made undone, you will remember why you made it.  If it was an accident,
+leave it undone.  If it was deliberate, redo the change as described in the
+preceding paragraph.
+
+  Not all buffers record undo information.  Buffers whose names start with
+spaces don't; these buffers are used internally by Emacs and its extensions
+to hold text that users don't normally look at or edit.  Also, minibuffers,
+help buffers and documentation buffers don't record undo information.
+
+  At most 8000 or so characters of deleted or modified text can be
+remembered in any one buffer for reinsertion by the undo command.  Also,
+there is a limit on the number of individual insert, delete or change
+actions that can be remembered.
+
+  The reason the `undo' command has two keys, `C-x u' and `C-_', set
+up to run it is that it is worthy of a single-character key, but the way to
+type `C-_' on some keyboards is not obvious.  `C-x u' is an
+alternative that requires no special knowledge of the terminal.
+
+
+File: emacs  Node: Minibuffer, Prev: Undo, Up: Top, Next: M-x
+
+The Minibuffer
+**************
+
+  The "minibuffer" is the facility used by Emacs commands to read
+arguments more complicated than a single number.  Minibuffer arguments can
+be file names, buffer names, Lisp function names, Emacs command names, Lisp
+expressions, and many other things, depending on the command reading the
+argument.  The usual Emacs editing commands can be used to edit in the
+minibuffer also.
+
+  When the minibuffer is in use, it appears in the echo area, and the
+terminal's cursor moves there.  The beginning of the minibuffer line
+displays a "prompt" which says what kind of input you should supply and
+how it will be used.  Often this prompt is derived from the name of the
+command that the argument is for.  The prompt normally ends with a colon.
+
+  Sometimes a "default argument" appears in parentheses after the
+colon; it too is part of the prompt.  The default will be used as the
+argument value if you enter an empty argument (e.g., just type RET).
+For example, commands that read buffer names always show a default, which
+is the name of the buffer that will be used if you type just RET.
+
+  The simplest way to give a minibuffer argument is to type the text you
+want, terminated by RET which exits the minibuffer.  You can get out
+of the minibuffer, canceling the command that it was for, by typing
+`C-g'.
+
+  Since the minibuffer uses the screen space of the echo area, it can
+conflict with other ways Emacs customarily uses the echo area.  Here is how
+Emacs handles such conflicts:
+
+   * If a command gets an error while you are in the minibuffer, this does
+     not cancel the minibuffer.  However, the echo area is needed for the
+     error message and therefore the minibuffer itself is hidden for a
+     while.  It comes back after a few seconds.
+     
+   * If in the minibuffer you use a command whose purpose is to print a
+     message in the echo area, such as `C-x =', the message is printed
+     normally, and the minibuffer is hidden for a while.  It comes back
+     after a few seconds.
+     
+   * Echoing of keystrokes does not take place while the minibuffer is in
+     use.
+
+* Menu:
+
+* File: Minibuffer File.  Entering file names with the minibuffer.
+* Edit: Minibuffer Edit.  How to edit in the minibuffer.
+* Completion::		  An abbreviation facility for minibuffer input.
+* Repetition::		  Re-executing commands that used the minibuffer.
+
+
+File: emacs  Node: Minibuffer File, Prev: Minibuffer, Up: Minibuffer, Next: Minibuffer Edit
+
+Minibuffers for File Names
+==========================
+
+  Sometimes the minibuffer starts out with text in it.  For example, when
+you are supposed to give a file name, the minibuffer starts out containing
+the "default directory", which ends with a slash.  This is to inform
+you which directory the file will be found in if you do not specify a
+directory.  For example, the minibuffer might start out with
+
+     Find File: /u2/emacs/src/
+
+where `Find File: ' is the prompt.  Typing `buffer.c' specifies the file
+`/u2/emacs/src/buffer.c'.  To find files in nearby directories, use `..';
+thus, if you type `../lisp/simple.el', file `/u2/emacs/lisp/simple.el' will
+appear on your screen.  Alternatively, you can kill with `M-DEL' the
+directory names you don't want (*Note Words::).
+
+  You can also type an absolute file name, one starting with a slash or a
+tilde, ignoring the default directory.  For example, to find the file
+`/etc/termcap', just type the name, giving
+
+     Find File: /u2/emacs/src//etc/termcap
+
+Two slashes in a row are not normally meaningful in Unix file names, but
+they are allowed in GNU Emacs.  They mean, "ignore everything before the
+second slash in the pair."  Thus, `/u2/emacs/src/' is ignored, and
+you get the file `/etc/termcap'.
+
+  If you set `insert-default-directory' to `nil', the default directory
+is not inserted in the minibuffer.  This way, the minibuffer starts out
+empty.  But the name you type, if relative, is still interpreted with
+respect to the same default directory.
+
+
+File: emacs  Node: Minibuffer Edit, Prev: Minibuffer File, Up: Minibuffer, Next: Completion
+
+Editing in the Minibuffer
+=========================
+
+  The minibuffer is an Emacs buffer (albeit a peculiar one), and the usual
+Emacs commands are available for editing the text of an argument you are
+entering.
+
+  Since RET in the minibuffer is defined to exit the minibuffer,
+inserting a newline into the minibuffer must be done with `C-o' or with
+`C-q LFD'.  (Recall that a newline is really the LFD
+character.)
+
+  The minibuffer has its own window which always has space on the screen
+but acts as if it were not there when the minibuffer is not in use.  When
+the minibuffer is in use, its window is just like the others; you can
+switch to another window with `C-x o', edit text in other windows and
+perhaps even visit more files, before returning to the minibuffer to submit
+the argument.  You can kill text in another window, return to the
+minibuffer window, and then yank the text to use it in the argument.
+*Note Windows::.
+
+  There are some restrictions on the use of the minibuffer window, however.
+You cannot switch buffers in it---the minibuffer and its window are
+permanently attached.  Also, you cannot split the minibuffer window.
+
+  Recursive use of the minibuffer is supported by Emacs.  However, it is
+easy to do this by accident (because of autorepeating keyboards, for
+example) and get confused.  Therefore, most Emacs commands that use the
+minibuffer refuse to operate if the minibuffer window is selected.  If the
+minibuffer is active but you have switched to a different window, recursive
+use of the minibuffer is allowed---if you know enough to try to do this,
+you probably will not get confused.
+
+  If you set the variable `enable-recursive-minibuffers' to be
+non-`nil', recursive use of the minibuffer is always allowed.
+
+
+File: emacs  Node: Completion, Prev: Minibuffer Edit, Up: Minibuffer, Next: Repetition
+
+Completion
+==========
+
+  When appropriate, the minibuffer provides a "completion" facility.
+This means that you type enough of the argument to determine the rest,
+based on Emacs's knowledge of which arguments make sense, and Emacs visibly
+fills in the rest, or as much as can be determined from the part you have
+typed.
+
+  When completion is available, certain keys---TAB, RET, and SPC---are
+redefined to complete an abbreviation present in the minibuffer into a
+longer string that it stands for, by matching it against a set of
+"completion alternatives" provided by the command reading the argument.
+`?' is defined to display a list of possible completions of what you
+have inserted.
+
+  For example, when the minibuffer is being used by `Meta-x' to read
+the name of a command, it is given a list of all available Emacs command
+names to complete against.  The completion keys match the text in the
+minibuffer against all the command names, find any additional characters of
+the name that are implied by the ones already present in the minibuffer,
+and add those characters to the ones you have given.
+
+  A concrete example may help here.  If you type `Meta-x au TAB', the TAB
+looks for alternatives (in this case, command names) that start with
+`au'.  In this case, there are only two: `auto-fill-mode' and
+`auto-save-mode'.  These are the same as far as `auto-', so the
+`au' in the minibuffer changes to `auto-'.
+
+  If you go on to type `f TAB', this second TAB sees `auto-f'.
+The only command name starting this way is `auto-fill-mode', so that
+is the completion.  You have now have `auto-fill-mode' in the
+minibuffer after typing just `au TAB f TAB'.  Note that
+TAB has this effect because in the minibuffer it is bound to the
+function `minibuffer-complete' when completion is supposed to be done.
+
+  Case is normally significant in completion, because it is significant in
+most of the names that you can complete (buffer names, file names and
+command names).  Thus, `fo' will not complete to `Foo'.  When you
+are completing a name in which case does not matter, the program can request
+that case be ignored for completion as well.
+
+  Here is a list of all the completion commands, defined in the minibuffer
+when completion is available.
+
+`TAB'     
+     Complete the text in the minibuffer as much as possible 
+     (`minibuffer-complete').
+`SPC'     
+     Complete the text in the minibuffer but don't add or fill out more
+     than one word (`minibuffer-complete-word').
+`RET'     
+     Submit the text in the minibuffer as the argument, possibly completing
+     first as described below (`minibuffer-complete-and-exit').
+`?'     
+     Print a list of all possible completions of the text in the minibuffer
+     (`minibuffer-list-completions').
+
+  SPC completes much like TAB, but never adds goes beyond the
+next hyphen.  If you have `auto-f' in the minibuffer and type
+SPC, it finds that the completion is `auto-fill-mode', but it
+stops completing after `fill-'.  This gives `auto-fill-'.
+Another SPC at this point completes all the way to
+`auto-fill-mode'.  SPC in the minibuffer runs the function
+`minibuffer-complete-word' when completion is available.
+
+  There are three different ways that RET can work in completing
+minibuffers, depending on how the argument will be used.
+
+   * "Strict" completion is used when it is meaningless to give any
+     argument except one of the known alternatives.  For example, when
+     `C-x k' reads the name of a buffer to kill, it is meaningless to
+     give anything but the name of an existing buffer.  In strict
+     completion, RET refuses to exit if the text in the minibuffer
+     does not complete to an exact match.
+     
+   * "Cautious" completion is similar to strict completion, except that
+     RET exits only if the text was an exact match already, not
+     needing completion.  If the text is not an exact match, RET does
+     not exit, but it does complete the text.  If it completes to an exact
+     match, a second RET will exit.
+     
+     Cautious completion is used for reading file names for files that must
+     already exist.
+     
+   * "Permissive" completion is used when any string whatever is
+     meaningful, and the list of completion alternatives is just a guide.
+     For example, when `C-x C-f' reads the name of a file to visit, any
+     file name is allowed, in case you want to create a file.  In
+     permissive completion, RET takes the text in the minibuffer
+     exactly as given, without completing it.
+
+  When completion is done on file names, certain file names are usually
+ignored.  The variable `completion-ignored-extensions' contains a list
+of strings; a file whose name ends in any of those strings is ignored as a
+possible completion.  The standard value of this variable is `(".o"
+".elc" "~")', which is designed to allow `foo' to complete to
+`foo.c' even though `foo.o' exists as well.  If the only possible
+completions are files that end in "ignored" strings, then they are not
+ignored.
+
+
+File: emacs  Node: Repetition, Prev: Completion, Up: Minibuffer
+
+Repeating Minibuffer Commands
+=============================
+
+  Every command that uses the minibuffer at least once is recorded on a
+special history list, together with the values of the minibuffer arguments,
+so that you can repeat the command easily.  In particular, every
+use of `Meta-x' is recorded, since `M-x' uses the minibuffer to
+read the command name.
+
+`C-x ESC'     
+     Re-execute a recent minibuffer command (`repeat-complex-command').
+
+  `C-x ESC' is used to re-execute a recent minibuffer-using
+command.  With no argument, it repeats the last such command.  A numeric
+argument specifies which command to repeat; one means the last one, and
+larger numbers specify earlier ones.
+
+  `C-x ESC' works by turning the previous command into a Lisp
+expression and then entering a minibuffer initialized with the text for
+that expression.  If you type just RET, the command is repeated as
+before.  You can also change the command by editing the Lisp expression.
+Whatever expression you finally submit is what will be executed.  The
+repeated command does not go on the command history itself; `C-x
+ESC' does not alter the command history.
+
+  Once inside the minibuffer for `C-x ESC', if the command shown
+to you is not the one you want to repeat, you can move around the list of
+previous commands using `M-n' and `M-p'.  `M-p' replaces the
+contents of the minibuffer with the next earlier recorded command, and
+`M-n' replaces them with the next later command.  After finding the
+desired previous command, you can edit its expression as usual and then
+resubmit it by typing RET as usual.  Any editing you have done on the
+command to be repeated is lost if you use `M-n' or `M-p'.
+
+  `M-p' is more useful than `M-n', since more often you will
+initially request to repeat the most recent command and then decide to
+repeat an older one instead.  These keys are specially defined within
+`C-x ESC' to run the commands `next-complex-command' and
+`previous-complex-command'.
+
+  The list of previous minibuffer-using commands is stored as a Lisp list
+in the variable `command-history'.  Each element is a Lisp expression
+which describes one command and its arguments.  The command can be
+reexecuted by feeding the corresponding `command-history' element to
+`eval'.
+
+
+File: emacs  Node: M-x, Prev: Minibuffer, Up: Top, Next: Help
+
+Running Commands by Name
+************************
+
+  The Emacs commands that are used often or that must be quick to type are
+bound to keys---short sequences of characters---for convenient use.  Other
+Emacs commands that do not need to be brief are not bound to keys; to run
+them, you must refer to them by name.
+
+  A command name is, by convention, made up of one or more words, separated
+by hyphens; for example, `auto-fill-mode' or `manual-entry'.  The
+use of English words makes the command name easier to remember than a key
+made up of obscure characters, even though it is more characters to type.
+Any command can be run by name, even if it is also runnable by keys.
+
+  The way to run a command by name is to start with `M-x', type the
+command name, and finish it with RET.  Actually, `M-x' (the command
+`execute-extended-command') is using the minibuffer to read the
+command name.
+
+  Emacs uses the minibuffer for reading input for many different purposes;
+on this occasion, the string `M-x' is displayed at the beginning of
+the minibuffer as a "prompt" to remind you that your input should be
+the name of a command to be run.  *Note Minibuffer::, for full information
+the features of the minibuffer.
+
+  You can use completion to enter the command name.  For example, the
+command `forward-char' can be invoked by name by typing
+
+     M-x forward-char RET
+     
+or     
+     
+     M-x fo TAB c RET
+
+Note that `forward-char' is the same command that you invoke with
+the key `C-f'.  Any command (interactively callable function) defined
+in Emacs can be called by its name using `M-x' whether or not any
+keys are bound to it.
+
+  If you type `C-g' while the command name is being read, you cancel
+the `M-x' command and get out of the minibuffer, ending up at top level.
+
+  To pass a numeric argument to the command you are invoking with
+`M-x', specify the numeric argument before the `M-x'.  `M-x'
+passes the argument along to the function which it calls.  The argument
+value appears in the prompt while the command name is being read.
+
+  Normally, when describing a command that is run by name, we omit the
+RET that is needed to terminate the name.  Thus we might speak of
+`M-x auto-fill-mode' rather than `M-x auto-fill-mode RET'.
+We mention the RET only when there is a need to emphasize its
+presence, such as when describing a sequence of input that contains a
+command name and arguments that follow it.
+
+
+
+File: emacs  Node: Help, Prev: M-x, Up: Top, Next: Mark
+
+Help
+****
+
+  Emacs provides extensive help features which revolve around a single
+character, `C-h'.  `C-h' is a prefix key that is used only for
+documentation-printing commands.  The characters that you can type after
+`C-h' are called "help options".  One help option is `C-h';
+that is how you ask for help about using `C-h'.
+
+  `C-h C-h' prints a list of the possible help options, and then asks
+you to go ahead and type the option.  It prompts with a string
+
+     A, C, F, I, K, L, M, N, S, T, V, W, C-c, C-d, C-w or C-h for more help: 
+
+and you should type one of those characters.  Typing a third `C-h'
+displays a description of what the options mean; it still waits for you to
+type an option.  To cancel, type `C-g'.
+
+  Here is a summary of the defined help commands.
+
+`C-h a'     
+     Display list of commands whose names contain a specified string
+     (`command-apropos').
+`C-h b'     
+     Display a table of all key bindings in effect now; local bindings of
+     the current major mode first, followed by all global bindings
+     (`describe-bindings').
+`C-h c KEY'     
+     Print the name of the command that KEY runs (`describe-key-briefly').
+     `c' is for `character'.
+`C-h f FUNCTION RET'     
+     Display documentation on the Lisp function named FUNCTION
+     (`describe-function').  Note that commands are Lisp functions, so
+     a command name may be used.
+`C-h k KEY'     
+     Display name and documentation of the command KEY runs (`describe-key').
+`C-h i'     
+     Run Info, the program for browsing documentation files (`info').
+`C-h l'     
+     Display a description of the last 100 characters you typed
+     (`view-lossage').
+`C-h m'     
+     Display documentation of the current major mode (`describe-mode').
+`C-h n'     
+     Display documentation of Emacs changes, most recent first
+     (`view-emacs-news').
+`C-h s'     
+     Display current contents of the syntax table, plus an explanation of
+     what they mean (`describe-syntax').
+`C-h t'     
+     Display the Emacs tutorial (`help-with-tutorial').
+`C-h v VAR RET'     
+     Display the documentation of the Lisp variable VAR
+     (`describe-variable').
+`C-h w COMMAND RET'     
+     Print which keys run the command named COMMAND (`where-is').
+
+
+Documentation for a Key
+=======================
+
+  The most basic `C-h' options are `C-h c' (`describe-key-briefly') and
+`C-h k' (`describe-key').  `C-h c KEY' prints in the echo area the name of
+the command that KEY is bound to.  For example, `C-h c C-f' prints
+`forward-char'.  Since command names are chosen to describe what the
+command does, this is a good way to get a very brief description of what
+KEY does.
+
+  `C-h k KEY' is similar but gives more information.  It displays
+the documentation string of the command KEY is bound to as well as
+its name.  This is too big for the echo area, so a window is used for the
+display.
+
+
+Help by Command or Variable Name
+================================
+
+  `C-h f' (`describe-function') reads the name of a Lisp function
+using the minibuffer, then displays that function's documentation string
+in a window.  Since commands are Lisp functions, you can use this to get
+the documentation of a command that is known by name.  For example,
+
+     C-h f auto-fill-mode RET
+
+displays the documentation of `auto-fill-mode'.  This is the only
+way to see the documentation of a command that is not bound to any key
+(one which you would normally call using `M-x').
+
+  `C-h f' is also useful for Lisp functions that you are planning to
+use in a Lisp program.  For example, if you have just written the code
+`(make-vector len)' and want to be sure that you are using
+`make-vector' properly, type `C-h f make-vector RET'.  Because
+`C-h f' allows all function names, not just command names, you may find
+that some of your favorite abbreviations that work in `M-x' don't work
+in `C-h f'.  An abbreviation may be unique among command names yet fail
+to be unique when other function names are allowed.
+
+  The function name for `C-h f' to describe has a default which is
+used if you type RET leaving the minibuffer empty.  The default is
+the function called by the innermost Lisp expression in the buffer around
+point, provided that is a valid, defined Lisp function name.  For
+example, if point is located following the text `(make-vector (car
+x)', the innermost list containing point is the one that starts with
+`(make-vector', so the default is to describe the function
+`make-vector'.
+
+  `C-h f' is often useful just to verify that you have the right
+spelling for the function name.  If `C-h f' mentions a default in the
+prompt, you have typed the name of a defined Lisp function.  If that tells
+you what you want to know, just type `C-g' to cancel the `C-h f'
+command and go on editing.
+
+  `C-h w COMMAND RET' tells you what keys are bound to COMMAND.  It prints
+a list of the keys in the echo area.  Alternatively, it says that the
+command is not on any keys, which implies that you must use `M-x' to call
+it.
+
+  `C-h v' (`describe-variable') is like `C-h f' but describes Lisp
+variables instead of Lisp functions.  Its default is the Lisp symbol around
+or before point, but only if that is the name of a known Lisp variable.
+*Note Variables::.
+
+
+Apropos
+=======
+
+  A more sophisticated sort of question to ask is, "What are the commands
+for working with files?"  For this, type `C-h a file RET', which displays a
+list of all command names that contain `file', such as `copy-file',
+`find-file', and so on.  With each command name appears a brief description
+of how to use the command, and what keys you can currently invoke it with.
+For example, it would say that you can invoke `find-file' by typing `C-x
+C-f'.  The `a' in `C-h a' stands for `Apropos'; `C-h a' runs the Lisp
+function `command-apropos'.
+
+  Because `C-h a' looks only for functions whose names contain the
+string which you specify, you must use ingenuity in choosing substrings.
+If you are looking for commands for killing backwards and `C-h a
+kill-backwards RET' doesn't reveal any, don't give up.  Try just
+`kill', or just `backwards', or just `back'.  Be persistent.
+Pretend you are playing Adventure.
+
+  Here is a set of arguments to give to `C-h a' that covers many
+classes of Emacs commands, since there are strong conventions for naming
+the standard Emacs commands.  By giving you a feel for the naming
+conventions, this set should also serve to aid you in developing a
+technique for picking `apropos' strings.
+
+     char, line, word, sentence, paragraph, region, page, sexp, list, defun,
+     buffer, screen, window, file, dir, register, mode,
+     beginning, end, forward, backward, next, previous, up, down, search, goto,
+     kill, delete, mark, insert, yank, fill, indent, case,
+     change, set, what, list, find, view, describe.
+
+  To list all Lisp symbols that contain a match for a regexp, not just
+the ones that are defined as commands, use the command `M-x apropos'
+instead of `C-h a'.
+
+
+Other Help Commands
+===================
+
+  If something surprising happens, and you are not sure what commands you
+typed, use `C-h l' (`view-lossage').  `C-h l' prints the last
+100 command characters you typed in.  If you see commands that you don't
+know, you can use `C-h c' to find out what they do.
+
+  Emacs has several major modes, each of which redefines a few keys and
+makes a few other changes in how editing works.  `C-h m' (`describe-mode')
+prints documentation on the current major mode, which normally describes
+all the commands that are changed in this mode.
+
+  `C-h b' (`describe-bindings') and `C-h s' (`describe-syntax') present
+other information about the current Emacs mode.  `C-h b' displays a list of
+all the key bindings now in effect; the local bindings of the current major
+mode first, followed by the global bindings (*Note Key Bindings::).  `C-h
+s' displays the contents of the syntax table, with explanations of each
+character's syntax (*Note Syntax::).
+
+  The other `C-h' options display various files of useful information.
+`C-h C-w' displays the full details on the complete absence of warranty for
+GNU Emacs.  `C-h n' (`view-emacs-news') displays the file `emacs/etc/NEWS',
+which contains documentation on Emacs changes arranged chronologically.
+`C-h t' (`help-with-tutorial') displays the learn-by-doing Emacs tutorial.
+`C-h i' (`info') runs the Info program, which is used for browsing through
+structured documentation files.  `C-h C-c' (`describe-copying') displays
+the file `emacs/etc/COPYING', which tells you the conditions you must obey
+in distributing copies of Emacs.  `C-h C-d' (`describe-distribution')
+displays the file `emacs/etc/DISTRIB', which tells you how you can order a
+copy of the latest version of Emacs.
+
+
+File: emacs  Node: Mark, Prev: Help, Up: Top, Next: Killing
+
+The Mark and the Region
+***********************
+
+  There are many Emacs commands which operate on an arbitrary contiguous
+part of the current buffer.  To specify the text for such a command to
+operate on, you set "the mark" at one end of it, and move point to the
+other end.  The text between point and the mark is called "the region".
+You can move point or the mark to adjust the boundaries of the region.  It
+doesn't matter which one is set first chronologically, or which one comes
+earlier in the text.
+
+  Once the mark has been set, it remains until it is set again at another
+place.  The mark remains fixed with respect to the preceding character if
+text is inserted or deleted in the buffer.  Each Emacs buffer has its own
+mark, so that when you return to a buffer that had been selected
+previously, it has the same mark it had before.
+
+  Many commands that insert text, such as `C-y' (`yank') and
+`M-x insert-buffer', position the mark at one end of the inserted
+text---the opposite end from where point is positioned, so that the region
+contains the text just inserted.
+
+* Menu:
+
+* Mark Ring::
+
+  Aside from delimiting the region, the mark is also useful for remembering
+a spot that you may want to go back to.  To make this feature more useful,
+Emacs remembers 16 previous locations of the mark, in the `mark ring'.
+
+  Here are some commands for setting the mark:
+
+`C-SPC'     
+     Set the mark where point is (`set-mark-command').
+`C-@'     
+     The same.
+`C-x C-x'     
+     Interchange mark and point (`exchange-point-and-mark').
+`M-@'     
+     Set mark after end of next word (`mark-word').  This command and
+     the following one do not move point.
+`C-M-@'     
+     Set mark after end of next Lisp expression (`mark-sexp').
+`M-h'     
+     Put region around current paragraph (`mark-paragraph').
+`C-M-h'     
+     Put region around current Lisp defun (`mark-defun').
+`C-x h'     
+     Put region around entire buffer (`mark-whole-buffer').
+`C-x C-p'     
+     Put region around current page (`mark-page').
+
+  For example, if you wish to convert part of the buffer to all upper-case,
+you can use the `C-x C-u' (`upcase-region') command, which operates
+on the text in the region.  You can first go to the beginning of the text
+to be capitalized, type `C-SPC' to put the mark there, move to
+the end, and then type `C-x C-u'.  Or, you can set the mark at the end
+of the text, move to the beginning, and then type `C-x C-u'.  Most
+commands that operate on the text in the region have the word `region'
+in their names.
+
+  The most common way to set the mark is with the `C-SPC' command
+(`set-mark-command').  This sets the mark where point is.  Then you
+can move point away, leaving the mark behind.  It is actually incorrect to
+speak of the character `C-SPC'; there is no such character.  When
+you type SPC while holding down CTRL, what you get on most
+terminals is the character `C-@'.  This is the key actually bound to
+`set-mark-command'.  But unless you are unlucky enough to have a
+terminal where typing `C-SPC' does not produce `C-@', you
+might as well think of this character as `C-SPC'.
+
+  Since terminals have only one cursor, there is no way for Emacs to show
+you where the mark is located.  You have to remember.  The usual solution
+to this problem is to set the mark and then use it soon, before you forget
+where it is.  But you can see where the mark is with the command `C-x
+C-x' (`exchange-point-and-mark') which puts the mark where point was and
+point where the mark was.  The extent of the region is unchanged, but the
+cursor and point are now at the previous location of the mark.
+
+  `C-x C-x' is also useful when you are satisfied with the location of
+point but want to move the mark; do `C-x C-x' to put point there and
+then you can move it.  A second use of `C-x C-x', if necessary, puts
+the mark at the new location with point back at its original location.
+
+
+Operating on the Region
+=======================
+
+  Once you have created an active region, you can do many things to
+the text in it:
+   * Kill it with `C-w' (*Note Killing::).
+   * Save it in a register with `C-x x' (*Note Registers::).
+   * Save it in a buffer or a file (*Note Accumulating Text::).
+   * Convert case with `C-x C-l' or `C-x C-u' (*Note Case::).
+   * Evaluate it as Lisp code with `M-x eval-region' (*Note Lisp Eval::).
+   * Fill it as text with `M-g' (*Note Filling::).
+   * Print hardcopy with `M-x print-region' (*Note Hardcopy::).
+   * Indent it with `C-x TAB' or `C-M-\' (*Note Indentation::).
+
+
+Commands to Mark Textual Objects
+================================
+
+  There are commands for placing the mark on the other side of a certain
+object such as a word or a list, without having to move there first.
+`M-@' (`mark-word') puts the mark at the end of the next word,
+while `C-M-@' (`mark-sexp') puts it at the end of the next Lisp
+expression.  These characters allow you to save a little typing or
+redisplay, sometimes.
+
+   Other commands set both point and mark, to delimit an object in the
+buffer.  `M-h' (`mark-paragraph') moves point to the beginning of
+the paragraph that surrounds or follows point, and puts the mark at the end
+of that paragraph (*Note Paragraphs::).  `M-h' does all that's
+necessary if you wish to indent, case-convert, or kill a whole paragraph.
+`C-M-h' (`mark-defun') similarly puts point before and the mark
+after the current or following defun (*Note Defuns::).  `C-x C-p'
+(`mark-page') puts point before the current page (or the next or
+previous, according to the argument), and mark at the end (*Note Pages::).
+The mark goes after the terminating page delimiter (to include it), while
+point goes after the preceding page delimiter (to exclude it).  Finally,
+`C-x h' (`mark-whole') sets up the entire buffer as the region, by
+putting point at the beginning and the mark at the end.
+
+
+File: emacs  Node: Mark Ring, Prev: Mark, Up: Mark
+
+The Mark Ring
+=============
+
+  Aside from delimiting the region, the mark is also useful for remembering
+a spot that you may want to go back to.  To make this feature more useful,
+Emacs remembers 16 previous locations of the mark, in the `mark ring'.
+Most commands that set the mark push the old mark onto this ring.  To
+return to a marked location, use `C-u C-@' (or `C-u C-SPC');
+this is the command `set-mark-command' given a numeric argument.  This
+moves point to where the mark was, and restores the mark from the ring of
+former marks.  So repeated use of this command moves point to all of the
+old marks on the ring, one by one.  Enough uses of `C-u C-@' bring
+point back to where it was originally.
+
+  Each buffer has its own mark ring.  All editing commands that use the
+mark ring use the current buffer's mark ring.  In particular, `C-u
+C-SPC' always stays in the same buffer.
+
+  Many commands that can move long distances, such as `M-<'
+(`beginning-of-buffer'), start by setting the mark and saving the old
+mark on the mark ring, just as a way of making it possible for you to move
+to where point was before the command.  This is to make it easier for you
+to move back later.  Searches do this except when they do not actually move
+point.  You can tell when a command sets the mark because `Mark Set'
+is printed in the echo area.
+
+  The variable `mark-ring-max' is the maximum number of entries to
+keep in the mark ring.  If that many entries exist and another one is
+pushed, the last one in the list is discarded.  Repeating `C-u
+C-SPC' circulates through the limited number of entries that are
+currently in the ring.
+
+  The variable `mark-ring' holds the mark ring itself, as a list of
+marker objects in the order most recent first.
+
+
+
+File: emacs  Node: Killing, Prev: Mark, Up: Top, Next: Yanking
+
+Deletion and Killing
+====================
+
+  Most commands which erase text from the buffer save it so that you can
+get it back if you change your mind, or move or copy it to other parts of
+the buffer.  These commands are known as "kill" commands.  The rest of
+the commands that erase text do not save it; they are known as "delete"
+commands.  (This distinction is made only for erasure of text in the
+buffer.)
+
+  The delete commands include `C-d' (`delete-char') and DEL
+(`delete-backward-char'), which delete only one character at a time, and
+those commands that delete only spaces or newlines.  Commands that can
+destroy significant amounts of nontrivial data generally kill.  The
+commands' names and individual descriptions use the words `kill' and
+`delete' to say which they do.  If you do a kill or delete command by
+mistake, you can use the `C-x u' (`undo') command to undo it (*Note
+Undo::).
+
+
+Deletion
+--------
+
+`C-d'     
+     Delete next character (`delete-char').
+`DEL'     
+     Delete previous character (`delete-backward-char').
+`M-\'     
+     Delete spaces and tabs around point (`delete-horizontal-space').
+`M-SPC'     
+     Delete spaces and tabs around point, leaving one space
+     (`just-one-space').
+`C-x C-o'     
+     Delete blank lines around the current line (`delete-blank-lines').
+`M-^'     
+     Join two lines by deleting the intervening newline, and any indentation
+     following it (`delete-indentation').
+
+  The most basic delete commands are `C-d' (`delete-char') and
+DEL (`delete-backward-char').  `C-d' deletes the character
+after point, the one the cursor is "on top of".  Point doesn't move.
+DEL deletes the character before the cursor, and moves point back.
+Newlines can be deleted like any other characters in the buffer; deleting a
+newline joins two lines.  Actually, `C-d' and DEL aren't always
+delete commands; if given an argument, they kill instead, since they can
+erase more than one character this way.
+
+  The other delete commands are those which delete only formatting
+characters: spaces, tabs and newlines.  `M-\' (`delete-horizontal-space')
+deletes all the spaces and tab characters before and after point.
+`M-SPC' (`just-one-space') does likewise but leaves a single
+space after point, regardless of the number of spaces that existed
+previously (even zero).
+
+  `C-x C-o' (`delete-blank-lines') deletes all blank lines after
+the current line, and if the current line is blank deletes all blank lines
+preceding the current line as well (leaving one blank line, the current
+line).  `M-^' (`delete-indentation') joins the current line and
+the previous line, or the current line and the next line if given an
+argument, by deleting a newline and all surrounding spaces, possibly
+leaving a single space.  *Note M-^: Indentation.
+
+
+Killing by Lines
+----------------
+
+`C-k'     
+     Kill rest of line or one or more lines (`kill-line').
+
+  The simplest kill command is `C-k'.  If given at the beginning of a
+line, it kills all the text on the line, leaving it blank.  If given on a
+blank line, the blank line disappears.  As a consequence, if you go to the
+front of a non-blank line and type `C-k' twice, the line disappears
+completely.
+
+  More generally, `C-k' kills from point up to the end of the line,
+unless it is at the end of a line.  In that case it kills the newline
+following the line, thus merging the next line into the current one.
+Invisible spaces and tabs at the end of the line are ignored when deciding
+which case applies, so if point appears to be at the end of the line, you
+can be sure the newline will be killed.
+
+  If `C-k' is given a positive argument, it kills that many lines and
+the newlines that follow them (however, text on the current line before
+point is spared).  With a negative argument, it kills back to a number of
+line beginnings.  An argument of -2 means kill back to the second line
+beginning.  If point is at the beginning of a line, that line beginning
+doesn't count, so `C-u - 2 C-k' with point at the front of a line kills
+the two previous lines.
+
+  `C-k' with an argument of zero kills all the text before point on the
+current line.
+
+
+Other Kill Commands
+-------------------
+
+`C-w'     
+     Kill region (from point to the mark) (`kill-region').
+`M-d'     
+     Kill word (`kill-word').
+`M-DEL'     
+     Kill word backwards (`backward-kill-word').
+`C-x DEL'     
+     Kill back to beginning of sentence (`backward-kill-sentence').
+     *Note Sentences::.
+`M-k'     
+     Kill to end of sentence (`kill-sentence').
+`C-M-k'     
+     Kill sexp (*Note Lists::) (`kill-sexp').
+`M-z CHAR'     
+     Kill up to next occurrence of CHAR (`zap-to-char').
+
+  A kill command which is very general is `C-w' (`kill-region'),
+which kills everything between point and the mark.  With this command, you
+can kill any contiguous sequence of characters, if you first set the mark
+at one end of them and go to the other end.
+
+  A convenient way of killing is combined with searching: `M-z'
+(`zap-to-char') reads a character and kills from point up to (but not
+including) the next occurrence of that character in the buffer.  If there
+is no next occurrence, killing goes to the end of the buffer.  A numeric
+argument acts as a repeat count.  A negative argument means to search
+backward and kill text before point.
+
+  Other syntactic units can be killed: words, with `M-DEL' and `M-d' (*Note
+Words::); sexps, with `C-M-k' (*Note Lists::); and sentences, with `C-x
+DEL' and `M-k' (*Note Sentences::).
+
+
+File: emacs  Node: Yanking, Prev: Killing, Up: Top, Next: Accumulating Text
+
+Yanking
+=======
+
+  "Yanking" is getting back text which was killed.  The usual way to
+move or copy text is to kill it and then yank it one or more times.
+
+`C-y'     
+     Yank last killed text (`yank').
+`M-y'     
+     Replace re-inserted killed text with the previously killed text
+     (`yank-pop').
+`M-w'     
+     Save region as last killed text without actually killing it
+     (`copy-region-as-kill').
+`C-M-w'     
+     Append next kill to last batch of killed text (`append-next-kill').
+
+  All killed text is recorded in the "kill ring", a list of blocks of
+text that have been killed.  There is only one kill ring, used in all
+buffers, so you can kill text in one buffer and yank it in another buffer.
+This is the usual way to move text from one file to another.
+(*Note Accumulating Text::, for some other ways.)
+
+  The command `C-y' (`yank') reinserts the text of the most recent
+kill.  It leaves the cursor at the end of the text.  It sets the mark at
+the beginning of the text.  *Note Mark::.
+
+  `C-u C-y' leaves the cursor in front of the text, and sets the mark
+after it.  This is only if the argument is specified with just a `C-u',
+precisely.  Any other sort of argument, including `C-u' and digits, has
+an effect described below (under "Yanking Earlier Kills").
+
+  If you wish to copy a block of text, you might want to use `M-w'
+(`copy-region-as-kill'), which copies the region into the kill ring
+without removing it from the buffer.  This is approximately equivalent to
+`C-w' followed by `C-y', except that `M-w' does not mark the
+buffer as "modified" and does not temporarily change the screen.
+
+
+Appending Kills
+---------------
+
+  Normally, each kill command pushes a new block onto the kill ring.
+However, two or more kill commands in a row combine their text into a
+single entry, so that a single `C-y' gets it all back as it was before
+it was killed.  This means that you don't have to kill all the text in one
+command; you can keep killing line after line, or word after word, until
+you have killed it all, and you can still get it all back at once.  (Thus
+we join television in leading people to kill thoughtlessly.)
+
+  Commands that kill forward from point add onto the end of the previous
+killed text.  Commands that kill backward from point add onto the
+beginning.  This way, any sequence of mixed forward and backward kill
+commands puts all the killed text into one entry without rearrangement.
+Numeric arguments do not break the sequence of appending kills.  For
+example, suppose the buffer contains
+
+     This is the first
+     line of sample text
+     and here is the third.
+
+with point at the beginning of the second line.  If you type `C-k C-u 2
+M-DEL C-k', the first `C-k' kills the text `line of sample
+text', `C-u 2 M-DEL' kills `the first' with the newline that
+followed it, and the second `C-k' kills the newline after the second
+line.  The result is that the buffer contains `This is and here is the
+third.' and a single kill entry contains `the firstRETline of
+sample textRET'---all the killed text, in its original order.
+
+  If a kill command is separated from the last kill command by other
+commands (not just numeric arguments), it starts a new entry on the kill
+ring.  But you can force it to append by first typing the command `C-M-w'
+(`append-next-kill') in front of it.  The `C-M-w' tells the following
+command, if it is a kill command, to append the text it kills to the last
+killed text, instead of starting a new entry.  With `C-M-w', you can kill
+several separated pieces of text and accumulate them to be yanked back in
+one place.
+
+
+Yanking Earlier Kills
+---------------------
+
+  To recover killed text that is no longer the most recent kill, you need
+the `Meta-y' (`yank-pop') command.  `M-y' can be used only after a `C-y' or
+another `M-y'.  It takes the text previously yanked and replaces it with
+the text from an earlier kill.  So, to recover the text of the
+next-to-the-last kill, you first use `C-y' to recover the last kill, and
+then use `M-y' to replace it with the previous kill.
+
+  You can think in terms of a "last yank" pointer which points at an item
+in the kill ring.  Each time you kill, the "last yank" pointer moves to
+the newly made item at the front of the ring.  `C-y' yanks the item
+which the "last yank" pointer points to.  `M-y' moves the "last
+yank" pointer to a different item, and the text in the buffer changes to
+match.  Enough `M-y' commands can move the pointer to any item in the
+ring, so you can get any item into the buffer.  Eventually the pointer
+reaches the end of the ring; the next `M-y' moves it to the first item
+again.
+
+  `M-y' can take a numeric argument, which tells it how many items to
+advance the "last yank" pointer by.  A negative argument moves the
+pointer toward the front of the ring; from the front of the ring, it moves
+to the last entry and starts moving forward from there.
+
+  Once the text you are looking for is brought into the buffer, you can
+stop doing `M-y' commands and it will stay there.  It's just a copy of
+the kill ring item, so editing it in the buffer does not change what's in
+the ring.  As long as no new killing is done, the "last yank" pointer
+remains at the same place in the kill ring, so repeating `C-y' will
+yank another copy of the same old kill.
+
+  If you know how many `M-y' commands it would take to find the
+text you want, you can yank that text in one step using `C-y' with
+a numeric argument.  `C-y' with an argument greater than one
+restores the text the specified number of entries back in the kill
+ring.  Thus, `C-u 2 C-y' gets the next to the last block of killed
+text.  It is equivalent to `C-y M-y'.  `C-y' with a numeric
+argument starts counting from the "last yank" pointer, and sets the
+"last yank" pointer to the entry that it yanks.
+
+  The length of the kill ring is controlled by the variable
+`kill-ring-max'; no more than that many blocks of killed text are
+saved.
+
+
+File: emacs  Node: Accumulating Text, Prev: Yanking, Up: Top, Next: Rectangles
+
+Accumulating Text
+=================
+
+  Usually we copy or move text by killing it and yanking it, but there are
+other ways that are useful for copying one block of text in many places, or
+for copying many scattered blocks of text into one place.
+
+  You can accumulate blocks of text from scattered locations either into a
+buffer or into a file if you like.  These commands are described here.  You
+can also use Emacs registers for storing and accumulating text.
+*Note Registers::.
+
+`C-x a'     
+     Append region to contents of specified buffer (`append-to-buffer').
+`M-x prepend-to-buffer'     
+     Prepend region to contents of specified buffer.
+`M-x copy-to-buffer'     
+     Copy region into specified buffer, deleting that buffer's old contents.
+`M-x insert-buffer'     
+     Insert contents of specified buffer into current buffer at point.
+`M-x append-to-file'     
+     Append region to contents of specified file, at the end.
+
+  To accumulate text into a buffer, use the command `C-x a BUFFERNAME'
+(`append-to-buffer'), which inserts a copy of the region into the
+buffer BUFFERNAME, at the location of point in that buffer.  If there
+is no buffer with that name, one is created.  If you append text into a
+buffer which has been used for editing, the copied text goes into the
+middle of the text of the buffer, wherever point happens to be in it.
+
+  Point in that buffer is left at the end of the copied text, so successive
+uses of `C-x a' accumulate the text in the specified buffer in the same
+order as they were copied.  Strictly speaking, `C-x a' does not always
+append to the text already in the buffer; but if `C-x a' is the only
+command used to alter a buffer, it does always append to the existing text
+because point is always at the end.
+
+  `M-x prepend-to-buffer' is just like `C-x a' except that point in
+the other buffer is left before the copied text, so successive prependings
+add text in reverse order.  `M-x copy-to-buffer' is similar except that
+any existing text in the other buffer is deleted, so the buffer is left
+containing just the text newly copied into it.
+
+  You can retrieve the accumulated text from that buffer with `M-x
+insert-buffer'; this too takes BUFFERNAME as an argument.  It inserts
+a copy of the text in buffer BUFFERNAME into the selected buffer.
+You could alternatively select the other buffer for editing, perhaps moving
+text from it by killing or with `C-x a'.  *Note Buffers::, for
+background information on buffers.
+
+  Instead of accumulating text within Emacs, in a buffer, you can append
+text directly into a file with `M-x append-to-file', which takes
+FILE-NAME as an argument.  It adds the text of the region to the end
+of the specified file.  The file is changed immediately on disk. This
+command is normally used with files that are not being visited in
+Emacs.  Using it on a file that Emacs is visiting can produce confusing
+results, because the text inside Emacs for that file will not change
+while the file itself changes.
+
+
+File: emacs  Node: Rectangles, Prev: Accumulating Text, Up: Top, Next: Registers
+
+Rectangles
+==========
+
+  The rectangle commands affect rectangular areas of the text: all the
+characters between a certain pair of columns, in a certain range of lines.
+Commands are provided to kill rectangles, yank killed rectangles, clear
+them out, or delete them.  Rectangle commands are useful with text in
+multicolumnar formats, such as perhaps code with comments at the right,
+or for changing text into or out of such formats.
+
+  When you must specify a rectangle for a command to work on, you do
+it by putting the mark at one corner and point at the opposite corner.
+The rectangle thus specified is called the "region-rectangle"
+because it is controlled about the same way the region is controlled.
+But remember that a given combination of point and mark values can be
+interpreted either as specifying a region or as specifying a
+rectangle; it is up to the command that uses them to choose the
+interpretation.
+
+`M-x delete-rectangle'     
+     Delete the text of the region-rectangle, moving any following text on
+     each line leftward to the left edge of the region-rectangle.
+`M-x kill-rectangle'     
+     Similar, but also save the contents of the region-rectangle as the
+     "last killed rectangle".
+`M-x yank-rectangle'     
+     Yank the last killed rectangle with its upper left corner at point.
+`M-x open-rectangle'     
+     Insert blank space to fill the space of the region-rectangle.
+     The previous contents of the region-rectangle are pushed rightward.
+`M-x clear-rectangle'     
+     Clear the region-rectangle by replacing its contents with spaces.
+
+  The rectangle operations fall into two classes: commands deleting and
+moving rectangles, and commands for blank rectangles.
+
+  There are two ways to delete a rectangle: you can discard its contents,
+or save them as the "last killed" rectangle.  The commands for these
+two ways are `M-x delete-rectangle' and `M-x kill-rectangle'.  In
+any case, the portion of each line that falls inside the rectangle's
+boundaries is deleted, causing following text (if any) on the line to move
+left.
+
+  Note that "killing" a rectangle is not killing in the usual sense; the
+rectangle is not stored in the kill ring, but in a special place that
+can only record the most recent rectangle killed.  This is because yanking
+a rectangle is so different from yanking linear text that different yank
+commands have to be used and yank-popping is hard to make sense of.
+
+  Inserting a rectangle is the opposite of deleting one.  All you need to
+specify is where to put the upper left corner; that is done by putting
+point there.  The rectangle's first line is inserted there, the rectangle's
+second line is inserted at a point one line vertically down, and so on.
+The number of lines affected is determined by the height of the saved
+rectangle.
+
+  To insert the last killed rectangle, type `M-x yank-rectangle'.
+
+  There are two commands for working with blank rectangles: `M-x
+clear-rectangle' to blank out existing text, and `M-x open-rectangle'
+to insert a blank rectangle.  Clearing a rectangle is equivalent to
+deleting it and then inserting as blank rectangle of the same size.
+
+  Rectangles can also be copied into and out of registers.
+*Note Rectangle Registers: RegRect.
+
+
+File: emacs  Node: Registers, Prev: Rectangles, Up: Top, Next: Display
+
+Registers
+*********
+
+  Emacs "registers" are places you can save text or positions for
+later use.  Text saved in a register can be copied into the buffer
+once or many times; a position saved in a register is used by moving
+point to that position.  Rectangles can also be copied into and out of
+registers (*Note Rectangles::).
+
+  Each register has a name, which is a single character.  It can store
+either a piece of text or a position or a rectangle; only one of the three
+at any given time.  Whatever you store in a register remains there until
+you store something else in that register.
+
+* Menu:
+
+* RegPos::    Saving positions in registers.
+* RegText::   Saving text in registers.
+* RegRect::   Saving rectangles in registers.
+
+`M-x view-register RET R'     
+     Display a description of what register R contains.
+
+  `M-x view-register' reads a register name as an argument and then
+displays the contents of the specified register.
+
+
+File: emacs  Node: RegPos, Prev: Registers, Up: Registers, Next: RegText
+
+Saving Positions in Registers
+=============================
+
+  Saving a position records a spot in a buffer so that you can move
+back there later.  Moving to a saved position reselects the buffer
+and moves point to the spot.
+
+`C-x / R'     
+     Save location of point in register R (`point-to-register').
+`C-x j R'     
+     Jump to the location saved in register R (`register-to-point').
+
+  To save the current location of point in a register, choose a name R and
+type `C-x / R'.  The register R retains the location thus saved until you
+store something else in that register.
+
+  The command `C-x j R' moves point to the location recorded
+in register R.  The register is not affected; it continues to
+record the same location.  You can jump to the same position using the
+same register any number of times.
+
+
+File: emacs  Node: RegText, Prev: RegPos, Up: Registers, Next: RegRect
+
+Saving Text in Registers
+========================
+
+  When you want to insert a copy of the same piece of text frequently, it
+may be impractical to use the kill ring, since each subsequent kill moves
+the piece of text farther down on the ring.  It becomes hard to keep track
+of what argument is needed to retrieve the same text with `C-y'.  An
+alternative is to store the text in a register with `C-x x'
+(`copy-to-register') and then retrieve it with `C-x g'
+(`insert-register').
+
+`C-x x R'     
+     Copy region into register R (`copy-to-register').
+`C-x g R'     
+     Insert text contents of register R (`insert-register').
+
+  `C-x x R' stores a copy of the text of the region into the
+register named R.  Given a numeric argument, `C-x x' deletes the
+text from the buffer as well.
+
+  `C-x g R' inserts in the buffer the text from register R.
+Normally it leaves point before the text and places the mark after, but
+with a numeric argument it puts point after the text and the mark before.
+
+
+File: emacs  Node: RegRect, Prev: RegText, Up: Registers
+
+Saving Rectangles in Registers
+==============================
+
+  A register can contain a rectangle instead of linear text.  The rectangle
+is represented as a list of strings.  *Note Rectangles::, for basic
+information on rectangles and how rectangles in the buffer are specified.
+
+`C-x r R'     
+     Copy the region-rectangle into register R (`copy-region-to-rectangle').
+     With numeric argument, delete it as well.
+`C-x g R'     
+     Insert the rectangle stored in register R (if it contains a
+     rectangle) (`insert-register').
+
+  The `C-x g' command inserts linear text if the register contains
+that, or inserts a rectangle if the register contains one.
+
+
+File: emacs  Node: Display, Prev: Registers, Up: Top, Next: Search
+
+Controlling the Display
+***********************
+
+  Since only part of a large buffer fits in the window, Emacs tries to show
+the part that is likely to be interesting.  The display control commands
+allow you to ask to see a different part of the text.  This is also known
+as "scrolling".
+
+  If a buffer contains text that is too large to fit entirely within a
+window that is displaying the buffer, Emacs shows a contiguous section of
+the text.  The section shown always contains point.  As you change the
+text, Emacs always tries to keep the same position in the text at the top
+of the window.  A new position moves to the top of the window only if this
+is necessary to keep point visible, or if you request it explicitly with a
+display control command.
+
+`C-l'     
+     Clear screen and redisplay, scrolling the selected window to center
+     point vertically within it (`recenter').
+`C-v'     
+     Scroll forward (a windowful or a specified number of lines) (`scroll-up').
+`M-v'     
+     Scroll backward (`scroll-down').
+`C-x <'     
+     Scroll text in current window to the left (`scroll-left').
+`C-x >'     
+     Scroll to the right (`scroll-right').
+`M-r'     
+     Move point to the text at a given vertical position within the window
+     (`move-to-window-line').
+`C-x $'     
+     Make deeply indented lines invisible (`set-selective-display').
+
+  The basic display control command is `C-l' (`recenter').  In its
+simplest form, with no argument, it clears the entire screen and redisplays
+all windows, scrolling the selected window so that point is halfway down
+from the top of the window.  Other windows are cleared and redisplayed, but
+not scrolled.
+
+  `C-l' with a numeric argument does not clear the screen; it does
+nothing except scroll the selected window as specified by the argument.
+With a positive argument N, it repositions text to put point N
+lines down from the top.  An argument of zero puts point on the very top
+line.  Point does not move with respect to the text; rather, the text and
+point move rigidly on the screen.  `C-l' with a negative argument puts
+point that many lines from the bottom of the window.  For example, `C-u
+- 1 C-l' puts point on the bottom line, and `C-u - 5 C-l' puts it five
+lines from the bottom.
+
+  The "scrolling" commands `C-v' and `M-v' let you move the whole display
+up or down a few lines.  `C-v' (`scroll-up') with an argument shows you
+that many more lines at the bottom of the window, moving the text and point
+up together as `C-l' might.  `C-v' with a negative argument shows you more
+lines at the top of the window.  `Meta-v' (`scroll-down') is like `C-v',
+but moves in the opposite direction.
+
+  To read the buffer a windowful at a time, use `C-v' with no argument.
+It takes the last two lines at the bottom of the window and puts them at
+the top, followed by nearly a whole windowful of lines not previously
+visible.  If point was in the text scrolled off the top, it moves to the
+new top of the window.  `M-v' with no argument moves backward with
+overlap similarly.  The number of lines of overlap across a `C-v' or
+`M-v' is controlled by the variable `next-screen-context-lines'; by
+default, it is two.
+
+  Scrolling happens automatically if point has moved out of the visible
+portion of the text when it is time to display.  Usually the scrolling is
+done so as to put point vertically centered within the window.  However, if
+the variable `scroll-step' has a nonzero value, an attempt is made to
+scroll the buffer by that many lines; if that is enough to bring point back
+into visibility, that is what is done.
+
+  The text in a window can also be scrolled horizontally.  This means that
+each line of text is shifted sideways in the window, and one or more
+characters at the beginning of each line are not displayed at all.  When a
+window has been scrolled horizontally in this way, text lines are truncated
+rather than continued (*Note Continuation Lines::), with a `$' appearing
+in the first column when there is text truncated to the left, and in the
+last column when there is text truncated to the right.
+
+  The command `C-x <' (`scroll-left') scrolls the selected window
+to the left by N columns with argument N.  With no argument, it scrolls
+by almost the full width of the window (two columns less, to be precise).
+`C-x >' (`scroll-right') scrolls similarly to the right.
+The window cannot be scrolled any farther to the right once it is
+displaying normally (with each line starting at the window's left margin);
+attempting to do so has no effect.
+
+  The commands described above all change the position of point on the
+screen, carrying the text with it.  Another command moves point the same
+way but leaves the text fixed.  It is `Meta-r' (`move-to-window-line').
+With no argument, it puts point at the beginning of the line at the center
+of the window.  An argument is used to specify the line to put point on,
+counting from the top if the argument is positive, or from the bottom if it
+is negative.  Thus, `M-0 M-r' moves point to the text at the top of the
+window.  `Meta-r' never causes any text to move on the screen; it
+causes point to move with respect to the screen and the text.
+
+* Menu:
+
+* Selective Display::  Hiding lines with lots of indentation.
+* Display Vars::       Information on variables for customizing display.
+
+
+File: emacs  Node: Selective Display, Prev: Display, Up: Display, Next: Display Vars
+
+Selective Display
+=================
+
+  Emacs has the ability to hide lines indented more than a certain number
+of columns (you specify how many columns).  You can use this to get an
+overview of a part of a program.
+
+  To hide lines, type `C-x $' (`set-selective-display') with a numeric
+argument N.  (*Note Arguments::, for how to give the argument.)  Then lines
+with at least N columns of indentation disappear from the screen.  The only
+indication of their presence is that three dots (`...') appear at the end
+of each visible line that is followed by one or more invisible ones.
+
+  The invisible lines are still present in the buffer, and most editing
+commands see them as usual, so it is very easy to put point in the middle
+of invisible text.  When this happens, the cursor appears at the end of the
+previous line, after the three dots.  If point is at the end of the visible
+line, before the newline that ends it, the cursor appears before the three
+dots.
+
+  The commands `C-n' and `C-p' move across the invisible lines as if they
+were not there.
+
+  To make everything visible again, type `C-x $' with no argument.
+
+
+File: emacs  Node: Display Vars, Prev: Selective Display, Up: Display
+
+Variables Controlling Display
+=============================
+ 
+  This section contains information for customization only.  Beginning
+users should skip it.
+
+  The variable `mode-line-inverse-video' controls whether the mode
+line is displayed in inverse video (assuming the terminal supports it);
+`nil' means don't do so.  *Note Mode Line::.
+
+  If the variable `inverse-video' is non-`nil', Emacs attempts
+to invert all the lines of the display from what they normally are.
+
+If the variable `visible-bell' is non-`nil', Emacs attempts to make the
+whole screen blink when it would normally make an audible bell sound.  This
+variable has no effect if your terminal does not have a way to make the
+screen blink.
+
+The variable `echo-keystrokes' controls the echoing of multi-character
+keys; its value is the number of seconds of pause required to cause echoing
+to start, or zero meaning don't echo at all.  *Note Echo Area::.
+
+If the variable `ctl-arrow' is `nil', control characters in the buffer
+are displayed with octal escape sequences, all except newline and tab.
+This variable has a separate value in each buffer; in new buffers, its
+value is initialized from the variable `default-ctl-arrow'.
+
+  Normally, a tab character in the buffer is displayed as whitespace which
+extends to the next display tab stop position, and display tab stops come
+at intervals equal to eight spaces.  The number of spaces per tab is
+controlled by the variable `tab-width', which is local to every
+buffer just like `ctl-arrow' and gets its value in a new buffer from
+`default-tab-width'.  Note that how the tab character in the buffer is
+displayed has nothing to do with the definition of TAB as a command.
+
+
+File: emacs  Node: Search, Prev: Display, Up: Top, Next: Fixit
+
+Searching and Replacement
+*************************
+
+  Like other editors, Emacs has commands for searching for occurrences of
+a string.  The principal search command is unusual in that it is
+"incremental"; it begins to search before you have finished typing the
+search string.  There are also nonincremental search commands more like
+those of other editors.
+
+  Besides the usual `replace-string' command that finds all
+occurrences of one string and replaces them with another, Emacs has a fancy
+replacement command called `query-replace' which asks interactively
+which occurrences to replace.
+
+* Menu:
+
+* Incremental Search::     Search happens as you type the string.
+* Nonincremental Search::  Specify entire string and then search.
+* Word Search::            Search for sequence of words.
+* Regexp Search::          Search for match for a regexp.
+* Regexps::                Syntax of regular expressions.
+* Search Case::            To ignore case while searching, or not.
+* Replace::                Search, and replace some or all matches.
+* Other Repeating Search:: Operating on all matches for some regexp.
+
+
+File: emacs  Node: Incremental Search, Prev: Search, Up: Search, Next: Nonincremental Search
+
+Incremental Search
+==================
+
+  An incremental search begins searching as soon as you type the first
+character of the search string.  As you type in the search string, Emacs
+shows you where the string (as you have typed it so far) would be found.
+When you have typed enough characters to identify the place you want, you
+can stop.  Depending on what you will do next, you may or may not need to
+terminate the search explicitly with an ESC first.
+
+`C-s'     
+     Incremental search forward (`isearch-forward').
+`C-r'     
+     Incremental search backward (`isearch-backward').
+
+  `C-s' starts an incremental search.  `C-s' reads characters from the
+keyboard and positions the cursor at the first occurrence of the characters
+that you have typed.  If you type `C-s' and then `F', the cursor moves
+right after the first `F'.  Type an `O', and see the cursor move to after
+the first `FO'.  After another `O', the cursor is after the first `FOO'
+after the place where you started the search.  Meanwhile, the search string
+`FOO' has been echoed in the echo area.
+
+  The echo area display ends with three dots when actual searching is going
+on.  When search is waiting for more input, the three dots are removed.
+(On slow terminals, the three dots are not displayed.)
+
+  If you make a mistake in typing the search string, you can erase
+characters with DEL.  Each DEL cancels the last character of search string.
+This does not happen until Emacs is ready to read another input character;
+first it must either find, or fail to find, the character you want to
+erase.  If you do not want to wait for this to happen, use `C-g' as
+described below.
+
+  When you are satisfied with the place you have reached, you can type
+ESC, which stops searching, leaving the cursor where the search
+brought it.  Also, any command not specially meaningful in searches stops
+the searching and is then executed.  Thus, typing `C-a' would exit the
+search and then move to the beginning of the line.  ESC is necessary
+only if the next command you want to type is a printing character,
+DEL, ESC, or another control character that is special within
+searches (`C-q', `C-w', `C-r', `C-s' or `C-k').
+
+  Sometimes you search for `FOO' and find it, but not the one you
+expected to find.  There was a second `FOO' that you forgot about,
+before the one you were looking for.  In this event, type another `C-s'
+to move to the next occurrence of the search string.  This can be done any
+number of times.  If you overshoot, you can cancel some `C-s'
+characters with DEL.
+
+  After you exit a search, you can search for the same string again by
+typing just `C-s C-s': the first `C-s' is the key that invokes
+incremental search, and the second `C-s' means "search again".
+
+  If your string is not found at all, the echo area says `Failing
+I-Search'.  The cursor is after the place where Emacs found as much of your
+string as it could.  Thus, if you search for `FOOT', and there is no
+`FOOT', you might see the cursor after the `FOO' in `FOOL'.
+At this point there are several things you can do.  If your string was
+mistyped, you can rub some of it out and correct it.  If you like the place
+you have found, you can type ESC or some other Emacs command to
+"accept what the search offered".  Or you can type `C-g', which
+removes from the search string the characters that could not be found (the
+`T' in `FOOT'), leaving those that were found (the `FOO' in
+`FOOT').  A second `C-g' at that point cancels the search
+entirely, returning point to where it was when the search started.
+
+  The `C-g' "quit" character does special things during searches;
+just what it does depends on the status of the search.  If the search has
+found what you specified and is waiting for input, `C-g' cancels the
+entire search.  The cursor moves back to where you started the search.  If
+`C-g' is typed when there are characters in the search string that have
+not been found---because Emacs is still searching for them, or because it
+has failed to find them---then the search string characters which have not
+been found are discarded from the search string.  With them gone, the
+search is now successful and waiting for more input, so a second `C-g'
+will cancel the entire search.
+
+  To search for a control character such as `C-s' or DEL or ESC,
+you must quote it by typing `C-q' first.  This function of `C-q' is
+analogous to its meaning as an Emacs command: it causes the following
+character to be treated the way a graphic character would normally be
+treated in the same context.
+
+  You can change to searching backwards with `C-r'.  If a search fails
+because the place you started was too late in the file, you should do this.
+Repeated `C-r' keeps looking for more occurrences backwards.  A
+`C-s' starts going forwards again.  `C-r' in a search can be cancelled
+with DEL.
+
+  If you know initially that you want to search backwards, you can
+use `C-r' instead of `C-s' to start the search, because `C-r'
+is also a key running a command (`isearch-reverse') to search
+backward.
+
+  The characters `C-y' and `C-w' can be used in incremental search
+to grab text from the buffer into the search string.  This makes it
+convenient to search for another occurrence of text at point.  `C-w'
+copies the word after point as part of the search string, advancing
+point over that word.  Another `C-s' to repeat the search will then
+search for a string including that word.  `C-y' is similar to `C-w'
+but copies all the rest of the current line into the search string.
+
+  All the characters special in incremental search can be changed by setting
+the following variables:
+
+`search-delete-char'     
+     Character to delete from incremental search string (normally DEL).
+`search-exit-char'     
+     Character to exit incremental search (normally ESC).
+`search-quote-char'     
+     Character to quote special characters for incremental search (normally
+     `C-q').
+`search-repeat-char'     
+     Character to repeat incremental search forwards (normally `C-s').
+`search-reverse-char'     
+     Character to repeat incremental search backwards (normally `C-r').
+`search-yank-line-char'     
+     Character to pull rest of line from buffer into search string
+     (normally `C-y').
+`search-yank-word-char'     
+     Character to pull next word from buffer into search string (normally
+     `C-w').
+
+
+Slow Terminal Incremental Search
+--------------------------------
+
+  Incremental search on a slow terminal uses a modified style of display
+that is designed to take less time.  Instead of redisplaying the buffer at
+each place the search gets to, it creates a new single-line window and uses
+that to display the line that the search has found.  The single-line window
+comes into play as soon as point gets outside of the text that is already
+on the screen.
+
+  When the search is terminated, the single-line window is removed.  Only
+at this time is the window in which the search was done redisplayed to show
+its new value of point.
+
+  The three dots at the end of the search string, normally used to indicate
+that searching is going on, are not displayed in slow style display.
+
+  The slow terminal style of display is used when the terminal baud rate is
+less than or equal to the value of the variable `isearch-slow-speed',
+initially 1200.
+
+
+File: emacs  Node: Nonincremental Search, Prev: Incremental Search, Up: Search, Next: Word Search
+
+Nonincremental Search
+=====================
+
+  Emacs also has conventional nonincremental search commands, which require
+you to type the entire search string before searching begins.
+
+`C-s ESC STRING RET'     
+     Search for STRING.
+`C-r ESC STRING RET'     
+     Search backward for STRING.
+
+  To do a nonincremental search, first type `C-s ESC'.  This
+enters the minibuffer to read the search string; terminate the string with
+RET, and then the search is done.  If the string is not found the
+search command gets an error.
+
+  The way `C-s ESC' works is that the `C-s' invokes
+incremental search, which is specially programmed to invoke nonincremental
+search if the argument you give it is empty.  (Such an empty argument would
+otherwise be useless.)  `C-r ESC' also works this way.
+
+  Forward and backward nonincremental searches are implemented by the
+commands `search-forward' and `search-backward'.  These commands
+may be bound to keys in the usual manner.  The reason that they are reached
+by special-case code in incremental search is because `C-s ESC'
+is the traditional sequence of characters used in Emacs to invoke
+nonincremental search.
+
+  However, nonincremental searches performed using `C-s ESC' do
+not call `search-forward' right away.  The first thing done is to see
+if the next character is `C-w', which requests a word search.
+
+*Note Word Search::.
+
+
+File: emacs  Node: Word Search, Prev: Nonincremental Search, Up: Search, Next: Regexp Search
+
+Word Search
+===========
+
+  Word search searches for a sequence of words without regard to how the
+words are separated.  More precisely, you type a string of many words,
+using single spaces to separate them, and the string can be found even if
+there are multiple spaces, newlines or other punctuation between the words.
+
+  Word search is useful in editing documents formatted by text formatters.
+If you edit while looking at the printed, formatted version, you can't tell
+where the line breaks are in the source file.  With word search, you can
+search without having to know them.
+
+`C-s ESC C-w WORDS RET'     
+     Search for WORDS, ignoring differences in punctuation.
+`C-r ESC C-w WORDS RET'     
+     Search backward for WORDS, ignoring differences in punctuation.
+
+  Word search is a special case of nonincremental search and is invoked
+with `C-s ESC C-w'.  This is followed by the search string, which
+must always be terminated with RET.  Being nonincremental, this
+search does not start until the argument is terminated.  It works by
+constructing a regular expression and searching for that.  *Note Regexp Search::.
+
+  A backward word search can be done by `C-r ESC C-w'.
+
+  Forward and backward word searches are implemented by the commands
+`word-search-forward' and `word-search-backward'.  These commands
+may be bound to keys in the usual manner.  The reason that they are reached
+by special-case code in incremental and nonincremental search is because
+`C-s ESC C-w' is the traditional Emacs sequence of keys to use to
+do a word search.
+
+
+File: emacs  Node: Regexp Search, Prev: Word Search, Up: Search, Next: Regexps
+
+Regular Expression Search
+=========================
+
+  A "regular expression" ("regexp", for short) is a pattern that
+denotes a set of strings, possibly an infinite set.  Searching for matches
+for a regexp is a very powerful operation that editors on Unix systems have
+traditionally offered.  In GNU Emacs, you can search for the next match for
+a regexp either incrementally or not.
+
+  Incremental search for a regexp is done by typing `C-M-s'
+(`isearch-forward-regexp').  This command reads a search string
+incrementally just like `C-s', but it treats the search string as a
+regexp rather than looking for an exact match against the text in the
+buffer.  Each time you add text to the search string, you make the regexp
+longer, and the new regexp is searched for.
+
+  Note that adding characters to the regexp in an incremental regexp search
+does not make the cursor move back and start again.  Perhaps it ought to; I
+am not sure.  As it stands, if you have searched for `foo' and you
+add `\|bar', the search will not check for a `bar' in the
+buffer before the `foo'.
+
+  Nonincremental search for a regexp is done by the functions
+`re-search-forward' and `re-search-backward'.  You can invoke
+these with `M-x', or bind them to keys.  Also, you can call
+`re-search-forward' by way of incremental regexp search with
+`C-M-s ESC'.
+
+
+File: emacs  Node: Regexps, Prev: Regexp Search, Up: Search, Next: Search Case
+
+Syntax of Regular Expressions
+=============================
+
+Regular expressions have a syntax in which a few characters are special
+constructs and the rest are "ordinary".  An ordinary character is a simple
+regular expression which matches that character and nothing else.  The
+special characters are `$', `^', `.', `*', `+', `?', `[', `]' and `\'.  Any
+other character appearing in a regular expression

@@ -1,0 +1,94 @@
+GNU Emacs NEWS -- history of user-visible changes.  12-December-1985
+Copyright (C) 1985 Richard M. Stallman.
+See the end for copying conditions.
+
+Changes in Emacs 17
+
+* Frustrated?
+
+Try M-x doctor.
+
+* Bored?
+
+Try M-x hanoi.
+
+* Brain-damaged?
+
+Try M-x yow.
+
+* Sun3, Tahoe, Apollo, HP9000s300, Stride and Nu machines supported.
+
+The Tahoe uses 4.2; Emacs on that machine is just as on all others.
+In regard to the Apollo, see the file APOLLO in this directory.
+HP9000s300, Stride and Nu run forms of System V.
+
+* System V Unix supported, including subprocesses.
+
+It should be possible now to bring up Emacs on a machine running
+mere unameliorated system V Unix with no major work; just possible bug
+fixes.  But you can expect to find a handful of those on any machine
+that Emacs has not been run on before.
+
+* Berkeley 4.1 Unix supported -- perhaps.
+
+There are now conditionals in Emacs for this system.  The changes
+came from someone who ran Emacs on a 4.1 system, but I have had
+to change them since, so they will need fixing up.
+
+
+* Portable `alloca' provided.
+
+Emacs can now run on machines that do not and cannot support the library
+subroutine `alloca' in the canonical fashion, using an `alloca' emulation
+written in C.
+
+* On-line manual.
+
+Info now contains an Emacs manual, with essentially the same text
+as in the printed manual.
+
+The manual can now be printed with a standard TeX.
+
+Nicely typeset and printed copies of the manual will be available
+from the Free Software Foundation.
+
+* Backup file version numbers.
+
+Emacs now supports version numbers in backup files.
+
+The first time you save a particular file in one editing session,
+the old file is copied or renamed to serve as a backup file.
+In the past, the name for the backup file was made by appending `~'
+to the end of the original file name.
+
+Now the backup file name can instead be made by appending ".~NN~" to
+the original file name, where NN stands for a numeric version.  Each
+time this is done, the new version number is one higher than the
+highest previously used.
+
+Thus, the active, current file does not have a version number.
+Only the backups have them.
+
+This feature is controlled by the variable `version-control'.  If it
+is `nil', as normally, then numbered backups are made only for files
+that already have numbered backups.  Backup names with just `~' are
+used for files that have no numbered backups.
+
+If `version-control' is `never', then the backup file's name is
+made with just `~' in any case.
+
+If `version-control' is not `nil' or `never', numbered backups are
+made unconditionally.
+
+To prevent unlimited consumption of disk space, Emacs can delete
+old backup versions automatically.  Generally Emacs keeps the first
+few backups and the latest few backups, deleting any in between.
+This happens every time a new backup is made.  The two variables that
+control the deletion are `kept-old-versions' and `kept-new-versions'.
+Their values are, respectively, the number of oldest backups to keep
+and the number of newest ones to keep, each time a new backup is made.
+The value of `kept-new-versions' includes the backup just created.
+By default, both values are 2.
+
+If `trim-versions-without-asking' is non-`nil', the excess middle versions
+are deleted with

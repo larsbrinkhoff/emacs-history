@@ -1,0 +1,116 @@
+EMACS_UTILS:TEMACS.EXE                                          19-MAR-1986 18:30        VAX-11 Linker V04-00             Page    1
+
+                                             +------------------------+
+                                             ! Object Module Synopsis !
+                                             +------------------------+
+
+Module Name     Ident              Bytes      File                                Creation Date      Creator
+-----------     -----              -----      -----                               -------------      -------
+$$$$FIRSTFILE   V1.0                  557 [GNUEMACS.SRC]$$$$FIRSTFILE.OBJ;1    18-MAR-1986 17:42  VAX C      V2.1-007
+ABBREV          V1.0                 6583 DISK1:[GNUEMACS.SRC]ABBREV.OBJ;1     18-MAR-1986 17:42  VAX C      V2.1-007
+ALLOC           V1.0               188721 DISK1:[GNUEMACS.SRC]ALLOC.OBJ;1      18-MAR-1986 17:43  VAX C      V2.1-007
+ALLOCA          V1.0                  109 DISK1:[GNUEMACS.SRC]ALLOCA.OBJ;1     18-MAR-1986 17:44  VAX C      V2.1-007
+BUFFER          V1.0                15179 DISK1:[GNUEMACS.SRC]BUFFER.OBJ;1     18-MAR-1986 17:44  VAX C      V2.1-007
+BYTECODE        V1.0                 4792 DISK1:[GNUEMACS.SRC]BYTECODE.OBJ;1   18-MAR-1986 17:45  VAX C      V2.1-007
+CALLINT         V1.0                 4786 DISK1:[GNUEMACS.SRC]CALLINT.OBJ;1    18-MAR-1986 17:46  VAX C      V2.1-007
+CASEFIDDLE      V1.0                 3915 DISK1:[GNUEMACS.SRC]CASEFIDDLE.OBJ;1 18-MAR-1986 17:47  VAX C      V2.1-007
+CM              V1.0                 1975 DISK1:[GNUEMACS.SRC]CM.OBJ;1         18-MAR-1986 17:47  VAX C      V2.1-007
+CMDS            V1.0                 5087 DISK1:[GNUEMACS.SRC]CMDS.OBJ;1       18-MAR-1986 17:47  VAX C      V2.1-007
+DATA            V1.0                17514 DISK1:[GNUEMACS.SRC]DATA.OBJ;1       18-MAR-1986 17:48  VAX C      V2.1-007
+DIRED           V1.0                 3091 DISK1:[GNUEMACS.SRC]DIRED.OBJ;1      18-MAR-1986 17:50  VAX C      V2.1-007
+DISPNEW         V1.0                12774 DISK1:[GNUEMACS.SRC]DISPNEW.OBJ;1    18-MAR-1986 17:50  VAX C      V2.1-007
+DOC             V1.0                 2693 DISK1:[GNUEMACS.SRC]DOC.OBJ;1        18-MAR-1986 17:51  VAX C      V2.1-007
+DOPRNT          V1.0                  418 DISK1:[GNUEMACS.SRC]DOPRNT.OBJ;1     18-MAR-1986 17:52  VAX C      V2.1-007
+EDITFNS         V1.0                11594 DISK1:[GNUEMACS.SRC]EDITFNS.OBJ;1    18-MAR-1986 17:52  VAX C      V2.1-007
+EMACS           V1.0                 2800 DISK1:[GNUEMACS.SRC]EMACS.OBJ;1      18-MAR-1986 17:53  VAX C      V2.1-007
+EVAL            V1.0                22919 DISK1:[GNUEMACS.SRC]EVAL.OBJ;1       18-MAR-1986 17:53  VAX C      V2.1-007
+FILEIO          V1.0                12939 DISK1:[GNUEMACS.SRC]FILEIO.OBJ;1     18-MAR-1986 17:55  VAX C      V2.1-007
+FILEMODE        V1.0                  262 DISK1:[GNUEMACS.SRC]FILEMODE.OBJ;1   18-MAR-1986 17:56  VAX C      V2.1-007
+FNS             V1.0                13349 DISK1:[GNUEMACS.SRC]FNS.OBJ;1        18-MAR-1986 17:56  VAX C      V2.1-007
+INDENT          V1.0                 6949 DISK1:[GNUEMACS.SRC]INDENT.OBJ;1     18-MAR-1986 17:58  VAX C      V2.1-007
+INSDEL          V1.0                 1639 DISK1:[GNUEMACS.SRC]INSDEL.OBJ;1     18-MAR-1986 17:59  VAX C      V2.1-007
+KEYBOARD        V1.0                14616 DISK1:[GNUEMACS.SRC]KEYBOARD.OBJ;1   18-MAR-1986 17:59  VAX C      V2.1-007
+KEYMAP          V1.0                13047 DISK1:[GNUEMACS.SRC]KEYMAP.OBJ;1     18-MAR-1986 18:00  VAX C      V2.1-007
+LREAD           V1.0                10574 DISK1:[GNUEMACS.SRC]LREAD.OBJ;1      18-MAR-1986 18:02  VAX C      V2.1-007
+MACROS          V1.0                 3980 DISK1:[GNUEMACS.SRC]MACROS.OBJ;1     18-MAR-1986 18:03  VAX C      V2.1-007
+MALLOC          V1.0                  968 DISK1:[GNUEMACS.SRC]MALLOC.OBJ;1     18-MAR-1986 18:04  VAX C      V2.1-007
+MARKER          V1.0                 2139 DISK1:[GNUEMACS.SRC]MARKER.OBJ;1     18-MAR-1986 18:04  VAX C      V2.1-007
+MINIBUF         V1.0                12427 DISK1:[GNUEMACS.SRC]MINIBUF.OBJ;1    18-MAR-1986 18:04  VAX C      V2.1-007
+MOCKLISP        V1.0                 2382 DISK1:[GNUEMACS.SRC]MOCKLISP.OBJ;1   18-MAR-1986 18:05  VAX C      V2.1-007
+PRINT           V1.0                 8042 DISK1:[GNUEMACS.SRC]PRINT.OBJ;1      18-MAR-1986 18:06  VAX C      V2.1-007
+REGEX           V1.0                 6681 DISK1:[GNUEMACS.SRC]REGEX.OBJ;1      18-MAR-1986 18:06  VAX C      V2.1-007
+SCROLL          V1.0                11120 DISK1:[GNUEMACS.SRC]SCROLL.OBJ;1     18-MAR-1986 18:08  VAX C      V2.1-007
+SEARCH          V1.0                13373 DISK1:[GNUEMACS.SRC]SEARCH.OBJ;1     18-MAR-1986 18:08  VAX C      V2.1-007
+SYNTAX          V1.0                10378 DISK1:[GNUEMACS.SRC]SYNTAX.OBJ;1     18-MAR-1986 18:09  VAX C      V2.1-007
+SYSDEP          V1.0                 6604 DISK1:[GNUEMACS.SRC]SYSDEP.OBJ;1     18-MAR-1986 18:11  VAX C      V2.1-007
+TERM            V1.0                10619 DISK1:[GNUEMACS.SRC]TERM.OBJ;1       18-MAR-1986 18:12  VAX C      V2.1-007
+TERMCAP         V1.0                 1764 DISK1:[GNUEMACS.SRC]TERMCAP.OBJ;1    18-MAR-1986 18:13  VAX C      V2.1-007
+TPARAM          V1.0                  759 DISK1:[GNUEMACS.SRC]TPARAM.OBJ;1     18-MAR-1986 18:14  VAX C      V2.1-007
+UNDO            V1.0                 3590 DISK1:[GNUEMACS.SRC]UNDO.OBJ;1       18-MAR-1986 18:14  VAX C      V2.1-007
+VMSMAP          V1.0                 1766 DISK1:[GNUEMACS.SRC]VMSMAP.OBJ;1     18-MAR-1986 18:15  VAX C      V2.1-007
+VMSFNS          V1.0                 5377 DISK1:[GNUEMACS.SRC]VMSFNS.OBJ;1     18-MAR-1986 18:15  VAX C      V2.1-007
+WINDOW          V1.0                19265 DISK1:[GNUEMACS.SRC]WINDOW.OBJ;1     18-MAR-1986 18:16  VAX C      V2.1-007
+XDISP           V1.0                13972 DISK1:[GNUEMACS.SRC]XDISP.OBJ;1      18-MAR-1986 18:18  VAX C      V2.1-007
+VAXCRTL         V04-005                 0 SYS$SYSROOT:[SYSLIB]VAXCRTL.EXE;3    11-OCT-1985 14:03  VAX-11 Linker V04-00
+FORRTL          V04-000                 0 SYS$SYSROOT:[SYSLIB]FORRTL.EXE;3     23-JUN-1985 05:40  VAX-11 Linker V04-00
+LIBRTL          V04-000                 0 SYS$SYSROOT:[SYSLIB]LIBRTL.EXE;3     23-JUN-1985 05:31  VAX-11 Linker V04-00
+MTHRTL          V04-001                 0 SYS$SYSROOT:[SYSLIB]MTHRTL.EXE;1      8-MAR-1985 16:00  VAX-11 Linker V04-00
+
+
+Module Name     Ident              Bytes      File                                Creation Date      Creator
+-----------     -----              -----      -----                               -------------      -------
+SMGSHR          V04-000                 0 SYS$SYSROOT:[SYSLIB]SMGSHR.EXE;1     23-JUN-1985 05:41  VAX-11 Linker V04-00
+
+                                                 +----------------+
+                                                 ! Image Synopsis !
+                                                 +----------------+
+
+Virtual memory allocated:                         00000200 00074FFF 00074E00 (478720. bytes, 935. pages)
+Stack size:                                             20. pages
+Image header virtual block limits:                       1.        1. (    1. block)
+Image binary virtual block limits:                       2.      561. (  560. blocks)
+Image name and identification:                    TEMACS V1.0
+Number of files:                                        55.
+Number of modules:                                      51.
+Number of program sections:                            907.
+Number of global symbols:                             2002.
+Number of image sections:                               27.
+User transfer address:                            00056F1C
+Debugger transfer address:                        7FFEDF68
+Number of address fixups:                                1.
+Number of code references to shareable images:          62.
+Image type:                                       EXECUTABLE.
+Map format:                                       DEFAULT in file DISK1:[GNUEMACS]EMACS.MAP;5
+Estimated map length:                             1051. blocks
+                                              +---------------------+
+                                              ! Link Run Statistics !
+                                              +---------------------+
+
+Performance Indicators                            Page Faults	CPU Time	Elapsed Time
+----------------------                            -----------	--------	------------
+    Command processing:                                   254	00:00:04.83	00:00:08.36
+    Pass 1:                                               953	00:00:17.11	00:00:44.47
+    Allocation/Relocation:                                136	00:00:01.90	00:00:06.87
+    Pass 2:                                              1572	00:00:29.35	00:01:00.88
+    Map data after object module synopsis:                704	00:00:19.61	00:00:35.14
+    Symbol table output:                                   25	00:00:00.05	00:00:00.30
+Total run values:                                        3644	00:01:12.85	00:02:36.02
+
+Using a working set limited to 621 pages and 3232 pages of data storage (excluding image)
+
+Total number object records read (both passes):   7271
+    of which 19 were in libraries and 2343 were DEBUG data records containing 420753 bytes
+55857 bytes of DEBUG data were written,starting at VBN 562 with 110 blocks allocated
+
+Number of modules extracted explicitly             = 0
+    with 1 extracted to resolve undefined symbols
+
+54 library searches were for symbols not in the library searched
+
+A total of 0 global symbol table records was written
+
+LINK/NODEBUG/MAP=EMACS_UTILS:EMACS.MAP/EXE=EMACS_UTILS:TEMACS.EXE $$$$FIRSTFILE.OBJ,ABBREV.OBJ,ALLOC.OBJ,ALLOCA.OBJ,BUFFER.OBJ,BYTEC
+ODE.OBJ,CALLINT.OBJ,CASEFIDDLE.OBJ,CM.OBJ,CMDS.OBJ,DATA.OBJ,DIRED.OBJ,DISPNEW.OBJ,DOC.OBJ,DOPRNT.OBJ,EDITFNS.OBJ,EMACS.OBJ,EVAL.OBJ,
+FILEIO.OBJ,FILEMODE.OBJ,FNS.OBJ,INDENT.OBJ,INSDEL.OBJ,KEYBOARD.OBJ,KEYMAP.OBJ,LREAD.OBJ,MACROS.OBJ,MALLOC.OBJ,MARKER.OBJ,MINIBUF.OBJ
+,MOCKLISP.OBJ,PRINT.OBJ,REGEX.OBJ,SCROLL.OBJ,SEARCH.OBJ,SYNTAX.OBJ,SYSDEP.OBJ,TERM.OBJ,TERMCAP.OBJ,TPARAM.OBJ,UNDO.OBJ,VMSMAP.OBJ,VM
+SFNS.OBJ,WINDOW.OBJ,XDISP.OBJ

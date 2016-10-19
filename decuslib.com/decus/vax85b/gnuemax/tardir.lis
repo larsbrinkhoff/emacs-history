@@ -1,0 +1,535 @@
+
+./                                                               -> .                    ASCII       0
+./EM.C                                                           -> EM.C                 ASCII      97
+./JOVE/                                                          -> .                    ASCII       0
+./JOVE/MAKEFILE                                                  -> MAKEFILE             ASCII       6
+./JOVE/FINDCOM.C                                                 -> FINDCOM.C            ASCII       2
+./JOVE/FUNC_DEFS.C                                               -> FUNC0DEFS.C          ASCII      28
+./JOVE/GLOB.C                                                    -> GLOB.C               ASCII      20
+./JOVE/SETMAPS.C                                                 -> SETMAPS.C            ASCII       4
+./JOVE/PORTSRV.C                                                 -> PORTSRV.C            ASCII       6
+./JOVE/KEYMAPS.TXT                                               -> KEYMAPS.TXT          ASCII      29
+./JOVE/MALLOC.C                                                  -> MALLOC.C             ASCII       9
+./JOVE/JOVE.H                                                    -> JOVE.H               ASCII      23
+./JOVE/JOVE_TEMP.H                                               -> JOVE0TEMP.H          ASCII       3
+./JOVE/JOVE_TUNE.H                                               -> JOVE0TUNE.H          ASCII       6
+./JOVE/TERMCAP.H                                                 -> TERMCAP.H            ASCII       2
+./JOVE/JOVE_ASK.C                                                -> JOVE0ASK.C           ASCII       7
+./JOVE/JOVE_BUF.C                                                -> JOVE0BUF.C           ASCII      23
+./JOVE/JOVE_C.C                                                  -> JOVE0C.C             ASCII       6
+./JOVE/JOVE_DELETE.C                                             -> JOVE0DELE            ASCII      13
+./JOVE/DOC/                                                      -> .                    ASCII       0
+./JOVE/DOC/JOVE.MAN                                              -> JOVE.MAN             ASCII      91
+./JOVE/DOC/TEACH.JOVE                                            -> TEACH.JOV            ASCII      49
+./JOVE/DOC/DESCRIBE.COM                                          -> DESCRIBE.COM         ASCII      55
+./JOVE/JOVE_DISP.C                                               -> JOVE0DISP.C          ASCII      32
+./JOVE/JOVE_DRAW.C                                               -> JOVE0DRAW.C          ASCII      20
+./JOVE/JOVE_EXTEND.C                                             -> JOVE0EXTE            ASCII      33
+./JOVE/JOVE_FUNCS.C                                              -> JOVE0FUNC            ASCII      26
+./JOVE/JOVE_INSERT.C                                             -> JOVE0INSE            ASCII      29
+./JOVE/JOVE_IO.C                                                 -> JOVE0IO.C            ASCII      33
+./JOVE/JOVE_IPROC.C                                              -> JOVE0IPRO            ASCII      24
+./JOVE/JOVE_PROC.C                                               -> JOVE0PROC.C          ASCII      31
+./JOVE/JOVE_RE.C                                                 -> JOVE0RE.C            ASCII      39
+./JOVE/JOVE_SCREEN.C                                             -> JOVE0SCRE            ASCII      30
+./JOVE/JOVE_TERM.C                                               -> JOVE0TERM.C          ASCII       9
+./JOVE/JOVE.BLURB                                                -> JOVE.BLU             ASCII       3
+./JOVE/JOVE_MAIN.C                                               -> JOVE0MAIN.C          ASCII      25
+./JOVE/JOVE_MARKS.C                                              -> JOVE0MARK            ASCII       9
+./JOVE/JOVE_MISC.C                                               -> JOVE0MISC.C          ASCII      23
+./JOVE/JOVE_MOVE.C                                               -> JOVE0MOVE.C          ASCII       6
+./JOVE/JOVE_UTIL.C                                               -> JOVE0UTIL.C          ASCII      19
+./JOVE/JOVE_WIND.C                                               -> JOVE0WIND.C          ASCII      17
+./SCAME/                                                         -> .                    ASCII       0
+./SCAME/BUGFIX.3                                                 -> BUGFIX.3             ASCII      13
+./SCAME/BUGFIX.4                                                 -> BUGFIX.4             ASCII       5
+./SCAME/MAIN.C.ORIG                                              -> MAIN2C.ORI           ASCII      13
+./SCAME/README                                                   -> README               ASCII      10
+./SCAME/MAKEFILE                                                 -> MAKEFILE             ASCII       2
+./SCAME/LIB/                                                     -> .                    ASCII       0
+./SCAME/LIB/TUT2                                                 -> TUT2                 ASCII      20
+./SCAME/LIB/HELPMENU                                             -> HELPMENU             ASCII       1
+./SCAME/LIB/CHANGEDFILE                                          -> CHANGEDFI            ASCII       1
+./SCAME/LIB/QUERYREP                                             -> QUERYREP             ASCII       1
+./SCAME/LIB/BASIC                                                -> BASIC                ASCII       2
+./SCAME/LIB/INSTRING                                             -> INSTRING             ASCII       1
+./SCAME/LIB/TUT1                                                 -> TUT1                 ASCII      30
+./SCAME/LIB/SUMMARY                                              -> SUMMARY              ASCII      11
+./SCAME/LIB/APROPOSLIST                                          -> APROPOSLI            ASCII       9
+./SCAME/LIB/NEWS                                                 -> NEWS                 ASCII       1
+./SCAME/TMP/                                                     -> .                    ASCII       0
+./SCAME/SCAME.1                                                  -> SCAME.1              ASCII      17
+./SCAME/BUGFIX.1                                                 -> BUGFIX.1             ASCII      12
+./SCAME/BUGFIX.2                                                 -> BUGFIX.2             ASCII      12
+./SCAME/MAKEFILE,V                                               -> MAKEFILE3            ASCII       3
+./SCAME/README,V                                                 -> README3V             ASCII      10
+./SCAME/K_FUNCS.H,V                                              -> K0FUNCS.H3V          ASCII       5
+./SCAME/CONFIG.SAMPLE,V                                          -> CONFIG.SAM           ASCII       3
+./SCAME/SCAME.H,V                                                -> SCAME.H3V            ASCII      14
+./SCAME/DISPTAB.C,V                                              -> DISPTAB.C3V          ASCII      39
+./SCAME/FILES.C,V                                                -> FILES.C3V            ASCII      10
+./SCAME/HELP.C,V                                                 -> HELP.C3V             ASCII       7
+./SCAME/IO.C,V                                                   -> IO.C3V               ASCII      35
+./SCAME/K_FUNCS.C,V                                              -> K0FUNCS.C3V          ASCII      21
+./SCAME/MACRO.C,V                                                -> MACRO.C3V            ASCII       3
+./SCAME/MAIN.C,V                                                 -> MAIN.C3V             ASCII      15
+./SCAME/SCAME0.C,V                                               -> SCAME0.C3V           ASCII      46
+./SCAME/SCAME-REAPER.C,V                                         -> SCAME3REA            ASCII       5
+./SCAME/SCAME1.C,V                                               -> SCAME1.C3V           ASCII      25
+./SCAME/SCAME2.C,V                                               -> SCAME2.C3V           ASCII      22
+./SCAME/SCREEN.C,V                                               -> SCREEN.C3V           ASCII      12
+./SCAME/SEARCH.C,V                                               -> SEARCH.C3V           ASCII      14
+./SCAME/STRINGS.C,V                                              -> STRINGS.C3V          ASCII       6
+./SCAME/VARS.C,V                                                 -> VARS.C3V             ASCII       7
+./SCAME/X_FUNCS.C,V                                              -> X0FUNCS.C3V          ASCII       9
+./SCAME/SCAME.1,V                                                -> SCAME.13V            ASCII      18
+./SCAME/BUGS,V                                                   -> BUGS3V               ASCII       2
+./TECO/                                                          -> .                    ASCII       0
+./TECO/INSTRUCTIONS                                              -> INSTRUCTI            ASCII       3
+./TECO/TECO.1                                                    -> TECO.1               ASCII       7
+./TECO/REF.F                                                     -> REF.F                ASCII      39
+./TECO/TECO.M11                                                  -> TECO.M11             ASCII     164
+./TECO/TECOIO.M11                                                -> TECOIO.M11           ASCII      54
+./README.SJU                                                     -> README.SJU           ASCII       1
+./EMACS/                                                         -> .                    ASCII       0
+./EMACS/GNUEMACS.BUGS                                            -> GNUEMACS.BUG         ASCII       1
+./EMACS/INSTALL                                                  -> INSTALL              ASCII      15
+./EMACS/README                                                   -> README               ASCII       2
+./EMACS/TO_DO                                                    -> TO0DO                ASCII       4
+./EMACS/DBX/                                                     -> .                    ASCII       0
+./EMACS/DBX/MAKEFILE                                             -> MAKEFILE             ASCII       7
+./EMACS/DBX/READ_ME                                              -> READ0ME              ASCII       1
+./EMACS/DBX/TO_DO                                                -> TO0DO                ASCII       1
+./EMACS/DBX/ASM.C                                                -> ASM.C                ASCII       4
+./EMACS/DBX/ASM.H                                                -> ASM.H                ASCII       1
+./EMACS/DBX/C.C                                                  -> C.C                  ASCII      28
+./EMACS/DBX/C.H                                                  -> C.H                  ASCII       1
+./EMACS/DBX/CERROR.S                                             -> CERROR.S             ASCII       2
+./EMACS/DBX/CHECK.C                                              -> CHECK.C              ASCII       7
+./EMACS/DBX/CHECK.H                                              -> CHECK.H              ASCII       1
+./EMACS/DBX/COMMANDS.Y                                           -> COMMANDS.Y           ASCII      21
+./EMACS/DBX/COREDUMP.C                                           -> COREDUMP.C           ASCII       8
+./EMACS/DBX/COREDUMP.H                                           -> COREDUMP.H           ASCII       1
+./EMACS/DBX/DATE.C                                               -> DATE.C               ASCII       1
+./EMACS/DBX/DEBUG.C                                              -> DEBUG.C              ASCII      11
+./EMACS/DBX/DEFS.H                                               -> DEFS.H               ASCII       4
+./EMACS/DBX/EVAL.C                                               -> EVAL.C               ASCII      46
+./EMACS/DBX/EVAL.H                                               -> EVAL.H               ASCII       2
+./EMACS/DBX/EVENTS.C                                             -> EVENTS.C             ASCII      32
+./EMACS/DBX/EVENTS.H                                             -> EVENTS.H             ASCII       2
+./EMACS/DBX/FORTRAN.C                                            -> FORTRAN.C            ASCII      26
+./EMACS/DBX/FORTRAN.H                                            -> FORTRAN.H            ASCII       1
+./EMACS/DBX/KEYWORDS.C                                           -> KEYWORDS.C           ASCII       7
+./EMACS/DBX/KEYWORDS.H                                           -> KEYWORDS.H           ASCII       1
+./EMACS/DBX/LANGUAGES.C                                          -> LANGUAGES.C          ASCII       4
+./EMACS/DBX/LANGUAGES.H                                          -> LANGUAGES.H          ASCII       1
+./EMACS/DBX/LIBRARY.C                                            -> LIBRARY.C            ASCII      25
+./EMACS/DBX/LISTS.C                                              -> LISTS.C              ASCII       9
+./EMACS/DBX/LISTS.H                                              -> LISTS.H              ASCII       4
+./EMACS/DBX/MACHINE.C                                            -> MACHINE.C            ASCII      36
+./EMACS/DBX/MACHINE.H                                            -> MACHINE.H            ASCII       2
+./EMACS/DBX/MAIN.C                                               -> MAIN.C               ASCII      16
+./EMACS/DBX/MAIN.H                                               -> MAIN.H               ASCII       2
+./EMACS/DBX/MAKEDEFS.C                                           -> MAKEDEFS.C           ASCII       7
+./EMACS/DBX/MAPPINGS.C                                           -> MAPPINGS.C           ASCII      11
+./EMACS/DBX/MAPPINGS.H                                           -> MAPPINGS.H           ASCII       2
+./EMACS/DBX/MKDATE.C                                             -> MKDATE.C             ASCII       2
+./EMACS/DBX/NAMES.C                                              -> NAMES.C              ASCII       7
+./EMACS/DBX/NAMES.H                                              -> NAMES.H              ASCII       2
+./EMACS/DBX/OBJECT.C                                             -> OBJECT.C             ASCII      46
+./EMACS/DBX/OBJECT.H                                             -> OBJECT.H             ASCII       1
+./EMACS/DBX/OPERATORS.C                                          -> OPERATORS.C          ASCII      14
+./EMACS/DBX/OPERATORS.H                                          -> OPERATORS.H          ASCII       8
+./EMACS/DBX/OPS.C                                                -> OPS.C                ASCII      61
+./EMACS/DBX/OPS.H                                                -> OPS.H                ASCII      29
+./EMACS/DBX/PASCAL.C                                             -> PASCAL.C             ASCII      17
+./EMACS/DBX/PASCAL.H                                             -> PASCAL.H             ASCII       1
+./EMACS/DBX/PRINTSYM.C                                           -> PRINTSYM.C           ASCII      21
+./EMACS/DBX/PRINTSYM.H                                           -> PRINTSYM.H           ASCII       1
+./EMACS/DBX/PROCESS.C                                            -> PROCESS.C            ASCII      43
+./EMACS/DBX/PROCESS.H                                            -> PROCESS.H            ASCII       2
+./EMACS/DBX/RUNTIME.C                                            -> RUNTIME.C            ASCII      25
+./EMACS/DBX/RUNTIME.H                                            -> RUNTIME.H            ASCII       2
+./EMACS/DBX/SCANNER.C                                            -> SCANNER.C            ASCII      21
+./EMACS/DBX/SCANNER.H                                            -> SCANNER.H            ASCII       1
+./EMACS/DBX/SOURCE.C                                             -> SOURCE.C             ASCII      13
+./EMACS/DBX/SOURCE.H                                             -> SOURCE.H             ASCII       1
+./EMACS/DBX/SYMBOLS.C                                            -> SYMBOLS.C            ASCII      51
+./EMACS/DBX/SYMBOLS.H                                            -> SYMBOLS.H            ASCII       7
+./EMACS/DBX/TREE.C                                               -> TREE.C               ASCII      24
+./EMACS/DBX/TREE.H                                               -> TREE.H               ASCII       2
+./EMACS/DBX/Y.TAB.C                                              -> Y2TAB.C              ASCII      70
+./EMACS/DBX/Y.TAB.H                                              -> Y2TAB.H              ASCII       3
+./EMACS/DBX/MADE                                                 -> MADE                 ASCII       2
+./EMACS/DBX/LIBRARY.O                                            -> LIBRARY.O            BIN, FLG=   407      12
+./EMACS/DBX/CERROR.O                                             -> CERROR.O             BIN, FLG=   407       1
+./EMACS/DBX/MAKEDEFS.O                                           -> MAKEDEFS.O           BIN, FLG=   407       6
+./EMACS/DBX/MAKEDEFS                                             -> MAKEDEFS             ASCII      36
+./EMACS/DBX/Y.TAB.O                                              -> Y2TAB.O              BIN, FLG=   407      30
+./EMACS/DBX/MKDATE                                               -> MKDATE               ASCII      18
+./EMACS/DBX/ASM.O                                                -> ASM.O                BIN, FLG=   407       4
+./EMACS/DBX/EVENTS.O                                             -> EVENTS.O             BIN, FLG=   407      25
+./EMACS/DBX/C.O                                                  -> C.O                  BIN, FLG=   407      23
+./EMACS/DBX/CHECK.O                                              -> CHECK.O              BIN, FLG=   407       6
+./EMACS/DBX/COREDUMP.O                                           -> COREDUMP.O           BIN, FLG=   407       6
+./EMACS/DBX/DEBUG.O                                              -> DEBUG.O              BIN, FLG=   407      12
+./EMACS/DBX/EVAL.O                                               -> EVAL.O               BIN, FLG=   407      36
+./EMACS/DBX/FORTRAN.O                                            -> FORTRAN.O            BIN, FLG=   407      19
+./EMACS/DBX/KEYWORDS.O                                           -> KEYWORDS.O           BIN, FLG=   407       6
+./EMACS/DBX/LANGUAGES.O                                          -> LANGUAGES.O          BIN, FLG=   407       4
+./EMACS/DBX/LISTS.O                                              -> LISTS.O              BIN, FLG=   407       3
+./EMACS/DBX/MACHINE.O                                            -> MACHINE.O            BIN, FLG=   407      22
+./EMACS/DBX/MAIN.O                                               -> MAIN.O               BIN, FLG=   407      14
+./EMACS/DBX/MAPPINGS.O                                           -> MAPPINGS.O           BIN, FLG=   407       6
+./EMACS/DBX/NAMES.O                                              -> NAMES.O              BIN, FLG=   407       2
+./EMACS/DBX/OBJECT.O                                             -> OBJECT.O             BIN, FLG=   407      31
+./EMACS/DBX/OPERATORS.O                                          -> OPERATORS.O          BIN, FLG=   407       4
+./EMACS/DBX/PASCAL.O                                             -> PASCAL.O             BIN, FLG=   407      15
+./EMACS/DBX/PRINTSYM.O                                           -> PRINTSYM.O           BIN, FLG=   407      20
+./EMACS/DBX/PROCESS.O                                            -> PROCESS.O            BIN, FLG=   407      25
+./EMACS/DBX/RUNTIME.O                                            -> RUNTIME.O            BIN, FLG=   407      17
+./EMACS/DBX/SCANNER.O                                            -> SCANNER.O            BIN, FLG=   407      16
+./EMACS/DBX/SOURCE.O                                             -> SOURCE.O             BIN, FLG=   407       9
+./EMACS/DBX/SYMBOLS.O                                            -> SYMBOLS.O            BIN, FLG=   407      24
+./EMACS/DBX/TREE.O                                               -> TREE.O               BIN, FLG=   407      16
+./EMACS/DBX/OPS.O                                                -> OPS.O                BIN, FLG=   407      16
+./EMACS/DBX/DATE.O                                               -> DATE.O               BIN, FLG=   407       2
+./EMACS/ETC/                                                     -> .                    ASCII       0
+./EMACS/ETC/CCADIFF                                              -> CCADIFF              ASCII      15
+./EMACS/ETC/CCADIFF,V                                            -> CCADIFF3V            ASCII      15
+./EMACS/ETC/COPYING                                              -> COPYING              ASCII       5
+./EMACS/ETC/COPYING,V                                            -> COPYING3V            ASCII       6
+./EMACS/ETC/DEBUG                                                -> DEBUG                ASCII       9
+./EMACS/ETC/DEBUG,V                                              -> DEBUG3V              ASCII      10
+./EMACS/ETC/DIFF                                                 -> DIFF                 ASCII      61
+./EMACS/ETC/DIFF,V                                               -> DIFF3V               ASCII      61
+./EMACS/ETC/DISTRIB                                              -> DISTRIB              ASCII       9
+./EMACS/ETC/DISTRIB,V                                            -> DISTRIB3V            ASCII      10
+./EMACS/ETC/DOCSTR.13.8.14                                       -> DOCSTR213            ASCII     172
+./EMACS/ETC/DOCSTR.13.8.15                                       -> DOCSTR213            ASCII     238
+./EMACS/ETC/DOCSTR.13.8.2                                        -> DOCSTR213            ASCII     238
+./EMACS/ETC/DOCSTR.13.8.2,V                                      -> DOCSTR213            ASCII     238
+./EMACS/ETC/GNU                                                  -> GNU                  ASCII      46
+./EMACS/ETC/GNU,V                                                -> GNU3V                ASCII      47
+./EMACS/ETC/MAKEFILE                                             -> MAKEFILE             ASCII       1
+./EMACS/ETC/MAKEFILE,V                                           -> MAKEFILE3            ASCII       2
+./EMACS/ETC/NEWS                                                 -> NEWS                 ASCII      73
+./EMACS/ETC/NEWS,V                                               -> NEWS3V               ASCII      73
+./EMACS/ETC/TAGS                                                 -> TAGS                 ASCII       2
+./EMACS/ETC/TAGS,V                                               -> TAGS3V               ASCII       2
+./EMACS/ETC/TUTORIAL                                             -> TUTORIAL             ASCII      64
+./EMACS/ETC/TUTORIAL,V                                           -> TUTORIAL3            ASCII      65
+./EMACS/ETC/ETAGS.C                                              -> ETAGS.C              ASCII      48
+./EMACS/ETC/ETAGS.C,V                                            -> ETAGS.C3V            ASCII      48
+./EMACS/ETC/LOADST                                               -> LOADST               ASCII      24
+./EMACS/ETC/LOADST.C                                             -> LOADST.C             ASCII       6
+./EMACS/ETC/LOADST.C,V                                           -> LOADST.C3V           ASCII       6
+./EMACS/ETC/MAKE-DOCFILE                                         -> MAKE3DOCF            ASCII      14
+./EMACS/ETC/MAKE-DOCFILE.C                                       -> MAKE3DOCF            ASCII      14
+./EMACS/ETC/MAKE-DOCFILE.C,V                                     -> MAKE3DOCF            ASCII      15
+./EMACS/INFO/                                                    -> .                    ASCII       0
+./EMACS/INFO/COPYING                                             -> COPYING              ASCII       5
+./EMACS/INFO/DIR                                                 -> DIR                  ASCII       2
+./EMACS/INFO/INFO                                                -> INFO                 ASCII      53
+./EMACS/LISP/                                                    -> .                    ASCII       0
+./EMACS/LISP/COPYING                                             -> COPYING              ASCII       5
+./EMACS/LISP/LOADUP-SJU.EL                                       -> LOADUP3SJ            ASCII       1
+./EMACS/LISP/ABBREV.EL                                           -> ABBREV.EL            ASCII      17
+./EMACS/LISP/MAKEFILE                                            -> MAKEFILE             ASCII       1
+./EMACS/LISP/ADD-LOG.EL                                          -> ADD3LOG.EL           ASCII       4
+./EMACS/LISP/ATON.EL                                             -> ATON.EL              ASCII       6
+./EMACS/LISP/BUFF-MENU.EL                                        -> BUFF3MENU.EL         ASCII      15
+./EMACS/LISP/GNUMACS.BUGS                                        -> GNUMACS.BUG          ASCII       1
+./EMACS/LISP/BYTECOMP.EL                                         -> BYTECOMP.EL          ASCII      62
+./EMACS/LISP/ABBREV.ELC                                          -> ABBREV.ELC           ASCII      13
+./EMACS/LISP/C-MODE.EL                                           -> C3MODE.EL            ASCII      33
+./EMACS/LISP/C-MODE.ELC                                          -> C3MODE.ELC           ASCII      16
+./EMACS/LISP/COMPARE-WINDOWS.EL                                  -> COMPARE3W            ASCII       5
+./EMACS/LISP/BUFF-MENU.ELC                                       -> BUFF3MENU.ELC        ASCII      12
+./EMACS/LISP/COMPILE.EL                                          -> COMPILE.EL           ASCII      19
+./EMACS/LISP/COMPILE.ELC                                         -> COMPILE.ELC          ASCII      11
+./EMACS/LISP/DEBUG.EL                                            -> DEBUG.EL             ASCII      16
+./EMACS/LISP/DEBUG.ELC                                           -> DEBUG.ELC            ASCII      11
+./EMACS/LISP/DIRED.EL                                            -> DIRED.EL             ASCII      21
+./EMACS/LISP/DIRED.ELC                                           -> DIRED.ELC            ASCII      15
+./EMACS/LISP/DISSOCIATE.EL                                       -> DISSOCIAT            ASCII       5
+./EMACS/LISP/FILES.EL                                            -> FILES.EL             ASCII      40
+./EMACS/LISP/BYTECOMP.ELC                                        -> BYTECOMP.ELC         ASCII      51
+./EMACS/LISP/FILES.ELC                                           -> FILES.ELC            ASCII      31
+./EMACS/LISP/FILL.EL                                             -> FILL.EL              ASCII      10
+./EMACS/LISP/FILL.ELC                                            -> FILL.ELC             ASCII       5
+./EMACS/LISP/INC-VERSION.EL                                      -> INC3VERSI            ASCII       3
+./EMACS/LISP/INDENT.EL                                           -> INDENT.EL            ASCII      14
+./EMACS/LISP/INDENT.ELC                                          -> INDENT.ELC           ASCII       9
+./EMACS/LISP/INFO.EL                                             -> INFO.EL              ASCII      39
+./EMACS/LISP/INFO.ELC                                            -> INFO.ELC             ASCII      27
+./EMACS/LISP/ISEARCH.EL                                          -> ISEARCH.EL           ASCII      15
+./EMACS/LISP/ISEARCH.ELC                                         -> ISEARCH.ELC          ASCII       6
+./EMACS/LISP/LEDIT.EL                                            -> LEDIT.EL             ASCII       9
+./EMACS/LISP/LISP-MODE.EL                                        -> LISP3MODE.EL         ASCII      29
+./EMACS/LISP/DISSOCIATE.ELC                                      -> DISSOCIAT            ASCII       2
+./EMACS/LISP/LISP.EL                                             -> LISP.EL              ASCII      13
+./EMACS/LISP/LISP.ELC                                            -> LISP.ELC             ASCII      10
+./EMACS/LISP/LOADDEFS.EL                                         -> LOADDEFS.EL          ASCII      49
+./EMACS/LISP/LISP-MODE.ELC                                       -> LISP3MODE.ELC        ASCII      17
+./EMACS/LISP/LOADUP.EL                                           -> LOADUP.EL            ASCII       4
+./EMACS/LISP/LPR.EL                                              -> LPR.EL               ASCII       4
+./EMACS/LISP/MACROS.EL                                           -> MACROS.EL            ASCII       7
+./EMACS/LISP/MAKESUM.EL                                          -> MAKESUM.EL           ASCII       6
+./EMACS/LISP/MAN.EL                                              -> MAN.EL               ASCII       6
+./EMACS/LISP/MAN.ELC                                             -> MAN.ELC              ASCII       3
+./EMACS/LISP/MLCONVERT.EL                                        -> MLCONVERT.EL         ASCII      16
+./EMACS/LISP/MLSUPPORT.EL                                        -> MLSUPPORT.EL         ASCII      19
+./EMACS/LISP/NEW-VERSION-LEVEL.EL                                -> NEW3VERSI            ASCII       3
+./EMACS/LISP/NOVICE.EL                                           -> NOVICE.EL            ASCII       7
+./EMACS/LISP/OPTIONS.EL                                          -> OPTIONS.EL           ASCII       9
+./EMACS/LISP/OPTIONS.ELC                                         -> OPTIONS.ELC          ASCII       5
+./EMACS/LISP/OUTLINE.EL                                          -> OUTLINE.EL           ASCII      14
+./EMACS/LISP/OUTLINE.ELC                                         -> OUTLINE.ELC          ASCII      11
+./EMACS/LISP/PAGE.EL                                             -> PAGE.EL              ASCII       7
+./EMACS/LISP/PAGE.ELC                                            -> PAGE.ELC             ASCII       4
+./EMACS/LISP/PARAGRAPHS.EL                                       -> PARAGRAPH            ASCII      13
+./EMACS/LISP/LOADDEFS.ELC                                        -> LOADDEFS.ELC         ASCII      47
+./EMACS/LISP/RECT.EL                                             -> RECT.EL              ASCII      15
+./EMACS/LISP/RECT.ELC                                            -> RECT.ELC             ASCII      10
+./EMACS/LISP/REGISTER.EL                                         -> REGISTER.EL          ASCII      13
+./EMACS/LISP/PARAGRAPHS.ELC                                      -> PARAGRAPH            ASCII       9
+./EMACS/LISP/REPLACE.EL                                          -> REPLACE.EL           ASCII      12
+./EMACS/LISP/REPLACE.ELC                                         -> REPLACE.ELC          ASCII       7
+./EMACS/LISP/RMAIL.EL                                            -> RMAIL.EL             ASCII      54
+./EMACS/LISP/RMAIL.ELC                                           -> RMAIL.ELC            ASCII      41
+./EMACS/LISP/RNEWS.EL                                            -> RNEWS.EL             ASCII      54
+./EMACS/LISP/SENDMAIL.EL                                         -> SENDMAIL.EL          ASCII      21
+./EMACS/LISP/REGISTER.ELC                                        -> REGISTER.ELC         ASCII       9
+./EMACS/LISP/SHELL.EL                                            -> SHELL.EL             ASCII      16
+./EMACS/LISP/COMPARE-WINDOWS.ELC                                 -> COMPARE3W            ASCII       2
+./EMACS/LISP/SIMPLE.EL                                           -> SIMPLE.EL            ASCII      91
+./EMACS/LISP/SHELL.ELC                                           -> SHELL.ELC            ASCII      12
+./EMACS/LISP/SPELL.EL                                            -> SPELL.EL             ASCII       8
+./EMACS/LISP/STARTUP.EL                                          -> STARTUP.EL           ASCII       6
+./EMACS/LISP/SIMPLE.ELC                                          -> SIMPLE.ELC           ASCII      75
+./EMACS/LISP/TABIFY.EL                                           -> TABIFY.EL            ASCII       4
+./EMACS/LISP/STARTUP.ELC                                         -> STARTUP.ELC          ASCII       3
+./EMACS/LISP/TAGS.EL                                             -> TAGS.EL              ASCII      16
+./EMACS/LISP/TABIFY.ELC                                          -> TABIFY.ELC           ASCII       2
+./EMACS/LISP/TEX-START.EL                                        -> TEX3START.EL         ASCII       1
+./EMACS/LISP/TEXT-MODE.EL                                        -> TEXT3MODE.EL         ASCII       9
+./EMACS/LISP/SENDMAIL.ELC                                        -> SENDMAIL.ELC         ASCII      14
+./EMACS/LISP/TIME.EL                                             -> TIME.EL              ASCII       5
+./EMACS/LISP/TAGS.ELC                                            -> TAGS.ELC             ASCII      12
+./EMACS/LISP/UNDERLINE.EL                                        -> UNDERLINE.EL         ASCII       4
+./EMACS/LISP/TEXT-MODE.ELC                                       -> TEXT3MODE.ELC        ASCII       6
+./EMACS/LISP/VERSION.EL                                          -> VERSION.EL           ASCII       4
+./EMACS/LISP/WINDOW.EL                                           -> WINDOW.EL            ASCII       4
+./EMACS/LISP/TIME.ELC                                            -> TIME.ELC             ASCII       2
+./EMACS/LISP/XAUTOLOADS.EL                                       -> XAUTOLOAD            ASCII      24
+./EMACS/LISP/UNDERLINE.ELC                                       -> UNDERLINE.ELC        ASCII       2
+./EMACS/LISP/WINDOW.ELC                                          -> WINDOW.ELC           ASCII       3
+./EMACS/SRC/                                                     -> .                    ASCII       0
+./EMACS/SRC/TRMAMB.C,V                                           -> TRMAMB.C3V           ASCII      14
+./EMACS/SRC/TAGS,V                                               -> TAGS3V               ASCII      65
+./EMACS/SRC/TRM.H,V                                              -> TRM.H3V              ASCII      12
+./EMACS/SRC/MADE                                                 -> MADE                 ASCII       4
+./EMACS/SRC/TRMC100.C,V                                          -> TRMC100.C3V          ASCII      14
+./EMACS/SRC/TRMTERM.C,V                                          -> TRMTERM.C3V          ASCII      28
+./EMACS/SRC/TRMVT100.C,V                                         -> TRMVT100.C3V         ASCII      11
+./EMACS/SRC/COPYING                                              -> COPYING              ASCII       5
+./EMACS/SRC/CRT0.O                                               -> CRT0.O               BIN, FLG=   407       1
+./EMACS/SRC/ABBREV.C,V                                           -> ABBREV.C3V           ASCII      30
+./EMACS/SRC/ALLOC.C,V                                            -> ALLOC.C3V            ASCII      62
+./EMACS/SRC/AUXDOC.C,V                                           -> AUXDOC.C3V           ASCII      11
+./EMACS/SRC/BUFFER.C,V                                           -> BUFFER.C3V           ASCII      54
+./EMACS/SRC/BUFFER.H,V                                           -> BUFFER.H3V           ASCII      11
+./EMACS/SRC/BYTECODE.C,V                                         -> BYTECODE.C3V         ASCII      26
+./EMACS/SRC/CALLINT.C,V                                          -> CALLINT.C3V          ASCII      23
+./EMACS/SRC/CALLPROC.C,V                                         -> CALLPROC.C3V         ASCII      16
+./EMACS/SRC/CM.C,V                                               -> CM.C3V               ASCII      25
+./EMACS/SRC/CM.H,V                                               -> CM.H3V               ASCII       8
+./EMACS/SRC/CMDS.C,V                                             -> CMDS.C3V             ASCII      17
+./EMACS/SRC/COMMANDS.H,V                                         -> COMMANDS.H3V         ASCII       6
+./EMACS/SRC/CONFIG.H,V                                           -> CONFIG.H3V           ASCII      10
+./EMACS/SRC/CRT0.C,V                                             -> CRT0.C3V             ASCII       7
+./EMACS/SRC/DOC.C,V                                              -> DOC.C3V              ASCII      12
+./EMACS/SRC/KEYBINDINGS,V                                        -> KEYBINDIN            ASCII      11
+./EMACS/SRC/DIRED.C,V                                            -> DIRED.C3V            ASCII      15
+./EMACS/SRC/DISP_EXTERN.H,V                                      -> DISP0EXTE            ASCII       7
+./EMACS/SRC/DISPLAY.C,V                                          -> DISPLAY.C3V          ASCII      46
+./EMACS/SRC/DISPLAY.H,V                                          -> DISPLAY.H3V          ASCII       6
+./EMACS/SRC/DISPNEW.C,V                                          -> DISPNEW.C3V          ASCII      29
+./EMACS/SRC/DISTPATHS.H,V                                        -> DISTPATHS.H3V        ASCII       1
+./EMACS/SRC/DSP.C,V                                              -> DSP.C3V              ASCII       7
+./EMACS/SRC/EDITFNS.C,V                                          -> EDITFNS.C3V          ASCII      41
+./EMACS/SRC/EMACS.C,V                                            -> EMACS.C3V            ASCII      18
+./EMACS/SRC/EVAL.C,V                                             -> EVAL.C3V             ASCII      91
+./EMACS/SRC/FILEIO.C,V                                           -> FILEIO.C3V           ASCII      50
+./EMACS/SRC/FILEMODE.C,V                                         -> FILEMODE.C3V         ASCII       8
+./EMACS/SRC/FIXEDPOINT.C,V                                       -> FIXEDPOIN            ASCII      12
+./EMACS/SRC/FIXEDPOINT.H,V                                       -> FIXEDPOIN            ASCII       5
+./EMACS/SRC/FNS.C,V                                              -> FNS.C3V              ASCII      45
+./EMACS/SRC/INDENT.C,V                                           -> INDENT.C3V           ASCII      24
+./EMACS/SRC/INDENT.H,V                                           -> INDENT.H3V           ASCII       3
+./EMACS/SRC/INSDEL.C,V                                           -> INSDEL.C3V           ASCII      12
+./EMACS/SRC/KEYBOARD.C,V                                         -> KEYBOARD.C3V         ASCII      63
+./EMACS/SRC/KEYMAP.C,V                                           -> KEYMAP.C3V           ASCII      54
+./EMACS/SRC/LASTFILE.C,V                                         -> LASTFILE.C3V         ASCII       4
+./EMACS/SRC/LIBIPC.C,V                                           -> LIBIPC.C3V           ASCII       8
+./EMACS/SRC/LISP.H,V                                             -> LISP.H3V             ASCII      50
+./EMACS/SRC/PRINT.C,V                                            -> PRINT.C3V            ASCII      26
+./EMACS/SRC/MACROS.H,V                                           -> MACROS.H3V           ASCII       3
+./EMACS/SRC/MALLOC.C,V                                           -> MALLOC.C3V           ASCII      28
+./EMACS/SRC/MARKER.C,V                                           -> MARKER.C3V           ASCII      12
+./EMACS/SRC/MINIBUF.C,V                                          -> MINIBUF.C3V          ASCII      50
+./EMACS/SRC/PATHS.H,V                                            -> PATHS.H3V            ASCII       2
+./EMACS/SRC/PROCESS.C,V                                          -> PROCESS.C3V          ASCII      69
+./EMACS/SRC/PROCESS.H,V                                          -> PROCESS.H3V          ASCII       6
+./EMACS/SRC/READ.C,V                                             -> READ.C3V             ASCII      51
+./EMACS/SRC/REGEX.C,V                                            -> REGEX.C3V            ASCII      77
+./EMACS/SRC/REGEX.H,V                                            -> REGEX.H3V            ASCII       9
+./EMACS/SRC/SEARCH.C,V                                           -> SEARCH.C3V           ASCII      52
+./EMACS/SRC/SYNTAX.C,V                                           -> SYNTAX.C3V           ASCII      52
+./EMACS/SRC/SYNTAX.H,V                                           -> SYNTAX.H3V           ASCII       7
+./EMACS/SRC/TEST.C,V                                             -> TEST.C3V             ASCII       1
+./EMACS/SRC/UNDO.C,V                                             -> UNDO.C3V             ASCII      17
+./EMACS/SRC/UNEXEC.C,V                                           -> UNEXEC.C3V           ASCII      19
+./EMACS/SRC/USERID.C,V                                           -> USERID.C3V           ASCII       9
+./EMACS/SRC/WINDOW.C,V                                           -> WINDOW.C3V           ASCII      87
+./EMACS/SRC/WINDOW.H,V                                           -> WINDOW.H3V           ASCII      16
+./EMACS/SRC/XDISP.C,V                                            -> XDISP.C3V            ASCII      75
+./EMACS/SRC/FUNCTIONS                                            -> FUNCTIONS            ASCII      27
+./EMACS/SRC/MAKEFILE,V                                           -> MAKEFILE3            ASCII      10
+./EMACS/SRC/VARIABLES,V                                          -> VARIABLES            ASCII       9
+./EMACS/SRC/COPYING,V                                            -> COPYING3V            ASCII       6
+./EMACS/SRC/FUNCTIONS,V                                          -> FUNCTIONS            ASCII      27
+./EMACS/SRC/CASEFIDDLE.C,V                                       -> CASEFIDDL            ASCII      13
+./EMACS/SRC/DATA.C,V                                             -> DATA.C3V             ASCII      76
+./EMACS/SRC/MACROS.C,V                                           -> MACROS.C3V           ASCII      15
+./EMACS/SRC/MOCKLISP.C,V                                         -> MOCKLISP.C3V         ASCII      12
+./EMACS/SRC/UNDO.H,V                                             -> UNDO.H3V             ASCII       5
+./EMACS/SRC/KEYBINDINGS                                          -> KEYBINDIN            ASCII      11
+./EMACS/SRC/MAKEFILE                                             -> MAKEFILE             ASCII       9
+./EMACS/SRC/TAGS                                                 -> TAGS                 ASCII      64
+./EMACS/SRC/TRM.H                                                -> TRM.H                ASCII      11
+./EMACS/SRC/TRMAMB.C                                             -> TRMAMB.C             ASCII      14
+./EMACS/SRC/TRMC100.C                                            -> TRMC100.C            ASCII      14
+./EMACS/SRC/TRMTERM.C                                            -> TRMTERM.C            ASCII      28
+./EMACS/SRC/TRMVT100.C                                           -> TRMVT100.C           ASCII      10
+./EMACS/SRC/VARIABLES                                            -> VARIABLES            ASCII       8
+./EMACS/SRC/ABBREV.C                                             -> ABBREV.C             ASCII      29
+./EMACS/SRC/ALLOC.C                                              -> ALLOC.C              ASCII      61
+./EMACS/SRC/AUXDOC.C                                             -> AUXDOC.C             ASCII      11
+./EMACS/SRC/BUFFER.C                                             -> BUFFER.C             ASCII      54
+./EMACS/SRC/BUFFER.H                                             -> BUFFER.H             ASCII      10
+./EMACS/SRC/BYTECODE.C                                           -> BYTECODE.C           ASCII      25
+./EMACS/SRC/CALLINT.C                                            -> CALLINT.C            ASCII      22
+./EMACS/SRC/CALLPROC.C                                           -> CALLPROC.C           ASCII      16
+./EMACS/SRC/CASEFIDDLE.C                                         -> CASEFIDDL            ASCII      13
+./EMACS/SRC/CM.C                                                 -> CM.C                 ASCII      25
+./EMACS/SRC/CM.H                                                 -> CM.H                 ASCII       7
+./EMACS/SRC/CMDS.C                                               -> CMDS.C               ASCII      17
+./EMACS/SRC/COMMANDS.H                                           -> COMMANDS.H           ASCII       5
+./EMACS/SRC/CONFIG.H                                             -> CONFIG.H             ASCII      10
+./EMACS/SRC/CRT0.C                                               -> CRT0.C               ASCII       7
+./EMACS/SRC/DATA.C                                               -> DATA.C               ASCII      76
+./EMACS/SRC/DIRED.C                                              -> DIRED.C              ASCII      14
+./EMACS/SRC/DISP_EXTERN.H                                        -> DISP0EXTE            ASCII       7
+./EMACS/SRC/DISPLAY.C                                            -> DISPLAY.C            ASCII      46
+./EMACS/SRC/DISPLAY.H                                            -> DISPLAY.H            ASCII       6
+./EMACS/SRC/DISPNEW.C                                            -> DISPNEW.C            ASCII      28
+./EMACS/SRC/DISTPATHS.H                                          -> DISTPATHS.H          ASCII       1
+./EMACS/SRC/DOC.C                                                -> DOC.C                ASCII      11
+./EMACS/SRC/DSP.C                                                -> DSP.C                ASCII       7
+./EMACS/SRC/EDITFNS.C                                            -> EDITFNS.C            ASCII      41
+./EMACS/SRC/EMACS.C                                              -> EMACS.C              ASCII      18
+./EMACS/SRC/EVAL.C                                               -> EVAL.C               ASCII      91
+./EMACS/SRC/FILEIO.C                                             -> FILEIO.C             ASCII      50
+./EMACS/SRC/FILEMODE.C                                           -> FILEMODE.C           ASCII       8
+./EMACS/SRC/FIXEDPOINT.C                                         -> FIXEDPOIN            ASCII      12
+./EMACS/SRC/FIXEDPOINT.H                                         -> FIXEDPOIN            ASCII       4
+./EMACS/SRC/FNS.C                                                -> FNS.C                ASCII      45
+./EMACS/SRC/INDENT.C                                             -> INDENT.C             ASCII      23
+./EMACS/SRC/INDENT.H                                             -> INDENT.H             ASCII       2
+./EMACS/SRC/INSDEL.C                                             -> INSDEL.C             ASCII      11
+./EMACS/SRC/KEYBOARD.C                                           -> KEYBOARD.C           ASCII      62
+./EMACS/SRC/KEYMAP.C                                             -> KEYMAP.C             ASCII      54
+./EMACS/SRC/LASTFILE.C                                           -> LASTFILE.C           ASCII       3
+./EMACS/SRC/LIBIPC.C                                             -> LIBIPC.C             ASCII       7
+./EMACS/SRC/LISP.H                                               -> LISP.H               ASCII      49
+./EMACS/SRC/MACROS.C                                             -> MACROS.C             ASCII      14
+./EMACS/SRC/MACROS.H                                             -> MACROS.H             ASCII       3
+./EMACS/SRC/MALLOC.C                                             -> MALLOC.C             ASCII      27
+./EMACS/SRC/MARKER.C                                             -> MARKER.C             ASCII      12
+./EMACS/SRC/MINIBUF.C                                            -> MINIBUF.C            ASCII      50
+./EMACS/SRC/MOCKLISP.C                                           -> MOCKLISP.C           ASCII      12
+./EMACS/SRC/PATHS.H                                              -> PATHS.H              ASCII       1
+./EMACS/SRC/PRINT.C                                              -> PRINT.C              ASCII      25
+./EMACS/SRC/PROCESS.C                                            -> PROCESS.C            ASCII      68
+./EMACS/SRC/PROCESS.H                                            -> PROCESS.H            ASCII       6
+./EMACS/SRC/READ.C                                               -> READ.C               ASCII      51
+./EMACS/SRC/REGEX.C                                              -> REGEX.C              ASCII      76
+./EMACS/SRC/REGEX.H                                              -> REGEX.H              ASCII       8
+./EMACS/SRC/SEARCH.C                                             -> SEARCH.C             ASCII      52
+./EMACS/SRC/SYNTAX.C                                             -> SYNTAX.C             ASCII      51
+./EMACS/SRC/SYNTAX.H                                             -> SYNTAX.H             ASCII       7
+./EMACS/SRC/TEST.C                                               -> TEST.C               ASCII       1
+./EMACS/SRC/UNDO.C                                               -> UNDO.C               ASCII      17
+./EMACS/SRC/UNDO.H                                               -> UNDO.H               ASCII       5
+./EMACS/SRC/UNEXEC.C                                             -> UNEXEC.C             ASCII      19
+./EMACS/SRC/USERID.C                                             -> USERID.C             ASCII       9
+./EMACS/SRC/WINDOW.C                                             -> WINDOW.C             ASCII      86
+./EMACS/SRC/WINDOW.H                                             -> WINDOW.H             ASCII      16
+./EMACS/SRC/XDISP.C                                              -> XDISP.C              ASCII      75
+./EMACS/SRC/DISPLAY.O                                            -> DISPLAY.O            BIN, FLG=   407      16
+./EMACS/SRC/FIXEDPOINT.O                                         -> FIXEDPOIN            BIN, FLG=   407       3
+./EMACS/SRC/DISPNEW.O                                            -> DISPNEW.O            BIN, FLG=   407      16
+./EMACS/SRC/XDISP.O                                              -> XDISP.O              BIN, FLG=   407      33
+./EMACS/SRC/WINDOW.O                                             -> WINDOW.O             BIN, FLG=   407      55
+./EMACS/SRC/CM.O                                                 -> CM.O                 BIN, FLG=   407      11
+./EMACS/SRC/TRMC100.O                                            -> TRMC100.O            BIN, FLG=   407      13
+./EMACS/SRC/TRMAMB.O                                             -> TRMAMB.O             BIN, FLG=   407      13
+./EMACS/SRC/TRMTERM.O                                            -> TRMTERM.O            BIN, FLG=   407      21
+./EMACS/SRC/TRMVT100.O                                           -> TRMVT100.O           BIN, FLG=   407       8
+./EMACS/SRC/EMACS.O                                              -> EMACS.O              BIN, FLG=   407      15
+./EMACS/SRC/DSP.O                                                -> DSP.O                BIN, FLG=   407       3
+./EMACS/SRC/KEYBOARD.O                                           -> KEYBOARD.O           BIN, FLG=   407      46
+./EMACS/SRC/MACROS.O                                             -> MACROS.O             BIN, FLG=   407      12
+./EMACS/SRC/KEYMAP.O                                             -> KEYMAP.O             BIN, FLG=   407      39
+./EMACS/SRC/BUFFER.O                                             -> BUFFER.O             BIN, FLG=   407      45
+./EMACS/SRC/INSDEL.O                                             -> INSDEL.O             BIN, FLG=   407       7
+./EMACS/SRC/MARKER.O                                             -> MARKER.O             BIN, FLG=   407       6
+./EMACS/SRC/MINIBUF.O                                            -> MINIBUF.O            BIN, FLG=   407      37
+./EMACS/SRC/FILEIO.O                                             -> FILEIO.O             BIN, FLG=   407      36
+./EMACS/SRC/DIRED.O                                              -> DIRED.O              BIN, FLG=   407       9
+./EMACS/SRC/FILEMODE.O                                           -> FILEMODE.O           BIN, FLG=   407       2
+./EMACS/SRC/USERID.O                                             -> USERID.O             BIN, FLG=   407       2
+./EMACS/SRC/CMDS.O                                               -> CMDS.O               BIN, FLG=   407      15
+./EMACS/SRC/CASEFIDDLE.O                                         -> CASEFIDDL            BIN, FLG=   407       9
+./EMACS/SRC/INDENT.O                                             -> INDENT.O             BIN, FLG=   407      12
+./EMACS/SRC/SEARCH.O                                             -> SEARCH.O             BIN, FLG=   407      31
+./EMACS/SRC/REGEX.O                                              -> REGEX.O              BIN, FLG=   407      16
+./EMACS/SRC/UNDO.O                                               -> UNDO.O               BIN, FLG=   407      10
+./EMACS/SRC/ALLOC.O                                              -> ALLOC.O              BIN, FLG=   407     263
+./EMACS/SRC/DATA.O                                               -> DATA.O               BIN, FLG=   407      61
+./EMACS/SRC/DOC.O                                                -> DOC.O                BIN, FLG=   407       8
+./EMACS/SRC/EDITFNS.O                                            -> EDITFNS.O            BIN, FLG=   407      37
+./EMACS/SRC/CALLINT.O                                            -> CALLINT.O            BIN, FLG=   407      15
+./EMACS/SRC/EVAL.O                                               -> EVAL.O               BIN, FLG=   407      63
+./EMACS/SRC/FNS.O                                                -> FNS.O                BIN, FLG=   407      34
+./EMACS/SRC/PRINT.O                                              -> PRINT.O              BIN, FLG=   407      20
+./EMACS/SRC/READ.O                                               -> READ.O               BIN, FLG=   407      35
+./EMACS/SRC/ABBREV.O                                             -> ABBREV.O             BIN, FLG=   407      23
+./EMACS/SRC/SYNTAX.O                                             -> SYNTAX.O             BIN, FLG=   407      30
+./EMACS/SRC/UNEXEC.O                                             -> UNEXEC.O             BIN, FLG=   407       7
+./EMACS/SRC/MOCKLISP.O                                           -> MOCKLISP.O           BIN, FLG=   407      11
+./EMACS/SRC/BYTECODE.O                                           -> BYTECODE.O           BIN, FLG=   407      17
+./EMACS/SRC/PROCESS.O                                            -> PROCESS.O            BIN, FLG=   407      38
+./EMACS/SRC/CALLPROC.O                                           -> CALLPROC.O           BIN, FLG=   407      13
+./EMACS/SRC/MALLOC.O                                             -> MALLOC.O             BIN, FLG=   407       4
+./EMACS/SRC/LASTFILE.O                                           -> LASTFILE.O           BIN, FLG=   407       1
+./EMACS/SRC/TEMACS                                               -> TEMACS               ASCII     846
+./EMACS/SRC/TDBX                                                 -> TDBX                 ASCII     246
+./EMACS/SRC/XEMACS                                               -> XEMACS               ASCII    1108
+./EMACS/SRC/MAKEFILE-TEMP                                        -> MAKEFILE3            ASCII       9
+GNUEMACS.MAI                                                     -> GNUEMACS.MAI         ASCII     311
+                                                                 -> .                    ASCII       0
+                                                                 -> .                    ASCII       0
+ _ B_ U_ F_ F_ E_ R-_ M_ E_ N_ U  MAKE A MENU OF BUFFERS SO YOU  -> .                    ASCII       0

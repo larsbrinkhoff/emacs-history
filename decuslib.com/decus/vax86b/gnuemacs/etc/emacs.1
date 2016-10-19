@@ -1,0 +1,393 @@
+.TH GNUEMACS 1 "28 January 1986"
+.FM quote "MIT Project Athena"
+.SH NAME
+gnuemacs \- GNU project Emacs
+.SH SYNOPSIS
+.PP
+.B gnuemacs
+[options] [file ...]
+.br
+.SH DESCRIPTION
+.PP
+.I GNU Emacs
+is a new version of Emacs written by the author of the original (PDP-10) Emacs,
+Richard Stallman.  Its user functionality encompasses
+everything other Emacs editors do, and it is easily extensible since it is
+written in a version of Lisp specifically designed to support editing.
+.PP
+There is an extensive reference manual, but
+users of other Emacs's
+should have little trouble adapting even
+without a copy.
+If you are a CCA Emacs user,
+you can get a quick introduction to
+.I GNU Emacs
+by reading the Athena Document
+.I GNU Emacs for CCA Users.
+If you have never used an Emacs-style editor before,
+you should read the Athena Document
+.I Essential GNU Emacs.
+.PP
+This editor
+has an extensive interactive help facility,
+but BE WARNED:
+the facility assumes that you know how to manipulate
+.I GNU Emacs
+windows and buffers.
+Control-h (backspace
+or C-h) enters the Help facility.  Help Tutorial (C-h t)
+requests an interactive tutorial which can teach beginners the fundamentals
+of Emacs in a few minutes.
+Help Apropos (C-h a) helps you
+find a command given its functionality, Help Character (C-h c)
+describes a given character's effect, and Help Function (C-h f)
+describes a given Lisp function specified by name.
+.PP
+.I GNU Emacs's
+Undo can undo several steps of modification to your buffers, so it is
+easy to recover from editing mistakes.
+.PP
+.I GNU Emacs's
+many special packages handle
+outline editing (Outline), compiling (Compile), running subshells
+within Emacs windows (Shell), and even running a Lisp top-level
+(Lisp-Interaction-Mode).
+.sp
+.I
+.SM Using GNU Emacs with X
+.PP
+.I GNU Emacs
+has been tailored to work well with the X window system.
+If you are working from
+a VAXstation 100 or a VAXstation 2 workstation,
+.I GNU Emacs
+will create a new window for you to work in,
+so you will probably want to start the editor
+as a background process
+so that you can continue using your original window.
+.I GNU Emacs
+can be started with the following X switches:
+.TP 8
+.B \-r
+Display the
+.I GNU Emacs
+window in inverse video.
+.TP
+.B \-i
+Use the "kitchen sink" bitmap icon when iconifying the
+.I GNU Emacs
+window.
+.TP
+.B \-font font
+Set the
+.I GNU Emacs
+window's font to that specified by
+.I font.
+You will find the various
+.I X
+fonts in the
+.I \/usr\/new\/lib\/X\/font
+directory.
+Note that
+.I GNU Emacs
+will only accept fixed width fonts.
+These include the
+.I 6x10.onx, 6x13.onx, 6x13p.onx, 8x13.onx,
+and
+.I 9x15.onx
+fonts.
+The other fixed width fonts are specified by the
+.I fx
+character sequence that comes before the
+.I .onx
+extension.
+
+When you specify a font,
+do not include the
+.I .onx
+extension.
+Be sure to put a space between the
+.I \-font
+switch and the font specification argument.
+.TP
+.B \-b pixels
+Set the
+.I GNU Emacs
+window's border width to the number of pixels specified by
+.I pixels.
+.PP
+.TP 8
+.B \-w =[WIDTH][xHEIGHT][{+-}XOFF[{+-}YOFF]]
+Set the
+.I GNU Emacs
+window's width, height, and position on the screen.
+The []'s denote optional arguments, the {}'s surround alternatives.
+WIDTH and HEIGHT are in number of characters, XOFF and YOFF are in
+pixels.  WIDTH defaults to 80, HEIGHT to 24, XOFF and YOFF to 1.  If you don't
+give XOFF and/or YOFF, then you must use the mouse to create the window.
+If you give XOFF and/or YOFF, then a WIDTHxHEIGHT window will
+automatically be creating without intervention.  XOFF and YOFF specify deltas
+from a corner of the screen to the corresponding corner of the window, as
+follows:
+.br
+	
+.br
+\+XOFF+YOFF     upper left to upper left
+.br
+\-XOFF+YOFF     upper right to upper right
+.br
+\+XOFF-YOFF     lower left to lower left
+.br
+\-XOFF-YOFF     lower right to lower right
+.PP
+.TP 8
+.B \-fg color
+On color displays, sets the color of the text.
+.TP
+.B \-bg color
+On color displays,
+sets the color of the window's background.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B \-bd color
+On color displays,
+sets the color of the window's border.See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B \-cr color
+On color displays,
+sets the color of the window's text cursor.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B \-ms color
+On color displays,
+sets the color of the window's mouse cursor.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B \-d displayname
+Create the
+.I GNU Emacs
+window on the display specified by
+.I displayname.
+.PP
+You can set
+.I X
+default values for your
+.I GNU Emacs
+windows in your
+.I \.Xdefaults
+file.
+Use the following format:
+.IP
+emacs.keyword:value
+.PP
+where
+.I value
+specifies the default value of
+.I keyword.
+.I GNU Emacs
+lets you set default values for the following keywords:
+.TP 8
+.B BodyFont
+Sets the window's text font.
+.TP
+.B ReverseVideo
+If
+.I ReverseVideo's
+value is set to
+.I on,
+the window will be displayed in inverse video.
+.TP
+.B BitMapIcon
+If
+.I BitMapIcon's
+value is set to
+.I on,
+the window will iconify into the "kitchen sink."
+.TP
+.B BorderWidth
+Sets the window's border width in pixels.
+.TP
+.B Foreground
+For color displays,
+sets the window's text color.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B Background
+For color displays,
+sets the window's background color.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B Border
+For color displays,
+sets the color of the window's border.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B Cursor
+For color displays,
+sets the color of the window's text cursor.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.TP
+.B Mouse
+For color displays,
+sets the color of the window's mouse cursor.
+See the file
+.I \/usr\/lib\/rgb.txt
+for a list of valid
+.I color
+names.
+.PP
+If you try to set color values while using a black and white display,
+the window's characteristics will default as follows:
+the foreground color will be set to black,
+the background color will be set to white,
+the border color will be set to grey,
+and the text and mouse cursors will be set to black.
+.SH
+.I
+.SM Other GNU Emacs Options
+.PP
+The following options are of general interest:
+.TP 8
+.B file
+Edit
+.I file.
+.TP
+.B \+number
+Go to the line specified by
+.I number
+(do not insert a space between the "+" sign and
+the number).
+.TP
+.B \-q
+Do not load an init file.
+.TP
+.B \-u user
+Load
+.I user's
+init file.
+.TP
+.B \-t file
+Use specified
+.I file
+as the terminal instead of using stdin/stdout.
+.PP
+The following options are lisp-oriented
+(these options are processed in the order encountered):
+.TP 8
+.B \-f function
+Execute the lisp function
+.I function.
+.TP
+.B \-e function
+Execute the lisp function
+.I function.
+.TP
+.B \-l file
+Load the lisp code in the file
+.I file.
+.PP
+The following options are useful when running
+.I GNU Emacs
+as a batch editor:
+.TP 8
+.B \-batch commandfile
+Edit in batch mode using the commands found in
+.I commandfile.
+The editor will send messages to stdout.
+This option must be the first in the argument list.
+.TP
+.B \-kill
+Exit emacs while in batch mode.
+
+.SH FILES
+
+/usr/athena/lib/gnuemacs/lisp - Lisp source files and compiled files
+that define most editing commands.  Some are preloaded;
+others are autoloaded from this directory when used.
+
+/usr/athena/lib/gnuemacs/etc - various programs that are used with
+GNU Emacs, and some files of information.
+
+/usr/athena/lib/gnuemacs/etc/DOCSTR.* - contains the documentation
+strings for the Lisp primitives and preloaded Lisp functions
+of GNU Emacs.  They are stored here to reduce the size of
+Emacs proper.
+
+/usr/athena/lib/gnuemacs/etc/CCADIFF discusses GNU Emacs vs. CCA Emacs;
+/usr/athena/lib/gnuemacs/etc/DIFF discusses GNU Emacs vs. Twenex Emacs;
+/usr/athena/lib/gnuemacs/etc/GOSDIFF discusses GNU Emacs vs. Gosling Emacs.
+These files also have information useful to anyone wishing to write
+programs in the Emacs Lisp extension language, which has not yet been fully
+documented.
+
+/usr/athena/lib/gnuemacs/info - files for the Info documentation browser
+(a subsystem of Emacs) to refer to.  Currently not much of Unix
+is documented here.
+
+/usr/athena/lib/gnuemacs/lock - holds lock files that are made for all
+files being modified in Emacs, to prevent simultaneous modification
+of one file by two users.
+.PP
+.SH BUGS
+.PP
+The shell will not work with programs
+running in Raw mode.
+.SH UNRESTRICTIONS
+.PP
+There are none.
+GNU Emacs is free; anyone may redistribute copies of GNU Emacs to
+anyone under the terms stated in the GNU Emacs General Public License,
+a copy of which accompanies each copy of GNU Emacs and which also
+appears in the reference manual.
+.PP
+Copies of
+.I GNU Emacs
+may sometimes be received packaged with distributions of Unix systems,
+but it is never included in the scope of any license covering those
+systems.  Such inclusion violates the terms on which distribution
+is permitted.  In fact, the primary purpose of the General Public
+License is to prohibit anyone from attaching any other restrictions
+to redistribution of GNU Emacs.
+.PP
+Richard Stallman encourages you to improve and extend Emacs, and urges that
+you contribute your extensions to the GNU library.  Eventually GNU
+(Gnu's Not Unix) will be a complete replacement for Berkeley
+Unix.
+Everyone will be able to use the GNU system for free.
+.SH AUTHORS
+.PP
+.I GNU Emacs
+was written by Richard Stallman and the Free Software Foundation.
+Joachim Martillo and Robert Krawitz added the X features.

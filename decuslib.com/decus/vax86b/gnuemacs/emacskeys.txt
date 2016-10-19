@@ -1,0 +1,132 @@
+Default key-bindings for VMS version of GNU emacs
+-------------------------------------------------
+(List is not exhaustive)
+
+^X^F		Read a file.  Prompts for filename.  Type <SPACE> for
+		filename completion.
+^X^R		Read a file in read only mode.
+^X^Q		Toggle read-only mode.
+^X^S		Save file.
+^X^W		Write current buffer in a file, prompting for filename.
+^Xi		Insert contents of a file in current buffer.
+^X^C		Prompt for saving all modified files and exit emacs.
+^X4^F		Split window and read file.
+^X4b		Split window and switch to buffer.
+
+<ESC>x		Prompt for and execute extended command.  Type <SPACE>
+		to get a list of possible commands completions.
+
+^X(		Start defining keyboard macro.
+^X)		Stop defining keyboard macro.
+^Xe		Invoke keyboard macro.
+^Xq		Show definition of keyboard macro.
+^Z		Invoke keyboard macro.
+
+^S		Incremental search forward.  Terminate with <CR>.
+^R		Incrememtal search backward. Terminate with <CR>.
+<ESC>%		Query replace.
+
+^G		Quit current action.
+
+^H		Provide help.
+
+^Q		Next character is to be inserted in text. (Useful for
+    		inserting control characters.)
+
+^_		Undo last command.
+
+^@		(or ^2) Set mark.
+^X^X		Exchange point and mark.
+
+^A		Beginning of line.
+^E		End of line.
+^N		Next line.
+^P		Previous line.
+^B		Backward character.
+^F		Forward character.
+<ESC>F		Forward word.
+<ESC>B		Backward word.
+^V		Scroll forward.
+<ESC>v		Scroll reverse.
+^X<		Scroll left.
+^X>		Scroll right.
+^O		Open a line.
+<ESC>^O		Split current line.
+
+^D		Delete character.
+<DEL>		Delete backward character.
+<ESC>D		Delete word.
+<ESC><DEL>	Delete word backwards.
+<ESC><		Beginning of buffer.
+<ESC>>		End of buffer.
+^K		Delete from cursor to end of line.
+^W		Delete from mark to cursor.
+^Y		Yank deleted text back.
+
+<ESC>$		Send command to subprocess.
+
+^Xb		Switch to another buffer.
+^Xk		Kill buffer.
+^X^B		Display list of all buffers.
+
+^X^U		Convert text between mark and cursor to uppercase.
+^X^L		Convert text between mark and cursor to lowercase.
+<ESC>u		Convert next word to uppercase.
+<ESC>l		Convert next word to lowercase.
+<ESC>c		Capitalize next word.
+
+^X2		Split window vertically.
+^X5		Split window horizontally.
+^Xo		Go to other window.
+^X1		Make current window the only one on screen.
+^X0		Delete window.
+^X^		Enlarge window.
+^X}		Enlarge window horizontally.
+^X{		Shrink window horizontally.
+
+^L		Move current line to center of window.  Redraws display.
+
+VT200 BINDINGS
+--------------
+
+Arrows: The obvious definitions: backward-char, next-line, forward-char,
+                                             previous-line.
+
+Editing Keys:
+  Find                  Forward search.
+  Insert Here           Open a line.
+  Remove                Kill region.
+  Select                Set mark.
+  Prev Screen           Reverse scroll.
+  Next Screen           Forward scroll.
+
+Top row keys:
+  F6			Edit and send current line as command to subprocess.
+  F11                   Prefix for ESC commands.  Cannot be used to
+			terminate incremental searches.
+  BS			Beginning of line.
+  Help                  Follow it by a key to get help on that key.
+  Do			Send a command to subprocess.
+
+Keypad:
+  -----------------------------------------------------------------
+  |PF1            |PF2            |PF3            |PF4            |
+  |beginning-of-  |               |               |               |
+  |line           |end-of-line    |isearch-forward|kill-line      |
+  |---------------+---------------+---------------+---------------|
+  |7              |8              |9              |-              |
+  |forward-       |backward-      |               |               |
+  |paragraph      |paragraph      |kill-region    |kill-word      |
+  |---------------+---------------+---------------+---------------|
+  |4              |5              |6              |,              |
+  |               |beginning-of-  |               |               |
+  |end-of-buffer  |buffer         |yank           |delete-char    |
+  |---------------+---------------+---------------+---------------|
+  |1              |2              |3              |Enter          |
+  |               |               |               |               |
+  |forward-word   |backward-word  |quoted-insert  |               |
+  |---------------+---------------+---------------|               | 
+  |0                              |.              |               |
+  |                               |beginning-of-  |               |
+  |beginning-of-next-line         |previous-line  |open-line      |
+  -----------------------------------------------------------------

@@ -1,0 +1,102 @@
+Advantages of Gosling Emacs:
+
+1. The program itself is much smaller.
+GNU Emacs uses about 250k more pure storage.
+As a result, Gosling Emacs can run on machines
+that cannot run GNU Emacs.  There is not much difference
+in the amount of impure storage in the two programs.
+
+2. In some versions there is support for other forks to
+establish communications channels to Emacs (using sockets?).
+
+3. There is a direct interface to dbm (data bases).
+
+
+Advantages of GNU Emacs:
+
+* True Lisp, not Mocklisp.
+
+GNU Emacs's extension language has real symbols, lists
+and vectors.  Many extensions are much simpler, and some
+become possible that were nearly impossible in Gosling Emacs.
+Many primitives can have cleaner interfaces, and some features
+need not be put in as special primitives because you can do
+them easily yourself.
+
+* But Mocklisp still works.
+
+An automatic conversion package plus a run-time library
+allows you to convert a Mocklisp library into a Lisp library.
+
+* Commands are better crafted.
+
+For example, nearly every editing function for which a
+numeric argument would make sense as a repeat count does
+accept a repeat count, and does handle a negative argument
+in the way you would expect.
+
+* The manual is clearer.
+
+Everyone tells me it is a very good manual.
+
+* Better on-line documentation.
+
+Both functions and variables have documentation strings that
+describe exactly how to use them.
+
+* C mode is smart.
+
+It really knows how to indent each line correctly,
+for most popular indentation styles.  (Some variables
+control which style is used.)
+
+* Compatible with PDP-10 Emacs, Multics Emacs and Zmacs.
+
+The commands in GNU Emacs are nearly the same as in the
+original Emacs and the other Emacses which imitated it.
+(A few have been changed to fit the Unix environment better.)
+
+* Side-by-side windows.
+
+You can split a GNU Emacs window either horizontally or
+vertically.
+
+* Redisplay is faster.
+
+GNU Emacs sends about the same stuff to the terminal that
+Gosling's does, but GNU Emacs uses much less CPU time to
+decide what to do.
+
+* Entirely termcap-driven.
+
+GNU Emacs has nearly no special code for any terminal type.  Various
+new termcap strings make it possible to handle all terminals nearly as
+fast as they could be handled by special-case code.
+
+* Display-hiding features.
+
+For example, Outline Mode makes it possible for you to edit
+an outline, making entire sub-branches of the outline visible
+or invisible when you wish.
+
+* You can interrupt with Control-G.
+
+Even a looping Lisp program can be stopped this way.
+And even a loop in C code does not stop you from killing
+Emacs and getting back to your shell.
+
+* Per-buffer Undo.
+
+You can undo the last several changes, in each buffer
+independently.
+
+* The editor code itself is clean.
+
+Many people have remarked on how much they enjoy reading
+the code for GNU Emacs.
+
+
+One other note: The program etc/cvtmail that comes with GNU Emacs can
+be used to convert a mail directory for Gosling Emacs's Rmail into a
+Unix mail file that you could read into GNU Emacs's Rmail.
+

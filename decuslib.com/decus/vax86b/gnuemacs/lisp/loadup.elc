@@ -1,0 +1,82 @@
+
+(load "subr")
+
+(load "simple")
+
+(garbage-collect)
+
+(load "files")
+
+(garbage-collect)
+
+(load "indent")
+
+(load "window")
+
+(load "paths.el")
+
+(garbage-collect)
+
+(load "loaddefs.el")
+
+(garbage-collect)
+
+(load "startup")
+
+(load "lisp")
+
+(garbage-collect)
+
+(load "page")
+
+(load "register")
+
+(garbage-collect)
+
+(load "paragraphs")
+
+(load "lisp_mode")
+
+(garbage-collect)
+
+(load "text_mode")
+
+(load "fill")
+
+(garbage-collect)
+
+(load "c_mode")
+
+(garbage-collect)
+
+(load "isearch")
+
+(garbage-collect)
+
+(load "replace")
+
+(garbage-collect)
+
+(load "abbrev")
+
+(garbage-collect)
+
+(load "vmsproc")
+
+(garbage-collect)
+
+(load "buff_menu")
+
+(load "version.el")
+
+(lisp-interaction-mode)
+
+(load "site_init" t)
+
+(garbage-collect)
+
+(if (or (equal (nth 3 command-line-args) "-d") (equal (nth 4 command-line-args) "-d")) (progn (message "Writing map file") (dump-emacs) (kill-emacs)))
+
+(setq purify-flag nil)
+
+(or (fboundp (quote dump-emacs)) (eval top-level))

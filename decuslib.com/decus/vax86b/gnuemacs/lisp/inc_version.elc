@@ -1,0 +1,20 @@
+
+(insert-file-contents "EMACS_LISPDIR:VERSION.EL")
+
+(re-search-forward "emacs-version \"")
+
+(re-search-forward "VMS-[0-9.]*")
+
+(save-excursion (save-restriction (narrow-to-region (point) (progn (skip-chars-backward "0-9") (point))) (goto-char (point-min)) (let ((version (read (current-buffer)))) (delete-region (point-min) (point-max)) (prin1 (1+ version) (current-buffer)))))
+
+(skip-chars-backward "^\"")
+
+(message "New Emacs version will be %s" (buffer-substring (point) (progn (skip-chars-forward "^\"") (point))))
+
+(write-region (point-min) (point-max) "EMACS_LISPDIR:VERSION.NIL" nil (quote nomsg))
+
+(erase-buffer)
+
+(set-buffer-modified-p nil)
+
+(kill-emacs)
