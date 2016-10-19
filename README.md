@@ -22,6 +22,8 @@ not included.
 
 - emacs_18.41.tar.gz from http://bitsavers.org/bits/MIT/gnu/
 
+- emacs.tar.Z (**modified** 18.51) from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD-Tahoe/new.tar.gz
+
 - diff-18* from http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
 
 - emacs-18.55.tar.gz from ftp://ftp4.gwdg.de/pub/msdos/editors/emacs/
