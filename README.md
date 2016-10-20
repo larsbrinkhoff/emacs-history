@@ -39,6 +39,15 @@ not included.
   system, and some backups that Brad Parker found several years
   ago (NN is the version of the system)"
 
+- TI Explorer Zmacs 6 from Alfred M. Szmidt.
+
+  `zmacs-ti-6.tar.xz` (System 6)
+  "Based on zmacs.lisp time stamp:
+  1980-10-17 or there abouts"
+
+  "This is for TI Explorer (N is the version of Zmacs, not the
+  operating system -- even though they are the same)"
+
 - Emacs 13.8 from http://decuslib.com/decus/vax85b/gnuemax/emacs/
 
   Possibly with VMS modifications.
