@@ -22,6 +22,7 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 - TECO EMACS 162 from Alfred M. Szmidt.
 
   `ai-emacs.tgz` and `ai-emacs1.tgz`
+  Released September 1981-09-20, but this copy has further modifications.  
   "Based on AI EMACS; LOCK timestamp:
   1988-03-02 or there abouts"
 
@@ -31,7 +32,7 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 - emacs-v170.tap from Richard Alderson.
 
-  TOPS-20 `DUMP` tape image of TECO EMACS.  `<EMACS>EMACS.EXE` has
+  TOPS-20 `DUMPER` tape image of TECO EMACS.  `<EMACS>EMACS.EXE` has
   timestamp May 1 1996.  
   Extracted in http://github.com/PDP-10/emacs/tree/extracted
 
