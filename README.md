@@ -48,6 +48,24 @@ not included.
   "This is for TI Explorer (N is the version of Zmacs, not the
   operating system -- even though they are the same)"
 
+- Symbolics Genera Zwei from Alfred M. Szmidt.
+
+  `zwei-419.tar.xz` (Genera 8.1)
+  "Based on the Zwei patch-dir file:
+  ;;; Written 9/05/97 11:27:49 by LISPM"
+
+  `zwei-430.tar.xz` (Genera 8.3)
+  "Based on the Zwei patch-dir file:
+  ;;; Written 2/02/93 11:06:17 by Palter"
+
+  `zwei-436.tar.xz` (Genera 8.5 / Open Genera 2.0)
+  "Based on the Zwei patch-dir file:
+  ;;; Written 4/10/91 15:20:14 by Palter"
+
+  "This is from Genera, copies come from CD-ROMs and tapes distributed
+  with the Symbolics Lisp Machines (zwei-NNN where NNN is the version
+  of Zwei/Zmacs)"
+
 - Emacs 13.8 from http://decuslib.com/decus/vax85b/gnuemax/emacs/
 
   Possibly with VMS modifications.
