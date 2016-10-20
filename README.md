@@ -1,8 +1,21 @@
-# Historical Emacs tarballs
+# Historical Emacs Software Preservation
 
-Run the `build.sh` script to create a git repository with all GNU
-Emacs releases.  TECO EMACS, Gosling Emacs, Lucid Emacs and XEmacs are
-not included.
+### Included Implementations
+
+- TECO EMACS
+- Zwei/Zmacs
+- Multics Emacs
+- Gosling Emacs
+- GNU Emacs
+- Lucid Emacs
+- XEmacs
+
+### GNU Emacs Release History
+
+Run the `build.sh` script to create a git repository with GNU Emacs
+releases from 16.56 to 19.34.  Tarballs are preferred, but some
+releases are reconstructed from diffs.  Timestamps will be copied from
+the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 ## Provenance
 
