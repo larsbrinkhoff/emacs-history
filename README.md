@@ -9,7 +9,6 @@ not included.
 - TECO EMACS 162 from Alfred M. Szmidt.
 
   `ai-emacs.tgz` and `ai-emacs1.tgz`
-
   "Based on AI EMACS; LOCK timestamp:
   1988-03-02 or there abouts"
 
@@ -21,6 +20,24 @@ not included.
 
   TOPS-20 `DUMP` tape image of TECO EMACS.  Extracted in
   http://github.com/PDP-10/emacs/tree/extracted
+
+- MIT CADR Zwei from Alfred M. Szmidt and Brad Parker.
+
+  `nzwei-mit-48.tar.xz`
+  "Based on zmacs.lisp time stamp:
+  1980-10-17 or there abouts"
+
+  `zwei-mit-78.tar.xz`
+  "Based on the System patch-dir file
+  ;;; Written 1/11/82 13:52:10 by BSG"
+
+  `zwei-mit-99.tar.xz`
+  "Based on zmacs.lisp timestamp:
+  1985-04-13 or there abouts"
+
+  "This is for MIT CADR, copies come from tapes for the MIT CADR
+  system, and some backups that Brad Parker found several years
+  ago (NN is the version of the system)"
 
 - Emacs 13.8 from http://decuslib.com/decus/vax85b/gnuemax/emacs/
 
