@@ -1,0 +1,193 @@
+01/31/79 Multics EMACS Fortran mode.		Paul Schauble      
+					DVCP M.S. C34
+					602-866-4531
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+     This is the second edition of EMACS Fortran mode.  This
+mode is intended to aid in the construction and debugging of
+Fortran programs using EMACS.  Commands are provided for
+producing comment and continuation cards and for other commonly
+used formatting operations.
+
+     Fortran major mode is entered via the following command:
+
+	ESC-X fortran-mode CR
+
+     This mode may also be entered by Find File'ing any file
+with a last component name of ".fortran" when the
+find-file-set-modes option is selected.
+
+     The current list of special commands in Fortran mode is:
+
+CR	Carriage Return has been changed so that the cursor will
+	return to column 7, rather than to column 1. This will
+	also insert comment prefixes ("c     ") in the appropriate
+	places. If desired, the cursor may be moved back by hand
+	to delete spaces or comment prefixes.
+	
+^I	Tab has been changed so that a tab done in column 1 will
+	tab to column 7. Subsequent tabs will tab to the normal
+	places. The sequence for successive tabs is 7,10,20,30...
+	
+ESC-^M	Or ESC-CR ends the current line when the next line is a
+	continuation. A new line will be done, unless the current
+	line is blank or empty, and the prefix "     &  " will be
+	inserted, leaving the cursor in column 9. This is the
+	continuation for standard Fortran rather than for
+	Multics.
+	
+ESC-;	Begins a single comment line. A new line is done, unless
+	the current line is blank or empty, and the prefix 
+	"c     " inserted, leaving the cursor in column 7. This
+	may be used to end a line when the next line is a comment.
+	
+^XC	Begins a block of comments. The current line, if any, will
+	be ended and a comment block header line inserted. Any
+	future lines added will be prefixed by the standard
+	comment prefix "c     ". This minor mode is exited by a
+	second ^XC. Notice that ^X^C exits the editor. Don't miss!
+	
+ESC-:	Positions a fortran label. Since a line usually starts in
+	column 7, this command is provided to correctly position
+	statement numbers. Type the statement number, then ESC-:
+	to place the label in column 1.
+
+ESC-^C	Compile program.  The current buffer, if changed, is written
+	out to its default pathname (as for ^X^S), and then
+	compiled.  Compiler diagnostics are displayed, in the other
+	window if in two-window mode.  The extended commands
+	set-compiler and set-compile-options may be used to select
+	the compiler and options to be used.
+	
+^X^D	Find next error. This command is used following a
+	compilation in two-window mode. It scans the compiler output
+	and the source buffer in parallel, pointing a simulated
+	cursor to consecutive errors and placing the real cursor on
+	the line referred to in the error message. This mode will
+	terminate itself when you advance past the last error, when
+	you do another compilation, or when you exit it by keying
+	^XT. Since this mode locks the buffer used for
+	compilations, you are strongly advised to exit it when you
+	are finished.
+
+'	Abbreviation expander. The two characters immediately
+	preceeding the cursor when this character is struck
+	are taken as an abbreviation and expanded. The
+	character ' may itself be inserted by quoting it with
+	\ or ^Q. These abbreviations are initially supplied:
+	     in	integer		su   subroutine
+	     di	dimension		co   continue
+	     fu	function		re   return
+	     eq   equivalence	ex   external
+	     au   automatic		cn   common
+	     fo   format		im   implicit
+	Note that, with the exception of cn for common, all of
+	these abbreviations are the first two characters of
+	the word.	Other abbreviations may be defined using the
+	extended command set-fortran-abbrev. 
+	The abbreviations co (continue) and re (return) are very
+	special.  Since these words almost always have a label
+	and sit on a line by themselves, these abbreviations have
+	been hacked to do an ESC-:  and a new-line, so that
+	typing (in column 7)
+	      123co'
+	will expand to
+	123   continue
+	leaving you on the next line. The abbrev fo for format 
+	hacks labels, but not new lines. Try them.
+
+     In addition, several extended commands have been provided to set
+various parameters. These are:
+
+For comment blocks:	
+ESC-X fortran-set-begin-comment CR     to set the begin line, and
+ESC-X fortran-set-end-comment CR       to set the end line.
+
+     Both of these commands prompt for the line in the minibuffer.
+The line supplied is inserted exactly as given, and must therefore
+include the "c" at the beginning. Default values for these lines are
+	"c     ========================================".
+These are set by buffer.
+	
+For compilations:
+     ESC-X set-compiler compiler-name CR 
+	to set the compiler to be used.  Default is "ft".
+     ESC-X set-compile-options options  CR
+	to set compile options.  These are given as on the
+	compiler command.  The default is "-tb".  These are
+	set by buffer.
+	
+And, for abbreviations,
+     ESC-X set-fortran-abbrev abbrev expansion label eol
+	may be used to define new abbreviations. abbrev must
+	be a two character abbreviation that will be replaced
+	with expansion. Arguments must be enclosed in quotes
+	if they contain special characters, including spaces.
+	The optional arguments label and eol will cause this
+	abbrev to hack labels and new lines, respectively, just
+	like co and re.  The label option does not require a
+	label, but processes it if it is present.
+	Abbreviations are defined globaly and apply to all
+	buffers in fortran mode.  For example,
+	ESC-X set-fortran-abbrev as "common /xyz/ y(100)" eol
+	defines an abbrev as that expands to
+		common /xyz/ y(100)
+	and does a new-line, but does not believe in labels.
+
+
+     As mentioned above, this is an early edition and there may
+still be problems.  Any difficulties, comments, suggestions, etc.
+may be mailed to Schauble.fso (on System M, Phoenix) for action.
+(MIT-Multics and other ARPANET users continue to send bug/comment
+mail to emacs.bugs at MIT-Multics as usual, they will be forwarded).
+In fact, I would like to know if anyone is using this thing.
+
+     Intended for future implementation are:
+
+Debugging mode - Fortran debugging using probe integrated with
+	the editor. For now, the recommended debugging method
+	is to do a ^Z and run your program one level up.
+	Return to emacs with a pi command.
+
+	
+     Any suggestions on these or other features should be mailed to
+the above address.
+
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

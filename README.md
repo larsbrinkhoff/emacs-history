@@ -72,6 +72,10 @@ not included.
   "This is for/from Lambda, I do not know the version sadly :( The
   copy comes from Joe Marshall who used to work at Gigamos."
 
+- Multics Emacs 12.9 from web.mit.edu.
+
+  Last changed in 1989-11-14.
+
 - Emacs 13.8 from http://decuslib.com/decus/vax85b/gnuemax/emacs/
 
   Possibly with VMS modifications.

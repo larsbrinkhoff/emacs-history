@@ -1,0 +1,3077 @@
+11/10/79 - Emacs extensions
+
+(Updates to this document are kept in
+	>exl>emacs_dir>info>extensions.changes.info)
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+     An editor _e_x_t_e_n_s_i_o_n is a user-provided capability, added to the
+editor which augments its power and repertoire.  It is different from a
+macro, which is simply a collection of editor commands gathered up and
+(perhaps) given a name.  Extensions are _p_r_o_g_r_a_m_s; in Multics Emacs,
+they are written in the language of the Multics Emacs environment.  One good
+definition of an extension is a body of code which augments the editor's
+capability, but does not need to know how data in the editor is stored or
+manipulated.  In this sense, all of the word, sentence, paragraph,
+Lisp-list commands, and the various "modes" (e.g., PL/I mode) are extensions.
+
+     The person who wishes to add to his Multics Emacs environment any
+powerful or sophisticated capability must learn to write extensions.  The 
+keyboard macro facility (^X(, ^X)), is not intended for such usage.  In this 
+document we explain how to write extensions.
+
+     One of the guiding design principles in the Multics Emacs editor was
+that the creations of editor extensions, either by the editor implementors or
+end users, should be in a programming language of established elegance and
+power.  This primer will give you a starting point for writing Lisp code to
+run as editor extensions in the Multics Emacs environment.  If you have some
+knowledge of Lisp already, it will be of value.  However, I shall assume that
+the reader has no familiarity with Lisp, but perhaps with PL/I or BASIC.
+
+     I will assume that the reader _i_s quite familiar with Multics Emacs as 
+far as having used it, and acquired some proficiency and familiarity with its 
+general usage and visible organization.
+
+
+
+          An Introduction to Lisp for People Who Don't Want
+          To Have to Know Lisp to Write Emacs extensions.
+          -----------------------------------------------
+
+     Lisp programs are built of _f_u_n_c_t_i_o_n_s, which are vaguely like procedures 
+or subroutines in other languages, although more akin to PL/I and ALGOL 
+functions.  We write a Lisp program by creating a file full of function 
+_d_e_f_i_n_i_t_i_o_n_s.  A function definition specifies the name of a function, and 
+what it does.  Here is a sample function definition:
+
+(defun addandmult (a b c)			;Here is a comment
+       (* (- a b)
+	(+ a b c)))
+
+This says, "Here is a function named addandmult.  It takes three arguments,
+which, as parameters, we will call a, b, and c.  Compute the result of 
+multiplying the difference of a and b by the sum of a, b, and c.  Return that 
+number as a _r_e_s_u_l_t, or _v_a_l_u_e.
+
+     Here is another function definition:
+
+(defun squareprint (arg)
+       (print "The square of")
+       (print arg)
+       (print "is")
+       (print (* arg arg))
+       5)
+
+     This function, when invoked, will print the message "The square of",
+print the value of its argument, print the word "is", and print the value of
+the square of its argument.  It _r_e_t_u_r_n_s the value 5.  The function
+"squareprint" has side effects: it causes output on the console.  It also
+returns a value, the number 5.  Note that all Lisp functions produce a value;
+only some produce side effects.  The first function we defined returns the
+product of those numbers as a value; the second returns 5.
+
+     If we look at squareprint, we see that it almost consists of 
+"statements", the "print statements" that print things.  These statements
+are called _f_o_r_m_s, and what they are in fact are calls to _o_t_h_e_r functions, in 
+this case the built-in _p_r_i_n_t function.  In the form
+
+	(print "The square of")
+
+the print function is being passed as an argument the string "The square of".
+Like all functions, _p_r_i_n_t will return a value, in
+this case, something which we will not use.  The side-effect of
+printing something will occur.  In the form
+
+	(+ a b c)
+
+we are asking to invoke the "+" function, which is also built-in, passing it
+as arguments the values of the parameter-variables a, b, and c.  It will
+return a value, which is the requested sum, and produce no side effects.
+
+     There are five forms in the function-definition for _s_q_u_a_r_e_p_r_i_n_t:
+
+       (print "The square of")
+       (print arg)
+       (print "is")
+       (print (* arg arg))
+       5
+
+      Forms immediately inside a function definition are executed
+sequentially, like statements in other programming languages.  The value
+produced by the last form is the one the function itself returns.  What does
+it mean to "execute" a 5? "Execute" is not exactly the right term, that is
+where the problem lies.  What really happens is that these forms are
+_e_v_a_l_u_a_t_e_d.  This means that a value is produced from them.  Evaluating a 5
+produces the number 5; evaluating the form
+
+      (+ a b c)
+
+calls the "+" function with the appropriate arguments, and produces whatever 
+value the "+" function returns.  The value produced by the "print" function 
+is something which is not interesting, but a value is produced.
+
+     Numbers, like 5, and strings, like "The square of" are said to evaluate 
+to themselves.  Things between parentheses, like
+
+     (+ a b c)
+     (print "The square of")
+
+are calls to functions, which are evaluated by calling the function 
+indicated, and producing the value it returns.  Function calls have the syntax
+
+    (FUNCTIONNAME ARGFORM1 ARGFORM2 ARGFORM3 ... ARGFORMn)
+
+FUNCTIONNAME is the name of the function to call; the ARGFORMs are themselves 
+forms, which will be evaluated to produce the arguments to give to the 
+function.  Thus, we see that to evaluate (i.e., "execute" and find the value
+returned by so executing) a form like
+
+    (+    (*  a  b)
+	15
+	c)
+
+     We evaluate the _i_n_n_e_r _f_o_r_m (* a b) to produce a value,
+     We evaluate the 15 to produce 15 (remember, numbers and strings evaluate
+        to themselves)
+     We evaluate the _v_a_r_i_a_b_l_e c to produce its value,
+
+       And pass these three values on to the "+" function, and return what
+       it returns.
+
+     Thus, forms are seen to be either numbers like 5, strings like "is",
+variables like b, or function calls like (* a b).
+
+     Variables are much like variables in other languages. A variable has a 
+value, which is called its _b_i_n_d_i_n_g.  At this stage of the exposition, this 
+value must be a string or a number.  When a function is invoked, the 
+parameter variables (like a, b, and c above) of the function acquire the
+arguments of the function call as bindings.  Evaluating a variable produces
+its binding as a value.  For instance, if someplace in a function we cause
+the form
+
+	(addandmult 2 (+ 3 2) 6)
+
+to be evaluated, a, b, and c will have the bindings 2, 5, and 6 while
+the forms in the definition of _a_d_d_a_n_d_m_u_l_t are being evaluated.  This is not 
+unlike the subroutine parameter mechanism in other languages.  It is very
+different insofar that it specifies what _v_a_l_u_e a variable has during 
+"subroutine" execution.  In PL/I or FORTRAN, a parameter is associated with
+a variable in the calling program, not a value, during subroutine execution.
+
+     There are parameter variables, as we have used above, temporary 
+variables, which we will meet below, and global variables.  Regardless of 
+what "kind" of variable we are dealing with, they all have bindings (values), 
+and evaluation of the variable produces that value.
+
+     Summarizing our naive introduction to dataless Lisp:
+
+     1. Lisp programs are built of functions.
+
+     2. Function definitions consist of the word "defun", the
+        function's name, a "parameter list", and a number of forms, which
+        are to be sequentially evaluated at function call time, with
+        a pair or parentheses around the whole thing.
+
+     3. The value of the last form in a function will be the value returned
+        by that function.
+
+     4. Forms can be either strings, numbers, variables or calls on functions.
+        Forms are _e_v_a_l_u_a_t_e_d to produce values,
+        which are passed around between functions as arguments and results.
+
+     5. Strings and numbers evaluate to themselves.
+
+     6. Variables evaluate to the datum to which they are bound, which,
+        for a parameter, is the corresponding argument to the containing
+        function.
+
+     7. Function calls contain the name of a function to call and
+        forms which are evaluated to produce the arguments to the
+        function.  Function calls may produce side-effects.  Like any form,
+        when a function call is evaluated, it produces a value.
+
+
+
+
+			    P__r_e_d_i_c_a_t_e_s
+
+     Programming languages need conditional execution.  In order to control 
+conditional execution, we need things upon which to base a decision.  There 
+are two data objects in the Lisp world corresponding to truth and falsity, 
+for the purposes of parts of the Lisp system that deal with conditions.
+There are a set of functions called _p_r_e_d_i_c_a_t_e_s which return these objects as 
+values.  For instance, there is a function called ">" which, invoked as
+
+    (> 4 6)
+
+will return the indicator of falsity, and when invoked as
+
+    (> 4 1)
+
+will return the indicator of truth.   Predicates work just like other
+built-in and non built-in functions, like print, addandmult, squareprint, 
+and +.  They take arguments, and produce a result.  In the case of
+predicates, however, the result is not a string or a number, but
+an indication of truth or falsity.  The result of a predicate can be used
+by the "_i_f special form" to control the execution of a function, and we
+will consider _i_f shortly.
+
+     Here are some of the most useful Lisp predicates.  In all of these
+examples, A1, A2, S1, O1, etc., stand for _f_o_r_m_s, which means they
+can be 12, (+ 6 q), (myfun 33 (- a b)), etc.  When we say below that
+"A1 is a number" below, what re really are trying to say is that A1
+is some form which _e_v_a_l_u_a_t_e_s to a number, such as 3, (+ 6 2),
+or x49, if x49's value is indeed a number.
+
+     Predicates for numbers:  A1 and A2 are numbers:
+
+  Predicate   Example   Returns TRUTH if ..., otherwise falsity.
+  _________   _______   ________________________________________
+
+     =	    (= A1 A2)     A1 and A2 are the same number.
+     >	    (> A1 A2)     A1 is a bigger number than A2.
+     <        (< A1 A2)     A1 is a smaller number than A2.
+
+     Predicates for strings: S1 and S2 are strings:
+
+     samepnamep
+              (samepnamep S1 S2)   S1 and S2 are strings of identical
+			content, i.e., the "same string".  This is
+			the standard way to see if two strings are
+			the same, as in (samepnamep test "-hold")
+     alphalessp
+	    (alphalessp S1 S2)   S1 collates before S2 alphabetically, e.g.,
+			(alphalessp "Able" "Baker") returns truth, but
+			(alphalessp "Zeke" "Joe") does not.
+
+     Predicate for symbols (including character objects), which we will
+     learn more about later: SY1 and SY2 are symbols.
+
+     eq       (eq SY1 SY2)    SY1 and SY2 are the same symbol.
+
+     Predicates for any objects: O1 is some object, of perhaps unknown type:
+
+     fixp     (fixp O1)       O1 is a number, as opposed to some other kind
+			of object.
+     stringp  (stringp O1)    O1 is a string, as opposed to anything else.
+     symbolp  (symbolp O1)    O1 is a symbol, as opposed to anything else.
+     null     (null O1)       O1 is not only a symbol, but the very important
+		          and critical symbol named "nil".
+
+			Lisp Special Forms
+		      -------------------------
+
+     Now there are a number of _s_p_e_c_i_a_l _f_o_r_m_s in Lisp, which do not go by the 
+simple rules given above.  We have already seen one.  The function-defining 
+form, which begins with the word "defun", is not simply a function call with 
+forms to produce the function's arguments.  By all rights, a form like
+
+   (defun square (x)
+	(* x x))
+
+should, when evaluated, evaluate, in order, to produce arguments for "defun",
+
+       1. A variable named "square".
+       2. The form "(x)", calling a function named "x" with no arguments.
+       3. The form "(* x x)", multiplying the value of a variable named "x"
+          by itself,
+
+and then pass these three values onto the "defun" function.  This, however
+is not actually what happens.  Evaluating the "defun" form causes a function
+named "square" to be defined, whose parameter list and "body" are as given.
+Defun is a _s_p_e_c_i_a_l _f_o_r_m, and when Lisp sees "defun" as the function-name in a 
+form it has been asked to evaluate, it says "Stop everything, I'm going to 
+do something special with this, in this case, define a _f_u_n_c_t_i_o_n built out of 
+this _f_o_r_m _i_t_s_e_l_f."  It is _n_o_t a call to "defun" with arguments.  Although 
+this may seem kludgey at first, it can be shown that one must have at least 
+one such special form in order to have an operative Lisp system of any kind.
+
+     There is a special form in the Multics Emacs Lisp environment called _i_f, 
+which is used to control conditional execution (conditional evaluation).  
+Here is an example of its use:
+
+(defun which-is-greater (first second)
+       (if (> first second)
+	 (print "The first one is the greater.")
+         else
+	 (if (> second first)
+	     (print "The second one is greater")
+	   else
+	     (print "They are equal")))
+
+The syntax of _i_f is as follows:
+
+     (if <PREDICATE>
+         <THEN-FORM-1>
+         <THEN-FORM-2>
+             ...
+         <THEN-FORM-m>
+       else
+         <ELSE-FORM-1>
+         <ELSE-FORM-2>
+             ...
+         <ELSE-FORM-n>   )
+
+     Any number, including none, "THEN-FORM"s may be supplied.  Similarly,
+any number, including none, of the "ELSE-FORM"s may be given.  If there are
+no "ELSE-FORM"s, then the keyword "else" may be omitted, too.
+
+     Note that all the forms in the _i_f are _n_o_t sequentially evaluated; the 
+word _e_l_s_e is not even intended to be a form.  If all of the forms inside the 
+_i_f were evaluated, it would be useless, for execution (evaluation) would not 
+be conditional.   That is why _i_f is a special form; there are special rules 
+about how forms inside it are to be evaluated.  The rule for all non-special 
+forms is the same: you evaluate all the sub-forms sequentially to produce the 
+arguments to the function.
+
+     The _i_f special form evaluates the <PREDICATE>: if it results in truth,
+the <THEN-FORM>s are sequentially evaluated, and the value of the last one is 
+returned as the value of the _i_f.  Otherwise, the <ELSE-FORM>s are evaluated 
+sequentially, and the value of the last returned.  If there are none, 
+something useless is returned (nil, to those knowledgeable in Lisp).
+
+     There are two global variables in Lisp, called "t" and "nil", whose
+bindings are always the truth and falsity indicators respectively.  Thus,
+
+   (if t
+       (print "Truth")
+     else
+       (print "Not so truth"))
+
+when evaluated, will always print "Truth".
+
+     There is a way to change the value of a variable.  The only way we have 
+seen so far that variables acquire values is by being parameters, and 
+acquiring values at function call time.  Values can be changed by the special 
+form _s_e_t_q:
+
+(defun adder-of-one ()
+       (print "The value of x is")
+       (print x)
+       ("And the value of x plus one is")
+       (setq x (+ x 1))
+       (print x))
+
+A _s_e_t_q form has the word _s_e_t_q, the name of a variable, and an inside form.  
+The inside form is evaluated, and that value assigned to the variable.  It is 
+like an assignment statement in other languages.
+
+     There is a construct for looping in the Multics Emacs Lisp environment.  
+It, too, is a special form.  It is called "do-forever":
+
+(do-forever
+    (print "Yay Multics")
+    (print "scitluM yaY"))
+
+will, when evaluated, print these two sayings forever.  The way you stop
+doing in a do-forever is to evaluate the form "(stop-doing)":
+
+(defun print-n-times (n)
+       (do-forever
+         (if (= n 0)(stop-doing))
+         (print "foo")
+         (setq n (- n 1))))
+
+This function, given a number as an argument, will print "foo" that many 
+times. The "=" builtin function/predicate compares its two arguments, which 
+must be numbers, and returns truth or falsity depending on whether or not they 
+are numerically equal. Note that the arguments to "=" are _n_o_t n and 0, but 
+rather, the number which is the binding of n and 0.  The number which is the 
+binding of n is different each time around the loop; that is the point of the 
+program.  It is _s_e_t_q which changes the value of n each time around, as
+do-forever executes the loop.  A "do-forever" form generally returns something 
+useless (nil), unless you exit by saying (return 5) or (return nil), or
+(return a), in which latter case the value of the variable a is returned.
+
+     One can acquire temporary variables via the special form "let":
+
+(defun sumtimesdif (x y)
+   (let ((sum (+ x y))
+         (dif (- x y)))
+        (print "Sum times difference is ")
+        (print (* sum dif))
+        (print "Sum squared is")
+        (print (* sum sum))))
+    
+This function has two temporary variables, sum and dif, which are 
+initialized to the values of (+ x y) and (- x y).  The general syntax of
+"let" is:
+
+     (let ((VAR1 VAL1)
+	 (VAR2 VAL2)
+	 ...........
+	 (VARn VALn))
+	<FORM1>
+	<FORM2>
+	.......
+	<FORMm>)
+
+     The temporary variables VAR1...VARn exist only within the _l_e_t.  They get 
+the initial values of VAL1-VALn, which are forms that will be evaluated.
+Then, with all these temporary variables set up and initialized, the FORMi's
+are evaluated sequentially, and the value of the last FORMi is returned by _l_e_t.
+
+     Another, less useful way of acquiring temporary variables is via the
+special form _p_r_o_g.  Forms inside a _p_r_o_g are evaluated sequentially, like
+forms in a function definition.  However, the first "form" in a _p_r_o_g is not
+really a form at all, but rather a list of temporary variables used in the
+_p_r_o_g, such as "(a b c)".  That is why _p_r_o_g is a special form.  The value
+returned by _p_r_o_g is usually useless, unless (return...) is used to return
+something meaningful.
+
+     Inside a _p_r_o_g, one can also put "labels", to use for 
+go-to's:
+
+(defun bar2 (x y)
+       (prog ()			;note the empty variable list
+	   (if (< x y)(go lab1))
+	   (print "X is not less than Y")
+	   (return nil)		;return "false" indication
+        lab1
+	   (print "so be it!")
+	   (return t)))		;return "true" indication.
+
+Note the special form _g_o, whose _o_p_e_r_a_n_d (_n_o_t argument)
+is a _l_a_b_e_l to which to "go", i.e., continue sequential evaluation of forms in 
+the prog.  You wil find that labels are rarely needed, due to the powerful
+_i_f and _d_o-___f_o_r_e_v_e_r constructs.
+
+     There are special forms for or-ing and and-ing predicate results: they 
+are special because they stop evaluating their operands (from which arguments 
+are produced) when they "know" their answer for certain:
+
+    (if (and (not (= x 0))
+	   (> (// 10 x) 5))
+        (print "Quotient too large."))
+
+The _n_o_t function inverts truth and falsity.
+The double-slash indicates division, because slash is the escape character in 
+Lisp.
+
+     Note that the _a_n_d will not attempt to evaluate the second form within it 
+if the first produces falsity.  This prevents an error which would result if 
+an attempt were made to divide by zero.   Sequential execution and stopping
+at an intermediate result are a defined and useful feature here, as opposed 
+to the logical operators of, say, PL/I.
+
+     There are two more special forms worth mentioning while we are on the
+topic, progn and prog2.  _p_r_o_g_n is used to force sequential execution of forms
+and returning the value of the last.  For instance,
+
+(if (and (> x 3)
+         (progn (print "Oh dear this is getting serious")
+	      (> y 5))
+         (print "Fatal difficulty")))
+
+_p_r_o_g_n returns the value of its last form.  Thus, the _a_n_d tests x being 
+greater than 3, and y being greater than 5, before the "print" of "Fatal 
+difficulty" is evaluated.  The printing of "Oh dear..." occurs as part of the 
+evaluation of the _p_r_o_g_n, it is only the second value in the progn which _a_n_d 
+gets to see.  The _p_r_o_g_n is used to force evaluation of the _p_r_i_n_t form.
+
+     _p_r_o_g2_ is even a bit stranger, but often just the thing one needs.  _p_r_o_g2_
+is just like _p_r_o_g_n, except that it returns its _s_e_c_o_n_d argument, evaluated,
+rather than its last.  It must have at least two arguments.  It is used for
+clever tricks that involve saving some value which is subsequently going to
+be destroyed.  The following form, when evaluated, interchanges the values of
+x and y:
+
+(setq x (prog2 0			; this zero is evaluated to 0, and
+				; its value thrown away.
+	     y			; the value of y is obtained here, and
+				; remembered as it is here.
+	     (setq y x)))		; x is evaluated, and that value 
+				; assigned  to y. The value of setq
+				; is that value.
+	; But the value of the _p_r_o_g2_ is that value of y as it was before we 
+	; assigned into y, and now the outer setq assigns that to x.
+
+
+			     S__y_m_b_o_l_s
+
+     There is one more type of data object in Lisp that will concern us at
+present.  It is called the _s_y_m_b_o_l.  Symbols are named data objects kept in a
+registry of symbols, by Lisp.  For current purposes, there is only one symbol
+of any name.  Symbols are used in Multics Emacs to represent buffer names,
+and various quantities associated with buffers.  Lisp uses symbols to keep 
+track of functions, and internally to keep track of global variables.
+
+     To use a symbol in a program, we give the name of the symbol preceded by 
+the ASCII quote character, '.  For instance,  the form
+
+(setq x 'Brunhilde)
+
+assigns the symbol named Brunhilde to x.  Note that this is different
+from
+
+(setq x "Brunhilde")
+
+which assigns the _s_t_r_i_n_g Brunhilde to x, and from
+
+(setq x Brunhilde)
+
+which assigns the value of the variable Brunhilde to x.
+
+			L__i_s_p L__i_s_t_s
+
+     The final data-type of Lisp with which we will have reason to deal is the
+_c_o_n_s (for construct), and the larger data-type built out of it, the _l_i_s_t.
+Conses are blocks which relate to two (usually other) objects in the
+environment, which are known as its _c_a_r and its _c_d_r, for historical reasons.
+The function "cons", given two objects, produces a new cons, whose car and
+cdr, respectively, are the two objects given.  For instance, let's say
+that the variable "x" has a value of the string "Brunhilde", as above,
+then
+
+	(cons 7 x)
+
+produces a cons whose car is the number 7 and whose cdr is the string
+"Brunhilde", returning it as a value.  The functions "car" and "cdr"
+may be used to obtain the car and cdr of a cons.  Let us say that we had
+set the variable "c" to the result of the form (cons 7 x) above, then
+
+	(car c)
+
+produces the number 7 as a value.
+
+     The usual thing to do with conses is to make larger and larger structures
+out of conses, by setting up conses whose car and cdr are more conses,
+and so forth, until we have a large enough structure to represent all the
+values we need.  The resulting construction serves the same purpose
+as a PL/I structure: its various parts have meaning assigned by the
+programmer.
+
+     The most common construction of conses is the "list".  A list
+is defined as a chain of conses, each of which has the next one
+in the chain as its cdr, except the last one, which has the symbol "nil"
+as its cdr.  A list built in this way of n conses is called a list of n
+_e_l_e_m_e_n_t_s, the elements being the n objects which are the cars of the conses.
+The cons at the head of the list is identified as being "the list": its
+car is the first element in the list, its cdr is the cons whose
+car is the second element of the list, and so forth.  Let us
+construct a list of the numbers 2, 4, 5, and 7, in that order, and
+set the variable "b" to it:
+
+	(setq b (cons 2 (cons 4 (cons 5 (cons 7 nil)))))
+
+(Note that the variable "nil" is peculiar insofar as its value is always
+the symbol "nil", thus we need not say 'nil.)
+
+There is a function that simplifies the writing of such forms, for
+constructing lists: it builds lists directly, and accepts any number
+of arguments.  It produces the same result as the type of construction
+shown above.  It is called "list":
+
+	(setq b (list 2 4 5 7))
+
+To get the third element of the list, once this form were evaluated, we
+could evaluate the form
+
+	(car (cdr (cdr b)))
+
+(ie.e, the car of the cons which is the cdr of the cons which is the
+cdr of the cons which is the value of b).  Again, there are
+Lisp functions to simplify such constructions.  The above form
+is equivalent to
+
+	(caddr b)
+
+In general, for up to 4 car's and cdr's deep, total, functions
+like cadr, cdar, caddr, cadar and so forth, are provided (up through caaaar
+and cddddr).  The first four elements of a list are gotten by
+car, cadr, caddr, and cadddr (it is good exercise to work that
+through and verify why this is the case).
+
+     When lists are printed out by Lisp, they are represented
+as a pair of parentheses around the printed representations of all
+of the elements, in sequence, separated by spaces.  Thus, if
+Lisp printed out the list which was b's value above, it would
+appear
+
+	(2 4 5 7)
+
+Conses whose cdr is the symbol nil may always be viewed as lists
+of one item, and are so printed out by Lisp, unless it is in the
+process of printing a larger list of which the cons at issue is
+a chain-link.  Conses whose cdr is neither nil nor another cons
+are printed with a dot preceding the cdr. Thus:
+
+	(cons 'a 'b)  =>  (a . b)
+	(cons 'a nil) =>  (a)		;a list of one element
+	(cons 'a (cons 'b 'c)) => (a b . c)
+	(cons 'a (cons 'b nil)) => (a b)	;list of two elements
+	(cons 'a (cons (cons 'b 'c)(cons 'd nil))) ;list of three
+		=> (a (b . c) d)
+
+Lists can be put into programs, by quoting them, as we quote symbols:
+
+	(setq b1 '(this is (a list)(of lists)))
+
+Two functions are provided to redefine the car or cdr of an existing cons.
+They can be very dangerous if misused, especially if they alter a list as in
+the form above, which is written into a program as a constant.  rplaca
+(replace car) and rplacd (replace cdr) each take two arguments, the first is
+the cons which is to be altered, and the second is the new car or new cdr
+respectively.  the returned value is the cons itself.
+
+		  A_C_T_U_A_L_L_Y_ W_R_I_T_I_N_G_ E_M_A_C_S_ E_X_T_E_N_S_I_O_N_S_
+
+     The starting point for writing extensions is building functions out of
+provided functions in the Emacs Lisp environment, and hooking them
+up to keys.  The documented set-key and set-permanent-key commands can be
+used to connect keys to Lisp functions that you provide, as well as to
+provided commands and keyboard macros.
+
+     Many simple and useful extensions are just groups of provided commands 
+strung together.  For instance, suppose that we want to write a function that 
+goes to the beginning of a line, deletes all whitespace there, goes to the end 
+of the line, does the same, and then goes back to the beginning of the line.
+
+     Interactively, we would type;
+
+	^A ESC-\ ^E ESC-\ ^A
+
+to do this.  To write such a function, called "shave-line", let us say, we 
+would write this:
+
+(defun shave-line ()		;keystroke functions take no args.
+       (go-to-beginning-of-line)
+       (delete-white-sides)
+       (go-to-end-of-line)
+       (delete-white-sides)
+       (go-to-beginning-of-line))
+
+Write this function in a file, with the editor of your choice.  When in 
+Emacs, say ESC-X loadfile PATHNAME CR, to load it in as code.  Then hook it 
+up, perhaps by saying
+
+       ESC-X set-key ^XA shave-line CR
+
+Then, hitting ^XA will cause the chosen sequence of actions to happen.  In 
+order to find out the names of the functions that we had to use to code shave-
+line, all we had to do is ask ESC-? what the names of the functions on ^A,
+^E, and ESC-\ were.
+
+     Now we want to be able to do more complex things, like use conditionals 
+and variables.  Let us say that we wanted a function that went to the 
+beginning of a line and deleted all words that started with "foo" from the 
+beginning of the line.
+
+(%include e-macros)
+
+(defun foodeleter ()
+       (go-to-beginning-of-line)
+       (do-forever
+	(if (looking-at "foo")
+	    (delete-word)
+	    (delete-white-sides)
+	  else (stop-doing))))
+
+The (%include e-macros) must be at the beginning of any file that uses the 
+Emacs environment Lisp macros.   The file e-macros.incl.lisp is found in the 
+same directory as the editor.  It should be in your "translator" search path
+in order to do any Emacs extension development work.
+
+    What this function does in essence is type ^A, and as long as the first 
+three characters on the line are "foo", does ESC-D's followed by ESC-\ to 
+remove the whitespace after the word.  When the first three characters are no 
+longer "foo", it will return.  "looking-at" is an Emacs predicate (to be 
+described in detail below) which tests whether a given string is to the right 
+of the current "cursor".  We will no longer discuss the issue of how to hook 
+this or any other function up to a given key; we have already covered that 
+adequately.  From this point on, we will only discuss coding functions.
+
+     If you write the function foodeleter, hook it up to a key and use it, 
+you will watch all foo-starting words magically disappear at once from the 
+begninning of a line with foo-starting words at its front, when you strike 
+this key.  Note that the code for foodeleter has no mention of printing,
+output, or displays.  It cares and or knows exactly as much about them as you 
+do when typing Emacs keystroke commands.  It just manipulates the text in the 
+buffer, and the screen or printing terminal is managed automatically by the 
+magic of the Multics Emacs redisplay.  The display need never be thought 
+about in coding Emacs extensions.
+
+     It is a major intentional feature that many of the commands that are 
+connected to keys can be, and should be used in coding extensions.
+go-to-end-of-line, go-to-beginning-of-buffer, skip-over-indentation,
+forward-char, and delete-word are typical of them.  There are some commands, 
+however, that should not be used from extension code.  For example, if you
+wanted to search for some string, you do not want to invoke
+string-search, which is what ^S is connected to, for that will prompt
+the user in the minibuffer for what to search for.  Here is a table of
+some keystroke commands that you should not use in extensions, what you 
+should use instead, and why:
+
+KEY	DONT USE		USE INSTEAD	WHY
+
+^N	next-line-command	next-line		next-line command worries
+					about screen position,
+					which is expensive and
+					usually not needed.
+					Also worries about
+					numeric arguments.
+
+^P	prev-line-command	prev-line		Same reasons as above.
+
+^K	kill-lines	kill-to-end-of-line
+			delete-char (at eol)
+					^K is very complex, has
+					many cases, worries about
+					numeric arguments.
+
+^S	string-search	forward-search	forward-search takes string
+					as Lisp argument, does not 
+					prompt.  Moves "cursor" if
+					search succeeds; returns 
+					truth or falsity to indicate
+					result.
+
+^R	reverse-string-search
+			reverse-search	Same as ^S.
+
+^X^R	read-file		read-in-file	read-in-file takes Lisp
+					argument for pathname,
+					does not prompt.
+
+^X^W	write-file	write-out-file	Same as ^X^R.
+
+^W	wipe-region	wipe-point-mark	Use local marks, see below.
+
+ESC-/	regexp-search-command
+			regexp-search	Same arguments as ^S. Takes
+					Lisp argument, no slashes.
+					Returns falsity if not found
+					or moves cursor to after
+					and returns mark to before
+					matched string if found.
+
+^XB	select-buffer       go-to-or-create-buffer  Takes arg, doesn't prompt
+
+^X^F	find-file		find-file-subr      Ditto.
+
+	This list is probably not complete, but these are the important
+ones to know.
+
+	Commands whose behavior is indistinguishable between ESC-5-<FOO>
+and <FOO><FOO><FOO><FOO><FOO>, i.e., ^B, ^D, ^F, ESC-B, ESC-D, ESC-F,
+#, ESC-#, etc., are OK to use in extensions;  they do not inspect their
+arguments.  They are invoked multiple times by the Emacs listener if 
+appropriate.   Commands whose names include the word "command" (other than
+^G, command-quit) are usually not intended to be used in code.
+
+     The value of the numeric command argument, i.e., "5" in ESC-5-<FOO>,
+is available as the binding of the global variable "numarg"; if there was no
+numeric argument given, this variable is set to the symbol "nil" (not to be 
+confused with the global variable nil, whose binding is the symbol nil) which,
+we now disclose, is _t_h_e representation of falsity.
+
+     The normal printing characters are hooked up to the function
+self-insert, which inserts the last physical character typed at the current
+point in the buffer.  This is clearly unusable from code, if your desire is 
+to insert text into the buffer.  For this purpose, the Emacs environment 
+provides the function "insert-string", whose argument is a string to be 
+inserted  into the buffer at the current cursor.  As in typing in text 
+manually, the cursor is left after the inserted text:
+
+(defun make-a-point ()
+       (go-to-beginning-of-line)
+       (insert-string "CASE IN POINT:   "))
+
+     make-a-point, when invoked, goes to the beginning of the line, and 
+inserts the string "CASE IN POINT:   " in the buffer.  The cursor is left 
+after the inserted string.
+
+    When we say "the cursor is moved around" or "a string is inserted" in a 
+function, we do not imply that the user watching the screen can see all these 
+things happen.  No action on the screen occurs until the entire function has 
+finished running, at which time, the screen is updated all at once, as 
+appropriate, showing the total, cumulative effect of what has happened, 
+regardless of how it happened.
+
+		      M__a_r_k_s _a_n_d _t_h_e_i_r M__a_n_a_g_e_m_e_n_t
+
+     A concept of great value is that of the "mark", or, as it is called in
+other Emacs-like editors, the editor buffer pointer.  Like the cursor, a mark 
+is a conceptual pointer to the position between two characters in the current 
+buffer.  Marks, like the cursor, have the property that they remain between 
+the two characters between which they were put regardless of other insertions 
+or deletions in the same buffer, even on the same line as the mark.  Marks 
+are valuable because regions of text in the buffer are specified as the 
+extent between the current conceptual cursor, hereafter known as "point", and 
+a given mark.  Marks are a type of data object in the Multics Emacs Lisp 
+environment, like strings, numbers,and symbols.  The value of any variable 
+may be made to be a mark.  The value of many variables might even be the same 
+mark! The "the-mark" spoken of in the documentation is just one mark, that
+is the value of a global variable that many supplied functions know about.
+Emacs functions use many temporary marks.
+
+     The function set-mark creates a new mark, which points to the current 
+"point" in the current buffer.  It stays around, and is updated by the editor, 
+any time text is inserted or deleted in this buffer.  Since this is 
+expensive, we must take care to discard, or _r_e_l_e_a_s_e marks when we are done 
+using them.  This is done by giving them to the function release-mark.  Here 
+is an example of a function which deletes three words and all between them:
+
+(defun delete-three-words ()
+       (let ((temp-mark (set-mark)))	 ;make a mark in a temp var.
+	   (do-times 3 (forward-word)) ;3 words forward
+	   (wipe-point-mark temp-mark) ;wipe out the stuff between point
+				;and where point was.
+	   (release-mark temp-mark)))
+
+The variable temp-mark is set to a mark representing the "point" at the time 
+delete-three-words is entered. "do-times" is a very useful construct in the
+Multics Emacs Lisp environment, that repeats the evaluation of one or more 
+forms a given number of times. Its syntax is:
+
+    (do-times <HOWMANY> <FORM1> <FORM2> .. <FORMn>)
+
+wipe-point-mark is a function which, given a mark, takes all the text between
+"point" at the time it is invoked and that mark (i.e., "point" at the time 
+that mark was created) and deletes it from the buffer.  It is, however, 
+pushed on to the  kill ring, so that ^Y can be used to retrieve it.  If we 
+did not want it pushed onto the kill ring, we could have said
+
+    (without-saving (wipe-point-mark temp-mark))
+
+instead of
+
+   (wipe-point-mark temp-mark)
+
+and no saving would have occured.  After we perform the computation, we free 
+up the mark, to keep the performance of the editor up.
+
+     The sequence of setting a mark, using it, and releasing it, is so common
+that a special construct in the Multics Emacs Lisp environment is provided
+which takes care of all of this, including the creation of a temporary
+variable, so no _p_r_o_g or _l_e_t is needed.  It is called
+"with-mark".  The function delete-three-words, rewrtitten to use it, looks 
+like this:
+
+(defun delete-three-words ()
+       (with-mark m		;m is usually used for the name of a mark.
+	        (do-times 3 (forward-word))
+	        (wipe-point-mark m)))
+
+The with-mark construct is very powerful and useful.  Its syntax is
+(the word "syntax" is a tip-off to a special form):
+
+   (with-mark <MARKNAME>
+      <FORM1>
+      <FORM2>
+        ...
+      <FORMn> )
+
+It means:  "Where I am now, call that <MARKNAME>.  Evaluate (execute)
+the forms <FORM1> to <FORMN>, sequentially, returning the value of the last 
+one as a value.  Before returning anything, however, free up the mark I made".
+
+     A very common use of marks is to remember where you were at the time you 
+started something, and after some traveling around, get back there when you 
+are finished doing it. Here is an example of a function which truncates a 
+line which is longer than 50 print positions, with backspaces and tabs all 
+considered properly:
+
+(defun trunc-50 ()
+     (with-mark m			;remember where we started
+       (go-to-end-of-line)
+       (if (> (cur-hpos) 50.)		; dot is for decimal, default is octal
+	 (go-to-hpos 50.)
+	 (kill-to-end-of-line))	;what ^K does not at e.o.l.
+       (go-to-mark m)))		;return to where we were
+
+     Several things are worth noting here.  "cur-hpos" is a very valuable 
+function which tells you the horizontal position (on a dprint, not on the 
+screen) of the current "point" (the left margin is considered to be 0).
+As can be seen from the from "(cur-hpos)", it takes no arguments.  The 
+function go-to-hpos  moves point to a position on the current line whose 
+horizontal position is its argument, or the end of the line, if the line is 
+shorter than that.
+
+     Now "(go-to-mark m)" is not some kind of a branch, but tells the editor 
+to move the current point in this buffer to the point where it was at the time
+the mark, to which the variable m is bound, was created.
+
+     Although moving the editor's point to previously saved marks is 
+extremely common, just using the mark mechanism to remember where you were 
+before some excursion and get back there is so common that a special 
+mechanism is provided just for this: it is called save-excursion, and it deals
+with all the issues of temporary variables and releasing the mark when done.
+Our function trunc-50 recoded to use it looks like this:
+
+(defun trunc-50 ()
+       (save-excursion
+	(go-to-end-of-line)
+	(if (> (cur-hpos) 50.)
+	    (go-to-hpos 50.)
+	    (kill-to-end-of-line))))
+
+The semantics of the save-excursion special form are as follows: Remember
+where I am, via a mark saved in a secret internal variable.  Evaluate all of
+the forms within the save-excursion, and return as a value the value of the
+last one.  Before returning anything however, move the editor point back to 
+where it was when the save-excursion was first "entered", and release the 
+mark used to remember this place.
+
+
+     Note that if point were at print position 75. at the time trunc-50
+was called, it will wind up at position 50, even though the mark to which it
+wants to return points to what was at position 75.  No error is indicated, or 
+has occured.  Marks live, even if characters to the right or left of them are 
+deleted.
+
+
+			C__l_e_a_n_u_p H__a_n_d_l_e_r_s
+
+     You may have wondered, in the previous section, what happens if an
+extension encounters an error while executing, and never gets to release
+a mark it has set.   When errors occur (for example, forward-char (^F)'ing
+off the end of the buffer), Emacs aborts execution of command functions,
+returns to its listener, and beeps (as when a ^G is performed), as you
+know, if you have ever tried to ^V off the end of a buffer, or so forth.
+
+     Since the releasing of marks has been pointed out as mildly critical,
+there is a need for a "cleanup-handler"-like facility to make sure that
+marks get release when code is aborted.  Indeed, there is such a facility
+in Lisp, and we will explain its use summarily.  This cleanup-handler
+facility is useful for many other things, too: "save-excursion" returns
+the cursor to the point at which it found it, if aborted through,
+save-excursion-buffer returns to the buffer where it found the editor
+if aborted through, all the mark-handling forms release their mark,
+and so forth.  These Emacs-environment primitives use the cleanup-handler
+facility internally, so we need not worry about cleanup-handlers if we
+use them.  However, occasionally, there are times (see the code
+for columnating the Emacs wall chart, for example) when we must use
+cleanup-handlers explicitly.  The Lisp form "unwind-protect"
+is the primitive cleanup-handler.  Here is its syntax:
+
+     (unwind-protect
+	<SUBJECTFORM>
+	<CLEANUPFORM1>
+	<CLEANUPFORM2>
+	...
+	<CLEANUPFORMn>)
+
+The meaning of this is as follows: The <SUBJECTFORM> is evaluated, i.e.,
+executed,  and then <CLEANUPFORM1> to <CLEANUPFORMn> (any number of cleanup
+forms are permissible), and the value of the <SUBJECTFORM> returned.
+So far, unwind-protect is very much like _p_r_o_g2_ or _p_r_o_g_n.  The difference,
+however, is that <CLEANUPFORM1> to <CLEANUPFORMn> will be executed even if the
+execution of <SUBJECTFORM> fails, and aborts!  Similarly, the cleanup forms
+will be executed even if diabolically tricky things like a _r_e_t_u_r_n from a _p_r_o_g
+inside the <SUBJECTFORM> causes its execution to terminate prematurely.
+
+     Thus, the cleanup forms are executed after _e_v_e_r_y termination of the
+<SUBJECTFORM>, whether normal or abnormal.  The following use of
+unwind-protect (which could clearly be done in simpler ways, but is here for
+illustrative purposes only) performs "complex-function", and returns the
+cursor to the beginning of the buffer, even if "complex-function"
+"explodes":
+
+     (unwind-protect
+	(complex-function)
+	(go-to-beginning-of-buffer))
+
+Note that if you want more than one <SUBJECTFORM>, you had better use
+_p_r_o_g_n to encompass them, and make your <SUBJECTFORM> this _p_r_o_g_n.
+
+     Unlike Multics/PL/I cleanup handlers, unwind-protect cleanup forms
+will be executed upon normal termination of the subject form, too.
+A close inspection of most PL/I programs using cleanup handlers shows
+that this may be the better idea after all.
+
+
+			U__s_e_f_u_l P__r_e_d_i_c_a_t_e_s
+
+     The following predicates in the Multics Emacs environment are basic to 
+all extension-writing; they are used to test various hypotheses about point, 
+marks, and the buffer:
+
+   (eolp)		;End of line predicate. True if point is at end of a text 
+		;line, which is right before the newline character.
+
+   (bolp)		;Beginning of line predicate.  True if point is at the
+		;start of a text ine, being either before the first 
+		;character of the buffer, or after a newline.
+
+   (firstlinep)	;First line predicate.  True if point is on the first
+		;text line of the buffer.
+
+   (lastlinep)	;Last line predicate.  True if on last buffer line.
+
+   (at-beginning-of-buffer)
+		;True if point is right before the first character in the
+		;buffer
+
+   (at-end-of-buffer)
+		;True if point is right before the newline on the last
+		;line of the buffer. You can't go past it.
+
+   (looking-at <STRING-VALUE>)
+		;True if <STRING-VALUE> appears in the buffer 
+		;immediately to the right of point. Restriction:
+		;<STRING-VALUE> may not contain a newline character,
+		;except as its last character.
+
+   (at-white-char)	;True if the character to the right of point is 
+		;a space, newline, or tab.
+
+   (point>markp <MARK>) ;True if the current point is _f_u_r_t_h_e_r in the
+		;buffer than the position defined by <MARK>.
+		;This is expensive, and should not be used in loops.
+
+   (mark-reached <MARK>)
+		;True if the current point is up to or beyond <MARK>
+		;in the buffer.  Intended for use in controlling
+		;character-by character loops, expects that point
+		;starts to the left of <MARK> and moves toward it.
+		;The function (order-mark-last <MARK>) may be used
+		;to switch point and mark if needed at the start of such
+		;loops.  Will not terminate unless executed with mark
+		;and point on same line.
+
+   (mark-at-current-point-p <MARK>)
+		;True if the mark <MARK> represents the exact same
+		;position as the current point.
+
+   (mark-on-current-line-p <MARK>)
+		;True if the mark <MARK> represents a position on the
+		;same line as the current point.
+
+   (mark-same-line-p <MARK1> <MARK2>)
+		;True if two marks which are arguments represent
+		;positions on same line.
+
+   (line-is-blank)	;True if current line is all blanks or empty.
+
+   (empty-buffer-p <BUFFER-SYMBOL>)
+		;True if the buffer identified by <BUFFER-SYMBOL> is
+		;empty, i.e., contains exactly one line with only a 
+		;newline character in it.  The form
+		;(empty-buffer-p current-buffer) may be used to test
+		;the emptiness of the current buffer.  See below
+		;for a discussion of buffer symbols.
+		    ------------------------------
+
+   Now we use some of this. Here is a function that ltrims all the lines in
+the buffer.  There are easier ways, but we are using the primitives and 
+constructs we do here for illustrative purposes:
+
+(defun ltrim-all-lines ()
+       (save-excursion			;be polite, restore point.
+	(go-to-beginning-of-buffer)
+	(do-forever			;loop on lines thru buf
+	 (do-forever			;loop thru chars on line
+	  (if (eolp)(stop-doing))		;stop at eol.
+	  (if (at-white-char)(delete-char)	;do the work
+	    else (stop-doing)))		;non-white char, next line.
+	 (if (lastlinep)(stop-doing))		;quit when did last line
+	 (next-line))))			;leaves you at b.o.l.
+
+
+		        W_H_I_T_E_S_P_A_C_E_ M_A_N_A_G_E_M_E_N_T_
+
+     Management of whitespace is very important. Neatly formatted editor 
+output and displays, as well as program and document formatting require this.
+
+     The following functions exist to deal with whitespace:
+
+   skip-over-whitespace
+	Takes no arguments.  Moves point forward over all tabs, blanks, and
+	newlines until a non-white character or the end of the buffer is
+	reached to the right of point.
+
+   skip-back-whitespace
+	Takes no arguments.  Moves point backward over all tabs, newlines,
+	and blanks until the character to the left of point is not one of
+	these, or the beginning of the buffer is reached.
+
+   skip-to-whitespace
+	Moves forward until character to right of point is one of tab,
+	blank, or newline.  Since last character in buffer must be 
+	a newline, there is no special end condition.
+
+   skip-back-to-whitespace
+	Moves backward until the character to the right of point is
+	one of tab, blank, or newline, or the beginning of the buffer is 
+	reached.
+	 
+   delete-white-sides
+	The old standby on ESC-\, this extremely valuable function may be
+	used to advantage to delete leading or trailing blanks from
+	anything, or delete space between words.
+
+   skip-over-whitespace-in-line
+	Same as skip-over-whitespace, but will stop before the newline
+	character at the end of the line (i.e., stop at the end of the line)
+	if it gets that far.
+
+   skip-back-whitespace-in-line
+	Same as skip-back-whitespace, but will not proceed backward
+	beyond the beginning of the line.
+
+     A very common need is to generate whitespace to reach a given horizontal 
+position (column).  This is good for all kinds of tabbing and page layouts.  
+The function whitespace-to-hpos performs this service; it generates tabs and 
+spaces as appropriate, moving point along until the horizontal position which 
+is its argument is reached.  The following toy function moves all lines in 
+the buffer seven spaces over, regardless of their original indentation, with 
+just the right amount of tabs and spaces when all is said and done:
+
+(defun move-over-7 ()
+       (save-excursion
+        (go-to-beginning-of-buffer)		;all do-for-all-lines 
+        (do-forever				;start like this.
+	      (skip-over-indentation)		;This is ESC-M, which is
+					;often useful. Look it up.
+	      (let ((hpos (cur-hpos)))	;let hpos be the curr. pos.
+		 (delete-white-sides)	;close up all original space
+		 (whitespace-to-hpos (+ hpos 7))) ;make just enough
+	      (if (lastlinep)(stop-doing))
+	      (next-line))))
+
+     A related need is that to space out to a given position with whitespace,
+but leaving a single space if you are already there or beyond.  This is
+useful for producing columnar output where overlength fields must be
+separated (like what ^X^B does).  whitespace-to-hpos will not do this; it
+stops if it is far enough.  This need is fulfilled by format-to-col, which
+takes a single argument, a horizontal position to be spaced out to.  If the
+current point is already that far, it inserts a space.
+
+		   E__x_t_r_a_c_t_i_n_g T__e_x_t F__r_o_m _t_h_e B__u_f_f_e_r
+
+    The function point-mark-to-string is used to get a Lisp string whose 
+value is the string of characters between point and the mark which is its 
+argument.  Let us demonstrate with a function that finds a vertical bar  (|) 
+on a line, deletes it, and swaps the two line-halves around it.  For instance,
+the line
+
+	An Indian with a zebra | never trips in the snow
+
+will come out
+
+	never trips in the snowAn Indian with a zebra
+
+Here is this extremely utilitarian construction:
+
+(defun swap-around-bar ()
+       (go-to-beginning-of-line)
+       (if (not (forward-search-in-line "|"))	;check for one at all.
+	 (display-error "Hey, there is no ""|""!"))
+       (rubout-char)			;what # does
+       (with-mark m				;m in middle of line
+	     (go-to-end-of-line)
+	     (let ((temp (point-mark-to-string m))) ;get middle to end
+		(without-saving (wipe-point-mark m))
+		(go-to-beginning-of-line)
+		(insert-string temp)))) 		;put in text
+
+     forward-search-in-line is just like forward-search, except that it
+indicates failure if it cannot find its search string in the current line.
+If we cannot find the vertical bar, we complain and do command-quit, a "^G",
+which stops the execution of this function at once and returns to
+command level.  It is often needed, however, to search for some string
+only in a given line, and thus, it is useful in its own right.  There is also
+a reverse-search-in-line, and a regexp-search-in-line, which are similar in
+their relation to ^R and ESC-/.
+
+		         T__a_l_k_i_n_g _t_o _t_h_e U__s_e_r
+
+
+     We may not use the Lisp I/O system to print out messages and/or query 
+the user.  The Multics Emacs redisplay must manage the screen itself, 
+entirely.  Thus, you may not use "print", or "read", or other Lisp functions 
+that you may be familiar with.
+
+     A function called minibuffer-print is provided, which prints all the
+little messages that Emacs outputs in the minibuffer screen area.  It takes
+any number of arguments, which must be strings.  The useful function
+decimal-rep is provided to convert numbers into strings for purposes of
+inserting them in the buffer or handing them to display-error.  The following
+function counts the number of a's in the current line:
+
+(defun a-counter ()
+    (let ((n 0))				;initial count
+         (save-excursion			;why not.
+	(go-to-beginning-of-line)
+	(do-forever
+	 (if (not (forward-search-in-line "a"))
+	     (minibuffer-print "I found " (decimal-rep n) " a's.")
+	     (stop-doing))
+	 (setq n (+ 1 n)))))	;count 'em.
+
+     Note how we take advantage of the fact that forward-search-in-line
+moves to the right of what it finds (like ^S, its patron), so that it will not 
+find it the next time.
+
+     To prompt the user for input, which is always done via the minibuffer
+(other than for ESC-?, which is highly special), the function
+minibuf-response is used. It takes two arguments.  The first is the prompting
+string.  The second should be specified by the value of one of the global 
+variables ESC or NL, which are bound to magic symbols that minibuf-response
+knows about.  If the value of ESC is used, minibuffer input will terminate
+on an ESC.  If the value of NL is used, (NL, _n_o_t CR), minibuffer input will 
+terminate on a carriage return.  There are no other choices. Thus,
+
+      (minibuf-response "Type new division name: " NL)
+
+will return the user's response to this question.  S/he is expected to
+terminate it with a carriage return.  The value of minibuf-response is a Lisp
+string.  The carriage return will not appear in it, nor will the prompt.
+
+     Often one wants to display an error message in the minibuffer, and then
+abort execution of an extension, i.e., execute a command-quit (^G).  For
+example, in checking the arguments to an extended command, checking that a
+necessary sequence of previous commands were issued before a certain command,
+etc.  For this, display-error is provided.  display-error is like
+minibuffer-print, except that it does NOT return, but aborts to emacs top
+level immediately after printing its error message in the minibuffer.  Like
+minibuffer-print, it takes any number of string arguments.
+
+     Messages printed by minibuffer-print are suppressed during keyboard macro
+( ^X(, ^X)) execution, just as search strings are not displayed, and other
+gratuitous messages are suppressed.   The following set of functions describes
+the repertoire of message-printing:
+
+
+     display-error
+	Prints a message in the minibuffer and aborts to editor top
+	level.  It is intended for use in error message pritning.
+
+     display-error-noabort
+	Prints a message in the minibufer and continues execution.  This
+	function is intended for reporting non-fatal errors such
+	as "User not accepting messages...".
+
+
+     minibuffer-print
+	Prints a message in the minibuffer.  The message is NOT printed
+	during macro execution.  This function is intended for
+	use by extensions which print messages in the normal process
+	of their execution such as the line-count from ^X=.  For
+	this function, as well as the others below, in multi-line
+	minibuffer situations, an appropriate line is chosen based
+	upon availability of empty lines and several other criteria.
+
+     minibuffer-print-noclear
+	Prints a message in the minibuffer but does not erase the
+	previous contents.  The message is NOT printed during macro
+	execution.  Output is appended to the last minibuffer line used.
+
+     display-com-error
+	Prints a message in the minibuffer and aborts to editor top
+	level.  Its first argument is a Multics standard error code.
+	It remaining arguments are character strings or symbols.
+	See the section "Multics Error Table" below for the technique
+	used to get error_table_ values into your program.
+
+     display-com-error-noabort
+	Prints a message in the minibuffer and continues execution.
+	Its first argument is a Multics standard error code.
+
+     minibuffer-clear
+	Clears out the last minibuffer line that was written in, except
+	during macro execution.  This function should be used to clear
+	out minibuffers written in by minibuffer-print and
+	minibuffer-print-noclear at the end of subsystem invocation.
+
+     display-error-remark
+	Identical to display-error-noabort, except that the particular
+	minibuffer line on which this remark will be printed will be
+	"targeted" to be the next ine overwritten for any minibuffer
+	remark or output at all.  This function should be used for
+	"transient" remarks (such as "Writing", "Modified", etc., which
+	are desired to get off the screen as soon as possible.
+
+			    V__a_r_i_a_b_l_e_s
+
+     Many groups of Emacs commands need global variables to communicate 
+amongst themselves and the functions they call.  A global variable is a Lisp
+variable which is not the parameter of any particular function; its value may 
+be accessed or set by any function.  Some of the global variables in Multics 
+Emacs are highly user-visible, for example, "fill-column", which contains the 
+column number of the fill column as set by ^XF, and used by the filling 
+commands and fill mode.   Similarly, the character string which is the 
+comment prefix is the binding of the global variable "comment-prefix".
+Extensions will often need global variables to communicate among their parts.
+
+     Normally, global variables in Lisp are accessed just line other 
+variables, i.e., those which are parameters of functions or _p_r_o_g or _l_e_t 
+variables (_l_e_t will be discussed later.).  For instance, a function which
+wanted to set the fill column to 30. if it was over 40. now might contain
+the code:
+
+	(if (> fill-column 40.)(setq fill-column 30.))
+
+     When a global variable is used in your program, say one named 
+"my-global", the "declaration"
+
+	(declare (special my-global))
+
+must appear in the program before its first use, to tell the compiler about 
+this "special" variable (which is the Lisp term for a global variable, 
+incidentally).  The e-macros include file declares many of the provided 
+global variables, you need not declare them.
+
+     The global variable situation in Multics Emacs is complicated by the 
+fact that editing activity is usually local to each buffer.
+That is to say, if a set of global variables contains a set of values about
+what is being edited, it usually pertains to what is going on in only one
+editor buffer. If the user switches to a different buffer, and uses the same 
+editor facility, we do not want to use or change the values of those global 
+variables which pertained to activity in the other buffer.  At first, this 
+would seem to make global variables unusable, because all functions would 
+have to keep track of what buffer they are talking about before using any 
+global variables, and maintaining several sets of them thereby.
+Fortunately, it is a lot easier than that.  The buffer-switcher in Multics 
+Emacs is willing to save and restore values of global variables as buffers 
+are switched if you tell it what variables you want so saved and restored, when
+the buffer you are operating in is exited and re-entered, respectively.  Such
+a variable is called a _p_e_r-_b_u_f_f_e_r _v_a_r_i_a_b_l_e, and the act of telling the 
+buffer-switcher about it, thereby associating its current value with this 
+buffer, is called _r_e_g_i_s_t_e_r_i_n_g it.  Once a variable has been registered in a 
+given buffer, the functions which use it can assume that its value will be 
+what it last was in that buffer whenever the editor enters that buffer.
+Another term for a per-buffer variable is a _l_o_c_a_l _v_a_r_i_a_b_l_e.
+The following two primitives exist for registering local variables; there are 
+no primitives for setting or retrieving their values, because the whole point 
+of this mechanism is to allow them to be accessed as normal Lisp variables.
+
+     register-local-variable
+	Called with one argument, the symbol whose name is the name of the 
+	local variable we wish to register.  Registers it in the current 
+	buffer, if not already registered here.  If not already registered 
+	here, the variable initially inherits its "global value";  if 
+	registered, its value is left alone.  If it has no global value,
+	it acquires the symbol "nil" as its value if this is its first 
+	registration in this buffer.
+
+     establish-local-var
+	Just like register-local-variable, but takes a second argument,
+	a default value to be initially assigned to the variable the first 
+	time it is registered in this buffer, if it has no global value.
+
+     The global value of a per-buffer-variable is the value it has in buffers
+in which it is not registered.  It is this value which is set if you set this
+variable while in a buffer in which it is not registered.  A local variable 
+"inherits" its global value when it is first registered in a given buffer.
+For variables that have no global value (i.e., were never assigned one),
+establish-local-var can be used to good effect to provide default 
+initialization.
+
+     Here are three function which maintain a "problem count" in this buffer.
+The user says ESC-Xmonitor-problemsCR to start it up in a given buffer,
+and then can say ^X-P to count a problem, and ^X-R to report how many 
+"problems" he has so noted:
+
+(defun monitor-problems ()			;command-level function
+       (set-key '^XP 'note-a-problem)		;set the keys needed, only
+       (set-key '^XR 'report-problems)		;in this buffer
+       (establish-local-var 'problem-count 0))	;register the local var, 
+					;initial value 0 here.
+
+(defun note-a-problem ()			;executed on ^XP
+      (setq problem-count (+ 1 problem-count)))	;Increment the variable.
+
+(defun report-problems ()			;on ^XR
+       (minibuffer-print "There have been " (decimal-rep problem-count)
+		     " problems in this buffer."))
+
+     By calling establish-local-var on the symbol "problem-count", the
+programmer here has ensured that the problem-count's in each buffer
+in which he counts problems will be maintained separately.
+
+			P__r_o_v_i_d_e_d V__a_r_i_a_b_l_e_s
+
+     The following per-buffer variables are automatically registered by the
+editor.  Their values may be inspected or set in extension code.  The following
+table gives their names and meanings:
+
+buffer-modified-flag
+     Contains t or nil, indicating that this buffer has or has not been
+     modified since last read in or written.  Set automatically by the
+     editor.  Modification of a buffer executed within the special form
+
+	(without-modifying <form1><form2>...<formn>)
+
+     will not set this flag.
+
+read-only-flag
+     Contains t or nil indicating whether or not this is read-only buffer.
+     The editor does not set this flag, it is set only by extensions.
+     An attempt to modify the text in this buffer will produce an error
+     and a quit to editor command level if this flag is on, and the
+     buffer-modified-flag flag is off (nil).  The buffer may be modified,
+     however, successfully, by functions executed from within extension code
+     within a "(without-modifying ...)".
+
+fpathname
+     The full Multics pathname associated with this buffer by the last file
+     read or written into/out of it, or by find-file. It is nil if there is
+     none.  Changing it from extension code will modify or "forget" the
+     pathname as you set it.
+
+der-wahrer-mark   (name subject to change, use macros instead)
+     The mark associated with the user-visible mark that ^X^X etc. see.
+     Will be nil if no mark ever set by the user in this buffer.  Do not set
+     this variable, call set-the-mark (the ^@ function) to do so.
+
+current-buffer-mode
+     The major mode in effect in this buffer.  The value is a symbol.  To 
+     claim that a major mode of your construction is in effect in a buffer,
+     simply set this variable.
+
+comment-column
+     The comment column, as always, measured from 0.
+
+comment-prefix
+     The string, which may be a null string, which is the comment prefix.
+
+tab-equivalent
+     The amount of spaces that a tab is worth.  Initialized to 10., the Multics
+     standard, this can be set either in code or by ESC-ESC to edit code
+     from other operating systems.  The redisplay will obey this variable too,
+     but not in two-window mode.
+
+buffer-minor-modes
+     A Lisp list (to be explained) of symbols representing the minor modes
+     in effect in this buffer.
+
+			L__a_r_g_e S__c_a_l_e O__u_t_p_u_t
+
+    Output of multi-line information, or information longer than about 60
+characters, should not be done via display-error, which prints in the 
+minibuffer area, but via the _l_o_c_a_l-_d_i_s_p_l_a_y, or _p_r_i_n_t_o_u_t facility. This is the 
+facility with which buffer listings, global searches, apropos, and other 
+familiar commands display their output.  On display terminals, it displays 
+lines at the top of the screen, asking for "MORE?" as each screen fills up,
+and pausing for the next Emacs command at the end of the display, and
+restoring the screen.  On printing terminals, the data is simply printed
+line by line, with no "MORE?" processing or pausing at the end.
+The local display facility is an integral part of the Multics Emacs
+redisplay.
+
+     There are three common functions used in generating local displays:
+
+init-local-displays
+     is called with no arguments to start a local display.  It basically
+     sets up the necessary redisplay mechanism, initializing it to the top
+     of the screen.
+
+local-display-generator
+     This function is called with a string, whose last character must be a 
+     newline, and displays it as the next line (or lines, if continuation lines
+     are required) of local output.  If you do not have a newline at the end
+     of your string, calling local-display-generator-nnl instead will provide
+     one automatically.  There must be no embedded newlines in strings for
+     local output.  A null string causes an empty line.
+
+end-local-displays
+     Finishes a local display, restoring the screen.  Causes
+     the next redisplay to be suppressed, so the local display remains visible
+     on the screen.
+
+     The sequence of calls
+
+	(init-local-displays)
+	(local-display-generator(-nnl) ...)    ;perhaps many times
+	(end-local-displays)
+
+     correctly produces a local display.
+
+     Often, the best way to generate a well-formatted local display is to set
+up a temporary buffer (see "Manipulating Buffers" below), build some text in
+it, and display its content, in part or in whole, as a local display.  Three
+functions are provided to facilitate this:
+
+local-display-current-line
+     Does a local-display-generator on the current editor line in this buffer.
+
+display-buffer-as-printout
+     Does an init-local-displays, and displays all lines of the current
+     buffer as local output.  It does NOT do an end-local-displays; you have to
+     do that yourself, hopefully _a_f_t_e_r you have gotten out of your
+     temporary buffer and cleaned up whatever else you had to.
+
+view-region-as-lines
+     Displays the entire point-to-user-visible-mark as local display,
+     making all the necessary calls including end-local-displays.
+
+     While in a function which has a local display in progress, you must never
+call the redisplay (see "Calling the Redisplay" below), or call
+minibuf-response or any other function which will cause redisplay, for that
+will instantaneously restore the screen contents to the windows on display,
+obliterating the local display in progress.
+
+     The following function locally displays all lines in the buffer
+that contain the string "defun":
+
+(defun look-for-defuns ()			;use ESC-x look-for-defunsCR
+       (save-excursion			;remember where we are.
+	(go-to-beginning-of-buffer)
+	(init-local-displays)		;set up for printout.
+	(do-forever			;loop the buffer
+	  (if (forward-search-in-line "defun")	;look for "defun"
+	      (local-display-current-line))	;cause printout of it
+	  (if (lastlinep)(stop-doing))	;check for EOB.
+	  (next-line)))			;Go to start of next line.
+       (end-local-displays))			;wait for user, and next
+					;command.
+
+		         M__a_n_i_p_u_l_a_t_i_n_g B__u_f_f_e_r_s
+
+     The easiest way to do string processing in the editor environment, i.e.,
+monkeying around with strings, catenating, searching, etc., is often to use
+the primitives of the editor itself, which is, after all, a string-processing
+language.  To do this, temporary buffers are necessary.  To create a buffer,
+you should use the primitive "go-to-or-create-buffer", which is what
+^XB uses, which goes to a buffer associated with the symbol you give it
+as an argument.  We will discuss how to make it temporary shortly.
+
+     Lisp symbols are funny things;  it was stated before that symbols are
+kept in a registry.  This is true for most symbols: this registry is called
+the _o_b_a_r_r_a_y, and there is only one symbol of any given name in it.
+A symbol registered in the obarray is said to be _i_n_t_e_r_n_e_d.  There can
+only be one interned symbol named "joe", but it is possible to create
+many uninterned symbols named "joe".  If you refer to a symbol named "joe"
+in a program, however, by saying "'joe", you will always be getting the
+interned one.
+
+     A major feature of symbols in Lisp is that they can be given _p_r_o_p_e_r_t_i_e_s,
+arbitrary user-defined attributes.  These attributes are catalogued "in" the
+symbol via _i_n_d_i_c_a_t_o_r_s, symbols which indicate what property we want.
+The Lisp functions "putprop" and "get" store and retrieve properties.
+
+	(putprop 'Fred 'blue 'eyes)	;Gives the interned symbol named "Fred"
+				;an "eyes" property of "blue".
+
+	(get 'Fred 'eyes)		;retrieves the property under the 
+				;indicator "eyes", and thus returns
+				;the interned symbol "blue".
+
+     In Multics Emacs, symbols are used (among other things) to represent 
+buffers.  All of the information associated with a buffer is catalogued as
+properties of some symbol whose name is the name of the buffer.
+Thus, it is possible to have two buffers of the same name, which would imply
+that the of the symbols representing them, only one is interned. ^XB
+always uses the interned symbol of the name given; that is why you can ^XB back
+to an existent buffer instead of creating a new one each time.
+
+     To create a temporary buffer, we must first create an uninterned symbol,
+to make sure that we are not going to switch to a buffer that is already real.
+To do this, we give a string to be used in naming the symbol to the
+Lisp cliche
+
+	(maknam (explodec  "A string"))
+
+The explodec blows the string apart into a Lisp list of characters, the
+maknam builds a symbol out of it.  The value of this form is the new symbol.
+We can then go to a (guaranteed) new buffer of that name, i.e.,
+
+	(go-to-or-create-buffer (maknam (explodec "A string")))
+
+and the global variable "current-buffer" will have that symbol as its value.
+A _t_e_m_p_o_r_a_r_y _b_u_f_f_e_r is one that is destroyed automatically by the editor upon 
+switching out of it.  To  make a buffer temporary, all we have to do is give 
+the symbol which represents it (the "buffer symbol") a "temporary-buffer" 
+property of the symbol "t".  This can be done by the Lisp form
+
+	(putprop current-buffer t 'temporary-buffer)
+
+(The variable "t" is always bound to the symbol "t").  Once this has been 
+done, we must be careful not to switch out of this buffer until we are done 
+with it.  If our code involves manipulating many buffers, some of them 
+temporary, we must give the temporary buffers their temporary-buffer 
+properties at the end of our manipulations.
+
+     When a new buffer is created, it contains one line, which consists of 
+only a linefeed.  There are no "truly empty" buffers in Multics Emacs.
+The predicate empty-buffer-p may be applied to a buffer symbol to
+determine if that buffer is in this state.
+When buffers are switched, all information related to the old buffer is stored
+as properties of the buffer symbol: this includes not only the local 
+variables registered in that buffer, but the location of "point", the 
+user-visible (and all other) marks, etc.  Thus, when buffers are switched 
+back and forth (as can be seen while editing), the cursor retains its 
+position in each buffer, although the redisplay might choose to display a 
+screen differently after visiting another buffer and coming back.
+
+     There are some applications which require making a non-temporary 
+buffer, putting some text in it, and going back there on occasion.  For this 
+reason, we might want to go into a non-temporary buffer of an interned buffer 
+symbol, as such:
+
+	(go-to-or-create-buffer 'name-and-address-buffer)
+
+or perhaps keep a global (_n_o_t per-buffer) variable which we set once to an 
+uninterned symbol as such:
+
+	(setq name-and-address-keep-track
+		  (maknam (explodec "Name and Address Buffer")))
+
+and switch into it by saying
+
+	(go-to-or-create-buffer name-and-address-keep-track)
+
+
+     The function "buffer-kill" may be called with a buffer symbol to destroy
+a buffer.  The function "destroy-contents-of-buffer" (no arguments) may be 
+called to reduce the current buffer to a single "empty" line.
+
+     The following two variables are relevant to buffer manipulation:
+
+current-buffer
+     The value of this variable is the buffer symbol of the current buffer.  
+     Do not change it, or incorrect operation will result.  Use 
+     go-to-or-create-buffer.
+
+previous-buffer
+     The value of this variable is the buffer symbol of the last buffer, 
+     which will be returned to when ^XB-CR is typed.  It is acceptable to setq
+     this variable.  
+
+
+     go-to-or-create-buffer will accept a buffer-name of "" as meaning
+go to that previous buffer.
+
+     The special form save-excursion-buffer is invaluable when writing 
+functions that switch buffers.  It provides for remembering which buffer you 
+were in, and switching back to it when you are done.  It also saves and 
+restores the state of "previous-buffer".  save-excursion-buffer is like 
+save-excursion, it executes its contained forms while pushing the 
+buffer-state of the editor  on an internal stack, and returns the value of 
+the last form within it.
+
+     The following program when invoked after typing somebody's name (say we
+hook it up to a key) and follows it with his title in parentheses.  We assume
+the file >udd>Washington>States>personnel_data looks like this:
+
+Rasputin, G. E. =Chief Lecher
+Nietzsche, F. =Antichrist
+Mouse, M. =Optimist
+Eisenhower, D. D. =Golfer
+
+(defun insert-person-title ()
+       (let ((name (save-excursion			;save guy's point
+		(skip-back-whitespace)		;get to end of word
+		(with-mark m			;m = end of word
+		   (backward-word)			;go to beg. of wd.
+		   (catenate (point-mark-to-string m) ",")))))
+				;return the word with a "," after it.
+	  (insert-string				;insert
+	   (catenate " ("				;open paren and sp
+	     (save-excursion-buffer			;save the old buff
+	      (go-to-or-create-buffer 'name-position-records)
+						;go to stuff
+	      (if (empty-buffer-p current-buffer)	;read it once
+		(read-in-file ">udd>Washington>States>personnel_data"))
+	      (go-to-beginning-of-buffer)		;set up for search
+	      (do-forever				;scan lines
+	       (if (looking-at name)			;Are we at "name,"?
+		 (forward-search "=")		;look for the =.
+		 (return (with-mark n		;get to the end.
+			  (go-to-end-of-line)
+			  (point-mark-to-string n))))
+	       (if (lastlinep)(return "???"))		;couldn't find him
+	       (next-line))				;move on
+	      ") ")))))
+
+     This function operates by picking out the name you just typed by skipping
+back over whitespace, and picking up all between there and the start of the 
+previous (current) word.  It then inserts, between parentheses, the portion of
+that line of the data file which contains the sought name at its front after 
+the equals sign.  The buffer name-position-records is read into once, and
+contains the data file thereafter.
+
+     The initial save-excursion remembers the user's point location while the
+word is collected:  The save-excursion-buffer remembers what buffer and where
+in it, all its modes, local variables, etc., while we operate in the data 
+file buffer.
+
+     The function _c_a_t_e_n_a_t_e is an extremely valuable one in the context of 
+Multics Emacs; it takes any number of strings (or symbols, whose print-name 
+will be used), builds a string out of catenating them first-to-last, and 
+returns it.
+
+
+		        C__a_l_l_i_n_g _t_h_e R_e__d_i_s_p_l_a_y
+
+     The Multics Emacs redisplay is a large and powerful screen-management
+system which functions completely automatically.  Its function, in simple 
+terms, is to decide what lines of the current buffer should be shown on the
+screen, determine how to modify the current screen to show the contents of 
+those lines, and update the screen in an optimal manner.  It is called
+by the editor whenever there is no more input available.  It is very simple
+to call.  It takes no arguments, i.e., one just says
+
+	(redisplay)
+
+     The redisplay does not know or care by what means the buffer was 
+modified;  if you delete several words with ESC-D, ^D, or ^W, it is all the 
+same to the redisplay, and it will act similarly in updating the screen.
+
+     Normally, the extension writer need not be concerned at all about the 
+redisplay.  It is a major feature of Multics Emacs that only the total effect 
+of a complex manipulation is displayed, not every small operation that the 
+manipulation used to achieve its effect.
+
+     There are some situations, however, where it is advantageous to call the 
+redisplay explicitly from extension code.  One example might be a function 
+which takes a tremendous amount of compute time and might wish to update the
+screen every-so-often as it finishes some major section.  Note that you do not
+tell the redisplay what do display or how to display it; it will display some
+excerpt of the current buffer which is guaranteed to contain the current line,
+and show the cursor where the current point is.  If you call it during a 
+buffer excursion, i.e., while in some special buffer in a function, it will 
+thus display that buffer about its "point", and as soon as that function
+returns to editor command level, the screen will be overwritten with the 
+original buffer's lines.  Thus, calling redisplay is _n_o_t to be considered a 
+substitute for local displays (see above).
+
+     The most common need for calling redisplay is in functions that add 
+text (or change text) on a line, and move to another line.  For example, the 
+"electric semicolon" of electric PL/I mode, which adds a semicolon to the 
+current line and moves to the next.  On a printing terminal, the user would 
+never see the semicolon unless special action were taken.  The text in the 
+buffer would indeed be right, but by time the next redisplay occurred (the 
+electric semicolon command returned) the editor would be off that line, and 
+thus would display the next line, where the electric semicolon command left 
+it.  While this is correct, the user looking at his type-in would, with some 
+validity, complain that "all the semicolons seem to be missing".  Thus, the 
+electric PL/I semicolon command calls the redisplay immediately after it 
+executes "(insert-string ";")".
+
+     The following divertissement is a function for a "card-numbering FORTRAN 
+mode", which when invoked (perhaps hook it up to CR) puts a sequence number 
+in column 72 (71 from 0) and goes to column 7 of the next line.
+
+     It must call the redisplay, such that on a printing terminal, the card 
+numbers get shown.
+
+(defun fortran-next-line ()
+       (whitespace-to-hpos 71.)		;go to col 72.
+       (insert-string (decimal-rep cardno))	;cardno is a local buffer var
+       (setq cardno (+ 1 cardno))		;up the next card number
+       (redisplay)				;let printing user see.
+       (new-line)				;get to next line
+       (whitespace-to-hpos 6.))		;6 rel = card col 7.
+
+
+			    E_I_S_ T__a_b_l_e_s
+
+
+     The Multics Emacs environment provides a powerful facility for utilizing 
+the sophisticated 68/80 processor instructions for scanning for characters in 
+or not in a particular set of characters.  These operations correspond to the 
+PL/I "search" and "verify" builtins.  It is using these facilities that the 
+word commands operate.
+
+     A set of characters is represented by a "charscan table", a compound 
+Lisp object occupying about 200 words of storage (i.e., they are not for 
+free).   One can get a charscan table by giving a set of characters, as a 
+string, to the function charscan-table.  It returns a charscan table 
+representing that set of characters:
+
+	(setq number-verify-table (charscan-table "0123456789+-"))
+
+     Given such a table, there are  a set of functions which can be called to 
+utilize it to search for characters in or out of that set, backward, forward,
+whole buffer or only one line.  All the following functions take one argument,
+a charscan table representing a set of characters we will call S.  They 
+return nil (falsity) if they hit the end of the buffer or line (as 
+appropriate) without finding what they are looking for.  If they succeed, they
+move point.  If they fail, they don't move point:
+
+search-for-first-charset-line
+     Scans current line forward from point.  Success is stopping to the
+     left of a character in S.
+
+search-for-first-not-charset-line
+     Same as above, but success is stopping to the left of a character _n_o_t
+     in S.
+
+search-back-first-charset-line
+     Scans current line backward from point.  Success is stopping to the right
+     of a character in S.
+
+search-back-first-not-charset-line
+     Same as search-back-first-charset-line, but success is stopping to the
+     right of  a character _n_o_t in S.
+
+search-charset-forward
+     Scans the buffer from point to the end of the buffer.  Success is 
+     stopping to the left of a character in S.
+
+search-charset-backward
+     Scans the buffer backward from point to the beginning of the buffer.
+     Success is stopping to the right of a character in S.
+
+search-not-charset-forward
+     Scans the buffer forward from point to the end.  Success is stopping
+     to the left of a character not in S.
+
+search-not-charset-backward
+     Scans the buffer backward from point to the beginning of the buffer.
+     Success is stopping to the right of a character not in S.
+
+
+
+     The following function finds the first non-numeric character on the line
+it is invoked on:
+
+(defun find-first-non-numeric ()
+       (establish-local-var numscan-table nil)	;make sure var exists
+       (if (not numscan-table)		;if nil, i.e., not init yet,
+	 (setq numscan-table (charscan-table "0123456789")))
+       (go-to-beginning-of-line)
+       (if (not (search-for-first-not-charset-line numscan-table))
+	 (minibuffer-print "Line is O.K.!")))	;failure is all is in charset
+
+
+			     O__p_t_i_o_n_s
+
+     The Multics Emacs option mechanism provides for user-settable variables
+in the Lisp environment.  The only difference between an "option" and any 
+other global Lisp variable in the editor (basic or extended) is that the 
+options are listed at the user-visible level by ESC-Xopt listCR, and can be 
+set or interrogated via the "opt" command.  The option mechanism also 
+provides for checking that numeric variables stay numeric, and those variables
+that are restricted to "t" or "nil" as values stay restricted to those values.
+
+     Thus, options may control per-buffer or truly global variables; the 
+option mechanism does not care about or impose restraints upon the dynamic 
+scope of the variables managed by it.  The option mechanism also provides for 
+a default global value of variables it manages.
+
+     A global variable is "registered" with the option mechanism by invoking 
+the function "register-option" upon the Lisp symbol which represents (has the 
+name of) that variable, and its default global value.  If that value is a 
+number, the option mechanism will restrict the variable's value to numbers; 
+if it is one of t or nil, the option mechanism  will restrict its values to t 
+or nil (which the user indicates as "on" or "off").
+
+     The choice of whether a variable should be made an official "option" or 
+not depends upon whether or not you want the user to see it when an "opt 
+list" is done, and whether finer control than that provided by the option
+mechanism over the values assigned to it is necessary.  It is acceptable to 
+register an option the first time some code is executed; only then will it 
+appear in the option list.  It is usual to have forms invoking 
+"register-option" at "top-level" in a file full of code, i.e., outside of any 
+function.  Such code is executed when the code is brought into the editor 
+environment.
+
+     The following code registers an option describing default paragraph 
+indentation, and shows a function that creates a new paragraph (which should 
+probably be hooked up to a key).  Note that like all Lisp global variables,
+options must be declared "special" for the Lisp  compiler (see "compilation" 
+below):
+
+(declare (special paragraph-indentation))		;for compiler.
+
+(register-option 'paragraph-indentation 10.)		;default is ten.
+
+(defun new-paragraph ()
+       (new-line)					;two new-lines
+       (new-line)
+       (whitespace-to-hpos paragraph-indentation))	;tab out.
+
+     By issuing the command
+
+     ESC-X opt paragraph-indentation 5 CR
+
+the user can set the amount of indentation inserted by "new-paragraph" to 5.
+
+
+
+			N__a_m_e S__c_o_p_e I__s_s_u_e_s
+
+      One of the large benefits of Lisp is that all of the functions and 
+variables in the environment are accessible to all functions running in it.
+At times, this can be a problem, as well.   When adding your own extensions 
+to the editor environment, there is nothing to prevent you from choosing a 
+name for one of your functions which happens to be the name of some internal
+(or user-visible) function in Multics Emacs.  Occasionally, there may be reason
+to do this deliberately , e.g., write your own version of "next-line" that
+did something highly special.  This is dangerous, and not recommended.
+
+     In the general case, you want to make sure that none of your functions 
+or variables will conflict with those of the editor.  The best way to do this 
+is to choose some set of names that cannot possibly conflict.  Two sure-fire 
+ways to achieve this are to use capital letters anywhere (such as initial 
+capitals) or using underscores in your names.  No  Emacs or Lisp system 
+functions have leading capitals or trailing underscores.  There are a few
+Lisp system functions with embedded underscores, but other than make_atom, it 
+will not hurt you if you accidentally redefine them.  The Lisp compiler will 
+also warn you if you attempt to redefine a system function.  No functions in 
+Multics Emacs contain underscores in their names.
+
+     Another more reasonable way to avoid name scope conflicts is to prefix all
+of your names in a given package with some prefix indicative of the facility
+that you are trying to implement.  For instance, if you are implementing a 
+SNOBOL edit mode, you might name your functions 
+"snobol-mode-find-match-string", "snobol-mode-get-branch-target", etc.  The 
+same holds true for global variable names.
+
+     You can also be reasonably certain that names constructed on the fly
+(see "Program Development" below) with some degree of ludicrosity in their 
+names (e.g., "find-third-foo", "Johns-special-tsplp-hack", etc.) will not 
+conflict.
+
+     One can test for a name being known in the Emacs environment via the 
+predicate "internedp" (not installed as of 8/16), which tests whether or not 
+a symbol with the given name is interned on the obarray.  You must give it a 
+string.  It will return t or nil for interned or not.  From Emacs command 
+level,
+
+	ESC-ESC internedp "test-string"CR
+
+will print out 
+
+	Value: t
+
+or
+
+	Value: nil
+
+as appropriate.  This test is not a foolproof method, though, because some
+name which is not used now may be used later, as new versions of Multics
+Emacs are developed.  The rules given above will remain valid for all time.
+
+
+			      M__o_d_e_s
+
+     The major and minor mode mechanism of Multics Emacs, as it exists today,
+is little more than a way for the user to switch in and out large sets of 
+key-bindings and column settings, and know about it via the mode line.
+
+     The differentiation between major modes and minor modes is vague.  The 
+current convention holds that a major mode involves a large body of optional 
+code (e.g., PL/I mode), sets up for a editing code written in a particular 
+language, or sets up a buffer for some highly specialized task where very 
+common keys (e.g., CR) do non-obvious things (e.g., the Message mode buffers 
+of the Emacs message facility).  Minor modes generally involve the say that 
+whitespace or delimiters are interpreted, e.g., fill mode and speedtype mode.
+
+     The current convention on major modes is that the major mode is set up by
+a user-visible function called "XXX-mode", where XXX is the name of the mode.
+This "mode function"  establishes key-bindings (using set-key) as necessary, 
+and sets columns (e.g., fill-column, comment-column) and prefixes as 
+necessary.   The mode function establishes the mode by setting the 
+per-buffer-variable "current-buffer-mode" to a _s_y_m_b_o_l whose name is 
+indicative of the mode.  The name of the symbol will appear in the mode line 
+when the redisplay is invoked while in this buffer.  The following function
+sets up a major mode for editing FORTRAN programs:
+
+(defun fortran-mode ()				;the mode function
+       (setq current-buffer-mode 'FORTRAN)		;symbol for mode
+       (setq fill-column 70.)				;set columns
+       (setq fill-prefix "      ")			;six spaces on CR
+       (set-key 'CR 'fortran-new-line)			;set up CR key
+       (setq comment-column 1)
+       (setq comment-prefix "C "))			;that begins cmts.
+       
+The function fortran-new-line is assumed to be one which does something 
+appropriate, such as numbering cards.  Note that the use of the function 
+set-key implies that this key binding (of the carriage-return key) is
+local to this buffer, and will be reverted when this buffer is exited.
+
+     Minor modes are less straightforward.  Minor modes such as speedtype
+and fill mode have different actions associated with the keys they affect
+(for instance, all the "punctuation" keys), and the minor modes have to have
+detailed and specialized interaction between themselves.  There is no way to
+generalize the interactions between the minor modes; no completely adequate
+solution to this problem has been developed.
+
+     Minor modes are asserted and turned off in a given buffer by calling the
+functions "assert-minor-mode" and "negate-minor-mode" while in that buffer, 
+with an interned symbol which identifies that mode (and appears in the mode 
+line).  There is a per-buffer variable called buffer-minor-modes which has a
+value a Lisp list of all the symbols identifying the   minor modes in effect 
+in this buffer.  The Lisp predicate "memq" can be used to test whether a given
+interned symbol is a member of a list, and thus, whether a given minor mode 
+is in effect n the current buffer:
+
+     (memq 'fill buffer-minor-modes)
+
+will return the symbol "t" (truth to _i_f) if fill mode is in effect in this 
+buffer, otherwise it will return "nil" (false).  Functions implementing the
+actions of keys in minor modes should check in this way to see what other 
+minor modes are in effect, and what they ought do in that case.  This is 
+admittedly not an easy design problem.
+
+     The global variable fill-mode-delimiters is bound to a Lisp list of keys 
+that act as punctuation in many minor modes.  By use of the Lisp function
+"mapc", all punctuation can be set to trigger a given action.  "mapc" takes
+two arguments, a function, and a Lisp list: the function will be called upon 
+each element of the list:
+
+(defun no-punc-mode-word-on-a-line-mode-on ()		;mode function
+     (mapc 'word-on-a-line-setter fill-mode-delimiters)	;set up keys
+     (assert-minor-mode 'word-on-a-line))		;get in mode line
+
+(defun word-on-a-line-setter (key)			;key is the key
+       (set-key key 'word-on-a-line-responder))		;set these keys
+
+(defun word-on-a-line-responder ()			;key function
+       (delete-white-sides)				;get rid of whitesp
+       (self-insert)			;insert the typed character
+       (new-line))				;start a new line.
+
+This set of functions (very crudely) establishes a minor mode in which
+each word goes on a separate line as it is typed.
+
+		        C__h_a_r_a_c_t_e_r D__i_s_p_a_t_c_h_i_n_g
+
+
+     It is often very useful to make decisions based upon the
+identity of the character to the right (or left) of the current point.  The
+Multics Emacs environment provides several special forms and functions for
+facilitating this efficiently.  All of these functions and forms accept
+either of two ways of describing characters: either a single-character string
+(e.g., "."), or a symbol whose name is that character (e.g., 'a, as it would 
+appear in a program).  We will call the first kind the "string form", and the
+second kind "character objects".
+
+     The function "curchar", of no arguments, returns the character to the
+right of the current point as a character object (this is done for reasons of 
+storage efficiency: character objects are unique, while strings require 
+allocation).  You can test for two character objects being the same unique 
+object (or any two objects, in general) via the Lisp predicate "eq":
+
+(if (eq (curchar) 'a)
+    (display-error "We are looking at an ""a""."))
+
+Note that we could have also done this with the "looking-at" predicate 
+described above, but for single characters, looking-at is a lot less efficent,
+in both time and storage.
+
+     Please note very carefully that you cannot use _e_q to test if two strings 
+have the same characters in them;  Lisp strings are _n_o_t uniquized in the same 
+way that symbols are uniquized via the obarray.
+
+     In order to facilitate the use of "messy" characters (tabs, linefeeds,
+spaces, quotes, etc.) in this way, the Emacs environment provides several
+global variables with values of the character objects for these "messy" 
+characters:
+
+ESC		ASCII ESC, Ascii 033.
+CRET		ASCII Carriage return (Ascii 015)
+NL		ASCII Newline (linefeed), Ascii 012.
+SPACE		ASCII blank, Ascii 040.
+TAB		ASCII tab, Ascii 011.
+BACKSPACE		ASCII backspace, Ascii 010.
+DOUBLEQUOTE	", Ascii 042.
+SLASH		/, Ascii 057, hard to type in Lisp code.
+
+Note that (eq (curchar) NL) is equivalent to (eolp).
+
+     There is a special form to test if the current (to the right of point) 
+character is a given character: it is called if-at:
+
+(if-at "&" (display-error "You can't have an ampersand here!"))
+
+Its syntax is the same as _i_f, i.e., it has one or none or many "then" clauses 
+and "else" clauses, separated by the keyword "else" if there are any "else" 
+clauses.  However, instead of a predicate, _i_f-__a_t takes either a 
+single-character string or a character object to be compared against the
+current character.  If the current (to right of point) character is that 
+character, the _t_h_e_n forms are evaluated, etc.  _i_f-__a_t will convert the
+character string to a character object at Lisp compile time, if necessary.
+The specification of the character must be a form which evaluates to
+the character of interest (e.g., "a", 'a, variable-bound-to-an-a):
+
+(if-at TAB (delete-char)
+	 (whitespace-to-hpos next-field))	;tab to next field.
+
+     The exact effect (and actual implementation) of _i_f-__a_t is as though
+it were a shorthand for
+
+	(if (eq (curchar) ....) ..... ..... ..... )
+
+     There is similarly a function called "lefthand-char", which is like
+_c_u_r_c_h_a_r except that it returns the character to the _l_e_f_t of the current 
+point; if the current point is at the beginning of the buffer, it returns
+a character object for a newline (which is almost always what you want).
+Similarly, there is an "if-back-at" special form, whose syntax and semantics
+are identical to "if-at", except that it deals with the character to the
+_l_e_f_t of the current point.
+
+     Ther are two special forms for dispatching on the current (lefthand or 
+righthand) character.  They are called dispatch-on-current-char
+and dispatch-on-lefthand-char, and dispatch upon the character to the
+_r_i_g_h_t and the _l_e_f_t of the current point respectively:
+
+(declare (special parentable))			;global var.
+(setq parentable nil)		;done when code is loaded into editor
+
+(defun count-parens-in-buffer ()
+       (if (not parentable)				;if not initialized
+	 (setq parentable (charscan-table "()")))	;init it.
+       (let ((leftcount 0)(rightcount 0))		;init the counts.
+	  (save-excursion				;be nice
+	   (go-to-beginning-of-buffer)
+	   (do-forever
+	    (if (not (search-charset-forward parentable)) ; look for ( or ).
+	        (stop-doing))			;exit the do.
+	    (dispatch-on-current-char			;see which.
+	     ( "("	(setq leftcount (+ 1 leftcount)))
+	     ( ")"	(setq rightcount (+ 1 rightcount))))))
+	 (minibuffer-print (decimal-rep leftcount) " opens, "
+		         (decimal-rep rightcount) "closes.")))
+
+The general syntax of dispatch-on-current-char and dispatch-on-lefthand-char
+is as follows:
+
+(dispatch-on-current-char
+  (CH1		<CH1-form1>
+		<CH1-form2>
+		...........
+		<CH1-formn>)
+  (CH2		<CH2-form1>
+		<CH2-form2>
+		...........
+		<CH2-formn2>)
+...............................
+  (CHk		<CHk-form1>
+		<CHk-form2>
+		...........
+		<CHk-formnk>)
+  (else		<else-form1>
+		<else-form2>
+		............
+		<else-formn>))
+		
+     The CHi's can be any form which evaluates to a single-character string 
+or to a character object. When the current character (left or right as 
+appropriate) matches a CHi, all of the <CHi-form>'s in that clause are
+evaluated sequentially, and the value of the last returned as the value
+of the dispatch-on-current-char (nil is returned if there are no 
+<CHi-form>'s).  If no CHi's match, the else clause is evaluated as though it
+were a matching clause.  The else clause is optional; if omitted, and no
+CHi matches, nil is returned.
+
+
+		         P__r_o_g_r_a_m D__e_v_e_l_o_p_m_e_n_t
+
+     The editor itself provides many powerful tools for developing extension
+code and testing it while editing it.  The following is a typical scenario
+in the development of an extension:
+
+     The user decides to write an extension.  He sits down and thinks about 
+it, and decides to code it.  He enters Multics Emacs.  He does a
+^X^Fshaver.lispCR, to go into a new buffer with a proper file name
+and select Lisp major mode (assuming that he has, as all sophisticated users 
+should, opt for find-file-set-modes "on").  He should then type the form
+
+	(%include e-macros)
+
+at the top of his file; this will be necessary to compile it (see 
+"Compilation" below), or to use the "loadit" command, as we will describe.
+The file e-macros.incl.lisp should be in the translator search rules for
+your process.  A good way to to do this is put a link to it in the directory 
+in which you do Emacs extension development; the file is found in the same
+directory as the editor.  Now we begin to type in a function:
+
+(%include e-macros)
+
+(defun shave-line ()
+      (go-to-beginning-of-line)
+
+At this point, to type the next line, lining it up with the last
+Lisp form, we use the indent-to-lisp command, which is on ESC-CR
+on Lisp mode, and the next form will automatically indent properly:
+
+      (delete-white-space)
+
+(We deliberately gave the wrong name here).  When typing in Lisp in general,
+ESC-CR (in Lisp mode) will indent you on the next line the right amount.
+
+      (go-to-end-of-line)
+      (delete-white-space)
+
+Now we are looking at the buffer with the code for "shave-line" in front of
+us.  We wish to try it.  The best way to do this is to load the code in the
+buffer into the editor.  ESC-^Z in Lisp mode does this.  No sooner do we do
+this then we get the message:
+
+	Unbalanced parentheses.
+
+What this means is that there were not enough close parentheses somewhere:
+Emacs could not find the boundaries of the Lisp form.  Now we fix the program
+problem.  We are on the last line, so we just type the close paren:
+
+      (delete-white-space))
+
+Now we do the ESC-^Z again.  It works, the cursor returns to the function we
+are trying to edit.  Now to see if it works, we invoke it from Lisp:
+
+	ESC-ESC shave-line CR
+
+ESC-ESC puts parens around what you type, evaluates it, and types out the 
+Lisp value so returned.  However, we find the message
+
+       lisp: undefined function: delete-white-space
+
+printed in the minibuffer, with the terminal bell rung.  In fact, this is the
+case.  So we realize, that we must have the wrong function name.  We know it's
+on a key, so we
+
+     ESC-X apropos white CR
+
+and learn about delete-white-sides.  Now we go to the first line that
+has the bad function name, with ^P's, do an @ to clear the line out,
+ESC-^I to line up to re-type the form, and
+
+     (delete-white-sides)
+
+We fix the other bad line, too.  Now again we type
+
+     ESC-ESC shave-line CR
+
+and to our surprise it says
+
+     lisp: undefined function: delete-white-space
+
+as though we hadn't changed anything.  Indeed, fixing it in the buffer is not 
+good enough.  We must reload it into the editor environment, so we use
+ESC-^Z again, after fixing the screen.  Now we try it again:
+
+     ESC-ESC shave-line CR
+
+and immediately our function on the screen changes appearance, all the 
+whitespace on the ends of the last line of the function we edited disappears.
+Indeed it works, but it has messed up its own face!  This is a problem with
+editing what you are testing:  It must either be innocuous, i.e., do 
+something harmless, or you must be prepared to reconstruct damage your
+nascient function perpetrates, or switch to a test buffer before running it.
+
+     So we fix our function, and we are done.  Wrong! It exists in an editor
+buffer, and in the editor Lisp environment, but we must remember to write it 
+out:
+
+     ^X^S
+
+will indeed write it out to shaver.lisp as we had set up for initially.  Now 
+we have an operative Lisp program that we can use again.  If in a future 
+invocation of the editor, we need to use it, we can type
+
+     ESC-X loadfile <path>shaver.lisp CR
+
+and get it into the environment.  There are two problems with this, however:
+
+     1) Whoever loadfile's it will have to have e-macros.incl.lisp in his
+	translator search rules
+
+     2) The code will be executed interpretively by the Lisp interpreter in
+	the Lisp subsystem;  Multics Emacs is compiled Lisp, and compiled
+	Lisp runs up to 100 times fster than interpreted Lisp and has fewer
+	problems.
+
+The file shaver.lisp should be compiled.  Then, the compiled object segment 
+can be loaded into the editor with
+
+     ESC-Xloadfile <path>shaver
+
+     Some other problems are of immediate interest to the extension writer.
+It is possible to write loops that do not terminate, or that generate infinite
+garbage.  This is par for the course.  If you invoke your command, and the 
+cursor never leaves the minibuffer, and ^G seems to have no effect, you are 
+in a loop.  Hit QUIT, and use the "pi" Multics command to reenter Emacs.
+If you are really unfortunate, you will get
+
+     lisp: (nointerrupt t) mode, cannot accept interrupt
+
+in which case you were stuck in the process of generating infinite garbage.
+In this case, you must release, and your editing session is lost.  If you are
+more fortunate, you will get your screen back, with the cursor at the place
+your buggy function left it.  Often, by looking at exactly where it left it,
+you can get a good idea of what kind of thing was giving your program a hard 
+time.
+
+     If you get messages from Multics which tend to indicate that there is no 
+more room in your process directory, you are probably generating an infinite
+number of lines, i.e., an infinite buffer.  Again, if you are up to this, you
+must be aware of this.
+
+     Another thing that can happen is you might expose some bug, or what you
+believe to be bug, in Multics Emacs, or worse yet, Multics Lisp.  If this
+happens, please let us know via the trouble-report forwarding mechanism
+described in emacs.info, describing what you encountered and why you think
+it's a bug.
+
+     It is also possible to destroy the editor environment by bad coding.
+This is particularly true in running compiled code which was not checked out
+interpretively (i.e., via ESC-^Z).  Storing into "nil" is one common way to do 
+this.  If the entire editor seems broken, and the redisplay won't even show the
+screen, this is what you have done. Quit and release and start all over again.
+
+     There is a function called debug-e, callable as
+
+     ESC-X debug-e CR
+
+which will set "(*rset t)" mode and other  Lisp debugging aids, and unsnap all
+"lisp links".  IT will also revert to native Maclisp QUIT/pi handling.  To use
+this, however, you must be familiar with the debugging features of Multics
+Maclisp.
+
+     To get the value of a global variable to be printed out, say, 
+fill-column, fool ESC-ESC into doing it by saying
+
+     ESC-ESC progn fill-column CR
+
+Be careful, for values typed out are in octal.
+
+     Now there exists an entire Lisp code debugging facility within
+Emacs over and above this; it is called LDEBUG, or Lisp Debug
+mode.  It allows for the setting of breakpoints, dialogue with Lisp
+within Emacs, tracing, and so forth.  See ldebug-mode.info,
+or the appropriate part of CJ52, Emacs Extension Writer's Guide.
+
+			   C__o_m_p_i_l_a_t_i_o_n
+
+     All production Multics Lisp programs are compiled.  This results in a
+tremendous performance improvement, both for the user and the system.  Compiled
+Lisp programs are executed directly by the Multics processor; interpreted
+programs are interpreted by the Lisp interpreter.  Multics Emacs is compiled 
+Lisp.
+
+    The Lisp compiler is a Multics program that can be invoked from command 
+level.  It has the names lcp and lisp_compiler on it.  To compile a program 
+named myfuns.lisp, you say
+
+     lcp myfuns
+
+to Multics, and you will get, if all goes well, an object program named 
+"myfuns", which can be loadfile'd, in the working directory.
+
+     The compiler diagnoses Lisp syntax errors.  It warns you of implied 
+special variables (if you did not declare a variable special, and it is not
+a local variable in the function in which it was referenced, there is a good 
+chance you either made  mistake or a typo.  All global variables should be 
+declared for this reason: e-macros declares the provided ones.)
+
+     At the end of compilation, the compiler prints out the names of functions
+referenced in the code but not defined in the file.  This is normal; however,
+you should scan the list it prints out to see if any are ones that you 
+thought you defined; if so, you have a problem.  Check also for ones that
+are obvious typos for what you meant.
+
+     It is possible to do extravagantly complex things with the compiler; 
+especially, via the constructs known as L__i_s_p M__a_c_r_o_s (via which, incidentally, 
+the E__m_a_c_s environment special forms are implemented) to construct your
+own special forms.  We will not go into any of that here.  Consult other 
+documents on Multics Maclisp.
+
+     It is sometimes desireable, while editing a large extension program,
+to load only one function, the one you are looking dead at on the screen,
+into the editor environment.  The powerful function compile-function,
+on ESC-^C in Lisp mode, will compile the function you are looking at
+(whose start is found by ESC-^A from where you are now) out of a temporary
+segment in the process directory, load the object segment, and display the
+compiler diagnostics via local printout.  It should be used with care by
+any except experienced Emacs extension coders.  Be careful, when using it,
+to remember to write out your changes, and recompile your whole program,
+because a program incrementally debugged in this mode gives the impression
+that it is working properly when it is only doing so in the current editor
+environment.
+
+
+		         D__o_c_u_m_e_n_t_i_n_g C__o_m_m_a_n_d_s
+
+     One of the most attractive features of the Emacs environment is the
+automatic documentation system (apropos, ESC-?), which provides customized
+Emacs command documentation on request.  Documentation for supplied
+commands is kept in a special file in the Emacs environment directory.
+Extension writers may provide documentation for their own commands by
+placing a string, which is that documentation, as the "documentation"
+property of the symbol which is the command being documented.  For instance,
+if the symbol "remove-every-other-word" has the "documentation" property
+of
+
+      "Removes every other word from the sentence in which the cursor appears."
+
+this information will be displayed by ESC-? when used on some key which had
+been set-key'ed to remove-every-other-word, or by
+
+     ESC-X describe remove-every-other-word
+
+     Documentation properties are assigned most conveniently via the
+Lisp special form "defprop", whose general syntax is:
+
+     (defprop SYMBOL WHAT PROPERTY)
+
+which gives the symbol SYMBOL a PROPERTY property of WHAT.  "defprop"
+is a special form because the actual symbols appearing in the form
+are used, they are not variables, as in "(+ a b c)".  Thus,
+
+     (defprop Joe Fred father)
+
+indeed gives the symbol "Joe" a "father" property of "Fred".  
+("defprop" is a special-form way of doing the same thing as the
+"putprop" function, but it is a special form because is "arguments"
+are NOT forms to be evaluated to produce symbols whose properties
+are to be dealt with, but the symbols themselves).  To use
+"defprop" to establish Emacs command documentation, place forms like
+
+(defprop remove-every-other-word
+	"Removes every other word from the current sentence.
+Will not work on sentences ending in ""?"".  For indented
+sentences, use $$remove-other-word-from-indented-sentences$.
+$$$ is a very powerful, dangerous, command."
+	documentation)
+
+Note several things about the documentation string:
+
+ 1. It does not need to end in a newline, and may contain newlines.
+
+ 2. Quotes (") inside of it must be doubled.
+
+ 3. The string "$$$" will be replaced by the key being asked about
+    (e.g., "ESC-^Z" or "ESC-X remove-every-other-word") at the time
+    the documentation is displayed.
+
+ 4.  The keys used to invoke other commands may be referenced by stating two
+     dollar signs, the name of the command, and one dollar sign.  Thus,
+     $$go-to-end-of-line$ will appear as "^E" in most environments;  the point
+     of this and the previous paragraph is to make documentation expansion
+     independent of a user's key-bindings.
+
+The entire documentation string will be "filled" (ESC-Q'ed) _a_f_t_e_r all
+command-name substitutions are made;  thus, the placement of newlines in the
+documentation string is basically ignored.  Two consecutive newlines, however,
+will be preserved, and thus, lines may be set off for "examples", etc., by
+surrounding them with blank lines.
+
+     It is slightly more efficient, but clearly less readable, to place the
+defprop's documenting a command _b_e_f_o_r_e the "defun" defining the command
+itself.  The "defcom" facility may also be used to document commands;
+See "Defining commands with defcom" below.
+
+			W__i_n_d_o_w M__a_n_a_g_e_m_e_n_t
+
+     Although buffers appear in windows on user request, and are switched
+between automatically by the redisplay when the user switches windows with the
+^X^O, ^X4, and so forth, there are times when extension writers may
+want to take advantage of  multiple windows explicitly.  Good
+examples in supplied code are RMAIL reply mode and comout (^X^E).
+
+     Most of the extensions of interest are ones in which the extension
+writer wants to place some information in a buffer, or else prepare
+some buffer to have information placed in it (e.g., RMAIL reply)
+and then display that information in a window.  Normally, all that
+is required is to "go to" that buffer (e.g., with go-to-buffer or
+go-to-or-create-buffer), and the redisplay will "find" the editor
+in that buffer at the time of the next redisplay, and it will
+replace the contents of the selected window on the screen.
+We will call such commands "autophanic" (self-showing).  Examples
+are ^XB (select-buffer), ^X^F (find-file), etc.
+
+     However, there are commands that wish to set up buffers in some
+_o_t_h_e_r window than the current window, usually for multi-window
+operations such as mail reply, so as not to disturb the contents
+of the current window.  We will call them "heterophanic" (other-showing).
+The standard examples are dired-examine, mail reply, and comout (^X^E).
+Note that all the examples given are sub-commands of larger,
+autophanic commands.
+
+     Heterophanic buffer behavior is provided by the function
+find-buffer-in-window, whose purpose is mentioned in windows.info (CH27 Sec.
+XVI).  It takes as an argument a buffer-symbol (Lisp symbol representing a
+buffer).  That buffer will be created if it does not now exist, and will be
+"gone to", as if go-to-buffer had been used.  If Emacs is in single-window
+mode, the effect will be the same as that of go-to-or-create-buffer.  In
+two-window mode, that buffer will be put on display in one window or some
+other as follows:
+
+    If it is already on display in some window, it will be left there.
+    If it is _n_o_t, it will be put on display in some _o_t_h_e_r window,
+       meaning the one in which the cursor is _n_o_t, and the cursor
+       will move to that window, as if a ^X^O had been done.  The
+       least-recently used window will be chosen.
+
+     Thus, on printing terminals and in single-window mode, the effect
+of find-buffer-in-window is indistinguishable from that of
+go-to-or-create-buffer.  In multi-window mode, it is equivalent to
+"go-to-or-create-buffer and show it someplace else on the screen."
+
+     You must not use find-buffer-in-window to place a buffer on the
+screen once you have already gone to it;  if you think of
+find-buffer-in-window as a fancy kind of go-to-or-create-buffer you
+will find no need for doing so. IF, however, you encounter this very
+rare need (Emacs uses it only once!), how to do it will be
+described below.
+
+     It is an extension's responsibility to establish multiple windows if it
+_n_e_e_d_s them; no current Emacs code _r_e_q_u_i_r_e_s multiple windows, although the
+facilities mentioned above are more utile when already in it.
+
+     Variables, predicates, and other functions to determine or
+effect the window organization (number of windows present, etc.)
+are presented below.
+
+     Most extensions that place an auxiliary buffer on display via
+find-buffer-in-window provide some command to return to the "main"
+buffer (e.g., the RMAIL Incoming Message buffer, the buffer from which
+^X^E was issued, etc.).  It is the case that if you entered a buffer
+via find-buffer-in-window, you should probably return to the buffer
+from whence you came via find-buffer-in-window as well; the effect of this
+is to restore not only the original buffer, but the original window
+as well. Thus, save-excursion-buffer _c_a_n_n_o_t be used effectively
+to effect returns from trips into buffers entered via find-buffer-in-window;
+an attempt to use save-excursion-buffer will result in both windows showing
+the same buffer, as the "selected window" (i.e., the cursor-bearing window)
+is now changed and a new buffer selection means a new buffer in that window.
+
+     It is the intended standard that ^X^Q be used to exit auxiliary buffers
+used by extensions to return to their "main buffer", and usually switch
+windows as well, if the multiple-window strategy outlined above is used.
+
+     Pop-up window mode is in essence making all commands heterophanic.
+Commands or subcommands that are naturally heterophanic need not worry about
+pop-up window mode, because find-buffer-in-window, takes the appropriate
+action in either pop-up or non-pop-up mode.  However, if proper heterophanic
+behavior under pop-up windows is desired, naturally autophanic commands and
+subcommands must call a window-management primitive to obtain
+heterophanic behavior in pop-up window mode.  The primitive
+of interest is called select-buffer-window, which takes two arguments
+a buffer-symbol, and a "key" which gives pop-up window management
+some clue to what size window would be wanted if awindow had to be created.
+
+     In non-pop-up window mode, select-buffer-window is equivalent to
+go-to-or-create-buffer, and the key is ignored.  In pop-up mode, it is
+equivalent to find-buffer-in-window, with the key suggesting the
+new window size.
+
+     The following values for the key argument to select-buffer-window
+are accepted.  They specify the window size in pop-up mode if the
+window does not exist already:
+
+	any number		That many lines.
+	'cursize			Make a choice based on
+				the current number of lines in
+				the buffer.
+	nil			Choose some reasonable fraction
+				of the screen.
+	'cursize-not-empty		Same as nil if the buffer is empty
+				but same as 'cursize if it's not>
+				For example, ^X^F uses this, because
+				you will type into a new buffer.
+	'default-cursize		If this buffer has never been displayed
+				before, make some decision based on the
+				number of lines.  Otherwise, use
+				what size was chosen last time..
+
+     As we mentioned, find-buffer-in-window may not be used to place
+the "current buffer" heterophanically.  If you attempt to do this, i.e.,
+
+	(find-buffer-in-window current-buffer)
+
+you will find it appearing in both the old and new windows, for the
+window manager will find that you were in this buffer in the
+current window (a truth) before you went to another one (you had
+to go to another one, as per heterophanic behavior), and
+will indicate that the current buffer is to be displayed in the old window
+as well, for that was the last buffer you were in in that window.
+To avoid this, use select-buffer-find-window (of two arguments,
+the buffer and a key as for select-buffer-window) if heterophanic
+display of the current buffer is needed, i.e.,
+
+	(select-buffer-find-window current-buffer nil)
+
+It is very rare that this is needed; it is very rare to go to a buffer
+and then want to find-buffer-in-window it; in supplied Emacs, only
+^X^E does this.
+
+     As all things that would want to use these features are of necessity
+moderately sophisticated, only an outline of an extension using them
+is given here.  It is a typical sub-subsystem (e.g., dired) which
+sets itself up in an autophanic buffer display, with specific
+key bindings, etc., and has a heterophanic sub-display by which
+it displays a "menu" in addition to the main display:
+
+(defun unusual-mode ()			;Setup function for this
+       ...........				;mode.
+       (go-to-or-create-buffer (maknam (explodec "Unusual buffer")))
+       (set-key 'ESC-^S 'unusual-mode-show-menu)
+       (select-buffer-window current-buffer nil)
+       (register-local-var 'unusual-mode-buffer-to-return-to)
+      ...........)
+
+ ............
+(declare (special unusual-mode-buffer-to-return-to))   ;for compiler.
+(defun unusual-mode-show menu ()
+       (setq unusual-mode-buffer-to-return-to current-buffer)    ;save buff
+       (find-buffer-in-window 'Unusual-Menu)	;Display menu
+       (set-key 'r 'unusual-mode-select-item)	;Set key bindings
+       (set-key '^X^Q 'unusual-mode-menu-return)
+       (insert-string "Unusual menu delicacies")	;Fill it up
+       ;; Will not actually be displayed until command finishes.
+       .......
+       (go-to-beginning-of-buffer)
+       (setq current-buffer-mode 'Unusual/ Menu buffer-modified-flag nil
+	   read-only-flag t)
+       .........)
+
+(defun unusual-mode-menu-return ()
+       (find-buffer-in-window unusual-mode-buffer-to-return-to))
+       ;;Return to calling buffer.
+			 
+     There are several more primitives the window-sensitive
+extension writer should be aware of.  They deal with windows by "window
+number".  The topmost window on the screen is window number 1; The
+next one down, if any, is number 2, and so forth down (the minibuffer and
+mode line do not count as windows in this consideration).  The concept
+of selected-window (and selection of windows) is as in windows.info
+(or CH27, Section XVI.)
+
+   selected-window
+	This _v_a_r_i_a_b_l_e contains the number of the currently
+	selected window.  Do _n_o_t attempt to setq it to select a window;
+	Use select-window instead.
+
+   nuwindows
+	This _v_a_r_i_a_b_l_e contains the number of windows on the
+	screen; do _n_o_t attempt to setq it to create or delete
+	windows; use delete-window and the ^X2 and ^X3 functions
+	to do these things.
+
+   select-window
+	This _f_u_n_c_t_i_o_n  (of one argument, a window number)
+	does what ^X4 does (with an argument), i.e., selects that
+	window.
+
+   delete-window
+	This _f_u_n_c_t_i_o_n of one argument, a window number,
+	removes that window from the screen, dividing up its space
+	to adjacent windows.
+
+   buffer-on-display-in-window
+	This _p_r_e_d_i_c_a_t_e function of one argument, a buffer-symbol,
+	and returns truth/falsity, truth if and only if the specified
+	buffer is on display in some window currently on the screen.
+	If used as a _f_u_n_c_t_i_o_n, i.e., the value returned
+	is inspected, it will be found to be the window number in which
+	the specified buffer is on display (if it is _n_o_t on display, the
+	symbol "nil", via which Lisp represents falsity, is returned).
+
+   window-info
+	This is a function of one argument, a window number, which
+	returns information about that window.  The information
+	is in the form of a piece of Lisp list structure, which may be
+	decomposed by the Lisp list destructuring functions; assuming
+	that "info" has the result of window-info, the following forms
+	return the information as follows:
+
+		(caar info) => The top line-number on the screen of the
+			     window.  The topmost is #0.
+		(cdar info) => The number of lines in the window.
+		(caddr info) => The buffer-symbol of the buffer on
+			      display in the window.
+		(cadddr info) => A string duplicating the contents of the
+			       "cursor line" of the window, including
+			       its new-line character.    The cursor
+			       line of a buffer is that line where the
+			       cursor is (if it is in the selected
+			       window) or would be if that window
+			       became selected (e.g., ^XO).
+
+   window-adjust-upper
+	A function of two arguments, the first a window number, and
+	the second a _s_i_g_n_e_d number of lines to move its
+	upper divider-line _d_o_w_n (negative is up).
+
+   window-adjust-lower
+	Same as window-adjust-upper, but deals with lower divider line.
+	
+			 W__r_i_t_i_n_g S__e_a_r_c_h_e_s
+
+     There are several useful functions provided for the extension writer
+to aid in providing search-type commands.  These functions prompt
+for the search string, defaultify the search string, and announce
+search failure in a standardized way which causes all Emacs search
+commands to behave in a uniform fashion.  All supplied Emacs searches
+use them.
+
+     get-search-string
+	Takes one argument, the prompt.  The prompt ought contain
+	the word "search" somehwere, so that the user might know
+	that a search is being prompted for.  get-search-string will
+	prompt the user for a search string, which the user must
+	terminate with a CR, and return it as a string.
+	If the user gives a null string, the last search string
+	will be used and echoed.  The last search string will be set
+	to the returned string for the next defaulting.
+
+     search-failure-annunciator
+	Causes the "Search Fails." message to appear in the minibuffer,
+	and a command-quit (^G) to be performed.  Note that this will
+	abort any keyboard macro collection or execution in progress.
+
+     The writer of a search-type command should provide two interfaces,
+a "command", which deals in calling the above two primitives, and a
+"search primitive", also called by the "command".  The search primitive
+should return t (truth) if the search succeeds, leaving "point"
+at the proper place as the search defines.  If the search fails,
+the primitive must return nil (falsity), and leave point where it
+was when the primitive was invoked.
+
+     Here is a simple implementation of a "wraparound search", like
+the default search in the QEDX editor.  It first looks from point to
+the end of the buffer for the search string, and if that fails, it goes
+to the top and searches again.  It is not optimal because the it need not
+scan farther than the original point when starting from the top.  Using
+"point>markp" and searching a line at a time would be very expensive,
+due to point>markp's expense.  Searching a line at a time using
+forward-search-in-line an mark-on-current-linep would be acceptable, but
+more complex than this example need be.  For a search which is probably
+going to be used only as a user interface (i.e., not internally), this
+implementation is probably adequately efficient.
+
+     Here is the internal primitive for wraparound search:
+
+     (defun wraparound-search-primitive (string)
+	  (with-mark m			;Remember starting point
+	      (if (forward-search string)	;Look to end of buffer
+		t			;Return truth.
+		else
+		(go-to-beginning-of-buffer)
+		(if (forward-search string)	;Look from top.
+		    t
+		    else
+		    (go-to-mark m)		;Return to orig. place.
+		    nil)))))		;Return falsity
+	      ;; with-mark and this function, will
+	      ;; return the value of the outer "if".
+
+     Now here is the command for calling the primitive:
+
+     (defun wraparound-search ()
+	  (if (not (wraparound-search-primitive
+		    (get-search-string "Wraparound Search: ")))
+	      (search-failure-annunciator)))
+
+     wraparound-search is the command to which some key should be bound
+if this type of search is to be made available from the keyboard.
+
+
+		       C__a_l_l_i_n_g M__u_l_t_i_c_s C__o_m_m_a_n_d_s
+
+     There is a common need in extensions, especially those like DIRED,
+which manipulate the Multics Environment, to call Multics commands,
+or, more generally, execute Multics command lines.
+
+     The issue of calling PL/I-coded subroutines is a separable one.  The
+Lisp defpl1 facility is used for that, and we have not documented this yet.
+See extant extensions (and e_defpl1_.lisp) for examples and usage until then.
+
+     There are two primitives provided for executing Multics command lines.
+Multics command lines are strings submitted to cu_$cp for execution.
+This is the Multics agency to which the "e" requests of EDM and QEDX,
+the ".." requests of read_mail, send_mail, and debug, and other subsystems
+submit command lines.  These are they:
+
+     e_cline_
+	Takes one argument, a string, which is passed to cu_$cp for
+	execution.  No reattachment of output takes place.  If the
+	command line produces output, it will mess up the screen.
+	This should only be used when no output is anticipated, and
+	indeed should be used then in preference to comout-get-output,
+	as it is much faster.
+
+     comout-get-output
+	Takes any number of arguments, which may be strings or symbols,
+	and catenates them with one space between them to form a
+	Multics command line (facilitating things like
+
+	     (comout-get-output 'dl this-seg '-bf)
+
+	).  Reattaches user_output and error_output during the
+	execution, rerouting them to a process directory file.  When
+	the command execution completes, the contents of the current
+	buffer is obliterated (!) and the temporary file read in to it.
+	This is the primitive that Comout (^X^E) uses.  e_cline_
+	is used by comout-get-output internally.
+
+     These primitives set up a condition handler that catches all "abnormal"
+Multics signals and returns.  A very major deficiency at this point, which is
+not likely to be remedied in the near future, is that requests for input by
+these command lines cannot be dealt with reasonably at all.  In the case of
+e_cline_, the user will get the query in raw teletype modes, and will have to
+answer it in raw, nonedited teletype modes.  In the case of comout-get-output,
+the query will never appear in any form at all, having been routed to the
+temporary segment, and the user's process will hang infinitely, the user
+not knowing to respond having never seen the query.
+
+		         M__u_l_t_i_c_s E__r_r_o_r T__a_b_l_e
+
+     Sometimes it is necessary to get the value of standaard Multics error
+codes, from error_table_, into a program, to be able to see if a given
+Multics interface has in fact returned it.  The function "error_table_"
+(spelled the usual way with underscores, not hyphens) is used for this
+purpose.  Its single argument is a symbol, whose name is the name
+of the error_table_ entry whose value is sought, and the returned
+result is that value, or 1 if it is not a valid entry.
+
+     The error_table_ function optimizes finding the same name over
+and over again, so the extension writer need not go through machinations
+to "save" an error_table_ value computed by these means.
+Here is an example of the use of error_table_:
+
+      (let ((status-result (hcs_$get_user_effmode dir entry "")))
+           (if (not (= (cadr status-result) 0) ;the return code
+	     (if (= (cadr status-result)(error_table_ 'incorrect_access))
+	         (display-error-noabort "Warning: not checking access")
+	         else
+	         (display-com-error (cadr status-result) dir ">" entry))))
+
+
+		    Defining commands with defcom
+		    _____________________________
+
+     The "Defcom" (short for _d_e_f_i_n_e-_c_o_m_m_a_n_d) facility is a fairly new addition
+to Emacs (and thus many internal functions are not converted to use it) for
+simplifying the definition of Lisp functions to be used as Emacs commands,
+either keystroke requests, or extended commands.  Defcom cooperates
+with the Emacs command-reader to provide prompting and defaulting
+of unspecified arguments, range-checking of numeric arguments,
+automatic repetition for numeric arguments, if desired, cross-connecting
+symmetrical functions via negative arguments, and other features.
+
+     Defcom should only be used for defining functions actually to
+be used as Emacs commands;  internal and auxiliary
+functions to be used by these functions should still be defined with
+defun.  Emacs commands defined with defun will continue to work, but
+those defined with defcom produce much better diagnostics and
+offer more features.  Defcom is actually a technique whereby
+the necessary "defun"'s are generated automatically, so functions
+defined with defcom may be called from other functions, as well.
+
+     To define a function with defcom, one uses defcom instead of defun,
+and supplies no Lisp argument list, i.e.,
+
+   (defcom one-word-from-beginning
+	 (go-to-beginning-of-buffer)
+	 (forward-word))
+
+This is the simplest form of defcom; optional features are supplied by
+placing, between the function name and the function code, various keywords,
+all of which begin with the "&" character, and some of which take optional
+arguments, expressed as lists.
+
+     The most common optional specification is &numeric-argument,
+(or &na for short), which specifies what to do with a supplied numeric
+argument, if any.  The keyword &numeric-argument must be followed by
+a list of specifications, which must include one of the following
+maJor processing types:
+
+	&reject		Any numeric argument is rejected as invalid.
+			Clearly, no other specifications are valid
+			in this case. This is the default if
+			&numeric-argument is not given.
+	&ignore		A numeric argument is ignored.
+	&repeat		If the argument is positive, the
+			command is repeated that many times.
+	&pass		The value of the Lisp variable "numarg"
+			is set, as in non-defcom commands.
+
+     In addition to the major processing type, optional bounds may
+be specified by the keywords &upper-bound (&ub) or &lower-bound (&lb).
+These, in turn, must be followed by either an integer  being the bound, or the
+keyword &eval followed by an expression to evaluate at the time command
+execution is attempted, which will then produce a value (such an expression
+will be called an "&eval expression".)  Here are some examples of
+&numeric-argument specifications:
+
+	&numeric-argument (&pass)
+	&numeric-argument 
+		(&repeat &lower-bound 1 &upper-bound &eval (+ max-foos 2))
+	&numeric-argument
+		(&pass &upper-bound 15.)
+
+     A command defined with defcom may elect to receive Lisp arguments,
+that is to say, values which are to be prompted for or supplied as
+extended command arguments can be provided automatically, and prompted
+for, by the Emacs command reader, and supplied as Lisp arguments to the
+command function.  Instead of a normal Lisp argument list, the
+keyword &arguments (or &args or &a), followed by list of argument
+specifications, one for each Lisp argument to be supplied.
+
+     Each argument specification consists of the Lisp name of the argument,
+i.e., the name of the variable which will be referred to inside the function,
+and any number of "argument qualifiers", separated by spaces.  Each
+argument qualifier may consist of several tokens, as necessary.  Argument
+qualifiers specify the prompts, defaults, etc. for an argument.
+An argument specification  may also be given as the name of the variable
+alone, as opposed ot a list of it and qualifiers.  In this case,
+it is equivalent to having its own name as a prompt for its value.
+
+     When a defcom-defined commands is invoked as an extended command,
+(i.e., via ESC-X), the Emacs command reader will check the type and
+number of command arguments supplied and necessary, and prompt for those not
+supplied or default them as specified.  When a defcom-defined
+command which has arguments is invoked from a key, it is as if
+it were invoked as an extended command with no command arguments given,
+and all are either prompted for or defaulted.
+
+     Here are the valid argument qualifiers:
+
+	&string
+	&symbol
+	&integer		Specify how the argument, when read
+			by ESC-X or prompted for is to be converted
+			before being passed.  Only one at a time
+			of these are valid in a given argument
+			specification, and &string (i.e., no
+			conversion) is the default.
+
+	&default		Must be followed by either a string,
+			symbol, or integer, as consistent with
+			the expected data type for this argument,
+			or an &eval expression.  Specifies the
+			default value to be used if this argument
+			is not supplied, or a null response
+			is given to a prompt for this argument,
+			if any.
+
+	&prompt		Specifies the prompt for this argument, if
+			not supplied via ESC-X.  Prompts will be
+			put to the user before defaults are evaluated
+			or used; A null string causes the &default
+			value to be used.  &prompt is followed by
+			a prompt string (in quotes)(or an &eval
+			expression), and one of the two optional keywords
+			NL or ESC, specifying the prompt terminator
+			(ESC is obsolete, use NL in all cases).
+			If neither NL or ESC is given,
+			NL is assumed as the default.
+
+	&rest-as-list	Valid only for the last argument.  Causes
+			this variable to be given as a value a
+			list of all of the remaining supplied
+			arguments, however many they may be. If
+			&rest-as-list is used, the caller of this
+			function from Lisp (including start-up's written
+			by possibly not-Lisp-conscious users)
+			must know that the number and organization
+			of Lisp arguments is therefore different
+			from the apparent argument array given to
+			ESC-X.
+
+	&rest-as-string	Valid only for the last argument, causes
+			all remaining arguments to be supplied as
+			a single string to the function, a single
+			argument, as they appeaed to ESC-X, with
+			spaces and so forth included.  Same cautions
+			as &rest-as-list apply.
+
+     Here is a function definition which accepts three arguments:
+
+(defcom replace-n-times
+        &arguments
+        ((oldstring &string  &default &eval (get-search-string "Old: "))
+         (newstring &string &prompt "New String: " NL)
+         (count &integer &prompt "How many times? " NL &default 1))
+
+        (do-times count
+	(if (not (forward-search oldstring))(search-failure-annunciator))
+	(do-times (stringlength oldstring)(rubout-char))
+	(insert-string newstring)))
+
+Note that it can be invoked as
+
+  ESC-X replace-n-times Washington Lincoln 2 CR
+
+or
+
+  ESC-X replace-n-times CR
+
+in which case all arguments will be prompted for, or
+
+   set-perm-key  ^Z9 replace-n-times
+
+followed by striking that key at some time, will prompt for
+all arguments, too.  This function is so defined that it may
+be called from Lisp as
+
+	(replace-n-times "this" "that" 17)
+
+or whatever, i.e., it is a Lisp function of three arguments.
+   
+     When defcom-defined commands are re-invoked by ^C, they are
+repeated with identical arguments.  This is what makes search-repetition
+by ^C work.
+
+     Other than numeric arguments and command arguments, defcom
+may be used to spceify prologues, documentation, and negative-functions
+of command functions.  Documentation is specified by the
+keyword &documentation (or &doc) followed by a documentation
+string subject to the same rules as given above under "Documenting
+Commands".  Prologues are functions or code to be executed
+before any arguments are prompted for, perhaps to check for legal
+circumstances for calling this command.  Negative functions are
+functions or code to be executed if the command is supplied a negative
+numeric argument: the negative function is given the negative numeric
+argument made positive.  Prologues and negative functions are
+speicifed by the keywords &prologue, or &negative-function
+(short, &nf), followed by the name of the appropriate function,
+or forms, terminated by &end-code.  Here is an example of the
+use of some of these features:
+
+(defcom forward-topic
+        &doc "Goes forward one or more topics. See also $$backward-topic$."
+        &numeric-argument (&repeat)
+        &negative-function backward-topic
+        (with-mark m
+           (forward-search "Topic::"............
+
+ 
+
+Yet to be documented:
+
+Lisp macro catalogue.
+Emacs interrupt system.
+
+
+   As this document is extended and augmented, it may not approach true
+"completion" in any given length of time.  Thus, there are still "tricks"
+and functions that are not documented above.  The extension writer should
+study the supplied extensions, such as Fortran Mode (fortran-mode.lisp)
+and RMAIL (rmail.lisp), as well as the "fundamental mode extensions"
+in e_macops_.lisp.  These programs are found in the Emacs source archive.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

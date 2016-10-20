@@ -1,0 +1,147 @@
+2/22/79  -- Macro edit mode.
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+
+This package allows you to 
+   1) Get printed representations of all keyboard macros defined
+      in an environment into a buffer for
+         a) Editing them.
+         b) Re-defining them from the edited version
+         c) Writing them out to a file, for later
+	    I) Dprintng
+	    II) Getting those macros automatically defined in a later
+	        invocation of Emacs.
+
+1. Getting printed representations of all your macros into a buffer.
+
+   Make sure all your macros are hooked up to keys, or at least were at
+   some time given names, then,
+
+     ESC-x edit-macros  CR
+
+   will put you in a buffer in "Macro Edit" mode with all the macros
+   defined in that buffer in editable form.
+
+  a. Editing them.
+
+In Macro Edit mode, the following functions exist, on these keys:
+
+esc-^A	macedit-find-beginning-of-macdef
+
+	Move to the beginning of the current macro defintion.
+
+esc-^B	macedit-backward-term
+
+	Move backward one term in the keyboard macro.
+
+esc-^C	macedit-compile-to-lisp
+
+	Still under development, works a little bit, but impressive
+	even for the little bit it works.  Compiles the macro being
+	pointed at into lisp.
+
+esc-^E	macedit-find-end-of-macdef
+
+	Move to the end of the current macro definition.
+
+esc-^F	macedit-forward-term
+
+	Move forward one term in the current macro definition.
+
+esc-^H	macedit-mark-whole-macro
+
+	Put point and mark around the macro definition.
+
+esc-^K	macedit-kill-term
+
+	Kill forward to the end of the current (or next) term in
+	the current macro definition.
+
+esc-^N	macedit-forward-macdef
+
+	Move forward to the beginning of the next macro definition.
+
+esc-^P	macedit-backward-macdef
+
+	Move backward to the beginning of the previous macro definition.
+
+esc-^S	macedit-state-keyboard-macro
+
+	Prompt for a key; place the definition of the keyboard macro on
+	that key into the buffer at the current point.
+
+b) Redefining them from the edited version:
+
+esc-^Z	macedit-take-up-definition
+
+	Take up into the editor, as a live definition, the current macro
+	definition being pointed at.  Use this after editing a macro
+	definition to redefine it thusly.
+
+
+ESC-X load-these-macros
+
+	Accept all the macro definitions in the buffer, redefine them
+	all.
+
+c) Writing them out.
+
+   Use ^x^w as normal, any file you want, but if it has the suffix
+   ".emacro", it will be automatically find-filed'd into Macro Edit
+   mode when it is next find-file'd.
+
+Macro language has PL/I like comments (/* comment... */). ESC-;,
+ESC-P, and ESC-N do the right thing. The comment column is 51.
+Quoted strings are double-quoted.  Macro definitions look like
+
+   macro foo-the-bar on ^q
+     ^S "bar" ESC ESC-# "foo"
+   end-macro foo-the-bar
+
+The "on ^q" is optional.  If present, it will cause a set-perm-key
+to that macro.
+
+The command
+
+   ESC-X load-macrofile  PATHNAME CR
+
+may be issued at any time to take up one of these macro files and define
+all the keyboard macros in it.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

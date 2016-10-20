@@ -1,0 +1,551 @@
+
+09/21/87  emacs 
+Known errors in the current release of emacs.
+#	Associated TR's
+Description
+
+386  phx20768
+Emacs gets an error if the height of the user_i/o window is reduced
+during a video system Emacs session (e.g.  doing ^Z^Z and shrinking the
+window for a status line).
+
+385  phx20663
+If the user lacks w access to an output file, and answers "no" to the
+"Do you want to write to the protected file <path>?" query, a confusing
+error message, containing only [wd]>nil, is displayed.
+
+384  phx20641
+If the current line fills the entire window, ^V (next-screen) appears
+to do nothing.  This is because it tries to maintain a line of overlap
+between the old and new screen, and that overlapping line happens to be
+the entire old screen.
+
+383  forum.2730
+Redisplay does not do the right thing if multiple buffers are on
+display in multiple windows, and the values of tab-equivalent differ
+among the buffers.
+
+382  phx20344
+If accept-messages-path was used to accept messages on a mailbox other
+than the user's default, the Emacs message handler is not removed from
+that mailbox when quitting from Emacs.  If a message is then received
+in the mailbox a null pointer fault will result.
+
+381  phx20346
+reverse-regexp-search for "^string" goes to the beginning of the
+previous line containing "string" anywhere, rather than a line
+beginning with "string".
+
+380  phx20282
+"esc-X help" refers to >documentation>subsystem>emacs_dir instead of
+>documentation>subsystem>emacs.
+
+377  phx19966
+editor-main-init setq's default-fill-column and default-comment-column,
+thus overriding the defaults that are specified in e_option_defaults_.
+
+375  phx19737
+The sequence:
+          emacs -ns
+          ^X-3 esc-? ^E esc-R
+ results in an Emacs internal error followed by a fault referencing a
+lisp temp segment, which recurs if you try to pi back in.
+
+374  phx19730
+The previous-command variable is not maintained properly.  This can
+cause problems for commands that change their action when invoked
+consecutively (e.g.  rubout-word and complete-command).  Commands which
+throw to top-level rather than returning normally (such as the
+minibuffer termination key), and commands which are on
+*transparent-commands* leave previous-command unchanged, so the
+affected commands think that they have been invoked consecutively when
+they have not.
+
+373  
+complete-command (esc-SPACE) will get into a loop returning a sequence
+of the same completions if the completion-list contains a duplicated
+element.
+
+372  
+Fundamental/.ext-commands contains "alm-mode" twice, which causes error
+373 to occur.
+
+369  
+"destroy-buffer-contents" should release the buffer's temp segments.
+This is an easily-solved, special case of the general problem described
+in entry 368.
+
+368  
+Emacs never reclaims the space in its buffer temp segments that becomes
+unreferenced after a line gets copied into a lisp string, until the
+buffer is destroyed.  Perhaps a GC daemon could be created that would
+zero the unreferenced lines in the temp segs (in the hopes that an
+entire page might be zeroed).  Or perhaps the routines that replace a
+filecons with a string or delete lines could keep track of the amount
+of wasted space, and trigger a compaction of the temp seg when this
+passes a specified threshhold (the GC daemon cannot compact because it
+might be invoked after a pseudo-pointer has been extracted from a
+filecons).
+
+367  phx19619
+The internal documentation for the "replace" command says that it will
+not prompt for the second string if the first isn't found.  This is not
+true.
+
+366  phx19617
+multi-word-search (^XW) should start its search at the end of the
+current word if it is in the middle of a word.  Otherwise it might
+treat the remainder of the word as a whole word.  For instance, if
+point is between the e and w in "foreword", "^XW word" will stop at the
+end of "foreword".
+
+361  phx19374
+accept-messages-path references an undefined function
+console-messages-interrupt-handler (it should be
+console-message-interrupt-handler).
+
+360  phx19218
+Switching windows (i.e.  ^XO) before the first redisplay can cause a
+buffer named "nil" to be created.  It is difficult to kill this buffer.
+
+359  phx19170
+e_cline_'s any_other handler doesn't ignore stringsize like
+default_error_handler_ does.
+
+358  phx19119
+Recursive command-quit's cause problems.  At top-level it will cause a
+"throw can't find catch.  pgazonga" infinite loop.  In a minibuffer it
+will cause the minibuffer to be aborted and quits to be ignored.  To
+reproduce:
+  esc-esc unwind-protect (command-quit) (command-quit)
+
+355  forum.2414
+e_mail_pl1_$emacs_read_message returns an error code if it can't send
+the cknowledgement.  It should ignore this, as read_mail does.
+
+354  forum.2414
+If RMAIL gets an error reading or formatting a message "nil" is
+displayed instead of the line count and message.
+
+353  phx18981
+The electric-pl1-mode function overrides bindins of :  and ; that are
+set in the pl1-mode-hook.
+
+348  phx18717
+^X^E should make sure that the file_output buffer is modifiable.
+
+345  forum.2233
+The list *transparent-commands* should include control-prefix when
+vt1xx_keys_ is loaded.
+
+339  phx18154
+LDEBUG esc-R (ldebug-reset-break) does not check that the break
+s-expression is still in the source buffer before deleting it.  If the
+user manually deletes that s-expression then it will delete the
+following sexp.
+
+333  
+If you specify a pathname as the terminal type (with -query or -ttp)
+you must explicitly give the .ctl suffix.
+
+330  phx17744
+^X_ (underline-region) underlines newlines.
+
+329  phx17727
+Lisp mode incorrectly indents the third line of this construct:
+ (a
+   '(,b
+     c))
+
+This seems to be due to the asymmetry of forward-sexp and backward-sexp
+when there are prefix read-macros around.  Some fixes are in [aref
+1087] in Emacs meeting.
+
+328  
+The short name for -shared_static (undocumented) should probably be
+-ss, which is what the run_command_task command uses.
+
+325  phx17524
+Buffer editor doesn't recognize buffer names (when implementing G
+request, for instance) that have a ">" past the 20th character.
+
+324  phx17333
+If Emacs gets an RQO while writing out a file it doesn't always reset
+the terminal properly, because it doesn't run the DCTL-epilogue.  In
+the case of a VT100, for instance, the scroll region is not reset.
+tty_ modes, however, do get reset properly.
+
+322  phx17317
+When RMAIL re-uses a reply buffer it doesn't make sure that the "Ack"
+minor mode is reinitialized to match the acknowledgement flag.
+
+320  
+There are paths through e_tasking_ which will cause a
+return_conversion_error.  See the "signal program_interrupt" statement;
+if it returns then it falls through to an incompatible entrypoint.
+
+319  phx17174
+Type ^X` test.test CR CR
+     ^X` noproj CR CR
+ pretty soon you will get "lisp:  car or cdr of a number" loop.
+
+313  phx16932
+Emacs doesn't recognize sentences if the full stop is followed by ) or
+".
+
+311  phx16888
+The "A new message has arrived" message has a 50% chance of being
+overwritten by the "Do you wish to quit?" query.  Perhaps making the
+message a local display would work better.
+
+310  phx16888
+If a minibufffer-print is followed by a minibuffer-response then the
+question will overwrite the previous output.
+
+309  phx16877
+Emacs self-doc for delete_char says that it moves the rest of the line
+"one to the right", which should be "one to the left."
+
+308  phx16872
+If the response to the terminal type query is all numbers then Emacs
+just says "Do not understand.  Try again" instead of going to the "list
+of types" query.
+
+305  phx16606
+Macro edit parser does not understand negative numeric arguments.  The
+function macedit-digitp should recognize initial hyphens.
+
+302  
+It doesn't work to capitalize (esc-C) an underlined word.
+
+294  mail.2.11
+edit-dir doesn't understand directories that have no files.
+
+287  phx16787
+If you ^G out of the "Do you wish to quit rmail?" question after
+deleting the last message the message is marked for deletion but stays
+on display.
+
+286  phx16785
+Repeat-last-message (^X~) uses the last recipient if I have sent a
+message since receiving one.
+
+284  mail.4.83
+The Emacs lisp error handler doesn't interact with errset properly.
+"esc-esc errset (error 'foo 'bar 'fail-act) nil" should just return
+nil, but it prints the error message.
+
+273  mail.4.46
+esc-^B (backward-sexp) goes into an infinite loop if there is a
+semicolon ahead of point on the line.
+
+270  mail.4.30
+runoff-fill-region only works if the point is at the end of the region,
+not at the beginning.
+
+263  
+If you mark a buffer for deletion in buffer-edit, and kill it with ^XK
+before exiting buffer-edit then you get serious errors.
+
+258  phx16454
+It is difficult to kill buffers whose names end in whitespace, as ^XK
+and ^XB rtrim the buffer name.
+
+240  phx15723
+The dg132b CTL doesn't provide enough padding for insert/delete lines.
+At higher speeds it may be better to just redraw the screen.
+
+239  
+When Emacs signals quit the resetwrite can cause the initial string or
+epilogue string.  It should do its own resetwrite when the user hits
+BREAK, and then it should signal quit with an info structure that
+indicates that no automatic resetwrite should occur.
+
+233  phx15433
+global-print (^XS) leaves out some lines if the search string contains
+a newline.  This is because its main loop goes to the beginning of the
+next line before each search; it should only do this in the one-line
+case.
+
+228  phx15349 phx09740 phx13412
+The initial redisplay takes a fault if the buffer is looking at a large
+segment.
+
+227  phx15350
+If Emacs takes a fault, it leaves the user in rawi mode.
+
+226  phx15228 phx20036
+You can't send mail from xmail if you have a tasking Emacs, and thenyou
+cannot get back into the Emacs.
+
+224  phx15059 phx16507
+Scroll-current-window (^Z^V) allows the cursor to be on the bottom line
+of the window when the line should wrap.  This gets redisplay confused.
+Scenario:
+ Go into two-window mode, with the top window having seven lines.
+ Read in a file with several (>8) wrapping lines in a row.
+ esc 6 esc G esc - ^Z^V <= gets into the above state
+ esc - ^Z^V <= shows how confused it is
+ ^X O <= further confusion f redisplay
+
+217  phx14593
+In overwrite-mode, backslash still inserts.  So does ^Q, but this is by
+design.
+
+216  phx14519 phx16784
+Commands implemented using word-operator (esc-C, esc-L, and esc-U) do
+not work properly if point on the whitespace preceding the first word
+of the buffer.
+
+215  phx14519 phx17565
+Commands implemented using the word-operator macro (esc-C, esc-L, and
+esc-U) do not work properly if there is no word in the buffer (or
+perhaps if the buffer is empty).  A fix is given in the TR.
+
+213  phx16399
+Tasking Emacs should die more gracefully if you turn the video system
+on or off under it.  This also applies if you turn on/off the video
+system under a suspended normal Emacs.
+
+211  phx14400
+Real underlining display loses a letter if a capital letter is
+underlined twice.
+
+206  phx13052 phx15086 phx15464
+Sometimes gets error_table_$io_no_permission on reconnection.  This is
+probably due to getting the same devx.
+
+205  phx12602
+The window editor sometimes overwrites another buffer with the
+window-editor information.  This happens if you delete the window in
+which the window editor is running.
+
+202  
+In Multics-mode gets rid of the error_output switch.  This is due to
+the loss of syn_$syn_attach_.
+
+198  phx13758
+^V and esc-V are confusing when redisplay turned off.  They can also
+get confused if they are typed ahead.
+
+194  phx13572
+Emacs guesses that some terminal types are printing-terminals without
+checking for a CTL first.
+
+191  phx13136 phx13722
+Minibuffer output isn't always folded when it runs over the
+screenlinelen.
+
+188  phx13062 phx14762
+Some searching routines do not set gratuitous marks properly, causing
+^W to wipe the wrong text.
+
+185  phx12887
+Dired buffers that are modified should stop ^X^C from exiting w/o query.
+
+182  phx12653
+^XO doesn't do anything with redisplay off.
+
+180  phx12556
+check-entry-name in e_multics_file_ should call check_entryname_, not
+check_star_name_$path.
+
+167  phx12166
+A minibuffer message occurring during a local display sometimes aborts
+the local display.
+
+162  phx11972
+indent-rigidly should redo tabification in line.
+
+158  phx02711
+Speedtype does not accept >4 character abbreviations, and setab command
+does not diagnose either.
+
+157  phx03081
+pop-up windows/message mode problems.
+
+156  phx11749
+Local displays generated while in minibuffer don't get flushed.
+
+154  phx11779
+ESC-U/ESC-C/ESC-L should know how to correct _ canonicalization within
+word when case-changing.
+
+153  phx11755 phx11964
+Multiple windows/set-screen-size blows away windows on ambassador
+because of deficiency in DCTL code.
+
+144  phx11398
+LDEBUG breakpoints leave you in buffer where they occur, without LDEBUG
+bindings, and prints message into current buffer.
+
+132  phx10148
+Multics Mode with Process buffer showing in two windows (with differnt
+current points) confuses window manager about current window.
+
+130  phx09878
+Word definition seems a little screwed up in ^Z_ and ESC_ and ESC-T.
+
+128  phx09256 phx19080
+Single-character procedure names at begin of new pl1 file in electric
+PL/I mode cause ":" electric to beep and not do its job.
+
+117  phx10073
+Emacs should diagnose illegal keystring ^Z-- (two minuses).
+
+109  phx09931
+esc-/ ^$ CR on blank line doesn't find next blank line.
+
+104  phx09863
+Misspellings and bad grammar in extensions.info.
+
+92  phx09539
+In fortran mode, with free-format fortran, positioning to source
+lines should use fortran's line numbers, not Emacs'.
+
+89  phx09343
+Defcom for untabify is binding tab-equivalent to a string.
+
+87  phx09365
+Lines longer than fill column make CR in message buffer fail.
+
+86  phx03655 phx10392
+Emacs ^X^M qedx <CR>, BREAK, pi, q, pi sometimes fails in lisp_oprs_.
+(Gets segfault or mme2 error).  Might be lisp bug.
+
+84  phx09201
+ESC-Q leaves a blank line with fill prefix after a paragraph just filled.
+
+83  phx09092 phx09256 phx12741 phx15394
+Emacs doesn't handle colons well for label arrays in electric
+PL/1 mode (specifically try "action (4):").  Semicolons also not
+handled well after declarations.
+
+There is a fix for the label array bug in Emacs forum [1604].
+
+81  phx08766
+Emacs does not observe MAP mode.
+
+78  phx08592
+Emacs needs to know which conditions should be ignored, and which passed
+through, and needs to pass conditions like "endpage" through.
+
+77  phx08295 phx08925 phx12693
+^C doesn't do right thing after ^XE.
+
+75  phx06948
+Multiple ESC-^Q cause strange interaction with redisplay; sometimes
+paragraph creeps up and off screen, sometimes causes unnecessary
+redisplay.
+
+74  phx08227
+e_pl1_$get_mcs_tty_info appears to not know that diablo1620's does
+have tabs (and doesn't direct Emacs to use tabs in printing-tty output).
+
+69  phx08002
+When in electric-pl1-mode, ";" inside string should cause "Unbalanced
+PL/1 quotes" but not newline/special action, just insert ";".
+
+68  phx07939
+Local keybindings need to be "pushed"; when do electric-pl1-mode,
+fill mode, fill off, SEMI/TAB get rebound to self-insert instead
+of pl1-mode-special-whatever.
+
+63  phx07303
+LRU minibuffer-print line-selection algorithm needs to be better.
+
+61  phx07287
+Emacs should do resetread on quit.
+
+59  phx06969
+On printing terminal (TI745) "Writing" got overwritten by
+pathname -- possible padding bug in TI745 ctl.
+
+52  phx06832
+Marks not always moved correctly on ^W; see TR.
+
+47  phx06696
+Setting minibuffer size resets screensize.
+
+45  phx06634
+When a major-mode change happens, the OLD major mode should be
+cleaned up before the new one is instated.  In particular, trying to
+use an old fortran-mode buffer in most other major modes
+will still find CR bound to fortran's return-and-indent.
+
+44  phx06599
+ESC-W (copy-region) doesn't respect ESC-^W (doesn't append to
+last deletion.)
+
+43  phx06588
+pl1-comment-current-line should obey comment-column, NOT maintain its own
+comment column (pl1-comment-column).
+
+36  phx06301
+Rmail bugs: (1) Should do a go-to-or-create-buffer "Incoming Mail", not
+go-to-buffer. (2) rmail.info needs to be installed. (3) The feature
+whereby ^XR in an emacs with a non-quitted rmail returns to reading
+the mail you were reading MUST BE Documented.
+
+29  phx05495 phx05675 phx06167
+Speedtype mode and speedtype/fill interaction have several bugs.
+Bill York's new speedtype should be installed.
+
+18  phx03094 phx13763
+On tek4025, Emacs should first ask user to set command character.
+Would be nice to have a real cursor, also.
+
+16  phx05086 phx06698 phx08108 phx11313 phx11397 phx13319
+Emacs gives useless error message on RQO - should try to clean
+ up pdir automatically if that's where the error is.
+
+15  phx05073
+accept-messages doesn't work in recursive Emacs'.  This is caused by
+the console-message package not re-instating old accept_messages state;
+this will be fixed when the new message routines roll around.
+
+13  phx04933
+Bugs in ^XR after reading another mailbox, then trying to read own.
+See TR.
+
+8  phx06674
+^X:'ing to a person when that recipient's message buffer has been
+deleted blows out badly. (Two error messages, including one from
+go-to-line-point).
+
+6  phx04679 phx09752 phx14625
+Windows displaying the same buffer sometimes don't keep their own
+curpoint; moving in one, then ^XO or ^X4 to the other sometimes
+causes the second to redisplay to the point of the first.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

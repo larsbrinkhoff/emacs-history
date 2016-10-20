@@ -1,0 +1,348 @@
+10/10/79 - Emacs Lisp Debug Mode
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+     Multics Emacs LDEBUG mode (Lisp Debug) provides an
+interactive Lisp environment designed for the debugging of Emacs
+extension code.  Facilities are provided for tracing the Lisp
+stack, breakpointing code, and interacting with the native
+MacLisp "trace" facility.  LDEBUG mode is specifically optimized
+for multiple-window interaction.
+
+  LDEBUG Buffers
+
+The heart of the LDEBUG mode facilities is the "LDEBUG" buffer.
+The buffer named "LDEBUG", when created by ldebug-mode
+(either in response to a breakpoint being executed, a trapped
+Lisp error, or the explicit "ldebug" extended command)
+evaluates any Lisp form typed into it when Carriage Return is
+struck after it. The form must be all on one line- an error will
+occur if the form has syntactic errors (e.g., miscounted
+parentheses).  The result of the evaluation is placed in the
+LDEBUG buffer on the next line, following the sign "=>", which
+indicates the result of such an evaluation.  The Lisp variable
+"*" will be set to the result of each successive evaluation,
+as at raw Lisp top level: this may be used to reference the last
+printed result.
+
+     Random Lisp forms such as "(+ 2 3)" or "current-buffer" can
+be typed at LDEBUG buffers, and the resulting buffer contents
+will in effect be a dialogue of an interaction with Lisp.  Such
+buffers are often dprintable for later perusal.   The values of
+variables may be set by evaluating the normal Lisp setq form,
+e.g., (setq var (+ foo 27)).   As lines are
+placed into the LDEBUG buffer by the LDEBUG facility, the
+window (if any) containing it will scroll if necessary.
+
+     Lisp values "printed" into the LDEBUG buffer are by default
+limited in length to ten and depth to six.  The values of the
+option variables "ldebug-prinlength" and "ldebug-prinlevel"
+may be set to alter these defaults.  The default input and output
+radices are both 8: these may be altered as the option
+variables "ldebug-ibase" and "ldebug-base".
+
+     Most Emacs requests can be used in LDEBUG buffers; they are
+in "Lisp Debug" mode, which is an extension of ordinary Lisp
+mode, with commands differing as detailed below.
+
+
+     Emacs and Lisp Debug Mode
+
+     The "ldebug" (ESC-X ldebug CR) extended command can be
+invoked at any time, in the normal way Emacs extended commands
+are invoked.  It places Emacs in the LDEBUG buffer as described
+above, but also, more significantly, it sets up a system of Lisp
+error handlers "under" a new invocation of the Emacs request
+loop.  Should any Lisp error happen while these handlers exist,
+the LDEBUG buffer will be entered, placed on display if not
+already on display, the terminal's bell will be feeped, and the
+Lisp error message will be entered in the LDEBUG buffer.  You
+will then be at a "second (or greater) level" of LDEBUG, similar
+to what happens at Multics Command level when an error occurs.
+The level number will be part of the message entered in the
+LDEBUG buffer.
+
+     Recursive (level greater than 1) LDEBUG buffers may be
+released (aborting all executing code between the LDEBUG level
+being released and the previous level) via the ESC G
+(ldebug-return-to-emacs-top-level) request, the analogue
+of the Multics "release" command. It will beep and type "$g"
+in the LDEBUG buffer.  The value of the variable "ldebug-level"
+tells the current level of LDEBUG buffers.
+
+     ESC P (for proceed) is the analogue of the Multics "start"
+command; there is more to know about its meaning for each
+different type of entry to an LDEBUG buffer, and this
+will be described below.  In general, it restores the
+buffer and window from which the LDEBUG buffer were entered.
+
+
+     Error trap entries to LDEBUG
+
+     When an "error trap entry" to the LDEBUG buffer has
+occured, the Lisp stack may be traced via the ESC-T
+(ldebug-trace-stack) request, and the value of variables may be
+inspected simply by typing their names (as they are Lisp forms)
+at the LDEBUG buffer.
+
+     A value may be "returned" to the Lisp error handler by
+typing it on a line, and instead of ending the line with
+carriage return (which would evaluate and "print" the result),
+end it with ESC P.  Note that Lisp error handlers often want a
+list of the value to replace some erroneous value.  For
+instance, in the following dialogue, an LDEBUG trap was entered
+because of the unbound variable "stuff": the programmer returned
+the symbol "value-i-wanted" as the intended value of the unbound
+variable:
+
+   (myfun huff stuff)
+
+   Lisp breakpoint unbnd-vrbl at level 1 in buffer LDEBUG:
+   lisp: undefined atomic symbol   stuff
+
+   ('value-i-wanted)$p
+
+All "correctable" Lisp error breakpoints will accept a "retry"
+value to be used to retry the failing operation; the undefined
+function breakpoint ("undf-fnctn") also accepts a list of a new
+value, in this case a function to be used instead.  The MacLisp
+manual must be consulted  for the exact format of other retry
+values.
+
+     The "$p" is always printed by ESC P, to remind the user of the $p
+which is used in raw Multics MacLisp to restart breaks (the "$p"
+is in fact derived from ESC P on the ITS operating system, which
+is used to restart jobs in general).
+
+     ESC P may also be used alone on a line (i.e., no value to be
+returned preceding it) to restart a break and let Lisp's default
+action occur.
+
+     ESC G may be used as usual to release a level of errors to
+the next lower LDEBUG level; note that ^G (command-quit) only
+does not release past LDEBUG levels.
+
+
+     Code Breakpoints
+
+     Breakpoints may be set in interpreted extension code being
+debugged by typing ESC & in a Lisp Mode buffer with the cursor
+pointing at the point in some function being debugged where you
+would like this break set.  The LDEBUG mechanism will create
+this breakpoint by putting a call to a tracing function ("%%")
+in the code in the buffer, and evaluating the function
+definition it is looking at.  This "break code" will be left
+in the function to let you know that it is there: it includes
+a "break number" (they are assigned sequentially) by which
+this breakpoint can be referred to by requests yet to
+be described.
+
+     You should be in at least one level of LDEBUG buffers
+before setting a break: this means that you should have said
+"ESC X ldebug CR" some time before setting breaks.
+
+     Having set a break, you can run the code being debugged.
+When the breakpoint is entered, the LDEBUG buffer will be
+entered, at a new, higher level.  A message of the form
+
+   Break 4 in function testfun
+
+will be put in the buffer, and the LDEBUG buffer will be put on
+display if not already on display. As in all LDEBUG buffers,
+arbitrary forms can be evaluated (including inspecting
+variables), and ESC T can be used to trace the Lisp stack.
+Again, ESC G releases a level of LDEBUG buffers.
+
+     ESC P is used to restart code breakpoints, as well. A given
+breakpoint can be set for some number of proceeds (i.e., "3" means
+proceed, and proceed this breakpoint the next two times it is
+encountered automatically) by giving that number as a numeric
+argument to ESC P (i.e., ESC 3 ESC P).  A message indicating the
+number of proceeds will be inserted in the LDEBUG buffer.
+ESC P should be used alone on a line (i.e., no "retry value")
+when restarting code (or trace) breaks.
+
+     When in a code break, ESC R (ldebug-reset-break) may be
+used to reset the current breakpoint, before restarting or
+releasing.  The break code will be removed from the function
+definition (visibly, if it is on display), and the function
+definition will be reevaluated.  ESC R with a numeric argument
+can be used to reset a break by number.
+
+     When in an LDEBUG buffer, ESC L (ldebug-list-breaks) may be
+used to list all the known code breakpoints: their numbers, the
+function in which the break appears, the buffer the function
+appears in, and the status of the break.
+
+     The source for the current breakpoint may be shown by
+issuing the request ESC S (ldebug-show-bkpt-source).  It is
+placed in an available window (if in multiple windows or
+pop-up-window mode), and the cursor moved to the break code.
+(use ^XO to get back, or in one-window mode ^XB CR).
+
+     A common need during function breakpointing is to determine
+where the editor was (i.e., what was the current buffer, and
+where was the current point) at the time the breakpoint was
+encountered.  The ESC ^S (ldebug-display-where-editor-was)
+request serves this need; it selects the appropriate buffer,
+moving the cursor to the point in it where the current point was
+when the breakpoint was taken.  If the buffer is already on
+display in some window (or pop-up windows are being used),
+that window will be selected (i.e., receive the cursor), and ^XO
+can be used to return to the LDEBUG buffer for further probing
+or restarting.  In one-window mode, the correct buffer will
+be switched to, and ^XB can be used to get back.
+Note that if the cursor (current point) is moved
+by you explicitly (i.e., via normal Emacs requests) while
+visiting the buffer where the breakpoint was taken, it will have
+its new position when the breakpoint is restarted.  This is
+analogous to setting a variable before restarting with usual
+Multics debugging.
+
+   Using two or three windows to contain the LDEBUG buffer, the
+breakpoint source (function being debugged), and the buffer the
+functions being debugged are working on is highly effective and
+recommended.
+
+
+     Function tracing with LDEBUG
+
+     The standard MacLisp trace package can be used while in
+Emacs; extensibility features of the former allow LDEBUG to
+take control of the trace output and breakpointing provided by
+it.
+
+     All the facilities of the standard trace package can be
+used, by invoking trace from ESC ESC minibuffers.  The trace
+package allows tracing of entries and exits to functions,
+arguments, and return values, and breakpoints when functions are
+entered.  Some sample forms to trace the function "testfun" are
+given here: these are the in Lisp syntax, and may be typed as
+such to LDEBUG mode.  When typed to an ESC-ESC minibuffer, the
+outer set of parentheses should not be supplied.
+
+       (trace testfun)	Trace the input arguments and
+			return value of testfun each time
+			it is invoked.
+
+       (trace (testfun break (< x 3)))
+			Trace input and return value of
+			testfun, enter a breakpoint when
+			entered and x (x can be an argument
+			to testfun) is less than 3.
+       (trace (testfun break t))
+			Same, but breakpont at every
+			entry to testfun.
+       (trace (testfun entry (a b) exit (c)))
+			Trace input args and return value,
+			also print out the values of a and b
+			when testfun is entered and the value
+			of c when it is exited.
+
+     The general syntax of trace invocations is (brackets are
+indicating optional clauses, angle brackets are syntactic
+variables):
+
+     (trace <fnname-or-clause-1>  ... <fnname-or-clause-n>)
+
+where <fnname-or-clause> is either a function name to be traced
+for only input args and return value, or
+
+     (<fnname> [break <break-condition>] [entry (<entry-vals>)]
+				 [exit (<exit-vals>)])
+
+There are other options documented in the MacLisp reference
+manual.
+
+     When a function is traced within Emacs (it is not
+recommended to trace internal Lisp or Emacs primitives, and any
+part of the redisplay should definitely not be traced in this
+way), trace output for entry and exit tracings will be placed
+(and scrolled) directly into the LDEBUG buffer if it is on
+display; if it is not on display, this output will be put in the
+LDEBUG buffer, AND local-display'ed as it is produced.
+Note that the -- * * * * * * * * * -- of local displays will NOT
+be produced, as it cannot be known when the "end" of trace
+output has been reached.  Thus, traced functions invoked from
+the minibuffer may often leave the cursor in the minibuffer
+awaiting clearing the local display via linefeed or ^L.
+
+     Trace output generally looks like
+
+   (3 enter testfun (3 5 (a . b)) /|/| (4 5))
+
+The indentation level gives the depth in currently active
+traced functions.  The "3" is the recursion depth of the
+given function (e.g., testfun) being traced.  "enter"
+is the type of trace (enter vs. exit), (3 5 (a . b))
+is the list of arguments (in this case, three arguments).
+/|/| sets off the "entry values" and "exit values"
+optionally selectable by the "entry" and "exit" keywords
+in the trace-invoking form.   Exit traces look like
+
+   (3 exit testfun 17)
+
+     If trace is used to set an entry breakpoint, the LDEBUG
+buffer will be trapped to at the time the traced function is
+entered, in a way very much like a Lisp error break to LDEBUG.
+A message such as
+
+   Entry breakpoint to function testfun
+
+will be "printed" into the LDEBUG buffer, and the terminal
+feeped.  As with LDEBUG code breaks, ESC G releases, ESC P
+restarts, ESC R resets, and ESC ^S shows where the editor was
+at the time the break was taken.  When in entry breakpoints to
+interpreted functions, the arguments may be inspected by name.
+ESC-T may be used to trace the Lisp stack, but unless
+*rset t mode was in effect (setting up an LDEBUG level does this
+automatically), trace information may not be present.
+
+     It is not necessary to have invoked ldebug before invoking
+trace in Emacs; LDEBUG will be invoked automatically if an
+attempt is made to use trace in Emacs.  If some critical
+mechanism is being debugged and normal trace handling (i.e.,
+breakpointing/tracing to user_i/o from Lisp, not the Emacs
+handling just described is necessary, the variables
+trace-printer and trace-break-fun should be made unbound (e.g.,
+ESC ESC makunbound 'trace-printer) before the first reference to
+trace in a given invocation of Emacs.
+
+(END)
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

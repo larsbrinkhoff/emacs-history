@@ -1,0 +1,1416 @@
+Multics Emacs Commands (Fundamental mode) 7/22/90
+
+	K__e_y_s _a_n_d _t_h_e_i_r _b_i_n_d_i_n_g_s
+		(Extended (esc-X) commands are listed at the end.)
+
+#		rubout-char
+   
+   Deletes  the  previous  character  (before the cursor, which is usually the
+   last  character  typed,  like  in  normal Multics.) Note that # deletes the
+   character  to the left of the cursor, while ^D deletes the character at the
+   cursor.
+   
+@		kill-to-beginning-of-line
+   
+   Kills all the text on the current line to the left of the cursor.  The text
+   killed is saved on the kill ring, and may be retrieved with ^Y.
+   
+CR		new-line
+   
+   Inserts  a  newline  character into the buffer at the current point, ending
+   the  current  line,  and starting a new one.  If entered in the middle of a
+   line,  breaks  the  line  at the current point.  If the next line is empty,
+   i.e.,  was  made  by a single CR or ^O, CR will just go to it, and will not
+   insert  a  newline.   However,  the last empty line before a non-empty line
+   will be left empty.  If there is a fill prefix (see ^X.), CR will insert it
+   after any newline character it inserts.
+   
+ESC		escape
+   
+   Used  to enter two-keystroke key sequences, and to supply numeric arguments
+   to  commands.   For example, to enter the esc-K command, type ESC then a K.
+   To  supply  a  numeric argument to a command, type ESC, the number, and the
+   command.  For example, ESC 3 ^D deletes 3 characters.
+   
+\		escape-char
+   
+   \NNN  where  NNN are 1 to 3 octal digits, inserts the character whose value
+   is  NNN  into  the  buffer.  For example, \14 inserts a form-feed (^L).  \\
+   inserts  a  \;  \#  inserts  a  #; \@ inserts a @.  \ followed by any other
+   character  inserts  \  and  that  character  (except  \ CR, which inserts a
+   newline).
+   
+\177		rubout-char
+   
+   Deletes  the  previous  character  (before the cursor, which is usually the
+   last  character  typed, like in normal Multics.) Note that \177 deletes the
+   character  to the left of the cursor, while ^D deletes the character at the
+   cursor.
+   
+^@		set-or-pop-the-mark
+   
+   With  no  argument, i.e., ^@, sets the-mark in this buffer where the cursor
+   is  now,  and  leaves it there.  The current value of the-mark, if any, and
+   different than the current point, will be pushed on the mark ring.  It will
+   move  around  properly if the text around the-mark is deleted.  See ^X^X to
+   verify  where  the-mark is.  With an argument, i.e., ^U ^@, pops a mark off
+   the  mark  ring,  and  positions  to it.  Successive ^U ^@'s will "try" all
+   marks on the mark ring.
+   
+^A		go-to-beginning-of-line
+   
+   Position  to  the  beginning of the current line of the buffer.  That is to
+   say, right before the first character.
+   
+^B		backward-char
+   
+   Move  backward  one  character  in  the  buffer.   Tabs,  and  the  newline
+   characters  at the ends of lines count as one character.  Will command-quit
+   at the beginning of the buffer.
+   
+^C		re-execute-command
+   
+   Re-execute  the  last keystroke (command), other than ^J or ^C.  If used to
+   repeat  a  search, the search will be repeated with the same search string.
+   Useful for skipping successive words, etc.
+   
+^D		delete-char
+   
+   Delete  the  character  to  the  right  of  the current point.  This is the
+   character  on  which the cursor sits.  Move the rest of the line one to the
+   right,  closing  up  the  space.   Deleting  a newline at the end of a line
+   merges lines.
+   
+^E		go-to-end-of-line
+   
+   Position  to the end of the current line: that is, after the last character
+   and  before  the  linefeed.   On  an  empty  line,  this is the same as the
+   beginning of the line.
+   
+^F		forward-char
+   
+   Move forward one character.  Tabs and newlines count as one character each.
+   Will command-quit at the end of the buffer.
+   
+^G		command-prompt-abort
+   
+   Quit  out  of  the  current minibuffer prompt if any, and ring the bell (or
+   beep).  May be used to exit a minibuffer you did not intend to get into, or
+   just to tell when Emacs has "caught up."
+   
+^J		noop
+   
+   Linefeed;  ignored.  See also ^L.  Good for exiting displays (such as ^X^B,
+   apropos, etc.)
+
+   
+^K		kill-lines
+   
+   Kill  to  end  of  line,  except  when  already  at end of line, delete the
+   linefeed  (merge  lines).   If  on  an  empty  line, delete it.  If given a
+   numeric  argument, deletes that many lines, starting from the current point
+   on the current line.
+   
+^L		redisplay-command
+   
+   Clear  the  screen,  and  display the current window of the current buffer,
+   centered  about  the  current  line.  Useful if your screen is messed up by
+   messages (although see accept-msgs), non-Emacs output, etc.  With a numeric
+   argument,  moves current line to that line from the top of screen; ESC-1 ^L
+   moves  current  line to top, for example.  With a negative argument, a line
+   counting from the bottom of the screen will be used.
+   
+^N		next-line-command
+   
+   Position to the next line of the buffer.  If on the last line now, append a
+   new  empty  line to the bottom of the buffer, and position to the beginning
+   (and  end)  of  it.   Successive  ^N's  and  ^P's  try to maintain the same
+   horizontal position.
+   
+^O		open-space
+   
+   Open  up space by putting a newline AHEAD of the current point.  Pushes all
+   lines  of the buffer below the current line down one.  For instance, ^U^U^O
+   will open up 16 lines.  See ^X^O to remove (extra) blank lines.
+   
+^P		prev-line-command
+   
+   Move to previous line of the buffer.  Will command-quit if on first line of
+   the  buffer.  Attempt to maintain the same horizontal position.  Successive
+   ^P's and ^N's will try to maintain the original horizontal position.
+   
+^Q		quote-char
+   
+   "Quote"  the  next  character,  i.e.,  insert it into the buffer literally.
+   This  is used to enter control characters and other "funny" characters into
+   the  buffer,  i.e.,  ^Q# to insert a pound sign.  ^Q CR, however, inserts a
+   single  Newline  chaacter  (Newline  characters  separate  lines in Multics
+   files.)
+   
+^R		reverse-string-search
+   
+   Reverse search.  Leave cursor positioned before matching string, don't move
+   cursor  if  not found.  Prompts for search string in minibuffer, which must
+   be ended with CR.
+   
+^S		string-search
+   
+   Search  for  a  character  string,  from  current  point  in buffer to end.
+   Prompts  for  string  in  minibuffer, and leaves point, if search succeeds,
+   after  the  matched  string.  End search string with CR.  ^SCR re-uses last
+   search string.  If search fails, point will not move.
+   
+^T		twiddle-chars
+   
+   Twiddle  (transpose,  interchange)  the  last two characters typed, like, I
+   like Mutl^Tics becua^Tse...  etc.
+
+   
+^U		multiplier
+   
+   Multiplier.   When not followed by a number, multiplies the next command by
+   4  for  each  use.  i.e., ^U^D deletes 4 chars.  ^U^U^D deletes 16.  With a
+   number, uses that, i.e., ^U13x inserts 13 x's.
+   
+^V		next-screen
+   
+   Display  next  screenful  of  this buffer.  Leave cursor at upper left hand
+   corner of screen.  With an argument, displays that many screens ahead.
+   
+^W		wipe-region
+   
+   Wipe (kill) all text between cursor and the-mark.  Succeeding kill commands
+   (like  ^K, NOT ^W) will merge killed text.  The killed text is saved on the
+   kill ring, and can be retrieved with ^Y.
+   
+^X#		kill-backward-sentence
+   
+   Kill  backwards  to  the  beginning  of  this sentence: kill as much of the
+   sentence   as   thus  far  typed.   Successive  kills  via  ^X#  and  other
+   reverse-killing commands (e.g., esc-#) merge, and may be retrieved with one
+   ^Y.
+   
+^X(		begin-macro-collection
+   
+   Start  learning all which follows as a macro, until ^X) or an error occurs.
+   All commands and input between ^X( and ^X) will be remembered as a "macro",
+   which can be executed by ^XE, or saved and assigned to a key by save-macro,
+   and displayed by ^X*.
+
+   
+^X)		end-macro-collection
+   
+   End  a macro definition.  The commands and input typed since ^X( become the
+   "last  macro  defined"  for  ^XE,  which see.  If given a numeric argument,
+   re-executes  the defined macro as ^XE does (see that command).  See ^X( for
+   what a macro is.
+   
+^X*		show-last-or-current-macro
+   
+   Display  the  commands  (as  keystrokes, i.e., ^A, ESC-B, etc.) in the last
+   macro defined (see ^X().  If given a numeric argument, i.e., ^U^X*, display
+   the keystrokes and command names.
+   
+^X.		set-fill-prefix
+   
+   Set "fill prefix" in this buffer to be whatever is between the beginning of
+   the  line  and  the cursor.  The "fill prefix" is inserted automatically by
+   CR,  autofill,  and runoff-paragraph.  If the cursor is at the beginning of
+   the line when ^X.  is issued, the fill prefix is reset (i.e., there will be
+   no fill prefix).  It may be used to establish a "left margin".
+   
+^X0		remove-window
+   
+   Removes  a  window  from  the  screen; only valid if there is more than one
+   window  on  the  screen.  With no argument, ^X0 removes the current window.
+   With  a  numeric argument, it removes the window specified by the argument.
+   The uppermost window is window 1.
+   
+^X1		expand-window-to-whole-screen
+   
+   The  window  in which the cursor appears will be expanded to fill the whole
+   screen; all other windows will be removed.  This in essence returns to "one
+   window mode" from having any number of windows.  The cursor will retain its
+   position in the text.  See ^Z^W.
+   
+^X2		create-new-window-and-go-there
+   
+   Creates  a  new  window  at the bottom of the screen, redividing the screen
+   equally  among  the  windows  there.   The  cursor will be moved to the new
+   window,  which will have a buffer name created from its window number.  See
+   ^Z^W.
+   
+^X3		create-new-window-and-stay-here
+   
+   Create  a  new  window  at  the bottom of the screen, redividing the screen
+   equally  among  all  the windows.  The cursor remains where it is.  The new
+   window,  which  has  a  default buffer name created from its window number,
+   becomes the "least recently used window".  See ^X4 and ^Z^W.
+   
+^X4		select-another-window
+   
+   The  cursor  is  moved  to the least-recently visited window on the screen.
+   That  window  then  becomes  the  most-recently  visited.  Thus, successive
+   applications  of  ^X4  will visit all windows on the screen.  ^X4 is a good
+   command  to  use  when  you  want to visit some new buffer or file, but not
+   overwrite windows containing information you have been looking at recently.
+   With an argument, i.e., ESC 3 ^X4, goes to that window, e.g., window 3.
+
+   
+^X;		set-comment-column
+   
+   Make  the  "comment-column" in this buffer be the horizontal position where
+   the  cursor  is  now..   With  an argument, sets the comment column to that
+   number, counting from the left as column 1.  See esc-;.
+
+   
+^X=		linecounter
+   
+   Display in the minibuffer area the number of lines in this buffer, the line
+   number  (the  first  line  is line 1) of the line the cursor is on, and the
+   horizontal column position (on a dprinted line, not the screen).
+   
+^XB		select-buffer
+   
+   Switch  to  another buffer.  Prompts for the name of that buffer, terminate
+   with  CR.   If that buffer does not already exist, it will be created.  All
+   key bindings, fill column, comment column, comment prefix, etc., associated
+   with that buffer will be put in effect.  The last point that you were at in
+   that  buffer  becomes the current point.  ^XBCR goes to the last buffer you
+   were in.
+   
+^XCR		eval-multics-command-line
+   
+   Prompt for a Multics command line.  Terminate it with CR.  Multics commands
+   that produce output may well ruin your screen; if this occurs, use ^L.  Use
+   ^X^E if you expect output.
+   
+^XD		edit-dir
+   
+   Enter  the  directory  editor,  editing  the  working  directory.   With an
+   argument,  i.e.,  ^U^XD,  prompts  for other directory name.  Position to a
+   line  with some segment's name on it, and the following commands (keys) may
+   be used (lower case O.K.):
+
+   D       Delete this segment when the directory editor is exited.
+   U       Undelete, i.e., cancel previous D on this line.
+   E       Examine (i.e., take a look at) this segment, in a separate
+	   buffer.  Use ^X^Q to get back, and the examine
+	   buffer will disappear of its own accord.
+   Q       Quit the directory editor.  A list of files will be shown,
+	  and you will be queried if you want to delete them
+	  or not.  To exit without any action use ^XB.
+   R       Rename this segment.  The new name is prompted for.
+   N       Same as ^N.
+   P	 Same as ^P.
+   
+^XE		execute-last-editor-macro
+   
+   Execute  the  last macro defined (via ^X( ), one or many times depending on
+   the numeric argument to this command:
+
+   No argument:	Execute it once.
+   0( i.e., ESC-0^XE) Execute it over and over, pausing after each
+		   execution. Type a space to go on to the next,
+		   CR or ^G to stop repeating.
+   1-9999		Do it that many times.
+   9999-infinity	Do it forever until an error happens.
+   
+^XESC		escape-dont-exit-minibuf
+   
+   ^XESC  is  the  same  as ESC, and may be used for all ESC-...  commands and
+   numeric  arguments, but may be used in the minibuffer when typing ESC would
+   terminate the minibuffer, as in search strings.
+   
+^XF		set-fill-column
+   
+   Sets  the  fill  column in the current buffer to be the horizontal position
+   where  the  cursor  is  now.  The fill column is the "right margin" used by
+   esc-Q to fill and adjust text, by fill mode to fill and adjust text, and by
+   esc-S to determine where to center.  The fill column is the first column in
+   which  text  is  NOT  to  be  placed.   The new value of the fill column is
+   printed out in the minibuffer.  If a numeric argument is given, e.g., ^U 72
+   ^XF, the fill column is set to that value.
+   
+^XG		get-variable
+   
+   Get  back  a  "variable"  stored  by ^XX.  The name of the variable will be
+   prompted for; the cursor will be put after it, and the-mark before it.
+   
+^XH		mark-whole-buffer
+   
+   Put  the-mark  at  the  end  of the buffer and the cursor at the beginning.
+   This  "marks"  the  whole  buffer,  so  that  ^W  will delete it, etc.  The
+   linefeed  at  the end of the buffer is NOT in the marked region, but ^XH ^W
+   ^XB ...  ^Y will effectively move a whole buffer.
+   
+^XI		insert-file
+   
+   Insert  file.   Prompts  for a filename, terminated by CR.  Reads that file
+   into  the  current  buffer  without destroying the previous contents of the
+   buffer.   The  file  is read in to the left of the cursor and the cursor is
+   left  after  the  contents of the file just read.  The default file for the
+   buffer is not changed.  (See ^X^S.)
+
+   Archive  component  pathnames are accepted.  Starnames are accepted, but no
+   more than one segment or archive component can match the starname.
+   
+^XK		kill-buffer
+   
+   Kill  (destroy)  a  buffer.   Prompts  for the buffer's name.  End with CR.
+   Buffers  may  be  killed  to  conserve  storage, or not to appear in buffer
+   listings  or  to  prevent  quitting  (see  ^X^C).   If you kill the current
+   buffer, prompts for another buffer to go to, as in ^XB.
+   
+^XM		send-mail
+   
+   Enter  the  Emacs mailer (RMAIL) to compose a letter of outgoing mail.  ^XM
+   will  prompt  for the mail subject, end the subject with a carriage return.
+   For full information on reading and sending mail, see rmail.info.
+   
+^XO		select-other-window
+   
+   When  in  two-window  mode,  (see ^X2) move the cursor to the other window,
+   implicitly  (usually)  switching buffers.  The mode line will be updated to
+   reflect the new buffer.  The cursor will appear at the last point it was in
+   the  new  window.   In general, the cursor will enter the window used last,
+   immediately before the current window was entered.
+   
+^XQ		macro-query
+   
+   Query.   Only  usable  while  macros are being collected: when the macro is
+   run, ^XQ will query the user for a character: space will continue execution
+   of  the  macro.   ^G  will  stop  the macro altogether.  CR or other random
+   characters will restart the macro from the beginning.  In this way,
+
+  ^X( ^S f o o ESC ^XQ esc-U ^X)
+
+will "query replace", i.e., interrogatively upper-case all foo's.
+   
+^XR		rmail
+   
+   Enters  the  Emacs RMAIL subsystem to read mail.  Without an argument, that
+   is,  ^XR, your default mailbox is used.  With an argument, that is, ^U ^XR,
+   the   mailbox   name,   which   may  take  any  reasonable  form  (such  as
+   Washington.States, Palter, >udd>m>abc>abc, etc) is prompted for.  The first
+   message  in  the  mailbox is placed in a buffer in RMAIL mode.  Type "q" to
+   exit  RMAIL and delete all mail queued for deletion during RMAIL.  Refer to
+   rmail.info for full info on RMAIL and reading and sending mail.
+   
+^XS		global-print
+   
+   Global  print  all  lines a la QEDX.  Prompts for a string.  With a numeric
+   argument,  i.e.,  ^U^XS,  takes  a QEDX-like regular string.  End in either
+   case  with  CR.   Prints  all  lines  containing  that  string.  Type ^J or
+   continue editing to restore buffer display.
+   
+^XV		view-lines
+   
+   View  lines  or  region,  for  printing  terminals.   The  optional numeric
+   argument is how many lines to print- leaves you after them, unless argument
+   is  1  or  not supplied, in which case it leaves you on current line, after
+   printing it.  ESC-0^XV views the region (between cursor and the-mark), thus
+   ^XH  ESC-0^XV  prints  the  whole buffer.  With a negative argument, prints
+   lines starting that many back.
+   
+^XW		multi-word-search
+   
+   Multi-word search.  Prompts for one or more words, terminated by CR.  (this
+   is  a search string; just CR re-uses last).  Searches from current point to
+   end  for  those  words  appearing  in order, regardless of case of letters,
+   underlining,  intervening  punctuation,  whitespace, or line breaks.  Finds
+   whole words, not parts of words.  A word that ends in * will match the rest
+   of  a  word  to  *.  With a numeric argument, (^U^XW), goes to beginning of
+   buffer before searching.
+   
+^XX		put-variable
+   
+   Store  away  point/mark region to a "variable", whose name will be prompted
+   for.  Use ^XG to retreive this value, and list-variables to get it back.
+   
+^X\177		kill-backward-sentence
+   
+   Kill  backwards  to  the  beginning  of  this sentence: kill as much of the
+   sentence  as  thus  far  typed.   Successive  kills  via  ^X\177  and other
+   reverse-killing commands (e.g., esc-#) merge, and may be retrieved with one
+   ^Y.
+   
+^X^B		list-buffers
+   
+   Produces listing of buffers and their pathnames.  ">" marks buffer you came
+   from,  "*"  says  buffer  is  modified  since  it was last read or written.
+   Proceed with editing, or type ^J to refresh screen.
+   
+^X^C		quit-the-editor
+   
+   Exit the editor.  If modified buffers exist, they are listed as if by ^X^B;
+   ^X^C then asks you if you really want to exit the editor.
+   
+^X^E		comout-command
+   
+   Executes  a Multics command line (prompted for, end with CR), and places the
+   output  in  a  buffer; if the command line is empty this request is aborted.
+   The output is placed in the buffer "file_output"; however, if the command is
+   given  a  numeric  argument  (e.g.   ^U^X^E)  the "comout-command-to-buffer"
+   command (see below) is executed.  The file_output buffer is made the current
+   buffer.
+ 
+^U^X^E		comout-command-to-buffer
+
+   This is like "comout-command", except the user is prompted for the name of a
+   buffer  (which  is  used  instead  of  "file_output").  This can be made the
+   normal operation of ^X^E by placing the following line in the start_up.emacs
+   (see   Appendix   G   for   more   information   on   the   start_up.emacs):
+   (set-permanent-key "^X^E" comout-command-to-buffer)
+ 
+^X^F		find-file
+   
+   Find  file.   Prompts  for  a  filename,  terminated by CR.  If the file is
+   already in a buffer, ^X^F goes to that buffer (see ^XB).  If the file is in
+   more than one buffer, you will be queried about which one (or a new one) to
+   use.   If  the  file  is  not  in  any buffers, it will be read into a new,
+   appropriately-named  buffer.  This is the standard way to read in a file or
+   create a buffer for a new file.
+
+   If no such buffer exists, ^X^F reads the file into the buffer whose name is
+   the  first  component  of  the  entry portion of the filename, and sets the
+   default   file   of   this   buffer   to   the  file  just  read.   If  the
+   find-file-set-modes  option  is  on,  ^X^F  will  set the major mode of the
+   buffer  according  to  the  last  component  of  the  entry  portion of the
+   filename.   (For example, for the filename ">ldd>include>sst.incl.pl1", the
+   buffer chosen is "sst" and the major mode is "PL/1".)
+
+   ^X^F  will  accept  archive component pathnames (archive::component).  ^X^F
+   also  accepts  star  names  (including  stars  in the archive and component
+   names).   When  more  than one star match is found, a ^X^F is done for each
+   segment/archive component selected.
+   
+^X^G		ignore-prefix
+   
+   Flush  a  prefix  character.   Used  when a prefix character such as ESC is
+   entered by accident; causes an audible signal to indicate that the ^X^G has
+   been executed.  Unlike ^G, does not exit the minibuffer.
+   
+^X^I		indent-rigidly
+   
+   Re-indents  all  lines  in the region defined by the cursor and the mark by
+   the  amount specified by the numeric argument.  The numeric argument may be
+   negative  to  unindent.   All  lines  that  have any characters between the
+   cursor  and  the  mark  will  be  re-indented; thus, a line with the region
+   ending at its beginning will not be re-indented.
+   
+^X^L		lower-case-region
+   
+   Lower-case all letters between the cursor and the mark.
+   
+^X^O		delete-blank-lines
+   
+   Delete  blank  lines  around  cursor:  get  rid of vertical whitespace.  If
+   issued  on a blank line, leave one blank line.  Otherwise, delete all blank
+   lines after this line's end.  See ^O.
+   
+^X^R		read-file
+   
+   Read file.  Prompts for a filename, terminated by CR.  Reads that file into
+   the  current  buffer  destroying anything which was in the buffer, and sets
+   this  buffer's  default  file  to the file read.  The cursor is left at the
+   first  position of the first line of the file read.  If a blank response is
+   given  for  the  filename,  the buffer's default file is read.  The default
+   file is set by ^X^R, ^X^F, and ^X^W.
+
+   Archive  component pathnames are accepted.  Starnames are accepted too, but
+   no more than one segment or archive component must match.
+   
+^X^S		save-same-file
+   
+   Save  file.  Writes the contents of the current buffer to its default file.
+   This command is equivalent to ^X^WCR.
+   
+^X^T		toggle-redisplay
+   
+   Turns  off  all screen updating until the next ^X^T, command-quit, or error
+   happens.   ^X^T  may  be  used  on  slow  terminals  with  no insert/delete
+   facilities  to  avoid excessive printing time for operations such as typing
+   in the middle of a line.
+   
+^X^U		upper-case-region
+   
+   Upper-case all characters between the cursor and the mark.
+   
+^X^W		write-file
+   
+   Writes  the  current  buffer out to a file, whose relative pathname will be
+   prompted  for in the minibuffer.  Terminate response with a CR.  If a blank
+   or null response is given, write it out to this buffer's default file.  The
+   file specified becomes the buffer's default file.  See ^X^S.
+   
+^X^X		exchange-point-and-mark
+   
+   Exchange  the  cursor  and  the-mark,  to  verify what you are getting into
+   before  typing  ^W  or similar.  Puts the cursor where the-mark is and vice
+   versa.   ^X^X  ^X^X  quickly verifies the extent of the "point-mark region"
+   visually  and  puts  things  back.   Use  ^U  ^@ to visit older settings of
+   the-mark in this buffer.
+   
+^X_		underline-region
+
+   Underlines the region between the point and the mark.  If the option
+   underline-whitespace is On, underline the spaces also (Default is Off).
+   With a numeric argument, removes the underlining from the region.
+
+^Y		yank
+   
+   Yank  (retrieve) killed text to cursor.  Unkills last killed word, line, or
+   region  (^W).   With  a  numeric argument, goes that many killings down the
+   10-position kill ring.  Leaves the-mark at the front of the retrieved text,
+   and the point at the end.
+   
+^Z;		kill-comment
+   
+   Removes  the comment and the whitespace preceding it from the current line.
+   The  deleted text is saved on the kill ring, accessible to ^Y.  The text is
+   saved  in  such a way that folowing ^K's and other forward-killing commands
+   will merge properly with the deleted text.
+   
+^ZG		go-to-named-mark
+   
+   Prompt  for  the  name  of a "named mark", and move the cursor to the point
+   where that mark was saved.  Use ^Z^@ to set a named mark.
+   
+^Z^@		set-named-mark
+   
+   Prompt  for the name of a "named mark", and set that named mark to be where
+   the  cursor is now.  Named marks are valid only in the buffer in which they
+   were created.  Use ^ZG to go to a named mark.
+   
+^Z^B		edit-buffers
+   
+   Enters  the  buffer  editor.   If given no argument, i.e., ^Z^B, the buffer
+   editor  will  set  up  its  display  in  the  current  window.  If given an
+   argument, i.e., ^U ^Z^B, the buffer editor will find some other appropriate
+   window   (if  in  two-or-more-window  mode)  to  set  itself  up  in.   See
+   windows.info for full information on the buffer editor.
+   
+^Z^F		get-filename
+   
+   Inserts the pathname (as seen in the mode-line below) of the current buffer
+   at  the  cursor.   With  an  argument, inserts the entryname portion of the
+   pathname  only.   If  the  pathname  is  an archive component pathname, the
+   componentname is inserted.
+   
+^Z^G		ignore-prefix
+   
+   Flush  a  prefix  character.   Used  when a prefix character such as ESC is
+   entered by accident; causes an audible signal to indicate that the ^Z^G has
+   been executed.  Unlike ^G, does not exit the minibuffer.
+   
+^Z^V		scroll-current-window
+   
+   Scrolls the current window (or whole screen, in one-window mode) up or down
+   a  specified  number  of lines.  The cursor remains on the same line of the
+   buffer.   The  numeric  argument  tells how many lines to scroll it up; the
+   default is one line up.  A negative numeric argument indicates scrolling it
+   down.  Thus, ESC - 3 ^Z^V scrolls the current window three lines down.
+   
+^Z^W		edit-windows
+   
+   Enter  the window editor to create, realign, destroy, or visit windows.  If
+   given no argument, i.e., ^Z^W, the window editor will set up its display in
+   the window where the cursor currently sits.  If given an argument, i.e., ^U
+   ^Z^W,  the  window editor will find some appropriate window in which to set
+   up shop.  See windows.info for full information on the window editor.
+   
+^Z^Z		signalquit
+   
+   Signals  QUIT  to  Multics.  Restores normal tty modes before so doing, and
+   sets them back as Emacs needs them after having typed start.
+   
+^Z_		remove-underlining-from-word
+   
+   Remove  underlining  from  the  current  or  previous  word:  the rules for
+   selecting which word are the same as those used by uppercase-word.
+   
+^_		help-on-tap
+   
+   Gets  help/documentation  at  any time.  This feature is now only partially
+   complete.  The current repertoire is:
+
+  ^_ H  Find out where to get more help.
+  ^_ ?  Display the current repertoire of ^_
+  ^_ A  Prompt for a string to search for appropriate
+         commands (same as esc-X apropos).
+  ^_ C  Prompt for a key sequence to document (same as
+         esc-?).
+  ^_ D  Prompt for the name of an extended command to
+         document (same as esc-X describe).
+  ^_ L  Display the last 50 characters typed in.
+  ^_ ^G Do a command-quit as usual.
+   
+esc-#		rubout-word
+   
+   Delete  the  word  to  the  left  of the current point.  More specifically,
+   delete  going backwards, deleting characters until the beginning of a word.
+   Successive  words  deleted  with esc-# are merged and may be retrieved with
+   one ^Y.
+   
+esc-%		query-replace
+   
+   Interactively  replaces  all  occurences  of  one string with another.  The
+   command  prompts  for  both  strings  in  the minibuffer, and then searches
+   forward  for  each  occurrence  of the first string.  Terminate the strings
+   with  CR.   It positions the cursor immediately after this string and waits
+   for one of the following responses:
+
+  space  -- replaces this particular occurrence of the first string
+	  with the second.  Then searches for the next occurrence of
+	  the first string and waits for a response again.
+  ,      -- same as space, but redisplays before searching on.
+            Normally, esc-% redisplays only before prompting.
+  return -- leaves this occurrence of the first string alone and searches
+	  for the next occurrence of the first string.
+  period -- replaces this occurrence of the first string with the second
+	  and terminates the query replace.
+  !      -- Replaces this and all succeeding occurences of the
+            first string by the second, without asking.
+  ^G     -- terminates the query replace without modifying this
+	  occurrence of the first string.
+  ESC    -- same as ^G.
+   
+esc-/		regexp-search-command
+   
+   Search  forward  regular  expression,  `a  la "QEDX".  Terminate the regular
+   expression  by  CR,  we  supply  the  slashes.   All rules for QEDX regular
+   expressions  apply.   Searches  forward  from  cursor,  and  can  find many
+   occurences  of  the  regular  expresion on one line.  Leaves the cursor and
+   the-mark around the string it finds, so that
+
+   s/(fo.*)/(a b & )/ (QEDX)
+ = esc-/(fo.*) CR ^W( a b ^Y )  (EMACS)
+
+   
+esc-;		indent-for-comment
+   
+   Searches for this line's comment.  If one exists, indents it to the comment
+   column  in  this buffer (see ^X;).  If one does not exist, start one at the
+   comment  column  on  this line.  Uses the "comment-prefix" to search for an
+   old one or start a new one.  See also set-comment-prefix.
+
+   
+esc-<		go-to-beginning-of-buffer
+   
+   Move  to  the  beginning  of  the  current  buffer,  i.e., before the first
+   character in the buffer, that is, the top of the document being edited.
+   
+esc->		go-to-end-of-buffer
+   
+   Move to the end of the current buffer, i.e., before the newline on the last
+   line  of  the  current  buffer.   In  other  words, go to the bottom of the
+   document being edited.  There is no way to position beyond that newline.
+   
+esc-?		describe-key
+   
+   Display  the  documentation  for  a given key sequence.  To find out what a
+   Control  D  does,  type  esc-?   and a Control D.  With a numeric argument,
+   i.e.,  ^U  esc-?,  just  the  command  name  to  which the key is currently
+   connected will be displayed in the minibuffer.
+   
+esc-A		backward-sentence
+   
+   Go  to  the  beginning of the current sentence, i.e., just before the first
+   letter.   If already at the beginning of a sentence, go to the beginning of
+   the  previous sentence.  The beginning of the first word after a blank line
+   always counts as the beginning of a sentence.
+   
+esc-B		backward-word
+   
+   Go  backward  one  word.   If  in  the  middle  of a word, go to before the
+   beginning  of that word.  Skips backwards over all whitespace to get to the
+   next word.  Underscores and backspaces count as parts of words.
+   
+esc-C		capitalize-initial-word
+   
+   Capitalize a word, leading capital, rest of word lower-case, like "Word".
+   If the cursor is in a word or immediately after a word,capitalize that word.
+   Otherwise, do the next word.  With a numeric argument, do that many words;
+   with a negative numeric argument, to that many backward.  Leaves cursor
+   immediately after the last word (or before the first word) capitalized.
+   
+esc-CR		cret-and-indent-relative
+   
+   Does  a  CR and a indent-relative.  Basically, this means finish this line,
+   and  start  a  new  line,  indented  the same as the previous line.  If the
+   original line was not indented, note that this will line up with the second
+   word  on  the first line.  This is the command you want to terminate a line
+   of an indented body of text.
+   
+esc-D		delete-word
+   
+   Delete  the  word  to  the  right of the current point.  More specifically,
+   delete   going   forward,  deleting  all  whitespace  and  punctuation  and
+   characters until the end of the next word.
+   
+esc-E		forward-sentence
+   
+   Move  forward  to  the  end of this sentence.  If at the end of a sentence,
+   move  forward  to  the  end  of  the next sentence.  Ends of paragraphs are
+   implicitly ends of sentences, whether or not an end-of-sentence punctuation
+   (period, question mark, exclamation point) appears.
+   
+esc-ESC		eval-lisp-line
+   
+   Prompt  for  a string for Lisp to evaluate; put a pair of parens around it,
+   evaluate  it  in  Lisp (with ibase = 8) and print out the Lisp value in the
+   minibuffer  (base = 8, *nopoint nil).  To get a variable value, use esc-ESC
+   progn <varname> CR.
+   
+esc-F		forward-word
+   
+   Go  forward  one  word.  If in the middle of a word, move to the end of the
+   current  word.   Leaves point immediately after that word.  All punctuation
+   and  whitespace before the word are moved over.  Underscores and backspaces
+   count as parts of words.
+   
+esc-G		go-to-line-number
+   
+   Goes  to  a  given  line, given by line number, from the top of the buffer.
+   The numeric argument specifies the line number.  For instance, ESC 25 esc-G
+   goes to line 25.  If the line number  is not specified,  prompts for a line
+   to go to.
+
+esc-H		mark-paragraph
+   
+   Put  the-mark at the beginning of the current paragraph.  Put the cursor at
+   the  end  of  the  current  paragraph.   See  esc-[  for  a  definition  of
+   paragraphs.
+   
+esc-I		tab-to-previous-columns
+   
+   Indent the current point on this line (where the cursor is) to line up with
+   the  next  non-whitespace  item on the previous non-blank line.  Successive
+   invocations   of   esc-I   cause   attempts  to  line  up  with  succeeding
+   non-whitespace  items.   This is ideal for building columnated tables, etc.
+   Type  in  the  first  line by hand, and use esc-I to get to each new field,
+   column,  etc.   on succeeding lines.  Typed on an empty line, or at the end
+   of  a  line,  it positions for the next text to be entered.  With a numeric
+   argument,  esc-I  uses previously undented lines (other than the last line)
+   for a model, thus facilitating typing in outlines, etc.
+   
+esc-K		kill-to-end-of-sentence
+   
+   Delete  text  going  forward  from  the  cursor  to  the end of the current
+   sentence.   If  at  the end of a sentence, delete forward to the end of the
+   next  sentence.   Sentences  and  other  text  killed consecutively in this
+   fashion are merged, and may be retrieved with a single ^Y.
+   
+esc-L		lower-case-word
+   
+   Convert a word to all lower-case, like "word".  If the cursor is in a word
+   or immediately after a word, lower-case that word.  Otherwise, do the next
+   word.  Convert a word to all upper-case, like "WORD".  If the cursor is in
+   a word or immediately after a word, upper-case that word.  Otherwise, do
+   the next word.  With a numeric argument, do that many words; with a negative
+   numeric argument, to that many backward.  Leaves cursor immediately after
+   the last word (or before the first word) lower-cased.
+   
+esc-M		skip-over-indentation
+   
+   Move  the  cursor  to  the  first  non-whitespace  (i.e.,  not  tab, blank,
+   formfeed,  or  vertical  tab)  position on this line.  In other words, skip
+   over the indentation on this line.
+   
+esc-N		down-comment-line
+   
+   Properly  indents  the  comment  on the next line, or puts a comment on the
+   next  line,  if  there  is  not one there already.  Effectively the same as
+   ^Nesc-;.  See esc-;.
+   
+esc-P		prev-comment-line
+   
+   Indent  the  comment on the previous line properly.  If there is no comment
+   on  the  previous  line, put one there, indented properly.  Effectively the
+   same as ^Pesc-;.  See esc-;.
+   
+esc-Q		runoff-fill-paragraph
+   
+   "Fill"  the  current  paragraph,  like  runoff/compose  with  ".na".   With
+   argument  (i.e., ESC-1 esc-Q), fill and adjust like runoff/compose with .fi
+   and  .ad.   Right  margin is determined by fill column, left margin by fill
+   prefix.   Runoff/compose  control lines count as their own paragraphs.  See
+   ^XF to set fill-column, and ^X.  to set fill prefix.
+   
+esc-R		move-to-screen-edge
+   
+   Move to top, bottom, or other point on screen.  ESC-1 esc-R is the top line
+   of  the  screen, ESC 6 esc-R is the 6th line from the top, ESC - 4 esc-R is
+   the  fourth  line from the bottom.  A very large number is also the bottom.
+   Leaves the cursor on the start of the selected line.
+   
+esc-S		center-line
+   
+   Center the current line, according to fill-column (see ^XF).
+
+
+esc-T		twiddle-words
+   
+   Twiddle  (transpose,  interchange)  the  last two words typed, like: like I
+   esc-T  Multics  because...   If  you are currently in the middle of a word,
+   goes to the end of the word first.
+
+   
+esc-U		upper-case-word
+   
+   Convert a word to all upper-case, like "WORD".  If the cursor is in a word
+   or immediately after a word, upper-case that word.  Otherwise, do the next
+   word.  With a numeric argument, do that many words; with a negative numeric
+   argument, to that many backward.  Leaves cursor immediately after the last
+   word (or before the first word) uppercased.
+   
+esc-V		prev-screen
+   
+   Display  the  previous  screen (one back) of this buffer, leaving cursor at
+   the top of it.  With an argument, displays that many screens backward.
+   
+esc-W		copy-region
+   
+   Copies  the  text between the cursor and the-mark on to the top of the kill
+   ring.   This  means  that  the  next  ^Y will copy the text now between the
+   cursor and the-mark to wherever the cursor is when the ^Y is issued.
+   
+esc-X		extended-command
+   
+   Prompt  for  the  name  and  arguments  of  an  extended  commands  in  the
+   minibuffer.   Terminate  with  CR.   To find out about an extended command,
+   type
+
+	esc-X describe <name-of-command> CR
+   
+esc-Y		wipe-this-and-yank-previous
+   
+   I  don't like what I just ^Y'ed.  Get rid of it and yank the previous thing
+   in  its place.  Used to retrieve the previous "kill" when you find that the
+   thing  that you just ^Y'ed was the wrong thing.  In more detail, delete the
+   text  between  the  cursor  and the-mark without saving it, rotate the kill
+   ring one position, and ^Y.
+   
+esc-[		beginning-of-paragraph
+   
+   Move  to  the  beginning  of  the  current  paragraph.   If  already at the
+   beginning  of a paragraph, move to the beginning of the previous paragraph.
+   The  beginning  of  a  paragraph  is the beginning of the first line of the
+   paragraph.    The   definition   of   paragraphs   is   controlled  by  the
+   paragraph-definition-type  option;  if  1, blank lines separate paragraphs.
+   If  2,  an  indented  line  starts a paragraph.  Runoff and compose control
+   lines count as paragraphs.
+   
+esc-\		delete-white-sides
+   
+   Delete  all  whitespace  characters  on  the  current  line surrounding the
+   cursor.   In  this  context,  a  whitespace  character is a space, a tab, a
+   formfeed, or a vertical tab.
+   
+esc-\177		rubout-word
+   
+   Delete  the  word  to  the  left  of the current point.  More specifically,
+   delete  going backwards, deleting characters until the beginning of a word.
+   Successive words deleted with esc-\177 are merged and may be retrieved with
+   one ^Y.
+   
+esc-]		end-of-paragraph
+   
+   Move  to  the  end of the current paragraph.  If at the end of a paragraph,
+   move  to  the end of the next paragraph.  The end of a paragraph is the end
+   of  the  last  line  of  the  paragraph.   The  definition of paragraphs is
+   controlled  by  the  paragraph-definition-type  option;  if  1, blank lines
+   separate  paragraphs.   If  2, an indented line starts a paragraph.  Runoff
+   and compose control lines count as paragraphs.
+   
+esc-^		delete-line-indentation
+   
+   Without  a  numeric  argument,  i.e.,  esc-^,  delete all whitespace at the
+   beginning  of  this line and then merge it with the previous line.  With an
+   argument,  i.e.,  ^Uesc-^,  does  a  ^N  first,  so  that ^Uesc-^ in effect
+   "connects"   the   next  line  into  this  one,  without  the  next  line's
+   indentation.
+   
+esc-^B		balance-parens-backward
+   
+   Skip  backward over one set of balanced parentheses.  Will search backwards
+   until  a  set  of  parentheses  is  found.   Does not handle quoting or any
+   programming language conventions.
+   
+esc-^C		compile-buffer
+
+   Compiles  the buffer.  Writes the current buffer out to its default pathname
+   (as for ^X^S), and then compiles it.  Compiler diagnostics are placed in the
+   buffer "Compilation Errors" if the option "one-error-scan-buffer" is On (the
+   default); if it is Off then the diagnostics are placed in the buffer "<name>
+   Errors",  where  <name>  is  replaced  with  the  name  of  the buffer being
+   compiled.   (This  allows several buffers to be compiled without overwriting
+   each  other's  error  messages.)  If in two-window mode, the error buffer is
+   displayed  in another window; if the option "compile-two-windows" is On (the
+   default  is  Off) then this command will automatically enter two-window mode
+   if  necessary.  If the "compile-local-display" option is On (default is Off)
+   and  "compile-two-windows" is Off, the error messages will be displayed as a
+   local  display  (in  addition  to being put in a buffer).  If neither is set
+   (the   default),   a  one-line  local  display  will  indicate  whether  the
+   compilation  was successful.  The extended requests "ESC X set-compiler" and
+   "ESC  X  set-compile-options" can be used to select the compiler and options
+   to be used.
+   
+esc-^F		balance-parens-forward
+
+   Skip  forward  over  one  set of balanced parentheses.  Will search forward
+   until a set of parentheses is found.  Does not handle quoting, or any other
+   programming language conventions.
+   
+esc-^G		ignore-prefix
+   
+   Flush  a  prefix  character.   Used  when a prefix character such as ESC is
+   entered  by  accident; causes an audible signal to indicate that the esc-^G
+   has been executed.  Unlike ^G, does not exit the minibuffer.
+   
+esc-^I		indent-to-fill-prefix
+   
+   Delete  the  indentation  (leading  whitespace)  of  the  current line, and
+   replace it with the fill prefix in this buffer.  See ^X..
+   
+esc-^O		split-line
+   
+   Break  the  line  at this point, shear it vertically.  Puts the text to the
+   right of the cursor on the next line, with enough indentation so that it is
+   still  in the same place horizontally.  This can be undone by ^Uesc-^.  See
+   esc-^.
+   
+esc-^V		page-other-window
+   
+   Valid only when more than one window exists.  With no argument, causes a ^V
+   to  be  done  on the other window (i.e., the one the cursor is not now in);
+   with  an  argument,  pages  the  other window that many screens backward or
+   forward;  thus,  ESC  -  esc-^V  pages the other window one backward.  Very
+   useful  for  "paging"  compiler  diagnostics while editing a program.  When
+   more  than  two windows are in use, the "next most recently visited" window
+   will be considered to be the "other window".
+   
+esc-^W		merge-last-kills-with-next
+   
+   Causes  the  next kill-type commands (example, ^K, esc-D) which must follow
+   immediately,  to  merge what they kill with the last saved kill on the kill
+   ring, in the same direction as the next command kills.  For instance, ^A ^K
+   ^K ^N ^N esc-^W ^K ^K catenates two disjoint lines on the kill ring.
+   
+esc-^Y		yank-minibuf
+   
+   Yank  back  the last content of the minibuffer, without prompt string.  The
+   mark  will be set in the minibuffer, so ^X^X may be used to position around
+   it,  and  ^W  to  delete  it.  The real mark in the main buffer will not be
+   destroyed.
+   
+esc-_		underline-word
+   
+   Canonically underscore the current or previous word.  Although it will look
+   peculiar  on  the screen, it will be correct, and runoff-paragraph and fill
+   and  dprint  correctly.   The  rules for selecting which word to do are the
+   same as those used by uppercase-word.
+   
+esc-~		unmodify-buffer
+   
+   Marks  the  current  buffer  as  not modified.  Emacs will not mention this
+   buffer  when  querying because of a ^X^C.  esc-~ is useful after accidently
+   modifying a buffer which you only intended to examine.
+   
+
+
+
+
+			E__x_t_e_n_d_e_d C__o_m_m_a_n_d_s
+
+Type esc-X followed by the command name, and a carriage return to invoke these
+commands.
+
+esc-X accept-messages
+   
+   Accept  Multics interactive console messages into Emacs buffers, one buffer
+   per correspondent.  Causes messages to be displayed as local output as they
+   arrive.  All correspondence to and from each correspondent is maintained in
+   a  buffer  named  "Messages from <PersonName>", in which carriage return is
+   bound  to respond-from-buffer, which causes messages to be transmitted when
+   a  line  is typed by you into that buffer.  In these buffers, conversations
+   "transcript"  as  with  send_message  in  "input  mode".  The following key
+   bindings are set up globally by accept-msgs: (see their documentation):
+
+	^X:  message-response-command (responds to last sender from
+		minibuffer).
+	^X'  go-to-new-message-buffer (goes to a message buffer).
+               With an argument, lists message buffers (conversations)
+          ^X`  send-a-message (prompts for user name and then message)
+          ^X~  repeat-last-message (reprints last interactive message)
+   
+esc-X accept-messages-path
+   
+   Accepts messages on some other mailbox than the user's default mailbox.  Up
+   to  50  mailboxes  may  be  accepting  messages  at once in a process.  The
+   argument  to  esc-X  accept-messages-path  is  either  a  mailbox  pathname
+   (containing  >'s  or  <'s) or a user-name (for sites using the ARPANet Mail
+   Daemon)  or  a  pair  of  the form User.Project.  The effect is the same as
+   esc-X accept-messages.
+   
+esc-X alm-mode
+   
+   Enter  ALM  major  mode in this buffer.  ALM mode consists of many commands
+   and  variable  settings  suitable  for  the  creation  and  editing  of ALM
+   programs.
+   
+esc-X apropos
+   
+   Lists  all  commands and extended commands that "mention" a given string in
+   their names, and tell what, if any, keys invoke them in the current buffer.
+   For instance,
+
+    apropos forw
+
+   will  list forward-word, forward-char, etc.  This is the most common way to
+   "find" a command that does something you are looking for.
+   
+esc-X compose-mode
+
+   Mode for editing compose text files.  Turns on fill mode automatically.
+   Equivalent to the text-mode and runoff-mode commands; entered automatically
+   for files with a last component of ".runoff" or ".compin" if the option
+   find-file-set-modes is On (Default is Off).
+
+esc-X describe
+   
+   Display the documentation for an extended command.  The command name is the
+   argument describe.  For example,
+
+	esc-X describe apropos CR
+
+to find out about the "apropos" extended command.
+   
+esc-X edit-macros
+   
+   Produces  a  symbolic  file  of  all keyboard macros defined in the current
+   buffer  and  places  it  in  a new buffer.  The keyboard macros may then be
+   written  out  for  later  loading, edited, redefined, or compiled into Lisp
+   code.  See macro-edit.info for full information.
+   
+esc-X electric-alm-mode
+
+   Enters ALM mode, with several commands for automatically formatting ALM.
+
+esc-X electric-pl1-mode
+   
+   Enters  Electric  PL/I mode in the current buffer.  Electric PL/I mode is a
+   variant  of PL/I mode in which semicolons and colons have violent automatic
+   "electric"  action  which  may be disturbing to some, but useful to others.
+   See pl1-mode.info.
+   
+esc-X filloff
+   
+   Turns off fill mode in this buffer, if it is on.
+   
+esc-X fillon
+   
+   Turn  on  Fill Mode (a minor mode) in this buffer.  In Fill Mode, text will
+   be  wrapped  around lines so as not to extend past the fill column (see ^XF
+   to  set  that).   When  a space, tab, or punctuation mark is placed after a
+   word  which  passes  the  fill column, the line will be broken at the first
+   whitespace  from  the  end of the line.  filloff turns it off.  To insert a
+   character  to  cause  a  line  deliberately to extend pass the fill column,
+   either type CR or precede the character with ^Q.
+   
+esc-X fortran-mode
+   
+   Enter  Fortran  major  mode  in this buffer.  Fortran mode consists of many
+   commands  and  variable  settings  suitable for the creation and editing of
+   Fortran  programs.   See fortran-mode.info for a list of the commands and a
+   description  of this mode.  You can issue the command esc-X apropos fortran
+   CR in a Fortran mode buffer for a list of relevant commands in this mode.
+   
+esc-X fundamental-mode
+   
+   Enters  the  mode  (set  of  key  bindings  and variable settings) that all
+   buffers start out in.  This can be used to "undo" any other major mode that
+   you may have set.
+   
+esc-X ldebug
+   
+   Enters a "Lisp Top Level" buffer in Lisp Debug mode.  Forms typed into this
+   buffer  are  evaluated  and  the  value  is displayed by placing it in this
+   buffer.   When  esc-X  ldebug  has been used, all Lisp errors in Emacs trap
+   into  this  buffer.   ESC-P  restarts  a  break.   See ldebug.info for more
+   information.
+   
+esc-X lisp-mode
+   
+   Enter  Lisp major mode in this buffer.  Lisp mode consists of many commands
+   and  variable  settings  suitable  for  the  creation  and  editing of Lisp
+   programs.   See lisp-mode.info for a list of the commands and a description
+   of this mode.
+   
+esc-X list-named-marks
+   
+   Display  a  list of all of the named marks in the current buffer.  Use ^Z^@
+   to create a named mark, and ^ZG to go to one.
+   
+esc-X loadfile
+   
+   Loads  a  private Emacs extension package into the editor.  The argument is
+   its pathname.
+   
+esc-X loadlib
+   
+   Load  an  "uninstalled"  extension  package  into  Emacs.   Normally,  such
+   packages  are "autoloaded" when commands in them are invoked, but from time
+   to  time,  new,  experimental,  or  highly specialized packages may require
+   being  loaded  in this way.  The single argument is the name of the package
+   to be loaded.  Loading a package makes the commands in it available.
+   
+esc-X lvars
+   
+   Display  the names and lengths of all "variables" saved by ^XX.  Type ^J to
+   resume, or just continue editing.  See ^XX and ^XG.
+   
+esc-X make-wall-chart
+   
+   Puts  into  a  buffer  a "Wall Chart", describing all the currently defined
+   commands  and  what  keys invoke them in the current buffer.  The resultant
+   buffer is intended for dprinting.
+   
+esc-X opt
+   
+   Also "option".  Sets non-obvious internal flags and defaults, each of which
+   have names.  Takes three forms,
+
+	opt list			List all options and settings.
+	opt NAME VALUE		Set option value.
+	opt status NAME		Report setting of one option.
+
+   Values  may be on, off, or numbers, depending on the option.  Code, such as
+   startups, can simply set these Lisp variables.  (on/off => t/nil).  Current
+   options are:
+
+    display-ctlchar-with-^  Causes control characters to print as
+		        ^P instead of \020.
+    suppress-ctlchar-display  Don't show control characters.  Any character
+		        which would print as \NNN (except \177) is not
+		        displayed.
+    suppress-rubout-display Don't show rubout characters.  Causes \177 to
+		        never be displayed.  Usefull when reading ALM
+		        listing segments.
+    suppress-backspace-display Don't show backspaces.  Causes underlined
+		          "foo" to print as "_f_o_o".
+    rdis-whitespace-optimize Avoid printing whitespace when clever
+		         terminal control would go faster.  Currently
+		         on by default, but adds a little expense.
+    rdis-wosclr-opt	     Wipe Out Screen lines before filling screen.
+		       Try it both ways to see what this means.
+    paragraph-definition-type 1 (default) = blank lines precede
+		       paragraphs. 2 = indented line starts one.
+    find-file-set-modes  When on, find-filing foo.pl1 sets pl1 mode, etc.
+    track-eol-opt	     When on, ^N, ^P at eol stick to ends of lines.
+    default-fill-column	 Fill column for new buffers.
+    default-comment-column Comment column for new buffers (0 origin).
+    pop-up-windows	     When on, ^XB, ^X^F, ^X^E, etc., find an
+			appropriate place on the screen to put up
+			a window as opposed to replacing contents
+			of current window (highly experimental).
+   
+esc-X pl1-mode
+   
+   Enter  PL/I major mode in this buffer.  PL/I mode consists of many commands
+   and  variable  settings  suitable  for  the  creation  and  editing of PL/I
+   programs.   See  pl1-mode.info for a list of the commands and a description
+   of  this  mode.   You  can issue the command esc-X apropos pl1 CR in a PL/I
+   mode buffer for a list of relevant commands in this mode.
+   
+esc-X replace
+   
+   Global  replace  of  one string with another, from the current point to the
+   end  of  the  buffer.  Prompts for two strings, which must be terminated by
+   CR.   If  the  first string is not found, esc-X replace will not prompt for
+   the second string, and will not move the cursor.
+   
+esc-X reset-minibuffer-size
+   
+   Resets  the  size  of  the  minibuffer/prompting area to its default of two
+   lines.  See set-minibuffer-size.
+   
+esc-X reset-screen-size
+   
+   reset-screen-size
+
+   Resets  the  size  of  the  main editing area of the screen to its default,
+   namely, all of the space above the mode line.  See set-screen-size.
+   
+esc-X runoff-fill-region
+   
+   Fills/adjusts  an  entire  region  in  the  same  way  as  esc-Q  does to a
+   paragraph.   It  does  not  respect  paragraph  breaks:  this makes it only
+   marginally useful.
+   
+esc-X runoff-mode
+
+   Mode for editing runoff text files.  Turns on fill mode automatically.
+   Equivalent to the text-mode and compose-mode commands; entered automatically
+   for files with a last component of ".runoff" or ".compin" if the option
+   find-file-set-modes is On (Default is Off).
+
+esc-X save-macro
+   
+   Saves  a  macro,  assigning  it to a key.  Invoke it after a macro has been
+   defined.  Will prompt for a command name to assign to the macro, and a key.
+   When a key has been assigned, this key will invoke that macro- it will take
+   arguments identical to ^XE.
+   
+esc-X set-comment-prefix
+   
+   Set the "comment prefix" in this buffer.  This is usually set automatically
+   by  entering  a  major mode.  The comment prefix is given as an argument to
+   this  command,  in quotes.  The comment prefix is used by esc-;, esc-N, and
+   esc-P to find comments, and start them.
+   
+esc-X set-compile-options
+   
+   In  language  modes  that  support ESC-^C for "compile buffer", and similar
+   (e.g.,  PL/I, FORTRAN), sets non-default compilation options to be given to
+   the appropriate compiler.
+   
+esc-X set-compiler
+   
+   Sets  the  name  of  the  compiler to be used by the compile-buffer command
+   (usually  ESC-^C)  in  those  language  modes that compile buffers this way
+   (e.g.,  PL/I,  FORTRAN).   The single argument to esc-X set-compiler is the
+   compiler name.
+   
+esc-X set-key
+   
+   Assigns  key bindings in the current buffer.  Takes two arguments, the "Key
+   name"  and  the  command name.  Makes that key execute that command in this
+   buffer.    The   command  name  is  what  describe-command  or  apropos  or
+   make-wall-chart  give;  the key name can be anything like the names in this
+   documentation,  e.g., ^X, ^x, ESC-ESC, ^Xq, control-p, c-p, meta-f, esc-^f,
+   CR, ^X-^F, ^X-CR, \177, #, A, ^P, etc.  For instance, you might want to say
+   
+	set-key ^Z quit-the-editor
+
+if you want the privilege of quitting in one keystroke.
+   
+esc-X set-minibuffer-size
+   
+   Sets  the size of the minibuffer/prompting area on the screen to any value.
+   The  single  argument to esc-X set-minibuffer-size is the decimal number of
+   how  many  lines  should  be devoted to this function.  The default is two.
+   With  many-line  minibuffers,  many messages and errors may appear at once.
+   Use  reset-minibuffer-size  to  reset the minibuffer size to its default of
+   two lines.  Valid sizes are 1 to 6.
+   
+esc-X set-permanent-key
+   
+   Used  to  set  permanent (default in all buffers) key bindings.  Otherwise,
+   works exactly like set-key.  See set-key.
+   
+esc-X set-screen-size
+   
+   Set  the  size  of  the main editing area (the area above the Mode Line) to
+   other  than  its  default.   The  default is all of the area above the mode
+   line.  The decimal argument to esc-X set-screen-size is the number of lines
+   in  the main editing area.  reset-screen-size may be used to reset the main
+   editing  area  size to its default value.  esc-X set-screen-size is usually
+   used to reduce the amount of redisplay at low terminal speeds.
+   
+esc-X set-search-mode
+   
+   Sets  the  bindings  of  ^S  and  ^R  to  invoke several different forms of
+   searching.  The argument is the search mode.
+
+   The known search modes are:
+
+     string 		Searches for the exact character
+			string typed (the default).
+     regular-expression	The string typed is interpreted as a
+	  or  regexp	QEDX regular expression.
+     character		Searches for the single character
+			typed.  Control characters control
+			sophisticated options.
+     ITS-string		A type of search popularized by
+			Dave Moon and Dan Weinreb on MIT-AI,
+			having many sophisticated features.
+     incremental		Searches for a string showing the
+			state of the search as each character
+			is entered.
+
+   All  searches  prompt telling the type of search that has been invoked.  To
+   find  out more about these different kinds of searches, set the search mode
+   of interest, and do an esc-?  ^S.
+   
+esc-X setab
+   
+   Define  one  word  as  an  abbreviation for another for Speedtype mode, for
+   instance,
+
+     setab edr editor
+
+   Will  accept  multiple pairs of arguments.  If the second string (the thing
+   being  abbreviated)  is many words, or has special characters in it, put it
+   in quotes.
+   
+esc-X show-macro
+   
+   Displays    an    editor   macro   (defined   with   ^X()   the   same   as
+   show-last-editor-macro  does,  but takes the name assigned to the macro (by
+   save-macro) as an argument.
+   
+esc-X speedtype
+   
+   Enter  speedtype  minor  mode in this buffer.  Speedtype allows words to be
+   used   as   abbreviations  for  other  words.   setab  is  used  to  define
+   abbreviations;  When  a  space,  newline, tab, or punctuation mark is typed
+   after  an  abbreviation,  the abbreviation is removed from the text and its
+   expansion  is  used  instead.   Precede  punctuation  or  spaces with ^Q to
+   deliberately avoid speedtype expansion when in this mode.
+   
+esc-X speedtypeoff
+   
+   Turn off speedtype mode in this buffer, if it is on.
+   
+esc-X text-mode
+
+   Mode for editing text files.  Turns on fill mode automatically.  Equivalent
+   to the runoff-mode and compose-mode commands; entered automatically for
+   files with a last component of ".runoff" or ".compin" if the option
+   find-file-set-modes is On (Default is Off).
+   
+   
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

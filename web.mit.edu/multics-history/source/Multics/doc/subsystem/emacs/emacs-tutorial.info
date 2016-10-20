@@ -1,0 +1,2001 @@
+	         An Introduction to Using Multics Emacs  10/27/79
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+						
+
+
+Multics Emacs is an integrated editing, text-preparation, and screen 
+management system designed to take advantage of the features of modern display 
+terminals to aid in interactive text entry and editing.  In some sense, it is 
+an editor: yet a more appropriate description would be a "text processing
+subsystem": continuous interaction with text is its mode of operation, not
+"editing" via carefully structured "editing requests".
+
+     Although it is possible, and valuable, to use Multics Emacs from a
+"printing terminal", i.e., one that uses paper and ink, it is oriented 
+towards video terminals, and its usage is best learned on a video terminal,
+preferably at 1200 baud or better.
+
+     Sit down at a video terminal logged into Multics.  Invoke Emacs
+by typing its name at the command processor:
+
+     emacs
+
+Depending upon the facilities available at your site, Emacs may or may not
+ask you:
+
+     What type terminal do you have?
+
+
+If Emacs poses this question, which it will only ask you once per login
+session, as opposed to clearing the screen, type in the name of the type of
+terminal that you have.  If you do not know this, ask your Site Support
+personnel.  If you type a bad name, Emacs will type out the names of all
+terminals it knows how to support, so that you can type the right name.  Or
+type "quit" to give up.  Terminate the name of the terminal with a
+carriage-return, as you would any Multics input.
+
+     Now Emacs will take several seconds to get started up; it has a lot to 
+do at start-up time.  When it has started up, it will clear the screen, and
+display the line
+
+     Emacs (Fundamental) - main
+
+at the lower left of the screen.  This line is called the _m_o_d_e _l_i_n_e.
+It tells you several things, most important of which is that you are talking to
+Emacs, as opposed to the command processor, or some other editor.
+"Fundamental" is called the _m_o_d_e.  There are various _m_o_d_e_s
+best suited to preparing text, programs in different languages, and other 
+tasks.  Fundamental mode is the first and simplest mode.  It has no
+specialized features at all.  "main" is the _b_u_f_f_e_r _n_a_m_e.  You can be editing 
+many things at once with Emacs, like qedx.  Each separate thing being edited
+is edited in a separate "sub-editor" called a _b_u_f_f_e_r. The buffers have names; 
+"main" is the name of the buffer you start out in.
+
+     The region between the top of the screen and the mode line is where text 
+appears, and where we deal with text.  This area of the screen is called the
+_w_i_n_d_o_w.  It will always display 20 or so consecutive lines of the document or 
+program you are editing.  The region below the mode line has two areas,
+the _p_a_t_h _l_i_n_e and the _m_i_n_i_b_u_f_f_e_r, which we will deal with
+later.
+
+     You will note the blinking _c_u_r_s_o_r in the upper-left-hand corner
+of the screen.  The cursor may be a blinking underline on some terminals, or 
+a blinking or solid box on others.  The cursor is always on some position on 
+the screen.   The cursor is the single most important object in Emacs:
+we must familiarize ourselves with it, and must always concern ourselves with 
+its whereabouts on the screen.  All "action" happens at the cursor: all text
+we enter is entered "at" the cursor (and the cursor moves), and text we delete
+is deleted at the cursor, as well.
+
+     Now we are going to enter some text.  We do not have to tell Emacs that 
+we are going to type.  There is no "input mode" or "edit mode": we just type.
+Type these words on the terminal, do _n_o_t end it with a carriage return, line
+feed or other special character, the period should be the last character you 
+type:
+
+     This is sample text.
+
+You will note that you do not see what you have typed immediately, but
+soon after you start typing, the text on the screen will "catch up" with you.
+This is because you have waited a few minutes since the last time you typed,
+and Multics has "forgotten" about you temporarily.  In general, you may see 
+what you type as soon as you type it, or sometimes a little later, depending
+on the load on Multics.  This is very different than other Multics programs;
+other programs rely on the terminal to type out what you type in, but Emacs
+must type it out for you.
+
+     You will also note a little star come on under the word "Emacs": this
+is called the "modified" star.  When it is there, it means that the
+text in your buffer is different than the text you read in, if any, or
+is new text (as is the case here), and hasn't been written out to a file.
+When the "modified" star is on, you know that you wil have to write your text
+out before exiting Emacs.
+
+     You will see the text you typed at the top of the screen.  It just 
+appeared there as you typed it.  You did not have to issue a "print request":
+The line you are looking at at the top of the screen is the beginning of your 
+document: you are looking at your document, not an "input line", or an 
+"output line" or a "printout".  At all times, you are looking at your 
+document.
+
+     Look at the screen. You will see the cursor to the right of the period
+in the sentence "This is sample text".  You should begin to think "We are
+to the right of the period on that line."  At all times, the person using 
+Emacs must think of himself or herself "at" some point in his or her document,
+that "point" being indicated on the screen by the cursor.
+
+     Now let us add another line.  Type the "carriage return" key on your 
+terminal to end this line and start another one.  "Carriage return" is a 
+character, just like "T", "h", "i", or "s", or a space.  Typing it will
+put a "carriage return" character into your text, and move the cursor to 
+_b_e_y_o_n_d the carriage-return character, which is to say, the beginning of the 
+next line.   Having entered the carriage return, type:
+
+     Here is more text yet.
+
+Again, the text appears on the screen as we type it.  The line we had typed 
+earlier stays where it is, we now have a two-line document.  Using what we 
+know already, we can type in a whole document!  It is just like using a 
+typewriter.
+
+     This is fine, until we make an error.  We have to fix errors as we note 
+them.  Let us type a line with an error in it on purpose.  Go to the next 
+line, by typing a carriage return, and type:
+
+Multix
+
+
+We have made an error.  The "x" in "Multics" should have been a "cs".  What 
+do we normally do in Multics if we type a wrong letter?  We use #, the _e_r_a_s_e 
+_c_h_a_r_a_c_t_e_r.  The same is true in Emacs, but watch what happens.  Type the "#"
+(pound sign, or number sign) character.  Observe that the "x" in "Multix"
+physically disappears off the screen, leaving no trace of itself or the pound 
+sign!  The character has been erased; our document is on the screen.  The "x" 
+is no longer in our document.  What is more, there is no trace or record of 
+the mistake we made, or what we did to correct it.  The document is correct
+on the screen, as always.  Now, to put in the c and the s, just type the c 
+and type the s, and the word "Multics" will appear correct.
+
+     We can continue in this fashion, entering text just by typing it, ending
+lines with carriage returns when we want to go on to the next line, until our
+whole document is entered, correcting mistakes with #, but soon we may find
+a need to change, or modify, some text we had already entered.  For example,
+let us change the line we entered that said:
+
+     This is sample text.
+
+to say:
+
+     This is some sample text.
+
+adding the word "some" after the word "is".  The way we do this in Emacs is to
+"go" to the place in the text after the word "is", to _m_o_v_e or _p_o_s_i_t_i_o_n 
+ourselves there, by moving the cursor there.  We want to go up two lines and
+over a few characters.  First, let us "get to" the right line.  We will go there
+one line at a time.  We will tell Emacs "Go to the previous line".
+
+     Look on your keyboard for a key labelled "CTL", "CTRL", "CONTROL", 
+"CNTRL", or the like.  This is a very important key for Emacs; it is called the
+_c_o_n_t_r_o_l key.  It is like a shift key: you hold it down, and while holding it 
+down, you type one or more normal characters.  Like a shift key, pressing it 
+and releasing it has no effect.  When you press the "p" key (DON'T do it now),
+you get a lower-case "P".  If you press the "p" key while holding the "SHIFT"
+key, you get an upper-case "P".  If you press the "p" key while holding the
+"CONTROL" key, you get something called a "Control P".  It is a different
+_v_a_r_i_e_t_y of P, just like p and P, except instead of being an upper case
+letter or a lower case letter, it is a called a "control character". All
+control characters are commands to Emacs.  You have seen what happens
+when you type normal upper and lower case characters; they go into the
+document.  Control characters are used to control Emacs, to manipulate the 
+cursor and manipulate text.
+
+     To make Emacs move the cursor to the P_revious line, we use the control
+character "Control P", the P_ being for P__r_e_v_i_o_u_s. Do so: hold down the
+"CONTROL" key, like a shift key, and press the "P" key, while still holding
+the "CONTROL" key, then release both. Now watch the screen: you will observe 
+that the cursor will indeed move up to the previous line, to a place right 
+above where it had been.  This happens as soon as we type the Control P,
+we do not have to type (and must not type!) a carriage-return or other
+character to make it happen.  Note also that when we type Control P,
+we do not "see" our command anyplace on the screen, all we see is what it did.
+This is a very important principle in Emacs: what you see on the screen is 
+what you have in your document, and it does not matter what you used to 
+achieve that state.
+
+     Now let us go up one more line, to the first line. Hold down the control
+key again, and press "P" while holding it.  Again, the cursor will jump up
+a line.
+
+     Now that we are on the correct line for the change we wish to make, we can
+move around on that line to get to the correct place.  We can move 
+_b_a_c_k_w_a_r_d_s on that line by telling Emacs to "go backwards": as you guessed, 
+this is done with a "Control B", B_ for B_ackwards.  Hold down the control key.
+Now, slowly, press the "B" key, while still holding the control key, eight or
+nine times.  You will see the cursor move backwards, that is, to the left,
+one position for each time you press the "B" key.  Soon you will reach the 
+beginning of the line, at which time, you cannot go any further back, because
+that is the beginning of your text.  Emacs will cause your terminal to beep 
+at you, to indicate that you have made an error. Wait for all the beeping to
+finish, and release the control key.
+
+     We now want to move forward to the place after the word "is", in order
+to insert the word "some".  Hold down the control key, and type the letter
+"F" several times.  "Control F" is the Emacs command for "forward", i.e.,
+move the cursor forward one character.  While still holding down the control 
+key, type F's until the cursor is under (or covering, on some terminals), the
+letter "s" of the word "sample".  If you type the Control F too many times,
+simply type Control B's until you get to the right place.  What you  are 
+doing now is the most important form of interaction with Emacs- issue commands
+until you are "at the right place", or "the right thing has happened", doing
+one command at a time and observing its effect, and repeating that process 
+until you have achieved what you want.  This is _i_n_t_e_r_a_c_t_i_v_e editing, as 
+opposed to counting the number of lines or characters, etc., and issuing 
+commands to move  15 lines and 4 characters, etc. (although you can do this 
+too in Emacs if you really need to).  Visual feedback is the most important
+single feature of Emacs.
+
+     Now we are at the "s" of sample, and we wish to put the word "some"
+right there (i.e., at the cursor).  That is trivial: simply type the four 
+letters s, o, m, and e.  You will watch Emacs move the rest of the line over
+and you now have on that line:
+
+    This is somesample text.
+
+with the cursor still under the "s" of "sample".  Immediately, we perceive a 
+problem: there is no space  between "some" and "sample".  We did not enter a 
+space, this is exactly what we told Emacs to do.  Let us enter a space: 
+simply hit the space bar. Now we have:
+
+     This is some sample text.
+
+with the cursor still under the "s" of "sample".  We have now fixed the
+text we wished to.  Note that in order to type in the new word, "some", we did
+not have to say anything special, we just moved the cursor to the right 
+place, and started typing.  Whenever we type a non-control character (other 
+than #, @, and \), it goes into the text at the cursor, and moves the cursor 
+over one to the right.  If you think for a little while, you will notice that 
+that is what it did when we were simply typing in the lines on the screen!
+
+     Now we must get back to the end of the document, where we had left off 
+when we decided to add the word "some" to the first line.  We can do this by
+going to the N_ext line, and the N_ext line, until we are where we want to be.  
+As you doubtless surmise, we do this with the "Control N" command, N_ for 
+N_ext.  Hold down the control key (as you have seen, if you do _n_o_t, the 
+characters you type will go into your text!), and press "N" twice.  Each time,
+the cursor will move one line down.  We are now on the right line.  You will 
+find that you are at the end of that line;  Emacs tries to keep you in the same
+"column" when going between lines, but the line with "Multics" on it is much 
+shorter than the line you started from (the first line, which now says,
+"This is some sample text."), so you are as far as you can be on this line.
+
+     Now let us finish the sentence "Multics is a computer system."  We see
+that the cursor is right after the "s" in Multics": if we just type "is", we 
+will get
+
+     Multicsis
+
+which is surely not what we want.  So type  a space, and the cursor moves to 
+the right as a space goes into your text.  Now continue entering the words
+
+     is a computer system.
+
+and sure enough, your entire text appears correct before you:
+
+     This is some sample text.
+     Here is more text yet.
+     Multics is a computer system.
+
+     You may want to continue experimenting with the things you have just 
+learned:  when you are done, you will have to leave the editor: this is done 
+as follows: type a "Control X" followed by a "Control C" (C_ for C_ommand 
+level).  This is not an easy command to type or remember, but that is 
+reasonable, because you may be editing for hours, and you will only type it 
+once.  One way to type it is to hold down the control key, and type an "X" and 
+a "C" while holding it.  Emacs will respond,
+
+     Modified buffers exist.  Quit?
+
+because you have done work that you have not written out (we will learn 
+about writing out work later).  Answer "yes" (type the letters y, e, and s, 
+and a carriage return).  Emacs will clear the screen, and leave you at 
+Multics Command level.
+
+     We have now learned the six most important Emacs commands:
+
+     #		Erase the last character
+     Control F	Go F_orward one character.
+     Control B	Go B_ackward one character.
+     Control N	Go to the N_ext line.
+     Control P	Go to the P_revious line.
+     Control X Control C
+		Quit the editor.
+
+
+     Practice using them until you are thoroughly familiar with them.  They 
+are the most important and useful commands.  With these commands, and one or 
+two others, you can do just about anything you will ever be called upon to 
+do.  All the other commands just make it easier to do more complex things,
+but you can always move around and type in text with these commands.
+
+
+		       Deleting and Killing.
+
+     Next we will learn how to delete text.  We already know something about
+this subject; we know how to use "#" to delete characters that we type in
+as we type them in.  Here we will learn to remove other portions of the text.
+Enter Emacs as before. Type in the following text, as we did before.  So that
+you can follow the lesson properly, be careful to break the lines
+(type carriage return) exactly as you see here:
+
+     Once upon a time there were four bears.  They lived in a house on the
+     edge of the forest.  There was a father bear, a mother bear, and a 
+     baby bear. One day the bears went out in the woods.
+
+The last thing you should have typed should have been "woods.", and the
+cursor is to the right of the period in "woods.".  Let us now fix the
+obvious designated excess of bears: we want to change the word "four" to
+"three" in the first line.  As all else in Emacs, the way we do this is to
+"go" to the place in question, with the cursor, and then perform local
+surgery on the text at the cursor.  Let us use what we have learned before, 
+and use the "previous line" command (invoked by striking "Control P")
+twice, to get up to the first line.  We now find we are in the middle of
+the word "They", and we wish to go backward on this line until we are at the
+word "four".  So we use the "backward characters" command, invoked by
+striking "Control B", for "backwards".  We probably have to strike it about a 
+dozen times, so we should hold down the "control key" (like a shift key) with
+one finger and hit "B" about a dozen or so times until the cursor is right
+at the letter "f" of the word "four".  If we go too far, go "forward by 
+characters" with "Control F" until we are at the "f" of "four".
+
+     This may have seemed long and difficult to get to that word; there are
+easier ways, and we will learn them in time, but for now, we will continue to
+present the fundamental concepts and commands in the order which will allow
+you to do the most as soon as possible.
+
+     We now wish to change the word at the cursor to the word "three".  In 
+Emacs, we do not "change" or substitute.  We get rid of what we don't want,
+and type in what we do want. So what we will do is _d_e_l_e_t_e the word
+"four", and type in the word "three" (which we already know how to do!).
+The way we will delete the word "four", for now, is by destroying it one
+character at a time. We will use the "delete character" command, which
+is invoked by hitting "control D", "D" for D_elete.  Do this once, by
+holding down "control" and pressing "D" _o_n_c_e while "control" is down.
+Watch the screen. You will see that the first line is now changed:
+
+     Once upon a time there were our bears.  They lived in a house on the
+
+The "f" has disappeared! It has been _r_e_m_o_v_e_d from the line; the cursor
+is now under the "o". Note that if we type a (D_O_N_'T_ do it) "t" now,
+it will say
+
+     Once upon a time there were tour bears.  They lived in a house on the
+
+So let us get rid of the rest of the word "four" by hitting "Control D"
+three more times, slowly, watching the screen.  We now have, when this is 
+done:
+
+     Once upon a time there were  bears.  They lived in a house on the
+
+The cursor is under the _s_e_c_o_n_d of the two spaces now between the words
+"were" and "bears".  The rest is easy; we type the letters t, h, r, e, and e,
+and the word "three" appears letter by letter, between "were" and "bears",
+pushing over the rest of the line as we type it. So we have now learned the
+"delete character" command, which is used by typing "Control D", which
+physically removes the character at the cursor from the screen and our text.
+
+     Often we need to delete a lot more than a few characters; we want to
+remove large pieces of lines, or many lines. We will now learn the
+"kill lines" command, which is invoked by striking "Control K", K_ for K_ill
+Lines.  We wish to change the last sentence,
+
+     One day the bears went out in the woods.
+
+to
+
+     The bears often ate porridge.
+
+Again, the way we do this is to position the cursor to the point we want to
+change, and then operate upon the text.  We want to get to the letter "O" in
+the word "One" on the last line.  Use the Backward Character, Forward
+Character, Next Line, and Previous Line commands (Control B, Control F,
+Control N, Control P) any way you know how until the cursor is under the
+"O" of the word "One".  Now type a Control K, and watch the screen.  All the 
+text between the cursor and the end of the line wil vanish from the screen 
+and from the text.  Although we could just type in the new sentence right here
+and now, there is a very important feature to be learned at this point.
+Type a Control Y. This invokes the "Yank" command: watch the screen.  The text
+we had just killed is brought back.  The "Yank" command brings back anything
+we just killed, if we decide that killing it was a mistake.  In this way,
+we can fix damage that we do by accident by mistaken or inadvertent killing of
+text.  Almost every command in Emacs that deletes text puts the text it deletes
+into a special safe place called the _k_i_l_l _r_i_n_g, where the Yank command
+can find it.  What is more, killed text _s_t_a_y_s in the kill ring
+so that you can yank it back many commands later, or even somewhere else in
+your text after you accidentally or purposefully killed it; this way, you need
+not notice your mistake as soon as you make it.
+
+     The "Delete Character" command does not put the characters it kills
+in the kill ring; if you accidentally delete a character, it is easy enough
+to retype it; if you delete many characters by hand, it is probably not a 
+mistake.
+
+     The Yank command has left the cursor after the sentence it has
+retrieved; let us re-position the cursor, with the cursor-moving commands we
+know, back to the "O" in "One", and use "Control K" again to remove the
+sentence.  Now type in the new sentence,
+
+     The bears often ate porridge.
+
+and the correction is made.
+
+     "Kill Lines" (Control K) is a very versatile command, that does different
+things depending upon whether it is used in the end of a line or not.
+Let us enter some new text.  Type "Control N" (Next Line) about four times
+to get to a fresh place on the screen.  Note that the cursor is at the
+left margin; these lines are empty.  Type the following well-known verse:
+
+     I wandered lonely as a cloud
+     That floats on high over vales and hills.
+     And all at once, I saw a crowd
+     A host of lovely daffodils.
+     Beside the lake, beneath the trees,
+     Fluttering and dancing in the breeze.
+
+Position the cursor to under the "I" which starts the verse, using
+all the cursor positioning commands that you know about.  Now delete
+all the text on that line, that is "Kill to the end of the line", by typing
+a Control K.  Observe the screen: the line becomes blank. Now type
+Control K again, and watch the screen.  All the rest of the poem moves up.
+We now state what Control K does, and this explains why:
+
+	When not at the end of a line (i.e., at the beginning, or in the
+	   middle, Control K deletes all text between the cursor and the
+	   end of the line, leaving the cursor at what is now the end of the
+	   line.
+
+	When at the end of a line, Control K "removes the carriage-return",
+	   or "sticks the next line on to the end of this one", making one
+	   line.  If the line that the cursor is on has nothing in it
+	   (except the carriage return), this means make this line go away.
+
+Now type Control K again. The line
+
+     That floats on high over vales and hills
+
+will empty out.  Type it once more, and that (now empty) line will disappear,
+and the cursor will be at the beginning of the next line of the poem.  You can
+now see that typing Control K many times will delete lines one by one, off the
+screen, as you type it.
+
+     Now we will show some magic.  Invoke the "Yank" command again, by
+striking a Control Y, and watch the screen.  Both lines we deleted came back,
+intact!  There has been something going on behind the scenes on the kill ring
+as we have been typing Control K's:  If we type an unbroken succession of
+Control K's, the "killed text" is _m_e_r_g_e_d on the kill ring, so that one yank
+gets it all back.  Because of this feature, we do not have to painstakingly
+reconstruct text that we killed line-by-line as we have done.  If we did not
+want to bring all of it back, it is no problem to go back and kill some of the
+text that we yanked back and didn't want, but this is a lot easier than having
+to retype text that we killed and couldn't yank back.  Almost all Emacs
+commands that delete text participate in this _k_i_l_l _m_e_r_g_i_n_g with themselves and
+each other to help you recover accidentally deleted text easily, no matter how
+you deleted it.
+
+
+     We have now learned three new commands, for deleting text:
+
+     Control D	Delete Character at cursor.
+     Control K	Kill to end of line, if not already at end of line.
+		If at end of line, merge line with next line.
+     Control Y	Yank back text that we accidentally killed.
+
+     All these commands, of course, delete what is at the cursor, or bring
+back text at the position of the cursor.
+
+     Type some text, and experiment with these commands until you feel
+comfortable using them, and then exit the editor as we did earlier.
+
+		      Reading and writing files.
+
+     One of the most important things to know how to do is to read in Multics
+Files, and write them out.  There are three commands for doing this, and we 
+will now learn about them.  When we read in a file, it is read into a 
+_b_u_f_f_e_r.  Each file will be read into its own buffer.  When we read a file in, 
+the first twenty or so lines will appear on the screen, just as though
+you had typed them in.  You only see as many lines at one time as fit on
+the screen, however, the whole file is there, and if you try to position
+the cursor to some line that is not on the screen, either by doing 
+Control N's so that the cursor tries to go off the bottom, or Control P's
+so that the cursor tries to go off the top, or any other way,  Emacs will 
+choose such lines to display on the screen such that the line you want the
+cursor to be on is indeed shown.
+
+      Let us read in a file.  For this we use the "Find File" command.  Enter
+Emacs in the usual fashion.  Because we do not read in files that often while
+editing, the Find File command requires two keystrokes.  It is invoked by the
+two-key sequence "Control X Control F" (the F is for F_ind F_ile).  Type this
+by holding down the control key, and typing an X and an F while it is down.
+
+     You will see the cursor go to the bottom of the screen, below the
+mode line, and Emacs will say
+
+	Find File:
+
+with the cursor at the end of the word "File: ".  This is called a _p_r_o_m_p_t: 
+Emacs is waiting for you to type an "answer" to its question, in this case,
+the pathname of the file to be read in.  You are now in the _m_i_n_i_b_u_f_f_e_r, a 
+little one-line window below the mode line, used for answering prompts.
+We were prompted in the minibuffer previously when we tried to exit Emacs with
+modified buffers.  Type the pathname of a file: a good pathname is
+
+     >doc>subsystem>emacs>emacs.info
+
+which is the command writeup for Emacs.  Type this pathname: you need not put
+any spaces before or after it.  If you make a mistake while typing, you can use
+#, Control B, Control D, Control F, or any other command to edit the
+pathname itself while you are typing it!  End the pathname with a 
+carriage-return.  Assuming you have typed the pathname correctly,
+Emacs will now print the word "Reading.." in the minibuffer, letting you know 
+that it is reading in this file, and strike it out when it has finished 
+reading it.  A little later, you will see the screen start to fill up with the 
+first windowful of the file.  The cursor will be at the first character of the
+first line.  Now look at the mode line.  You will see that the buffer
+name is no longer "main", but "editor". The buffer name is taken from
+the first component of the entry name of the file read in (in this case, 
+the file was "editor.info", so it is "editor").  Below the mode line is
+something new, the full pathname of the file in this buffer.  This is called
+the _p_a_t_h _l_i_n_e, and tells us exactly what file we are editing.  Of course, we 
+are not really editing that file, but a copy of it, and the changes we may
+make will not be reflected to that file unless we try to write out the
+buffer to the file.
+
+     Now type a Control X, and an Equal Sign (=).  Be sure to release the
+control key before striking the equals sign.  Be careful to remember to hold
+the shift key if equal-sign requires a shift on your terminal.  Emacs will
+print in the minibuffer,
+
+     513 lines, current = 1
+
+or something similar. Control X = is the Line Counter command.  It tells you
+how many lines there are in your document, and what line number the cursor
+is currently on.  Control X = is a handy command to know.
+
+     Now type Next Line commands (Control N) slowly until the cursor is
+on the line right above the minibuffer.  Be very careful, just this time,
+to do this slowly enough, so that the cursor stays in the main window.
+Now note carefully the contents of the line it is on.  I cannot tell you
+what line that is, because I don't know how many lines your terminal has
+on its screen, and that governs what line your cursor will be on now.
+Now strike control N once more.  You will see Emacs rewrite many lines
+on your screen, and, if your terminal has the capability to do so, move
+many lines around.  When it is finished, the cursor will be at the
+beginning of a line in the middle of the screen.  Look at the line
+above that.  You will note that it is the same line that was at the bottom
+of the screen a second ago.  Control N indeed went to the next line of the
+text after the line the cursor was on, as it is supposed to.  Now do another
+Control X =.  Emacs will say something like
+
+	513 lines, current = 22
+
+If you look at the screen, you will see that the cursor is on the twelfth
+or so line of the screen, not the 22nd!  However, you are editing the
+file (or the buffer) and not the screen!  The line you are on is indeed the
+twenty-second line of the file.  If you were near the end, you might be on
+the 500th line or so, even though there are only 21 lines or so in the main 
+window.  Since you can only display about 21 lines at once, Emacs chooses
+_w_h_i_c_h 21 lines automatically to make sure the line that you want the
+cursor to be on is on the screen.
+
+     You can now edit this file as though you had typed it in, using all the 
+commands that you know.  You can move the cursor about, delete characters,
+kill lines, or enter new text at will.  Try putting in a new word or
+killing a line.  At once, the word
+
+     Modified
+
+will appear in the minibuffer, letting you know that you have changed the
+file since you read or wrote it, and will have to write it
+out if you want your work to be saved.  It is not easy to do five hundred
+Control N's to get through the file; we will learn more ways later of 
+moving around buffers faster.
+
+     Having made some editing changes to the file, we want to write it out.
+The command that writes back a file that you read it is called "Save same 
+file": it is invoked by the two-character sequence Control X Control S
+(S for S_ave).  Try it.  You will get the error message
+
+	Incorrect access on entry.
+
+You cannot write out this file, because it is my file, and I did not give you
+the access required to write on my file.  So let us write it out to a copy in
+our own directory:  For this, we use the Write File command, which is invoked
+by the two-character sequence Control X Control W (W for W_rite File).  Enter
+this sequence.  Emacs will prompt in the minibuffer:
+
+     Write File:
+
+Now type the pathname of a place you want to write it to:
+
+     myinfo.info
+
+End with a carriage return.  You will see the path line change to indicate
+the new pathname.  As Emacs is writing it, you will see the word "Writing.."
+appear in the minibuffer.  When the word "Written." replaces the word 
+"Writing..", you know that the file has been successfully written out to
+the Multics Storage System.
+
+     Now you can edit some more, and move around within the buffer, and
+when you wish to write the file out again, to the same place it was last
+written to, Save Same File (Control X Control S) will do the trick. Again,
+the Writing../Written in the minibuffer lets you know when Emacs is done
+writing.
+
+     We have now learned four new commands:
+
+     Control X Control F	Find file, read in a file. Asks for pathname
+			   in the minibuffer.
+
+     Control X Control S	Save Same File, writing out the buffer to the
+			   last place it was read from or written to.
+
+     Control X Control W	Write File: Write a file to a new place.
+			   Asks for pathname in the minibuffer.
+
+     Control X =		Line Counter: tell how many lines in the buffer,
+			   and what line we are on.
+
+
+			    Searching
+
+
+     A fundamental ability that is needed in editing is that of looking
+for a particular sequence of characters, or _s_e_a_r_c_h_i_n_g.  In the context of 
+E__m_a_c_s, this means finding a given sequence of characters in the buffer,
+and moving the cursor to that point.  There are two simple commands
+for searching in Emacs: we will learn them next.
+
+     Enter Emacs as usual.  Enter the following text:
+
+     Now is the time and the only time for those who have
+     their time to give their time.
+
+     Using Control P (Previous Line) and Control B (Backward Character)
+move the cursor to the upper left hand corner (under the "N" of "Now")
+of the screen.  We will now search for the word "time".  We use the
+String Search command, which is gotten by typing a Control S. Do it.
+Emacs responds in the minibuffer:
+
+     String Search:
+
+We now enter the four letters t, i, m, and e.  End the string with a carriage
+return.   You will see the cursor return
+to the main window, but now it will be immediately after the first occurence
+of the word "time".  Let us replace the word "time" here by "day".  We will
+learn a little trick.  By all rights, we should go backwards (Control B)
+four times, and then delete characters (Control D) four times to delete
+the word "time".  That would work; however, there is an easier way.  Type
+a pound sign (#).  Note that the "e" of "time" goes away.  If we type
+the "#" another three times, the t, i, and m will go away too!  This is what
+pound sign always does: it deletes the character to the left of the cursor,
+whether you just typed it in or not.  Think about it.  When you type in a
+character, the cursor moves to the right of it, and it is now to the left of 
+the cursor.  Typing pound sign makes it go away because pound sign deletes
+the character to the left of the cursor.  This is distinct from Control D,
+which deletes the character _a_t the cursor.
+
+     Finish deleting the first occurence of the word "time", and type in
+"day".  Now let us look for "grime".  Type a Control S, and in response to the
+prompt "String Search:  ", type the letters g, r, i, m, and e, and a
+carriage return.  Emacs will respond
+
+     Search fails.
+
+in the minibuffer, because it could not find the string "grime", and
+the cursor remains in the place where it was when the Control S was
+typed.  Now let us again look for "time".  Type a Control S, the letters
+t, i, m, and e, and carriage-return.  The cursor advances to the next "time"
+in the buffer.  Do it again, and the same thing happens.  Note carefully
+that Control S only searches forward in the buffer, from where the cursor
+is at the time it is used to the end of the buffer. It will not look
+backwards.  That is why it puts you _a_f_t_e_r the string it finds, so that
+it will not find the same one all the time.  Note how easily we can find
+the same string many times in a line.
+
+     Now go back to the beginning of the buffer, with Control P's and
+Control B's.  We are going to look for the string "time" again, but this
+time, a little bit differently.  Type a Control S.  Emacs again prompts,
+
+     String Search:
+
+Type a carriage return..  You will see Emacs put the word "time" right in the
+minibuffer, as though you had typed it, and find the first "time".  When you
+answer a search command's prompt with an "empty search string", that is to
+say, typing carriage return, Emacs will re-use the last "search string"
+(sequence of characters) you were searching for.  This applies to all the
+various search commands.  Using this, we can search many times for the same
+thing, without having to retype it into the minibuffer.  Search two or three
+times for "time" again (please do this, so that this lesson will continue to
+work).
+
+     Now we will learn a very important Emacs command, "Get out of what you
+are doing", which is gotten by issuing a Control G.  Try it.  Your terminal
+will beep at you.  Control G always causes your terminal to beep at you.
+Now type a Control S again.  Emacs will prompt in the minibuffer, as always,
+
+     String Search:
+
+Suppose we decide that we didn't want to search for anything, and that typing
+the Control S was a mistake.  Now type a Control G: the cursor will exit
+the minibuffer, and the terminal will beep.  The search command has been
+aborted.  Control G  can always be used to exit the minibuffer to abort
+any command that you change your mind about in midstream, such as
+Find File, or Write File, etc.  It can also be used after typing a
+large number of cursor movement commands to cause your terminal to "beep"
+when they are all done.  Sometimes, this is useful when the system is slow,
+as a way of letting you know that Emacs has "caught up" to what you told it
+to do.  Control G is very important, it is an "out" whenever you start
+doing something that you change your mind about, or aren't sure what you 
+typed.  If you ever find yourself in the minibuffer with a prompt that
+you think you didn't  ask for, or don't understand, like
+
+     Eval:
+
+you can be sure that typing a Control G will get you out of it without
+doing any harm.
+
+     The next command we will learn about is Reverse String Search:  it is
+invoked by striking a Control R.  Try it.  Strike a Control R.  Emacs will
+prompt in the minibuffer:
+
+     Reverse String Search:
+
+Type carriage return, like for Control S (String Search).  The string "time"
+will appear in the minibuffer, as we had promised.  The cursor will be left
+_b_e_f_o_r_e (i.e., under the first character of) the first occurence
+of "time" going backwards from where the cursor was when you typed the
+Control R.  If the cursor was right after a "time", it will now be at the
+front of the same one.  Do it again.  The cursor will go one "time" back
+each time, until there are no more between the cursor and the beginning of the
+buffer, at which time Emacs will respond
+
+     Search Fails.
+
+in the minibuffer.  If we want to change one of these "time"s to an
+"hour", we need only type four Control D's (Delete Character) and the
+word "hour" after finding one.
+
+     Reverse String Search is just like String Search, except
+
+	1. It goes backward to the beginning of the buffer, while forward
+	   search goes forwrd to the end.
+	2. It leaves the cursor _b_e_f_o_r_e (at the front of) the found
+	   string, while String Search leaves it _a_f_t_e_r.
+
+Otherwise, String Search and Reverse String Search both prompt in the
+minibuffer, take a string terminated by a carriage return to use for a search
+target, and use an empty string (a carriage return as answer) to indicate that
+the last search string used should be used again.
+
+     When you are searching for something in Emacs, you have to know if you
+want to search forward or backward for it, from where you are now; usually,
+you know this.  If you don't, you should search forward.  If the search fails,
+just hit a Control R and a carriage return, and Emacs will search backward for
+the same string.  If _t_h_a_t search fails, the string is really not in the
+buffer.
+
+     We now have learned three new commands:
+
+     Control S	String Search. Prompts for a string in the minibuffer,
+		   which must end with a carriage return.  An empty string
+		   uses the last string over again.  Searches forward for
+		   that string to the end of the buffer, and leaves you
+		   after it.
+
+     Control R	Reverse String Search.  Same as above, but goes backward.
+		   Leaves you at start of found string.
+
+     Control G	(Command Quit) Get out of anything, and beep the
+		   terminal.  Often used to get out of minibuffer
+		   prompts that you change your mind about.
+
+
+		       Two Very Useful Commands
+
+     We will now learn two useful commands that you will use all the time.
+We will not give any examples here, because what they do is so simple.  Try
+them yourself any way you want, but learn them.
+
+     Control A	Go to beginning of line.  Moves the cursor to the beginning
+		   of whatever line it is on.  The way to rememeber it
+		   is that "A is the first letter at the beginning of the
+		   alphabet".  We could not use "B" for "Beginning",
+		   because, as we know, Control B is for "Backward
+		   Character".
+
+     Control E	Go to end of line (E for E_nd).  Moves the cursor
+		   to the end (after the last character, before the
+		   carriage return) of whatever line it is now on.
+		   On a line with nothing on it (nothing _i_n it but a
+		   carriage return), this does nothing.
+
+
+
+		   Wiping, the Mark, and the Region
+
+     We will now learn three new concepts, and three new commands.
+We will learn them in order to be able to delete arbitrary extents of text
+(i.e., "from here to there", or "all that stuff") as opposed to killing
+lines and characters carefully to get rid of exactly what we want.  Enter
+Emacs.  Type in a paragraph or so of text, of your choice.  Choose a
+few words next to each other somewhere.  It is all right if they are not
+on the same lines.  Let us delete this "extent", that "much" of the text.
+The command we will be using is Wipe Region, which is invoked from
+Control W (for W_ipe Region).  We tell it what to "wipe", that is, wipe off
+the screen and out of the text, or delete, by giving it the "here" and 
+"there", that is, the "limits" or "boundaries" of the region to delete.
+It will delete all the text between the two points we tell it to.
+
+     How do we specify the "region" of our buffer that control W is to delete?
+By its limits.  How do we specify the limits?  One limit will be the cursor
+at the time we strike the Control W.  The other is specified by an "invisible
+cursor" called "the mark".  There is at most one "mark" in each buffer.  Until
+we "set the mark", there is no mark in the buffer.  Type a Control W.
+You will find that Emacs will complain that there is no mark, and nothing
+will happen.  We "set the mark" by moving the cursor to the place we
+want "the mark" to be, and issuing the command "Set the Mark", which is
+invoked by Control @. This is a very tricky command to type.  It is typed,
+like any control character, by holding the control key, and typing, in
+this case, the character @.  On some terminals, you may even have to
+hold Control and Shift at once to make this happen, if you normally have
+to hold the Shift key to get an @.  If you have trouble with this, ask someone
+familiar with the terminals in use at your site; tell him you are trying to
+"Generate an ASCII NULL, or a Control At Sign", and hopefully he or she can
+show you how to type one.
+
+     Move the cursor to be under the _f_i_r_s_t character of the first word that
+you have singled out for deletion.  We will set "the mark" here.  Type the
+Control @.  Absolutely nothing will happen: this command doesn't "do"
+anything visible.  Now move the cursor to right _a_f_t_e_r the _l_a_s_t letter of the
+_l_a_s_t word in the group we singled out for deletion.  We are now ready, in
+principle, to issue the Control W (Wipe Region) command, but let's not.
+There is usually something we want to do right before issuing a Control W: We
+want to check that "the mark" is where we think it is, because it might have
+been some time ago that we set it.  For this we use the command "Exchange
+Point and Mark" ("point" is the name for the place in the buffer that the
+cursor is located at.  If you don't understand the difference between that
+and the cursor itself, ignore it for now.) This command switches the cursor
+and "the mark" around, putting the cursor where the mark was and the mark
+where the cursor was.  The visible effect of this is to move the cursor to
+where the mark was, so we can see where it was.  The "Exchange Point and Mark"
+command is issued by typing Control X Control X (i.e., two Control X's in a 
+row).  Remember "X" for E_xchange.  Do it.  The cursor will move to under the
+first character of the region we are trying to delete, the place where we
+had set the mark.  Now before doing any other commands, do another
+Exchange Point and Mark (Control X Control X) to get back.
+It is very important that you do not move the cursor at all before typing
+the second pair of Control X's, or you will exchange the mark with the
+wrong point!  It is very common to type Control X Control X, Control X
+Control X in this way, to "verify" the "region" between the "point" and
+"the mark".
+
+     Now issue the Control W (Wipe Region) command.  You will see that all
+the text you singled out for deletion disappears from the screen (and thus
+from your text).  If there was a carriage return in the middle of them, you 
+will see that that too has gone, and one big line now replaces the two lines
+between which the carriage return had been.
+
+     Like The Kill Lines command (Control K), the Wipe Region command
+(Control W) puts what it removes in the kill ring.  Type a Control Y now
+(the Y_ank command).  All the text you had deleted reappears.  If you
+ever hit Control W by accident (for instance, instead of Control E), and
+see loads of text mysteriously vanish, just type Control Y and it will
+all come back.  As a matter of fact, if you ever see text vanish off your
+screen or out of your buffer for a reason that you don't think you understand,
+the chances are better than even that simply typing a Control Y will
+fix it all up.
+
+     A useful feature of the Yank command is that it puts "the mark" at the
+_b_e_g_i_n_n_i_n_g of the text it retrieves, and (as can be seen), leaves
+the cursor after it.  This has two implications that should be noted:
+
+     1. After you have yanked some text, no matter for what reason, you
+        can make it go away again simply by typing Control W (Wipe Region),
+        since the cursor and the mark exactly specify the boundaries of
+        what was yanked.
+
+    2.  After you have yanked something, no matter for what reason, you
+        can get to (move the cursor) to the beginning of the yanked text
+        by exchanging the cursor and the mark, simply by typing
+        two Control X's, the "Exchange Pont and Mark" command.
+
+     If we had known the second of these facts when we were learning about
+Control K (Kill Lines), we could have gotten to the beginning of the
+sentence
+
+     One day they went out in the woods.
+
+after we had yanked it back simply by typing Control X Control X.
+
+     The text in the buffer between the cursor and the mark is called 
+"the region".  There are many Emacs commands besides Wipe Region (Control W)
+which use the region, and the commands we learned for setting the limits
+of the region and testing what they are are useful for all of them.
+
+     We have learned three new commands:
+
+     Control @	Set the mark to be where the cursor is now.
+
+     Control X Control X
+		Switch the cursor and the mark around, to show us
+		where the mark was.  The mark is now where the cursor
+		was, and the cursor is now where the mark was.
+
+     Control W	Wipe Region.  Remove the text between the mark and the
+		cursor from the text and the screen.  Save it on the
+		kill ring for possible subsequent yanking.
+
+			Numeric Arguments
+
+
+     Next we learn about how to say "go FIVE characters forward", or 
+"go FOUR next lines down" and so forth.  Commands for which it is meaningful
+and useful to specify "how many times" to do them usually will accept what
+is called a "numeric argument", which is essentially a repetition count.
+For instance, if we give the "Next Line" command (Control N) a numeric
+argument of 25, it will go 25 lines down instead of one line down as it usually
+does.  If we give the "Delete Character" command (Control D) a numeric
+argument of 6, it will delete 6 characters, instead of the one it usually
+does.
+
+     Search around on your keyboard for a key labelled "ESC", "ESCAPE",
+"ALT", or "ALTMODE", or something like that.  This is called the "ESCAPE"
+key, which generates a character called the "ESCAPE character".   We
+will refer to it by the letters ESC; this means strike and release the
+ESCAPE key, do _n_o_t type the letters E, S, and C!
+
+     We specify a numeric argument to a command by typing an ESC character
+(hitting and releasing the ESCAPE key once), the number we want, and
+the command we want to receive the argument.  For instance, to delete
+six characters, we would type the _t_h_r_e_e keys
+
+	   ESC  6   Control-D
+
+That is, strike the escape key, the 6 key, and a Control D in that order.
+All the characters will disappear at once: you will not see them go one by
+one.  Similarly, if you said
+
+	ESC 249 Control-N
+
+while on the first line of a large file, the screen would fill immediately
+with lines 240 to 261 (roughly) of the file, with line 250 and the cursor
+in the middle.  You will be spared watching the cursor and the screen
+step through 250 lines one by one; it is done all at once.
+
+     The following commands that we have already learned about accept
+a numeric argument to mean "Do it that many times".  The complete list
+is given in the Emacs reference document:
+
+	Control B		Backward Character
+	Control D		Delete Character
+	Control F		Forward Character
+	Control N		Next Line
+	Control P		Previous Line
+
+If you give a numeric argument to Control K (Kill lines), it does _n_o_t
+do that many Control K's, it does something more useful.  Starting
+with the current point on the current line, it kills entirely (removes)
+that many _e_n_t_i_r_e lines.  Thus, if you are at the beginning of a line
+(doing a Control A, Go to Beginning of Line can ensure this), 
+
+	ESC 4 Control-K
+
+will delete this and the next three lines entirely.  Of course, these
+lines will be put as one on the kill ring, and will "_k_i_l_l _m_e_r_g_e"
+with preceding or following "kill type" commands as described above.
+
+     The "Yank" command also does something useful and different with
+a numeric argument.  The kill ring is so called because it is like a ring
+of text excerpts that were deleted.  Whenever you kill some text,
+the "ring" is rotated one of its ten positions, and the newly killed text
+goes in the front position, replacing what had been in the tenth position.
+It is like a merry-go-round with ten horses, and one on/off point.
+The ten positions on the kill ring thus contain the last ten text excerpts
+that you killed.  (When kill merging occurs, this does not happen, as the
+new text gets "stuck on to" the text in the ring at the on/off point).
+When you use a "Yank" command (Control Y), it is always the latest thing
+that you killed (i.e., the excerpt at the on/off point) that is retrieved.
+If you want the _s_e_c_o_n_d latest thing instead, simply give the
+Yank command a numeric argument of 2 by typing
+
+	ESC 2 Control-Y
+
+instead of just
+
+	Control-Y
+
+and that will happen.
+
+	There is a wonderful command that expresses the following situation.
+"I deleted some text.  Then I went somewhere else, and I deleted some
+more text.  Then I decided that the first text I deleted was really O.K.;
+deleting it was a mistake.  So I went back to the point where I deleted it
+from, and used the Yank command (Control Y).  However, that was a mistake,
+because it brought back the text from the second thing I had deleted,
+which was, indeed, the last thing I had deleted.  I wish I could say
+"Get rid of that stuff, and bring back the previous saved text in the
+kill ring." "
+
+     There is such a command.  It does precisely that.  It gets rid of
+the text between the cursor and the mark (which was, presumably just yanked
+by mistake), without saving it on the kill ring, "rotates" the kill ring
+one position _b_a_c_k_w_a_r_d_s, and retrieves the text at the on/off station.
+
+It is typed by the two-character sequence
+
+	ESC y
+
+That is to say, press the two keys, ESCAPE and Y (lower case or capital, it
+does not matter) one after the other.  (Be careful to type the two-key
+sequence deliberately and firmly; do NOT hold down the ESC key while typing
+Y: it is NOT like the CONTROL key.)   It is called the "Wipe this and Yank
+Previous" command:
+
+     ESC Y	Wipe this and Yank Previous.  I don't like what
+		   I just yanked.  Get rid of it, and bring out the
+		   previous thing I killed.
+
+By doing many ESC Y's in a row, until you "find the kill that you want",
+you can "go shopping" in the kill ring for saved text.
+
+     Whether you realize it or not, normal letters and numbers are actually
+Emacs commands, too!  For instance, we know that Control D means "Delete the
+character at the cursor".  But what does an ordinary "D" mean?  What happens
+when you type an ordinary "D"?  What happens when you type any number or letter
+or punctuation mark?  It goes into the buffer, and appears on the screen.
+The first thing we ever did was to type ordinary text into Emacs.
+Printing characters (other than #, @, and \), are said to be
+_s_e_l_f-_i_n_s_e_r_t_i_n_g, because if you type one, it inserts itself into
+the text.
+
+     We mention this now because giving a numeric argument to a self-inserting
+character causes it to insert itself that many times.  For instance,
+if we type
+
+	ESC 2 4 Q
+
+we will see twenty four Q's appear on the screen all at once.  This is a
+good way to get lines of dashes, underscores, stars, etc.
+
+     If ever you type a numeric argument, or are in the middle of typing
+a numeric argument, or have just typed  ESC, and you decide that you
+didn't mean it, or you are not sure as to whether you typed the numeric
+argument or not, type a Control G, which G_ets you out of anything.  The
+reassuring beep of Control G will verify that any possible numeric argument
+has been discarded.
+
+	        The First Help Command, and Local Displays
+
+     There is a command that will tell you what command a given key performs.
+This is a good command to use if you are not sure what a given key does, and
+you do not have the documentation on hand.  It displays the documentation for
+a given command on the screen.  It is called Describe Key, and is invoked by
+striking the two-key sequence
+
+     ESC ?
+
+Try it.  Let's find out about what Control E is and does.
+Type an ESC, and then a question mark.  Emacs will prompt in the
+minibuffer with
+
+     Explain Key:
+
+Now actually type a Control E, in the usual manner.  Emacs will probably wait
+a little while before responding, especially if this is the first time you
+have used ESC ? since entering Emacs and system load is heavy.  Be patient.
+The documentation for Control E, Go to End of Line, will appear at the top of
+the screen, replacing whatever text you were editing on the screen.  Bu do not
+worry, it did not destroy your text; it is just being "displayed" to you on
+the screen "in front of" your text.  The line of dashes and stars:
+
+     -- * * * * * * * * * * * * --
+
+is there to let you know that your buffer has not been destroyed, but simply
+that there is information being displayed for you to see "in front of" it.
+Such a display is called a L__o_c_a_l D__i_s_p_l_a_y.  We will shortly learn how to get
+rid of the local display, when we are finished viewing it, and restore the
+window on our buffer to the screen.
+
+     The documentation for Control E begins with the line
+
+     ^E	     go-to-end-of-line
+
+"^E" is the shorthand for "Control E" which is used in the reference document,
+and in displays and error messages produced by Emacs.  It is a good shorthand,
+because "Control X Control Q ESC B Control D" etc., can get long-winded.
+We will use this convention from hereon in.  When we say "^A", we will mean
+"Control A", i.e., hold down the control key and strike an A", _n_o_t the
+character "^" followed by an "A".
+
+     "go-to-end-of-line" is the _c_o_m_m_a_n_d _n_a_m_e associated with
+^E. At this stage, it serves only to remind us of what ^E does.  When a great
+deal of proficiency in using Emacs has been acquired, these command names
+can be used in computer programs to build commands of your own.
+As a matter of fact, once you know the command name, you can "connect" any key
+of your choice to any command of your choice if you don't like the default
+layout of what key does what (see the writeup of the "set-key" and
+"set-permanent-key" extended commands if you want to learn about this).
+
+     The documentation describing go-to-end-of-line follows the line giving
+the key name and command name.  The documentation is the same that you would
+find in the Emacs reference document; it describes everything there is to know
+about the command in question.
+
+     When we have finished viewing the local display of the command
+documentation, we wish to remove it from the screen.  If you just start
+editing again, typing editor commands, the display will vanish as soon as you
+start typing, putting back on the screen what had been there.  However, you
+might not know where the cursor was "supposed to be", because the local
+display is standing there in front of it.  For this reason, a command is
+provided that does _n_o_t_h_i_n_g _a_t _a_l_l.  Since typing _a_n_y editor command makes the
+local display go away, this command may be used for making local displays go
+away without doing anything else.  It is invoked by striking the Linefeed key
+on your terminal.  The "noop" (No Operation) command is invoked by Linefeed
+(which is the same as Control J on all terminals).  For reasons too complex to
+describe here, it is recommended, and cannot hurt, to hit Linefeed two or
+three times to get rid of a local display.
+
+     Sometimes, local displays will take more than one screen.  In this case,
+the last line of the screen will say
+
+     --More?-- (Space = yes, CR = no)
+
+If you see this on the last line of the window, hit the space bar once to see
+each successive screen of the local display.  When you are at the last screen
+of the local display, the line of dashes and stars
+
+     -- * * * * * * * * * * * --
+
+will appear, and Linefeeds may be used to restore the buffer to the screen.
+If, during a multi-screen local display, you decide that you do not want to
+see the rest of the display, typing a carriage return instead of the space bar
+will terminate the display and restore the buffer to the screen.
+
+     Occasionally, you may forget what command a given key invokes, or need to
+find out "what you just did by accident".  You can ask for the name of the
+command invoked by a given key without the documentation.  This can be
+preferable at low terminal speeds, or on a slow system, where the local
+display can take some time, or if you just need a reminder of what is
+"connected" to some given key. This can be done with the Describe Key command
+by giving it a numeric argument, i.e.,
+
+     ESC 1 ESC ?
+
+(a four-key sequence).  Type that.  Emacs will prompt:
+
+     Show Key Function:
+
+Type, for instance, a Control W.  Emacs will respond in the minibuffer,
+
+     ^W = wipe-region
+
+which is precisely what we wanted to know.
+
+   We now know two new commands:
+
+     ESC ?	Describe Key.  Prompts for you to type a key,
+		   and supplies the documentation for that key as
+		   a local display.  If given a numeric argument,
+		   tells what command is invoked by that key.
+
+     Linefeed	No Operation.  Type it two or three times to remove
+		   a local display from the screen.
+
+
+		      T__h_e B__u_f_f_e_r _a_n_d _t_h_e S__c_r_e_e_n
+
+
+     Very often we wish to "page" through a document, reading through it like
+a book, either to actually read it, or to "flip through" until we arrive at
+the place we want to see or edit.  Using Emacs, this is accomplished by
+"paging" through the text in the buffer screen by screen.  That is to say,
+after we finish reading or looking at the text on the screen, we want to see
+the next screenful (actually, the next windowful).  The next windowful of text
+is that text in the buffer which immediately follows the text now in the
+window.  That is the text we wish to progress to, and fill the window with.
+The command for doing this is "Next Screen", which is gotten by striking
+Control V (for V_iew Next Screen).  This is a very easy key to type with your
+left hand alone; use your thumb, while holding down the control key, to page
+through successive windowfuls of a document.
+
+     Read in some file and "^V through it".  You will note that each time you
+strike a Control V, the cursor will be left at the upper left-hand corner of
+the screen: not only has the window been filled with new text, but the cursor
+is now in a different place in the buffer, at the beginning of the text which
+fills the window.  The text now in the window, of course, is not the only part
+of the buffer you may edit.  If, for instance, after using ^V, you use a ^P to
+go to the previous line, you will observe Emacs choosing a different portion
+of the buffer to display in the window.  Emacs usually chooses its window,
+(i.e., what part of the buffer to show in the window) automatically, governed
+by where in the _b_u_f_f_e_r you moved the cursor. ^V is one of several ways, and
+the first we have learned thus far, to explictly select what will be displayed
+in the window.
+
+     Note that when you use ^V, the first line of the new screen will be the
+same as the last line of the old screen.  This is to give you some context,
+and a sense of continuity, so you will know you haven't missed anything, or
+forgotten what you were reading while the screen was being refilled.
+
+     As we can page "forward" through a buffer, so we can page "backward" as
+well.  As this is less common, it takes two keystrokes.  The two-key sequence
+ESC V invokes the "Previous Screen" command.  Remember, C__o_n_t_r_o_l V for the next
+screen, E__s_c_a_p_e V for the previous one.  ESC V will make the last line of the
+new screen be the same as the first line of the old one.
+
+     Now we can go forward and backward through the buffer line by line (^N
+and ^P), character by character (^F and ^B), windowful by windowful (^V and
+ESC V), or by searching (^S and ^R), and we will learn many more ways yet.
+However, among the most common of needs are to go to the _b_e_g_i_n_n_i_n_g of the
+buffer, the _e_n_d of the buffer, and to a given line number.
+The command "Go to Beginning of Buffer" is invoked by the two-key sequence
+ESC <. Think of the "less than sign" as an arrow pointing backward to the
+beginning of the buffer.  Using ESC < will place the first windowful of the
+buffer on the screen, and place the cursor at the very first character of the
+buffer.  This is often useful when  going through the entire buffer looking
+for something or changing things one by one as you see them.
+
+     As you might have guessed, ESC > is "Go to End of Buffer".  The "greater
+than sign" may be thought of as a little arrow pointing to the end of the
+buffer.   It places the last  windowful of the buffer on the screen, and
+places the cursor on the newline character (the "carriage return") which ends
+the last line of the text in the buffer.  That is the furthest place in the
+buffer that the cursor can go; it is the end of the last line in the buffer.
+There is no way to move the cursor to beyond that character.  If, after using
+ESC >, you see the cursor on a line by itself, that simply means that there is
+an "empty line", i.e., one with nothing but a newline in it, at the end of the
+buffer.
+
+     When editing Multics programs, it is often very useful to go to a given
+line number (e.g., the 240'th line of the buffer), because many Multics tools
+give diagnostics in terms of line numbers in their input files.  If you happen
+to be positioned on the first line of the buffer, going to the 241's line is
+easy; just do 240 ^N's by typing
+
+     ESC 2 4 0 ^N
+
+If you are not on the first line, you could use ^X= (Line Counter) to figure
+out where you are, subtract, and use ^P or ^N with the right numeric
+argument, but this is hardly reasonable.  Therefore, Emacs provides the
+"Go to Line Number" command, which is invoked by the two-key sequence
+ESC G (G for G_o).  The numeric argument to ESC G tells it what line number to
+go to.  For instance,
+
+     ESC 2 5 9 ESC G
+
+will move the cursor to (the beginning of) line 259 of your text, no matter
+what line you are on now.  As is the case with searching, ^N and ^P, and any
+Emacs cursor movement commands, if the target of the motion (the place in the
+_t_e_x_t being gone to) is not on the screen, a new window will be selected and
+displayed automatically such that the target of the motion _i_s on the screen.
+
+     When editing multiple files, each use of ^X^F (Find File) will result in
+a new buffer.  You may switch between buffers with the "Go Buffer" command,
+which is invoked by ^XB (B for B_uffer).  Be careful when typing this command:
+be sure to release the control key before typing the "B" (the B need not be
+capitalized;  Emacs does not distinguish between upper and lower case letters
+in editor commands (other than self-inserting characters)).  When you type a
+Control X and a B, Emacs will prompt for a buffer name to go to.  Type the
+name of the target buffer, ended by a carriage return.  If you give the name
+of a buffer that does not exist, Emacs will create such a buffer, and display
+it on the screen (you will see an empty window).  If you give the name of a
+buffer that does exist, Emacs will refresh the screen with the last windowful
+of that buffer that you were editing, that is to say, such a window of that
+buffer that the last point you were at with the cursor when editing in it is
+now on the screen, and the cursor will be placed at that point.
+
+     Note that when you switch buffers with "Go Buffer", the mode line
+changes, to indicate the new buffer name (and the new buffer modes, if they
+have changed as well, because modes may be different in different buffers, and
+are "remembered" in that buffer.  We will learn later about some useful
+modes.)  The path line (the line under the mode line) will change as well, to
+let you know the pathname of the file which was read into this buffer (or last
+written out from it).
+
+     You may list all of the buffers in a given invocation of Emacs with the
+"List Buffers" command, ^X^B (Control X, Control B).  The listing of buffers
+will be displayed as a local display; hit linefeed two or three times to get
+rid of it, as all local displays.  The name of each buffer, and the pathname
+of the file in it, if any, will be displayed.  To the left of the buffer names
+will be two symbols, for some buffers, ">" and "*". The "greater than" sign
+will be placed to the left of the name of the buffer in which you are now
+editing.  The star will be next to the name of any buffer which is "modified",
+i.e., has never been written out (but isn't empty), or has been modified since
+last read in or written out.  Only when there are "no stars" will ^X^C allow
+you to exit Emacs without querying you.
+
+     Go Buffer (^XB) provides a convenient service for going back to the last
+buffer you came from.  If you answer its prompt
+
+     Buffer:
+
+with _j_u_s_t a carriage return, i.e., no buffer name, Go Buffer will go back to
+the last buffer you had been in before entering the current buffer.  This may
+be used to "visit" another buffer and come back easily.
+
+     Occasionally, you may not believe what you see on the screen.  Sometimes
+bad telephone lines, or unexpected messages from Multics, or things you just
+don't understand ("I _k_n_o_w that's not there!) may cause the screen contents to
+become invalid.  This may be due to hardware problems, bugs in new versions of
+Emacs, or bugs in your terminal.  At any rate, there is a need to clear the
+entire screen and put it back the way it should be, without any regard for
+what was there.  This is like clearing one's throat, or clearing the top
+of the table.  This is accomplished with the Redisplay Command, which is
+gotten by striking ^L.  ^L is used for this purpose because many terminals,
+and some parts of the Multics Communications System, associate the Control L
+character with the clearing of screens. Try striking ^L; you will see the
+screen clear, and be refilled, with the cursor in the middle of the screen
+(unless you are at the top of your text buffer, in which case it will be at
+the top).  On fast terminals, ^L can be used just to "reposition the window"
+such that the line with the cursor on it is at the middle of the window.
+(this will work on all terminals, but may be too slow to be useful on slow
+lines).  ^L will also make local displays go away, and on fast terminals, is
+often used for this purpose as well.  ^L with a numeric argument is used to
+reposition the window, i.e., keep the cursor at the same point in the buffer,
+but  "move the window around" so that the line with the cursor on it
+is at a place of your choosing in the window; a numeric arguemtn of zero is
+the top of the window, and so forth. See fundamental-mode.info for more
+information on this.
+
+     We have now learned seven new commands for manipulating screens and
+buffers:
+
+     Control V	Next Screen. View the next screen of the buffer
+		   in the window, and leave the cursor at its top.
+
+     ESC V	Previous screen.  View the previous screen of the
+		   buffer in the window, leave the cursor at its top.
+
+     ESC <	Go to the beginning of the buffer.
+
+     ESC >	Go to the end of the buffer.
+
+     Control X B	Go Buffer.  Prompt for the name of another buffer,
+		   and switch to it, displaying it on the screen at the
+		   last point you left off editing it. If you give
+		   ^XB no buffer name, it will go to the previous buffer
+		   you had been in.
+
+     Control X Control B
+		List Buffers.  Show as local display the names,
+		file pathnames, and modified/not modified status of
+		all existent buffers.
+
+     Control L	Redisplay Command.  Clear the screen and refresh it,
+		eliminating possible non-understood garbage.  With a 
+		numeric argument, reposition the window.
+
+     ESC G	Go to Line Number.  Go to the beginning of the line
+		whose line number is supplied as a numeric argument.
+
+
+		    A__p_r_o_p_o_s _a_n_d E__x_t_e_n_d_e_d C__o_m_m_a_n_d_s
+
+     Some commands are issued by a single keystroke, such as ^D, which invokes
+the Delete Character comand, delete-char.  Other, less common ones, are
+invoked by two-key sequences beginning with ESC, such as ESC G, which invokes
+the command go-to-line-number.  Others, less common yet, are invoked by
+two-character sequences beginning with ^X (X for E_xtended key).  Commands that
+are the least common have to be invoked by actually typing in the name of the
+command.
+
+     By "less common", we do not mean that a command is obscure, little-used,
+less important, or not widely known or understood.  What we do mean is that
+during the course of normal editing, you will use it fewer times than more
+common commands.  For instance, you only use ^X^C (quit-the-editor) once per
+editing session, but it is one of the first and most important commands you
+must learn!  The commands that you must type most often are made the easiest
+to type.  The simplest commands to type (the single key "control"'s) are those
+that you would want to type _r_a_p_i_d_l_y.  A fine example of this is ^T,
+twiddle-chars, which exchanges the last two characters typed.  It is not a
+necessary command, as two pound signs and two more characters can do whatever
+it does.  But given that ^T can be typed in one character, it is useful.
+
+     The commands known as "Extended Commands" are those invoked by typing
+their command names at Emacs.  An example of an extended command is "fillon",
+which enters "fill mode" in a buffer.  Fill mode is a setup of a buffer such
+that you do not have to worry about the ends of lines when typing text, and
+never type carraige return (except, of course, when ending prompts, or where
+you want explicit control over the format and line-breaks of your document).
+Fill mode is ideal for typing in text from a written page, or composing a
+document spontaneously.  One types and types and lines get broken
+automatically.
+
+    To invoke the "fillon" command, we clearly cannot just type the characters
+"fillon" at Emacs, or they will go into the buffer like any other characters.
+We must somehow tell Emacs that we wish to type the name of an extended
+command.  The "Extended Command" command, which is invoked by ESC X, does this.
+The "X" is for E_xtended.  Type the two-key sequence Escape X.
+Emacs will prompt in the minibuffer,
+
+     Command:
+
+Now type the word "fillon" (no quotes, just the six characters), followed by a
+carriage return.  You will see the name of the "fill" _m_i_n_o_r _m_o_d_e appear in the
+mode line after the name of the current _m_a_j_o_r _m_o_d_e (Fundamental).
+
+     In general, we invoke an extended command by typing ESC X, the name of
+the command (and then any arguments, if the extended command takes command
+arguments), and a carriage return.
+
+     Now try fill mode.  Type in a long, very long sentence, consisting of
+very many real, separate words.  Watch what happens when you get to the end of
+the screen, as you type successive words.   Do not worry about typing carriage
+return; your lines will be automatically "filled" as they become too long.
+
+     The most important extended command is the "apropos" extended command.
+"Apropos is a word (from the French) meaning "about, or having to do with".
+It is used to find the names, and keys, of all commands that have to do with a
+given topic.  It is used if you remember something about a particular command,
+but you cannot remember the key that invokes this particular command, or what
+its name is.  The "apropos" extended command will find all commands that have
+a given character string in their name, and tell you what keys invoke them.
+
+     For instance, suppose you forgot the name of the key that went to the end
+of a line.  Type
+
+     ESC X apropos end CR
+
+(The "CR" means "carriage return").  Apropos will display, as a local display,
+the names of all commands available in this buffer whose names contain the
+character string "end".  It will tell you of ^E (go-to-end-of-line),
+ESC > (go-to-end-of-buffer), and a few surprises (such as ^XM, s_e_n_d-mail), and
+others.  Once we learn from apropos what commands are available, we may be
+jolted into recognition ("Oh, yes, ^E was go-to-end-of-line!"), or need more
+information ("Hmm, ^E looks right. I'd like to know more about it."), and use
+ESC ? (Describe Key), by typing, say ESC ? ^E, to get the full documentation
+on a particular command.
+
+     Apropos will also list all relevant extended commands, when listing
+commands whose names speak of a particular topic.  We cannot use ESC ?
+(Describe Key) to find out about extended commands, for it prompts for a
+single key, and tells about it.  If we typed "fillon" to ESC ?, it would read
+the "f", and tell us about "f" ("f" puts an f into the buffer, etc.), and put
+"illon" into our buffer.  So, there exists an extended command to retrieve
+documentation for extended commands: it is called "describe".  To find out
+about the "fillon" extended command, we type
+
+     ESC X describe fillon CR
+
+The command documentation will be shown as a local display.  We can find out
+about describe itself,
+
+     ESC x describe describe CR
+
+or about apropos
+
+     ESC X describe apropos CR
+
+if that is what we want to do.
+
+
+    We now know the three commands that constitute the core of the Emacs
+self-documentation and help system:
+
+     ESC ?	Describe Key.  Prompts for a one or two key sequence,
+		    and gives as local display the documentation for the
+		    command invoked by that key.
+
+     ESC X describe <command-name> CR
+		Gives as local display the documentation for the extended
+		   command whose name is given.
+
+     ESC X apropos <topic> CR
+	         Gives as local display a list of commands whose names
+	            contain the character string given as <topic>, and
+	            tells what keys invoke them, in the current buffer.
+		  Relevant extended commands are also listed.
+
+     The "<" and ">"'s in the above descriptions do not mean that you should
+type <'s and >'s.  They are being used as "pointy brackets".  That is to say,
+"<topic>" means any character string, being some topic you want help on.
+We use the "pointy brackets" so that you will not be misled into typing the
+character string "topic".
+
+     We have also learned of the "fillon" extended command:
+
+     ESC X fillon CR
+		Enters "fill" minor mode in the current buffer.  This
+		   causes overlength lines to be wrapped around and broken
+		   as they cross the "fill column". Ask the "describe"
+		   extended command to tell you more about fill mode.
+
+
+			  W__o_r_d C__o_m_m_a_n_d_s
+
+     Some of the most useful commands in Emacs are those which relate to
+words.  Even if we are typing computer programs or other non-English text
+material, the facility to move around word by word, delete words, etc., is a
+very useful one.
+
+     The word movement and deletion commands have a deliberate parallelism
+with the character movement and deletion commands:  ^F, ^B are Forward
+Character, Backward Character, and ESC F, ESC B are Forward Word, Backward
+Word.  Similarly, ^D and # are Delete Character and Rubout Character, while
+ESC D and ESC # are Delete Word and Rubout Word.
+
+     A "word" in Emacs consists of an unbroken string of upper and lower case
+alphabetics (a-z and A-Z), underscores and backspaces.  For instance,
+"new_payroll" is a word, "_b_e_g_i_n" is a word, "delete-char" is two words, and
+"segname$entry" is two words.  "March, I said." is three words.
+
+     The "Forward Word" command (ESC F) moves the cursor forward over one
+word.  If the cursor is currently on a character that is part of some word,
+the cursor will be moved to the first character after that word.   For
+instance, if the cursor is on the "e" of the word "Yes" in the fragment
+
+     "Yes, it is true," he said.
+
+and the Forward Word (ESC F) command is issued, the cursor will be left
+positioned on the comma after the word "Yes".  If the cursor is now on a
+character between two words (even if they are separated by many blank lines,
+or many lines full of punctuation, breaker bars, etc.), Forward Word will
+position the cursor to the first character after the _n_e_x_t word in the buffer.
+Thus, if the cursor is on the comma after the word "Yes" in the above example,
+and the Forward Word command is issued, the cursor will be moved to the space
+after the word "it".
+
+     Moving around by words is often the fastest way, or the most convenient
+way to move the cursor to where you want to go from where you are.  It is
+quite common to type ESC F ESC F ESC F etc. to move a word at a time, watching
+the cursor.  You might also judge "I want to go six words forward, roughly",
+and issue the key sequence
+
+     ESC 6 ESC F
+
+which is allowed, because Forward Word accepts a numeric argument as
+a repetition count.  However, doing ESC F's one at a time to move forward
+word-by-word is still an often-needed technique.  There are some problems in
+that technique, however, because any slip-up in typing
+
+     ESC F ESC F ESC F ESC F
+
+and you may have
+
+     ESC F ESC F ESC ESC F F ESC F
+
+or similar, which is not what you want.  (If, by the way, you fall into this
+trap, and ESC ESC gives you "Eval:", do a ^G to get out of it.)  Therefore,
+the command Re-execute Command (^C) is provided to make this and similar
+operations easier and less error-prone.   Typing a Control C re-executes the
+last editor keystroke command entered.  Thus, after typing ESC F to go forward
+a word, each typing of the single keystroke ^C will go forward another word.
+With good system response, this can be very effective.
+
+     To go backward by words, Backward Word (ESC B) is provided.  It is
+similar to Forward Word, and most other Emacs forward/backward motion
+commands.  If the cursor is on some character of a word, other than the first
+character, it will be moved to the first character of the word.  If on the
+first character of a word, or between words, Backward Word will move to the
+first character of the previous word (i.e., further back in the buffer).
+If we have the fragment
+
+     He said, "Come, let us reason together."
+
+and the cursor is on the "e" of "let", Backward Word would move it to the "l"
+of "let".  Successive Backward Word's would move it to the "C" of "Come",
+the "s" of "said", and the "H" of "He".  ^C (Re-execute Command) may be used to
+repeat Backward Word (or any other Emacs command) in the same way as we
+described for Forward Word.
+
+     Here is a good example of the interaction between Forward Word and
+Backward Word.  To put parentheses around the sobriquet "Tony" in
+
+     Anthony Tony Burns.
+
+assuming that the cursor is at the "." after "Burns", we type
+
+     ESC B ESC B
+
+to put the cursor at the "T" of "Tony. Then we type an open-parenthesis, which
+inserts itself at the cursor, leaving us with
+
+    Anthony (Tony Burns.
+
+and the cursor still on the "T" of "Tony", which has now moved over.
+Now ESC F puts the cursor on the space after "Tony", and typing the close
+parenthesis finally gives us
+
+     Anthony (Tony) Burns.
+
+with the cursor on the space after "(Tony)".  The total keystroke sequence
+was
+
+     ESC B ESC B ( ESC F )
+
+How easy.
+
+     Deleting words is perhaps the second most common editing operation (after
+deleting characters) when entering text.   Most often, we type a word, and
+decide that we did not want that word, or mistyped it sufficiently thoroughly
+that we wish to retype it entirely.  We wish to delete the last word we typed,
+which is to say (note the similarity to the use of #), the  word to the left of
+the cursor.  Parallel to #, ESC #, Rubout Word, is used for this purpose.  It
+deletes the word, or what is left of a word, if the cursor is in the middle of
+a word, to the left of the cursor.  Its action can best be described as though
+it were doing
+
+	^@	Set the Mark
+	ESC B	Backward Word
+	^W	Wipe Region
+
+That is to say, Rubout Word does a Backward Word, and removes all text between
+where the cursor winds up and where it started.  Successive Rubout Word's
+remove words farther and farther back.   Like all deleting commands (other
+than character deleting), Rubout Word participates in kill-merging, which is
+to say, that after one or any number of successive words have been removed by
+Rubout Word, a yank (^Y) will get them all back.  If successive words, and the
+punctuation and whitespace between them, are deleted by Rubout Word, a single
+Yank command will get back the whole deleted area, intact, punctuation,
+whitespace, and all, as it initially stood.  Rubout Word accepts a
+numeric argument as a repetition count, and, like all commands, can be
+repeated with ^C.
+
+     Note that when issued in the middle of a word, Rubout Word will delete
+that part of the word to the left of the cursor.  If immediately after a word,
+it will delete only the characters of the word.  At any other point, it will
+delete all characters between the cursor and the previous word, and that word.
+All these facts follow from the definition given above.
+
+     Forward word deletion may be performed by Delete Word, invoked by ESC D.
+It deletes the word, or part of a word, to the right of (including the
+character at) the cursor.  It deletes forward, from the point where the cursor
+is, to the point where Forward Word, ESC F, would go.   Successive ESC D's
+will participate in kill-merging, and delete text word-by-word, all capable of
+being retrieved in one Yank (^Y).  If issued with the cursor on the first
+character of a word, Delete Word will remove the entire word.  If issued in
+the middle of a word, Delete Word will remove all the characters from the one
+at the cursor up to and including the end of the word.  If issued between
+words, it deletes all whitespace and punctuation up until the next word, and
+the next word along with it.  Consider the sentence
+
+     We have not any melons today, Mrs. Johnson.
+
+with the cursor under the "r" of "Mrs.". To replace "melons" by "pears",
+we type
+
+     ESC B ESC B ESC B
+
+
+to put us on the "m" of "melons", and the ESC D, to delete the m, e, l, o, n,
+and s, leaving us with
+
+     We have not any  today, Mrs. Johnson.
+
+with the cursor on the second of two spaces between "any" and "today".  We
+then type the word "pears".
+
+     A unique set of capabilities is provided by three commands which control
+the "case" of words, i.e., lower case ("jack"), upper case ("JACK"), or
+"Capitalized Initial", ("Jack").   These three commands are:
+
+     ESC L	Lower Case Word
+     ESC U	Upper Case Word
+     ESC C	Capitalize Initial Word
+
+     Each of these commands may be issued with the cursor _o_n a word, that is,
+on any character of it, or _i_m_m_e_d_i_a_t_e_l_y _a_f_t_e_r a word to alter the case of that
+word.  For instance, suppose we had just typed
+
+     thomas
+
+with the cursor immediately after the "s" of "thomas".  To capitalize
+"thomas", we need only issue the two-key sequence ESC C, and we have
+
+     Thomas
+
+The cursor is always left immediately after the word whose case was
+transformed.  If we wish to capitalize several words, say
+
+     thomas alva edison
+
+we can move the cursor to any letter of the word "thomas", type ESC C, leaving
+us on the space after "Thomas", ^F to put us on "alva", ESC C, leaving us
+between "Alva" and "edison", and ^F and ESC C one last time, leaving us after
+"Edison".
+
+     The three word-case-altering commands all leave the cursor immediately
+after the word whose case is altered.  Since the character immediately after a
+word is a good place from which to issue a word-case-altering command,
+we can position the cursor immediately after the word "thomas", and
+type  ESC C ESC L ESC U ESC C ESC L etc., and watch Thomas, thomas, THOMAS,
+Thomas, thomas, etc., replace each other on the screen until we find the one
+we like.  A word-case-altering command may be issued from anywhere within  a
+word or immediately after it, but it will leave the cursor immediately after
+the word.
+
+     The word-case-altering commands deal with all the characters in a word,
+not just the first.  Thus, a word like "MaGicAl" can be converted to
+"Magical", "magical", or "MAGICAL" by use of these commands.  Thus, the
+word-case-altering commands can be used to fix typos caused by holding down a
+shift key too long.  For instance, in trying to type "Joralemon", we might
+type "JOralemon".  An easy job for ESC C, Capitalize Initial Word.  Issuing
+this command after we type the "n" gives us at once "Joralemon".
+
+     If a word-case-altering command is issued between two words, but _n_o_t
+_i_m_m_e_d_i_a_t_e_l_y after the first word, it will alter the case of, and move to the
+end of, the next word.  Thus, sequences of ESC C ^F ESC C ^F, etc., will
+capitalize successive words, regardless of how much punctuation or whitespace
+separates them.
+
+     Related to the word-case-altering commands are the underlining and
+underline-removing commands, ESC _ and ESC -. These commands are used to
+cause a word to be underlined, or to remove the underlining from an underlined
+word.  It is important to note that most current video terminals either do not
+have the ability to underline text at all, or can only do it in ways that are
+either very limited or not useful.  Therefore, underlined text in Emacs
+appears as
+
+     H\010__\010e_\010l_\010l_\010o
+
+where
+
+     H__e_l_l_o
+
+is wanted. The "\010"'s are backspaces; they are shown in this way because
+almost no video terminals can overprint characters, even among those that have
+limited underlining capability.  The text in the buffer, which will be written
+out to your file, actually contains the proper number and placement of
+backspaces: the "\010" representation is only the way they _a_p_p_e_a_r on the
+screen.
+
+     Typing in backspaces in order to underline words when talking to Multics
+is confusing, difficult, and error-prone enough when using a printing
+terminal:  the familiar sequence of "H e l l o backspace backspace backspace
+backspace backspace _ _ _ _ _" or worse is even less convenient on a video
+terminal that cannot overstrike.  
+
+     A word can be automatically underlined correctly by use of the Emacs
+Underline Word command, ESC _ (the two-key sequence, Escape Underscore.  Be
+careful to remember to use the shift key to get the underscore if, on your
+terminal, you would use the shift key any other time to get an underscore!) To
+use this command, position the cursor to any place within a word to be
+underlined, or immediately after, just as for the word-case-altering commands.
+ESC _ will then cause this word to be underlined correctly, and leave the
+cursor positioned immediately after it.  Just as with the word-case-altering
+commands, to type in a word and underline it, say "_b_e_g_i_n", we type the seven
+keys
+
+     b e g i n ESC _
+
+The fact that we issued the Underline Word command immediately to the right of
+a word (which we had just entered) causes that word to be underlined.
+
+     The command ESC - (Escape Minus-sign), Remove Underlining From Word,
+is used to take out underscores and backspaces (i.e., de-underline) a word
+that is underlined.  Like the word-case-altering commands and Underline Word,
+it may be issued with the cursor at any point within  the word of interest, or
+immediately after it.  Just as with the  word-case-altering commands,
+successive ESC _'s and ESC -'s will add and remove underlining from the same
+word, in alternation.
+
+      As with the word-case commands, to underline successive words,
+
+     ESC _ ^F ESC _ ^F ESC _ ^F
+
+will do the job.
+
+     A thoroughly unique ability of Multics Emacs is the ability to search for
+_w_o_r_d_s as opposed to _s_t_r_i_n_g_s, when required.  Suppose we had the sentence
+
+     Yes, I know, Miss Smith's theater
+     is the One for _m_e!
+
+Let us assume that the cursor was on a previous line, or in the word "Yes",
+and we wanted to find the word "is".  We could use String Search, ^S, and
+reply
+
+     i s ESC
+
+to the prompt
+
+     String Search:
+
+but this would get us to the "is" in "Miss", which is not what we want.
+We could search again, but there is a better way.  Use of the Word Search
+command, ^XW, will find a _w_o_r_d, not a part of a word.  If we had typed ^XW
+when trying to find the word "is", Emacs would have prompted:
+
+     Word Search:
+
+We then type the word, "is", as we would have for String Search, and a
+carraige return.
+
+     Word Search can find words regardless of capitalization or underlining.
+For instance, using Word Search to find the words "one" or "me" in the above
+sentence would find "One" and "_m_e".  
+
+     Word Search can also find _s_e_q_u_e_n_c_e_s of words, which is to say, several
+sequential words, separated by any amount of punctuation or whitespace.  If
+the cursor were far above the above fragment, in the document in which it
+appeared, we could find our fragment by answering ^XW's prompt,
+
+     Word Search: i know miss smith CR
+
+and the cursor will be left immediately after the "h" of "Smith", for the
+words:
+
+     I know, Miss Smith
+
+appear in sequence.  The comma between "know" and "Miss", as well as all
+spaces, and the capitalization of I, Miss, and Smith, are ignored by Word
+Search.  In fact, we could have searched:
+
+     Word Search: theater is the CR
+
+and the cursor would be left after the word "the", in the second line of the
+fragment.  The newline (carriage return) separating "theater" from "is" is
+simply whitespace, which is ignored by Word Search.  When we say that
+whitespace and punctuation is ignored by Word Search, we do not mean that
+having whitespace or punctuation  is the same as not having _a_n_y: what _i_s meant
+is that any amount of whitespace or punctuation will be treated the same, as
+separating one word from the next.  Thus,
+
+     ^XW jack knife CR
+
+will find
+
+     jack knife
+     Jack, knife
+     J__a_c_k... "KNIFE!!"
+
+but not
+
+     jackknife
+
+which is one word, not two.
+
+     Word Search can also help searching by searching for words that start
+with a given string.  This is useful for searching for long word.  To indicate
+that a word-prefix is being searched for, we type the first letters of the
+word followed by an asterisk, for example,
+
+    anted*
+
+to search for "antediluvian"  We can use an abbreviated word in this way as
+part of a word-sequence being searched for, for example,
+
+     ^XW the anted* era CR
+
+to search for 
+
+     T__h_e "A__n_t_e_d_i_l_u_v_i_a_n" E__r_a
+
+     Word Search is clearly an extremely powerful and useful command.  Like
+most other Emacs search commands, typing simply carriage return to its prompt,
+i.e., a null, or empty search string, re-uses the last search string.  Word
+Search searches from the current point in the buffer (where the cursor is) to
+the end of the buffer, indicating the usual
+
+     Search Fails.
+
+with its characteristic beep if the word or words being searched for could not
+be found.  There is no reverse word search; however, Word Search with an
+argument, for example
+
+     ESC 1 ^XW
+
+will search from the beginning of the buffer to the end.  A word of caution,
+however.   Because Word Search is such a powerful command that checks for so
+many different occurences, it can be slow, especially on a large file, and on
+a slow system.   Searching from the beginning of a file will almost always
+make it slower, taking a long time.  In general, the ordinary String Search
+(^S) should be used for best response if you can tell (as with other editors)
+what exact characters you are looking for; use word search when you do not
+know what characters you are looking for, but you do know what words.
+
+     Perhaps the best example of a use for Word Search is the editing of an
+input segment to a text justifier, like compose or runoff, when you have a
+hard-copy of the output (.compout or .runoff) segment before you.  You can
+use Word Search to search for a group of words that you see in the output
+segment:  they will be found in the input segment, even if compose or runoff
+inserted or deleted many spaces or moved them around on different lines when
+filling or justifying text.
+
+     We now summarize the various commands for manipulating words:
+
+ Word Motion of cursor:
+
+     ESC F	Move forward a word, to the end of the current word, or
+		 (if now at the end of a word or between words) to the end
+		 of the next word.
+
+     ESC B	Move backward a word, to the beginning of the current
+		 word, or (if now at the beginning of a word or between
+		 words) to the beginning of the previous word.
+
+Deleting words and parts of words:
+
+     ESC D	Delete forward from the cursor to the end of a word.  If
+		 between words, this will delete the word to the right of
+		 the cursor.
+		
+     ESC #	Delete backward from the cursor to the beginning of a
+		 word.  If between words, this will delete the word to the
+		 left of the cursor.
+
+Changing qualities of words:
+     These commands apply to the word in which the cursor appears,
+     or the word which IMMEDIATELY preceds the cursor:
+
+     ESC U	Convert the word to all UPPERCASE.
+
+     ESC L	CONVERT THE WORD TO ALL lowercase.
+
+     ESC C	lowercase the word, and then give it
+		 An Initial Capital Letter.
+
+     ESC _	U__n_d_e_r_l_i_n_e the word.
+
+     ESC -	De-underline _t_h_e _w_o_r_d.
+
+Searching for words or groups of words:
+
+     ^XW		Word Search.  Search forward for the word or sequence of
+		words in the search string.  The search string is ended by
+		the ESC character.
+
+------------------------------------------------------------
+============================================================
+Further Sections that should be written:
+
+     Indentation and whitespace commands:
+      ESC M, ESC I, ^O, ESC ^O, ^X^O, ^M action, ESC \, ESC ^.
+      Fill prefix, fill mode. ESC Q, ESC ^I
+
+     Text movers: ESC W, ESC ^W, ^XX, ^XG.
+      Buffersmen: ^XH, ^XI, ^XK.
+ 
+     2-window mode, ^X1 ^X2 ^X3 ^XO, ESC ^V.
+
+     Sentences and Paragraphs:
+      ESC A, ESC E, ESC K, ^X#. ESC [, ESC ], ESC H.
+
+     Keyboard Macros, ^X(, ^X), ^X*, ^XE, ^XQ, save-macro.
+
+     Miscellany: ^U, ^U^U, @, Comout (^X^E), \, ESC ^Y, Regexp
+      and global searches.  Dired, Rmail. accept-msgs.
+
+     Utter random miscellany: ^X^M, ^X^R, ^X^L, ^X^U, ^X ESC.
+      ESC ^F, ESC ^B.
+      make-wall-chart. set-screen-size. opt. "Hairy" searches.
+
+     Printing terminal usage. ^XV.
+------------------------------------------------------------
+============================================================
+
+     This document is not finished.  It may never be finished, because as fast
+as I can describe Emacs, it keeps growing.  Please look through emacs.info for
+whatever looks like it might interest you.  Look through fundamental-mode.info
+for any commands that look interesting.  Try them and see what they do.
+Make use of the builtin help facility, apropos, describe, and ESC ?.
+Dprint and look at any of the info segments you think may interest you; there
+is a complete list of available info segments 
+in emacs.info in >doc>subsystem>emacs.
+
+			-Bernard S. Greenberg
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

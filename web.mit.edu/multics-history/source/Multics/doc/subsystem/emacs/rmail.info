@@ -1,0 +1,266 @@
+10/19/80 RMAIL- Emacs mail reading/sending subsytem
+
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+     The Emacs mail system provides a facility for reading, sending, and
+responding to Multics mail within Emacs, utilizing the standard Emacs features
+and the interfaces of the Multics mail system.  Known deficiencies/misfeatures
+will be detailed below.  RMAIL is modeled after ITS RMAIL.
+
+     ------------------------------ ------------------------------
+
+     There are two basic functions, sending mail and reading mail.  The Emacs
+command for sending mail is
+
+	^XM	send-mail
+
+Issuing this command will prompt for a "Subject", which should be supplied,
+terminated by a carriage return.  This subject will be incorporated into the
+buffer name, so it should be short.  A buffer will be formatted up with the
+mail in it, header prefabricated.  The buffer will be placed  in an available
+window (like ^X^E (comout) does).  Fill mode will be turned on with a fill
+column of 72.  The buffer is now in MAIL mode, which defines the following
+commands:
+
+    ^XA	mail-append.  Go to the end of the body of the mail. Use this to
+	start inputting the text after you have set the destination, or
+	to go back to the text after editing some header field.
+
+    ^XT   mail-to.  Go to the end of the "To:" line, to add a recipient.
+	You will be left here when the MAIL buffer is entered, to enter
+	the first recipient.  Then use ^XA to continue. Separate
+	recipients (like all header fields) with commas, i.e.,
+
+	To:	Washington.States, Consultant.c
+
+    ^XF   mail-from. Go to the end of the "From:" line, to edit it, or
+	add more sender's names.
+
+    ^XJ   mail-subject.  Go to the end of the "Subject:" line, to edit it.
+
+    ^XC   mail-cc. Go to the end of the "Cc:" (carbon copy recipients)
+	line, making one if there is none, so that you can type in the
+	destination of a carbon copy recipient.
+
+    ^XY   mail-reply-to. Generate a "Reply-To" field, if none exists,
+	and go to it.  The destination put here will be used for replies
+	if a recipient of your mail uses RMAIL (or another mail system) to
+	automatically reply to your message.
+
+    ^X^S  send-the-mail.  Send the buffer to the recipients specified in the
+	header.  The relative success of the sendings will be displayed as
+	local output (2 linefeeds to restore display).
+
+    ESC-^F forward-mail-field.  Move forward one recipient, cc recipient, etc.
+	 on this (header) line.  Circles around at end.
+
+    ESC-^B backward-mail-field.  Move backward one recipient, cc recipient,
+	 etc. on this (header) line. Circles around at end.
+
+    ESC-^D delete-mail-field.  Delete, including necessary commas, the
+	 single header item (recipient, etc.) that the cursor is on.
+
+    ^XL   rmail-logger-append.  Log the message into a file, placing it at
+	the end, separated by a formfeed. With an argument, or the first
+	time, the pathname of the log file is prompted for.  Otherwise,
+	the same file last used by ^XL or ^XP is used.
+
+    ^XP   rmail-logger-append.  Same as ^XL, but puts message at the front
+	of the file.
+
+     Three forms of recipient (or cc recipient) destinations are accepted:
+
+	Jones.States		(standard Multics person.project)
+	Jones			(link mailbox in Daemon mailbox dir)
+	Mxyptlk at KRYPTON-KL10	(ARPANET address, PERSON at SITE)
+
+     Parenthetical comments in destinations are ignored, thus:
+
+	Muhammad (I am the Greatest) Ali at (the) WBA
+
+gets set to "Muhammad Ali" at Site WBA, as per RFC 733. Quote processing
+is done, too, and a field between <> brackets makes all outside it
+(in a given address) a comment (as per RFC 733, which is visible
+on Multics as mail_format.gi.info).
+
+     Net mail sending is done via the Network Mailer Daemon; net connect
+access is NOT required; you should be prepared for an acknowledgement message
+from the Mailer Daemon.
+
+     Your name will be given as
+
+	From:	Destructo.CHAOS
+
+or, if this site is on the ARPANET
+
+	From:	Destructo.CHAOS  at RANDUM-MULTIX
+
+If RMAIL knows your real name, you will get
+
+	From:	Myron P. Destructo <Destructo.CHAOS at RANDUM-MULTIX>
+
+RMAIL knows your name if either your site Emacs expert has placed it in the
+"rmail-full-name-table" in the "emacs environment directory" (see him or her
+about this) or if you have a form setting "my-personal-name" in your startup,
+e.g.,
+
+	(setq my-personal-name "Myron P. Destructo")
+
+     If the Lisp variable "mail-mode-hook" is bound by the user, the atomic
+symbol to which it is bound will be called as a function with no arguments
+whenever a mail-mode buffer is created.  This be used to set mail-mode key
+bindings.
+
+     ------------------------------ ------------------------------
+
+     Mail reading is performed via the command
+
+	^XR	rmail
+
+By default, mail is read in your personal default mailbox,
+>udd>your-project>you>you.mbx.  If ^XR is given an argument, e.g., ^U^XR, the
+"mailbox name" is prompted for.  This may take any of the forms
+
+	Person.Project
+	<pathname>	(with or without ".mbx" suffix)
+	Person		(if a link to Person.mbx exists in the ARPANET
+			 mailbox link directory)
+
+If you have no mail in the selected mailbox, a message will be issued to this
+effect.  Otherwise, the first message in the mailbox will be displayed in a
+buffer, in RMAIL mode.  This buffer is read-only;  the following extra
+commands (all normal commands are here too) apply in RMAIL mode:  NB:  these
+are mostly NOT control characters, but regular characters!:  (note also
+that numeric araguments may be typed directly, e.g., 3 g to go
+to message 3, without ESC or ^U):
+
+
+   n	Move on to the next message.
+   p	Move back to the previous message.
+   l	Move to the last message in your mailbox.
+   g	Move to message number (argument), i.e.,
+	3 g  to go to message # 3.
+   j      Same as g.
+   d	Delete (i.e., queue for deletion when rmail is exited)
+	this message, move on to next undeleted message.
+   D	Same as d, but moves backward.
+   u	Undelete the last (stacked) deleted message.
+   c      Copy the message to some other mailbox.  A mailbox name will
+	be prompted for; anything acceptable to ^XR (as above) is ok.
+   q	Quit out of rmail, returning to buffer from which
+	rmail was invoked, deleting all messages marked for
+	deletion.
+   s	Summarize (as local output) all undeleted messages.
+	May take a little time for full mailboxes.
+   ^XL    Log the message to an ASCII file, at the end of the file.
+	See the description above under the mail-sending commands.
+   ^XP    Same as ^XL, but "prepends" to the front.  See the description
+	above under mail-sending commands.
+
+   m      Send mail, not necessarily a reply (see r).  Indentical to
+	^XM, send-mail, but ESC-^Y, ^X^Q and ^X^S are defined as below
+	for the r command, for convenience while RMAIL'ing.
+
+   r      Reply to sender, via MAIL mode.  Formats up a MAIL mode buffer to
+	reply to the current message, copying the subject (if any), or
+	making one up, and setting up as a destination the sender's address
+	that he/she would like to be responded to at. With a numeric
+	argument, i.e, 1r, responds to other recipients as well:
+	we do not do so by default.  This command is EXTREMELY effective
+	in 2-window mode, in which case the response will be put in the
+	other window, and ESC-^V (page-other-window) may be used to "page"
+	the letter you are responding to as you respond.  When in RMAIL
+	reply mode, (variant of MAIL mode set up for this purpose), the
+	following three ADDITIONAL commands apply, other than the normal MAIL
+	mode commands and the standard Emacs commands:
+
+             ESC-^Y rmail-yank-mail
+
+		Yanks the text and header of the original piece of
+		mail being responded to, indented, by default, by
+		4 (opt rmail-original-yank-indent controls this number).
+
+	   ^X^Q	return-to-rmail
+
+		returns to RMAIL, and its window  without sending the
+		message.
+
+	   ^X^S	send-from-rmail
+
+		Actually sends the reply, and returns to RMAIL and its
+		window.
+
+
+
+
+     It is important to quit (q) out of RMAIL before leaving Emacs;  Messages
+do not actually get deleted unless you quit out of RMAIL (or, equivalently,
+answer "yes" to "All messages deleted.  Quit RMAIL?").
+
+     If the Lisp variable "rmail-mode-hook" is bound by the user,
+the atomic symbol to which it is bound will be called as a function with
+no arguments before the first message is displayed.  This can
+be used to set RMAIL-mode key bindings.
+
+     ------------------------------ ------------------------------
+People who receive a lot of mail from a lot of people and or
+ARPAnet sites may want to set the variable "rmail-names-for-me"
+in their startup.  This variable is set to a list of valid
+addresses which should NOT be included among recipients of any
+piece of mail generated by rmail-reply with an argument.
+This is to prevent sending yourself mail.  Project names of
+"*" as well as host names of "*" are permitted.
+
+  Example:
+    (setq rmail-names-for-me
+    	'("bsg.*" "Greenberg.*" "BSG1.*" "Greenb1 @ Foo-Unix"
+		"BSG @ *"))
+
+By default, rmail-reply will suppress responding the the same
+name as would be put in the From field by send-mail (^XM).
+----------------------------------------------------------------------
+     Current lossages, deficiencies, and unimplementeds (3/17/79)
+
+1. We don't send mail acknowledgements.
+
+2. We currently have no facility for forwarding mail.
+
+				(END)
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

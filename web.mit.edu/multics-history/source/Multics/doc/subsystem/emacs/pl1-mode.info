@@ -1,0 +1,142 @@
+4/11/79 - Multics Emacs PL/I mode
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+PL/I mode provides an automatic assistance in PL/I progam formatting in the
+real-time editing context of Multics EMACS.  The basic facility provided at
+this time is that of lining up untyped PL/I statements, although on a
+one-for-one basis it will line up typed ones, too.
+
+   Enter PL/I mode by issueing ESC-Xpl1-mode.  It will take a couple of
+seconds to "load itself".  When in PL/I mode, which shows up on the Mode line
+as "PL/I" as a major mode, the following non-default key bindings apply:
+
+            TAB (^I)    Indent this PL/I statement properly (if not yet
+		    typed in, tab out to it; otherwise, readjust its
+		    indentation properly).
+            ESC-CR (ESC-^M)   Like CR and TAB.
+	  ESC-^C Compile buffer. Write this buffer to its default pathname
+		and compile it, using the compiler "pl1" and assuming
+		"-tb" for options. These may be changed with the
+		extended commands set-compiler and set-compile-options.
+		Highly effective in two-window mode.
+		(See fortran-mode.info for more on this).
+	  ESC-^D      Try to find a declaration for the entry-point whose
+		    name is to the left of the cursor, and insert it.
+		    There exists a library of such.
+		    If the declaration is not in the library,
+		    ESC-^D will attempt to figure it out from inbound
+		    parameter descriptors in  an object segment
+		    responding to that name.
+		    error_table_$xxx can be declared by ESC-^D, too.
+	  ESC-^H (ESC-Backspace) Delete 5 columns of indentation.
+                    Intended for undenting END's.
+	  ESC-^I (ESC-TAB) Add 5 columns of indentation.
+	          Intended for asserting your own style.
+	  ^X^D   (Control X-Control D) Find next error. When used after
+		an ESC-^C, will search for errors and place the cursor
+		on them in the source.  Highly effective in two window
+		mode.  See fortran-mode.info for more information on
+		the compilation error facility.
+	  ^XC    (Control X-C) Start or end a comment. Text following
+		this will be set off as a comment. A second ^XC ends
+		the comment.
+
+	  All the standard commentation commands (ESC-;, etc.) do the PL/I
+	  thing.  Word commands (ESC-F, etc.) in PL/I mode buffers consider
+	  the dollar sign to be part of a word.
+
+     The indentation rules which are followed are such:
+
+           Any fragment of an incomplete statement gets lined up 5 after the
+start of that statement.  The statement after a DO or BEGIN gets indented 5
+times one less than the number of IF's in the DO or BEGIN.  In "inding style
+2", the statement after an END gets lined up 5 LESS than the END statement;
+the first statement in a program gets lined up at col.  11 (Multics
+reckoning).  OTHERWISE, each statement lines up with the previous one.
+
+    There are two styles available; the default is 1, you can get 2 by saying
+      ESC-Xopt pl1-inding-style 2 CR
+
+(i.e., it is managed by the EMACS option mechanism).
+
+ In style 1, you get;
+
+      if x = 6 then do;
+            bar = 5;
+            foo = 6;
+      end;
+
+In style 1, you are expected to line the END up yourself (use ESC-^H) because
+it is impossible in realtime to predict that an untyped statement is going to
+be an END.  You must undent the end yourself, because the next statement will
+line up with it.
+
+  In style 2 you get
+
+      if x = 6 then do;
+          bar = 5;
+          foo = 4;
+          end;
+     next = 17;
+
+Obviously, emacs is happier with this, because it can figure out the next
+statement after the END once you have typed it.
+
+    There are no known bugs in the mode's PL/I parsing:  it pretentiously
+claims to be able to parse any legal PL/I statement, with the following
+exception:  Multi-dimensional label constants not supported (not a big
+problem, multics PL/I doesnt support them either).
+
+    There is also a minor mode called "electric PL/I mode", which can be
+obtained by ESC-Xelectric-modeCR once in PL/I mode, or ESC-X electric-pl1-mode
+CR.  To get it by default as your mode for PL/I programs, put the statement
+
+	(defprop pl1 electric-pl1-mode suffix-mode)
+
+in your start_up.emacs.  Some users have found electric PL/I mode overly
+violent, so it remains an option.  It connects semicolon to a function which
+automatically indents for the next statement after inserting a semicolon;  use
+\;  to get a semi in without the electric action.  Also, this action is
+suppressed if there is a next line, and it is not empty.  The "electric
+semicolon" also moves "end"'s back for you (in inding-style 1), when you type
+the ";" of the "end" statement.  (Be careful to "\" ;'s in strings, there are
+problems there).  Electric PL/I mode also gives ":" electric action, i.e.,
+indenting after labels.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

@@ -1,0 +1,252 @@
+04/23/81 - List of known bugs and deficiencies in Multics Emacs.
+See the end of the file for explanations of categories and markings.
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+Bugs:
+ #   Date    Sev Difficulty   Description
+	    |  |
+05/79:
+049*79.05.29  7  3  F: ESC-E, ESC-] can hang at end of buffer.
+
+04/79:
+048*79.04.03  6  2  F: ESC-Y not after ^Y irretrievably wipes text.
+
+
+03/79:
+047*79.03.23  9  8  T: Bad echo negotiation bugs exist.
+046 79.03.18  3  6  M: No forwarding facility.
+045 79.03.17  3  3  D: Fortran mode doc still not in vfile.
+044*79.03.03  3  5  F: Lisp errors not caught/minibuffered.
+
+
+02/79:
+043*79.02.08  6  3  R: ^V and ESC-V ought beep at buffer limits.
+042*79.02.08  7  4  M: Too many d's make RMAIL fault. (can't duplicate)
+041*79.02.07  8  7  R: set-screen-size can leave bad lines on screen.
+040 79.02.06  6  9  R: ESC-< ^V redisp opt. causes obscure results.
+039*79.02.06  7  7  M: Messages swallowed by emacs if QUIT hit (accept-msgs).
+038*79.02.06  7  4  M: Mail not deallocated if rmail not quit cleanly.
+037 79.02.06  6  3  F: runoff-fill-region is mark-position-sensitive.
+036*79.02.06  4  2  F: "Modified" is issued for empty buffers.
+
+
+01/79:
+035 79.01.29  4  4  PL1: Subscripted labels sometimes indent badly.
+034 79.01.22  4  7  D: I/O attachment of info vfile left attached.
+033*79.01.22  5  5  M: Reply-to is not supported.
+032*79.01.22  2  7  F: Knight-TV meta numbers don't work.
+031*79.01.21  9  1  M: text of messages gets pushed on kill-ring.
+030*79.01.21  9  1  D: documentation pushed on kill-ring before display.
+029*79.01.17  9  9  F: fundamental-mode ex. comm. doesn't revert bindings well.
+028 79.01.12  5  3	T: Inverse video fields not cleared on VIP7800.
+
+
+12/78:
+027*78.12.27  6  1	M: ^X^S moves cursor.
+026*78.12.27  9  1	D: ^X2, ^X3, ^XF documentation is obsolete.
+025*78.12.15  8  7	R: If last line in top window is overlength, it is
+		mis-displayed when two-window mode exited.
+
+
+11/78:
+024*78.11.21  2  1	F: ESC-^Y doesn't set the mark.
+023*78.11.09  4  2	F: "Search fails." message overwrites search string.
+022 78.11.08  4  6	L: Unbalanced constructs leave cursor in random places.
+
+
+10/78:
+021 78.10.27  5  6	CI: "emacs -mc a b" reads file b, etc.
+020*78.10.20  3  5	F: Negative arguments are not supported.
+019 78.10.06  4  8	R: Initial redisplay done even if input pending.
+018*78.10.04  7  9	R: idel-chars not used in overlength lines.
+
+
+09/78:
+017*78.09.25  9  9	F: ^Q does not work in macros.
+016 78.09.22  5  8	F: ^X^O deletes formfeeds.
+015*78.09.22  3 10	R: ESC-99 ESC-R moves screen if last line too long.
+014*78.09.15  8  8	R: minibuffer prompts are editable, should not be.
+013 78.09.13  6  5	F: speedtype abbrevs > 4 chars fail.
+012*78.09.12  6  5	PL1: private auto-dcl files exist, should be merged.
+011 78.09.12  6 10	PL1: auto-dcl does not use the search facility.
+010*78.09.05  9  5	F: comout does not trap Multics errors properly.
+009 78.09.05  7  4	F: ^G beeps before all redisplays are done.
+008*78.09.05  8  4	L: Local displays sometimes damage two-window mode.
+007 78.09.01  5  4	R: Deleting end of buffer leaves screen blank.
+
+
+08/78:
+006*78.08.29  3  1	CI: Unread input is saved across emacs invocations.NOT SO.
+005 78.08.28  9  5	PL1: Tab and semicolon in quoted strings leaves the
+		cursor in a random place.
+004 78.08.28  1  3	R: Trailing whitespace (ac tb) gets printed.
+003 78.08.28  4  3	F: De-underlining consecutive underlined words loses.
+002*78.08.25  2  4	R: Random whitespace is sometimes printed in mid-line.
+001*78.08.23  5  1	CI: emacs does not recognize some TTT tty names.
+
+
+Suggestions: 
+
+030 79.05.29  3  4  F: Deconfuse loadlib/loadfile, use search rules, etc.
+029*79.03.31  3  2  F: "new-line" should not eat last blank line.
+028*79.03.03  3  5  F: End all prompts with CR, no more ESC.
+
+
+02/79:
+027*79.02.06  8  8  R: ^V/ESC-V with arguments to repeat redisplay-free.
+026 79.02.06  8 10  F: Fill paragraph by paragraph (etc.) text.
+025 79.02.06  4  8  F: Recursive editors in ^XQ/hairy searches, etc.
+
+
+01/79:
+024*79.01.26  4  5  F: Query-replace command, builtin (not macro).
+023 79.01.18  5  3  F: Explicit kill-ring-pop, or yank-and-pop command.
+022 79.01.18  8  4  F: An insert-other-buffer-here command.
+021*79.01.18  9  1  D: ESC-X help ought do something useful.
+020 79.01.17  3  1  PL1: electric colon should not electrify in mid-program.
+		(should check for next line end/empty)
+019*79.01.05  9  1  D: apropos should diagnose or accept multiple args.
+018 79.01.03  9  1  R: set-screen-size ought default full for no arg.
+
+
+12/78:
+017*78.12.27  6  9  F: ^C of a ^S or ^R (etc.) should re-search same string.
+016 78.12.27  7  9  F: Comout should deal with commands that ro/co internally.
+015*78.12.26  8 10  M: Rmail save/log requests.
+014*78.12.26  8  9  M: Rmail to read other-than-your-own mailboxes.
+013*78.12.26  7  9  M: Rmail should reply to recipients.
+
+
+11/78:
+012 78.11.28  3 10  M: Handle memos and progress as emacs interrupts.
+011 78.11.28  2 10  F: Expand active functions in file-name prompts.
+010 78.11.28  3  9  F: Expand abbrevs in file-name prompts.
+009*78.11.09  4  2  F: Leave search string visible when search fails.
+
+
+10/78:
+008*78.10.06  3  3  F: ^@ should respond visibly.
+
+
+08/78:
+007 78.08.30  3  4  F: Substitute globally <n> times, n given.
+006 78.08.25  2  1  F: Comout that uses different strategies for different
+		amounts of output (LEJ has such).
+005 78.08.23  2  2  R: ^XV should "integrate" output with following redisp.
+004 78.08.22  1  5  R: Visible "End of Buffer" marker on screen.
+003 78.08.22  4  5  R: ^XV that prints .-n,.+n (before and after cursor).
+002 78.08.22  1  2  F: Global substitute command showing changed lines.
+001 78.08.22  2  2  R: ^XV should delimit its printed output with "---".
+
+
+Major Projects:
+
+012 79.02.06  5 20  F: COBOL mode.  Problem is nobody knows what it
+		should do.
+011 79.02.05  5 30  F: Have a "tags" (multi-language label-cataloguing)
+		package.  No particular problem, just work.
+010 79.01.02  6 30  F: Have a completing reader.  Problem is large amount
+		of engineering and implementation work, and prerequisite
+		of MP 009.
+009 79.01.02  8 20  F: Organized cataloguing and argument checking on
+		extended commands.  Problem is design.
+008 78.12.19  7 35  R: Support underlining on "field-type" video TTY's.
+		Same problems as Major Project 007.
+
+007 78.12.19  8 28  R: Support overstriking on printing, TV, and other
+		^H-recognizing terminals.  Problem is overhaul of
+		redisplay data and control structure, specif. detabbify.
+006 78.11.28  9 50  F: Keep buffers in non-PDIR place, optionally, for 
+		safety".  Problem is Lisp representation of buffers.
+005 78.09.21  9 25  F: Start_up files in some non-Lisp ASCII format.  Problem
+		is designing and implementing a robust reader/evaluator
+		that gives credible diagnostics.
+004 78.09.21  8 20  F: Redesign/reimplement option mechanism.  Problems are
+		lack of info on options in autoload files not yet loaded,
+		and concomitant lack of error checking.
+
+003 78.09.13  6 15  F: Speedtype improvements.  Problem is lack of save/edit
+		ability, bugs in hashing algorithm, integration with native
+		Multics Speedtype.
+002 78.08.30  8 25  R: Synchronize with or abort output.  Problem is too much
+		typeout, waiting for unwanted redisplays.  Difficulties
+		are needed MCS features, and inconsistent partial screens.
+001 78.08.23  8 30  R: Substantially improve printing terminal redisplay.
+		Largest problems are middle-of-line edits, asynchrony
+		in deciding what to print, too much typeout.
+
+
+Other tasks:
+001*79.02.06  8  9  CI: Install new Lisp; update macros to use unwind-protect.
+		Problems are paperwork, exposure.
+002 79.02.06 10 30  D: Finish user documentation (emacs_tutorial.info).
+003*79.02.06  4  2  Update Emacs on CISL, incl. vfile.
+004*79.02.06  2  5  Support ADDS980 terminal in Arizona.
+005*79.02.06  9  2  Upgrade to MCS echo negotiation.  (Yet to debug new
+		interrupt synchronization under mcs_echo_neg as well).
+
+
+Explanations of categories and markings:
+
+* indicates that the bug has been fixed.
+Bug categories are:  F - fundamental emacs; CI - command interface;
+R - redisplay; PL1 - PL/1 mode; L - Lisp mode; M - Mail/message subsystems;
+D - Documentation/auto-doc; T - terminal/network support.
+
+
+Definitions:
+
+A "bug" is a user-visible deficiency causing unexpected results, loss of
+display or data, or useless output or display, or action at variance with the
+documentation.  Severity and estimated difficulty are rated on a scale of 1 to
+10.  10 is the most urgent and hardest.
+
+A suggestion is a suggested design augmentation or modification that is open
+to debate about relative merit;  it is not a bug fix.  Suggestions do not
+include missing isolatable sub-subsystems.  Suggestions requiring major
+redesign or new implementation are listed under "Major projects", and do not
+qualify as suggestions.
+
+A major project is a design/implementation enhancement involving substantial
+redesign and reimplementation, or the implementation of an entirely new
+subsystem within Emacs.
+
+(END)
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

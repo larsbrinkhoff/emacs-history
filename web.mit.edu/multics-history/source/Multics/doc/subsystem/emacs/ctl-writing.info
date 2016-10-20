@@ -1,0 +1,373 @@
+06/25/79  - Writing Emacs Terminal Control Modules ("CTL"s)
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command**
+
+
+
+
+
+     Support of video (and printing) terminals in Emacs is accomplished
+via terminal-dependent modules known as "CTL"s (from the typical name,
+e.g., "super58.ctl" for a "super58" terminal).   There are about two
+dozen supplied CTLs.  They are kept in the directory >unb
+Emacs will attempt to locate an appropriate CTL in this directory at the
+time Emacs is entered; the decision as to which CTL will be made based
+upon the terminal type maintained by Multics, and optional Emacs control
+arguments.
+
+     To support a type of terminal not supported by a supplied CTL, it is
+necessary to write a new CTL.  A CTL is written as a Lisp source program,
+name TTYTYPE.ctl.lisp, TTYTYPE being the name of the terminal type which
+will be supported.  If this terminal type is in your site's TTF (Terminal
+Type File), the name chosen should appear the same as appears in the TTF,
+except that the name of the CTL should be all lower case (Emacs will lower-case
+terminal types when looking for CTLs).  
+
+     CTLs are usually written by example from supplied CTLs.  Personnel
+with no knowledge of Lisp at all have achieved this successfully.  A
+relevant introduction to Lisp may be found in extensions.info in the Emacs
+documentation directory.  Once the CTL is written, it must be compiled
+before it can be used.  Compilation is performed via the Lisp compiler, lcp,
+which is kept in >unb.  A typical command line to compile
+a CTL might be
+
+	lcp super58.ctl
+
+This will produce an object segment, super58ctl, which, when debugged, can be
+installed in the system library.  To use a CTL being debugged, invoke
+emacs with the "-ttp" control argument and the full pathname of the
+_c_o_m_p_i_l_e_d CTL:
+
+	emacs -ttp >udd>Support>Jones>emacs_development>super58.ctl
+
+See emacs.info in the Emacs Documentation directory for the valid
+control arguments for managing terminal types.
+
+	    **************************************************
+
+
+     The most effective method of writing a new CTL is to take one that
+was written for a similar terminal and modify it.  Almost all of the extant
+CTLs were written in this way.  The source for all supplied CTLs is kept
+in >>ldd>unb>s>bound_emacs_ctls_.s.archive.  The sources are Lisp source
+segments, generally one or two printed pages long.    Good starting points are
+
+   o vip7200.ctl.lisp, typical of terminals that do not have the ability
+     to insert or delete lines or characters.
+
+   o vip7800.ctl.lisp, typical of terminals that do have these abilities.
+     The two facilities are independent, either one, both, or neither
+     may be present, although use of terminals without insert/delete
+     lines at less than 300 baud may be found to be unacceptable.
+
+     The interfaces (function definitions) in a CTL are standardized.  They
+have the same names in all CTLs.  The Emacs screen manager will call these
+interfaces anonymously after the appropriate CTL has been loaded.  The
+interface DCTL-init is called at Emacs start up time; it has the responsibility
+of setting various flags, and initializing the terminal.  It should
+contain the statements
+
+ (setq idel-lines-availablep t)    if the terminal can insert/delete lines
+ (setq idel-lines-availablep nil)  if it cannot
+ (setq idel-chars-availablep t)    if the terminal can insert/delete characters
+ (setq idel-chars-availablep nil)  if it cannot
+ (setq screenheight N.)            Where N is the number of LINES on the screen
+			     (note the dot after the N).
+ (setq screenlinelen M.)	     Where M is _o_n_e _l_e_s_s than_ the number
+			     of characters in a line on this terminal.
+			     Again, note the dot.
+ (setq tty-type 'TYPENAME)	     Where TYPENAME is a word like "super58"
+			     that identifies the terminal type.
+
+     At the time DCTL-init is invoked, the variable "ospeed" is set to the
+speed of the communications line in _c_h_a_r_a_c_t_e_r_s _p_e_r _s_e_c_o_n_d.
+This may be used to perform padding calculations.
+
+     Also before DCTL-init is invoked, the variable "given-tty-type" is set to
+the name by which the CTL was loaded with the ".ctl" suffix stripped.  This
+variable can be used in DCTL-init (and elsewhere) to enable and use different
+features of a terminal dependent on the name used to reference that terminal.
+
+     The following functions are available to the CTL writer:
+
+	o Rtyo takes one argument, a number (fixnum), and outputs
+	  that number as ASCII data. For instance, (Rtyo 141) will
+	  output an "a", and (Rtyo 33) will output an ESC.
+
+	o Rprinc takes one argument, a character string, and outputs
+	  it.  For instance, (Rprinc "]I") outputs a right bracket and
+	  an I.
+
+Both of these functions buffer their output until the Emacs screen manager
+deems it appropriate to dump this buffer.  This will always be done at
+the end of any redisplay at all, and after DCTL-init is called.
+
+     The CTL writer must maintain the values of the special (global) variables
+X and Y as the zero-originned screen position where the cursor was left.
+In return, he or she gets to inspect these variables to do positioning
+optimization.
+
+     The CTL writer must provide the following interfaces to be called by
+the Emacs screen manager:
+
+     o DCTL-init  - (of no arguments) - Must set the flags listed above,
+       initialize the terminal (if necessary), clear the terminal screen,
+       and leave the cursor at position (0, 0) (home).
+
+     o DCTL-position-cursor - (of two arguments, a new X position and
+       a new Y position) - Move the terminal's cursor to the given
+       position, if not there already. Position 0, 0 is defined as the
+       upper left hand corner of the screen.  This function must check
+       the variables X and Y, and output no characters if the cursor is
+       known to already be at the desired position.  Otherwise, it must
+       use the values of X and Y to determine what type of motion is necessary,
+       output characters to move the cursor, and update X and Y to the input
+       parameters (the delay of the buffered output is not an issue).
+
+       Typically, DCTL-position-cursor will determine which is the optimal
+       movement based upon the relative positions of the cursor and the desired
+       position.  For terminals that have many forms of cursor movement,
+       some combination of backspaces, linefeeds, and carriage returns
+       may be adequate to effect some forms of cursor movement. Sometimes
+       the sequences generated by the "arrow buttons" on the terminal
+       may be used for relative positioning.  Just about all terminals 
+       include some form of absolute positioning.  The choice of optimal
+       cursor positioning should be based upon which will output the fewest
+       characters to effect the desired move.  See hp2645.ctl.lisp for an
+       example of a very well optimized cursor positioner.
+
+       One useful trick in the writing of DCTL-position-cursor is the use of
+       recursion.  See adds980.ctl.lisp for an example.  If you choose to use
+       terminal tabs, then your DCTL-init must set them, and you must take
+       care not to clear them.  No supplied CTLs (other than the extremely
+       special-case printing terminal controller) use tabs.       
+
+     o DCTL-display-char-string (of one argument, a character string to
+       be displayed).  Must output this character string to the terminal
+       at the current assumed cursor position.  The string is guaranteed
+       to contain no control or other non-printing characters,  and each
+       character in it is guaranteed to take up one and only one print
+       position.  Be careful to update cursor position after printing
+       the string; the lisp function "stringlength" may be used to ascertain
+       the length/printing length of the string.
+
+     o DCTL-kill-line - (of no arguments) - Clear the line from the current
+       assumed cursor position to the end of the line, and, importantly,
+       _l_e_a_v_e the cursor at that original assumed position.  Most
+       video terminals have a clear-to-end-of-line feature; it should be
+       used here if available.  Some terminals do not, yet this function
+       must be provided anyway.  The machinations for "simulating" clear
+       to end of line are moderately arcane; see adm3a.ctl.lisp for an
+       example of clearing to end of line by overwriting with blanks.
+       Performance of this technique at 300 baud is generally completely
+       unacceptable, rendering such terminals unfit for use with Emacs
+       (or any other display editor) at that speed.
+
+     o DCTL-clear-rest-of-screen - (of no arguments) - Clear the screen
+       from the current assumed cursor position to the end. Leave the cursor
+       where it was supplied.  Some terminals have a "clear whole screen"
+       function, but not clear to end of screen.  For the time being, this
+       will do, although we may use the added functionality in the future.
+       If your terminal does not even have a clear-whole-screen function,
+       it is probably not worth using with Emacs.  If you choose to use tabs
+       in cursor positioning, be wary of clearing them via this function.
+
+     We have just listed all the required functions.  Some terminals require
+control sequences to change "modes" between normal Multics operation and
+operation within Emacs.  (For example, a terminal might be switched between
+line-at-a-time transmission and character-at-a-time transmission.)  Yet other
+terminals might use features during the operation of Emacs which should be
+disbaled/reset when using Multics.  (For example, the VT100 uses "scroll"
+regions to simulate insert/delete lines.  However, if a scroll region exists,
+it will make parts of the screen unusable when using Multics.)  It is possible
+and quite common to switch between Multics and Emacs by using the ATTN key and
+the "pi" command.  In this case, the terminal will be in the wrong mode at
+various times.  If the terminal for which you are writing a CTL exhibits this
+behavior, you should add the following statements to DCTL-init:
+
+ (setq DCTL-prologue-availablep t) to specify that certain functions must be
+			     performed each time Emacs "mode" is entered
+			     from Multics "mode".
+ (setq DCTL-epilogue-availablep t) to specify that certain functions must be
+			     performed each time Multics "mode" is
+			     entered from Emacs "mode".
+
+In addition, you must then supply the following two functions:
+
+     o DCTL-prologue - (of no arguments) - Perform any operations which are
+       required when Emacs "mode" is entered from Multics "mode".  This
+       function will be invoked immediately after DCTL-init is called and
+       after Emacs is reentered after a QUIT via either the "pi" or "start"
+       commands.
+
+     o DCTL-epilogue - (of no arguments) - Perform any operations which are
+       required when Multics "mode" is to be entered from Emacs "mode".  This
+       function will be invoked immediately before Emacs is exited when the
+       ^X^C (quit-the-editor) command is invoked and immediately before Emacs
+       is suspended when the ^Z^Z (quit) command is invoked or the ATTN key is
+       hit on the terminal.
+
+     If you have stated that insert/delete lines is available, via setting the
+flag idel-lines-availablep to t, you must supply the following two functions.
+If you set this flag to nil, you need not write these functions:
+
+     o DCTL-insert-lines - (of one argument, a number of lines to be
+       inserted) - Open up the given number of lines on the screen.
+       There will be guaranteed to be that many blank lines (created by
+       DCTL-delete-lines) at the bottom of the screen at the time this
+       function is invoked.  The cursor will be at position 0 of some
+       line at the time DCTL-insert-lines is invoked.  It must push
+       the contents of that line "down" the supplied number of lines,
+       leaving the cursor in the same place, the line the cursor is on
+       and the n-1 succeeding lines blank.
+
+     o DCTL-delete-lines - (of one argument, a number of lines to be
+       deleted) - Delete from the screen the supplied number of lines,
+       starting with the line the cursor is on on down.  The cursor is to
+       be left in the same place it was given.  That many blank lines
+       will be assumed to be pulled up on the bottom of the screen.
+
+     If the flag idel-chars-availablep is set t, indicating that insertion
+and deletion of characters is available, the following two functions must
+be supplied:
+
+     o DCTL-insert-char-string - (of one argument, a character string
+       to be inserted at the current assumed cursor position).  The
+       character string supplied is to be inserted at the current
+       cursor position.  All characters at, and to the right of the
+       current cursor position are to be pushed over to the right.  There
+       will be guaranteed to be only blanks on the screen in the region
+       which will be "pushed off".  The cursor is to be left (and updated
+       as being at) the end (after the last character) of the string inserted.
+
+     o DCTL-delete-chars - (of one argument, the number of characters
+       to be deleted). The supplied number of characters, starting with the
+       character at the cursor and on to the right, are to be physically
+       deleted from the screen.  All characters to the right of these
+       characters are to be moved that many positions to the left.  That many
+       blanks will be assumed to be moved in from the right edge.  The cursor
+       is to be left where it was supplied.
+
+     Writing a CTL usually involves editing an existant one, trying it,
+modifying it, and iterating until it is solid.  One will use the "-ttp"
+control argument many times to switch back and forth between "printing
+terminal mode" and the new CTL when logged in from the terminal on which the
+CTL is being developed.  For terminals with insert/delete features,
+it may be convenient to debug the CTL first without these features (claim
+they are not there in the DCTL-init), and add them later.  Similarly,
+one is encouraged to write "more optimal" DCTL-position-cursor's once
+one has one that works at all, for the convenience of editing the CTL with
+Emacs substantially reduces the effort of improving it.
+
+     For some terminals, padding may be necessary for some operations at some
+or all line speeds.  If terminal behavior appears random, or garbage is left
+on the screen after a ^L or ^K, this may be the problem.  Check the manual
+for your terminal about padding requirements.  It may be convenient to define
+a function called DCTL-pad, which takes a number of microseconds or
+milliseconds as an argument, and issues enough pad characters ((Rtyo 0)
+or (Rtyo 177) are common, check your terminal manual for what your terminal
+expects) to perform this padding.  The variable "ospeed" gives the line
+speed in characters per second, for use in such calculations.  Getting
+the padding right may involve quite a bit of tinkering on some terminals;
+one proven method in cases where padding is felt to be a problem is to specify
+a very large amount of padding (e.g., a second) and cut it down until it works.
+See dd4000.ctl.lisp for an example of terminal padding.
+
+	    **************************************************
+
+     The Lisp special forms _c_o_n_d and _d_o are used heavily in CTLs and
+not documented in extensions.info.  Emacs environment macros (do-forever,
+if, etc) should not be used in CTLs, thus the native Lisp forms are necessary.
+Here are the descriptions of cond and do:
+
+     (cond ((= this that) (thing1)(thing2))
+           ((> a b)(second)(third) 27)
+           ((< c 15)(other))
+	 (t (last 5)(chance)))
+
+means:
+
+   "If this equals that, call thing1 of no arguments, then call thing2 of
+    no arguments, and return as the value of the cond the value returned
+    by thing2.  OTHERWISE, if a is greater than b, call "second" with
+    no arguments, then call "third", and return 27 as a value. YET
+    OTHERWISE, if c is less than 15 (all numbers octal), return the value
+    obtained by applying "other" to no arguments.  If none of the above
+    are true, call "last" with an argument of 5, and then return the value
+    obtained by calling "chance" with no arguments."
+
+"cond" is very much like PL/I's
+
+    if ( .... ) then do;
+         .....
+    end;
+    else if ( .... ) then do;
+         .....
+    end;
+    else if ( .... ) then do;
+         .....
+    end;
+    else do;
+         .....
+    end;
+
+The format of Lisp "do" used in CTL's to iterate is of this form:
+
+   (do VARIABLE INITIAL-VALUE REPEAT-VALUE TEST form1 form2 form3.. )
+
+It is identically equivalent to PL/I's
+
+   do VARIABLE = INITIAL-VALUE
+      repeat REPEAT-VALUE
+      while (^ TEST);
+
+      form1;form2; ... 
+   end;
+
+which, itself, is equivalent to
+
+     VARIABLE = INITIAL-VALUE;
+l:   if TEST then go to e;
+     form1;form2;...
+     VARIABLE = REPEAT-VALUE;
+     go to l;
+e:   ;
+
+The variable VARIABLE is locally defined inside the "do".  It may be used
+in the forms inside the "do", in the "end test" TEST, and in the repeat
+value REPEAT-VALUE.
+
+(END)
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

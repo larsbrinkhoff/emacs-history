@@ -1,0 +1,356 @@
+4/16/79  -- Information on new window and buffer management system
+	  in Multics Emacs. (Last update 11/4/79)
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command**
+
+
+
+
+
+     The latest version of Multics Emacs contains a new "menu"-type scheme to
+manipulate buffers and windows, and supports as many windows as can be fit on
+the screen without any window going to less than 3 lines.
+
+     First, some definitions:
+
+	o buffer - a body of text in Emacs identified by a buffer
+	  name. This concept has not changed.
+
+	o window - an area of the screen delimited by "boundary lines"
+	  (lines of "-----"), the top of the screen, or the modeline.
+	  A window is said to be displaying a buffer if the text of that
+	  buffer can be seen in that window.
+
+	o "on display in" - a buffer is on display in a given window
+	  if the text of that buffer can be seen in that window.
+
+	o topline - the boundary line on the top of a window.
+	  The uppermost window has no topline.
+
+	o bottomline - the boundary line on the bottom of a window.
+	  The bottom-most window has no bottomline.
+
+	o Selected window - the window in which the cursor now appears
+	  (when not in the minibuffer).
+
+	o Current buffer - the buffer on display in the selected window.
+	  The modeline gives the name of the current buffer.
+
+	o LRU window - the least-recently used window, i.e., the
+	  window which has been the selected window least recently.
+
+	o Previous window - the next-most recently used window other than the
+	  selected window itself.  The selected window is always the
+	  most recently used.
+
+
+    There are several basic techniques for manipulating windows.  The simple
+keyboard commands ^XO, ^X0, ^X1, ^X2, ^X3, and ^X4 may be used to create,
+destroy, and select windows in a manner roughly analogous to the old use
+of ^XO, ^X1, ^X2, and ^X3.  At low speed, this may be the only convenient way.
+Alternatively, the "window editor" may be used.  The window editor, invoked by
+^Z^W, puts up a display of the numbers, positions, sizes, and contents of all
+extant windows, and allows destruction, selection, and size-adjustment of
+windows by positioning to the line describing the window to be dealt with and
+issuing commands.
+
+     First we describe the simple keyboard commands, beginning with the ones
+which had been used previously:
+
+  ^X2 creates a new window on the screen, and selects that window.  If there
+      was only one window on the screen, this is the same as it had been
+      before.  If there are any number of windows on the screen, ^X2 will make
+      one more, and select it.  The buffer placed on display in that window
+      will be one whose name is constructed as "Window ## Default" (where ##
+      is the window number, the top one being window 1), no longer
+      "alternate".  Arguments may no longer be used to ^X2 to specify the top
+      window size; the window editor must be used for this purpose.
+
+  ^X3 Creates a new window at the bottom of the screen, but keeps the
+      currently selected window selected. The name of the buffer placed in
+      that window is constructed as described above.  The new window becomes
+      the LRU window, so ^X4 ^X^E (command) CR will put file output in a new
+      window (see below).  Note that if there is only one window on the screen
+      this is compatible with what it had done before.  Again, arguments are
+      ignored.
+
+  ^X1 Gets rid of all windows except the currently selected window, which then
+      grows to occupy the whole screen.  This is compatible with what it did
+      before.  Getting rid of a window does NOT mean getting rid of the text
+      or buffer which is on display in that window, it just means taking the
+      window off the screen.
+
+  ^XO Selects the previous window, which is the window you had last been in
+      before you were in this window.  Note that this makes the window you
+      issue the ^XO in the previous window, so successive ^XO's will switch
+      windows back and forth like it has always done.  Selecting a window, of
+      course, may potentially (and usually does) switch buffers, too.  The
+      modeline always tells you what buffer is current, the cursor tells you
+      what window is selected.
+
+     The following two new commands augment the repertoire of the above:
+
+  ^X0 (control x zero, as opposed to control x "oh".) Removes the selected
+      window from the screen, giving the space it occupied to the windows
+      that were on either side of it.  The previous window will become
+      the new selected window.  With an argument, deletes the specified
+      window (the top window is number 1).
+
+  ^X4 Selects the LRU window.  The idea of this is to implement "Get me a
+      window I haven't looked at recently for the thing I'm about to do
+      (such as a ^XB or ^X^F)".  You would want to do this if you had
+      several (at least 2) windows on the screen, cared about some of them,
+      didn't care about some other of them, and wanted to find one you didn't
+      care about to do some new thing in.
+
+      Note that selecting the LRU window makes it the MOST recently used
+      (i.e., selected).  So some other window is now LRU, and another ^X4 will
+      select _t_h_a_t window.  Thus, successive ^X4's (or ^X4 ^C ^C ...)
+      will cycle through all windows on the screen.
+
+     Several Emacs commands always switch into a new buffer to present
+their goods, and leave you in it. For example, the directory editor, ^X^E
+(comout), which leaves you in file_output, and RMAIL (both inbound and
+outbound).  Some of these commands (and this is surely an area for debate)
+think they know that what you ask of them is not what you are "really doing".
+For instance, send-mail (^XM) believes that when you wish to send mail, it is
+on a spur-of-the-moment impulse, and you wish to keep what you were doing on
+the screen.  Similarly, comout (^X^E) believes that you are looking at
+file_output just to see how the "results" of your editing suceeded, and you do
+not wish to obliterate what you are editing from the screen.
+
+     These commands perform what is called a "find buffer in window" (which,
+incidentally, is available to the extension programmer by that name with
+hyphens in it).  What this means is that if the buffer they wish to go
+to/display (e.g., "file_output" for ^X^E (comout)) is already on display in
+some window, they will select that window.  If the buffer is not on display,
+they will select the LRU window in which to _p_u_t it on display, and so do.  The
+directory editor will put its "examine" buffer on display with a "find buffer
+in window", replacing the content of the LRU window if its examine buffer is
+not already on display.  Ditto the RMAIL reply buffer.
+
+	    --------------------------------------------------
+
+     The window editor provides an interactive way to manipulate windows in an
+integrated fashion, allowing the screen to be conveniently reorganized.  The
+window editor puts a formatted display in a dedicated buffer, which will
+appear on the screen, in the selected window.  ^Z^W causes this to happen.  If
+you want it to do a find-buffer-in-window on itself (e.g., you want to see the
+effect of reorganizing the screen on the material in the selected window),
+give it an argument, i.e., ^U^Z^W.  A typical window editor display looks like
+this:
+
+	1   0	0    12	term-paper	appear on 
+	2*  2	13   3	WINDOWSTAT	2*  
+	3   4	17   2	Messages from COMSAT
+
+Each line speaks of the contents of one window on the screen at the time
+the window editor was entered.  There are as many lines as there are windows.
+You may not use normal Emacs commands to change the content of the display; it
+is read-only.  You may, however, use normal Emacs commands (e.g., searches,
+etc.) to position around in it.   The cursor, when in the window-editor's
+buffer, is always on some line of the buffer (beware, the buffer may be larger
+than the window it is in, like most Emacs buffers!).  That line speaks of some
+window; the window's window-number from the top of the screen is the first
+number on that line.  The window designated by the line on which the cursor is
+will be called the "designated window (do not confuse this with the selected
+window, which will always be the window containing the window editor's
+display).
+
+     The window number will be followed by a star for the window that was the
+selected window at the time the window editor was entered.   The next number
+on each line is called the "internal window number", and is usually not of
+interest.  The remaining two numbers on each line are the position and size of
+each window, the position being the starting line-number on the screen (the
+top line is 0) and the number of lines in it.
+
+     Following the position and size is the buffer name of the buffer
+currently on display in that window.  Following the buffer name are the first
+ten characters of the "point line" in that window.  The "point line" is the
+line in the window that the cursor will go to if that window is selected.
+
+     One operates the window editor by invoking it, positioning to some line,
+thus designating some window, and issuing commands to affect that window.
+The following requests are recognized: note that they are "printing" (i.e., not
+control) characters, for ease of typing, since you may not enter text into a
+read-only buffer (like that of the window-editor or DIRED).  They are:
+
+     g     Go to, or select that window, leaving the window editor, and
+	 moving the cursor to that window.   given window in a many-window
+	 situation, as opposed to a large number of ^X4's.
+
+     f	 same as g, for compatibility with the buffer editor.
+
+     k	 Kill, i.e., remove this window from the screen.  This will be done
+	 immediately, and the buffer editor display will be updated to
+	 reflect the new screen layout.  The space occupied by that window
+	 will be distributed among its neighbors.
+
+     d	 same as k, for DIRED compatibility.
+
+     ^	 (think of the shape of this character, "pushing up").  Move the
+	 topline of the designated window up by one, increasing the size
+	 of this window, and deducting one from its upstairs neighbor.
+	 With a numeric argument, do that many lines instead of one.
+	 The buffer editor display will be updated to reflect the new
+	 screen layout.
+
+     v	 (think of the shape of this character, "pushing down".)  Moves the
+	 bottomline of the designated window down.  Same rules and features
+	 as ^.
+
+     a	 (think of the shape of a capital A).  Bring the topline of this
+	 window down, same rules and features as ^.
+
+     u	 (think of the shape of a U). Pull the bottomline of this window
+	 up, same rules and features as ^.
+
+     The following requests do not deal with the designated window, and may be
+issued at any time in the window editor:
+
+     n	 Go to the next line of the window editor display.  Although you
+	 could use ^N as always, n is easier here, since this is a read-only
+	 buffer.  If on the last line, goes to the first.
+
+     p	 Same rationale and idea as n, except goes to the previous line (or
+	 the last if issued on the first).
+
+     b	 Exits the window editor by entering the buffer editor in the
+	 window now occupied by the window editor's display.
+
+     c	 Creates a new window (like ^X3), except leaves you in the
+	 window editor's display, with the display updated to reflect the
+	 new state of the screen, with the new window as designated window.
+
+     3	 Same as c, for mnemonic ease with ^X3.
+
+     The window editor is normally exited by selecting some other window with
+the "g" request; indeed, one may often enter the window editor for no other
+reason than to do this!  Once can also exit via the "b" request to the buffer
+editor, or just ^XB or ^X^F of whatever one normally does to go wherever one
+wants to go.  Beware of window editor windows left lying around on the screen:
+while attractive and interesting, they are NOT updated dynamically by Emacs
+if windows and buffers are changed around.
+
+
+         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+     The buffer editor provides a facility for cleaning out, examining, and
+selecting buffers, similar to DIRED and the window editor.  Like both of these
+other menu-type editors, the buffer editor creates a read-only display in a
+special buffer, and selects it in a window of your choice.  Again as with these
+others, printing-character requests are use to select options to deal with the
+buffer whose name appears on the line with the cursor on it.
+
+     The buffer editor is entered via ^Z^B.  It will put its display in the
+window in which it was invoked.  If you want it to find-buffer-in-window itself
+(e.g., it is on the screen already, or you don't want to overwrite the current
+window), do a ^U^Z^B.
+
+     Each line of the buffer-editor's display contains a buffer's name, a
+pathname, if the buffer has a pathname associated with it, and possible flags.
+The flags appear at the left margin, and they are:
+
+	*  The buffer is "modified" (needs writing out)
+	>  The buffer that was current when the buffer editor was entered.
+	X  The buffer editor has marked this buffer for deletion.
+
+     There may be more buffers (i.e., lines in the buffer editor's display)
+than are on display in the window in which this display appears; like any
+other Emacs buffer on display, ^V, ESC-V, or any other standard Emacs
+technique may be used to position around in it.
+
+     Buffers may be killed (as ^XK normally does) with the buffer editor
+"k" (or "d") request.  Buffers so killed are not actually destroyed until the
+buffer editor is exited via a g, w, f, q (or ^X^Q) request, at which time you
+will be asked (if you have marked buffers for deletion) if you really want to
+delete them (they will be listed as local display).
+
+     The following requests are known to the buffer editor:
+
+     n	 Go to next line (see window editor's similar request for the
+	 rationale for this ^N substitute) or first if now on last.
+
+     p	 Go to previous line (or last if now on first).
+
+     k	 Mark the designated buffer for deletion when the buffer editor
+	 is exited, move to the next line.
+
+     d	 same as k, for DIRED compatibility.
+
+     u	 Undelete, i.e., unmark for deletion, the designated buffer.
+	 The X will be removed from the display, and the cursor will
+	 be positioned to the next line.
+
+     e	 Examine the designated buffer.  In one-window mode, this is
+	 kind of worthless, you should just go there.  But with two or more
+	 windows, a find-buffer-in-window is done on the designated buffer,
+	 putting it on display if not already on display. A message will
+	 be printed in the minibuffer about where (in what window) it
+	 appears.
+
+     These next requests cause the buffer editor to be exited: you will be
+     interrogated about pending deletions if you have any:
+
+     g	 Go to the designated buffer, exiting the buffer editor, replacing
+	 its display in the current (selected) window, with this buffer.
+	 This is just like doing a ^XB: as matter of fact, the buffer editor
+	 may be used for just seeing what buffers there are and going to
+	 one, to save typing!  This may also be useful for buffers with
+	 long and complex names, like "Messages from Brzezinski".
+
+     f	 Find-buffer-in-window the designated buffer.  Since the buffer
+	 editor makes its own window LRU when it exits, if you "f"
+	 a buffer not currently on display in any window, it is the same
+	 as "g"ing it, replacing the buffer editor's window.
+
+	 However, if the designated buffer is on the screen somewhere, the
+	 cursor will simply be moved into that window (and thus, into
+	 that buffer).  If you use multiple windows, you will find that you
+	 will use "f" all the time, and will rarely use "g".
+
+     s     Writes out, i.e., saves the designated buffer to its default
+	 pathname, unmarking it as modified.
+
+     w	 Exit the buffer editor to the window editor in the current window.
+
+     q	 Exit the buffer editor to the buffer from which it was invoked, in
+	 the current window, if it was invoked via ^Z^W, or find-buffer-in-window
+	 the buffer from which you came if the buffer editor was invoked
+	 by beargumented ^Z^B, i.e., was find-buffered-in-windowed
+	 itself.
+
+     ^X^Q	 Same as q.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

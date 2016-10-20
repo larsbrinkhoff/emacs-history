@@ -1,0 +1,401 @@
+5/12/80  - Site instructions for installing Emacs at your site.
+	 10.0 Release.
+
+** This document is not intended for use with the help command.   **
+** It is intended for perusal by print, dprint, or an editor.     **
+
+
+
+______________________________________________________________________
+
+
+     Multics Emacs is a state-of-the-art text processing and editing system.
+A new version is being distributed as part of Release 10.0, as an unbundled
+offering.  It offers facilities comparable to stand-alone word-processing
+systems, combined with the power of the entire Multics environment.
+
+     Multics Emacs is a very large and complex subsystem which requires
+special actions and customizations to be effected by site personnel:
+this document specifies these actions.
+
+     Multics Emacs is basically a "real-time video editor."  This means that
+as opposed to interacting with a user on a line-by-line basis, modifying text
+in response to "command lines", and printing text on demand, a selected
+portion of the text being edited is continuously displayed upon a screen.
+The terminal identifies a given location in the text via its cursor.
+By typing selected characters, the text at the cursor is modified, deleted,
+moved, etc., and the image of the text on the screen is dynamically updated
+to reflect these changes as they are made.  New text is entered simply
+by typing it.  There is no need for a "print" request; text is always visible.
+There is no need for a "substitute" request; once undesired text is deleted,
+new text is simply entered.
+
+     Responding to characters typed at a keyboard in a real-time video
+environment requires careful screen maintenance in response to each character
+typed _a_s _i_t _i_s _t_y_p_e_d:  to simply print a character upon the screen
+as it is typed requires intelligent screen maintenance.  It is impermissible
+to allow the terminal or the front-end processor to echo characters.  Thus,
+Multics Emacs must respond to _e_v_e_r_y character as it is typed.
+The ability to respond to every single character as it is typed is a new one
+for Multics; until now, there was no need for it.  This feature is provided
+by _b_r_e_a_k_a_l_l _m_o_d_e, a feature of the Multics Communications
+System (MCS).
+
+     Although every effort has been made to streamline the per-character
+loop of Emacs and Multics, including extensive modification to the
+mainframe and communications processor software, response to every
+character "in real time" is innately much more expensive in CPU and paging
+than response to "whole lines".  Implementors of real-time video editors
+on many systems have all found that these editors are much more expensive
+than non-video editors because of this.  Yet, various scenarios of
+mainframe time availability, video terminal availability, working hours,
+and system resource pricing have made the technology of real-time editing
+extremely popular in spite of the innate expense.
+
+      It is the responsibility of the site personnel to make the
+commitment to allow this software to be used at all at his or her site,
+and if that commitment is made, to ascertain at precisely what point, at
+what times of day, and on what configurations does, if at all, Emacs usage
+become problematic.  In two and a half years of experience at the Honeywell
+exposure sites, UNRESTRICTED Emacs usage has not ONCE created
+a performance problem; nevertheless, a very large number of Emacs
+users may have a deleterious effect on system performnace.
+
+	    **************************************************
+
+     Multics Emacs is a developing, experimental offering.  It is still
+undergoing development.  There are known bugs and deficiencies.  All known
+problems and deficiencies are listed in the file emacs.status.info in the
+documentation directory >doc>ss>emacs.  In spite of these bugs and problems,
+Multics Emacs is eminently usable, quite robust.  Multics Emacs has been in
+heavy use at the two Multics development sites for three years, and has
+acquired a user community of hundreds.
+
+
+Emacs' trouble-reporting mechanism is the same as for all other Multics
+Software; the TR system should be used.  Please check the known bug list
+before generating a trouble report.  We intend to maintain reasonable
+compatibility in user interface in future releases; the internal interfaces
+available to the extension writer, however, are more subject to change.
+However, the intent is to fully document all changes.
+
+
+	    **************************************************
+
+
+     The use of Multics Emacs, and its entire repertoire of command and
+function, for the installed version, is documented in Honeywell Manual
+CH27, "Emacs Text Editor User's Guide".  The writing of user extensions
+and terminal support modules (not of interest to anyone except very
+advanced users and site maintenance personnel) is documented in Honeywell
+Manual CJ52, "Emacs Editor Extension Writer's Guide".
+
+     The unofficial documentation which was the only documentation before
+the release of the above-mentioned manuals is distributed in
+>doc>ss>emacs,  where this info segment lives.  Starting there, the segment
+emacs.gi.info contains all other online documentation pointers.  This
+documentation is inteded to be dprinted, and is not suitable for perusal
+with the "help" command.  This documentation, however, is completely
+up to date, and often contains information in more detail, and
+differently organized than the published manuals.
+
+		  ******************************
+
+     Multics Emacs was modelled after the EMACS editor at the MIT Artificial
+Intelligence Lab.  EMACS (on the AI Lab PDP-10's) was written, in TECO, by
+staff members of the MIT AI Lab and the (MIT) Laboratory for Computer Science
+(LCS), without whose encouragement and support this project would not have
+been possible.
+
+     Multics Emacs makes no claims to current or future compatibility with
+other implementations of EMACS or any other editor.  Although largely
+compatible in general philosophy and repertoire with the AI Lab editor, there
+are significant differences, both in some specific commands with which we
+chose to differ, facilities implemented in one and not the other, and things
+that are of necessity different due to the difference in operating systems.
+Nevertheless, users familiar with any video editor generally find no problem
+whatsoever adapting to another.
+
+     Compatibility with AI Lab EMACS is not a large consideration for the
+future.
+
+     Multics Emacs was implemented from scratch at Honeywell with
+contributions from some programmers at the MIT Information Processing Center.
+No part of any other program on any other system was used, studied, copied,
+translated, or otherwise incorporated during the development of Multics Emacs.
+
+	    **************************************************
+
+     Emacs resides in the unbundled library, >system_library_unbundled.
+There are four object segments there:
+
+	o   bound_multics_emacs_.  The basic editor, online
+	    documentation system, command dispatcher, and display
+	    manager.
+
+	o   bound_emacs_packages_.  Various optional features, including
+	    the modes for editing PL/I and Lisp programs, the directory
+	    and buffer editors, and so on.
+
+	o   bound_emacs_rmail_. The Emacs mail system.
+
+	o   bound_emacs_preinit_. Code needed at the time Emacs modules
+	    or extensions are compiled or loaded, including the
+	    command definition facility and the default binding tables.
+
+     The source for these segments is kept in the conventionally-named
+source archives in the unbundled source library.
+
+		*****IMPORTANT*****
+
+     The terminal-specific knowledge of Emacs is embedded in small Lisp
+programs known as "ctls", whose exectuable objects reside in
+>unbundled>emacs_ctls.  The site is expected to add terminal control
+modules to this directory as needed at each site.  The names on the
+"ctl"s, as well as the names on links in the ctl directory, must reflect
+the names (in the TTF) for terminals used at your site.  Any terminal
+type to be supported by Emacs at your site must have the name
+<type>ctl on the appropriate ctl in the ctl directory:  As shipped from
+Phoenix, the ctl directory and TTF are consistent; you must adjust
+the ctl names for local terminal names in use at your site, as well
+as supply new ctls for terminals not supportedd in the distributed release.
+The primary names of the segments and links will be the only names
+reported (stripped of the "ctl" suffix) in response to user query
+about what types of terminals are supported at your site.
+Instructions on these matters, as well as writing new ctls,
+are given in CJ52, as well as online in ctl-writing.info.  Source for
+the ctls is in emacs_ctls.s.archive in the unbundled source library.
+There is a link in >unb>emacs_ctls to >unb>e_pl1_.
+
+     People writing emacs "extensions" (see below) are encouraged to use
+the source of Emacs as a model; thus, it ought be retained on line, but
+need not be.  This is even more true for the terminal control modules.
+
+
+     Also in the unbundled directory is:
+
+	o emacs.sv.lisp, the "Saved Lisp Environment" from which Emacs
+	  initializes its Lisp Environment each it is invoked. This
+	  environment is produced by executing the exec_com
+	  make_emacs.ec, which is supplied in
+	  bound_multics_emacs_.s.archive.  This exec_com _m_u_s_t be
+	  executed every time the creates and installs
+	  a new version of bound_multics_emacs_ (this is NOT needed
+	  for the released version).  The resulting object,
+	  emacs.sv.lisp must then be installed in >unbundled.
+	  The old saved enviroment need not
+	  be renamed, as Emacs only reads it once at startup time,
+	  and does not retain pointers to it.
+
+	  The environment must also be "resaved" (i.e., make_emacs.ec
+	  executed) if a new version of the program e_binding_table_ is
+	  installed in >unbundled (other than the released).
+	  This program defines the default key bindings.
+	  It is in bound_emacs_preinit_.
+
+	  Failure to re-save the environment when either bound_multics_emacs_
+	  or e_binding_table_ is changed will result in users getting
+	  the message "Error lisp_linkage_error by .... The version of
+	  <programname> is not the same one as was loaded into this
+	  environment."  Users will receive this error whenever Emacs
+	  is re-invoked in a process after a new version has been installed.
+	  Users should be advised to new_proc if they receive this message
+	  if dynamic installation of Emacs at your site is a possibility.
+	  The environment _m_u_s_t be resaved if any of these programs are
+	  changed; new_proc will not alleviate the problem.  A copy of
+	  the exec_com also exists in bound_multics_emacs_.s.archive.
+
+	o e-macros.incl, an object program.  This program is the
+	  compiled version of the include file, e-macros.incl.lisp.
+	  Having this object program, which can be generated by
+	  directly compiling the include file, makes use of the
+	  include file (which uses this compiled version if
+	  locatable) much more efficient.
+
+		  *****************************
+		  **********IMPORTANT**********
+		  *****************************
+
+     There are several site-specific objects that Emacs expects to find.
+These segments used to reside in a directory >sc1>emacs_dir; this
+is no longer necessary.  The following are the segments.
+
+	o emacs_info_vfile_, an indexed sequential vfile used by the online
+	  documentation system to store command descriptions in encoded form.
+	  This MSF vfile resides in >unbundled.  Make sure that
+	  users have s on the MSF dir and r on the components.  Experts
+	  familiar with the online documentation system can change
+	  or augment online command documentation without installations
+	  if they have rw to this MSF, thus, it is site modifiable.
+
+	o A segment, metering.acs, access to which controls logging of
+	  Emacs usage (see the section below). (Site optional).
+
+
+There should exist a link in >unb>include, or wherever your site chooses to
+put the include file e-define-command.lisp, to e_define_command_ in the
+executable directory.  This is needed in order for the two include files,
+e-macros.incl.lisp and e-define-command.incl.lisp, to find the program
+e_define_command_ at the time these include files are used at extension
+compile time.  There must also be a link from wherever the include file
+e-macros.incl.lisp is kept to the segment e-macros.incl in the executable
+directory.
+
+	    **************************************************
+
+     The table rmail-full-name-table, which used to reside in >sc1>emacs_dir,
+is no longer necessary, as its functionallity has been subsumed by the
+my-personal-name Emacs variable.
+
+	    **************************************************
+
+     A well-debugged version of the Multics MacLisp subsystem is being
+shipped in >unbundled in Release 10.0, specifically for the support of
+Multics Emacs.  Honeywell is neither supporting nor documenting Multics
+MacLisp in Release 10.0 as other than part of the support of Multics Emacs.
+
+
+     Multics MacLisp was developed at the Massachusetts Institute of
+Technology, under government funding.  Documentation is available from
+the MIT Information Processing Center.  Honeywell currently supports Multics
+MacLisp only to the degree required to keep Honeywell-supplied subsystems
+implemented in it operative.
+
+     There is an introduction to the language Lisp, in which Multics Emacs
+is coded (and "extended") in the file "extensions.info" in the Emacs
+documentation directory, as well as in CJ52.  This introduction is felt to
+be adequate for those wishing to write their own Emacs "extensions" (see
+below), and was written with that in mind.  It is not, however, a general
+introduction to the subject, or adequate to fully understand the source
+code of the deep levels of the Emacs editor.
+
+     The Multics MacLisp subsystem in the unbundled library is complete and
+fully operative.  It is the most advanced version of Multics MacLisp.  The
+principal user interfaces are:
+
+     o lisp, the interpreter
+
+     o lcp, lisp_compiler, which can compile source segments named
+       <name>.lisp into object segments loadable by the interpreter
+
+     o lap, the Lisp-oriented Multics assembler.
+
+     o display_lisp_object_segment, a tool.
+
+     Honeywell will fix bugs in Lisp that affect Emacs, as shipped in Release
+10.0.  We make no statement about any level of future support or documentation,
+or continued support even at this level of Multics MacLisp.
+
+	    **************************************************
+
+     Although Multics Emacs is easily used by personnel with no technical
+training or programming experience, those with some programming experience
+can utilize it even more effectively via "extensions".  Extensions are
+fragments of Lisp code, not part of the deep level of the editor, which
+imbed knowledge of given problem domains, without knowledge of the internal
+data structure of the editor, or even more to the point, of display management,
+at all. Examples of supplied extensions are the various language modes
+and the Emacs mail subsystem.
+
+     Via extension writing, a given shop can create Emacs environments for
+selected (or all) users with locally defined functionality, such as document
+formats, special languages, and other text processing considerations,
+available on keystrokes to the Emacs user.  Similarly, a user who is not
+completely satisfied with the way some Emacs command behaves is encouraged to
+look at the source and add his or her own version to his environment.
+
+     It is a major design feature of Multics Emacs that extension, the
+development of prepared functionality, is performed in a very powerful,
+concise, and clean language, namely Lisp extended by appropriate "Lisp
+Macros".  This design differs from that of conventional editors, which use the
+same language that they present as a user interface for writing "macros".  By
+necessity, those languages are always compromised in both directions,
+conciseness for interactive editing, and the diversity of a programming
+language for "macro writers".  Emacs does not suffer this deficiency.
+
+     CJ52, "Emacs Extension Writer's Guide," includes a complete explanation
+from the ground up of all knowledge about Lisp necessary to write extensions,
+including how to debug them interactively within Emacs, and take full
+advantage of Lisp mode.  extensions.info, in >doc>ss>emacs, is much of the
+same material, but is less complete, less up to date, and less accurate.
+
+     We strongly recommend that some programmer at your site look into
+these documents, just to see the type of thing that can be done.  Tailored
+Emacs environments provide a way to use all the text processing and display
+management power of Emacs to best suit your data processing needs.  It is
+our experience that programmers with no background in Lisp at all have
+been able to write extensions proficiently in one day; even non-technical
+personnel have successfully written extensions.  You will find that
+writing "Emacs extensions in Lisp" means very little more than saying
+what you want done in English with a pair of parentheses around each line.
+
+
+	    **************************************************
+
+     An audit trail mechanism exists with Emacs to monitor the usage and
+resources consumed by Emacs users.  By default, it is not enabled.  To enable
+it, the site should create the segment >unbundled>metering.acs, zero max
+length, giving rw access to *.* or all persons/prjects to be audited.  The
+site must then modify the segment emacs_data_.cds, which can be found in
+bound_multics_emacs_.s.archive, changing the value of "text_data.log_dir" to
+the pathname of a directory.  The site must create this directory, put a
+terminal quota on it, and give all users (or *.*) being audited sma to this
+directory.  An IACL of rw *.* should be put on this directory.  Watching rate
+of growth of logs in this directory, and cleaning it out, is the site's
+responsibility.  If not cleaned, record quota overflows will prevent people
+from using Emacs.  This facility is not "secure", and is intended for
+performance monitoring purposes.
+
+     Users will create log segments automatically in this directory,
+which can be displayed with the print_log tools.  Entries are of the
+three forms:
+
+  98   1426.0 0 Jones.SYSTEMS.a: Entering emacs on VIP7801 none a.l111
+ 101   1427.1 0 Jones.SYSTEMS.a: (VIP7801) in 11, r0/r4 echo 0/3, out 927.
+ 101   1427.1 0 Jones.SYSTEMS.a: 1.0 min, v/cpu 1/5 mem 67 paging 1029/1218
+
+The first message, at entry time, gives the user ID, the user's terminal type
+as specified to MCS, the user's answer-back, and the line over which the user
+is logged in.  The second two messages occur at the time that the user leaves
+Emacs.  The first message gives the user name, the terminal type as finally
+negotiated with Emacs, the number of input characters, the number of
+characters echoed by the supervisor via echo negotiation, the number of
+characters echoed by Emacs that would have been echoed by the supervisor were
+the system faster than the user's typing, and the number of output characters.
+The second message gives, in addition to the user ID, the elapsed real time in
+Emacs, virtual and real CPU consumption, memory units (in thousands), and
+paging device and all page faults.
+
+(END)
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

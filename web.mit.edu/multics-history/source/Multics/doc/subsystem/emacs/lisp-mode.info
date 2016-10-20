@@ -1,0 +1,242 @@
+09/14/78 -- Multics Emacs Lisp Mode.
+   Last updated 11/7/80
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+     Lisp   mode   facilitates  the  construction  and  editing  of  Lisp
+programs   in   Multics   Emacs.   Commands  for  positioning  over  Lisp
+expressions,   and  indenting  and  commenting  Lisp  code are available,
+as  well  as commands to facilitate  the testing of Lisp programs in  the
+Emacs environment.
+
+     Lisp major mode is entered via the command
+
+	ESC-X lisp-mode CR
+
+or  by  Find File'ing any file with a last component name of ".lisp" when
+the find-file-set-modes option is selected.  When in Lisp major mode, the
+comment  column  is set to 50 (column 51), and the comment prefix to ";".
+The  normal  comment commands, ESC-P, ESC-N, ESC-;, will act according to
+these settings.  If lisp-mode-hook is bound, it will be called.
+
+     The following is the current command repertoire of Lisp mode:
+
+^I (TAB)	indent-to-lisp
+
+	On  a  blank  or empty line,  creates enough leading whitespace
+	so  that  the  first  S-expression typed on this line will line
+	up  properly  according  to  conventional Lisp indenting rules.
+	Normally,   this  means  line  it  up  with  the  start  of the
+	previous   S-expression,   but  in  other  circumstances  other
+	actions  may  be  taken.   On a non-blank line,  re-adjusts the
+	line's indentation to effect conventional Lisp indenting.
+
+ESC-Q	lisp-indent-function
+
+	Put  point  and  mark  around  the  current  Lisp function (see
+	ESC-^A).   For  all lines other than the first,  re-indent them
+	according to conventional Lisp indentation.
+
+ESC-^A	begin-defun
+
+	Move  point  to  the  beginning of the current "function".  The
+	beginning  of  a  function  is defined as right before the last
+	open parenthesis at the left margin.
+
+ESC-^B	backward-sexp
+
+	Move  backwards  over  exactly  one balanced S-expression.  All
+	comments,   quoted  strings,   and  slashified  characters  are
+	considered  properly.   Will  abort  (and  beep) if unbalanced.
+	AVOID  invoking  this  from  inside comments or quoted strings.
+	Skips   trailing   open   parens.    Accepts  numeric  arg  for
+	repetition count.
+
+ESC-^C	compile-function
+
+	Effects  compilation  and  loading of the current Lisp function
+	via  the Multics Lisp Compiler (lcp).  Does this by loading lcp
+	into  the Emacs environment  (the first  time it  is used in an
+	Emacs  invocation),  utilizing  it,  and loadfiling the result.
+	Will  automatically  incorporate/compile the correct version of
+	e-macros.incl.lisp  into  your  environment (the first time) as
+	well.   Puts  the  name  of  the  function compiled on the kill
+	stack,  so  it  can  be  yanked  into an ESC-ESC minibuffer for
+	trial.   Displays  compiler  diagnostics  as local display.  Be
+	careful  to  WRITE  OUT  changes  you  make  and debug via this
+	facility; this is a common trap: you see what you have in front
+	of you "working", and you think you are done.
+
+	Forms  ESC-^C'ed  will  be  treated  as  though  they  had been
+	encountered  at  top  level by the compiler; macro definitions,
+	declarations,  and side-effects from compilation to compilation
+	are  all  handled  correctly.  Declarations, macro definitions,
+	and    reader   macro   definitions   other   than   those   in
+	e-macros.incl.lisp  must  be ESC-^C'ed explicitly.  Information
+	produced during any ESC-^C stays around for all future ESC-^C's
+	in  an  Emacs invocation: the regnant Emacs environment will be
+	used  as  the  compile AND LOAD time environments.  Thus, macro
+	and  other  definitions ESC-^Z'ed or ESC-ESC'ed are seen by the
+	compiler.
+
+ESC-^D	down-list-level
+
+	Go  down  one  level  of list structure.  Basically the same as
+	looking   forward   for   an   open  parenthesis,   but  it  is
+	intelligent about Lisp comments,  quotes,  etc.
+
+ESC-^E	end-defun
+
+	Go   to  right  after  the  last  close-paren  of  the  current
+	function.   See  "begin-defun"  for a definition of the current
+	function.    Useful   to   see   if  function  balances  parens
+	correctly.
+
+ESC-^F	forward-sexp
+
+	Skip  forward  over  exactly  one S-expression,  positioning to
+	after   the  appropriate  close  parenthesis,   or  before  the
+	appropriate  whitespace.   Accepts  numeric  arg for repetition
+	count.   Skips  leading  close  parens.   Avoid invoking inside
+	quoted strings or comments.
+
+ESC-^H	mark-defun
+
+	Put   point   and   mark  around  the  current  function.   See
+	begin-defun for a definition of the current function.
+
+ESC-^K	kill-sexp
+
+	Kill  one  (or  many) S-expressions forward,  i.e.,  from point
+	to   the   point   after   that  many  complete  S-expressions.
+	Argument is how many.  Merges kills forward.
+
+ESC-^M (ESC-CR) lisp-cret-and-indent
+
+	Identical  to  a  CR  (new-line)  followed  by  indent-to-lisp;
+	this  is  the  normal  way  to  terminate an input line in Lisp
+	mode.   It  puts you on a new line and indents in correctly for
+	the  next  S-expression.  Done in the middle of a line,  breaks
+	the  line  at that point,  correctly indenting the S-expression
+	which was to the right of point on the new line.
+
+ESC-^N	forward-list
+
+	Move  to  right  after the end of current Lisp list.  Basically
+	the  same  as  searching  for  a  close paren,  but intelligent
+	about Lisp comments,  quoting,  etc.
+
+ESC-^P	backward-list
+
+	Move  to  right  before the beginning of the current Lisp list.
+	Basically  the  same  as searching backwards for an open paren,
+	but intelligent about Lisp comments,  quoting,  etc.
+
+ESC-^Q	lisp-indent-region
+
+	Re-indent   all   lines   (other   than   the   first)  in  the
+	point-to-mark region for conventional Lisp indentation.
+
+ESC-^R	move-defun-to-screen-top
+
+	Move  the  current function (see begin-defun for definition) to
+	the  top  of  the  current  screen,   leaving point at function
+	beginning.
+
+ESC-^T	mark-sexp
+
+	Set  point  and mark around the current S-expression.  If point
+	is  currently  before the close paren of a list,  set point and
+	mark  around  that  list.  If point is before whitespace,  mark
+	the next S-expression.
+
+ESC-^V	view-defun
+
+	Print  out  current  function:   put  point and mark around the
+	current  Lisp  function (see begin-defun for a definition), and
+	display  it  (print  it  out  on  printing  terminals) as local
+	output.
+
+ESC-^Z	eval-top-level-form
+
+	Evaluates  the  current  top  level form and displays its value
+	in  the  minibuffer.   A top level form has the same definition
+	as  a  function.   (See begin-defun for the definition).  Loads
+	the  file  "e-macros.incl.lisp"  to  ensure the presence of the
+	Emacs   macros.    (See  extensions.info).   This  facility  is
+	intended    for    use    in    debugging    extensions, as  is
+	compile-function,   but  will  run your code interpreted rather
+	than  compiled  which  aids  in debugging.  Be careful to WRITE
+	OUT changes you make and debug via this facility.
+
+ESC-(	lisp-one-less-paren
+
+	Removes  one  close  parenthesis  from  the  end  of  the  last
+	S-expression  prior  to  this  line,  and  reindents this line.
+	Implements  "This  automatically-indented Lisp line is indented
+	one  level  too few.  There must be an extra close paren on the
+	last line.  Fix it and let's see."
+	
+ESC-)	lisp-one-more-paren
+
+	Adds  one close parenthesis to the end of the last S-expression
+	prior  to this line, and reindents this line.  Implements "This
+	automatically-indented  Lisp  line  is  indented  one level too
+	many.   There  must  be a missing close paren on the last line.
+	Fix it and let's see."
+
+
+
+     The  following  extended commands invoked via ESC-X are available in
+Lisp mode:
+
+eval-buffer
+
+	Evaluates  the  contents  of  the buffer and displays the value
+	of  the  last form in the buffer via the minibuffer.  Loads the
+	file  "e-macros.incl.lisp"  to insure the presence of the Emacs
+	macros.   This  command is used to "load" a buffer of Lisp code
+	into    the    Emacs    environment    for    debugging.    The
+	eval-top-level-form  function  (ESC-^Z)  may  then  be  used to
+	"re-load"  any  functions  whose  definition  you  change while
+	debugging.   Be  careful  to  WRITE  OUT  changes  you make and
+	debug via these facilities.
+
+
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

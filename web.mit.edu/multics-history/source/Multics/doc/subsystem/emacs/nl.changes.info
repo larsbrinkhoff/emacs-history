@@ -1,0 +1,135 @@
+12/8/81 11.10 Further changes to Emacs newline handling.
+
+**This file is intended to be perused via dprint, print, or via an**
+**editor.  It is not intended to be perused with the help command **
+
+
+
+
+
+An incompatible change, generally deemed to be an improvement, was made to the
+definitions of the "last line" and "end of the buffer" in Multics Emacs in
+Release 9.  The goal of these changes was to allow processing of files which
+do not end in newline, which were not supported, and to allow searches to
+search for embedded newlines.
+
+There is a potentially dangerous effect on extension code.  This is discussed
+later in this document.
+
+This change is felt to be a correction of an earlier design bug, a major
+improvement in consistency of Emacs' character handling, and compatible with
+the way TECO and other character-oriented tools process text.
+
+The essence of the change is to allow you to position your cursor BEYOND the
+last newline of a file.  Previously, you could not do this (Emacs would ^G at
+you tried.)  This means that if you had read in a file containing only three
+lines (in 8.0 Emacs)
+
+      First line
+      Second line
+      Third line
+
+each line ending in a newline, as is usual, doing an ESC-> would put you on the
+FOURTH line of the window, under the T of "Third Line".  If you then wrote this
+file out, it would have been written out exactly as it was read in.
+
+(Previously, ESC-> would have gooten you after the word "line" of the line
+that says "Third line", and it will would get written out as it had been read
+in).
+
+If now (in the new scheme), you type #, the NL at the end of "Third line" will
+be deleted, and the cursor will be left after the "line" of "Third line".
+ESC-> will subsequently get you to this place.  If you write the file out, in
+the new scheme, it will be written out WITHOUT a trailing NL, and the cursor
+will remain where it is.
+
+(This operation is impossible to describe or execute under the old scheme,
+which is one of the reasons for implementing the new scheme).
+
+The substance of the change is as follows: Emacs previously REMOVED the last
+newline of a file being read in, and ADDED an extra newline to a file being
+written out.  This behavior has been eliminated, nothing more and nothing
+less.  The original motivation for this behavior was to put you in a "Buffer
+with one line in it" when you started, and prevent people from writing out
+files that didn't end in newline.
+
+Deletion of newlines on input has been entirely eliminated.  However, it was
+felt that too many users would be confused if non-newline-ending files were
+allowed (in addition, many system programs do not support files that do not
+end in a newline).  Therefore, there are two new options:
+
+(1) add-newline, when On, automatically adds a newline to the buffer when
+writing it out ONLY when the buffer DOES NOT end in a newline.  Default is
+On.
+
+(2) check-newline, when On, asks the user whether or not he really wishes to
+write out the buffer if it does not end in a newline.  Default is Off.
+
+-------------------------------------------------------------------------
+
+Extension writers: This change does have a potentially significant effect on
+all loops which process files line by line.  "lastlinep" will continue to
+respond to the last line of the BUFFER, which is to say, that line whose
+newline cannot be gone past, that line whose newline will never be written
+out, that line that, in an empty buffer is the only line.
+
+Suppose you have an extension that reads in some file, and does some
+processing, line by line.  It might have a loop:
+
+     (go-to-beginning-of-buffer)
+     (do-forever
+       (process-stuff-on-this-line)
+       (if (lastlinep)(stop-doing))
+       (next-line))
+
+Previously, this worked.  Now, it will attempt to (process-stuff-on-this-line)
+on the line beyond the last newline of the file, if any file was
+involved at all.  This may well cause problems.  Cases and coding
+techniques that will NOT have problems:
+
+    1. Programs processing data they themselves generated, that
+       did NOT put a newline: this means most cases of programs
+       scanning program output today, if you think about it, because
+       the only REAL change we have perpetrated is in file reading
+       and writing.
+
+    2. Programs processing files they read in that look for things
+       and ignore blank lines.  All programs that look at files
+       they read in should do this anyway, and be "suspicious"
+       of data read in in this fashion.
+
+Thus, we believe that most things will continue to work.  Look
+over all your code, and if it is in category (2), make it suspicious
+and blank-line checking.
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved

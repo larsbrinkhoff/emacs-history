@@ -1,0 +1,87 @@
+                                        Multics Emacs Wall Chart (Fundamental mode)  12/8/81
+
+
+
+#         rubout-char		  ^XO       select-other-window	    esc-ESC   eval-lisp-line
+@         kill-to-beginning-of-line	  ^XQ       macro-query		    esc-F     forward-word
+CR        new-line			  ^XR       rmail			    esc-G     go-to-line-number
+ESC       escape			  ^XS       global-print		    esc-H     mark-paragraph
+\         escape-char		  ^XV       view-lines		    esc-I     tab-to-previous-columns
+\177      rubout-char		  ^XW       multi-word-search		    esc-K     kill-to-end-of-sentence
+^@        set-or-pop-the-mark		  ^XX       put-variable		    esc-L     lower-case-word
+^A        go-to-beginning-of-line	  ^X\177    kill-backward-sentence	    esc-M     skip-over-indentation
+^B        backward-char		  ^X^B      list-buffers		    esc-N     down-comment-line
+^C        re-execute-command		  ^X^C      quit-the-editor		    esc-P     prev-comment-line
+^D        delete-char		  ^X^E      comout-command		    esc-Q     runoff-fill-paragraph
+^E        go-to-end-of-line		  ^X^F      find-file		    esc-R     move-to-screen-edge
+^F        forward-char		  ^X^G      ignore-prefix		    esc-S     center-line
+^G        command-prompt-abort	  ^X^I      indent-rigidly		    esc-SPACE complete-command
+^J        noop			  ^X^L      lower-case-region		    esc-T     twiddle-words
+^K        kill-lines		  ^X^O      delete-blank-lines	    esc-U     upper-case-word
+^L        redisplay-command		  ^X^R      read-file		    esc-V     prev-screen
+^N        next-line-command		  ^X^S      save-same-file		    esc-W     copy-region
+^O        open-space		  ^X^T      toggle-redisplay		    esc-X     extended-command
+^P        prev-line-command		  ^X^U      upper-case-region		    esc-Y     wipe-this-and-yank-previous
+^Q        quote-char		  ^X^W      write-file		    esc-[     beginning-of-paragraph
+^R        reverse-string-search	  ^X^X      exchange-point-and-mark	    esc-\     delete-white-sides
+^S        string-search		  ^X_       underline-region		    esc-\177  rubout-word
+^T        twiddle-chars		  ^Y        yank			    esc-]     end-of-paragraph
+^U        multiplier		  ^Z;       kill-comment		    esc-^     delete-line-indentation
+^V        next-screen		  ^ZF       object-mode-find-file	    esc-^B    balance-parens-backward
+^W        wipe-region		  ^ZG       go-to-named-mark		    esc-^F    balance-parens-forward
+^X#       kill-backward-sentence	  ^Z^@      set-named-mark		    esc-^G    ignore-prefix
+^X(       begin-macro-collection	  ^Z^B      edit-buffers		    esc-^I    indent-to-fill-prefix
+^X)       end-macro-collection	  ^Z^F      get-filename		    esc-^O    split-line
+^X*       show-last-or-current-macro	  ^Z^G      ignore-prefix		    esc-^V    page-other-window
+^X.       set-fill-prefix		  ^Z^L      redisplay-this-line	    esc-^W    merge-last-kills-with-next
+^X0       remove-window		  ^Z^V      scroll-current-window	    esc-^Y    yank-minibuf
+^X1       expand-window-to-whole-screen	  ^Z^W      edit-windows		    esc-_     underline-word
+^X2       create-new-window-and-go-there  ^Z^Z      signalquit		    esc-~     unmodify-buffer
+^X3       create-new-window-and-stay-here ^Z_       remove-underlining-from-word
+^X4       select-another-window	  ^_        help-on-tap
+^X;       set-comment-column		  esc-#     rubout-word
+^X=       linecounter		  esc-%     query-replace
+^XB       select-buffer		  esc-/     regexp-search-command
+^XCR      eval-multics-command-line	  esc-;     indent-for-comment
+^XD       edit-dir			  esc-<     go-to-beginning-of-buffer
+^XE       execute-last-editor-macro	  esc->     go-to-end-of-buffer
+^XESC     escape-dont-exit-minibuf	  esc-?     describe-key
+^XF       set-fill-column		  esc-A     backward-sentence
+^XG       get-variable		  esc-B     backward-word
+^XH       mark-whole-buffer		  esc-C     capitalize-initial-word
+^XI       insert-file		  esc-CR    cret-and-indent-relative
+^XK       kill-buffer		  esc-D     delete-word
+^XM       send-mail			  esc-E     forward-sentence
+
+
+
+                                          -----------------------------------------------------------
+
+
+Historical Background
+
+This edition of the Multics software materials and documentation is provided and donated
+to Massachusetts Institute of Technology by Group BULL including BULL HN Information Systems Inc. 
+as a contribution to computer science knowledge.  
+This donation is made also to give evidence of the common contributions of Massachusetts Institute of Technology,
+Bell Laboratories, General Electric, Honeywell Information Systems Inc., Honeywell BULL Inc., Groupe BULL
+and BULL HN Information Systems Inc. to the development of this operating system. 
+Multics development was initiated by Massachusetts Institute of Technology Project MAC (1963-1970),
+renamed the MIT Laboratory for Computer Science and Artificial Intelligence in the mid 1970s, under the leadership
+of Professor Fernando Jose Corbato. Users consider that Multics provided the best software architecture 
+for managing computer hardware properly and for executing programs. Many subsequent operating systems 
+incorporated Multics principles.
+Multics was distributed in 1975 to 2000 by Group Bull in Europe , and in the U.S. by Bull HN Information Systems Inc., 
+as successor in interest by change in name only to Honeywell Bull Inc. and Honeywell Information Systems Inc. .
+
+                                          -----------------------------------------------------------
+
+Permission to use, copy, modify, and distribute these programs and their documentation for any purpose and without
+fee is hereby granted,provided that the below copyright notice and historical background appear in all copies
+and that both the copyright notice and historical background and this permission notice appear in supporting
+documentation, and that the names of MIT, HIS, BULL or BULL HN not be used in advertising or publicity pertaining
+to distribution of the programs without specific prior written permission.
+    Copyright 1972 by Massachusetts Institute of Technology and Honeywell Information Systems Inc.
+    Copyright 2006 by BULL HN Information Systems Inc.
+    Copyright 2006 by Bull SAS
+    All Rights Reserved
