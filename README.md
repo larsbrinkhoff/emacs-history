@@ -6,6 +6,17 @@ not included.
 
 ## Provenance
 
+- TECO EMACS 162 from Alfred M. Szmidt.
+
+  `ai-emacs.tgz` and `ai-emacs1.tgz`
+
+  "Based on AI EMACS; LOCK timestamp:
+  1988-03-02 or there abouts"
+
+  "This is for ITS (from the AI system), I think the one on MC is the
+  same I can check if you really are curious, and this should be 162
+  but lack of version strings and what not make it interesting"
+
 - emacs-v170.tap from Richard Alderson.
 
   TOPS-20 `DUMP` tape image of TECO EMACS.  Extracted in
