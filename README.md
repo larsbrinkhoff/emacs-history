@@ -18,8 +18,9 @@ not included.
 
 - emacs-v170.tap from Richard Alderson.
 
-  TOPS-20 `DUMP` tape image of TECO EMACS.  Extracted in
-  http://github.com/PDP-10/emacs/tree/extracted
+  TOPS-20 `DUMP` tape image of TECO EMACS.  `<EMACS>EMACS.EXE` has
+  timestamp May 1 1996.  
+  Extracted in http://github.com/PDP-10/emacs/tree/extracted
 
 - MIT CADR Zwei from Alfred M. Szmidt and Brad Parker.
 
