@@ -44,6 +44,12 @@ not included.
 
 - emacs-18.55.tar.Z from ftp://ftp.cs.ait.ac.th/pub/pc/demacs/
 
+- emacs-15.0.3.s.tar.gz from http://ftp.nice.ch/pub/next/developer/nextsources/Pre3.X/
+
+  GNU Emacs for NeXT systems.  This is a version of 18.55, plus RMS
+  changes up until July 1990.  This is interesting, because stock
+  18.55 was released in August 1989, and 18.56 in January 1991.
+
 - emacs-18.57.tar.gz from  http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
 
 - emacs-18.58.tar.gz from  http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
