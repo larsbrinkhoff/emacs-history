@@ -66,6 +66,11 @@ not included.
   with the Symbolics Lisp Machines (zwei-NNN where NNN is the version
   of Zwei/Zmacs)"
 
+- zwei-lambda.tar.xz from Alfred M. Szmidt and Joe Marshall.
+
+  "This is for/from Lambda, I do not know the version sadly :( The
+  copy comes from Joe Marshall who used to work at Gigamos."
+
 - Emacs 13.8 from http://decuslib.com/decus/vax85b/gnuemax/emacs/
 
   Possibly with VMS modifications.
