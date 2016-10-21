@@ -1,0 +1,30 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Path: utzoo!watmath!clyde!rutgers!mit-eddie!prep.ai.mit.edu!rms
+From: rms@prep.ai.mit.edu.UUCP
+Newsgroups: comp.emacs
+Subject: GNU Emacs 18.31 available
+Message-ID: <8611240122.AA22328@EDDIE>
+Date: Sun, 23-Nov-86 20:22:53 EST
+Article-I.D.: EDDIE.8611240122.AA22328
+Posted: Sun Nov 23 20:22:53 1986
+Date-Received: Mon, 24-Nov-86 04:27:55 EST
+Sender: dae...@mit-eddie.MIT.EDU
+Lines: 17
+
+GNU Emacs 18.31 is now available in the usual place.
+
+The VMS newline problems are believed to be fixed.
+The remaining unsolved problems include a failure of unexec
+on some kinds of V.2.2 systems (but not on all),
+possibly some nonfatal problems with X (one report that
+C-g takes effect synchronously under X),
+and many things that don't work on VMS because they use
+subprocesses on Unix.
+
+The differences from 18.30 are around 200k.
+
+I suspect that something was corrupted in the 18.26 to 18.30 diffs,
+or else they are installed incorrectly by patch.  Please do not
+propagate Emacs 18.30 distributions that were made by updating from
+18.26.  In particular, don't continue updating them.  I suggest that
+you get a new full distribution.

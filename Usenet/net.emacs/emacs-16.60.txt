@@ -1,0 +1,84 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: 16.60
+Message-ID: <5352@mit-eddie.UUCP>
+Date: Sat, 21-Sep-85 03:30:32 EDT
+Article-I.D.: mit-eddi.5352
+Posted: Sat Sep 21 03:30:32 1985
+Date-Received: Sun, 22-Sep-85 05:41:48 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 69
+
+From: Richard M. Stallman <rms@mit-prep>
+I have fixed two more bugs, making Emacs 16.60:
+A file diff-16.56-16.60 is available on /u2/emacs
+
+in process.c:
+***************
+*** 38,43
+  #include "window.h"
+  #include "buffer.h"
+  #include "process.h"
+  
+  extern errno;
+  extern sys_nerr;
+
+--- 38,47 -----
+  #include "window.h"
+  #include "buffer.h"
+  #include "process.h"
++   
++ #ifdef howmany				/* in sys/types.h under 4.3 BSD */
++ #undef howmany
++ #endif
+  
+  extern errno;
+  extern sys_nerr;
+
+
+in dispnew.c:
+***************
+*** 604,613
+    register int i;
+  
+    int free_at_end_vpos = screen_height;
+-   if (scroll_region_ok)
+-     free_at_end_vpos -= unchanged_at_bottom;
+-   else if (memory_below_screen)
+-     free_at_end_vpos = -1;
+    
+    /* Compute hash codes of all the lines.
+       Also calculate number of changed lines,
+
+--- 604,609 -----
+    register int i;
+  
+    int free_at_end_vpos = screen_height;
+    
+    /* Compute hash codes of all the lines.
+       Also calculate number of changed lines,
+***************
+*** 642,647
+  
+    window_size = screen_height - unchanged_at_top - unchanged_at_bottom;
+  
+    /* If large window, fast terminal and few lines in common between
+       PhysScreen and DesiredScreen, don't bother with i/d calc.  */
+    if (window_size >= 18 && baud_rate > 2400
+
+--- 638,648 -----
+  
+    window_size = screen_height - unchanged_at_top - unchanged_at_bottom;
+  
++   if (scroll_region_ok)
++     free_at_end_vpos -= unchanged_at_bottom;
++   else if (memory_below_screen)
++     free_at_end_vpos = -1;
++ 
+    /* If large window, fast terminal and few lines in common between
+       PhysScreen and DesiredScreen, don't bother with i/d calc.  */
+    if (window_size >= 18 && baud_rate > 2400

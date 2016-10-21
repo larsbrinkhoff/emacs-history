@@ -1,0 +1,40 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.3 4.3bsd-beta 6/6/85; site mit-eddie.MIT.EDU
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms
+From: r...@PREP.AI.MIT.EDU
+Newsgroups: net.emacs
+Subject: GNU Emacs 17.55 Available
+Message-ID: <1353@mit-eddie.MIT.EDU>
+Date: Fri, 21-Mar-86 18:48:12 EST
+Article-I.D.: mit-eddi.1353
+Posted: Fri Mar 21 18:48:12 1986
+Date-Received: Sat, 22-Mar-86 22:25:44 EST
+Sender: dae...@mit-eddie.MIT.EDU
+Organization: M.I.T. EE/CS Computer Facility, Cambridge MA
+Lines: 25
+
+From: r...@PREP.AI.MIT.EDU (Richard M. Stallman)
+
+GNU Emacs 17.55 is now available in the usual place:
+/u2/emacs/edist.tar-17.52 on prep.ai.mit.edu.
+Differences from 17.54 are available now;
+differences from 17.49 will appear later tonight in
+/u2/emacs/diff-17.49-17.55
+
+This new version is known to work on system V rel 0 and 2
+on vaxes, and system V rel 2 on the NCR Tower 32.
+It probably fixes the problems some people have recently
+reported seeing.
+
+I urge everyone to upgrade their earlier subversions of
+Emacs version 17 to 17.55, since this is nearly final
+and future changes will be very small.
+
+Tapes of this version will start to be available from
+the Free Software Foundation next week.  In addition,
+these tapes will have MIT Scheme version 4.0, which has
+been changed to be nearly compatible with the Revised
+Revised Report on Scheme, which is included in the
+distribution in machine-readable form.
+
+For more information on ordering tapes, send me mail.

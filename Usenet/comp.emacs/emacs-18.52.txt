@@ -1,0 +1,20 @@
+Path: utzoo!utgpu!water!watmath!clyde!bellcore!tness7!killer!mit-eddie!WHEATIES.AI.MIT.EDU!rms
+From: r...@WHEATIES.AI.MIT.EDU (Richard Stallman)
+Newsgroups: comp.emacs
+Subject: Emacs 18.52 available
+Message-ID: <8809012005.AA00538@sugar-bombs.ai.mit.edu>
+Date: 1 Sep 88 20:05:25 GMT
+Sender: dae...@eddie.MIT.EDU
+Lines: 11
+
+Emacs 18.52 is now available on prep.ai.mit.edu in
+/u/emacs/edist.tar-18.52.Z.  This file is around 4 meg.
+
+Compressed differences from 18.51 are in /u/emacs/diff-18.51-18.52.Z.
+They are 542000 bytes.
+
+This is the last release of Emacs I intend to make before version 19.
+The first test releases of version 19 will probably be in 6 to 9
+months.  Version 19 already has support for multiple X windows,
+per-buffer mouse commands, scroll bars, and European character sets.
+I don't know what other new features it will have.

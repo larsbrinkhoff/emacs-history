@@ -1,0 +1,247 @@
+Path: bga.com!news.sprintlink.net!redstone.interpath.net!ddsw1!news.kei.com!MathWorks.Com!europa.eng.gtefsd.com!howland.reston.ans.net!vixen.cso.uiuc.edu!usenet
+From: cth...@willow.cs.uiuc.edu (Chuck Thompson)
+Newsgroups: comp.emacs
+Subject: XEmacs 19.11 released (formerly Lucid Emacs)
+Date: 14 Sep 1994 02:22:51 GMT
+Organization: University of Illinois at Urbana
+Lines: 236
+Distribution: world
+Message-ID: <CTHOMP.94Sep13212251@willow.cs.uiuc.edu>
+NNTP-Posting-Host: willow.cs.uiuc.edu
+
+XEmacs 19.11 is now available.  This is a version of GNU Emacs derived from
+Emacs version 19 from the Free Software Foundation.
+
+There have been a number of administrative changes since the 19.10 release.
+All users are encouraged to read these notes completely (with the exception of
+the installation instructions.)
+
+You can get it via anonymous FTP from CS.UIUC.EDU (128.174.252.1).
+
+Log in with the user "anonymous" and "username@host" as a password (that is,
+your email address.)  Execute the command "cd /pub/xemacs/".  There you will
+find a number of files, only a subset of which you need.
+
+CS.UIUC.EDU is the canonical distribution point and has an excellent net
+connection, but only allows 20 connections at a time; you may want to get it
+from one of the mirror sites instead, such as:
+
+	self.stanford.edu		/pub/xemacs/
+	ftp.uu.net			/systems/gnu/xemacs/
+	ftp.ai.mit.edu			/pub/xemacs/
+	liasun3.epfl.ch			/pub/gnu/xemacs/
+	ftp.cenatls.cena.dgac.fr	/pub/Emacs/xemacs/
+	ftp.germany.eu.net		/pub/X11/misc/xemacs
+	ftp.th-darmstadt.de		/pub/editors/xemacs/
+	audrey.levels.unisa.edu.au	/xemacs/
+	ftp.center.osaka-u.ac.jp	/xemacs/
+	ftp.technion.ac.il		/pub/unsupported/gnu/xemacs/
+
+It may take a few days for the files to propogate to all of the mirrors.
+(Mirror sites are encouraged to automatically check cs.uiuc.edu.)
+
+The complete list of mirror sites, the current FAQ, and several other XEmacs
+related items can be found at the brand new XEmacs World Wide Web page:
+
+	 	 http://xemacs.cs.uiuc.edu/
+
+
+
+There are three types of tar files which comprise the xemacs distribution:
+
+ - A tar file containing a source tree, for building xemacs from scratch;
+ - A tar file containing the architecture-independent parts of a xemacs
+   installation tree (which contains only those files which are needed at
+   run-time, and excludes much of the source code);
+ - And several tar files containing the architecture-dependent parts of a
+   xemacs installation tree (the executables themselves.)
+
+If you intend to build xemacs from source, all you need is the single source
+distribution tar file.
+
+If you intend to install the precompiled binaries for a single architecture,
+then you need two tar files: both the architecture-independent and the 
+architecture-dependent parts of the installation tree.  
+
+If you intend to install the precompiled binaries for more than one
+architecture, then you need three or more tar files: the single tar file of
+the architecture-independent parts of the installation tree, and the tar files
+of the architecture-dependent parts for the architectures you want.
+
+  README
+	This file.
+
+  xemacs-19.11.tar.gz
+	The complete source distribution.  This file is about 10 megabytes.
+	When unpacked, the source distribution will take up about 36 megs.
+	You will need an additional 12 megs or so to compile it.
+
+  README.executables
+	Installation instructions for the precompiled binaries.  It's
+	important that you read this before unpacking the executables.
+
+  xemacs-19.11-common.tar.gz
+	This contains the architecture-independent parts of the installation
+	tree.  If you intend to build xemacs from scratch, you do not need
+	this file: it contains a subset of the files included in
+	xemacs-19.11.tar.gz but arranged in a different directory structure
+	(the files are arranged as an installation tree rather than a build
+	tree.)  If you intend to install the precompiled binaries, you need
+	this file in addition to the binary kit(s).
+
+  xemacs-19.11-sparc-sun-sunos4.1.3.tar.gz
+	This contains a set of ready-to-run executables for SunOS 4.1.3.
+	NOTE: you need to get xemacs-19.11-common.tar.gz as well for these to
+	work.  See README.executables.
+
+  xemacs-19.11-sparc-sun-sunos4.1.3-sparcworks.tar.gz
+  	This set contains a set of ready-to-run executables for SunOS 4.1.3,
+	plus support for Sun's SparcWorks development environment.  If you do
+	not own SparcWorks, then these binaries do not add any features that
+	you can take advantage of.  NOTE: you need to get
+	xemacs-19.11-common.tar.gz as well for these to work.  See
+	README.executables.
+
+  xemacs-19.11-sparc-sun-solaris2.3.tar.gz
+	This contains a set of ready-to-run executables for SunOS 5.3,
+	otherwise known as Solaris 2.3.  NOTE: you need to get
+	xemacs-19.11-common.tar.gz as well for these to work.  See
+	README.executables.
+
+  xemacs-19.11-sparc-sun-solaris2.3-sparcworks.tar.gz
+  	This set contains a set of ready-to-run executables for SunOS 5.3,
+	otherwise known as Solaris 2.3, plus support for Sun's SparcWorks
+	development environment.  If you do not own SparcWorks, then these
+	binaries do not add any features that you can take advantage of.
+	NOTE: you need to get xemacs-19.11-common.tar.gz as well for these to
+	work.  See README.executables.
+
+  xemacs-19.11-m68k-hp-hpux9.tar.gz
+	Executables for HP9000/300s and HP9000/400s with HPUX 8 or 9.
+
+  xemacs-19.11-hppa1.1-hp-hpux9.tar.gz
+	Executables for HP9000/7xx with HPUX 8 or 9.
+
+  xemacs-19.11-mips-sgi-irix4.0.5F.tar.gz
+	Executables for Irix 4.x.
+
+  xemacs-19.11-mips-sgi-irix5.2.tar.gz
+	Executables for IRIX 5.x.
+
+  xemacs-19.11-rs6000-ibm-aix3.2.tar.gz
+	Executables for AIX 3.2.4 and 3.2.5.
+
+  xemacs-19.11-mips-dec-ultrix4.4.tar.gz
+	Executables for Ultrix 4.4.
+
+  xemacs-19.11-alpha-dec-osf2.1.tar.gz
+	Executables for Dec Alpha OSF 2.1.
+
+  xemacs-19.11-i486-unknown-linux-athena.tar.gz
+  	Executables for Linux - Athena toolkit.
+
+  xemacs-19.11-i486-unknown-linux-athena.tar.gz
+  	Executables for Linux - Athena3d toolkit.
+
+  xemacs-19.11-i486-unknown-linux-motif.tar.gz
+  	Executables for Linux - Motif toolkit.
+
+  xemacs-19.11-m88k-motorola-sysv4.tar.gz
+	Executables for Motorola SVR4.
+
+  xpm-3.4c.tar.gz
+	The XPM library (optional, but recommended.)
+
+  gzip-1.2.4.tar.Z
+	The GNU compression utility; needed to unpack `.gz' files.  You can
+	get the latest version of this from any of the GNU mirror sites.
+
+Don't forget to set "binary" mode when transferring these files.  Unpack them
+with some variation of the command "zcat xemacs-19.11.tar.gz | tar -pvxf -".
+
+
+There is a new mailing list for discussing XEmacs.
+
+   xem...@cs.uiuc.edu:	    For reporting all bugs in XEmacs, including bugs
+			    in the compilation and installation procedures.
+			    Also for random questions and conversation about
+			    using XEmacs.
+
+To be added or removed from this mailing list, send mail to
+xemacs-...@cs.uiuc.edu.  (Send all administrative requests, and only
+administrative requests, to this address.)
+
+A CFV (Call For Votes) is currently in progress for a new newsgroup
+comp.emacs.xemacs.  After this group passes and is created the xemacs mailing
+list will be bidirectionally gatewayed into it.  In the meantime, xemacs is
+simply an alias for help-xemacs.
+
+
+The old mailing lists are still active for now, but have been renamed.
+
+   bug-luc...@lucid.com is now:
+
+   bug-x...@cs.uiuc.edu	For reporting all bugs in XEmacs,
+				including bugs in the compilation and
+				installation procedures.
+
+
+   help-luc...@lucid.com is now:
+
+   help-...@cs.uiuc.edu	For random questions and conversation
+				about using XEmacs.
+
+
+To be added or removed from these mailing lists, send mail to
+bug-xemac...@cs.uiuc.edu, help-xema...@cs.uiuc.edu or
+xemacs-...@cs.uiuc.edu).  (Send all administrative requests, and
+only administrative requests, to these addresses.)  These mailing
+lists are bidirectionally gatewayed into the newsgroups
+alt.lucid-emacs.bug and alt.lucid-emacs.help.
+
+Please use the newsgroups instead of the mailing lists if at all possible; it
+makes less work for us.
+
+Do not send messages about problems with XEmacs to the FSF GNU Emacs
+newsgroups and mailing lists (help-gn...@prep.ai.mit.edu,
+bug-gn...@prep.ai.mit.edu, gnu.emacs.help, gnu.emacs.bug, et cetera)
+unless you are sure that the problem you are reporting is a problem with both
+versions of Emacs.
+
+For information about the differences between XEmacs and FSF GNU
+Emacs, see the NEWS file included with the XEmacs distribution or
+check the XEmacs WWW page.
+
+
+** Major Differences Between 19.10 and 19.11
+============================================
+  
+The name has changed from "Lucid Emacs" to "XEmacs".  Along with this is a
+new canonical ftp site: cs.uiuc.edu:/pub/xemacs.
+
+XEmacs now has its very own World Wide Web page!  It contains a
+complete list of the FTP distribution sites, the most recent FAQ,
+pointers to elisp packages not included with the distribution, and
+other useful stuff.  Check it out at http://xemacs.cs.uiuc.edu/.
+
+A preliminary New Users Guide.
+
+cc-mode.el now provides the default C and C++ modes.
+
+The primary goal of this release is stability.  Very few new features have
+been introduced but lots of bugs have been fixed.  Many of the elisp packages
+have been updated.
+
+Some of the new elisp packages ---
+
+tcl-mode.el:  major mode for editing TCL code
+
+fast-lock.el: saves and restores font-lock highlighting, greatly
+            reducing the time necessary for loading a font-lock'ed
+            file
+
+ps-print.el: prints buffers to Postscript printers preserving the
+           buffer's bold and italic text attributes
+
+toolbar.el: provides a "fake" toolbar for use with XEmacs (an
+          integrated one will be included with 19.12)

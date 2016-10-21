@@ -1,0 +1,32 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!r...@prep.ai.mit.edu
+From: r...@prep.ai.mit.edu
+Newsgroups: net.emacs
+Subject: Emacs 17.36 available
+Message-ID: <809@mit-eddie.UUCP>
+Date: Fri, 20-Dec-85 06:13:05 EST
+Article-I.D.: mit-eddi.809
+Posted: Fri Dec 20 06:13:05 1985
+Date-Received: Sat, 21-Dec-85 05:24:55 EST
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 17
+
+From: r...@prep.ai.mit.edu (Richard M. Stallman)
+Emacs 17.36 is now available for general distribution.
+It is in /u2/emacs/edist.tar-17.36 and as individual files
+in /u2/emacs/dist, on Internet host prep.ai.mit.edu.
+
+The current manual source, included in the distribution, can be
+formatted with an ordinary TeX.  The manual in dvi format is available
+as /u2/emacs/emacs.dvi.
+
+Differences from 17.35 are in /u2/emacs/diff-17.35-17.36 (directories
+src, lisp and etc only).  However, it is a good idea to get the entire
+current distriution so as to have up-to-date manual files, etc.
+Any further changes will be bug fixes and will be posted to this list,
+so if you do this now you will not have to do it again.
+
+The Free Software Foundation will start distributing Emacs version
+17 (tapes and printed manuals) in a couple of weeks.

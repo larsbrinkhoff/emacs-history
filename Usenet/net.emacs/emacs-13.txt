@@ -1,0 +1,40 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10 beta 3/9/83; site encore.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!genrad!panda!talcott!encore!wegrzyn
+From: wegrzyn@encore.UUCP (Chuck Wegrzyn)
+Newsgroups: net.emacs,net.general,net.unix,net.unix-wizards
+Subject: Public Domain EMACS available from GNU Project
+Message-ID: <194@encore.UUCP>
+Date: Wed, 20-Mar-85 11:03:20 EST
+Article-I.D.: encore.194
+Posted: Wed Mar 20 11:03:20 1985
+Date-Received: Thu, 21-Mar-85 04:25:27 EST
+Organization: Encore Computer Corp., Wellesley Hills, MA
+Lines: 25
+Xref: watmath net.emacs:830 net.general:4327 net.unix:3985 net.unix-wizards:12496
+
+
+	The GNU project has released its first major subsystem,
+	the EMACS editor. This editor is a sophisticated screen
+	editor that is compatible and comparable with the EMACS
+	editors being sold by UniPress and CCA. It comes with
+	Mock Lisp ( did you know that UniPress trademarked MLISP??),
+	and all the little bells and features most of us expect
+	with EMACS.
+
+	The GNU version of EMACS, written by Richard Stallman, is
+	available for distribution. The distribution includes all
+	source code for EMACS and a source code level debugger.
+	Furthermore, under the GNU project banner, the EMACS system
+	can be distributed (in source code form) by one and all.
+
+	I was thinking of sending out the source code over the net,
+	but resisted : it is over 1Mbyte of code. If there is
+	enough demand, I will add a UUCP dial-in to our system, or
+	send out tapes, or ... ?
+
+	Is anyone interested in EMACS? If so, please tell me how
+	you think I should distribute it?
+
+			Chuck Wegrzyn
+		{allegra,decvax,ihnp4,princeton}!encore!wegrzyn

@@ -1,0 +1,23 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Path: utzoo!mnetor!seismo!rutgers!mit-eddie!PREP.AI.MIT.EDU!rms
+From: r...@PREP.AI.MIT.EDU (Richard M. Stallman)
+Newsgroups: comp.emacs
+Subject: GNU Emacs 18.36 available
+Message-ID: <8701212332.AA16786@EDDIE.MIT.EDU>
+Date: Wed, 21-Jan-87 18:25:04 EST
+Article-I.D.: EDDIE.8701212332.AA16786
+Posted: Wed Jan 21 18:25:04 1987
+Date-Received: Thu, 22-Jan-87 01:53:20 EST
+Sender: nes...@mit-eddie.MIT.EDU
+Lines: 10
+
+GNU Emacs version 18.36 is now available for testing in the
+usual places on prep.  Diffs from 18.35 are 240k.
+Version 18 is still considered a test version because
+there are still a few machines that 17 ran on but 18 does not.
+
+This version mainly fixes a lot of bugs, including one
+garbage collection bug that affected only certain machines
+including the RT/PC.  If you found Emacs 18 crashed while loading
+the predefined Lisp code, it is worth seeing if 18.36 fixes
+the problem.

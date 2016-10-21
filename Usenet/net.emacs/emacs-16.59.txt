@@ -1,0 +1,33 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: Emacs 16.59
+Message-ID: <5337@mit-eddie.UUCP>
+Date: Tue, 17-Sep-85 22:12:59 EDT
+Article-I.D.: mit-eddi.5337
+Posted: Tue Sep 17 22:12:59 1985
+Date-Received: Thu, 19-Sep-85 04:31:19 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 18
+
+From: Richard M. Stallman <rms@mit-prep>
+A couple more bugs have been found in 16.57/58.
+
+1) In abbrev.c, there are two calls to Fdefine_abbrev
+that pass only four arguments.  They should pass a fifth
+argument:   make_number (0)
+
+2) In buffer.c, there is a call to Fnext_window that passes
+only one argument.  Qnil should be passed as a second argument.
+
+3) In regex.c, in the function re_match_2, the code following
+ case endline: should look like
+	  if (d == end2
+	      || (d == end1 ? (size2 == 0 || *string2 == '\n') : *d == '\n'))
+	    break;
+	  goto fail;
+
+These are all incorporated in 16.59, available in a few minutes.

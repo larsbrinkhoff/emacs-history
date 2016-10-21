@@ -1,0 +1,23 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.3 4.3bsd-beta 6/6/85; site mit-eddie.MIT.EDU
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms
+From: r...@PREP.AI.MIT.EDU
+Newsgroups: net.emacs
+Subject: GNU Emacs 17.63
+Message-ID: <1888@mit-eddie.MIT.EDU>
+Date: Wed, 7-May-86 11:04:23 EDT
+Article-I.D.: mit-eddi.1888
+Posted: Wed May  7 11:04:23 1986
+Date-Received: Thu, 8-May-86 22:04:04 EDT
+Sender: uu...@mit-eddie.MIT.EDU
+Organization: M.I.T. EE/CS Computer Facility, Cambridge MA
+Lines: 8
+
+From: r...@PREP.AI.MIT.EDU (Richard M. Stallman)
+
+Emacs version 17.63 is now available.  Differences from
+versions 17.60, 17.61 and 17.62 are in /u2/emacs/diff-...
+on prep.ai.mit.edu.  These files range in size from
+20k to 35k.  Perhaps someone would like to post them to
+an appropriate list; I am not sure whether it is good
+to post such large files to this list, so I will let others decide.

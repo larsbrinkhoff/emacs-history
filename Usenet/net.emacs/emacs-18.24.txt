@@ -1,0 +1,28 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Path: utzoo!watmath!clyde!bellcore!ulysses!allegra!mit-eddie!jbs
+From: r...@PREP.AI.MIT.EDU
+Newsgroups: net.emacs
+Subject: Version 18 available for testing
+Message-ID: <3365@mit-eddie.MIT.EDU>
+Date: Thu, 2-Oct-86 16:27:02 EDT
+Article-I.D.: mit-eddi.3365
+Posted: Thu Oct  2 16:27:02 1986
+Date-Received: Sat, 4-Oct-86 09:32:08 EDT
+Sender: j...@mit-eddie.MIT.EDU
+Organization: M.I.T. EE/CS Computer Facility, Cambridge MA
+Lines: 14
+
+From: r...@PREP.AI.MIT.EDU (Richard M. Stallman)
+
+Those who wish to test GNU Emacs version 18 and are
+prepared for possible problems can now get it from the usual
+places (/u2/emacs/dist and /u2/emacs/edist.tar-18.24)
+on prep.ai.mit.edu.
+
+I am especialy interested to hear of any problems you have
+in getting it to run at all on previously supported systems other
+than 4.2bsd on a vax.
+
+I will be leaving for a month Friday evening.  During that time
+mly will probably merge in bug fixes.  However, anything you can
+get me by tomorrow afternoon I will look at before I go.

@@ -1,0 +1,311 @@
+Newsgroups: comp.emacs
+Path: gmd.de!xlink.net!howland.reston.ans.net!agate!headwall.Stanford.EDU!lucid.com!karoshi!jwz
+From: Jamie Zawinski <j...@lucid.com>
+Subject: Lucid Emacs 18.8 now available
+Message-ID: <JWZ.93Sep6185153@thalidomide.lucid.com>
+Sender: use...@lucid.com
+Organization: Lucid, Inc., Menlo Park, CA
+Date: 07 Sep 1993 01:51:53 GMT
+Lines: 301
+
+Lucid GNU Emacs 19.8 is now available.  This is a version of GNU Emacs derived
+from an early version of Emacs version 19 from the Free Software Foundation.
+
+(If you are already a user of version 19.6, you might want to skip ahead to
+the section labeled "Differences Between 19.6 and 19.8".)
+
+You can get it via anonymous FTP from LUCID.COM (192.43.175.3).
+
+Note that the IP address of LUCID.COM changed in mid-July, 1993; if you cannot
+connect, check to see that you are picking up the correct address.
+
+Log in with the user "anonymous" and "username@host" as a password (that is,
+your email address.)  Execute the command "cd /pub/lemacs/".  These are the
+files you will find there:
+
+  lemacs-19.8.tar.gz
+	The complete source distribution.  This file is about 7 megabytes.
+	When unpacked, the source distribution will take up about 25 megs.
+	You will need an additional 12 megs or so to compile it.
+
+  lemacs-19.8-sun4.tar.gz
+	This is the same as lemacs-19.8.tar.gz, plus the addition of a set
+	of ready-to-run executables for SunOS 4.1.  This file is about 9.5
+	megs.  When unpacked, the lemacs tree will take up about 31 megs.
+	This version of lemacs is compiled with support for Motif dialog
+	boxes and XPM files.
+
+  xpm-3.2f.tar.gz
+	The XPM library (optional.)
+
+
+Files with extension `.gz' have been packed with `gzip', the GNU compression
+utility.  The distribution directory also contains copies of these files in
+the Unix `compress' format, ending in `.Z'.  The contents of the archives are
+the same, but the `.Z' files are about 30% larger.
+
+Don't forget to set "binary" mode when transferring these files.  Unpack them
+with some variation of the command "zcat lemacs-19.8.tar.Z | tar -pvxf -".
+
+You can also purchase Lucid Emacs tapes and manuals directly from Lucid.
+Call (800) 223-9322 or send mail to lucid...@lucid.com for current pricing,
+media, and platform information.
+
+We have created two mailing lists for discussing our Emacs.
+
+   bug-luc...@lucid.com	For reporting all bugs in Lucid GNU Emacs,
+				including bugs in the compilation and
+				installation procedures.
+
+   help-luc...@lucid.com	For random questions and conversation
+				about using Lucid GNU Emacs.
+
+To be added or removed from these mailing lists, send mail to 
+bug-lucid-e...@lucid.com or help-lucid-e...@lucid.com.
+
+The bug-lucid-emacs and help-lucid-emacs mailing lists are archived in the 
+directory /pub/mlists/, and are bidirectionally gatewayed into the newsgroups
+alt.lucid-emacs.bug and alt.lucid-emacs.help.
+
+Please do not send messages about problems with Lucid GNU Emacs to the FSF
+GNU Emacs newsgroups and mailing lists (help-gn...@prep.ai.mit.edu,
+bug-gn...@prep.ai.mit.edu, gnu.emacs.help, gnu.emacs.bug, et cetera)
+unless you are sure that the problem you are reporting is a problem with
+both versions of GNU Emacs.  People who aren't subscribed to the Lucid GNU
+Emacs mailing lists most likely are not interested in hearing about problems
+with it.
+
+
+Why Another Version of Emacs?
+=============================
+
+Lucid's latest product, Energize, is a C/C++ development environment.  Rather
+than invent (and force our users to learn) a new user-interface, we chose to
+build part of our environment on top of the world's best editor, GNU Emacs.
+(Though our product is commercial, the work we did on GNU Emacs is free
+software, and is useful without having to purchase our product.)
+
+We needed a version of Emacs with mouse-sensitive regions, multiple fonts,
+the ability to mark sections of a buffer as read-only, the ability to detect
+which parts of a buffer has been modified, and many other features.
+
+Why Not Epoch or FSF19?
+=======================
+
+For our purposes, the existing version of Epoch was not sufficient; it did
+not allow us to put arbitrary pixmaps/icons in buffers, `undo' did not
+restore changes to regions, regions did not overlap and merge their
+attributes in the way we needed, and several other things.
+
+We could have devoted our time to making Epoch do what we needed (and, in
+fact, we spent some time doing that in 1990) but, since the FSF planned to 
+include Epoch-like features in their version 19, we decided that our efforts
+would be better spent improving Emacs 19 instead of Epoch.  
+
+Our original hope was that our changes to Emacs would be incorporated into
+the "official" v19.  However, scheduling conflicts arose, and we found that,
+given the amount of work still remaining to be done, we didn't have the time
+or manpower to do the level of coordination that would be necessary to get
+our changes accepted by the FSF.  Consequently, we released our work as a
+forked branch of Emacs, instead of delaying any longer.
+
+Roughly a year after Lucid Emacs 19.0 was released, a beta version of the FSF
+branch of Emacs 19 was released.  The FSF version is better in some areas, and
+worse in others, as reflects the differing focus of our development efforts.
+
+We plan to continue developing and supporting Lucid Emacs, and merging in bug
+fixes and new features from the FSF branch as appropriate; we do not plan to
+discard any of the functionality that we implemented which RMS has chosen not
+to include in his version.
+
+Certain elements of Lucid Emacs, or derivatives of them, have been ported to
+the FSF version.  We have not been doing work in this direction, because we
+feel that Lucid Emacs has a cleaner and more extensible substrate, and that
+any kind of merger between the two branches would be far easier by merging
+the FSF changes into our version than the other way around.
+
+We have been working closely with the Epoch developers to merge in the
+remaining Epoch functionality which Lucid Emacs does not yet have.  Epoch
+and Lucid Emacs will soon be one and the same thing.  Work is being done on
+a compatibility package which will allow Epoch 4 code to run in Lemacs with
+little or no change.  (As of 19.8, Lucid Emacs is running a descendant of
+the Epoch redisplay engine.)
+
+No Warranty
+===========
+
+Lucid Emacs is distributed under exactly the same terms as GNU Emacs, and
+thus has no warranty of any kind.
+
+However, if you have received this version of Emacs with Energize, then it is
+covered by your Energize support contract.  If you have received it through
+some other means, then you may buy a support contract for it from Lucid.
+Send mail to lucid...@lucid.com for more information about Lucid Emacs or
+Energize.
+
+What's Different?
+=================
+
+Unless otherwise noted, this file describes differences between Lucid Emacs
+version 19.* and GNU Emacs version 18.57.
+
+Lucid Emacs *currently* requires an X Window System environment to run,
+though it will not be much work to make it run on dumb ttys again.  We plan
+to do this eventually.  If you would like to volunteer to help, send us mail.
+
+Because of our functionality requirements and manpower constraints, we have
+not been able to spend as much time on portability issues as we would like;
+consequently, Lucid Emacs is not necessarily as easy to bring up on other
+systems as the other branches of Emacs are.  We are very eager to get feedback
+about portability problems from those who compile it on other systems.
+
+We have reimplemented the basic input model in a more general way; instead of
+X input being a special-case of the normal ASCII input stream, Emacs has a
+concept of "input events", and ASCII characters are a subset of that.  The
+events that Emacs knows about are not X events, but are a generalization of
+them, so that Emacs can eventually be ported to different window systems.
+
+We have reimplemented keymaps so that sequences of events can be stored into
+them instead of just ASCII codes; it is possible to, for example, bind
+different commands to each of the chords Control-h, Control-H, Backspace,
+Control-Backspace, and Super-Shift-Backspace.  Key bindings, function key
+bindings, and mouse bindings live in the same keymaps.
+
+Input and display of all ISO-8859-1 characters is supported.
+
+You can have multiple X windows ("screens" in lemacs terminology).
+
+Our Emacs has objects called "extents" and "faces", which are roughly
+analogous to Epoch's "buttons," "zones," and "styles."  An extent is a region
+of text (a start position and an end position) and a face is a collection of
+textual attributes like fonts and colors.  Every extent is displayed in some
+"face", so changing the properties of a face immediately updates the display 
+of all associated extents.  Faces can be screen-local: you can have a region
+of text which displays with completely different attributes when its buffer
+is viewed from a different X window.
+
+The display attributes of faces may be specified either in lisp or through
+the X resource manager.
+
+Variable width fonts work.
+
+The height of a line is the height of the tallest font on that line, instead
+of all lines having the same height.
+
+Emacs use the MIT "Xt" toolkit instead of raw Xlib calls, which makes it be
+a more well-behaved X citizen (and also improves portability).  A result of
+this is that it is possible to include other Xt "Widgets" in the Emacs
+window.  Also, Emacs understands the standard Xt command-line arguments.
+
+Emacs understands the X11 "Selection" mechanism; it's possible to define
+and customize selection converter functions and new selection types from 
+elisp, without having to recompile Emacs.
+
+Emacs now supports the Zmacs/Lispm style of region highlighting, where the
+region between the point and mark is highlighted when in its "active" state.
+
+Emacs has a menubar, whose contents are customizable from emacs-lisp.
+This menubar looks Motif-ish, but does not require Motif.  If you already
+own Motif, however, you can configure Emacs to use a *real* Motif menubar
+instead.  If you have OLIT ("OpenLook Intrinsics"), you can use an
+OpenWindows-like menubar.
+
+Emacs can ask questions using popup dialog boxes.  Any command executed from
+a menu will ask yes/no questions with dialog boxes, while commands executed
+via the keyboard will use the minibuffer.
+
+The initial load-path is computed at run-time, instead of at compile-time.
+This means that if you move the Emacs executable and associated directories
+to somewhere else, you don't have to recompile anything.
+
+You can specify what the title of the Emacs windows and icons should be
+with the variables `screen-title-format' and `screen-icon-title-format',
+which have the same syntax as `mode-line-format'.
+
+Emacs now supports floating-point numbers.
+
+Emacs now knows about timers directly, instead of them being simulated by
+a subprocess.
+
+Emacs understands truenames, and can be configured to notice when you are
+visiting two names of the same file.
+
+If you're running on a machine with audio hardware, you can specify sound 
+files for Emacs to play instead of the default X beep.
+
+Much more detail about the differences between Lucid Emacs and Emacs 18 can
+be found in the file .../etc/NEWS (accessible with ``C-h n''.)
+
+Note that building Lucid Emacs requires an ANSI C compiler, like gcc, or
+Lucid's own (and the galaxy's best) Lucid C/C++.
+
+
+Major Differences Between 19.6 and 19.8
+=======================================
+
+There were almost no differences between versions 19.6 and 19.7; version 19.7
+was a bug-fix release that was distributed with Energize 2.1.
+
+Lucid Emacs 19.8 represents the first stage of the Lucid Emacs/Epoch merger.
+The redisplay engine now in lemacs is an improved descendant of the Epoch
+redisplay.  As a result, many bugs have been eliminated, and several disabled
+features have been re-enabled.  Notably:
+
+Selective display (and outline-mode) work.
+
+Horizontally split windows work.
+
+The height of a line is the height of the tallest font displayed on that line;
+it is possible for a screen to display lines of differing heights. (Previously,
+the height of all lines was the height of the tallest font loaded.)
+
+There is lisp code to scale fonts up and down, for example, to load the next-
+taller version of a font.
+
+There is a new internal representation for lisp objects, giving emacs-lisp 28
+bit integers and a 28 bit address space, up from the previous maximum of 26.
+We expect eventually to increase this to 30 bit integers and a 32 bit address
+space, eliminating the need for DATA_SEG_BITS on some architectures.  (On 64
+bit machines, add 32 to all of these numbers.)
+
+GC performance is improved.
+
+Various X objects (fonts, colors, cursors, pixmaps) are accessible as first-
+class lisp objects, with finalization.
+
+When using XPM files, one can specify the values of logical color names to be
+used when loading the files.
+
+It is possible to resize windows by dragging their modelines up and down.  More
+generally, it is possible to add bindings for mouse gestures on the modelines.
+
+There is support for playing sound files on HP machines.
+
+ILISP version 5.5 is included.
+
+The Common Lisp #' read syntax is supported (#' is to "function" as ' is to
+"quote".)
+
+The `active-p' slot of menu items is now evaluated, so one can put arbitrary
+lisp code in a menu to decide whether that item should be selectable, rather
+than doing this with an `activate-menubar-hook'.
+
+The X resource hierarchy has changed slightly, to be more consistent.  It used
+to be
+ 	argv[0]			SCREEN-NAME	pane	screen
+  	ApplicationShell	EmacsShell	Paned	EmacsScreen
+
+   now it is
+
+	argv[0]			shell		pane	SCREEN-NAME
+	ApplicationShell	EmacsShell	Paned	EmacsScreen
+
+The Lucid Emacs sources have been largely merged with FSF version 19; this
+means that the lisp library contains the most recent releases of various
+packages, and many new features of FSF 19 have been incorporated.
+
+Because of this, the lemacs sources should also be substantially more portable.
+
+Please read the NEWS file (C-h n) for more information about these changes.
+
+(No scrollbars yet, but they will be in 19.9.)

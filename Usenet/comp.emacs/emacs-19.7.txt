@@ -1,0 +1,109 @@
+Xref: gmd.de gnu.emacs.announce:23 comp.emacs:3886
+Path: gmd.de!newsserver.jvnc.net!darwin.sura.net!gatech!usenet.ins.cwru.edu!magnus.acs.ohio-state.edu!cis.ohio-state.edu!totoro.cs.oberlin.edu!jimb
+From: ji...@totoro.cs.oberlin.edu (Jim Blandy)
+Newsgroups: gnu.emacs.announce,comp.emacs
+Subject: GNU Emacs 19.7 available
+Date: 22 May 1993 23:47:41 -0400
+Organization: Gatewayed from the GNU Project mailing list info-gn...@prep.ai.mit.edu
+Lines: 96
+Sender: dae...@cis.ohio-state.edu
+Approved: info-gn...@prep.ai.mit.edu
+Distribution: world
+Message-ID: <9305230231.AA01824@totoro.cs.oberlin.edu>
+
+	[ Please use one of the ftp sites mentioned in the list at the
+	  end, instead of prep.ai.mit.edu.  Because GNU Emacs 19 is a large
+	  and long awaited program, prep.ai.mit.edu will be very
+	  loaded and unresponsive, and everyone will do better using
+	  one of the mirror sites.
+
+	  GNU Emacs 19 will join GNU Emacs 18 on FSF's Emacs tape.
+	  It will NOT be on the Experimental tape.  If you are
+	  ordering an Emacs tape within the next month to get a beta
+	  release of GNU Emacs 19, please make a note of this on your
+	  order.
+
+	  Thank You, g...@prep.ai.mit.edu
+	]	  
+
+Version 19.7 of GNU Emacs is now available for beta-testing via
+anonymous FTP from prep.ai.mit.edu, as `pub/gnu/emacs-19.7.tar.z'.
+
+
+Emacs 19's new features include:
+
+* multiple X windows (`frames' to Emacs), with a separate X window for
+  the minibuffer, or with a minibuffer attached to each X window,
+* property lists for characters in buffers and strings,
+* multiple fonts, color, and underlining, defined by those properties,
+* X selection processing, including CLIPBOARD selections,
+* simplified and improved processing of function keys, mouse clicks,
+  and mouse motion,
+* menu bars and popup menus defined by keymaps,
+* scrollbars, and 
+* support for European character sets.
+
+
+At the lisp level, Emacs 19 supports:
+
+* before and after change hooks,
+* source-level debugging of Emacs Lisp programs,
+* floating point numbers,
+* improved buffer allocation, using a new mechanism capable of
+  returning storage to the system when a buffer is killed,
+* interfacing with the X resource manager, and 
+* support for the GNU configuration scheme.
+
+
+Many popular lisp packages are now part of the standard distribution,
+including:
+* the comint modes (CMUshell and friends),
+* the extended byte compiler,
+* the GNUS newsreader,
+* the lisp source-level debugger, and
+* the VC version control system.
+
+
+Thanks are due to:
+* the Emacs 19 alpha-testers,
+* Jamie Zawinski and the Lucid folks for their implementation of some of
+  the X-related features, and
+* Alan Carroll and the people who worked on Epoch for generating
+  initial feedback to a multi-windowed Emacs.
+
+
+Please report bugs to:
+	bug-gn...@prep.ai.mit.edu
+
+This is not a hoax.  ;-}
+
+
+[ Most GNU software is packed using the new `gzip' compression program.
+  Source code is available on most sites distributing GNU software.
+
+  For information on how to order GNU software on tape, floppy, or cd-rom,
+  check the file etc/ORDERS in the GNU Emacs distribution or in GNUinfo/ORDERS
+  on prep, or e-mail a request to: g...@prep.ai.mit.edu
+
+  By ordering tapes from the FSF you help us continue to develop more free
+  software.  Media revenues are our primary source of support.  Donations to
+  FSF are deductible on US tax returns.
+
+  The above software will soon to be at these ftp sites as well.
+  Please try them before prep.ai.mit.edu!   thanx -g...@prep.ai.mit.edu
+	ASIA: ftp.cs.titech.ac.jp, utsun.s.u-tokyo.ac.jp:/ftpsync/prep,
+  cair.kaist.ac.kr:/pub/gnu
+	AUSTRALIA: archie.oz.au:/gnu (archie.oz or archie.oz.au for ACSnet)
+	EUROPE: irisa.irisa.fr:/pub/gnu, grasp1.univ-lyon1.fr:pub/gnu,
+  ftp.mcc.ac.uk, unix.hensa.ac.uk:/pub/uunet/systems/gnu,
+  src.doc.ic.ac.uk:/gnu, ftp.informatik.tu-muenchen.de,
+  ftp.informatik.rwth-aachen.de:/pub/gnu, isy.liu.se,
+  ftp.stacken.kth.se, ftp.luth.se:/pub/unix/gnu,
+  nic.funet.fi:/pub/gnu, ugle.unit.no, ftp.win.tue.nl, ftp.denet.dk,
+  ftp.eunet.ch, nic.switch.ch:/mirror/gnu, archive.eu.net
+	USA: wuarchive.wustl.edu:/mirrors/gnu, ftp.kpc.com:/pub/mirror/gnu,
+  ftp.cs.widener.edu, uxc.cso.uiuc.edu, col.hp.com:/mirrors/gnu,
+  ftp.cs.columbia.edu:/archives/gnu/prep, gatekeeper.dec.com:/pub/GNU,
+  ftp.uu.net:/systems/gnu
+]
+

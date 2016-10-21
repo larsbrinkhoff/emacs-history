@@ -1,0 +1,29 @@
+Path: gmdzi!unido!mcsun!uunet!tut.cis.ohio-state.edu!AI.MIT.EDU!rms
+From: r...@AI.MIT.EDU (Richard Stallman)
+Newsgroups: gnu.emacs.announce,comp.emacs
+Subject: Emacs 18.56 available on prep
+Message-ID: <9101171739.AA18015@mole.ai.mit.edu>
+Date: 17 Jan 91 17:39:40 GMT
+Sender: dae...@tut.cis.ohio-state.edu
+Followup-To: gnu.emacs.announce
+Organization: Gatewayed from the GNU Project mailing list info-gn...@prep.ai.mit.edu
+Lines: 16
+Approved: info-gn...@prep.ai.mit.edu
+Xref: gmdzi gnu.emacs.announce:14 comp.emacs:8413
+
+Emacs 18.56 is now available for anonymous ftp from
+/u/emacs/emacs-18.56.tar.Z on prep.ai.mit.edu.
+
+This versione exists mainly to fix bugs, and to eliminate any vestige
+of resemblance with Gosmacs.  However, there is a new feature: the
+undo code has been completely rewritten, and you can now specify just
+how much undo data should be kept for each buffer.
+
+There is a new release of the Emacs Lisp manual as well.
+
+I don't think there will be diffs from 18.55, because the changes are
+so large and pervasive that the diffs might be larger than the
+distribution.  However, if this proves not to be true, I will make
+some diffs, but it will not happen until a week from now.  Perhaps it
+would work to use the src directory verbatim but make diffs for
+everything else.

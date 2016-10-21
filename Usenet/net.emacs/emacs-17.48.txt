@@ -1,0 +1,36 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!r...@prep.AI.MIT.EDU
+From: r...@prep.AI.MIT.EDU
+Newsgroups: net.emacs
+Subject: Emacs 17.48 available
+Message-ID: <126@mit-eddie.UUCP>
+Date: Mon, 10-Feb-86 01:44:28 EST
+Article-I.D.: mit-eddi.126
+Posted: Mon Feb 10 01:44:28 1986
+Date-Received: Wed, 12-Feb-86 06:04:04 EST
+Sender: shep@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 21
+
+From: r...@prep.AI.MIT.EDU (Richard M. Stallman)
+You can now get Emacs 17.48, from the directory /u2/emacs/dist
+or the tar file /u2/emacs/edist.tar-17.48.  Difference files
+are available for upgrading from versions 17.43, 17.45, 17.46 and 17.47.
+They are called /u2/emacs/diff-17.*-17.48.  All are on this host
+(prep.ai.mit.edu) and available for anonymous ftp.
+
+The Free Software Foundation will now begin shipping Emacs 17 tapes.
+To order a tape, send $150 (Mass residents add 5%, overseas add
+$15 if you want air mail) to
+
+  Free Software Foundation
+  1000 Mass Ave
+  Cambridge, MA 02138
+
+The tapes will also contain bison (a yacc replacement),
+MIT Scheme and hack (a rogue-like game).
+
+Emacs manuals are available too, at $15 a copy (plus $15 more for
+air mail if overseas).  The manual sources are part of the Emacs
+distribution; the output from TeX is in /u2/emacs/emacs.dvi.

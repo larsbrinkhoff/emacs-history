@@ -1,0 +1,21 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: 15.34 available
+Message-ID: <4198@mit-eddie.UUCP>
+Date: Wed, 8-May-85 02:03:56 EDT
+Article-I.D.: mit-eddi.4198
+Posted: Wed May  8 02:03:56 1985
+Date-Received: Thu, 9-May-85 01:43:20 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 6
+
+From: Richard M. Stallman <rms@mit-prep>
+GNU Emacs version 15.34 is now available on prep:/u2/emacs/dist.
+I hope this is the final version 15 distribution.
+In the past couple of days I have fixed some significant
+bugs in handling terminals: VT100, and anything
+whose termcap entry has sg > 0.
