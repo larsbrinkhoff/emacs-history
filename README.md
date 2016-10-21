@@ -2,13 +2,13 @@
 
 ### Included Implementations
 
-- TECO EMACS
-- Zwei/Zmacs
-- Multics Emacs
-- Gosling Emacs
-- GNU Emacs
-- Lucid Emacs
-- XEmacs
+- TECO EMACS (1976 - 1996)
+- Zwei/Zmacs (1978 - 1997)
+- Multics Emacs (1978 - 1989)
+- Gosling Emacs (1980 - 2007)
+- GNU Emacs (1984 -)
+- Lucid Emacs (1992 - 1994)
+- XEmacs (1994 - 2013)
 
 ### GNU Emacs Release History
 
