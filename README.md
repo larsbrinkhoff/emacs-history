@@ -142,6 +142,10 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 - emacs-18.59.tar.gz from  http://ftp.gnu.org/old-gnu/emacs/
 
+- emacs-18-patches* from http://dev.gentoo.org/~ulm/emacs/
+
+  To build Emacs 18.59 on a modern Linux system.
+
 - emacs-19.7.tar.gz to emacs-19.21.tar.gz from http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/old/
 
 - emacs-19.22.tar.gz to emacs-19.28.tar.gz from http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
