@@ -110,6 +110,8 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 - emacs-17.61.diff and emacs-17.64.diff from Usenet net.emacs.
 
+- Emacs 17.62 from http://bitsavers.trailing-edge.com/bits/DEC/vax/ultrix/3.0/Ultrix-32_3.0_unsupp.tap.gz, with help from Alfred M. Szmidt
+
 - Emacs "17.VMS-2" from http://decuslib.com/decus/vax86b/gnuemacs/
 
 - emacs_18.41.tar.gz from http://bitsavers.org/bits/MIT/gnu/
