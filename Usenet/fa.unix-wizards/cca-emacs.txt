@@ -1,0 +1,20 @@
+Message-ID: <anews.Aucbvax.2921>
+Newsgroups: fa.unix-wizards
+Path: utzoo!decvax!ucbvax!unix-wizards
+X-Path: utzoo!decvax!ucbvax!unix-wizards
+From: ucbvax!unix-wizards
+Date: Thu Sep  3 06:02:48 1981
+Subject: Unix EMACS
+
+>From z@CCA-UNIX Thu Sep  3 05:54:22 1981
+I  too  have  an EMACS which runs on VAXes under 4.1BSD.  It differs from
+Gosling's EMACS in that the user interface is virtually identical to that
+of  Twenex  EMACS;  almost  all  of the standard EMACS commands have been
+implemented, and in most cases they work exactly the same as  on  Twenex.
+It  has  such  features  as real control-meta commands, region filtering,
+text justifying, crash recovery, automatic  backup  file  creation,  Lisp
+mode commands for manipulating s-expressions, lists, and defuns, keyboard
+macros, a tutorial, and  all  the  standard  EMACS  online  documentation
+except  the  INFO  subsystem,  which  will  be  coming later.  It doesn't
+currently have a macro language, but I am about to add one; it will  look
+much like the meta-Lisp in Gosling's EMACS.

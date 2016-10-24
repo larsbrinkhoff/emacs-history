@@ -1,0 +1,123 @@
+Message-ID: <bnews.cca.4253>
+Newsgroups: net.emacs,net.usoft
+Path: utzoo!decvax!cca!z
+X-Path: utzoo!decvax!cca!z
+From: cca!z
+Date: Wed Jan 19 01:59:28 1983
+Subject: Description of CCA EMACS
+Posted: Sun Jan 16 19:02:50 1983
+Received: Wed Jan 19 01:59:28 1983
+
+Since I announced the availability of CCA EMACS last week, I have been
+flooded with questions such as "What is CCA EMACS?", "What are its major
+features?", etc.  I am posting the following in the hope that it will
+answer many of these questions.  I will be happy to answer further
+questions personally.
+
+	Steve Zimmerman
+	decvax!cca!z
+
+
+CCA EMACS is a powerful screen editor closely based on the original
+EMACS written at MIT.  It currently runs on VAXes running Berkeley's
+4.0BSD or 4.1BSD.  Some of its major features are:
+
+- An interactive spelling checker and corrector, which allows the user
+  to step through his text, pausing at each spelling error.  The user
+  can either correct the error himself, or have EMACS suggest possible
+  correct spellings.
+
+- Text filling, justifying, and centering commands, which can work on
+  lines, paragraphs, or arbitrary regions of text.
+
+- A word abbreviation mode, which allows words, phrases, or arbitrary
+  regions to be abbreviated by a few characters.  Abbreviations may be
+  saved for use in later editing sessions.
+
+- A directory editor which allows viewing and deleting of files and
+  directories, as well as editing their protection fields.
+
+- A crash recovery feature using keystroke files as protection against
+  machine crashes.  An auto save mode is also available.
+
+- A "Make" command for automatic compilation of programs, with an
+  interface which provides easy location of errors.
+
+- The ability to run a shell and arbitrary subprocesses asynchronously
+  in a buffer.  Up to five such shell buffers may be present and in
+  operation at any one time.
+
+_ Virtually complete compatibility with ITS EMACS.  All major features
+  of ITS EMACS (with the temporary exception of an extension language)
+  and most minor features are included in CCA EMACS.
+
+- Multiple editing buffers (up to 200), which allow the user to easily
+  alternate editing between different files in the same session.
+
+- Two window mode, which allows two different buffers (or two different
+  parts of the same buffer) to be displayed on the screen at once.  The
+  user can adjust the size of each window.
+
+- Keyboard macros, which allow a user to encode a frequently used series
+  of commands into a single command.  A keyboard macro is defined by
+  executing the commands which are its definition, so there are no
+  special macro conventions to remember.  Multiple keyboard macros may
+  be defined in a single editing session, and they may be saved in
+  libraries for later use.
+
+- A "Tags" package, which allows EMACS to move directly to any C
+  function or variable in any file, without the user's having to know
+  what file the function or variable is in.
+
+- Commands to pass regions of text through arbitrary Unix filters.
+
+- A ring of sixteen marks, which allow a user to mark various places in
+  the buffer.  These marks may be used as place holders, or they may be
+  used to delimit regions for other commands.  Each buffer has its own
+  ring of marks.
+
+- A kill ring of sixteen levels, which automatically retains text which
+  the user has deleted.  Text can be later retrieved from any level of
+  the kill ring into the current buffer.  The same kill ring is used
+  across all buffers, which makes it easy to transfer text from one
+  buffer to another.
+
+- A set of 37 named registers (known as Q-registers) which are useful
+  for storing numbers, marks, or text.
+
+- A full set of commands for manipulating rectangular regions.  These
+  are useful for operations such as moving columns around in tables.
+
+- An Auto Fill mode, which causes text to automatically be broken into
+  separate lines once it reaches a user settable right margin.
+
+- An Undo facility, which allows the last change to the buffer to be
+  undone.
+
+- Extensive online documentation, ranging from self-documenting commands
+  to an interactive tutorial to a full hierarchical online manual,
+  complete with its own specialized reading program.
+
+- A full set of forward and backward movement, deletion, and
+  transposition commands for characters, words, sentences, paragraphs,
+  program expressions, and arbitrary regions.
+
+- Powerful search and replace commands, which do case independent
+  matching at the user's option.  There is also a Query Replace command,
+  which allows the user to decide at each occurrence of the specified
+  string whether that occurrence should be replaced or not.  All search
+  and replace commands have variations which use Unix regular
+  expressions, and all may optionally traverse buffer boundaries.
+
+- Optional numbering of the lines in the buffer by EMACS.
+
+- More than 50 user settable variables, which allow each user to
+  customize EMACS in the way he or she prefers.  The local variables
+  feature allows the same variable to have different settings for
+  different buffers.
+
+- Dynamic key binding, which allows users to determine themselves which
+  commands they want to have bound to which keys.
+
+- Init files, which allow variable setting and key binding to be
+  automatically done at the beginning of each editing session.

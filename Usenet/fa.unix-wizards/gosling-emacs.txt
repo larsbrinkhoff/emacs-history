@@ -1,0 +1,16 @@
+Message-ID: <anews.Aucbvax.2908>
+Newsgroups: fa.unix-wizards
+Path: utzoo!decvax!ucbvax!unix-wizards
+X-Path: utzoo!decvax!ucbvax!unix-wizards
+From: ucbvax!unix-wizards
+Date: Wed Sep  2 12:10:55 1981
+Subject: Unix Emacs
+
+>From THOMAS@UTAH-20 Wed Sep  2 12:04:15 1981
+There are several.  If you have a VAX, probably the editor of choice is
+one written by James Gosling @ CMU-10A.  Contact him for details
+(gosling@cmua).  On an 11, the problem is more difficult.  There a couple
+around, but at least one of them is an "unreleased" Bell Labs program.
+They all have some lossages.
+=S
+-------

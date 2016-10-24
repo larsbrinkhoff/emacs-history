@@ -1,0 +1,60 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Path: utzoo!linus!genrad!decvax!cca!z
+From: z@cca.UUCP
+Newsgroups: net.general,net.unix-wizards,net.emacs
+Subject: Important notice for EMACS users
+Message-ID: <4874@cca.UUCP>
+Date: Mon, 13-Jun-83 16:51:48 EDT
+Article-I.D.: cca.4874
+Posted: Mon Jun 13 16:51:48 1983
+Date-Received: Tue, 14-Jun-83 04:29:24 EDT
+Lines: 48
+
+This notice is directed to all users of CCA EMACS, version 162.35z or
+earlier, and users of Montgomery's EMACS (BTL EMACS).
+
+Versions of CCA EMACS up to and including version 162.35z had contained
+some portions of Warren Montgomery's EMACS version 4.0, which was
+developed by Mr. Montgomery at Bell Laboratories.  Beginning with CCA
+EMACS version 162.36z, CCA EMACS no longer contained any of the code
+from Mr. Montgomery's EMACS, or any methods or concepts which would be
+known only by programmers familiar with BTL EMACS of any version.  CCA
+has not shipped any versions of CCA EMACS earlier than version 162.36z
+since January, 1983.
+
+On May 19, 1983 CCA was informed that Bell Laboratories considers BTL's
+EMACS version 4.0, developed by Mr. Montgomery, to be Bell Laboratories
+proprietary information.  They have asked us to notify those persons to
+whom we may have distributed Mr. Montgomery's EMACS, or parts thereof,
+that Bell Laboratories considers that software to be proprietary and
+that its use must be discontinued and all copies in the possession of
+these people must be destroyed immediately.
+
+Although CCA no longer uses any of the code asserted by Bell
+Laboratories to be proprietary information, we realize that these
+assertions by Bell Laboratories may cause some inconvenience.
+Therefore, we would like to make the following offer:  If you are using
+a version of CCA EMACS earlier than 162.36z, we will replace it with a
+version of the current CCA EMACS which has been configured to have the
+same capabilities as your present EMACS, but which contains none of Mr.
+Montgomery's code.  There will be no charge for this replacement.  All
+that we ask is that you sign the standard CCA EMACS license agreement
+and send us a tape containing the version of CCA EMACS that you are now
+using; we will return the tape with your replacement EMACS.
+
+Although the replacement EMACSes we will be sending out will have
+basically the same capabilities as the ones they are replacing, they
+will actually be an improvement, since the new routines are superior to
+the ones they replace.  However, the replacement copies will not have
+all the various features which have been added to CCA EMACS since the
+originals were obtained.  If users of these older versions would like to
+take this opportunity to upgrade to the current version of CCA EMACS, we
+will make this easier by making a one-time offer of $475 per CPU
+license, in contrast to the normal $850 for the first CPU and $680 for
+additional CPU's.  There is no discount on the educational fee of $350
+per CPU.  Both the offer of a free replacement EMACS and the discount
+price on the current EMACS are valid through August 15, 1983.
+
+	Steve Zimmerman
+	decvax!cca!z
+	{allegra,philabs}!linus!cca!z

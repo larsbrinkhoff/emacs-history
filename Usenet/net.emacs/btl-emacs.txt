@@ -1,0 +1,49 @@
+Message-ID: <bnews.ihnss.1395>
+Newsgroups: net.emacs
+Path: utzoo!decvax!harpo!ihnp4!ihnss!warren
+X-Path: utzoo!decvax!harpo!ihnp4!ihnss!warren
+From: ihnss!warren
+Date: Wed Jan 19 07:05:51 1983
+Subject: "btl emacs"
+Posted: Mon Jan 17 14:52:06 1983
+Received: Wed Jan 19 07:05:51 1983
+Reply-To: warren@ihnss.UUCP (Warren Montgomery)
+
+Just to complete the roster, I thought I should mention the emacs
+variant that I wrote and that has wide distribution inside of Bell
+Labs.  It is not as feature rich as Gosling's or Zimmerman's emacs,
+though it does provide a basic set of capabilities (Multi-window,
+Multi-file, regions, kill stack, etc.) plus an extension language. 
+(The extension language is not nearly as nice as m-lisp, but will
+let you do some rather hairy hacking, and it does come with a set of
+macro packages for such things as RMAIL, spelling correction,
+abbreviations, etc.
+
+The main point of interest about it is that it was designed for a
+small address space (pdp-11), and thus runs well in a small amount
+of space and isn't particulary fussy about the operating system it
+runs under.  The display update is reasonably quick and it can run
+either with termcap, or with it's own extensible terminal support
+database.
+
+The hitch is that it is not in the public domain, and at this point
+is available only inside of the Bell System.  The Unix folks are exploring
+the possibility of licensing it for other use.  They usually want
+money in return for such nuisance.  They tell me that deals
+involving lots of machines in one contract, or a distributor that
+packages software in systems that are then sold, work best, since
+the overhead of writing the contract is spread over lots of copies.
+I can promise nothing about the potential availability or cost of my
+emacs in this way.  If you are seriously interested in this, feel
+free to send a request either to me or to the Murray Hill computing
+information librarian.  Please include your name, affiliation,
+what you would be willing to pay, and some description of your
+application.
+
+
+		Warren Montgomery
+		Room 6E-338
+		Bell Laboratories
+		Naperville Road
+		Naperville, ILL 60566
+		(ihnss!warren)

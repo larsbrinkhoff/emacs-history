@@ -1,0 +1,44 @@
+Message-ID: <bnews.cca.805>
+Newsgroups: net.general
+Path: utzoo!decvax!cca!z
+X-Path: utzoo!decvax!cca!z
+From: cca!z
+Date: Sat May 15 00:51:24 1982
+Subject: Re: emacs info!
+Posted: Fri May 14 09:11:23 1982
+Received: Sat May 15 00:51:24 1982
+
+I have discovered from my response to the original request for info on
+EMACS that many people are unaware that I also have an EMACS which runs
+on VAXes.  So, here is the information once again:
+
+My EMACS differs from Gosling's in that is much more of a clone of
+ITS/TOPS-20 EMACS, to the point that much of the documentation is
+identical.  It has also implemented the vast majority of commands
+available in TOPS-20 EMACS, which is several times as many as are
+available in Gosling's.  Some of the major features it has that
+Gosling's doesn't are a tutorial, a full help facility, complete Lisp
+and C modes, a complete set of sentence and paragraph commands, crash
+recovery, named kill buffers (Q-registers), an undo command virtually
+identical to vi's, commands to kill and copy rectangular areas, and a
+mode designed for drawing pictures.  Its major drawback compared to
+Gosling's is that although it has keyboard macros, it doesn't yet have a
+Lisp-like extension language, though this is being worked on.
+
+My EMACS has been aimed at a broader audience than Gosling's, and
+reactions to its user interface have been far more favorable.  Here at
+CCA, 89% of our vi users and 50% of our Rand editor users have switched
+to EMACS since it was introduced a year ago, and all new users since
+that time, from secretaries to programmers to managers, have learned
+EMACS as their editor.
+
+If you have access to the Arpanet and would like EMACS, you can simply
+FTP to CCA, login as "anonymous" with any password, and copy the entire
+contents of the subdirectories emacs/src and emacs/lib.  Otherwise, you
+can mail me a tape along with a self-addressed, STAMPED mailing
+envelope, and I'll mail you back a tar tape of EMACS.  My address is:
+
+	Steven Zimmerman
+	Computer Corporation of America
+	575 Technology Square
+	Cambridge, Mass. 02139

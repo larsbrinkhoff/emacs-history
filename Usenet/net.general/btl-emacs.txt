@@ -1,0 +1,283 @@
+Message-ID: <anews.Apur-ee.107>
+Newsgroups: net.general,net.general
+Path: utzoo!duke!cincy!pur-ee!malcolm
+X-Path: utzoo!duke!cincy!pur-ee!malcolm
+From: pur-ee!malcolm
+Date: Mon Jun 29 16:13:10 1981
+Subject: Bell Labs Free Press
+
+>From ihuxa!**RJE**  Fri Jun 26 18:24:33 1981
+To:  kec tosca usa pur-ee!aef pur-ee!malcolm 
+From: ihn5g!jdd (Joe Steffen filling in for John DeTreville)
+Subject: BLFP 3.10
+
+Bell Labs Free Press      Friday, 26 June 1981     Volume 3 : Issue 10
+
+Today's Topics:
+
+	   Interlisp Tools, C, Author Maintained Software,
+			Coding Trick of the Day
+----------------------------------------------------------------------
+
+>From rjsmith Mon Jun 22 14:06:07 1981 remote from ihuxp
+Comments on Interlisp-ish tools:
+
+I grew up on a Multics system (ahh, those were the days...), where
+there was a very nice facility called the audit_editor which
+provided most of the described facilities of the Interlisp
+programmer's assistant (exept for 'undo'-ability).  It was a module
+spliced in between the terminal I/O driver module and the 'real
+world'.  It would record all input and/or output (depending on how
+you set it up), and allow you to selectively recall, edit, and
+re-issue any prior command (or reissue output as a command, if you
+were auditing output).  This ability was VERY nice - the biggest use
+I found for it was simply for correcting mistypings in the previous
+command (I find nothing more frustating than to issue a long,
+convoluted command only to discover that I misspelled something-or-other). 
+Ever since I started working here (a mere month ago), I have wanted
+to implement a similar facility on UN*X (for my own use, even if
+nobody else's).  But being an apprentice Unixian, I haven't quite
+garnered all the know-how to implement it here.  I envision it as
+being an intelligent 'tee' program, but that's about as far as I
+have gotten.
+
+[Mike Veach (ihuxp!veach) has a memo describing how his hrdcpy command
+works.  This command records the input and output of a terminal session
+-- it might provide a starting point for this program.  JLS]
+
+As for Masterscope, one of the Multics text editors had a built-in
+facility for finding all occurences of a given string and
+automatically performing a set of commands on any line containing
+the string (e.g., make a string replacement and print the new line;
+but you could also do fancier stuff).  Since the editor was not tied
+to any particular language, it probably did not have many of
+Masterscope's bells and whistles; but since it was built into the
+editor, it was also very flexible, general, and easy to use.  Once
+again, I would love to have a similar facility on UN*X.
+
+				Hackingly yours,
+
+				Roy Smith
+				(ihuxp!rjsmith)
+
+------------------------------
+
+>From rick Mon Jun 22 14:54:15 1981 remote from mhtsa
+Subj:	BLFP: response to jej regarding C (BLFP 3.8)
+
+While not claiming C as the end-all of programming languages, I had
+to comment on jej's recent fault-finding. In order:
+
+1. Type Syntax. Okay, some constructions are unable to be parsed by
+ordinary mortals. This is primarily because of the way "pointer to
+object" is specified. Ravi Sethi has a proposal (very Pascal-like)
+for an optional syntax which may be reviewed by the C standards com-
+mittee.
+
+2. etc. Syntax. Your example is a poor one. Take your compound state-
+ment and make a block out of it thusly:
+
+	#define zot(x)	{ <compound statement> }
+
+the braces will avoid any troubles you might have. (In fact, the syntax
+for <compound statement> is
+	compound-statement: { [declaration-list] [statement-list] }
+)
+Semicolons ARE statement terminators, check the syntax in the C Language
+Reference Manual (either Kernighan & Ritchie or the latest specification
+by Ritchie c. September 1980), section 18.3.
+
+3. Diagnostics. This is a lossage in the implementation of pcc NOT of
+the language itself.
+
+4. Low level. I think that you might find it difficult to write oper-
+ating system primitives in a language which enforces strict type
+checking with no escape. Even Wirth recognized this--Modula2 enables
+one to define an "interface" module which allows for dirty tricks.
+NEVER ignore lint messages, every one should be justified (if only
+to yourself).
+
+				Rick Mascitti (mhtsa!rick)
+
+------------------------------
+
+>From warren Mon Jun 22 17:14:54 1981 CDT remote from ihnss
+Subject: programming languages
+
+Regarding the recent discussion of C, I have found that programming
+languages are much like religion and politics.  It's very hard to
+find any measurable differences in performance, but each one has its
+proponents who are willing to fight for their choice.  I have worked
+in systems programming environments using C, Fortran, PL/1, Lisp,
+and assembly language, and can't really say that there were great
+differences among them.  I would certainly rate C near the top of
+this list, for what we try to do with it.  (I wouldn't, for example,
+want to write much AI code in C!)
+
+Given any given set of tools, the good programmers will write good
+programs, and the bad programmers will find some way to write bad
+programs. (Even with a language that "prevents" them from doing it!)
+The language is one that is a good match for both the application
+and the programmer.  A lot of attention has been given to the
+problem of finding languages that match the application, but I
+suspect that matching the programmer is more significant.  My theory
+is that every programmer developes a "machine model" that
+corresponds to his early experience with computer languages.  After
+the model is formed, he expresses algorithms in that model, and
+translates them to the language he uses.  The model evolves slowly
+with exposure to new problems and languages.
+
+With this assumption, a programmer confronted with a new "better"
+programming language simply tries to figure out how to express his
+model of how the machine operates in terms of the new language, and
+does not necessarily benefit from the enhanced features of the new
+language.  Thus its hard to measure differences.  I have seen lots
+of examples of this kind of coding.  The Multics project used PL/1,
+but the original programmers were obviously trained in assembly
+language, with the result that much of the code looked like high
+level assembly language.  I have seen lots of Fortran code that was
+really assembly language in disguise, and there is much C code that
+looks like ALGOL.
+
+C has many problems, but I don't think that its qualitatively worse
+than anything else.  The only unique complaint I could make about C
+is that I think that the preprocessor is probably a little too
+powerful.  Jej's complaints only scratched the surface of what can
+happen when you replace subroutines with macros (and vice-versa). 
+Experienced coders quickly learn to use lots of braces and to avoid
+putting side effects (*foo++) in arguments to functions.  I think
+that the most insidious problem with the preprocessor is that it
+lets you redefine the language so completely that the code becomes
+unreadable by anyone else.  Look at the source for the Bourne Shell,
+and some of the other standard unix programs some time, and you will
+notice that it doesn't look much like C.  When the preprocessor is
+used to change the way the language looks, you have really created a
+separate dialect that cannot immediately be understood by other
+programmers.  This inhibits the exchange of programs.
+
+	Warren Montgomery
+	ihnss!warren
+	IH x2494
+
+------------------------------
+
+>From mark Fri Jun 19 18:40:12 1981 remote from ucbvax
+Subject: C language
+
+It's quite true that there are a number of warts in C, but you have
+to view it in the proper context.  Ritchie didn't just sit down and
+design C as it appears today, it has had features added as they have
+been needed.  Some of the features couldn't be added as cleanly as
+they could with a new language design.  The type structure is one
+example - there are two type syntaxes because of the way variables
+are declared.  Also, typedef turned out to require a tricky implementation:
+when you do typedef int a; you create a new reserved word a!
+This is why you get syntax errors when you misspell a type name,
+since identifiers are not allowed as types.  This property has given
+me fits too - my thesis can't handle typedef.  You can't allow identifiers
+as type names because
+	main()
+	{
+		a * b;
+	}
+is ambigously either an expression to ignore, or a declaration
+of b as a pointer to an a.  The type syntax strikes again!
+
+It might be time for a redesign of C, but there is a pretty incredible
+investment of software already written in C (a conversion tool could
+be provided) and a community of people who know the current language.
+Also, it would force settlement of the question: "is the next language
+to be called D or P?"  (C came after B, and it is rumored that the
+names were derived from BCPL, which preceeded B.)
+
+You also have to realize that C is intended as a systems programming
+language.  As SPL's go, C is one of the best.  But people are also
+using it to write applications, which it was not designed for.
+A high level, strongly typed, runtime checked language for Unix
+would be a big plus.  (I wrote a compiler for Staple, which is just
+such a language, 2 years ago, but haven't had the time to support
+a new compiler, with all the bugs involved.)  No, it's not possible
+to runtime check C (unless someone has some wonderful ideas about
+what to do about code like *p++ = *q++; or p[-1].)
+
+	Mark
+
+[There is a C interpreter written by Eben Ostby (who has left BTL to go
+to architecture school!?) and available from P. Macri (supervisor) which
+is claimed to have solved the run-time pointer/subscript checking
+problem.  I am still waiting for my tape copy but I will try to verify
+this claim.  JLS]
+
+------------------------------
+
+>From warren Mon Jun 22 16:49:30 1981 CDT remote from ihnss
+Subject: author-maintained software
+
+I have been fighting for some kind facility to support "author
+maintained" software for some time.  I may have mentioned this one
+before, so bear with me.  On the Multics system (which has a user
+interface much line unix), there is a provision for author mainted
+software.  There is a standard directory for it, and a submission
+procedure that guarantees that each program has a manual page
+describing what it does and who supports it.  The system
+administrator simply puts the code there, and refers all bugs to the
+author.  Each user may or may not choose to include the author
+maintained directory in his search path.  Many useful tools were
+maintained this way.  It saves the author much pain that must be
+endured with an "underground" mechanism.
+
+On the same subject, I have been getting a lot of requests for EMACS
+recently, some from outside of BTL, and have talked to Larry Crume
+about what could be done to facilitate distribution of useful
+software tools within the Bell system.  (Larry is the 
+head of a department supporting some UNIX applications, and also I
+am told has been known to read the blfp)  He was very receptive to
+suggestions for some way to distribute useful software.  One
+suggestion that sounded pretty good was to allow people to include
+"author maintained" software as part of a standard unix
+distribution, with no claims for support.  If the interest in the
+general community for a particular tool becomes sufficient to
+warrant support, some means of getting money for the tool being
+supported could be found and people could be assigned to support it
+officially.  The discussion was very informal, but I think that if a
+good plan in this area can be worked out, it may get some official
+support.
+
+One more bit of trivia for all of the programmers distributing
+software out there.  I finally found out how to clear software for
+official release, both within the bell system and outside.  It seems
+you must get a software release form (I think that they are
+available from Hugh Logan @ MH), and  get it approved by your
+director and the patent department.  The release can be at any
+number of levels (i.e. to anyone, to universities, to Bell System
+only, or to one person only), and involves analyzing the possible
+value of what is being released.  Once this is accomplished, the MH
+computing information service will handle distribution within the
+bell system.  You send them a tape and documentation, and they can
+distribute it for you.
+
+	Warren Montgomery
+	ihnss!warren
+	IH x2494
+
+------------------------------
+
+>From your moderator
+Subject: Coding Trick of the Day
+
+This is a new feature which has two functions:
+
+	1) Describe little known but useful coding tricks
+	2) Reward you for reading another issue of the BLFP
+	
+Ever wondered how to put page ejects into a C listing without using a
+special listing program?  Just insert form feed characters (control L)
+into the source file at the appropriate places.  The pr and opr commands
+intrepret this character as a page eject.
+
+------------------------------
+
+End of Bell Labs Free Press
+***************************
+
+

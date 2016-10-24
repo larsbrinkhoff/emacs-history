@@ -1,0 +1,31 @@
+Message-ID: <bnews.sri-arpa.865>
+Newsgroups: net.emacs
+Path: utzoo!decvax!decwrl!sun!megatest!fort...@CMU-CS-VLSI.ARPA
+X-Path: utzoo!decvax!decwrl!sun!megatest!fort...@CMU-CS-VLSI.ARPA
+From: James....@CMU-CS-VLSI.ARPA
+Date: Tue Apr 12 04:51:12 1983
+Subject: Emacs goes commercial
+Posted: Sat Apr  9 13:49:00 1983
+Received: Tue Apr 12 04:51:12 1983
+
+The version of Emacs that I wrote is now available commercially through
+a company called Unipress who can be reached at (201) 985-8000.  They
+will be doing development, maintenance and will be producing a real
+manual.  Emacs will be available on many machines (it already runs on
+VAXen under Unix and VMS, SUNs, codatas, and Microsoft Xenix).  Along
+with this, I regret to say that I will no longer be distributing it.
+
+This is a hard step to take, but I feel that it is necessary.  I can
+no longer look after it properly, there are too many demands on my
+time.  Emacs has grown to be completely unmanagable.  Its popularity
+has made it impossible to distribute free: just the task of writing
+tapes and stuffing them into envelopes is more than I can handle.
+
+The alternative of abandoning it to the public domain is unacceptable.
+Too many other programs have been destroyed that way.
+
+Please support these folks.  The effort that they can afford to put
+into looking after Emacs is directly related to the support they get.
+Their prices are reasonable.
+
+				James.

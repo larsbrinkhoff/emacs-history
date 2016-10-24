@@ -1,0 +1,29 @@
+Message-ID: <anews.Aucbvax.2107>
+Newsgroups: fa.works
+Path: utzoo!duke!decvax!ucbvax!works@mit-ai
+X-Path: utzoo!duke!decvax!ucbvax!works@mit-ai
+From: works@mit-ai
+Date: Sun Jul  5 08:07:41 1981
+Subject: Software tools - EMACS and UNIX
+
+>From WorkS-REQUEST@MIT-AI Sun Jul  5 07:59:49 1981
+
+There are (at least) two editors entitled EMACS on the Berkeley
+VM/UNIX VAX system.  The one by James Gosling of CMU seems to
+be favored.  It has a LISP-like language for extension.  It is
+missing features of various sorts, however.
+                                   -- CSVAX.fateman at Berkeley
+
+
+  A point of information: There exists an excellent, if not fully
+mature, EMACS for the VAX running Berkeley UNIX or VMS+EUNICE.
+  The basic editing level is written entirely in C (zero lines of
+machine code), the macro level is an embedded lisp-like language
+called MLISP (which is INFINITELY more comprehensable than TECO
+macros!), and the top level is the usual EMACS
+double-bucky-coke-bottle command language.
+  Inquiries sould go to GOSLING@CMUA, but I think he is on summer
+vacation or some such.
+                               -- Dave Dyer <DDYER at USC-ISIB>
+-------
+

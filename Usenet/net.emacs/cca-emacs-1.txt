@@ -1,0 +1,40 @@
+Message-ID: <bnews.cca.4248>
+Newsgroups: net.emacs
+Path: utzoo!decvax!cca!z
+X-Path: utzoo!decvax!cca!z
+From: cca!z
+Date: Thu Jan 13 05:53:30 1983
+Subject: New CCA EMACS Distribution
+Posted: Tue Jan 11 19:26:54 1983
+Received: Thu Jan 13 05:53:30 1983
+
+A new version of EMACS has now been released by CCA.  A number of
+important new features have been added since the last release, including
+word abbreviation mode, visible marks, and the ability to run shells
+inside buffers.  Starting with this version, the following new
+distribution policy applies:
+
+A CCA EMACS licence is now available for $850 ($350 for educational
+institutions).  The license is valid for a single CPU; quantity
+discounts are available.  Those sites interested in purchasing a license
+should send me their name and address, and I will send them a pair of
+license forms to be filled out.  Upon receipt of two completed forms
+plus the appropriate fee, CCA will execute the license and send one
+completed form to the applicant, along with a tape containing CCA EMACS
+(including sources), a complete manual, and command charts.
+
+Major updates of CCA EMACS are available to license holders for $300.
+Until March 15th, current users of CCA EMACS who do not hold licenses
+may also get the latest release for $300.  After March 15th, the rates
+quoted in the previous paragraph apply to everyone.
+
+License forms may be obtained by contacting me through uucpnet at
+decvax!cca!z, or through the U.S. mail at the following address:
+
+					Steven Zimmerman
+					Computer Corporation of America
+					Four Cambridge Center
+					Cambridge, MA 02142
+					(617) 492-8860
+
+The phone number listed is effective Monday, January 10th, 1983.
