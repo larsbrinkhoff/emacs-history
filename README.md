@@ -187,6 +187,15 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
   James Gosling: "It’s fine with me too. Archaeology is a good thing :-)"
 
+- gosling-emacs.tar from der Mouse.
+
+  "I got it from a prerelase of Eunice, obtained because one of the
+  people behind Eunice personally knew some people at the lab I was
+  then hanging out at.  ("Then" is mid-'80s sometime.)  Once I started
+  using a real Unix (4.2c, then 4.3 shortly after that, then SunOS,
+  then....) I ripped out the special-case Eunice code and have been
+  maintaining (and slowly evolving) it over the years since then."
+
 - old-uemacs.tar.gz from Dave Conroy.
 
   "I probably have a version that predates any of Daniel Lawrence's changes,
