@@ -9,6 +9,7 @@
 - GNU Emacs (1984 -)
 - Lucid Emacs (1992 - 1994)
 - XEmacs (1994 - 2013)
+- MicroEMACS (1985 -)
 
 ### GNU Emacs Release History
 
@@ -185,3 +186,9 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   Brian Reid: "Fine with me. I consider them to be James' property and not my own."
 
   James Gosling: "It’s fine with me too. Archaeology is a good thing :-)"
+
+- old-uemacs.tar.gz from Dave Conroy.
+
+  "I probably have a version that predates any of Daniel Lawrence's changes,
+  but I will need to look around a little and find it."  
+  "This looks like a version from 1986."
