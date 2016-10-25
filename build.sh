@@ -65,6 +65,14 @@ apply_patch() {
     commit $1
 }
 
+tag() {
+    export GIT_COMMITTER_DATE="$2"
+    export GIT_COMMITTER_NAME="-"
+    export GIT_COMMITTER_EMAIL="-"
+    git commit --author="- <->" --date "$2" --allow-empty-message --allow-empty -m ""
+    git tag emacs-$1
+}
+
 friedman=ftp.splode.com/pub/users/friedman/emacs
 tuhs=www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD
 bitsavers=bitsavers.org/bits
@@ -77,7 +85,22 @@ slackware=mirrors.slackware.com/slackware/slackware-3.1/source/e
 
 PATCHOPTS=-p1
 
+tag 13 "Wed Mar 20 11:03:20 1985"
+tag 15.10 "1985-04-10 0:0:0"
+tag 15.34 "Wed May  8 02:03:56 1985"
 release 16.56 $friedman/emacs-16.56.tar.gz
+tag 16.57 "Mon Sep 16 20:51:34 1985"
+tag 16.58 "Tue Sep 17 17:27:33 1985"
+tag 16.59 "Tue Sep 17 22:12:59 1985"
+tag 16.60 "Sat Sep 21 03:30:32 1985"
+tag 17.36 "Fri Dec 20 06:13:05 1985"
+tag 17.43 "1986-01-25 0:0:0""
+tag 17.46 "1986-02-04 0:0:0""
+tag 17.48 "Mon Feb 10 01:44:28 1986"
+tag 17.49 "1986-02-12 0:0:0""
+tag 17.55 "Fri Mar 21 18:48:12 1986"
+tag 17.57 "1986-03-27 0:0:0""
+tag 17.58 "1986-04-04 0:0:0""
 get_dir 17.61 $tuhs/emacs
 
 # Apply the 17.60 to 17.61 diff in reverse.
@@ -93,12 +116,33 @@ rm -rf * && git checkout tmp~ -- . && commit 17.61
 git branch -D tmp
 
 release 17.62 $bitsavers/DEC/vax/ultrix/3.0/gnuemacs.tar.gz
+tag 17.63 "Wed May  7 11:04:23 1986"
+tag 17.64 "Mon May 12 15:18:17 1986"
+tag 18.31 "Sun Nov 23 00:03:35 1986"
+tag 18.32 "Sat Dec  6 14:28:39 1986"
+tag 18.33 "Fri Dec 12 09:21:03 1986"
+# 18.34?
+tag 18.35 "Mon Jan  5 01:15:17 1987"
+tag 18.36 "Wed Jan 21 02:13:17 1987"
+tag 18.37 "Mon Feb  9 09:53:27 1987"
+tag 18.38 "Mon Mar  2 15:54:47 1987"
+tag 18.39 "Sat Mar 14 09:39:24 1987"
+tag 18.40 "Wed Mar 18 11:36:49 1987"
 release 18.41 $bitsavers/MIT/gnu/emacs_18.41.tar.gz
+# 18.42, 18.43?
+tag 18.44 "Wed Apr 15 01:29:41 1987"
+tag 18.45 "1987-06-02 0:0:0""
+tag 18.46 "Mon Jun  8 19:31:03 1987"
+tag 18.47 "Wed Jun 10 21:10:01 1987"
+tag 18.48 "Sun Aug 30 02:20:48 1987"
+tag 18.49 "Wed Sep 16 17:19:40 1987"
+tag 18.50 "Thu Feb 11 01:37:48 1988"
 release 18.51 $decuslib/vax88a1/gnusoftware/edist_18_51.tar_z
 apply_patch 18.52 $funet/emacs/diff-18.51-18.52.gz
 apply_patch 18.53 $funet/emacs/diff-18.52-18.53.gz
 apply_patch 18.54 $funet/emacs/diff-18.53-18.54.gz
 release 18.55 $gwdg/emacs-18.55.tar.gz
+tag 18.56 "Wed Jan 16 18:57:00 1991"
 release 18.57 $funet/emacs/emacs-18.57.tar.gz
 release 18.58 $funet/emacs/emacs-18.58.tar.gz
 release 18.59 $gnu/emacs-18.59.tar.gz
