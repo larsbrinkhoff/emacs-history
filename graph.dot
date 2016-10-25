@@ -1,0 +1,39 @@
+digraph Emacs {
+
+  {
+    node [shape=plaintext]
+    1976 -> 1977 -> 1978 -> 1980 -> 1981 -> 1983 -> 1984 -> 1985 -> 1987
+    -> 1989 -> 1992 -> 1994  [style=invis];
+  }
+
+  {
+    EMACS;
+    EINE -> ZWEI -> Zmacs;
+    "Multics Emacs";
+    "Gosling Emacs" -> "GNU Emacs" -> "Lucid Emacs" -> XEmacs;
+    "Gosling Emacs" -> "Unipress Emacs";
+    "BTL Emacs" -> "CCA Emacs";
+    "GNU Emacs" -> Epoch -> "Lucid Emacs";
+    "GNU Emacs" -> NEmacs -> MULE -> XEmacs;
+    MicroEMACS;
+
+    EMACS -> EINE [style=dotted];
+    EMACS -> "Multics Emacs" [style=dotted];
+    EMACS -> "Gosling Emacs" [style=dotted];
+    EMACS -> "BTL Emacs" [style=dotted];
+    EMACS -> "MicroEMACS" [style=dotted];
+  }
+
+  { rank=same; 1976; EMACS; }
+  { rank=same; 1977; EINE; }
+  { rank=same; 1978; "Multics Emacs"; ZWEI }
+  { rank=same; 1980; Zmacs; "Gosling Emacs"; "BTL Emacs"; }
+  { rank=same; 1981; "CCA Emacs"; }
+  { rank=same; 1983; "Unipress Emacs"; }
+  { rank=same 1984 "GNU Emacs" }
+  { rank=same 1985 MicroEMACS }
+  { rank=same 1987 Epoch }
+  { rank=same 1989 NEmacs }
+  { rank=same; 1992; "Lucid Emacs"; MULE; }
+  { rank=same 1994 XEmacs }
+}
