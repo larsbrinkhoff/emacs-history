@@ -1,0 +1,41 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: SUN version 16.57 lossage
+Message-ID: <5334@mit-eddie.UUCP>
+Date: Tue, 17-Sep-85 17:27:33 EDT
+Article-I.D.: mit-eddi.5334
+Posted: Tue Sep 17 17:27:33 1985
+Date-Received: Thu, 19-Sep-85 04:00:04 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 26
+
+From: Richard M. Stallman <rms@mit-prep>
+The change to unexec.c in 16.57 turns out to be a loser.  I am
+removing it, which makes 16.58.  Everyone should revert unexec.c back
+to the way it was in 16.56.  Here is the change that should be undone:
+
+diff -cbr /u2/emacs/dist-16.56/src/unexec.c /u2/emacs/dist/src/unexec.c
+*** /u2/emacs/dist-16.56/src/unexec.c	Fri Jun 14 18:55:25 1985
+--- /u2/emacs/dist/src/unexec.c	Mon Sep 16 16:08:54 1985
+***************
+*** 164,170
+      if (!data_start)
+        data_start = (int) &etext;
+  #ifdef SUN
+!     data_start = data_start & ~(SEGSIZ - 1); /* (Down) to segment boundary. */
+  #else
+      data_start = data_start & ~pagemask; /* (Down) to page boundary. */
+  #endif
+
+--- 164,170 -----
+      if (!data_start)
+        data_start = (int) &etext;
+  #ifdef SUN
+!     data_start = (data_start + SEGSIZ - 1) & ~(SEGSIZ - 1); /* (Up) to segment boundary. */
+  #else
+      data_start = data_start & ~pagemask; /* (Down) to page boundary. */
+  #endif

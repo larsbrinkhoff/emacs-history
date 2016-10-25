@@ -1,0 +1,21 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: Patch release 16.57
+Message-ID: <5329@mit-eddie.UUCP>
+Date: Mon, 16-Sep-85 20:51:34 EDT
+Article-I.D.: mit-eddi.5329
+Posted: Mon Sep 16 20:51:34 1985
+Date-Received: Wed, 18-Sep-85 03:28:29 EDT
+Sender: bcn@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 6
+
+From: Richard M. Stallman <rms@mit-prep>
+/u2/emacs/dist now contains version 16.57, which differs from 16.56
+in having fixes to all the significant bugs discovered since 16.56
+came out.  It is still a little experimental, and there may
+possibly be a 16.58 in a couple of days.  /u2/emacs/edist.tar is
+also 16.57.  I will prepare a set of diffs in a few hours.

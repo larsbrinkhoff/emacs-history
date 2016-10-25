@@ -1,0 +1,31 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!mhuxr!mhuxn!ihnp4!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: Final (or approximately so) version 16 available.
+Message-ID: <4698@mit-eddie.UUCP>
+Date: Mon, 15-Jul-85 16:38:10 EDT
+Article-I.D.: mit-eddi.4698
+Posted: Mon Jul 15 16:38:10 1985
+Date-Received: Wed, 17-Jul-85 06:37:42 EDT
+Sender: bcn@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 16
+
+From: Richard M. Stallman <rms@mit-prep>
+GNU Emacs 16.56 is a completely Gosling-free version with lots of
+improvements.  It is also smaller than version 15.34.  Some toleration
+of flow control is provided.  It is in /u2/emacs/edist.tar on mit-prep;
+also individual files in /u2/emacs/dist.
+
+READ THE NEWS FILE before you use it.  Also read INSTALL; the procedures
+have been simplified.
+
+Tex source for the manual is included.
+
+diffs from version 15.34 may be made available on prep in a few days;
+but the manual source may make that sort of useless.
+
+mly will be fixing bugs for the next few weeks while I am away.
+Mail orders for tapes will be covered too.
