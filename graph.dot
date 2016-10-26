@@ -2,19 +2,96 @@ digraph Emacs {
 
   {
     node [shape=plaintext]
-    1976 -> 1977 -> 1978 -> 1980 -> 1981 -> 1983 -> 1984 -> 1985 -> 1987
-    -> 1989 -> 1992 -> 1994  [style=invis];
+    1976 -> 1977 -> 1978 -> 1980 -> 1981 -> 1983 -> 1984 -> 1985 -> 1986
+    -> 1987 -> 1988 -> 1989 -> 1990 -> 1991 -> 1992 -> 1993 -> 1994 -> 1995
+    -> 1996 [style=invis];
   }
 
   {
     EMACS;
     EINE -> ZWEI -> Zmacs;
     "Multics Emacs";
-    "Gosling Emacs" -> "GNU Emacs" -> "Lucid Emacs" -> XEmacs;
+    "Gosling Emacs" -> "GNU Emacs";
     "Gosling Emacs" -> "Unipress Emacs";
     "BTL Emacs" -> "CCA Emacs";
-    "GNU Emacs" -> Epoch -> "Lucid Emacs";
-    "GNU Emacs" -> NEmacs -> MULE -> XEmacs;
+    "GNU Emacs" -> "GNU Emacs 13" -> "GNU Emacs 15.10" -> "GNU Emacs 15.34"
+    -> "GNU Emacs 16.56" -> "GNU Emacs 16.57" -> "GNU Emacs 16.58"
+    -> "GNU Emacs 16.59" -> "GNU Emacs 16.60" -> "GNU Emacs 17.36"
+    -> "GNU Emacs 17.43" -> "GNU Emacs 17.46" -> "GNU Emacs 17.48"
+    -> "GNU Emacs 17.49" -> "GNU Emacs 17.55" -> "GNU Emacs 17.57"
+    -> "GNU Emacs 17.58" -> "GNU Emacs 17.60" -> "GNU Emacs 17.61"
+    -> "GNU Emacs 17.62" -> "GNU Emacs 17.63" -> "GNU Emacs 17.64"
+    -> "GNU Emacs 18.31" -> "GNU Emacs 18.32" -> "GNU Emacs 18.33"
+    -> "GNU Emacs 18.35"
+    -> "GNU Emacs 18.36"
+    -> "GNU Emacs 18.37"
+    -> "GNU Emacs 18.38"
+    -> "GNU Emacs 18.39"
+    -> "GNU Emacs 18.40"
+    -> "GNU Emacs 18.41"
+    -> "GNU Emacs 18.44"
+    -> "GNU Emacs 18.45"
+    -> "GNU Emacs 18.46"
+    -> "GNU Emacs 18.47"
+    -> "GNU Emacs 18.48"
+    -> "GNU Emacs 18.49"
+    -> "GNU Emacs 18.50"
+    -> "GNU Emacs 18.51"
+    -> "GNU Emacs 18.52"
+    -> "GNU Emacs 18.53"
+    -> "GNU Emacs 18.54"
+    -> "GNU Emacs 18.55"
+    -> "GNU Emacs 18.56"
+    -> "GNU Emacs 18.57"
+    -> "GNU Emacs 18.58"
+    -> "GNU Emacs 18.59"
+    -> "GNU Emacs 19.7"
+    -> "GNU Emacs 19.8"
+    -> "GNU Emacs 19.9"
+    -> "GNU Emacs 19.10"
+    -> "GNU Emacs 19.11"
+    -> "GNU Emacs 19.12"
+    -> "GNU Emacs 19.13"
+    -> "GNU Emacs 19.14"
+    -> "GNU Emacs 19.15"
+    -> "GNU Emacs 19.16"
+    -> "GNU Emacs 19.17"
+    -> "GNU Emacs 19.18"
+    -> "GNU Emacs 19.19"
+    -> "GNU Emacs 19.20"
+    -> "GNU Emacs 19.21"
+    -> "GNU Emacs 19.22"
+    -> "GNU Emacs 19.23"
+    -> "GNU Emacs 19.24"
+    -> "GNU Emacs 19.25"
+    -> "GNU Emacs 19.26"
+    -> "GNU Emacs 19.27"
+    -> "GNU Emacs 19.28"
+    -> "GNU Emacs 19.29"
+    -> "GNU Emacs 19.30"
+    -> "GNU Emacs 19.31"
+    -> "GNU Emacs 19.32"
+    -> "GNU Emacs 19.33"
+    -> "GNU Emacs 19.34";
+    "GNU Emacs 18.49" -> Epoch -> "Epoch 1.0" -> "Epoch 2.0" -> "Epoch 3.1"
+    -> "Epoch 3.2" -> "Epoch 4.0";
+    "GNU Emacs 18.53" -> "NEmacs 3.2.1" -> "NEmacs 3.3.1" -> "MULE 0.9.0b"
+    -> "MULE 1.0" -> "MULE 2.0" -> "MULE 2.2" -> "MULE 2.3";
+    "GNU Emacs 18.55" -> "GNU Emacs 19.0" -> "GNU Emacs 19.1"
+    -> "GNU Emacs 19.2" -> "GNU Emacs 19.3" -> "GNU Emacs 19.4"
+    -> "GNU Emacs 19.5" -> "GNU Emacs 19.6" -> "GNU Emacs 19.7";
+    "GNU Emacs 19.0" -> "Lucid Emacs 19.0" -> "Lucid Emacs 19.1"
+    -> "Lucid Emacs 19.2"-> "Lucid Emacs 19.3"-> "Lucid Emacs 19.4"
+    -> "Lucid Emacs 19.5"-> "Lucid Emacs 19.6"-> "Lucid Emacs 19.8"
+    -> "Lucid Emacs 19.9"-> "Lucid Emacs 19.10"-> "Lucid Emacs 19.11"
+    -> "XEmacs 19.12" -> "XEmacs 19.13"-> "XEmacs 19.14";
+    "GNU Emacs 18.59" -> "MULE 1.0";
+    "GNU Emacs 19.25" -> "MULE 2.0";
+    "GNU Emacs 19.28" -> "MULE 2.2";
+    "Epoch 4.0" -> "Lucid Emacs 19.8";
+    "GNU Emacs 19.8" -> "Lucid Emacs 19.8";
+    "GNU Emacs 19.23" -> "Lucid Emacs 19.10";
+    "GNU Emacs 19.30" -> "XEmacs 19.13";
     MicroEMACS;
 
     EMACS -> EINE [style=dotted];
@@ -26,14 +103,24 @@ digraph Emacs {
 
   { rank=same; 1976; EMACS; }
   { rank=same; 1977; EINE; }
-  { rank=same; 1978; "Multics Emacs"; ZWEI }
+  { rank=same; 1978; "Multics Emacs"; ZWEI; }
   { rank=same; 1980; Zmacs; "Gosling Emacs"; "BTL Emacs"; }
   { rank=same; 1981; "CCA Emacs"; }
   { rank=same; 1983; "Unipress Emacs"; }
-  { rank=same 1984 "GNU Emacs" }
-  { rank=same 1985 MicroEMACS }
-  { rank=same 1987 Epoch }
-  { rank=same 1989 NEmacs }
-  { rank=same; 1992; "Lucid Emacs"; MULE; }
-  { rank=same 1994 XEmacs }
+  { rank=same; 1984; "GNU Emacs"; }
+  { rank=same; 1985; "GNU Emacs 13"; MicroEMACS; }
+  { rank=same; 1986; "GNU Emacs 17.43"; }
+  { rank=same; 1987; "GNU Emacs 18.35"; }
+  { rank=same;       "GNU Emacs 18.49"; Epoch; }
+  { rank=same; 1988; "GNU Emacs 18.50"; "Epoch 1.0" }
+  { rank=same; 1989; "GNU Emacs 18.53"; "Epoch 2.0"; }
+  { rank=same;       "GNU Emacs 18.54"; "NEmacs 3.2.1"; }
+  { rank=same; 1990; "GNU Emacs 19.0";  "Epoch 3.1"; "NEmacs 3.3.1"; }
+  { rank=same; 1991; "GNU Emacs 18.56"; }
+  { rank=same; 1992; "GNU Emacs 18.58"; "Lucid Emacs 19.0"; "MULE 0.9.0b"; }
+  { rank=same; 1993; "GNU Emacs 19.7"; "Lucid Emacs 19.4"; "MULE 1.0"; }
+  { rank=same; 1994; "GNU Emacs 19.23"; "Lucid Emacs 19.9"; }
+  { rank=same;       "GNU Emacs 19.26"; "MULE 2.0"; }
+  { rank=same; 1995; "GNU Emacs 19.29"; "XEmacs 19.12"; "MULE 2.3"; }
+  { rank=same; 1996; "GNU Emacs 19.31"; "XEmacs 19.14"; }
 }
