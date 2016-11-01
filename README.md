@@ -201,3 +201,8 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   "I probably have a version that predates any of Daniel Lawrence's changes,
   but I will need to look around a little and find it."  
   "This looks like a version from 1986."
+
+- EMACS+IN.gz and EMACSDOCS+IN.gz from http://unixpc.taronga.com/STORE/
+
+  UNIX PC EMACS Version 4.9c 9/5/85, but Warren Montgomery.  Also called
+  BTL Emacs, or AT&T Emacs, or Toolchest EMACS.
