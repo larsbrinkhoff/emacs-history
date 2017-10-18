@@ -196,6 +196,14 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   then....) I ripped out the special-case Eunice code and have been
   maintaining (and slowly evolving) it over the years since then."
 
+- Gosling emacs.tap from DECUS/Stuttgart University/neozeed.
+
+  "This is apparently Gosling Emacs from 1984 tape. The decus tape label is :
+  UniPress Software Inc.
+  PRODUCT: EMACS SCREEN EDITOR
+  VAX/SUN UNIX 4.2 Source
+  (C)1983 tar S/N # 1054 7/84"
+
 - old-uemacs.tar.gz from Dave Conroy.
 
   "I probably have a version that predates any of Daniel Lawrence's changes,
