@@ -1,0 +1,74 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84 exptools; site ihwpt.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!mhuxr!mhuxn!ihnp4!ihwpt!warren
+From: warren@ihwpt.UUCP (warren montgomery)
+Newsgroups: net.emacs
+Subject: Re: Montgomery's Emacs
+Message-ID: <615@ihwpt.UUCP>
+Date: Tue, 17-Dec-85 12:56:57 EST
+Article-I.D.: ihwpt.615
+Posted: Tue Dec 17 12:56:57 1985
+Date-Received: Thu, 19-Dec-85 05:16:18 EST
+References: <733@mit-eddie.UUCP> <11600007@ccvaxa>
+Organization: AT&T Bell Laboratories
+Lines: 59
+
+My emacs implementation was begun in 1979, after having left MIT.  I
+made it freely available to people INSIDE of Bell Labs, and it was
+widely used.  It was never officially "released" from Bell Labs.  At
+the time, Bell Labs had a policy of not copyrighting software, but
+instead trying to protect it by keeping it secret within the
+company, thus no code was ever marked with copyright notices. 
+Unfortunately, several copies did get out during that time, mainly
+due to people who left Bell Labs to return to school or gave copies
+to friends.  When Zimmerman modified one of those copies as the
+original basis for CCA emacs, AT&T and CCA had a prolonged debate
+over it.  Eventually the matter was resolved when Zimmerman replaced
+the last of my code, and AT&T has tried to be more careful with it
+ever since.  
+
+To summarize, I don't think my employer considers any of the escaped
+copies of my emacs to be public domain, though there may be legal
+grounds to contest that.  (I'm not a lawyer, so don't take my word
+for it).
+
+As for what's good or bad about my implementation, here is some
+information:
+
+Mine is probably the least extensive of the unix emacses, as it has
+never been even close to a full time job for me.  I emulated the
+emacs that I had come to know and love at MIT, as of 1978, so it
+diverged a little earlier than the others.  It is certainly the
+smallest in code and data of the various implementations, and runs
+quite well on split I&D pdp-11's, memory starved PC's, and other
+small machines (though I doubt it would run on an 11 with only 64K
+total I&D any more).  The last time I saw any timing comparisons, it
+ran much faster than Gosling's, though that was years ago.  The
+editor is written entirely in C, which is an advantage in speed and
+a disadvantage in flexibility.  It is reasonably straight-forward
+code, which is an advantage to anyone who wants to hack it up, but
+as a result it doesn't optimize odd cases at all.  It also depends
+relatively little on it's environment, relying only on the section
+II system calls, which has made it easy to port.
+
+It now comes with an extension language that is lisp-like, and is
+compiled to teco-like gobbledygook, and provides a good deal of
+flexibility.  You are still limited in changing the behavior of the
+stuff hard coded in C. It has a solution to the flow control problem
+that in most cases allows it to work fine with networks or terminals
+that need ^S/^Q for flow control and still allow you to type ^S and
+^Q as commands.
+
+As for the pricing, AT&T's pricing structure is different from
+industry norms.  The single user price listed ($950, or something
+like that) is for a single purchaser to do anything they want with
+it internally.  Thus if you have a hundred vaxen and want to run it
+on all, you pay just the one fee, making it a good deal for
+organizations that want a lot of copies.  A major objective of the
+Toolchest is to make software available to people who will
+re-package and support it.  For a one time fee of under $10K, you
+can buy the right to repackage and sell it however you want.  
+
+-- 
+
+Warren Montgomery,  ihesa!warren
