@@ -206,3 +206,16 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
   UNIX PC EMACS Version 4.9c 9/5/85, but Warren Montgomery.  Also called
   BTL Emacs, or AT&T Emacs, or Toolchest EMACS.
+
+- 8S_emacs1_2_dd, 8S_emacs2_2_dd, 10S_emacs_docs_dd from Seth Morabito.
+
+  UNIX PC EMACS.
+
+  ""8S" indicates that it is an 8-sector UnixPC diskette. "10S"
+  indicates that it is a 10-sector UnixPC diskette. As you probably
+  already know, software was distributed on both formats.
+
+  I no longer have a UnixPC of my own, so I can't extract these. If
+  you have access to a PC with the proper floppy drive you should be
+  able to use 'dd' or ImageDisk with the right conversion to write
+  these, and then extract them on a real UnixPC.
