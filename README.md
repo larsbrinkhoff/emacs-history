@@ -20,6 +20,10 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 ## Provenance
 
+- TECO EMACS 24 and 25.
+
+  ITS `DUMP` tape image.  Binary files from late 1976.
+
 - TECO EMACS 162 from Alfred M. Szmidt.
 
   `ai-emacs.tgz` and `ai-emacs1.tgz`
