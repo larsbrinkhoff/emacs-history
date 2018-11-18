@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><link rel="stylesheet" href="https://www.saildart.org/css/u8.css" /><meta charset="utf-8" />
+<title>SINE1.STF[1,OTA]1 - www.SailDart.org</title>
+</head>
+<body id="u8body">
+<div id="tagline">perm filename SINE1.STF[1,OTA]1  blob <a href="https://www.saildart.org/SINE1.STF[1,OTA]1_blob">sn#541373</a> filedate 1980-10-15 generic text, type T, neo UTF8</div>
+<pre id="u8lump">
+↑L 
+     Listing of >s>langs>sine>inst.incl.sysin     12/30/79 17:27:19
+
+
+          extrn     $real←make←screen,$real←display,$real←force←display
+          extrn     $real←print,scs$cl,scs$ioars←nnl,$real←display←screen
+          extrn     $real←get←hpos
+          entry     make←variable,make←mark,set←mark←reg,eval←mark←reg
+          entry     tyi
+
+*         This is the code for all the instructions sine knows about
+
+     instruction    add
+          l    rv,op1(ops)
+          a    rv,op2(ops)
+          br   link
+
+     instruction    sub
+          l    rv,op1(ops)
+          s    rv,op2(ops)
+          br   link
+
+     instruction    mul
+          l    9,op1(ops)
+          m    8,op2(ops)
+          lr   rv,9
+          br   link
+
+     instruction    div
+          lis  8,0
+          l    9,op1(ops)
+          bnms div.ok
+          lcs  8,1
+div.ok    d    8,op2(ops)
+          lr   rv,9
+          br   link
+
+     instruction    mod
+          lis  8,0
+          l    9,op1(ops)
+          bnms mod.ok
+          lcs  8,1
+mod.ok    d    8,op2(ops)
+          lr   rv,8
+          br   link
+
+     instruction    and
+          l    rv,op1(ops)
+          n    rv,op2(ops)
+          br   link
+
+     instruction    or
+          l    rv,op1(ops)
+          o    rv,op2(ops)
+          br   link
+
+     instruction    xor
+          l    rv,op1(ops)
+          x    rv,op2(ops)
+          br   link
+
+     instruction    min
+          l    rv,op1(ops)
+          c    rv,op2(ops)
+          bnpr link
+          l    rv,op2(ops)
+          br   link
+
+     instruction    max
+          l    rv,op1(ops)
+          c    rv,op2(ops)
+          bnmr link
+          l    rv,op2(ops)
+          br   link
+
+     instruction    car
+          l    rv,op1(ops)
+          l    rv,cons.car(rv)
+          br   link
+
+     instruction    cdr
+          l    rv,op1(ops)
+          l    rv,cons.cdr(rv)
+          br   link
+
+     instruction    caar
+          l    rv,op1(ops)
+          l    rv,cons.car(rv)
+          l    rv,cons.car(rv)
+          br   link
+
+     instruction    cadr
+          l    rv,op1(ops)
+          l    rv,cons.cdr(rv)
+          l    rv,cons.car(rv)
+          br   link
+
+     instruction    cdar
+          l    rv,op1(ops)
+          l    rv,cons.car(rv)
+          l    rv,cons.cdr(rv)
+          br   link
+
+     instruction    cddr
+          l    rv,op1(ops)
+          l    rv,cons.cdr(rv)
+          l    rv,cons.cdr(rv)
+          br   link
+
+     instruction    cons
+          lis  5,8                           a cons is 8 bytes long
+          save
+          bal  link,allocate
+          restore
+          l    t2,op1(ops)
+          st   t2,cons.car(rv)
+          l    t2,op2(ops)
+          st   t2,cons.cdr(rv)
+          oi   rv,cons←bits
+          br   link
+
+     instruction    rplaca
+          l    rv,op1(ops)
+          l    t2,op2(ops)
+          st   t2,cons.car(rv)
+          br   link
+
+     instruction    rplacd
+          l    rv,op1(ops)
+          l    t2,op2(ops)
+          st   t2,cons.cdr(rv)
+          br   link
+
+init←routine   equ  t2
+
+     instruction    rsearch
+          la   init←routine,getr←init
+          lr   t3,link                       we can bash about anything here
+          bal  link,s.common
+          ais  rv,1
+          br   t3
+
+     instruction    search
+          la   init←routine,get←init
+s.common  save
+          lis  temp,0
+          st   temp,error←register
+          l    source,op2(ops)               string to search for
+          la   temp,getr←init
+          clr  temp,init←routine
+          bnes s.not←rev
+          bal  link,get←length               start at the end if in reverse
+          lr   index,rv                      start at beginning
+          sis  index,1
+          bs   s.init
+s.not←rev lis  index,0
+s.init    st   index,segptr(sp)
+
+          l    source,op1(ops)               get string to search though
+          l    index,buffer.location(source)
+          balr link,init←routine
+s.restart save←sv   haystack
+          l    source,op2(ops)
+          l    index,segptr(sp)
+          balr link,init←routine
+          balr link,get
+          b    s.found                       empty SS
+          lr   type,char                     first find first char of SS
+          save←sv   needle
+          load←sv   haystack
+s.look    balr link,get
+          b    s.failed
+error12   equ  *                             search failed
+          clr  type,char
+          bnes s.look
+
+          lr   t1,index                      save for failing search
+s.compare save←sv   haystack
+          load←sv   needle
+          balr link,get                      get next char in needle to check
+          b    s.found
+          lr   rv,char
+          save←sv   needle
+          load←sv   haystack
+          balr link,get
+          b    s.failed
+          clr  rv,char
+          be   s.compare
+          lr   index,t1                      keep looking
+          b    s.restart
+
+s.found   equ  *
+          l    rv,search←save←area←haystack+8     index(haystack)
+          l    source,search←save←area←haystack   source(haystack)
+          make←virtual←bufptr rv,source
+          b    get←no←error
+
+s.failed  lis  rv,0
+          b    get←error
+
+s.recover clhi t1,get←init                        doing search or rsearch?
+          be   s.return←end
+          lis  rv,0
+          b    popj
+
+s.return←end   equ  *
+          l    source,op1(ops)
+          bal  link,get←length
+          b    popj
+
+     instruction    searchr
+          lr   t1,link
+          bal  link,search
+sr.common l    source,op1(ops)
+          s    rv,buffer.location(source)
+          br   t1
+
+     instruction    rsearchr
+          lr   t1,link
+          bal  link,rsearch
+          bs   sr.common
+
+*         call iocs$get←chars (user←input,addr(buffer),num←chars,num←read,code);
+
+     instruction    tyi
+          stm  temp,register←save(sp)   incase of break!!!!
+          lhi  temp,-2                  amount to backup if break hit
+          sth  temp,break←enabled
+
+          la   temp,user←input
+          st   temp,arg1p(sp)
+          la   temp,segptr(sp)          don't use io←buffer since we are called
+          st   temp,segsize(sp)         by print which has stuff there
+          la   temp,segsize(sp)
+          st   temp,arg2p(sp)
+          la   temp,a←one
+          st   temp,arg3p(sp)
+          la   temp,code
+          st   temp,arg4p(sp)
+          la   temp,code
+          st   temp,arg5p(sp)
+          lhi  temp,24
+          st   temp,alist←size(sp)
+          la   ap,alist(sp)
+          save
+          bal  link,iocs$get←chars
+          lis  temp,0
+          sth  temp,break←enabled
+          restore
+
+          lb   rv,segptr(sp)       get the char
+          br   link
+
+*         call iocs$put←chars (user←output, addr(io←buffer), num←chars, code);
+
+     instruction    tyo
+          l    t1,op1(ops)              get char to print
+          stb  t1,io←buffer(sp)
+
+          la   temp,user←output
+          st   temp,arg1p(sp)
+          la   temp,io←buffer←ptr(sp)
+          st   temp,arg2p(sp)
+          la   temp,a←one
+          st   temp,arg3p(sp)
+          la   temp,code
+          st   temp,arg4p(sp)
+          lhi  temp,20
+          st   temp,alist←size(sp)
+          la   ap,alist(sp)
+          save
+          bal  link,iocs$put←chars
+          restore
+          lr   rv,t1
+          br   link
+
+a←one     dac  1
+
+*         Prints a text object
+
+     instruction    print
+          lis  rv,0                no clear to end of line
+          b    $real←print
+
+     instruction    print←clearing
+          lis  rv,1
+          b    $real←print
+
+*         returns the number of characters in the input buffer
+
+     instruction    tyis
+          la   temp,user←input
+          st   temp,arg1p(sp)
+          la   temp,status←string
+          st   temp,arg2p(sp)
+          la   temp,io←buffer(sp)
+          st   temp,io←buffer←ptr(sp)
+          la   temp,io←buffer←ptr(sp)   returns input and output status in
+          st   temp,arg3p(sp)           successive HWs.
+          la   temp,code
+          st   temp,arg4p(sp)
+          lhi  temp,20
+          st   temp,alist←size(sp)
+          la   ap,alist(sp)
+          save
+          bal  link,iocs$order
+          restore
+          lh   rv,io←buffer(sp)
+          br   link
+
+status←string  equ  *
+          dc   c'status  '
+
+*         descriptor hacking
+
+     instruction    cline
+          save
+          l    source,op1(ops)
+          bal  link,get←length
+          sth  rv,dscrs+2               build up pl/1 type descriptors
+          lhi  rv,x'1400'
+          sth  rv,dscrs
+          lis  index,0
+          bal  link,get←init
+          la   t1,io←buffer(sp)
+cline.loop     equ  *
+          balr link,get
+          b    cline.sendit
+          stb  char,0(t1)
+          ais  t1,1
+          bs   cline.loop
+
+cline.sendit   equ  *
+          la   temp,io←buffer(sp)
+          st   temp,arg1p(sp)
+          lcs  temp,8                   negative => descriptors
+          st   temp,alist←size(sp)
+          la   10,dscrs
+          la   15,alist(sp)
+          bal  link,scs$cl
+          b    popj
+
+     instruction    call←af
+          save
+          lis  temp,0
+          st   temp,error←register
+          la   t1,3*56(stack)
+          st   t1,arg1p(sp)
+          li   temp,c'sine'
+          st   temp,0(t1)
+          li   temp,c'←mac'
+          st   temp,4(t1)
+          li   temp,c'hine'
+          st   temp,8(t1)
+          li   temp,c'$haf'
+          st   temp,12(t1)
+          lhi  temp,c' ['
+          sth  temp,16(t1)
+          l    source,op1(ops)
+          la   t1,18(t1)
+          lis  index,0
+          bal  link,get←init
+caf.get←loop   equ  *
+          balr link,get
+          bs   caf.do←call                   remember skip return
+          dc   0
+          stb  char,0(t1)
+          ais  t1,1
+          bs   caf.get←loop
+
+caf.do←call    equ  *
+          lhi  temp,c']'
+          stb  temp,0(t1)
+          shi  t1,3*56-1(stack)              get number of chars.
+          sth  t1,dscrs+6
+          lhi  temp,x'1400'
+          sth  temp,dscrs+4
+
+          la   temp,code(ls)
+          st   temp,arg2p(sp)
+          li   temp,x'1100001f'         fixed bin(31)
+          st   temp,dscrs
+          lcs  temp,12
+          st   temp,alist←size(sp)
+
+          save
+          la   10,dscrs
+          la   15,alist(sp)
+          bal  link,scs$cl
+          restore
+
+          lhi  rv,32                    if error return " "
+          l    temp,code(ls)
+          bm   get←error
+          l    rv,get.stop(ls)
+get←no←error   equ  *
+          lis  temp,0
+          st   temp,error←register
+          b    popj
+
+          entry     get←code←ptr
+get←code←ptr   equ  *
+          .ent 0
+          la   temp,get.stop(ls)
+          l    5,4(ap)
+          st   temp,0(5)
+          .rtn
+
+*         call ioa$ioars (temp←area,op1,op2)  op1 is a string, op2 is number
+*         then copy temp area into op3
+
+     instruction    insert←ioa
+          save
+          la   temp,io←buffer(sp)       temporary buffer
+          st   temp,arg1p(sp)
+          li   temp,x'54000050'         char(80) varying
+          st   temp,dscrs+8
+          l    source,op1(ops)
+          bal  link,get←length
+          sth  rv,dscrs+6               build up pl/1 type descriptors
+          lhi  rv,x'1400'
+          sth  rv,dscrs+4
+          lis  index,0
+          bal  link,get←init
+          ar   text←ptr,index
+          st   text←ptr,arg2p(sp)
+          la   temp,op2(ops)
+          st   temp,arg3p(sp)
+          li   temp,x'1100001f'         fixed bin(31)
+          st   temp,dscrs
+          lhi  temp,-16
+          st   temp,alist←size(sp)
+          save
+          la   10,dscrs
+          la   15,alist(sp)
+          bal  link,scs$ioars←nnl
+          restore
+
+          la   temp,io←buffer+2(sp)     make it look like a sine string
+          st   temp,op1(ops)
+          l    temp,op3(ops)
+          st   temp,op2(ops)
+          bal  link,insert
+          b    popj
+
+*         Store a value in a vbl or temp
+
+     instruction    store
+          l    rv,op1(ops)
+          l    t2,op2(ops)
+          st   rv,0(t2)
+          br   link
+
+*         store a value in a vbl
+
+     instruction    estore
+          l    rv,op1(ops)              get value
+          l    t1,op2(ops)              get vbl
+          st   rv,variable.value(t1)
+          br   link
+
+*         Creator functions
+
+     instruction    make←buffer
+          save
+          la   temp,code
+          st   temp,arg1p(sp)
+
+*    If this arg is null then a new segment is created else it is a ptr
+*    to an already existing segment which the buffer should point to.
+
+          lis  temp,0
+          st   temp,segptr(sp)
+          la   temp,segptr(sp)
+          st   temp,arg2p(sp)
+          lhi  temp,12
+          st   temp,alist←size(sp)
+          la   ap,alist(sp)
+          bal  link,$pl1←make←buffer
+          restore
+          l    rv,code
+          br   link
+
+     instruction    make←string
+          save
+          l    source,op1(ops)
+          bal  link,get←length
+          lr   5,rv
+          ais  5,2                           for length field
+          lr   t1,rv
+          bal  link,allocate
+          oi   rv,string←bits
+          sth  t1,string.length(rv)
+          l    source,op1(ops)
+          lis  index,0
+          bal  link,get←init
+          la   t1,string.text(rv)
+makstr.loop    equ  *
+          balr link,get
+          b    popj
+          stb  char,0(t1)
+          ais  t1,1
+          bs   makstr.loop
+
+     instruction    intern
+          save
+          l    source,op1(ops)
+          lr   temp,source
+          srl  temp,28
+          clhi temp,string←type
+          bes  int.OK
+          bal  link,make←string
+          st   rv,op1(ops)
+          lr   source,rv
+
+int.OK    lh   t1,string.length(source)
+          lr   t2,t1
+int.hash  sis  t1,1
+          bms  int.got←hash
+          lb   char,string.text(source,t1)
+          ar   t2,char
+          bs   int.hash
+int.got←hash   equ  *
+          l    t3,op2(ops)                   get array
+          dh   t2,array.size+2(t3)           mod array size
+          slls t2,2                          full word entries
+          l    rv,array.cells(t2,t3)
+          l    t5,op1(ops)                   get string we're looking for
+          bz   int.new
+int.look←loop  equ  *
+          l    t4,variable.name(rv)
+          lh   t1,string.length(t4)
+          ch   t1,string.length(t5)          are the lengths the same
+          bnes int.next
+int.comp←loop  equ  *
+          sis  t1,1
+          bm   popj                          we found it
+          lb   char,string.text(t4,t1)
+          clb  char,string.text(t5,t1)
+          bes  int.comp←loop
+
+int.next  l    rv,variable.next(rv)          check next vbl in chain
+          bnz  int.look←loop
+
+int.new   lhi  5,variable←size
+          bal  link,allocate
+          oi   rv,variable←bits
+          l    temp,array.cells(t2,t3)
+          st   temp,variable.next(rv)
+          st   rv,array.cells(t2,t3)
+          l    temp,op1(ops)
+          st   temp,variable.name(rv)
+          lis  temp,0
+          st   temp,variable.value(rv)
+          b    popj
+
+     instruction    make←window
+          save
+          lhi  5,window←size
+          bal  link,allocate
+          oi   rv,window←bits
+          lr   t2,rv                         set mark doesn't bash this
+          l    source,op1(ops)
+          st   source,window.real←text(t2)
+          bal  link,make←mark
+          st   rv,window.start(t2)
+          st   rv,op1(ops)
+          st   source,op2(ops)
+          lis  temp,0
+          st   temp,op3(ops)
+          bal  link,set←mark                      To thread them on the buffer
+          bal  link,make←mark
+          st   rv,window.stop(t2)
+          st   rv,op1(ops)
+          bal  link,set←mark
+          lr   rv,t2
+          b    popj
+
+     instruction    define←window
+          lis  temp,0
+          st   temp,error←register
+          lr   t2,link
+          l    t1,op1(ops)
+          l    source,window.real←text(t1)        get the buffer...
+          l    index,op2(ops)
+          l    rv,window.start(t1)
+          bal  link,sm.gone                  do the set mark
+          l    index,op3(ops)
+          l    rv,window.stop(t1)
+          bal  link,sm.gone                  do the set mark
+          lr   rv,t1                         return the defined window
+          br   t2                            return
+
+     instruction    make←gnirt
+          lr   t1,link
+          lhi  5,gnirt←size+16
+          bal  link,allocate
+          oi   rv,gnirt←bits
+          lis  temp,0
+          sth  temp,gnirt.real←length(rv)
+          lhi  temp,16
+          sth  temp,gnirt.max←length(rv)
+          la   temp,gnirt←size(rv)           get text ptr
+          st   temp,gnirt.text←ptr(rv)
+          br   t1
+
+     instruction    make←mark
+          save
+          lis  5,marker←size
+          bal  link,allocate
+          oi   rv,marker←bits
+          lis  temp,0
+          st   temp,0(rv)
+          st   temp,4(rv)
+          b    popj
+
+     instruction    make←variable
+          save
+          lcs  temp,1 0                     error means found it (not new)
+          st   temp,error←register
+          l    source,op1(ops)               Get name of vbl
+          lr   temp,source
+          srl  temp,28
+          clhi temp,string←type
+          bes  mv.got←string
+          bal  link,make←string
+          lr   source,rv
+          st   rv,op1(ops)
+mv.got←string  equ  *
+          l    rv,linel←ptr                  get first vbl in chain
+          bz   mv.new
+mv.check←this  equ  *
+          l    t1,variable.name(rv)
+          lh   t3,string.length(t1)
+          clh  t3,string.length(source)
+          bne  mv.get←next
+mv.comp   sis  t3,1
+          bm   popj                          We have found a match
+          lb   char,string.text(t1,t3)
+          clb  char,string.text(source,t3)
+          bnes mv.get←next
+          bs   mv.comp
+mv.get←next    equ  *
+          l    rv,variable.next(rv)
+          bnz  mv.check←this
+
+mv.new    lr   temp,source
+          srl  temp,28
+          clhi temp,string←type
+          bes  mv.no←copy←name
+          bal  link,make←string              copy string into safe place
+          lr   source,rv
+mv.no←copy←name     equ  *
+          lis  5,variable←size
+          bal  link,allocate
+          oi   rv,variable←bits
+          l    t1,linel←ptr
+          l    temp,variable.next(t1)        thread it on
+          st   rv,variable.next(t1)
+          st   temp,variable.next(rv)
+          st   source,variable.name(rv)
+          lis  temp,0
+          st   temp,variable.value(rv)
+          st   temp,error←register
+          b    popj
+
+     instruction    make←array
+          save
+          l    t1,op1(ops)                   get type of array.
+          clhi t1,1                          bit array
+          bes  ma.bits
+          clhi t1,32
+          bes  ma.full
+          bal  link,error
+error13   equ  *                             bad array cell size
+
+ma.bits   l    5,op2(ops)                    # of bits
+          sis  5,1                           round up
+          ohi  5,x'1f'
+          ais  5,1
+          srls 5,3                           # of full bytes to allocate
+          lr   t2,5
+          srls t2,2                          # of full←words to zero
+          bs   ma.alloc
+
+ma.full   l    5,op2(ops)
+          slls 5,2                           # of full word is op2
+          l    t2,op1(ops)                   # of full words to zero
+
+ma.alloc  ahi  5,array←size
+          bal  link,allocate
+          oi   rv,array←bits
+          l    temp,op2(ops)
+          st   temp,array.size(rv)
+          l    t1,op1(ops)                   bits / cell
+          st   t1,array.type(rv)
+          lis  t1,0                          blast them out
+          lr   t3,rv
+ma.loop   sis  t2,1                          initialize
+          bm   popj
+          st   t1,array.cells(t3)
+          ais  t3,4
+          bs   ma.loop
+
+*         Generalized text mover.
+
+     instruction    insert←region
+          save
+          lis  temp,0
+          st   temp,error←register
+          l    source,op1(ops)
+          bal  link,get←length          gets length of op1 (source)
+          lr   len,rv
+          bz   popj                     nothing to do...
+
+          l    temp,op3(ops)
+          bnms in.not←minus
+          lr   temp,len
+in.not←minus   equ  *
+          s    temp,op2(ops)
+          lr   len,temp
+          bm   get←error
+
+          l    temp,op2(ops)
+          st   temp,insert.start
+          lr   temp,source
+          srl  temp,28
+          clhi temp,buffer←type
+          bes  in.hack←stop
+          l    temp,op3(ops)
+          st   temp,insert.stop
+          bs   in.check←sink
+
+in.hack←stop   equ  *
+          l    temp,op3(ops)
+          make←absolute←bufptr     temp,source
+          st   temp,insert.stop
+
+in.check←sink  equ  *
+          l    sink,op4(ops)
+          lr   temp,sink
+          srl  temp,28
+          clhi temp,buffer←type
+          be   in.into←buffer
+
+*    Inserting into a gnirt is easy just make sure it is big enough to
+*    hold the new text then add it too the end.
+
+          lh   5,gnirt.real←length(sink)
+          ar   5,len                    add in new stuff
+          clh  5,gnirt.max←length(sink)
+          bnp  in.doit                  already big enough
+          ohi  5,x'000f'                give some room to grow
+          ais  5,1
+          bal  link,allocate
+          l    t2,gnirt.text←ptr(sink)
+          lis  type,0                        copy ptr
+in.copy←gnirt←loop  equ  *
+          l    temp,0(t2,type)               copy the old text
+          st   temp,0(rv,type)
+          ais  type,4
+          clh  type,gnirt.real←length(sink)
+          bls  in.copy←gnirt←loop
+
+          lr   type,5                        save new max length
+          lr   t2,rv                         save new text←ptr
+
+          lh   5,gnirt.max←length(sink)      free old block
+          l    rv,gnirt.text←ptr(sink)
+          bal  link,free
+
+          sth  type,gnirt.max←length(sink)   set up the new values
+          st   t2,gnirt.text←ptr(sink)
+
+in.doit   l    index,insert.start
+          bal  link,get←init
+          l    type,insert.stop
+          bnms in.default←stop
+          l    type,get.stop
+in.default←stop     equ  *
+          l    put←ptr,gnirt.text←ptr(sink)
+          ah   put←ptr,gnirt.real←length(sink)    always append to a gnirt
+          ahm  len,gnirt.real←length(sink)
+          lr   rv,sink                       return thing inserted into.
+in.add←to←gnirt←loop     equ  *
+          clr  index,type
+          bnl  popj
+          balr link,get
+          b    popj
+          stb  char,0(put←ptr)
+          ais  put←ptr,1
+          bs   in.add←to←gnirt←loop
+
+in.into←buffer equ  *
+          bal  link,update←gap          make sure everything is kool
+          lis  temp,buffer.flags.wired
+          sbt  temp,buffer.flags(sink)
+
+*         t2 is also put←ptr which is OK to bash
+
+          l    t2,buffer.start←mod(sink)
+          bz   ins.no←mod←m             no marks to hassle with
+          l    temp,buffer.location(sink)
+          cl   temp,marker.mv(t2)
+          bnls ins.check←em             start is before us: punt
+          st   temp,marker.mv(t2)
+ins.check←em   l    t2,buffer.end←mod(sink)
+          bzs  ins.no←mod←m             just in case
+          cl   temp,marker.mv(t2)
+          bls  ins.no←mod←m
+          l    temp,buffer.gap←end(sink) This is a marker value(point)
+          st   temp,marker.mv(t2)
+
+ins.no←mod←m   equ  *
+          l    index,insert.start
+          bal  link,get←init
+          l    temp,insert.stop
+          bms  in.default←stop1
+          st   temp,get.stop
+in.default←stop1    equ  *
+          l    put←ptr,text←ptr(sink)
+          a    put←ptr,buffer.location(sink)
+          am   len,buffer.location(sink)
+          am   len,gap←start(sink)
+          lr   rv,sink
+
+          lis  temp,buffer.flags.wired
+          rbt  temp,buffer.flags(sink)
+
+insert.loop    equ  *
+          balr link,get
+          b    popj
+          stb  char,0(put←ptr)
+          ais  put←ptr,1
+          bs   insert.loop
+
+     instruction    insert
+          l    temp,op2(ops)
+          st   temp,op4(ops)
+          lis  temp,0
+          st   temp,op2(ops)
+          lcs  temp,1
+          st   temp,op3(ops)            negative max means go to end
+          b    insert←region
+
+     instruction    nth
+          lis  temp,0
+          st   temp,error←register
+          lr   t1,link
+          l    source,op1(ops)
+          l    index,op2(ops)
+          bm   nth.error.low
+          bal  link,get←length
+          cr   index,rv
+          bnm  nth.error.high
+nth.restart    equ  *
+          bal  link,get←init
+          balr link,get
+          b    nth.error
+          lr   rv,char
+          br   t1
+nth.error lcs  rv,1
+          st   rv,error←register
+          br   t1
+nth.error.low  equ  *
+          lis  index,0
+nth.error.common    equ  *
+          lcs  rv,1
+          st   rv,error←register
+          b    nth.restart
+nth.error.high equ  *
+          lr   index,rv
+          b    nth.error.common
+
+     instruction    nthr
+          l    source,op1(ops)
+          l    temp,buffer.location(source)
+          a    temp,op2(ops)
+          st   temp,op2(ops)
+          b    nth
+
+     instruction    location
+          l    source,op1(ops)
+          l    rv,buffer.location(source)
+          br   link
+
+*         This gets the length of a text←object in source
+
+     instruction    length
+          l    source,op1(ops)
+get←length     lr   type,source
+          srl  type,28
+          clhi type,0                   is it a number?
+          bnes l.try←string
+          cli  source,!2
+          bps  l.is←string
+          lis  rv,1
+          br   link
+
+l.try←string   clhi type,string←type
+          bnes l.try←window
+l.is←string    lhl  rv,string.length(source)
+          br link
+
+l.try←window   clhi type,window←type
+          bne  l.try←buffer
+          l    type,window.real←text(source)
+          l    rv,window.stop(source)
+          l    temp,marker.mv(rv)
+          make←virtual←bufptr temp,type
+          l    rv,window.start(source)
+          l    rv,marker.mv(rv)
+          make←virtual←bufptr rv,type
+          sr   temp,rv
+          lr   rv,temp
+          br   link
+
+l.try←buffer   clhi type,buffer←type
+          bne  l.try←gnirt
+          l    rv,buffer.gap←start(source)
+          a    rv,buffer.top(source)
+          s    rv,buffer.gap←end(source)
+          br   link
+
+l.try←gnirt    clhi type,gnirt←type
+          bne  error4←do
+          lh   rv,gnirt.real←length(source)
+          br   link
+
+     instruction    set←loc
+          l    source,op1(ops)
+          l    t2,op2(ops)              get new location
+validate←loc   equ  *
+          lis  temp,0
+          st   temp,error←register
+          lr   t2,t2               can't be negative
+          bms  loc.error←less
+          lr   t1,link
+          bal  link,get←length
+          lr   link,t1
+          clr  t2,rv                    can't go pass the max
+          bp   loc.error←more
+          lr   rv,t2                    so we can return new location
+          st   rv,buffer.location(source)
+          br   link
+
+loc.error←less equ  *
+          lis  rv,0
+          st   rv,buffer.location(source)
+          bs   loc.error
+
+loc.error←more equ  *                   set to length
+          st   rv,buffer.location(source)
+
+loc.error lcs  temp,1
+          st   temp,error←register
+          br   link
+error5    equ  *
+
+     instruction    add←to←loc
+          l    source,op1(ops)
+          l    t2,op2(ops)
+          a    t2,buffer.location(source)
+          b    validate←loc
+
+*         deletes text from point to point + N
+
+     instruction    delete
+          lis  temp,0
+          st   temp,error←register
+          save
+          l    source,op1(ops)
+          lr   temp,source
+          srl  temp,28
+          clhi temp,buffer←type
+          be   delete.from←buffer
+
+          lis  temp,0                             Its a gnirt
+          s    temp,op2(ops)
+          bnm  popj
+          ahm  temp,gnirt.real←length(source)
+          bnm  popj                               all done
+          lis  temp,0
+          sth  temp,gnirt.real←length(source)     we deleted too far
+get←error equ  *
+          lcs  temp,1
+          st   temp,error←register
+          b    popj
+
+delete.from←buffer  equ  *
+          l    t1,buffer.location(source)
+          l    index,op2(ops)
+          bz   popj
+          bms  delete.doit
+          am   index,buffer.location(source)
+          lr   temp,index
+          lis  index,0
+          sr   index,temp
+delete.doit    lr   temp,index
+          a    temp,buffer.location(source)
+          bnms delete.enough
+
+delete.too←big equ  *
+          st   t1,buffer.location(source)    reset things
+          b    get←error
+
+error8         equ  *                        trying to delete too much
+
+delete.enough  bal  link,get←length
+          cl   rv,buffer.location(source)
+          bls  delete.too←big
+          lr   sink,source
+          lis  len,0                    how big to make gap
+          bal  link,update←gap
+          l    temp,gap←start(source)
+          lr   t2,temp                  save for later
+          ar   temp,index               mung all markers here to gap
+          l    t1,marker←chain(source)
+          bzs  delete.finish
+delete.floop   cl   temp,marker.mv(t1)       find the first marker to mung
+          bnls delete.next←m            not this mark
+          cl   t2,marker.mv(t1)
+          bls  delete.next←m            not this either.
+          st   temp,marker.mv(t1)       if in area to be deleted: pin it 
+delete.next←m  l    t1,marker.next(t1)
+          bnzs delete.floop
+          bs   delete.finish
+
+delete.finish  am   index,buffer.location(source) do the deletion
+          am   index,gap←start(source)
+
+          l    t2,buffer.start←mod(source)
+          bz   popj                     not marks to hassle with
+          l    temp,buffer.location(source)
+          cl   temp,marker.mv(t2)
+          bnls del.check←em             start is before us: punt
+          st   temp,marker.mv(t2)
+del.check←em   l    t2,buffer.end←mod(source)
+          bz   popj                     just in case
+          cl   temp,marker.mv(t2)
+          bnp  popj
+          st   temp,marker.mv(t2)
+
+          b    popj
+
+*         set←mark a,b,c Set the mark a in buffer b to the value c
+
+     instruction    set←mark
+          lis  temp,0
+          st   temp,error←register
+          l    source,op2(ops)
+          l    rv,op1(ops)              make sure mark isn't on list
+          l    index,op3(ops)
+set←mark←reg   l    t1,marker←chain(source)
+          bzs  sm.thread
+sm.rem←loop    clr  rv,t1                    find mark if exists
+          bes  sm.gone
+          l    t1,marker.next(t1)
+          bnzs sm.rem←loop
+sm.thread l    t1,marker←chain(source)  If not found then thread it on
+          st   t1,marker.next(rv)
+          st   rv,marker←chain(source)
+
+*    define←window calls in here.
+sm.gone   make←absolute←bufptr     index,source
+          cl   index,buffer.top(source)
+          bnps sm.point←ok
+          lcs  index,1
+          st   index,error←register
+          l    index,buffer.top(source)
+sm.point←ok    equ  *
+          st   index,marker.mv(rv)
+          br   link
+
+     instruction    unset←mark
+          l    source,op2(ops)
+          l    rv,op1(ops)
+unset←mark←reg equ  *
+          la   t1,marker←chain-marker.next(source)
+usm.loop  cl   rv,marker.next(t1)
+          bes  usm.unthread
+          l    t1,marker.next(t1)
+          bnzs usm.loop
+          bal  link,error
+error7    equ  *                        no such mark
+
+usm.unthread   equ  *
+          l    temp,marker.next(rv)
+          st   temp,marker.next(t1)
+          br   link
+
+     instruction    eval←mark
+          l    t1,op1(ops)
+          l    source,op2(ops)
+eval←mark←reg  equ  *
+          l    rv,marker.mv(t1)
+          make←virtual←bufptr rv,source
+          br   link
+
+     instruction    fill←vbl←array
+          l    temp,op2(ops)            get number of cases
+          l    t1,state.pc.loc
+          l    t4,state.pc.buf
+          l    t4,buffer.base(t4)
+          l    t2,op1(ops)              get array
+fva.loop  lhl  t3,0(t1,t4)              get function descriptor
+          lr   rv,t3
+          nhi  t3,x'6000'               get base register number
+          srls t3,11                    shift it over.
+          clhi t3,ip←reg←number         is it a vbl?
+          bes  fva.vbl
+          bal  link,error
+error10   equ  *                        case not vbl
+
+fva.vbl   nhi  rv,x'1fff'               get the offset
+          sll  rv,19                    extend the sign
+          sra  rv,17
+          a    rv,state.ip              get address
+          l    rv,0(rv)                 indirect through vbl←tab
+          st   rv,array.cells(t2)
+          ais  t2,4
+          ais  t1,2
+          sis  temp,1
+          bp   fva.loop
+          st   t1,state.pc.loc
+          br   link
+
+     instruction    fill←char←array
+          save
+          l    t1,op1(ops)                   get array to fill.
+          l    temp,array.type(t1)           get type of array. must be bits
+          clhi temp,1
+          bes  fca.check←size
+          bal  link,error
+error9    equ  *
+
+fca.check←size equ  *
+          l    temp,array.size(t1)           must be 128 bits long
+          clhi temp,128
+          bnls fca.OK
+          bal  link,error
+error11   equ  *
+
+fca.OK    l    source,op2(ops)               get string to get chars from
+          lis  index,0
+          bal  link,get←init
+          lr   rv,t1                         return array
+fca.loop  balr link,get
+          b    popj
+          nhi  char,x'7f'
+          sbt  char,array.cells(t1)
+          bs   fca.loop
+
+     instruction    ar
+          l    t1,op1(ops)              get array
+          l    t2,op2(ops)              get index
+          l    temp,array.type(t1)      bit array?
+          clhi temp,1
+          be   ar.bits
+
+          slls t2,2
+          l    rv,array.cells(t1,t2)
+          br   link
+
+ar.bits   lis  rv,0
+          tbt  t2,array.cells(t1)       test the bit
+          bzr  link
+          lis  rv,1
+          br   link
+
+     instruction    as
+          l    rv,op1(ops)              get value
+          l    t1,op2(ops)
+          l    t2,op3(ops)
+          l    temp,array.type(t1)      bit array?
+          clhi temp,1
+          be   as.bits
+
+          slls t2,2
+          st   rv,array.cells(t1,t2)
+          br   link
+
+as.bits   lr   rv,rv
+          bzs  as.zero←bit
+          sbt  t2,array.cells(t1)
+          br   link
+as.zero←bit    equ  *
+          rbt  t2,array.cells(t1)
+          br   link
+
+     instruction    copy←array
+          lr   t3,link
+          l    t1,op1(ops)
+          l    t2,op2(ops)
+          bnzs ca.got
+          l    temp,array.type(t1)
+          st   temp,op1(ops)
+          l    temp,array.size(t1)
+          st   temp,op2(ops)
+          bal  link,make←array
+          lr   t2,rv
+          bs   ca.dont←check
+
+do←error16     equ  *
+          bal  link,error
+error16   equ  *
+
+ca.got    l    temp,array.type(t1)
+          cl   temp,array.type(t2)
+          bnes do←error16
+          l    temp,array.size(t1)
+          cl   temp,array.size(t2)
+          bnes do←error16
+
+ca.dont←check  equ  *
+          l    t4,array.size(t1)
+          mh   t4,array.type+2(t1)           total number of bits
+          sis  t4,1
+          ohi  t4,x'001f'
+          ais  t4,1
+          srls t4,3                          bytes
+          lr   rv,t2
+ca.loop   sis  t4,4
+          bmr  t3
+          l    temp,array.cells(t1,t4)
+          st   temp,array.cells(t2,t4)
+          bs   ca.loop
+
+     instruction    make←screen
+          b    $real←make←screen
+
+     instruction    display
+          b    $real←display
+
+     instruction    force←display
+          b    $real←force←display
+
+     instruction    display←screen
+          b    $real←display←screen
+
+     instruction    get←hpos
+          b    $real←get←hpos
+
+*         Token handling instructions with flexibility
+
+     instruction    find←first←in←fa
+          lis  t1,1           forward
+          lis  t2,1           absolute
+          b    ffi.common
+
+     instruction    find←first←in←fr
+          lis  t1,1
+          lis  t2,0
+          b    ffi.common
+
+     instruction    find←first←in←ba
+          lcs  t1,1
+          lis  t2,1
+          b    ffi.common
+
+     instruction    find←first←in←br
+          lcs  t1,1
+          lis  t2,0
+          b    ffi.common
+
+     instruction    find←first←not←in←fa
+          lis  t1,1           forward
+          lis  t2,1           absolute
+          b    ffni.common
+
+     instruction    find←first←not←in←fr
+          lis  t1,1
+          lis  t2,0
+          b    ffni.common
+
+     instruction    find←first←not←in←ba
+          lcs  t1,1
+          lis  t2,1
+          b    ffni.common
+
+     instruction    find←first←not←in←br
+          lcs  t1,1
+          lis  t2,0
+          b    ffni.common
+
+ffi.common     equ  *
+          save
+          lis  temp,0
+          st   temp,error←register
+          l    t3,op2(ops)                        get bit map
+          bal  link,ff.string
+          l    source,op1(ops)                    get buffer to look through
+          l    rv,buffer.location(source)
+          l    index,buffer.location(source)
+          lr   t1,t1
+          bms  ffi.reverse
+          bal  link,get←init
+          bs   ffi.start
+ffi.reverse    equ  *
+          bal  link,getr←init
+
+ffi.start balr link,get
+          b    ffi.error                          none found
+          tbt  char,array.cells(t3)
+          bzs  ffi.start                          not found: loop
+ffi.done  make←virtual←bufptr index,source
+          lr   rv,index
+          sr   rv,t1                              back up one
+          lr   t1,t1
+          bps  ffi.return
+          ais  rv,1
+ffi.return     equ  *
+          lr   t2,t2
+          bnz  popj
+          s    rv,buffer.location(source)
+          b    popj
+
+ffi.error equ  *
+          lcs  temp,1
+          st   temp,error←register
+          bs   ffi.return
+
+ffni.common    equ  *
+          save
+          lis  temp,0
+          st   temp,error←register
+          l    t3,op2(ops)                        get bit map
+          bal  link,ff.string
+          l    source,op1(ops)                    get buffer to look through
+          l    rv,buffer.location(source)
+          l    index,buffer.location(source)
+          lr   t1,t1
+          bms  ffni.reverse
+          bal  link,get←init
+          bs   ffni.start
+ffni.reverse   equ  *
+          bal  link,getr←init
+
+ffni.start     equ  *
+          balr link,get
+          b    ffi.error                     none found
+          tbt  char,array.cells(t3)
+          bnzs ffni.start                         found one: loop
+          b    ffi.done
+
+ff.string equ  *
+          lr   temp,t3
+          srl  temp,28
+          clhi temp,array←type
+          ber  link                          alreay kool
+          lis  temp,0
+          st   temp,bit←map.cells(sp)
+          st   temp,bit←map.cells+4(sp)
+          st   temp,bit←map.cells+8(sp)
+          st   temp,bit←map.cells+12(sp)
+          la   t3,bit←map.t(sp)
+          oi   t3,array←bits
+          l    source,op2(ops)
+          lis  index,0
+          lr   rv,link
+          bal  link,get←init
+ff.loop   balr link,get
+          br   rv
+          dc   0
+          sbt  char,bit←map.cells(sp)
+          bs   ff.loop
+
+*         Token handling instructions
+
+     instruction    to←token←fa
+          lis  t1,1           forward
+          lis  t2,1           absolute
+          b    ws.common
+
+     instruction    to←token←ba
+          lcs  t1,1           backward
+          lis  t2,1           absolute
+          b    ws.common
+
+     instruction    to←token←fr
+          lis  t1,1           forward
+          lis  t2,0           relative
+          b    ws.common
+
+     instruction    to←token←br
+          lcs  t1,1           backward
+          lis  t2,0           relative
+
+ws.common save
+          l    source,op1(ops)          get the buffer
+          l    index,buffer.location(source)
+
+          lr   t1,t1
+          bms  ws.use←getr              use the proper init routine
+          bal  link,get←init
+          bs   ws.loop
+ws.use←getr    equ  *
+          bal  link,getr←init
+
+ws.loop   balr link,get
+          b    ws.off←end               don't move if off the end
+          tbt  char,break←table
+          bnzs ws.loop
+
+          make←virtual←bufptr index,source
+          lr   rv,index
+          sr   rv,t1
+          lr   t1,t1
+          bps  ws.not←back
+          ais  rv,1
+ws.not←back    equ  *
+          lr   t2,t2
+          bnz  popj                     return it as is
+          s    rv,buffer.location(source)    make it relative to point
+          b    popj
+ws.off←end     equ  *
+          lr   rv,t2                    relative (return zero)
+          bz   popj
+          l    rv,buffer.location(source)
+          b    popj
+
+*         Now the token stuff
+
+     instruction    over←token←fa
+          lis  t1,1           forward
+          lis  t2,1           absolute
+          b    tok.common
+
+     instruction    over←token←ba
+          lcs  t1,1           backward
+          lis  t2,1           absolute
+          b    tok.common
+
+     instruction    over←token←fr
+          lis  t1,1           forward
+          lis  t2,0           relative
+          b    tok.common
+
+     instruction    over←token←br
+          lcs  t1,1           backward
+          lis  t2,0           relative
+
+tok.common     save
+          l    source,op1(ops)          get the buffer
+          l    index,buffer.location(source)
+
+          lr   t1,t1
+          bms  tok.use←getr             use the proper init routine
+          bal  link,get←init
+          bs   tok.skip←white←space
+tok.use←getr   equ  *
+          bal  link,getr←init
+
+tok.skip←white←space     equ  *
+          balr link,get
+          b    ws.off←end
+          tbt  char,break←table
+          bnzs tok.skip←white←space
+
+*    now get to end of token
+
+tok.find←token←end  equ  *
+          balr link,get
+          b    tok.off←end
+          tbt  char,break←table
+          bzs  tok.find←token←end
+
+tok.off←end    equ  *                        just remember not to sis one
+          make←virtual←bufptr index,source
+          lr   char,char
+          bms  tok.no←sis
+
+          sr   index,t1                      point at first white space
+          lr   t1,t1
+          bps  tok.no←sis
+          ais  index,1
+tok.no←sis     equ  *
+          lr   rv,index
+          lr   t2,t2                         relative or absolute
+          bnz  popj
+          s    rv,buffer.location(source)
+          b    popj
+
+break←table    equ  *
+* dcl break←data bit(128) static init("007c0000e3ff003e0000001e0000001c"b4);
+          dc   x'007c',x'0000',x'e3ff',x'003e'
+          dc   x'0000',x'001e',x'0000',x'001c'
+
+     instruction    get←pname
+          l    t1,op1(ops)
+          l    rv,variable.name(t1)
+          br   link
+
+     instruction    command←args
+    "     l    t1,76(sp)                     get saved register 15
+          l    t2,op1(ops)                   which arg does she want
+          slls t2,2
+          ais  t2,4
+          lis  rv,0
+          cl   t2,0(t1)                      too many?
+          bnlr link
+          l    t3,0(t1,t2)
+          l    rv,0(t3)
+          br   link
+
+     instruction    make←read←only
+          l    rv,op1(ops)
+          lis  temp,buffer.flags.read←only
+          sbt  temp,buffer.flags(rv)
+          br   link
+
+     instruction    get←documentation
+          lis  temp,0
+          st   temp,error←register
+          l    t1,op1(ops)
+          l    t2,variable.value(t1)
+          lr   temp,t2
+          srl  temp,28
+          clhi temp,function←type
+          bnes get←error←np
+          l    t1,function.vbl←tab(t2)
+          lh   t2,0(t1)       get statics number
+          l    rv,4(t1,t2)
+          br   link
+get←error←np   equ  *
+          lcs  temp,1
+          st   temp,error←register
+          br   link
+
+↑L 
+     Listing of >s>langs>sine>static.incl.sysin   12/30/79 17:27:17
+
+*    all this code relies on the fact that ds's are inited to zero
+
+state          equ  *
+state.pc.buf   ds   4
+state.pc.loc   ds   4
+state.sb       ds   4
+state.sp       ds   4
+state.ip       ds   4
+
+code           ds   4
+user←input     ds   4
+user←output    ds   4
+string←space   ds   4
+variable←chain ds   4
+top←of←heap    ds   4
+number←of←allocates ds   4
+time←to←gc     ds   4
+get.stop       ds   4
+getr.stop      ds   4
+
+insert.start   ds   4
+insert.stop    ds   4
+
+breakp         ds   2
+break←enabled  ds   2
+contour←ptr    ds   4
+
+error←register ds   4
+
+dscrs          equ  *                   build descriptors here
+search←save←area←haystack     ds   20
+search←save←area←needle       ds   20
+
+restart.buf    ds   4
+restart.loc    ds   4
+restart.vbl←tab     ds   4
+
+in.save.flag   ds   4
+
+linel←ptr      ds   4
+current←screen←ptr  ds   4
+screen←chain   ds   4
+
+num←of←lines   equ  25
+lines.screen   ds   num←of←lines*4
+
+pos←struc←ptr  dac  0
+pos←struc      equ  *
+dispop         dc   c'xy'
+x←cord         dc   0
+y←cord         dc   0
+
+inhibit←gc     dc   0
+↑L 
+     Listing of >s>langs>sine>regs.incl.sysin     12/30/79 17:27:17
+
+*    So that there is some hope of winnage I will try to stick to
+*    the following register conventions.
+
+*         The value returned by instructions:
+
+rv             equ  1
+
+*         Operands to instructions will be pointed to by ops
+
+ops            equ  2
+
+*         For pushing and poping regs... (way up there so it will be safe)
+
+stack          equ  11
+
+*         This means that the first free register is:
+
+first←free     equ  3
+
+*         The instruction decoder and dispatch uses the following regs.
+
+opcode         equ  first←free
+optype         equ  first←free+1
+place          equ  first←free+2
+pc             equ  first←free+3
+base←reg       equ  first←free+4
+test←mask      equ  first←free+5
+
+*         The co-routined read-from-text-object hack uses:
+
+source         equ  first←free
+text←ptr       equ  first←free+1
+get            equ  first←free+2
+index          equ  first←free+3
+type           equ  first←free+4
+char           equ  0
+
+*         For sticking things in buffers.
+
+sink           equ  first←free+5
+put←ptr        equ  first←free+6
+len            equ  first←free+7
+
+*         Update←gap's regs
+
+gstart         equ  first←free
+gsize          equ  first←free+1
+markers        equ  first←free+2
+from←ptr       equ  first←free+2
+to←ptr         equ  first←free+3
+num←ch         equ  first←free+4
+
+*         Temps:
+
+temp           equ  0
+t1             equ  10
+t2             equ  9
+t3             equ  8
+t4             equ  7
+t5             equ  6
+t6             equ  5
+
+*         The usual pl1 registers 12,13,14 and 15
+
+lp             equ  12
+sp             equ  13
+link           equ  14
+ap             equ  15
+↑L 
+     Listing of >s>langs>sine>defuns.incl.sysin   12/30/79 17:27:17
+
+*    So that there is some hope of winnage I will try to stick to
+*    the following register conventions.
+
+*         The value returned by instructions:
+
+rv             equ  1
+
+*         Operands to instructions will be pointed to by ops
+
+ops            equ  2
+
+*         For pushing and poping regs... (way up there so it will be safe)
+
+stack          equ  11
+
+*         This means that the first free register is:
+
+first←free     equ  3
+
+*         The instruction decoder and dispatch uses the following regs.
+
+opcode         equ  first←free
+optype         equ  first←free+1
+pc.buf         equ  first←free+2
+pc.loc         equ  first←free+3
+base←reg       equ  first←free+4
+test←mask      equ  first←free+5
+
+*         The co-routined read-from-text-object hack uses:
+
+source         equ  first←free
+text←ptr       equ  first←free+1
+get            equ  first←free+2
+index          equ  first←free+3
+type           equ  first←free+4
+char           equ  0
+
+*         For sticking things in buffers.
+
+sink           equ  first←free+5
+put←ptr        equ  first←free+6
+len            equ  first←free+7
+
+*         Update←gap's regs
+
+gstart         equ  first←free
+gsize          equ  first←free+1
+markers        equ  first←free+2
+from←ptr       equ  first←free+2
+to←ptr         equ  first←free+3
+num←ch         equ  first←free+4
+
+*         Temps:
+
+temp           equ  0
+t1             equ  10
+t2             equ  9
+t3             equ  8
+t4             equ  7
+t5             equ  6
+t6             equ  5
+
+*         The usual pl1 registers 12,13,14 and 15
+
+ls             equ  12
+sp             equ  13
+link           equ  14
+ap             equ  15
+
+
+*
+*    OTA's macro package
+*         (I just can't resist hacking macros any longer)
+*
+
+save macro
+ stm 2,0(stack)
+ ahi stack,56
+ mend
+
+restore macro
+ lm 2,-56(stack,0)
+ mend
+
+debug     equ  0
+
+instruction macro inst←name
+ .if debug
+ entry @inst←name
+ .fi
+@inst←name equ *
+ mend
+
+change←pc macro     base,offset
+          save
+          l    source,state.pc.buf
+          lis  temp,buffer.flags.wired
+          rbt  temp,buffer.flags(source)
+          l    source,@offset".buf"(@base)
+          st   source,state.pc.buf
+          sbt  temp,buffer.flags(source)
+          bal  link,swap←in
+          l    source,@offset".loc"(@base)
+          st   source,state.pc.loc
+          restore
+          mend
+
+branch    macro     reg,tobash
+          l    @tobash,state.pc.buf
+          s    @reg,buffer.base(@tobash)
+          st   @reg,state.pc.loc
+          mend
+
+bpcounter set  0
+make←virtual←bufptr macro     bp,buf
+bpcounter set  bpcounter+1
+          cl   @bp,buffer.gap←start(@buf)
+          bnps "bufptr.macro."@bpcounter
+          s    @bp,buffer.gap←end(@buf)
+          a    @bp,buffer.gap←start(@buf)
+"bufptr.macro."@bpcounter     equ  *
+          mend
+
+make←absolute←bufptr     macro     bp,buf
+bpcounter set  bpcounter+1
+          cl   @bp,buffer.gap←start(@buf)
+          bnps "bufptr.macro."@bpcounter
+          a    @bp,buffer.gap←end(@buf)
+          s    @bp,buffer.gap←start(@buf)
+"bufptr.macro."@bpcounter     equ  *
+          mend
+
+save←sv   macro     area
+          st   source,search←save←area←@area
+          st   get,search←save←area←@area+4
+          st   index,search←save←area←@area+8
+          st   text←ptr,search←save←area←@area+12
+          l    temp,get.stop
+          st   temp,search←save←area←@area+16
+          mend
+
+load←sv   macro     area
+          l    source,search←save←area←@area
+          l    get,search←save←area←@area+4
+          l    index,search←save←area←@area+8
+          l    text←ptr,search←save←area←@area+12
+          l    temp,search←save←area←@area+16
+          st   temp,get.stop
+          mend
+
+*         The stuff on the stack...
+
+condition←ptr  equ  12
+
+          pc   0
+          org  80
+stack←start    equ  *
+alist          equ  *
+alist←size     ds   4
+arg1p          ds   4
+arg2p          ds   4
+arg3p          ds   4
+arg4p          ds   4
+arg5p          ds   4
+arg6p          ds   4
+arg7p          ds   4
+arg8p          ds   4
+cond           equ  *
+cond.next      ds   4
+cond.handler   ds   4
+cond.name1     ds   4
+cond.name2     ds   4
+io←buffer←len  ds   4
+io←buffer←ptr  ds   4
+io←buffer      ds   84
+operand←table  ds   16
+inst←info      ds   2
+saved←opcode   ds   2
+register←save  ds   4*16
+segptr         ds   4
+segsize        ds   4
+dname          equ  *
+dname.length   ds   4
+dname.chars    ds   168
+ename          equ  *
+ename.length   ds   4
+ename.chars    ds   32
+bit←map.t      ds   4
+bit←map.l      ds   4
+bit←map.cells  ds   16
+stack←end      equ  *
+
+*         The operand table
+
+          org  0
+op1            ds   4
+op2            ds   4
+op3            ds   4
+op4            ds   4
+
+↑L 
+     Listing of >s>langs>sine>control.incl.sysin  12/30/79 17:26:43
+
+
+     instruction    push
+          l    rv,op1(ops)
+          br   link
+
+     instruction    pop
+          sis  stack,4
+          l    rv,0(stack)
+          l    t1,op1(ops)              operand is a ptr
+          st   rv,0(t1)
+          br   link
+
+     instruction    discard
+          sis  stack,4
+          br   link
+
+     instruction    squish
+          l    t1,op1(ops)
+          slls t1,2                     make into full word ptr
+          l    t3,-4(stack,0)           get top value to save
+          sr   stack,t1
+          st   t3,-4(stack,0)           restore top value
+          br   link
+
+fun←vbl   equ  first←free
+new←pc    equ  first←free+1
+
+     instruction    call←vbl
+     instruction    call
+          l    t1,state.pc.buf               save the state
+          l    t2,state.pc.loc
+          l    t3,op1(ops)                   get the vbl containing fun to call
+          l    t3,variable.value(t3)
+          lr   temp,t3
+          srl  temp,28
+          clhi temp,function←type
+          bes  call.got←fun
+          bal  link,error
+error15   equ  *
+call.got←fun   equ  *
+          change←pc t3,function
+          st   t1,frame.saved←pc.buf(stack)
+          st   t2,frame.saved←pc.loc(stack)
+          l    temp,state.sb
+          st   temp,frame.saved←sb(stack)
+          st   stack,frame.saved←sp(stack)
+          l    temp,state.ip
+          st   temp,frame.saved←ip(stack)
+          l    temp,op2(ops)
+          sth  temp,frame.num←args(stack)
+          lhl  temp,saved←opcode(sp)
+          sth  temp,frame.flag←bits(stack)        tels whether to push result
+          lis  temp,0
+          st   temp,frame.handlers(stack)
+          sth  temp,frame.num←bound(stack)
+
+          l    t1,op1(ops)                        get vbl which has the function
+          l    t3,variable.name(t1)
+          st   t3,frame.name←of←function(stack)
+          l    t3,variable.value(t1)              get function
+          l    temp,function.vbl←tab(t3)
+          st   temp,state.ip
+
+          l    t1,state.pc.buf
+          l    t1,buffer.base(t1)
+          l    t2,state.pc.loc
+          lh   t4,0(t1,t2)                        first HW is num←temps
+          sth  t4,frame.num←temps(stack)
+          ais  t2,2
+          st   t2,state.pc.loc                    next opcode is here
+          st   stack,state.sb                     make it stack←base
+          slls t4,2
+          ahi  stack,frame←size(t4)     bump by frame size + number of temps
+          st   stack,state.sp           make new top of stack ptr
+          br   link
+
+     instruction    return
+          l    t1,state.sb              get stack←base
+          lh   t2,frame.num←temps(t1)   need to find bound vbls
+          slls t2,2
+          ahi  t2,frame.temps(t1)       t2 is ptr to bound vbls
+          lh   t3,frame.num←bound(t1)
+          mh   t3,binding←block←size
+return.unbind  equ  *
+          sis  t3,12
+          bms  return.unbound
+          l    t4,bindings.value←addr(t2,t3) gets vbl in question
+          l    temp,bindings.old←value(t2,t3)     get saved value
+          st   temp,0(t4)               restore!
+          bs   return.unbind
+return.unbound equ  *
+          l    t2,frame.saved←pc.loc(t1)
+          bz   !13+x'e4'                if last frame then really ret
+          change←pc t1,frame.saved←pc
+
+          lh   t2,frame.num←args(t1)    so we can pop our args
+          l    t3,frame.saved←ip(t1)
+          st   t3,state.ip
+          l    t3,frame.saved←sb(t1)
+          st   t3,state.sb
+          l    rv,-4(stack,0)           get return value
+          l    stack,frame.saved←sp(t1)
+          slls t2,2                     make num←args a FW ptr
+          sr   stack,t2                 form new sp
+          st   stack,state.sp
+
+*    This idea here is to inhibit pushing stuff on the stack by
+*    looking at the bit for the call instruction.
+
+          lhl  temp,frame.flag←bits(t1) get call inst
+          sth  temp,saved←opcode(sp)    make return's push bit the call's bit
+          br   link
+
+
+     instruction    num←args
+          b    error
+
+     instruction    bind
+     instruction    bind←vbl
+          l    t2,op1(ops)                   get the variable
+          la   t3,variable.value(t2)
+
+*    t2 is object
+*    t3 is addr of cell
+
+bind←reg  l    t1,state.sb                   get ptr to base of stack
+          lh   rv,frame.num←bound(t1)        and those already bound
+          mh   rv,size←of←binding←blocks     binding blocks are bigger
+          ah   rv,frame.num←temps(t1)        offset by temps
+          slls rv,2
+          ahi  rv,frame.temps(t1)
+          st   t2,bindings.variable(rv)      save the object
+          st   t3,bindings.value←addr(rv)    save place where value is
+          l    temp,0(t3)
+          st   temp,bindings.old←value(rv)   and the old value
+          lis  temp,1
+          ahm  temp,frame.num←bound(t1)      up the count
+          ais  stack,12
+          br   link
+
+size←of←binding←blocks   dc   3              number of full←words
+
+     instruction    bind←array←cell
+          l    t2,op1(ops)                   get the array
+          l    t1,op2(ops)                   get index to bind
+          slls t1,2
+          la   t3,array.cells(t1,t2)         this is value←addr
+          lr   t4,link                       can't do a save
+          bal  link,bind←reg                 takes the object in t2
+          l    rv,op3(ops)
+          st   rv,0(t3)                      set it
+          br   t4
+
+     instruction    bind←static
+          l    t3,op1(ops)
+          l    t2,state.ip
+          lh   temp,0(t2)
+          lr   t1,t3
+          la   t4,0(t2)            flush the type bits.
+          sr   t1,t4
+          clr  t1,temp                       is it really a static
+          bp   do←bad←type
+          lr   t4,link                       save return address
+          bal  link,bind←reg
+          br   t4
+
+     instruction    quote
+          l    rv,op1(ops)
+          br   link
+
+     instruction    eval
+          l    t1,op1(ops)
+          l    rv,variable.value(t1)
+          br   link
+
+*    This instruction sets up a handler for a particular error condition.
+*    The code to handle the error follows the handle instruction and
+*    the address of the code to be executed under the auspicouses of the
+*    handler is the second argument.  The error name is the first argument.
+
+*         Code for handling typical error:
+*    (handle "srchfail" search←routine)
+*    (foo bar baz)            ; code to be executed when error occurs.
+*    (goto cleanup)
+*search←routine
+*    (baz bar foo)            ;code executed under error handler
+*cleanup
+*    (revert)
+
+     instruction    handle
+          lr   t3,link                            save the return addr
+          l    t1,state.sb                        get frame ptr
+          l    temp,frame.handlers(t1)
+          st   temp,handler.next(stack)           chain all the handlers together
+          st   stack,frame.handlers(t1)           thread it on
+          lr   t1,stack
+          ahi  t1,handler←size
+          st   t1,handler.contour(stack)          save contour pointer
+          l    source,op1(ops)                    get string and copy it.
+          li   char,x'20202020'
+          st   char,handler.error←name(stack)
+          st   char,handler.error←name+4(stack)
+          lis  index,0
+          bal  link,get←init
+          la   t2,handler.error←name(stack)
+handle.copy    equ  *
+          balr link,get
+          b    handle.copy←done
+          stb  char,0(t2)
+          ais  t2,1
+          bs   handle.copy
+handle.copy←done    equ  *
+          l    temp,state.pc.buf                  go here when error occurs
+          st   temp,handler.addr.buf(stack)
+          l    temp,state.pc.loc
+          st   temp,handler.addr.loc(stack)
+          l    temp,op2(ops)
+          branch    temp,t1
+          ahi  stack,handler←size
+          br   t3
+
+*    revert simply deactivates the top handler
+
+     instruction    revert
+          l    t1,state.sb
+          l    t2,frame.handlers(t1)
+          l    t3,handler.next(t2)
+          st   t3,frame.handlers(t1)         unthread handler
+          l    t3,handler.contour(t2)        reset the stack
+          shi  t3,handler←size
+          clhi stack,handler←size(t3)        anything above handler?
+          bes  revert.move←value
+          l    temp,-4(stack,0)
+          st   temp,0(t3)                    move top of stack down
+          ais  t3,4
+revert.move←value   equ  *
+          lr   stack,t3                      pop off handler
+          br   link
+
+*    This code just signals a condition.
+
+     instruction    signal
+          l    source,op1(ops)
+          lis  index,0
+          bal  link,get←init
+          lr   t1,stack
+          ais  stack,8
+          li   temp,x'20202020'
+          st   temp,0(t1)
+          st   temp,4(t1)
+          lr   put←ptr,t1
+signal.loop    equ  *
+          balr link,get
+          b    error.signal←entry
+          stb  char,0(put←ptr)
+          ais  put←ptr,1
+          bs   signal.loop
+
+*         Flow control
+
+     instruction    restart←at
+          l    temp,op1(ops)
+          ni   temp,x'0000ffff'
+          st   temp,restart.loc
+          l    temp,state.pc.buf
+          st   temp,restart.buf
+          l    temp,state.ip
+          st   temp,restart.vbl←tab
+          br   link
+
+     instruction    goto
+          l    temp,op1(ops)
+          branch    temp,t1
+*         st   temp,state.pc.loc
+          br   link
+
+     instruction    bnoerr
+          l    t1,error←register
+          lis  temp,0
+          st   temp,error←register
+          lr   t1,t1
+          bmr  link
+          l    t1,op1(ops)
+          branch    t1,t2
+*         st   t1,state.pc.loc
+          br   link
+
+     instruction    berr
+          l    temp,error←register
+          bzr  link
+          lis  temp,0
+          st   temp,error←register
+          l    t1,op1(ops)
+          branch    t1,t2
+          br   link
+
+string←types   dc   x'7020'
+
+t←value   equ  x'0b02fff1'
+nil←value equ  x'0b02fff0'
+
+     instruction    t
+          li   rv,t←value
+          br   link
+
+     instruction    nil
+          li   rv,nil←value
+          br   link
+
+     instruction    ift
+          li   temp,nil←value
+          cl   temp,op1(ops)
+          ber  link
+
+comp.branch    equ  *
+          l    temp,op2(ops)
+          branch    temp,t1
+          br   link
+
+     instruction    ifnil
+          li   temp,nil←value
+          cl   temp,op1(ops)
+          bner link
+          b    comp.branch
+
+     instruction    eq
+          l    temp,op1(ops)
+          lr   t1,temp
+          srl  t1,28
+          tbt  t1,string←types
+          bnzs eq.string
+          l    t1,op2(ops)
+          srl  t1,28
+          tbt  t1,string←types
+          bnzs eq.string
+          cl   temp,op2(ops)
+          be   t
+          b    nil
+
+eq.string save
+          l    source,op2(ops)
+          lis  index,0
+eq.looking←atp←entry     equ  *
+          bal  link,get←init
+          save←sv   haystack
+          l    source,op1(ops)
+          lis  index,0
+          bal  link,get←init
+
+eq.loop   balr link,get
+          lhi  link,0                        no-op
+          lr   t1,char
+          save←sv   needle
+          load←sv   haystack
+          balr link,get
+          lhi  link,0                        no-op
+          clr  char,t1
+          bne  nil←pop
+          clhi char,-1
+          be   t←pop                         done
+          save←sv   haystack
+          load←sv   needle
+          b    eq.loop
+
+nil←pop   li   rv,nil←value
+          b    popj
+t←pop     li   rv,t←value
+          b    popj
+
+     instruction    not
+          l    temp,op1(ops)
+          cli  temp,nil←value
+          be   t
+          b    nil
+
+     instruction    gp
+          l    temp,op1(ops)
+          lr   t1,temp
+          srl  t1,28
+          tbt  t1,string←types
+          bnzs gp.string
+          l    t1,op2(ops)
+          srl  t1,28
+          tbt  t1,string←types
+          bnzs gp.string
+          c    temp,op2(ops)
+          bp   t
+          b    nil
+
+gp.string save
+          l    source,op2(ops)
+          lis  index,0
+          bal  link,get←init
+          save←sv   haystack
+          l    source,op1(ops)
+          lis  index,0
+          bal  link,get←init
+
+gp.loop   balr link,get
+          b    nil←pop
+          lr   t1,char
+          save←sv   needle
+          load←sv   haystack
+          balr link,get
+          b    t←pop
+          clr  t1,char
+          bp   t←pop
+          bl   nil←pop
+
+*    There equal so far so keep looking
+
+          save←sv   haystack
+          load←sv   needle
+          b    gp.loop
+
+     instruction    gep
+          save
+          bal  link,lp             >= is ↑&lt;
+          st   rv,op1(ops)
+          restore
+          b    not
+
+     instruction    lp
+          l    temp,op1(ops)       (&lt; a b) = (> b a)
+          l    t1,op2(ops)
+          st   t1,op1(ops)
+          st   temp,op2(ops)
+          b    gp
+
+     instruction    lep
+          save
+          bal  link,gp             &lt;= is equivalent to ↑>
+          st   rv,op1(ops)
+          restore
+          b    not
+
+     instruction    looking←atp
+          save
+          l    source,op2(ops)          get buffer to examine
+          l    index,buffer.location(source)
+          a    index,op3(ops)           add in offset
+          bnms lap.check←length         normalize
+          lis  index,0
+          b    lap.eqp
+lap.check←length    equ  *
+          bal  link,get←length
+          cr   index,rv
+          bnm  nil←pop                  error!
+lap.eqp   equ  *
+          bal  link,get←init
+          save←sv   haystack
+          l    source,op1(ops)          get string to check for
+          lis  index,0
+          bal  link,get←init
+
+lap.loop  balr link,get
+          b    t←pop                    win!
+          lr   t1,char
+          save←sv   needle
+          load←sv   haystack
+          balr link,get
+          b    nil←pop                  ran out of chars to check
+          clr  char,t1
+          bne  nil←pop
+          save←sv   haystack
+          load←sv   needle
+          b    lap.loop
+
+     instruction    modifiedp
+          l    source,op1(ops)          get buffer to check
+          l    rv,buffer.start←mod(source)
+          l    temp,marker.mv(rv)
+          l    rv,buffer.end←mod(source)
+          cl   temp,marker.mv(rv)
+          bp   nil
+          b    t
+
+     instruction    functionp
+          l    t1,op1(ops)
+          srl  t1,28
+          clhi t1,function←type
+          be   t
+          b    nil
+
+     instruction    stringp
+          l    t1,op1(ops)
+          srl  t1,28
+          clhi t1,string←type
+          be   t
+          b    nil
+
+     instruction    variablep
+          l    t1,op1(ops)
+          srl  t1,28
+          clhi t1,variable←type
+          be   t
+          b    nil
+↑L 
+     Listing of >s>langs>sine>opcodes.tint   12/30/79 17:26:51
+
+bsysin\hk
+blisp\hki(setq opcode←table '(
+\
+bpl1\hkiopname
+\
+0pnum\
+bop\
+hk:i@
+bopname\hki↑X1\ bopcode\hki↑X1popcodeπ\\\\mopcode\
+0pnum←args\
+bop1\hki↑X1\j:&lt;s0\z-2;oget←second\> qnum←args\+1pnum←args\
+ |get←second| bop2\hki↑X1\j:&lt;s0\z-2;oget←third\> qnum←args\+1pnum←args\
+  |get←third| bop3\hki↑X1\j:&lt;s0\z-2;oget←fourth\> qnum←args\+1pnum←args\
+   |get←fourth| bop4\hki↑X1\j:&lt;s0\z-2;ogot←all←args\> qnum←args\+1pnum←args\
+|got←all←args|
+btype\hki↑X1\
+          |* now all the args are parsed *|
+
+|* First add to the sysin incl file *|
+bsysin\zji org \qopcode\*12↑ii+op←tab←origin
+ dc ↑Dop1\,↑Dop2\,↑Dop3\,↑Dop4\,↑Dtype\,↑Dopname\
+\
+|* Next the lisp stuff *|
+     blisp\
+zji(↑Dopname\ \qopcode\+8192↑ii . \qnum←args\↑ii)
+\
+|* Last the pl1 error incl *|
+qnum\+1pnum\
+bpl1\
+jqopcode\↑ii,
+\sopname\li"↑Dopname\",
+\
+@
+emopcodes\
+
+bsysin\eoopcodes.incl.sysin\
+blisp\zji))
+\eoopcodes.lisp\
+bpl1\
+jidcl numops fixed init (\qnum\↑ii);
+dcl opcodes (\qnum\↑ii) fixed static init (
+\
+sopname\0lr-di);\lidcl \lri (\qnum\↑ii) char(16) static init (
+\zj-llr-di);\
+eoopcodes.incl.pl1\
+
+ob (9.775 5 0.75) >s>langs>sine
+
+</pre>
+</body>
+</html>

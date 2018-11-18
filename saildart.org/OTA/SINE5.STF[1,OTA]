@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><link rel="stylesheet" href="https://www.saildart.org/css/u8.css" /><meta charset="utf-8" />
+<title>SINE5.STF[1,OTA] - www.SailDart.org</title>
+</head>
+<body id="u8body">
+<div id="tagline">perm filename SINE5.STF[1,OTA]  blob <a href="https://www.saildart.org/SINE5.STF[1,OTA]_blob">sn#541376</a> filedate 1980-10-15 generic text, type T, neo UTF8</div>
+<pre id="u8lump">
+/↑L 
+     Listing of >doc>sm>pl1←mode.doc    12/30/79 15:24:51
+
+↑Dstart←of←statement: Goes to the beginning of the current statement.
+
+↑Dpl1←indent←line: Indents the current line appropriately
+depending on:
+               1) The previous line.
+               2) The flags set in the options:: clause.
+               3) The current line.
+
+↑Dnext←non←white: Moves to the next program character (comments
+are skipped).
+
+↑Dbalance←forward: At a do, proc or begin statement scans forward
+for the balancing end statement.
+
+↑Dbalance←backward: At an end statement, scans backwards for a
+matching do, proc or begin statement.
+
+↑Dgoto←line←n: Goes to the line specified by the argument.
+
+↑Dcompile←pl1: Writes out and recompiles the current buffer.
+If you blow out use "pi" to recover.
+
+↑L 
+     Listing of >doc>sm>print←doc.doc   12/30/79 15:24:51
+
+↑Dprint←doc: This program reads a command from the key
+board and prints the documentation for it.
+↑L 
+     Listing of >doc>sm>tv.doc     05/20/80 23:10:52
+
+↑Dset←buffer←mark: Sets the mark for this buffer to the location
+of the cursor.
+
+↑Dbeginning←of←line: Moves the cursor to the beginning of the
+current line.
+
+↑Dback←char: Moves the cursor back one character.  With an
+argument it backs up that many characters.
+
+↑Dillegal←command: This function is invoked by all unused commands.
+
+↑Ddelete←char: Deletes the next character in the buffer.  If
+passed an argument deletes that many characters.
+
+↑Dend←of←line: Moves the cursor to the end of the current line.
+
+↑Dforward←char: Moves the cursor one character to the right.  If
+given an argument moves that many characters right.
+
+↑Dabort: This function is called to abort the current invocation
+of the reader.  Good for getting out of the echo area.
+
+↑Ddo←tab: Inserts a tab (9.) into the buffer.
+
+↑Dcr←tab: Inserts a &lt;cr> and a &lt;tab>
+
+↑Dkill←line: Deletes the current line not including the carriage
+return.  If the line is empty then the carriage return will be
+deleted.  The deleted text is saved on the kill stack.
+
+↑Dfull←redisplay: Causes the entire screen to be recentered and
+refreshed.  If on a printing terminal, prints &lt;argument> lines on
+each side of the current line and indicates the cursor.
+
+↑Ddo←cr: Inserts a carriage return (13.) into the buffer.
+
+↑Dnext←line←command: (under the control of emacs←type←np)
+&lt;default> Moves the cursor to the beginning of the next line.
+&lt;other>   Moves the cursor down one line and as nearly as possible in
+the same horizontal position.
+
+↑Dopen←line: Inserts a carriage return after the cursor.  It is
+equivalent to &lt;cr> C-B.
+
+↑Dprevious←line←command: (under the control of emacs←type←np)
+&lt;default> Moves the cursor to the beginning of the previous line.
+&lt;other>   Moves the cursor up one line and as nearly as possible in
+the same horizontal position.
+
+↑Dquote←next←character: This reads one character from the
+terminal and inserts it verbatum into the buffer.  This is how
+you insert control characters into a file.
+
+↑Dreverse←string←search: Reads a string from the echo area
+terminated by and altmode (&lt;esc>) and moves the cursor to the
+beginning of the first occurance of the string between the
+cursor and the beginning of the buffer.  With an argument
+searches for that many occurances.
+
+↑Dstring←search: Reads a string from the echo area terminated by
+and altmode (&lt;esc>) and moves the cursor to the end of the first
+occurance of the string between the cursor and the end of the
+buffer.  With an argument searches for that many occurances.
+
+↑Dtwiddle←chars: (under the control of emacs←type←t)
+&lt;default> Interchanges the characters adjoining the cursor.
+Places the cursor after the second character.  If you are at
+the end of a line (or buffer), the two previous characters
+are interchanged instead.
+&lt;other>   Interchanges the two preceeding characters.
+
+↑Dget←multiplier: This function is used to suppy numeric
+arguments to other functions.  It stores the argument if the
+variable "argument".  If no number is supplied then 4 is the
+default.  ↑U↑U make the argument be 4*4 or 16.  ↑U342 make
+the argument 342.  See?
+
+↑Dnext←page: Moves the cursor down one half a screen full. An
+argument moves down argument/2 screens. This is approximately
+argument*11/2 lines.  Affected by the setting of emacs←type←np.
+
+↑Dkill←point←to←mark: This deletes all the text between the cursor
+and the mark for this buffer.  The killed text is saved on the
+kill stack.
+
+↑Dyank←last←kill: Inserts the top item on the kill stack into the
+buffer before the cursor.
+
+↑Dread←line←yank: Inserts in the echo buffer the last thing
+that you typed in.  Its work is independent of the kill stack.
+
+↑Dprint←mode←line: Prints the mode line containing much random
+information on your console.  (printing terminals only)
+
+↑Drubout←char: Deletes the character to the left of the cursor. 
+With an argument it deletes that many characters.
+
+↑Dself←insert: Inserts the character typed.  That character is
+found in the global variable "char".
+
+↑Dself←insert←break: Calls all the functions on the list in the
+variable "token←hackers".  It then inserts itself.
+
+↑Dlist←buffers: Prints out a list of all buffers and some usefull
+information about each.  From left to right: buffer name,
+whether the buffer needs writing out, the length, the major
+mode, and the filename associated with the buffer.
+
+↑Dreturn←from←reader: This function causes the reader to return
+to its caller.  Normally this gets you out of TV but if you are
+in the echo area it is equivilant to typing the terminator.
+
+↑Dfind←file←command: Reads a filename from the echo area and
+reads the file into a buffer whose name is derived from the
+filename.  It will prompt you for another buffer if the buffer
+it picks is not empty.  A response to this question of ↑G means
+don't read the file in, and a response of carriage return means
+read the file into this buffer anyway.
+
+↑Dget←file: Reads a filename from the echo area and reads the
+file into the current buffer.
+
+↑Dsave←buffer: Writes the current buffer to the current filename.
+
+↑Dput←file: Reads a filename from the echo area and writes the
+current buffer to that file.
+
+↑Dswitch←point←and←mark: Exchanges the positions of the cursor
+and the mark for the current buffer.
+
+↑Dprint←buffer: Prints all of the current buffer on the screen. 
+When it gets to the bottom of the screen it stops and prints
+"--more--".  A space means continue printing and anything else
+means stop printing and fix up the screen.  The characters are
+all ignored.
+
+↑Dset←indent←column: set the indent column to argument
+
+↑Dprint←current←position: prints the location of the point, the length
+of the buffer, the percentage distance through the buffer, the horizontal
+position of the point (which column its in), and the location of the mark
+
+↑Dswitch←buffers: Reads a buffer name from the echo area and
+makes that the current buffer.  If no such buffer exists it will
+be created.  If no name is supplied the last buffer you were in
+is reentered.  This is good for switching back and forth between
+two oft used buffers.
+
+↑Dset←fill←width: sets fill←width to the argument if one is given, otherwise
+it uses the horizontal position of the point
+
+↑Dset←major←mode: Reads a mode name from the echo area and makes
+that the major mode for the current buffer.
+
+↑Dadd←minor←mode: Reads a mode name from the echo area and adds
+that to the list of minor modes for this buffer.
+
+↑Dback←s←expr: Moves the cursor to the beginning of the
+parenthesised just to the left of the cursor.  If the previous
+non-white space character is not a ")" then the cursor is moved
+back one word.
+
+↑Ddelete←s←expr: Deletes the parentesised list following the
+cursor.  If the next non-white space character is not a "(" then
+the next word is deleted.    The deleted text is saved on the
+kill stack.
+
+↑Dforward←s←expr: Moves the cursor past the next parentesised
+list.  If the next non-white space character is not a "(" then
+the cursor is moved past the next word.
+
+↑Dload←function: Reads a filename from the echo area, appends
+".sine" and fasloads it.  All the functions defined in the file
+are defined in the current sine environment.
+
+↑Decho←line←cr: Prints a fresh copy of the current line and inserts
+a &lt;cr>.  (printing terminals only)
+
+↑Drubout←s←expr: Deletes the previous parentesised list.  If the
+previous character is not a ")" then the previous word is
+deleted.  The deleted text is saved on the kill stack.
+
+↑Dditto: copy the word in the corresponding position of the previous
+line to the point.  An argument means to copy that many consecutive words
+
+↑Dtop←of←buffer: Moves the cursor to the beginning of the buffer.
+
+↑Dbottom←of←buffer: Moves the cursor to the end of the buffer.
+
+↑Dback←sentence: move to the beginning of the sentence
+
+↑Dback←word: Moves the cursor to the left of the previous word.
+
+↑Dtty←back←word: Moves backward a word and print it backwards.
+
+↑Dcapitalize←word: capitalize the first character of the following word
+
+↑Ddelete←word: Deletes the word to the left of the cursor.  The
+deleted text is saved on the kill stack.
+
+↑Dforward←sentence: move to the end of the sentence
+
+↑Dforward←word: Moves the cursor to the right of the next word.
+
+↑Dtty←forward←word: Moves forward a word and prints it normally.
+
+↑Dlower←case←word: lowercase the following word
+
+↑Dset←point←paragraph: set the point and the mark around the current
+paragraph
+
+↑Dfill←paragraph: make each line of the current paragraph as long as
+possible without exceeding the fill←width
+
+↑Dcenter←line: center the current line on a line of length fill←width
+
+↑Dtwiddle←word: (under the control of emacs←type←t)
+&lt;default> Interchanges the surrounding words.  The point is left after
+the second word.
+&lt;other>   Interchanges the two preceeding words.
+
+↑Dupper←case←word: uppercase the following word
+
+↑Dprevious←page: Moves the cursor up one half a screen full. An
+argument moves up argument/2 screens. This is approximately
+argument*11/2 lines.  Affected by the setting of emacs←type←np.
+
+↑Dcall←function: Reads a function name from the echo area and
+calls it.  If the function is not defined, it will attempt to
+autoload from >sl1>sm>(name).sine.
+
+↑Dyank←previous←kill: Deletes the text between the cursor and the
+mark and THROWS IT AWAY.  It then throws away the top item on
+the kill stack and inserts the new top of the kill stack into
+the buffer.  WARNING: this is a vary dangerous command unless
+the previous command was a "yank←last←kill".  In this case it
+can be used to get the things not on the top of the kill stack.
+You have been warned.
+
+↑Dback←paragraph: move to the beginning of the current paragraph
+
+↑Ddelete←whitespace: delete tabs and blanks around the point
+
+↑Dforward←paragraph: move to the end of the current paragraph
+
+↑Drubout←word: Deletes the word to the left of the cursor.  The
+deleted text is saved on the kill stack. 
+
+↑Dauto←load←rest: When this function is executed, the rest of the
+functions that are defined for TVmacs are autoloaded and the
+command that was typed is then executed.
+↑L 
+     Listing of >doc>sm>lisp←mode.doc   12/30/79 15:24:34
+
+↑Dindent←for←lisp: indents an S-expression
+
+↑Dlisp←newline: puts you on a new line properly indented
+
+↑L 
+     Listing of >doc>sm>sysin←mode.doc  12/30/79 15:24:31
+
+↑Dsysin←indent←line: indents to next field
+↑L 
+     Listing of >doc>sm>dcl←mode.doc    12/30/79 15:24:30
+
+↑Ddo←call←dcl: 
+if in a declare statement - finishes the declaration of the last token
+otherwise - prompts for the arguments to the subroutine
+
+↑Ddo←declare: finish the current declaration
+
+↑Ddo←call: finish the call in progress prompting for each argument
+
+↑Ddcl←elsewhere: declare the preceding variable with the other
+declarations, prompting for its type if necessary
+
+wotT (3.925 3 1.06) >doc>sm
+
+</pre>
+</body>
+</html>

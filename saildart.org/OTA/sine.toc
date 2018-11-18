@@ -1,0 +1,11 @@
+<li>1980-10-15 20:54 <a href="/SINE.STF[1,OTA]1"> SINE  .STF</a> [  1,OTA]  1   207930</li>
+<li>1980-10-15 20:54 <a href="/SINE.STF[1,OTA]"> SINE  .STF</a> [  1,OTA]  2   207930</li>
+<li>1980-10-15 21:02 <a href="/SINE1.STF[1,OTA]1"> SINE1 .STF</a> [  1,OTA]  1    70120</li>
+<li>1980-10-15 21:02 <a href="/SINE1.STF[1,OTA]"> SINE1 .STF</a> [  1,OTA]  2    70120</li>
+<li>1980-10-15 21:06 <a href="/SINE2.STF[1,OTA]"> SINE2 .STF</a> [  1,OTA]  1    55600</li>
+<li>1980-10-15 21:08 <a href="/SINE3.STF[1,OTA]"> SINE3 .STF</a> [  1,OTA]  1    22020</li>
+<li>1980-10-15 14:43 <a href="/SINE4.STF[1,OTA]"> SINE4 .STF</a> [  1,OTA]  1   108190</li>
+<li>1980-10-15 21:10 <a href="/SINE5.STF[1,OTA]"> SINE5 .STF</a> [  1,OTA]  1    12025</li>
+<li>1980-10-15 21:12 <a href="/SINE6.BAK[1,OTA]"> SINE6 .BAK</a> [  1,OTA]  1     6325</li>
+<li>1980-10-15 21:36 <a href="/SINE6.STF[1,OTA]1"> SINE6 .STF</a> [  1,OTA]  1     6185</li>
+<li>1980-12-08 14:29 <a href="/SINE6.STF[1,OTA]"> SINE6 .STF</a> [  1,OTA]  2     6325</li>

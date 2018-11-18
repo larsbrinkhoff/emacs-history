@@ -1,0 +1,3016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><link rel="stylesheet" href="https://www.saildart.org/css/u8.css" /><meta charset="utf-8" />
+<title>SINE4.STF[1,OTA] - www.SailDart.org</title>
+</head>
+<body id="u8body">
+<div id="tagline">perm filename SINE4.STF[1,OTA]  blob <a href="https://www.saildart.org/SINE4.STF[1,OTA]_blob">sn#541371</a> filedate 1980-10-15 generic text, type T, neo UTF8</div>
+<pre id="u8lump">
+↑L 
+     Listing of >s>editors>tv>m>abbrev←mode.asm   04/29/80 12:02:17
+
+(documentation ">doc>sm>abbrev←mode.doc")
+
+(variable dispatch M←dispatch C-X←dispatch keep←on←tunneling token←hackers)
+(variable tg1 alphanumerics)
+(variable read←line replace blow←out)
+(variable current←buffer echo←buf tg char)
+
+(variable abbrev←table)
+(variable old←space old←cr)
+
+(defun abbrev←mode ( &aux old←space old←cr )
+       (store (cons 'expand←last←token token←hackers) token←hackers)
+       (keep←on←tunneling))
+
+(defun user←init ()
+       (store (make←buffer) abbrev←table)
+       (store (make←gnirt) tg1))
+
+(defun load () (load←abbrevs))
+(defun load←abbrevs ( &aux file )
+       (store (read←line "Load Abbrevs From File: " 13) file)
+          ;if [filename]=""
+          ;    then get >u>ss>[userid].abbrevs
+          ;    else if its in [filename]
+          ;              then use it
+          ;              else see if its in >u>ss>[userid].[filename]
+       (cond ((eq (length file) 0)
+                  (cond ((gep (read←file echo←buf (cat←into tg
+                         ">u>ss>" (call←af "user id") ".abbrevs")) 0) (t))
+                        ((t) (blow←out "File Not Found"))))
+             ((gep (read←file echo←buf file) 0) (replace tg file))
+             ((gep (read←file echo←buf (cat←into tg
+                         ">u>ss>" (call←af "user id") "." file)) 0) (t))
+             ((t) (blow←out "File Not Found")))
+
+       (set←loc abbrev←table 0)
+       (insert echo←buf abbrev←table)
+       (set←loc echo←buf 0)
+       (delete echo←buf (length echo←buf))
+       (insert tg echo←buf))
+
+(defun def () (define←abbrev))
+(defun define←abbrev ( &aux abbrev expansion )
+       (store (read←line "Abbrev: " 32) abbrev)
+       (cat←into tg "Expansion for '" abbrev "': ")
+       (replace tg1 abbrev)
+retry  (ift (eq (length (store (read←line tg 13) expansion)) 0) retry)
+          ;put abbrev and expansion into abbrev table "↑↑abbrev↑←expansion"
+       (set←loc abbrev←table 0)
+       (insert \1e abbrev←table)
+       (insert tg1 abbrev←table)
+       (insert \1f abbrev←table)
+       (insert expansion abbrev←table)
+       (insert 13 abbrev←table))
+
+(defun save () (save←abbrevs))
+(defun save←abbrevs ( &aux file)
+       (store (make←buffer) file)
+       (insert (read←line "Save Abbrevs Into File: " 13) file)
+       (set←loc file 0)
+          ;if [filename]=""
+          ;    then use >u>ss>[userid].abbrevs
+          ;    else if substr([filename],1,6)=">u>ss>"
+          ;              then use >u>ss>[userid].[rest of name]
+          ;              else use [filename]
+       (cond ((eq (length file) 0) 
+                    (insert ">u>ss>" file)
+                    (insert (call←af "user id") file)
+                    (insert ".abbrevs" file))
+             ((looking←atp ">u>ss>" file 0)
+                    (set←loc file 6)
+                    (insert (call←af "user id") file)
+                    (insert "." file)))
+       (write←file abbrev←table file)
+       (set←loc echo←buf 0)
+       (delete echo←buf (length echo←buf))
+       (insert file echo←buf))
+
+(defun expand←last←token ( &aux found )
+       (replace tg \1e)
+       (insert←region current←buffer (iferror
+                                      (find←first←not←in←ba current←buffer
+                                                          alphanumerics)
+                                      (push 0))
+                      (location current←buffer)
+                      tg)
+       (insert \1f tg)
+       (set←loc abbrev←table 0)
+       (set←loc abbrev←table
+           (store (iferror (search abbrev←table tg) (goto regular)) found))
+       (delete current←buffer (sub 2 (length tg)))
+       (insert←region abbrev←table found (sub (search abbrev←table 13) 1)
+                      current←buffer)
+regular)
+↑L 
+     Listing of >s>editors>tv>m>overwrite←mode.asm     12/30/79 17:35:53
+
+(variable argument cmnd←1 keep←on←tunneling self←insert current←buffer)
+(static flag)
+
+(documentation ">doc>sm>overwrite.doc")
+
+(defun user←init()
+     (store (t) flag))
+
+(defun overwrite←mode ()
+     (keep←on←tunneling))
+
+(defun overwrite ()
+     (cond ((or (eq argument 4) (eq argument -1))
+               (store (nil) flag))
+           ((t)
+               (store (t) flag)))
+     (store 0 argument))
+
+;    overwrite mode does replacing instead of inserting for most characters
+
+(defun self←insert ()
+     (ifnil flag skip)
+     (cond
+          ((eq (nthr current←buffer 0) 9)
+               (cond ((eq 4 (mod (sub (get←hpos current←buffer
+                                   (location current←buffer)) 1) 5))
+                         (delete current←buffer 1))))
+          ((not (eq (nthr current←buffer 0) 13))
+               (delete current←buffer 1)))
+skip
+     (insert cmnd←1 current←buffer))
+↑L 
+     Listing of >s>editors>tv>m>printing←aux.asm  12/30/79 17:35:46
+
+(variable dispatch default←d M←dispatch default←md)
+(variable argument back←char back←word beginning←of←line call←list char)
+(variable current←buffer delete←char display←mode←line do←cr do←tab)
+(variable end←of←line forward←char forward←word full←redisplay)
+(variable keep←on←tunneling read←line redo←mode←line rubout←char)
+(variable self←insert token←chars token←hackers verbose←printing)
+
+(variable cursor←char display←read←line)
+
+(documentation ">doc>sm>tv.doc")
+
+(defun printing←aux←start ()
+     (store "@" cursor←char)
+     (store read←line display←read←line)
+     (store tty←read←line read←line)
+     (as 'print←mode←line dispatch 29)       ;C-]
+     (as 'print←mode←line default←d 29)
+     (as 'echo←line←cr M←dispatch 13)        ;M-C-m
+     (as 'echo←line←cr default←md 13)
+     (as 'tty←back←word M←dispatch 66)       ;M-B
+     (as 'tty←back←word default←md 66)
+     (as 'tty←back←word M←dispatch 98)       ;M-b
+     (as 'tty←back←word default←md 98)
+     (as 'tty←forward←word M←dispatch 70)    ;M-F
+     (as 'tty←forward←word default←md 70)
+     (as 'tty←forward←word M←dispatch 102)   ;M-f
+     (as 'tty←forward←word default←md 102))
+
+
+(defun do←cr ()
+     (call←list token←hackers)
+     (insert 13 current←buffer)
+     (cond (verbose←printing (tyo 13))))
+
+(defun do←tab ()
+     (call←list token←hackers)
+     (insert 9 current←buffer)
+     (cond (verbose←printing (tyo 9))))
+
+(defun self←insert ()
+     (insert char current←buffer)
+     (cond (verbose←printing (tyo char))))
+
+(defun forward←char ()
+     (cond (verbose←printing (tyo (nthr current←buffer 0))))
+     (add←to←loc current←buffer 1))
+
+(defun back←char ()
+     (cond (verbose←printing (tyo (nthr current←buffer -1))))
+     (add←to←loc current←buffer -1))
+
+(defun tty←forward←word (&aux loc)
+     (cond ((not verbose←printing)
+               (forward←word)
+               (return)))
+     (store (iferror (find←first←in←fa current←buffer token←chars)
+          (length current←buffer)) loc)
+     (do←while (lp (location current←buffer) loc)
+          (tyo (nthr current←buffer 0))
+          (add←to←loc current←buffer 1))
+     (store (iferror (find←first←not←in←fa current←buffer token←chars)
+          (length current←buffer)) loc)
+     (do←while (lp (location current←buffer) loc)
+          (tyo (nthr current←buffer 0))
+          (add←to←loc current←buffer 1)))
+
+(defun tty←back←word (&aux loc)
+     (cond ((not verbose←printing)
+               (back←word)
+               (return)))
+     (store (iferror (find←first←in←ba current←buffer token←chars) 0) loc)
+     (do←while (gp (location current←buffer) loc)
+          (tyo (nthr current←buffer -1))
+          (add←to←loc current←buffer -1))
+     (store (iferror (find←first←not←in←ba current←buffer token←chars) 0) loc)
+     (do←while (gp (location current←buffer) loc)
+          (tyo (nthr current←buffer -1))
+          (add←to←loc current←buffer -1)))
+
+(defun delete←char ()
+     (cond (verbose←printing
+               (tyo "/")
+               (tyo (nthr current←buffer 0))))
+     (delete current←buffer 1))
+
+(defun rubout←char ()
+     (cond (verbose←printing
+               (tyo "\")
+               (tyo (nthr current←buffer -1))))
+     (delete current←buffer -1))
+
+(defun tty←read←line (prompt terminator &aux string)
+     (tyo 13)
+     (print prompt 0 0 0)
+     (store (display←read←line prompt terminator) string)
+     (tyo 13)
+     (push string))
+
+(defun full←redisplay (&aux end i loc)
+     (store (location current←buffer) loc)
+     (for i 1 argument
+          (beginning←of←line)
+          (add←to←loc current←buffer -1))
+     (cond ((eq (location current←buffer) 0) (tyo 13)))
+     (do←while (lp (location current←buffer) loc)
+          (tyo (nthr current←buffer 0))
+          (add←to←loc current←buffer 1))
+     (tyo cursor←char)
+     (for i 1 argument
+          (end←of←line)
+          (add←to←loc current←buffer 1))
+     (store (location current←buffer) end)
+     (set←loc current←buffer loc)
+     (do←while (lp (location current←buffer) end)
+          (tyo (nthr current←buffer 0))
+          (add←to←loc current←buffer 1))
+     (cond ((eq (location current←buffer) (length current←buffer)) (tyo 13)))
+     (set←loc current←buffer loc)
+     (store 0 argument))
+
+(defun print←mode←line ()
+     (tyo 13)
+     (store 2 display←mode←line)
+     (redo←mode←line)
+     (tyo 13))
+
+(defun echo←line←cr (&aux end)
+     (store (location current←buffer) end)
+     (beginning←of←line)
+     (tyo 13)
+     (do←while (lp (location current←buffer) end)
+          (tyo (nthr current←buffer 0))
+          (add←to←loc current←buffer 1))
+     (tyo 13)
+     (insert 13 current←buffer))
+
+(defun set←cursor←char ()
+     (tyo 13)
+     (print "Set to? " 0 0 0)
+     (store (tyo (tyi)) cursor←char)
+     (tyo 13))
+↑L 
+     Listing of >s>editors>tv>m>normal←aux.asm    05/14/80 23:08:24
+
+(variable dispatch M←dispatch O←dispatch C-X←dispatch)
+(variable alphanumerics argument argumentp back←word)
+(variable beginning←of←line current←buffer current←mark)
+(variable emacs←type←t end←of←line forward←word hold keep←on←tunneling)
+(variable library←dir load←file previous←line replace)
+(variable replace←all←util self←insert tg token←chars white←space)
+
+(variable fill←width indent←column)
+(static text←mode←token←table tg1 tm1)
+
+(documentation ">doc>sm>tv.doc")
+
+(defun user←init ()
+       (load←file (cat←into tg library←dir ">replace.sine"))
+       (store 65 fill←width)
+       (store 0 indent←column)
+       (store (make←mark) tm1)
+       (store (make←gnirt) tg1)
+       (store (fill←char←array (make←array 1 128)
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890'-%$#@←")
+              text←mode←token←table)
+       (fill←char←array text←mode←token←table \22))    ;double quote
+
+(defun normal←aux←start ( &aux token←chars )
+       (store text←mode←token←table token←chars)
+       (bind←key C-t twiddle←chars)
+       (bind←array←cell C-X←dispatch "." 'set←indent←column)
+       (bind←array←cell C-X←dispatch "=" 'print←current←position)
+       (bind←array←cell C-X←dispatch "f" 'set←fill←width)
+       (bind←array←cell C-X←dispatch "F" 'set←fill←width)
+       (bind←array←cell M←dispatch 34 'ditto)     ;34="
+       (bind←key M-a back←sentence)
+       (bind←key M-A back←sentence)
+       (bind←key M-c capitalize←word)
+       (bind←key M-C capitalize←word)
+       (bind←key M-e forward←sentence)
+       (bind←key M-E forward←sentence)
+;      (bind←key M-g fill←region)
+;      (bind←key M-G fill←region)
+       (bind←key M-h set←point←paragraph)
+       (bind←key M-H set←point←paragraph)
+       (bind←key M-l lower←case←word)
+       (bind←key M-L lower←case←word)
+       (bind←key M-q fill←paragraph)
+       (bind←key M-Q fill←paragraph)
+       (bind←key M-s center←line)
+       (bind←key M-S center←line)
+       (bind←key M-t twiddle←word)
+       (bind←key M-T twiddle←word)
+       (bind←key M-u upper←case←word)
+       (bind←key M-U upper←case←word)
+       (bind←key M-[ back←paragraph)
+       (bind←key M-\ delete←whitespace)
+       (bind←key M-] forward←paragraph)
+       (keep←on←tunneling))
+
+
+(defun twiddle←chars (&aux char)
+     (cond ((not emacs←type←t) (add←to←loc current←buffer -1)))
+     (cond
+          ((eq (location current←buffer) 0) (set←loc current←buffer 1))
+          ((eq (location current←buffer) (length current←buffer))
+               (add←to←loc current←buffer -1))
+          ((eq (nthr current←buffer -1) 13) (add←to←loc current←buffer 1))
+          ((eq (nthr current←buffer 0) 13) (add←to←loc current←buffer -1)))
+     (store (nthr current←buffer -1) char)
+     (delete current←buffer -1)
+     (add←to←loc current←buffer 1)
+     (insert char current←buffer))
+
+
+(defun set←indent←column ()
+     (store argument indent←column))
+
+
+(defun print←current←position (&aux loc len)
+     (store 1 hold)                ;point, length, percent, hpos, mark
+     (store (location current←buffer) loc)
+     (store (length current←buffer) len)
+     (delete tg1 (length tg1))
+     (insert←ioa "location is ↑i" loc tg1)
+     (insert←ioa ",  length is ↑i" len tg1)
+     (insert←ioa " (↑i%)" (div (mul loc 100) len) tg1)
+     (insert←ioa ",  hpos is ↑i" (get←hpos current←buffer loc) tg1)
+     (insert←ioa ",  mark at ↑i  " (eval←mark current←mark current←buffer) tg1)
+     (print tg1 1 1 0))
+
+
+(defun set←fill←width ()
+     (cond (argumentp (store argument fill←width))
+           ((t) (store (get←hpos current←buffer
+                    (location current←buffer)) fill←width)))
+     (store 0 argument))
+
+
+(defun ditto (&aux loc hpos begin end i)
+     (store (location current←buffer) loc)
+     (store (get←hpos current←buffer loc) hpos)
+     (previous←line)
+     (do←while (lp (get←hpos current←buffer (location current←buffer)) hpos)
+          (add←to←loc current←buffer 1))
+     (add←to←loc current←buffer 1)
+     (back←word)
+     (store (location current←buffer) begin)
+     (for i 1 argument (forward←word))
+     (store (location current←buffer) end)
+     (set←loc current←buffer loc)
+     (insert←region current←buffer begin end current←buffer)
+     (store 0 argument))
+
+
+(defun back←sentence ()
+     (set←loc current←buffer
+          (iferror (find←first←in←ba current←buffer alphanumerics) 0))
+     again
+     (set←loc current←buffer
+          (iferror (find←first←in←ba current←buffer ".!?") 0))
+     (cond
+          ((end←sentencep)
+               (set←loc current←buffer
+                    (find←first←not←in←fa current←buffer white←space))
+               (return))
+          ((eq (location current←buffer) 0)
+               (return))
+          ((t)
+               (set←loc current←buffer (sub (location current←buffer) 1))
+               (goto again))))
+
+
+;check for end of sentence
+
+(defun end←sentencep (&aux offset)      ;this has side effects!
+     (store 0 offset)
+     again
+     (cond
+          ((eq (nthr current←buffer offset) 13)   ;13=&lt;cr>
+               (add←to←loc current←buffer offset)
+               (return←value (t)))
+          ((eq (nthr current←buffer offset) 32)   ;32=&lt;sp>
+               (add←to←loc current←buffer offset)
+               (return←value (t)))
+          ((or (eq (nthr current←buffer offset) 34)    ;34="
+               (eq (nthr current←buffer offset) 39))   ;39='
+               (store (add 1 offset) offset)
+               (goto again))
+          ((or (eq (nthr current←buffer offset) 41)    ;41=)
+               (eq (nthr current←buffer offset) 96))   ;96=`
+               (store (add 1 offset) offset)
+               (goto again))
+          ((t)
+               (return←value (nil)))))
+
+
+(defun capitalize←word ( &aux c)
+       (set←loc current←buffer
+                (find←first←in←fa current←buffer token←chars))
+       (cond ((and (gep (store (nthr current←buffer 0) c) "a") (lep c "z"))
+              (delete current←buffer 1)
+              (insert (sub c 32) current←buffer))
+             ((t) (add←to←loc current←buffer 1)))
+       (cond ((eq 0 (iferror (find←first←not←in←fr current←buffer token←chars)
+                              1))
+               (return)))                    ;to do 1 char words properly
+       (lower←case←word))
+
+
+(defun forward←sentence ()
+     again
+     (set←loc current←buffer
+          (iferror (add 1 (find←first←in←fa current←buffer ".!?"))
+                   (length current←buffer)))
+     (cond
+          ((end←sentencep)
+               (return))
+          ((eq (location current←buffer) (length current←buffer))
+               (return))
+          ((t)
+               (set←loc current←buffer (add (location current←buffer) 1))
+               (goto again))))
+
+
+(defun set←point←paragraph ()
+     (forward←paragraph)
+     (set←mark current←mark current←buffer (location current←buffer))
+     (back←paragraph)
+     (beginning←of←line))
+
+
+(defun lower←case←word ( &aux c )
+       (set←loc current←buffer
+                (find←first←in←fa current←buffer token←chars))
+       (do←while (eq (ar token←chars (store (nthr current←buffer 0) c)) 1)
+                 (cond ((and (gep c "A") (lep c "Z"))
+                        (delete current←buffer 1)
+                        (insert (add c 32) current←buffer))
+                       ((add←to←loc current←buffer 1)))))
+
+
+(defun fill←paragraph(&aux end←mark)
+       (cond (argumentp (store argument fill←width)))
+       (store 0 argument)
+       (set←mark tm1 current←buffer (location current←buffer))
+
+       (forward←paragraph)
+       (cond ((eq (nthr current←buffer -1) 13)
+          (add←to←loc current←buffer -1)))   ;&lt;cr> at end of
+                              ;buffer is a paragraph delimiter.
+       (store (make←mark) end←mark)
+       (set←mark end←mark current←buffer (location current←buffer))
+       (back←paragraph)
+
+loop
+       (forward←word)
+       (cond ((gp (get←hpos current←buffer (location current←buffer))
+                  fill←width)
+          (back←word)
+          (cond ((eq (nthr current←buffer -1) " ") (delete←whitespace)))
+          (insert 13 current←buffer)
+          (move←over indent←column)
+          (forward←word)))
+       (cond ((lp (iferror (find←first←in←fa current←buffer 13)
+                           (add 1 (length current←buffer)))
+                                   ;don't do it if there is no &lt;cr>
+                  (min (iferror (find←first←in←fa current←buffer token←chars)
+                                (length current←buffer))
+                       (eval←mark end←mark current←buffer)))
+          (set←loc current←buffer (find←first←in←fa current←buffer 13))
+          (delete current←buffer 1)
+          (delete←whitespace)
+          (insert " " current←buffer)))
+       (cond ((lp (location current←buffer)
+                  (eval←mark end←mark current←buffer))
+          (goto loop)))
+
+       (set←loc current←buffer (eval←mark tm1 current←buffer)))
+
+
+(defun center←line (&aux loc loc←eol len←text)
+     (cond
+          (argumentp (store argument fill←width))
+          ((t) (store fill←width argument)))
+     (store (sub argument indent←column) argument)
+     (cond ((lp argument 1) (return)))
+     (beginning←of←line)
+     (store (location current←buffer) loc)
+     (delete current←buffer (find←first←not←in←fr current←buffer "     "))
+                                        ;that's a tab and a blank
+     (store (sub (iferror (search current←buffer 13)
+                          (add 1 (length current←buffer))) 1) loc←eol)
+     (cond
+          ((eq loc loc←eol) (return))
+          ((gp 0 (store (sub argument (sub loc←eol loc)) len←text)) (return)))
+     (move←over (add (div len←text 2) indent←column))
+     (end←of←line)
+     (store 0 argument))
+
+
+;add whitespace to the left of a line
+
+(defun move←over (amount)
+     (do←while (gp amount 0)
+          (insert 32 current←buffer)
+          (store (sub amount 1) amount)))
+
+
+(defun twiddle←word (&aux word saved)
+     (cond ((not emacs←type←t) (back←word)))
+     (store (make←gnirt) word)
+     (set←loc current←buffer (find←first←in←ba current←buffer token←chars))
+     (insert←region current←buffer
+          (find←first←not←in←ba current←buffer token←chars)
+          (location current←buffer) word)
+     (delete current←buffer (sub 0 (length word)))
+     (store (location current←buffer) saved)
+     (set←loc current←buffer (find←first←in←fa current←buffer token←chars))
+     (insert word current←buffer)
+     (delete word (length word))
+     (insert←region current←buffer
+          (location current←buffer)
+          (iferror (find←first←not←in←fa current←buffer token←chars)
+                   (length current←buffer))
+          word)
+     (delete current←buffer (length word))
+     (set←loc current←buffer saved)
+     (insert word current←buffer)
+     (forward←word))
+
+(defun upper←case←word ( &aux c )
+       (set←loc current←buffer
+                (find←first←in←fa current←buffer token←chars))
+       (do←while (eq (ar token←chars (store (nthr current←buffer 0) c)) 1)
+                 (cond ((and (gep c "a") (lep c "z"))
+                        (delete current←buffer 1)
+                        (insert (sub c 32) current←buffer))
+                       ((add←to←loc current←buffer 1)))))
+
+
+(defun back←paragraph ()
+     (set←loc current←buffer
+          (iferror (find←first←not←in←ba current←buffer white←space) 0))
+     again
+     (set←loc current←buffer
+          (iferror (add 1 (rsearch current←buffer 13)) 0))
+     (cond
+          ((end←paragraphp)
+               (set←loc current←buffer
+                    (find←first←not←in←fa current←buffer white←space))
+               (return))
+          ((eq (location current←buffer) 0)
+               (return))
+          ((t)
+               (add←to←loc current←buffer -1)
+               (goto again))))
+
+
+;check for end of paragraph
+
+(defun end←paragraphp ()
+     (cond
+          ((eq (nthr current←buffer 0) 9)    ;9=&lt;tab>
+               (return←value (t)))
+          ((eq (nthr current←buffer 0) 13)   ;13=&lt;cr>
+               (return←value (t)))
+          ((eq (nthr current←buffer 0) ".")  ;nite commands
+               (return←value (t)))
+          ((t) (return←value (nil)))))
+
+
+(defun delete←whitespace ()
+     (delete current←buffer (iferror
+          (find←first←not←in←br current←buffer "  ")   ;&lt;sp> and &lt;tab>
+          (location current←buffer)))
+     (delete current←buffer (iferror
+          (find←first←not←in←fr current←buffer "  ")
+          (sub (length current←buffer) (location current←buffer)))))
+
+
+(defun forward←paragraph ()
+     (set←loc current←buffer
+          (iferror (find←first←not←in←fa current←buffer white←space)
+               (length current←buffer)))
+     again
+     (set←loc current←buffer
+          (iferror (search current←buffer 13) (length current←buffer)))
+     (cond
+          ((end←paragraphp)
+               (set←loc current←buffer
+                    (find←first←not←in←ba current←buffer white←space))
+               (return))
+          ((eq (location current←buffer) (length current←buffer))
+               (return))
+          ((t)
+               (add←to←loc current←buffer 1)
+               (goto again))))
+
+↑L 
+     Listing of >s>editors>tv>m>dcl←mode.asm 12/30/79 17:35:39
+
+; coded 11/13/78 by sas
+; modified 3/6/79 by sas to work better
+; modified 5/17/79 by sas for ortho commands
+
+(documentation ">doc>sm>dcl←mode.doc")
+
+(static dcl←buffer tg0 tg1 tg2 tm0 declared←flag)
+(variable print←msg read←line whitespace)
+(variable current←buffer keep←on←tunneling M←dispatch O←dispatch)
+(variable start←of←statement next←pl1←token)
+
+(defun dcl←mode()
+       (bind←key M-c do←call←dcl)
+       (bind←key O-e dcl←elsewhere)
+       (bind←key O-d do←declare)
+       (bind←key O-c do←call)
+       (keep←on←tunneling))
+
+(defun user←init()
+       (store (make←mark) tm0)
+       (store (make←gnirt) tg0)
+       (store (make←gnirt) tg1)
+       (store (make←gnirt) tg2)
+       (store (make←buffer) dcl←buffer)
+       (read←dcl←file))
+
+(defun read←dcl←file()
+       (insert ">u>ss>" tg1)
+       (insert (call←af "user id") tg1)
+       (insert ".dcls" tg1)
+
+       (cond ((gep (read←file dcl←buffer tg1) 0)
+              (t))
+             ((gep (read←file dcl←buffer ">u>ss>default.dcls") 0)
+              (t))
+             ((t)
+              (print←msg "Cannot find dcls." 1))))
+
+
+(defun do←call←dcl(&aux save start)
+       (store (location current←buffer) save)
+
+       (start←of←statement)
+       (store (location current←buffer) start)
+       (next←pl1←token)
+       (delete tg1 99999)
+       (snarf←token)
+
+       (set←loc current←buffer save)
+       (cond ((or (eq tg1 "dcl")
+                  (eq tg1 "declare"))
+              (do←declare))
+             ((t)
+              (do←call))))
+
+
+(defun snarf←token(&aux here end)
+       (delete tg1 99999)
+       (store (location current←buffer) here)
+       (set←loc current←buffer (find←first←not←in←ba current←buffer "      
+)(,+-*/=↑&|[]"))
+       (store (location current←buffer) end)
+       (set←loc current←buffer (find←first←in←ba current←buffer "     
+)(,+-*/=↑&|[]"))
+       (insert←region current←buffer (location current←buffer) end tg1)
+       (set←loc current←buffer here))
+
+
+(defun find←dcl(vbl &aux start)
+       (delete tg2 99999)
+       (cat←into tg0 "dcl " vbl " ")
+       (set←loc dcl←buffer 0)
+       (set←loc dcl←buffer  (iferror (search dcl←buffer tg0)
+                                     (progn (print←msg "Not known." 1)
+                                            (goto exit))))
+       (store (location dcl←buffer) start)
+       (set←loc dcl←buffer (iferror (search dcl←buffer ";")
+                                    (length dcl←buffer)))
+       (insert←region dcl←buffer start (location dcl←buffer) tg2)
+exit   )
+
+
+(defun dcl←elsewhere()
+       (snarf←token)
+       (declaredp tg1)
+       (cond (declared←flag
+              (print←msg "Already dcld." 1)
+              (goto punt)))
+       (find←dcl tg1)
+       (cond ((eq (length tg2) 0)
+              (cat←into tg2 (read←line "Declaration:" 13) ";")))
+       (insert←dcl tg1 tg2)
+punt   )
+
+
+
+(defun do←declare()
+       (snarf←token)
+       (find←dcl tg1)
+       (insert " " current←buffer)
+       (insert tg2 current←buffer))
+
+
+(defun do←call(&aux start)
+       (delete tg1 99999)
+       (insert "call " tg1)
+       (snarf←token)
+       (insert 13 tg1)
+
+       (set←loc dcl←buffer 0)
+       (set←loc dcl←buffer  (iferror (search dcl←buffer tg1)
+                                     (progn (print←msg "Not known." 1)
+                                            (goto exit))))
+
+       (insert "(" current←buffer)
+loop   (store (location dcl←buffer) start)
+       (ift (eq (nthr dcl←buffer 0) 13) done)
+       (set←loc dcl←buffer (iferror (search dcl←buffer 13)
+                                 (length dcl←buffer)))
+       (delete tg1 99999)
+       (insert←region dcl←buffer start (sub (location dcl←buffer) 1) tg1)
+       (insert ": " tg1)
+       (insert (read←line tg1 13) current←buffer)
+       (insert "," current←buffer)
+       (goto loop)
+done   (ift (eq (nthr current←buffer -1) "(") fini)
+       (delete current←buffer -1)
+fini   (insert ")" current←buffer))
+
+
+
+
+
+(defun declaredp(vbl &aux oldpos)
+       (store (t) declared←flag)
+       (cat←into tg0 " dcl " vbl 32)
+       (store (location current←buffer) oldpos)
+       (set←loc current←buffer
+                (iferror (rsearch current←buffer "/* declarations */")
+                         (add 0 0)))
+       (set←loc current←buffer (iferror (search current←buffer tg0)
+                                        (goto no)))
+       (ift (gp (location current←buffer) oldpos) no)
+       (set←loc current←buffer oldpos)
+       (return)
+no     (set←loc current←buffer oldpos)
+       (store (nil) declared←flag)
+exit)
+
+
+
+
+(defun insert←dcl(vbl dcl)
+       (set←mark tm0 current←buffer (location current←buffer))
+       (set←loc current←buffer
+                (iferror (rsearch current←buffer "/* declarations */")
+                         (add 0 0)))
+       (set←loc current←buffer
+                (iferror (search current←buffer 13) (length current←buffer)))
+
+       (insert " dcl " current←buffer)
+       (insert vbl current←buffer)
+       (insert 32 current←buffer)
+       (insert dcl current←buffer)
+       (insert 13 current←buffer)
+       (set←loc current←buffer (eval←mark tm0 current←buffer))
+exit   )
+↑L 
+     Listing of >s>editors>tv>m>dcl←lib.asm  12/30/79 17:35:38
+
+(documentation ">doc>sm>dcl←lib.doc")
+
+; coded 11/13/78 by sas
+; modified 3/6/79 by sas to work better
+
+(static dcl←buffer tg1)
+(variable print←msg read←line whitespace)
+(variable current←buffer dispatch)
+(variable start←of←statement next←pl1←token)
+
+(defun user←init()
+       (as 'do←call←dcl dispatch 3)          ; C-c
+       (store (make←gnirt) tg1)
+       (insert ">u>ss>" tg1)
+       (insert (call←af "user id") tg1)
+       (insert ".dcls" tg1)
+       (store (make←buffer) dcl←buffer)
+
+       (cond ((gep (read←file dcl←buffer tg1) 0)
+              (t))
+             ((gep (read←file dcl←buffer ">u>ss>default.dcls") 0)
+              (t))
+             ((t)
+              (print←msg "Cannot find dcls." 1))))
+
+
+(defun do←call←dcl(&aux save start)
+       (store (location current←buffer) save)
+
+       (start←of←statement)
+       (store (location current←buffer) start)
+       (next←pl1←token)
+       (delete tg1 99999)
+       (snarf←token)
+
+       (set←loc current←buffer save)
+       (cond ((or (eq tg1 "dcl")
+                  (eq tg1 "declare"))
+              (do←declare))
+             ((t)
+              (do←call))))
+
+
+(defun snarf←token(&aux here end)
+       (store (location current←buffer) here)
+       (set←loc current←buffer (find←first←not←in←ba current←buffer "      
+"))
+       (store (location current←buffer) end)
+       (set←loc current←buffer (find←first←in←ba current←buffer "     
+"))
+       (insert←region current←buffer (location current←buffer) end tg1)
+       (set←loc current←buffer here))
+
+
+
+
+(defun do←declare(&aux start)
+       (delete tg1 99999)
+       (insert "dcl " tg1)
+       (snarf←token)
+       (insert " " tg1)
+
+       (set←loc dcl←buffer 0)
+       (set←loc dcl←buffer  (iferror (search dcl←buffer tg1)
+                                     (progn (print←msg "Not known." 1)
+                                            (goto exit))))
+       (store (location dcl←buffer) start)
+       (set←loc dcl←buffer (iferror (search dcl←buffer ";")
+                                    (length dcl←buffer)))
+       (insert " " current←buffer)
+       (insert←region dcl←buffer start (location dcl←buffer)
+                      current←buffer)
+exit   )
+
+
+(defun do←call(&aux start)
+       (delete tg1 99999)
+       (insert "call " tg1)
+       (snarf←token)
+       (insert 13 tg1)
+
+       (set←loc dcl←buffer 0)
+       (set←loc dcl←buffer  (iferror (search dcl←buffer tg1)
+                                     (progn (print←msg "Not known." 1)
+                                            (goto exit))))
+
+       (insert "(" current←buffer)
+loop   (store (location dcl←buffer) start)
+       (ift (eq (nthr dcl←buffer 0) 13) done)
+       (set←loc dcl←buffer (iferror (search dcl←buffer 13)
+                                 (length dcl←buffer)))
+       (delete tg1 99999)
+       (insert←region dcl←buffer start (sub (location dcl←buffer) 1) tg1)
+       (insert ": " tg1)
+       (insert (read←line tg1 13) current←buffer)
+       (insert "," current←buffer)
+       (goto loop)
+done   (ift (eq (nthr current←buffer -1) "(") fini)
+       (delete current←buffer -1)
+fini   (insert ")" current←buffer))
+
+↑L 
+     Listing of >s>editors>tv>m>fill←mode.asm     05/17/80 16:00:33
+
+(documentation ">doc>sm>fill←mode.doc")
+
+(variable back←word char current←buffer)
+(variable keep←on←tunneling token←hackers white←space)
+(variable fill←width indent←column)
+
+(static position)
+
+(defun user←init ()
+       (store 65 fill←width)
+       (store 0 indent←column)
+       (store (make←mark) position))
+
+(defun fill←mode ( &aux token←hackers )
+       (store (cons 'check←filling token←hackers) token←hackers)
+       (keep←on←tunneling))
+
+(defun check←filling ()
+       (cond ((and (or (eq char " ") (eq char 9))
+                   (gp (get←hpos current←buffer (location current←buffer))
+                         fill←width))
+               (set←mark position current←buffer (location current←buffer))
+               (set←loc current←buffer (iferror
+                    (find←first←in←ba current←buffer white←space) 0))
+               (cond ((eq (nthr current←buffer -1) " ")
+                         (delete current←buffer -1)))
+               (insert 13 current←buffer)
+               (move←over indent←column)
+               (set←loc current←buffer (eval←mark position current←buffer)))))
+
+
+(defun move←over (amount)
+     (do←while (gp amount 0)
+          (insert 32 current←buffer)
+          (store (sub amount 1) amount)))
+↑L 
+     Listing of >s>editors>tv>m>sysin←mode.asm    12/30/79 17:35:35
+
+(documentation ">doc>sm>sysin←mode.doc")
+
+(variable current←buffer current←filename)
+(variable keep←on←tunneling)
+(variable beginning←of←line)
+(static sysin←eol)
+(static sysin←operator←column)
+(static sysin←operand←column)
+(static sysin←comment←column)
+(static tg1)
+(static White&CR)
+(variable M←dispatch)
+(variable argument argumentp)
+(variable save←buffer)
+
+(defun user←init()
+       (store (make←gnirt) tg1)
+       (store (fill←char←array (make←array 1 128) "    
+") White&CR)
+       (store 10 sysin←operator←column)
+       (store 20 sysin←operand←column)
+       (store 30 sysin←comment←column))
+
+(defun sysin←mode ()
+       (sysin←scan←options)
+       (bind←key C-M-I sysin←indent←line)
+       (bind←key C-M-Z compile←sysin)
+       (keep←on←tunneling))
+
+(defun compile←sysin()
+       (save←buffer)
+       (delete tg1 99999)
+       (insert "midi " tg1)
+       (insert current←filename tg1)
+       (delete tg1 6)
+       (cline tg1))
+
+(defun sysin←scan←options(&aux number char old)
+       (store (location current←buffer) old)
+       (set←loc current←buffer 0)
+       (set←loc current←buffer (iferror (search current←buffer "* options:: ")
+                                        (goto noopt)))
+       (store 0 number)
+loop   (store (nthr current←buffer 0) char)
+       (cond ((and (gep char "0") (lep char "9"))
+              (store (add (mul number 10) (and char 15)) number))
+             ((eq char "↑")
+              (store 1 number))
+             ((eq char "o")
+              (store number sysin←operator←column)
+              (store 0 number))
+             ((eq char "r")
+              (store number sysin←operand←column)
+              (store 0 number))
+             ((eq char "c")
+              (store number sysin←comment←column)
+              (store 0 number))
+             ((t)
+noopt         (set←loc current←buffer old)
+              (return)))
+       (add←to←loc current←buffer 1)
+       (goto loop))
+
+
+
+(defun goto←column(there &aux here)
+       (store (sub (get←hpos current←buffer (location current←buffer)) 1) here)
+       (ift (gep here there) punt)
+attab  (ifnil (gp (sub there here) 4) finis)
+       (insert 9 current←buffer)
+       (store (add here 5) here)
+       (store (sub here (mod here 5)) here)
+       (goto attab)
+finis  (ift (eq here there) punt)
+       (insert 32 current←buffer)
+       (store (add here 1) here)
+       (goto finis)
+punt   )
+
+(defun goto←column←w(there)
+       (delete←white←right)
+       (ift (and sysin←eol argumentp) punt)
+       (goto←column there)
+       (ift (eq (ar White&CR (nthr current←buffer -1)) 1) punt)
+       (insert 9 current←buffer)
+punt   )
+
+(defun delete←white←right(&aux oldpos)
+       (store (location current←buffer) oldpos)
+       (set←loc current←buffer (find←first←not←in←fa current←buffer "      "))
+       (delete current←buffer (sub oldpos (location current←buffer)))
+       (store (eq (nthr current←buffer 0) 13) sysin←eol))
+
+(defun sysin←indent←line(&aux char column)
+       (beginning←of←line)
+loop   (store (nthr current←buffer 0) char)
+       (ift (eq char "*") punt)
+       (ift (or (eq char " ") (or (eq char 9) (eq char 13))) label)
+
+       (set←loc current←buffer (find←first←in←fa current←buffer White&CR))
+
+label  (goto←column←w sysin←operator←column)
+       (ift sysin←eol punt)
+
+       (set←loc current←buffer (find←first←in←fa current←buffer White&CR))
+       (goto←column←w sysin←operand←column)
+       (ift sysin←eol punt)
+
+       (set←loc current←buffer (find←first←in←fa current←buffer White&CR))
+       (goto←column←w sysin←comment←column)
+
+punt   (ift (lep argument 1) retn)
+       (set←loc current←buffer (iferror (search current←buffer 13)
+                                        (goto retn)))
+       (store (sub argument 1) argument)
+       (goto loop)
+retn  )
+↑L 
+     Listing of >s>editors>tv>m>pl1←mode.asm 05/17/80 16:10:18
+
+(documentation ">doc>sm>pl1←mode.doc")
+
+(static pl1←start←column)
+(static pl1←continuation←column)
+(static pl1←indentation)
+(static pl1←undent←end)
+(static pl1←declaration←hack)
+
+(variable dispatch M←dispatch O←dispatch)
+(variable current←buffer current←filename save←buffer)
+(variable tg1)
+(static pl1←eob)
+(static pl1←sob)
+(static pl1←type)
+(variable beginning←of←line)
+(variable next←line←command)
+(variable previous←line←command)
+(variable argument)
+(static PLI←Breaks)
+(static PLI←White)
+(variable keep←on←tunneling)
+
+(defun user←init()
+       (store 0 pl1←declaration←hack)
+       (store 0 pl1←start←column)
+       (store 20 pl1←continuation←column)
+       (store 5 pl1←indentation)
+       (store 1 pl1←undent←end)
+       (store (make←gnirt) tg1)
+       (store (fill←char←array (make←array 1 128)
+                               "+-/*:;↑~=|()[]&'&lt;>     ↑L") PLI←Breaks)
+       (store (fill←char←array (make←array 1 128)
+                               "   ↑L") PLI←White)
+       (as 1 PLI←Breaks 13)
+       (as 1 PLI←White 13)
+       (as 1 PLI←Breaks 34))
+
+(defun pl1←mode ()
+       (bind←key C-M-P balance←backward)
+       (bind←key C-M-A start←of←statement)
+       (bind←key C-M-N balance←forward)
+       (bind←key O-l goto←line←n)
+       (bind←key C-M-M next←non←white)
+       (bind←key C-M-I pl1←indent←line)
+       (bind←key C-M-Z compile←pl1)
+       (bind←key C-J pl1←new←line)
+       (pl1←scan←options)
+       (keep←on←tunneling))
+
+
+(defun pl1←new←line()
+       (insert 13 current←buffer)
+       (pl1←indent←line))
+
+(defun pl1←scan←options(&aux number char old)
+       (store (location current←buffer) old)
+       (set←loc current←buffer 0)
+       (set←loc current←buffer (iferror (search current←buffer "/* options:: ")
+                                        (goto noopt)))
+       (store 0 number)
+loop   (store (nthr current←buffer 0) char)
+       (cond ((and (gep char 48) (lep char 57))
+              (store (add (mul number 10) (and char 15)) number))
+             ((eq char 94)
+              (store 1 number))
+             ((eq char 105)
+              (store number pl1←indentation)
+              (store 0 number))
+             ((eq char 99)
+              (store number pl1←continuation←column)
+              (store 0 number))
+             ((eq char 100)
+              (store number pl1←declaration←hack)
+              (store 0 number))
+             ((eq char 117)
+              (store number pl1←undent←end)
+              (store 0 number))
+             ((eq char 115)
+              (store number pl1←start←column)
+              (store 0 number))
+             ((t)
+noopt         (set←loc current←buffer old)
+              (return)))
+       (add←to←loc current←buffer 1)
+       (goto loop))
+
+(defun compile←pl1()
+       (save←buffer)
+       (delete tg1 99999)
+       (insert "pl1 " tg1)
+       (insert current←filename tg1)
+       (cline tg1))
+             
+(defun next←non←white()
+scan   (set←loc current←buffer
+               (iferror (find←first←not←in←fa current←buffer PLI←White)
+                        (length current←buffer)))
+       (store (eq (location current←buffer) (length current←buffer)) pl1←eob)
+       (ift pl1←eob punt)
+       (ift (eq (nthr current←buffer 0) 47) com1)
+punt   (return)
+com1   (ifnil (eq (nthr current←buffer 1) 42) punt)
+       (set←loc current←buffer (iferror (search current←buffer "*/")
+                                        (length current←buffer)))
+       (goto scan))
+
+
+(defun next←pl1←token(&aux char stok)
+       (delete tg1 (length tg1))
+       (next←non←white)
+       (ift pl1←eob punt)
+       (store (location current←buffer) stok)
+       (store (nth current←buffer stok) char)
+       (ift (eq char 34) quote)
+       (ift (eq (ar PLI←Breaks char) 0) snarf)
+       (add←to←loc current←buffer 1)
+       (insert char tg1)
+punt   (return)
+quote  (add←to←loc current←buffer 1)
+       (set←loc current←buffer (iferror (search current←buffer 34)
+                                        (length current←buffer)))
+       (goto common)
+snarf
+       (set←loc current←buffer (over←token←fa current←buffer))
+common
+       (insert←region current←buffer stok (location current←buffer) tg1)
+       )
+
+(defun statement←type(&aux char)
+loop   (next←pl1←token)
+       (ift pl1←eob punt)
+       (next←non←white)
+       (ift pl1←eob punt)
+       (store (nthr current←buffer 0) char)
+       (ift (eq char 58) label)    ; :
+       (ift (eq char 61) simple)   ; =
+       (ift (eq char 46) simple)   ; .
+       (ift (eq char 45) simple)   ; -
+       (ift (eq tg1 "end") close)
+       (ift (eq tg1 "do") open)
+       (ift (eq tg1 "proc") open)
+       (ift (eq tg1 "procedure") open)
+       (ift (eq tg1 "begin") open)
+       (ift (eq tg1 "else") else)
+       (ift (eq tg1 "then") else)
+       (ift (eq tg1 "if") if)
+       (ift (eq tg1 "on") on)
+simple (store 0 pl1←type)
+skip   (set←loc current←buffer (iferror (search current←buffer 59)
+                                        (length current←buffer)))
+       (return)
+label  (next←pl1←token)
+       (ifnil pl1←eob loop)
+punt   (store -1 pl1←type)
+open   (store 1 pl1←type)
+       (goto skip)
+close  (store 2 pl1←type)
+       (goto skip)
+else   (store 3 pl1←type)
+       (return)
+if     (store 4 pl1←type)
+ifloop (next←pl1←token)
+       (ift pl1←eob punt)
+       (ift (eq tg1 ";") punt)
+       (ifnil (eq tg1 "then") ifloop)
+       (return)
+on     (store 5 pl1←type)
+       (next←pl1←token))
+
+
+(defun balance←forward(&aux depth)
+       (store 0 depth)
+loop                               ; 1st scan for open statement
+       (statement←type)
+       (ift pl1←eob punt)
+       (ift (eq pl1←type 1) scan)
+       (ift (eq pl1←type 2) punt)
+       (goto loop)
+scan                               ; 2nd scan for balancing end
+       (statement←type)
+       (ift pl1←eob punt)
+       (ift (eq pl1←type 1) open)
+       (ift (eq pl1←type 2) close)
+       (goto scan)
+open
+       (store (add depth 1) depth)
+       (goto scan)
+close
+       (ift (lp depth 1) punt2)
+       (store (sub depth 1) depth)
+       (goto scan)
+punt2
+       (previous←statement←cmd)
+punt)
+
+
+(defun start←of←statement()
+       (set←loc current←buffer (iferror (rsearch current←buffer 59)
+                                        (add 0 0)))
+       (add←to←loc current←buffer 1)
+       (next←non←white))
+
+
+(defun previous←statement()
+       (set←loc current←buffer (iferror (rsearch current←buffer 59)
+                                        (add 0 0)))
+       (set←loc current←buffer (iferror (rsearch current←buffer 59)
+                                        (add 0 0)))
+       (ift (lp (location current←buffer) 2) just)
+       (add←to←loc current←buffer 2)
+just
+       (store (eq (location current←buffer) 0) pl1←sob))
+
+(defun previous←statement←cmd()
+       (previous←statement)
+       (next←non←white))
+
+(defun balance←backward(&aux depth start)
+       (store 0 depth)
+       (start←of←statement)
+loop
+       (statement←type)
+       (ift pl1←eob punt)
+       (ift (eq pl1←type 2) scan)
+       (previous←statement)
+       (ift pl1←sob punt)
+       (goto loop)
+scan
+       (previous←statement)
+scan2
+       (previous←statement)
+       (ift pl1←sob punt)
+       (store (location current←buffer) start)
+more
+       (statement←type)
+       (ift pl1←eob punt)
+       (ift (eq pl1←type 1) open)
+       (ift (eq pl1←type 2) close)
+       (ift (gp pl1←type 2) more)
+scan3
+       (set←loc current←buffer start)
+       (goto scan2)
+close
+       (store (add depth 1) depth)
+       (goto scan3)
+open
+       (ift (lp depth 1) punt2)
+       (store (sub depth 1) depth)
+       (goto scan3)
+punt2
+       (previous←statement)
+       (start←of←statement)
+punt   )
+
+
+(defun next←statement←cmd()
+       (statement←type)
+       (next←non←white))
+
+
+(defun pl1←indent←line(&aux oldpos column newpos char offset)
+       (store pl1←start←column column)
+indent
+       (beginning←of←line)
+       (store (location current←buffer) oldpos)
+       
+;    first hack continuation
+       (store (nthr current←buffer -2) char)
+       (ift (or (eq char ";")
+                (or (eq char 13)
+                    (eq char ":"))) nrml)
+       (ift (and (eq char "/")
+                 (eq (nthr current←buffer -3) "*")) nrml)
+       (start←of←statement)
+       (store pl1←continuation←column offset)
+       (cond ((eq pl1←declaration←hack 0)
+              (next←pl1←token)
+              (ifnil (or (eq tg1 "dcl") (eq tg1 "declare")) nodcl)
+              (ifnil (eq char ",") nodcl)
+              (set←loc current←buffer oldpos)
+              (previous←line←command)
+              (next←non←white)
+              (store 0 offset)))
+nodcl  (store (sub (add offset
+                        (get←hpos current←buffer (location current←buffer))) 1)
+              column)
+       (set←loc current←buffer oldpos)
+       (goto simple)
+
+;    then hack first line
+nrml   (previous←statement←cmd)
+       (ifnil pl1←sob cool)
+       (goto simple)
+
+;    now hack label alone on previous line
+cool   (store (location current←buffer) newpos)
+       (next←pl1←token)
+       (ifnil (eq (nthr current←buffer 0) 58) nolabel)
+       (ifnil (eq (nthr current←buffer 1) 13) nolabel)
+       (add←to←loc current←buffer 1)
+       (next←non←white)
+       (goto label)
+nolabel
+       (set←loc current←buffer newpos)
+label
+       (store (sub (get←hpos current←buffer (location current←buffer)) 1)
+              column)
+
+;    now look back a statement and guess
+loop
+       (statement←type)
+       (ift (lp pl1←type 1) simple)
+       (ift (gp pl1←type 2) loop)
+       (ift (eq pl1←type 1) open)
+       (ift (eq pl1←undent←end 0) simple)
+       (store (sub column pl1←indentation) column)
+       (goto simple)
+
+open   (store (add column pl1←indentation) column)
+
+;    now delete white space on the line
+simple
+       (set←loc current←buffer oldpos)
+       (set←loc current←buffer          ; is line all white?
+                (min (iferror (find←first←not←in←fa current←buffer PLI←White)
+                              (length current←buffer))
+                     (sub (iferror (search current←buffer 13)
+                                   (sub (length current←buffer) 1)) 1)))
+       (delete current←buffer (sub oldpos (location current←buffer)))
+
+;    handle undenting end statements
+       (ift (eq pl1←undent←end 1) intab)
+       (ift (eq (nthr current←buffer 0) 13) intab)
+       (statement←type)
+       (ifnil (eq pl1←type 2) noind)
+       (store (sub column pl1←indentation) column)
+
+;    actually insert tabs and blanks
+noind
+       (set←loc current←buffer oldpos)
+intab
+       (ift (lp column 5) inspace)
+       (insert 9 current←buffer)
+       (store (sub column 5) column)
+       (goto intab)
+inspace
+       (ift (lp column 1) endit)
+       (insert 32 current←buffer)
+       (store (sub column 1) column)
+       (goto inspace)
+
+;    handle iteration if non zero argument
+endit
+       (store (sub argument 1) argument)
+       (ift (lp argument 1) punt)
+       (set←loc current←buffer (iferror (search current←buffer 59)
+                                        (goto punt)))
+       (next←non←white)
+       (goto indent)
+punt   (store 0 argument))
+
+(defun goto←line←n()
+       (set←loc current←buffer 0)
+       (store (sub argument 1) argument)
+       (next←line←command))
+
+↑L 
+     Listing of >s>editors>tv>m>lisp←mode.asm     12/30/79 17:35:20
+
+(documentation ">doc>sm>lisp←mode.doc")
+
+(variable white←space current←buffer add←mode←fun)
+(variable beginning←of←line forward←s←expr back←s←expr)
+(variable asm←mode keep←on←tunneling)
+(variable dispatch M←dispatch C-X←dispatch)
+
+(defun indent←for←lisp ( &aux here begin save hpos first←time )
+       (beginning←of←line)
+       (delete current←buffer
+               (min (iferror (find←first←not←in←fr current←buffer white←space)
+                             (sub (length current←buffer)
+                                  (location current←buffer)))
+                    (sub (searchr current←buffer 13) 1)))
+       (store (location current←buffer) here)
+       (back←over←lisp←wsac)
+loop   (cond ((eq (nthr current←buffer -1) \28)
+              (cond ((not (eq (nthr current←buffer 0) \28))
+                     (store (location current←buffer) save)
+                     (store (iferror (search current←buffer 13)
+                                     (length current←buffer))
+                            begin)
+                     (forward←s←expr)
+                     (over←white←space)
+                     (cond ((or (lep begin (location current←buffer))
+                                (eq (nthr current←buffer 0) ";"))
+                            (set←loc current←buffer save)))))
+              (goto go←here)))
+       (store (location current←buffer) save)
+       (store (iferror (rsearch current←buffer 13) 0) begin)
+       (back←white←space)
+       (cond ((lp begin (location current←buffer))
+              (back←s←expr)             ;still on same line
+              (goto loop)))
+       (set←loc current←buffer save)
+go←here
+       (store (get←hpos current←buffer (location current←buffer)) hpos)
+       (set←loc current←buffer here)
+       (insert←white←space←to←hpos hpos))
+
+(defun lisp←newline ()
+       (insert 13 current←buffer)
+       (indent←for←lisp))
+
+(defun user←init ()
+       (store lisp←mode asm←mode)
+       (store (fill←char←array (make←array 1 128) "    
+") white←space))
+
+(defun lisp←mode ()
+       (bind←key m-c-i indent←for←lisp)
+       (bind←key c-j lisp←newline)
+       (keep←on←tunneling))
+
+(defun insert←white←space←to←hpos (hpos &aux i)
+       (store (sub hpos 1) hpos)
+       (for i 1 (div hpos 5) (insert 9 current←buffer))
+       (for i 1 (mod hpos 5) (insert 32 current←buffer)))
+
+(defun over←white←space ()
+     (set←loc current←buffer
+              (find←first←not←in←fa current←buffer white←space)))
+
+(defun back←white←space ()
+     (set←loc current←buffer
+              (find←first←not←in←ba current←buffer white←space)))
+
+(defun back←over←lisp←wsac ( &aux semi )
+loop (back←white←space)
+     (cond ((gp (store (iferror (rsearch current←buffer ";") (push 0)) semi)
+                (rsearch current←buffer 13))
+            (set←loc current←buffer semi)
+            (goto loop)))                    ;keep looking
+     (back←white←space))
+↑L 
+     Listing of >s>editors>tv>m>DIRED←mode.asm    12/30/79 17:35:17
+
+(documentation ">doc>sd>dired.doc")
+
+(variable rcr)
+(variable read←line)
+(variable redo←mode←line)
+(variable replace)
+(variable return←from←reader)
+(variable load←file)
+(variable beginning←of←line)
+(variable back←char)
+(variable next←line)
+(variable previous←line)
+(variable full←redisplay)
+(variable print←msg)
+(variable keep←on←tunneling)
+
+(variable current←buffer)
+(variable echo←buf)
+(variable tg)
+(variable dir)
+(variable dired←cte)
+(variable dispatch)
+(variable M←dispatch)
+(variable C-X←dispatch)
+
+(defun DIRED←mode ()
+     (bind←key d dired←delete←current)
+     (bind←key D dired←delete←current)
+     (bind←key k dired←delete←current)
+     (bind←key K dired←delete←current)
+     (bind←key c-d dired←delete←current)
+     (bind←key c-k dired←delete←current)
+     (bind←key u dired←undelete←current)
+     (bind←key U dired←undelete←current)
+     (bind←key del dired←undelete←previous)
+     (bind←key " " next←line)
+     (bind←key n next←line)
+     (bind←key N next←line)
+     (bind←key p previous←line)
+     (bind←key P previous←line)
+     (bind←key q dired←quit)
+     (bind←key Q dired←quit)
+     (bind←key x dired←quit)
+     (bind←key X dired←quit)
+     (bind←key e dired←rcr←command)
+     (bind←key E dired←rcr←command)
+     (keep←on←tunneling))
+
+(defun dired←delete←current ()
+     (beginning←of←line)
+     (cond ((eq (nth current←buffer (location current←buffer)) 9)
+            (insert 68 current←buffer)))
+     (next←line))
+
+(defun dired←undelete←current ()
+     (beginning←of←line)
+     (cond ((not (eq (nth current←buffer (location current←buffer)) 9))
+            (delete current←buffer 1)))
+     (next←line))
+
+(defun dired←undelete←previous ()
+     (previous←line)
+     (cond ((not (eq (nth current←buffer (location current←buffer)) 9))
+            (delete current←buffer 1))))
+
+(defun dired←quit (&aux char)
+     (delete tg (length tg))
+     (set←loc current←buffer 0)
+loop
+     (insert←region current←buffer
+          (set←loc current←buffer (iferror (search current←buffer "D  ")
+                                           (goto end←loop)))
+          (set←loc current←buffer (search current←buffer 13))
+          tg)
+     (goto loop)
+end←loop
+     (cond ((eq (length tg) 0) (return←from←reader)
+                               (return)))
+     (cond ((eq dired←cte "de")
+             (print←clearing "Delete the following files in " 1 1 1)
+             (print←clearing dir 31 1 1)
+             (print←clearing "?" (add 31 (length dir)) 1 1))
+           ((t)
+             (print←clearing "Run the " 1 1 1)
+             (print←clearing 34 9 1 1)
+             (print←clearing dired←cte 10 1 1)
+             (print←clearing 34 (add 10 (length dired←cte)) 1 1)
+             (print←clearing " command on the following files in "
+                             (add 11 (length dired←cte)) 1 1)
+             (print←clearing dir (add 46 (length dired←cte)) 1 1)
+             (print←clearing "?"
+                             (add 46 (add (length dired←cte) (length dir)))
+                             1 1)))
+     (print←clearing " " 1 2 1)
+     (print←clearing
+          "Valid answers are y (yes), n (no, go back), q (quit), x (quit)."
+          1 3 1)
+     (print←clearing " " 1 4 1)
+     (print←clearing tg 1 5 1)
+     (store (tyi) char)
+     (cond ((or (eq char "Y") (eq char "y"))
+            (print←msg "Yes" 0)
+            (redo←mode←line)
+            (print←msg " " 0)
+            (set←loc current←buffer 0)
+            (delete current←buffer (length current←buffer))
+            (insert tg current←buffer)
+            (set←loc current←buffer 0)
+inner←loop
+            (cat←into tg dired←cte " " dir ">")
+            (insert←region current←buffer
+                 (location current←buffer)
+                 (set←loc current←buffer (iferror (search current←buffer 13)
+                                                  (return←from←reader)
+                                                  (return)))
+               tg)
+            (cline tg)
+            (goto inner←loop))
+           ((or (eq char "Q") (eq char "q"))
+return←fr
+            (print←msg "Just Quit" 0)
+            (return←from←reader)
+            (return))
+           ((or (eq char "X") (eq char "x"))
+            (goto return←fr))
+           ((or (eq char "N") (eq char "n"))
+            (print←msg "No, Go Back" 0)
+            (set←loc current←buffer 0))
+           ((t)
+            (print←msg "Bad Answer" 1)
+            (redo←mode←line)
+            (goto end←loop))))
+
+(defun dired←rcr←command
+     (beginning←of←line)
+     (cat←into tg dir ">")
+     (insert←region current←buffer
+                    (search current←buffer 9)
+                    (sub (search current←buffer 13) 1)
+                    tg)
+     (rcr tg))
+
+(defun dired←set←cte ()
+     (replace dired←cte (read←line "Dired Command: " 13))
+     (cond ((eq (length dired←cte) 0)
+             (insert "de" dired←cte)
+             (insert "de" echo←buf))))
+↑L 
+     Listing of >s>editors>tv>p>asm.asm 12/30/79 17:35:17
+
+(defun parse←fun (&aux eof)
+     (store (over←s←expr←fa source) eof)
+     (add←to←loc source 1)
+     (cond ((not (eq (get←next←sexp eof) "defun")) (barf))
+           (t (store (get←next←sexp eof) fun←name)
+              (parse←arg←list (get←next←sexp eof)))
+     (skip←over←whitespace)
+     (cond ((looking←at "[") (parse←call eof))
+           ((t) (ifnil (store (get←next←sexp eof) form) leave)
+                (intern←label form pc))))
+
+(defun parse←call (eof)
+     (store (over←s←expr←fa source) end←place)
+     (add←to←loc source 1)
+     (store (lookup (store (get←next←sexp end←place) function)) type)
+     (store (add pc 1) pc)
+loop (ifnil (store (get←next←sexp end←place) form) leave)
+     (parse←form type form)
+     (store (add pc 1) pc)
+     (goto loop)
+leave)
+
+(defun parse←form (type form)
+     (cond ((looking←at "[")
+↑L 
+     Listing of >s>editors>tv>p>debug.asm    12/30/79 17:35:20
+
+(variable current←buffer)
+(variable current←tvbuf)
+(variable current←mark)
+(variable switch←point←and←mark)
+(variable forward←s←expr)
+(variable replace)
+(variable full←redisplay)
+(variable pagel)
+(variable db←g)
+
+(defun user←init ()
+       (store (make←gnirt) db←g))
+
+(defun try←fun ( &aux fun com s e fid )
+     (cond ((lp (eval←mark current←mark current←buffer)
+                (location current←buffer))
+            (switch←point←and←mark)))
+     (store (define←window (make←window current←buffer)
+               (location current←buffer)
+               (eval←mark current←mark current←buffer))
+            fun)
+     (write←file fun (store
+               (call←af "cat >pd>ss> [user id] . [short←date] .asm")
+               fid))
+     (cat←into db←g "lisp asm " fid)
+     (delete db←g 4)
+     (cline db←g)
+     (delete (replace db←g fid) 4)
+     (load (insert ".sine" db←g))
+     (full←redisplay))
+
+(defun print←number (msg place num &aux mask )
+       (display←screen 0 (sub pagel 2) 1)         ;clear an area to use
+       (print msg place (sub pagel 2) 0)
+       (tyo ":")
+       (delete db←g 10000)
+       (print (insert←ioa "↑i" num db←g) 0 0 0))
+
+(defun print←object (msg place num &aux mask )
+       (display←screen 0 (sub pagel 2) 1)         ;clear an area to use
+       (print msg place (sub pagel 2) 0)
+       (tyo ":")
+       (delete db←g 10000)
+       (print (insert←ioa "↑8w" num db←g) 0 0 0))
+↑L 
+     Listing of >s>editors>tv>p>info.asm     12/30/79 17:35:10
+
+(variable current←buffer current←filename current←tvbuf echo←buf echo←screen)
+(variable dispatch)
+(variable redo←mode←line read←line replace goto←buffer add←mode
+          over←s←expr←fr back←word return←from←reader load←file
+          self←insert←break invoke←editor save←changes next←line
+          blow←out print←msg get←meta←cmd)
+(variable tg alphabetics white←space display←mode←line hold)
+(variable find←doc)
+
+(variable current←info←node extra←info)
+(variable completed comp←search filename menu←items)
+(variable info←new←buf info←node←list starting←node info←history)
+(variable completing←start info←previous←node)
+
+(documentation ">u>ota>sine>p>info.doc")
+
+(defun user←init ( &aux root←buffer root←fid )
+       (read←file (store (make←buffer) root←buffer)
+                  (store ">u>ota>sine>p>root←node" root←fid))
+       (store (list ">" root←fid root←buffer) starting←node)
+       (store (store (nil) current←info←node) info←node←list)
+       (store (make←buffer) extra←info)
+       (store (make←gnirt) completed)
+       (store (make←gnirt) comp←search)
+       (store (make←gnirt) filename)
+       (store (make←gnirt) menu←items)
+       (cond ((eq find←doc 0) (load←file ">sl1>sinemacs>print←doc.sine"))))
+
+;    The format of an info←node is as follows:
+;         (node←name filename←of←node←info
+;               buffer←containing←file
+;               child1 child2 ... childn)
+
+(defun get←info←node (item file &aux new←node buf)
+       (cond ((store (find←info←node item file) new←node)
+              (cond ((eq (car new←node) item)
+                     (return←value new←node))
+                    ((return←value
+                      (make←new←node item file (caddr new←node))))))) ;buffer
+                     
+(print←clearing "reading in" 1 2 0)
+(print file 12 2 0)
+
+       (cond ((lp (read←file (store (make←buffer) info←new←buf) file) 0)
+              (print "failed" 0 0 0) (nil))
+             ((t) (make←new←node item file info←new←buf))))
+
+(defun find←info←node (item file &aux this←node ff info←node←list)
+       (store (nil) ff)
+       (do←while info←node←list
+                 (store (car info←node←list) this←node)
+                 (cond ((eq file (cadr this←node))
+                        (cond ((eq item (car this←node))
+                               (return←value this←node))
+                              ((store this←node ff)))))
+                 (store (cdr info←node←list) info←node←list))
+       (push ff))        ;return filename or nil if no real matches found
+
+(defun make←new←node (item file buf &aux node)
+       (store (cons (store (list (replace (make←gnirt) item)
+                                 (replace (make←gnirt) file) buf)
+                           node)
+                    info←node←list)
+              info←node←list)
+       (push node))
+
+(defun info ( &aux buffer←to←return←to )
+       (store (nil) info←history)
+       (store starting←node current←info←node)
+       (store (car current←tvbuf) buffer←to←return←to)
+       (goto←buffer "INFO")
+       (add←mode "info" 1 1)
+       (install←new←node)
+       (errset "abort" ((select←child←node)) ())
+loop   (errset "abort" ((invoke←editor 1))
+               ((goto loop)))
+       (goto←buffer buffer←to←return←to))
+
+(defun install←new←node ( &aux info←topic end←extra )
+       (store (car current←info←node) info←topic)
+       (replace current←filename info←topic)
+       (set←loc current←buffer 0)
+       (delete current←buffer (length current←buffer))
+       (insert (find←doc info←topic (caddr current←info←node)) current←buffer)
+       (set←loc current←buffer 0)
+       (set←loc extra←info 0)
+       (delete extra←info (length extra←info))
+       (insert←region current←buffer
+                      (set←loc current←buffer
+                               (find←first←in←fa current←buffer \28))
+                      (add (location current←buffer)
+                           (store (over←s←expr←fr current←buffer) end←extra))
+                      extra←info)
+       (delete current←buffer end←extra)
+       (store -1 display←mode←line))
+
+(defun select←child←node ( &aux item)
+       (cond ((store (read←child←node) item)
+              (cond ((eq (goto←child←node item) 0)
+                     (blow←out "Completion lossage"))))))
+
+(defun read←child←node ( &aux item self←insert←break )
+       (store try←completing self←insert←break)
+       (set←loc current←buffer 0)
+       (delete current←buffer (length current←buffer))
+       (set←loc extra←info 0)
+       (store (set←loc extra←info (iferror (search extra←info \28)
+                                           (blow←out "Illegal node format")))
+              completing←start)
+
+;collect together all the possible menu items so we can show him his choices.
+; The form is of a list of lists where the forst token in each list is
+; the name of the menu item.
+
+       (do←until (eq (nthr extra←info 0) \29)
+                 (set←loc extra←info (find←first←not←in←fa extra←info
+                                                           white←space))
+                 (insert←region extra←info
+                                (add (location extra←info) 1)    ;skip the open
+                                (find←first←in←fa extra←info white←space)
+                                current←buffer)
+                 (insert 13 current←buffer)       ;CR between each
+                 (set←loc extra←info (search extra←info \29)))
+
+       (errset "abort" ((return←value (read←line "Menu Item: " 13)))
+                       ((install←new←node) (return←value (nil)))))    ;cleanup
+
+(defun goto←child←node (item &aux first←child new←node )
+       (set←loc extra←info 0)
+       (set←loc extra←info
+                (iferror (search extra←info (cat←into tg \28 item " "))
+                         (return←value -1)))
+       (delete filename 10000)
+       (insert←region extra←info
+                      (set←loc extra←info
+                               (find←first←not←in←fa extra←info white←space))
+;(  To balance the quoted close paren
+                      (set←loc extra←info (find←first←in←fa extra←info ")/"))
+                      filename)
+       (cond ((eq (nthr extra←info 0) "/")
+              (delete tg 10000)
+              (store (insert←region extra←info
+                                    (add (location extra←info) 1)
+                                    (find←first←in←fa extra←info \29)
+                                    tg)
+                     item)))
+       (store (cdddr current←info←node) first←child)
+       (do←while first←child
+                 (cond ((eq item (caar first←child))
+                        (store (car first←child) new←node)
+                        (goto got←it)))
+                 (store (cdr first←child) first←child))
+
+;;;  The node does not already exist so create it and thread it in.
+
+       (store (get←info←node item filename) new←node)
+       (rplacd (cddr current←info←node)
+               (cons new←node (cdddr current←info←node)))
+got←it
+       (push←current←info←node)
+       (store new←node current←info←node)
+       (install←new←node))
+
+(defun try←completing ()
+       (delete tg 10000)
+       (back←word)
+       (insert←region current←buffer
+                      (location current←buffer)
+                      (length current←buffer)
+                      tg)
+       (cond ((lep (get←whole←string tg extra←info
+                                     completing←start \28 completed)
+                   0)
+              (tyo 7) (set←loc current←buffer (length current←buffer)))
+             ((t)
+              (delete current←buffer (sub (length current←buffer)
+                                          (location current←buffer)))
+              (insert completed current←buffer)
+              (return←from←reader))))
+
+(defun get←whole←string (attempt completion←table start prefix answer)
+       (cat←into comp←search prefix attempt)
+       (set←loc completion←table start)
+       (set←loc completion←table
+                (iferror (search completion←table comp←search)
+                         (return←value -1)))
+       (iferror (search completion←table comp←search)
+                (add←to←loc completion←table (sub 0 (length attempt)))
+                (delete answer 10000)
+                (insert←region completion←table
+                               (location completion←table)
+                               (find←first←in←fa completion←table white←space)
+                               answer)
+                (return←value 1))
+       (return←value 0))
+
+(defun push←current←info←node ()
+       (store (cons current←info←node info←history) info←history))
+
+(defun maybe←display ()
+       (cond ((eq (tyis) 0) (display))))
+
+(defun peruse←history ( &aux info←history current←screen )
+       (store echo←screen current←screen)
+       (do←while info←history
+                 (set←loc echo←buf 0)
+                 (delete echo←buf (length echo←buf))
+                 (insert (caar info←history) echo←buf)
+                 (maybe←display)
+                 (cond ((eq (tyi) "y")
+                        (print←msg "Yes" 0)
+                        (return←value (car info←history))))
+                 (store (cdr info←history) info←history))
+       (print←msg "No Previous Node" 1)
+       (nil))
+
+(defun back←up ( &aux new←node )
+       (cond ((store (peruse←history) new←node)
+              (push←current←info←node)
+              (store new←node current←info←node)
+              (install←new←node))))
+
+(defun info←make←global ( &aux known←under buf item )
+       (store (read←line "What should this node be know as? " 13) known←under)
+       (store (car current←info←node) item)
+       (cond ((eq (length known←under) 0) (store item known←under)))
+       (store (caddr starting←node) buf)
+       (set←loc buf 0)
+       (iferror (search buf (cat←into tg \28 known←under " "))
+                (set←loc buf (search buf \28))
+                (insert 13 buf)
+                (insert \28 buf)
+                (insert known←under buf)
+                (insert " " buf)
+                (insert (cadr current←info←node) buf)
+                (cond ((not (eq known←under item))
+                       (insert  "/" buf)
+                       (insert item buf)))
+                (insert \29 buf)
+                (write←file buf (cadr starting←node))
+                (return))
+       (blow←out "That global node exists"))
+
+(defun edit←node ( &aux save←changes buf )
+       (store current←buffer buf)
+       (goto←buffer "edit←info")
+       (add←mode "doc" 1 1)
+       (set←loc current←buffer 0)
+       (delete current←buffer (length current←buffer))
+       (insert buf current←buffer)
+       (set←loc current←buffer (location buf))
+       (store update←info save←changes)
+loop   (errset "abort" ((invoke←editor 1))          ;1 => recursive editor
+                       ((goto loop)))
+       (store current←buffer buf)
+       (goto←buffer "INFO")
+       (set←loc current←buffer 0)
+       (delete current←buffer (length current←buffer))
+       (insert buf current←buffer)
+       (set←loc current←buffer (location buf)))
+
+(defun update←info ( &aux buf temp )
+       (store (caddr current←info←node) buf)
+       (cat←into tg 4 (car current←info←node) ":")
+       (set←loc buf 0)
+       (set←loc buf (search buf tg))
+       (add←to←loc buf (over←s←expr←fr buf))
+       (delete buf (iferror (sub (searchr buf 4) 1)
+                            (sub (length buf) (location buf))))
+       (store (location current←buffer) temp)
+       (set←loc current←buffer 0)
+       (next←line)
+       (insert←region current←buffer
+                      (location current←buffer)
+                      (length current←buffer)
+                      buf)
+       (set←loc current←buffer temp)
+       (write←file buf (cadr current←info←node))
+       (print←msg "Updated" 0))
+
+(defun add←child ( &aux new←node buf get←meta←cmd )
+       (store add←previous get←meta←cmd)
+       (store 0 info←previous←node)
+       (replace tg (read←line "Menu Name: " 13))
+       (cond ((eq info←previous←node 0)
+              (replace filename (read←line "What File is it in? " 13))
+              (cond ((not (eq info←previous←node 0))
+                     (store info←previous←node new←node)
+                     (goto got←node)))
+              (cond ((eq (length filename) 0)     ;use the current filename
+                     (insert (cadr current←info←node) filename)))
+              (replace menu←items (read←line "What is the Node's Name? " 13))
+              (cond ((eq (length menu←items) 0) (insert tg menu←items)))
+              (cond ((not (store (get←info←node menu←items filename) new←node))
+                     (store (make←new←node menu←items filename info←new←buf)
+                            new←node)))
+              (cat←into completed 4 menu←items ":")
+              (store (caddr new←node) buf)
+              (set←loc buf 0)
+;;;add to file if not already there
+              (iferror (search buf completed)
+                       (insert completed buf)
+                       (insert "
+()
+" buf)
+                       (cond ((lp (write←file buf filename) 0)
+                              (blow←out "Can't update info")))))
+;;; He specified a previously visited node
+             ((t)
+              (store info←previous←node new←node)
+              (replace tg (car new←node))
+got←node
+              (replace menu←items (car new←node))))
+
+       (store (caddr current←info←node) buf)
+       (cat←into completed 4 (car current←info←node) ":")
+       (set←loc buf 0)
+       (set←loc buf (search buf completed))
+       (cat←into filename \28 tg " ")   ;so we can search for dups.
+       (cond ((lp (iferror (search buf filename) (length buf))
+                  (iferror (search buf 4) (length buf)))
+              (blow←out "That Menu item exists")))
+       (set←loc buf (search buf \28))
+       (cat←into completed 13 \28 tg " " (cadr new←node))
+       (cond ((not (eq tg menu←items))
+              (insert "/" completed)
+              (insert menu←items completed)))
+       (insert \29 completed)
+       (insert completed buf)
+       (write←file buf (cadr current←info←node))
+       (rplacd (cddr current←info←node)           ;thread it in
+               (cons new←node (cdddr current←info←node)))
+       (install←new←node))
+
+(defun add←previous ( &aux temp )
+       (cond ((store (peruse←history) temp)
+              (store temp info←previous←node)
+              (return←from←reader))))
+
+(defun change←menu ())↑L 
+↑P␈     Listing of >s>editors>tv>p>comp.asm  12/30/79 17:35:09
+
+(defun user←init ()
+       (store (make←buffer) completion←table)
+       (store (make←gnirt) comp←search)
+       (store (make←gnirt) ans))
+
+(defun get←whole←string (attempt completion←table start prefix answer)
+       (cat←into comp←search prefix attempt)
+       (set←loc completion←table start)
+       (set←loc completion←table
+                (iferror (search completion←table attempt) (return←value -1)))
+       (iferror (search completion←table attempt)
+                (add←to←loc completion←table (sub 0 (length attempt)))
+                (delete answer 10000)
+                (insert←region completion←table
+                               (location completion←table)
+                               (find←first←in←fa completion←table "   
+")
+                               answer)
+                (return←value 1))
+       (return←value 0))
+
+(defun try←comp ( &aux code )
+loop   (cond ((eq (store (get←whole←string (read←line "string: " 27)
+                                           current←buffer 0 13 ans)
+                         code) 0)
+              (print←msg "ambiguous" 0))
+             ((eq code -1) (print←msg "no such string" 0))
+             ((t) (print←msg ans 0)))
+       (goto loop))
+↑L 
+     Listing of >s>editors>tv>p>count.asm    12/30/79 17:35:01
+
+(variable current←buffer echo←buf)
+
+(defun status ()
+       (set←loc echo←buf 0)
+       (delete echo←buf (length echo←buf))
+       (insert←ioa "point=↑i" (location current←buffer) echo←buf)
+       (insert←ioa " length=↑i" (length current←buffer) echo←buf)
+       (insert←ioa " (↑i%)" (div (mul (location current←buffer) 100)
+                                 (length current←buffer)) echo←buf))
+
+↑L 
+     Listing of >s>editors>tv>p>ota.asm 12/30/79 17:35:04
+
+(variable current←buffer dispatch)
+(variable punt←changes)
+
+(defun user←init ()
+       (as 'punt←changes dispatch 3)    ;for debugging
+       (as 'twiddle dispatch 20))       ;C-T
+
+(defun twiddle ( &aux point temp )
+       (ift (eq (location current←buffer) 0) just←return)
+       (cond ((eq (iferror (searchr current←buffer 13) 1) 1)
+              (add←to←loc current←buffer -1)))
+       (store (nthr current←buffer -1) temp)
+       (delete current←buffer -1)
+       (add←to←loc current←buffer 1)
+       (insert temp current←buffer)
+just←return)
+↑L 
+     Listing of >s>editors>tv>ap>move←col.asm     12/30/79 17:34:33
+
+(variable argument argumentp beginning←of←line current←buffer)
+(variable end←of←line next←line)
+(static check←col)
+
+(documentation ">doc>sm>move←col.doc")
+
+(defun user←init ()
+     (store 66 check←col))
+
+(defun move←col (&aux were←here)
+       (store (location current←buffer) were←here)
+       (cond (argumentp (store (add 1 argument) check←col)))
+       (store 0 argument)
+       (cond ((gep (get←hpos current←buffer (location current←buffer))
+                   check←col)
+              (next←line)))
+       (do←while (lp (location current←buffer) (length current←buffer))
+                 (end←of←line)
+                 (cond ((gp (get←hpos current←buffer (location current←buffer))
+                            check←col)
+                        (beginning←of←line)
+                        (do←while (lp (get←hpos current←buffer
+                                      (location current←buffer)) check←col)
+                                  (add←to←loc current←buffer 1))
+                        (return)))
+                 (next←line))
+       (set←loc current←buffer were←here)
+       (return))
+
+
+↑L 
+     Listing of >s>editors>tv>ap>tabify.asm  12/30/79 17:34:33
+
+(documentation ">doc>sm>tabify.doc")
+
+(variable argument argumentp current←buffer current←mark end←of←line)
+
+;Tabify Region, turning spaces into tabs
+;    region is defined by the mark and current←location
+;    argument is tab spacing
+;    no argument, default to 5
+
+(defun tabify (&aux end need)
+     (store (set←up←for←region) end)
+     (do←while (gep end (location current←buffer))
+          (set←loc current←buffer
+               (iferror (search current←buffer "  ") (goto exit)))
+          (cond ((gep (location current←buffer) end) (goto exit)))
+          (add←to←loc current←buffer -2)
+          (store (sub argument (mod (sub (get←hpos←varying current←buffer
+               (location current←buffer) argument) 1) argument)) need)
+          (cond
+               ((gep (find←first←not←in←fr current←buffer " ") need)
+                    (insert 9 current←buffer)
+                    (delete current←buffer need)
+                    (store (sub end (sub need 1)) end))
+               ((t)
+                    (set←loc current←buffer
+                         (find←first←not←in←fa current←buffer " ")))))
+     exit
+     (set←loc current←buffer end)
+     (store 0 argument))
+
+
+;does a get←hpos with different tab spacings
+
+(defun get←hpos←varying (buffer location tab←spacing &aux i hpos count)
+     (store (sub 0 (iferror (rsearchr current←buffer 13)
+          (location current←buffer))) i)
+     (store 1 hpos)
+     (do←while (lp i 0)
+          (cond
+               ((eq 9 (nthr current←buffer i))
+                    (store (sub argument (mod (sub hpos 1) argument)) count))
+               ((t) (store 1 count)))
+          (store (add count hpos) hpos)
+          (store (add 1 i) i))
+     (return←value hpos))
+
+
+;Untabify Region, turning tabs into spaces
+;    region is defined by the mark and current←location
+;    argument is tab spacing
+;    no argument, default to 5
+
+(defun untabify (&aux dist end)
+     (store (set←up←for←region) end)
+     (do←while (gep end (location current←buffer))
+          (set←loc current←buffer (iferror
+               (search current←buffer 9) (goto exit)))
+          (cond ((gep (location current←buffer) end) (goto exit)))
+          (add←to←loc current←buffer -1)
+          (store (sub argument (mod (sub (get←hpos current←buffer
+               (location current←buffer)) 1) argument)) dist)
+          (delete current←buffer 1)
+          (store (add end (sub dist 1)) end)
+          (do←while (gp dist 0)
+               (insert 32 current←buffer)
+               (store (sub dist 1) dist)))
+     exit
+     (set←loc current←buffer end)
+     (store 0 argument))
+
+
+;initializer for both region oriented functions
+
+(defun set←up←for←region (&aux loc←mark end)
+     (cond ((not argumentp) (store 5 argument)))
+     (store (eval←mark current←mark current←buffer) loc←mark)
+     (cond
+          ((gp loc←mark (location current←buffer))
+               (store loc←mark end))
+          ((t)
+               (store (location current←buffer) end)
+               (set←loc current←buffer loc←mark)))
+     (return←value end))
+
+; Trim←White deletes all trailing whitespace from a region
+; (because it is line oriented, its boundaries are only approxomately
+;  those of the point and mark)
+
+(defun trim←white (&aux end end←mark)
+     (store (set←up←for←region) end)
+     (store (make←mark) end←mark)
+     (set←mark end←mark current←buffer end)
+     (do←while (lp (location current←buffer)
+                   (eval←mark end←mark current←buffer))
+          (end←of←line)
+          (delete current←buffer
+               (iferror (find←first←not←in←br current←buffer "   ") 0))
+          (add←to←loc current←buffer 1))
+     (unset←mark end←mark current←buffer))
+↑L 
+     Listing of >s>editors>tv>ap>tags.asm    12/30/79 17:34:25
+
+(documentation ">doc>sm>tags.doc")
+
+(variable C-X←dispatch)
+(variable current←buffer)
+(variable goto←buffer)        ;for find←file
+(variable current←filename)   ;    "
+(variable derive←buffer←name) ;    "
+(variable current←tvbuf)      ;    "
+(variable echo←buf)           ;    "
+(variable punt←changes)       ;    "
+(variable display←mode←line)  ;    "
+(variable buffer←list)        ;    "
+(variable read←line)
+(variable replace)
+(static tg1)
+(static tg2)
+(static tg3)
+(static tags←white)
+(static tags←buffer)
+(static tags←file)
+(variable print←msg)
+(variable get←filename←suffix)
+
+(defun user←init()
+       (store (make←gnirt) tags←file)
+       (store (make←buffer) tags←buffer)
+       (store (make←gnirt) tg1)
+       (store (make←gnirt) tg2)
+       (store (make←gnirt) tg3)
+       (store (fill←char←array (make←array 1 128)
+                               "   ↑J↑L().") tags←white)
+       (as 1 tags←white 13)
+       (as 'goto←tag C-X←dispatch 20)        ;↑x↑t
+       (as 'open←tags←file C-X←dispatch 116) ;↑xt
+       (as 'tagify C-X←dispatch 84))         ;↑xT
+
+(defun tags()
+       (open←tags←file))
+
+(defun open←tags←file()
+       (ifnil (eq tags←buffer 0) reask)
+       (store (make←buffer) tags←buffer)
+       (store (make←gnirt) tags←file)
+       (ifnil (eq tg3 0) reask)
+       (store (make←gnirt) tg3)
+reask  (replace tags←file (read←line "Tags File: " 13))
+       (insert ".tags" tags←file)
+       (ift (gep (read←file tags←buffer tags←file) 0) exit)
+       (print←msg "No Such Tags File" 1)
+exit  )
+
+(defun goto←tag(&aux found start char)
+       (ifnil (eq tags←buffer 0) good)
+       (print←msg "No Open Tags File" 1)
+       (return)
+good
+       (delete tg1 99999)
+       (delete tg3 99999)
+       (insert 13 tg1)
+       (insert (read←line "Tag: " 13) tg3)
+       (insert tg3 tg1)
+       (insert 13 tg1)
+       (set←loc tags←buffer 0)
+       (set←loc tags←buffer (iferror (search tags←buffer tg1)
+                                     (add 0 0)))
+       (ifnil (eq (location tags←buffer) 0) win)
+       (print←msg "No Such Tag" 1)
+       (return)
+win
+       (set←loc tags←buffer (iferror (rsearch tags←buffer 12)
+                                     (sub 0 1)))
+       (add←to←loc tags←buffer 1)
+       (store (location tags←buffer) start)
+       (delete tg2 (length tg2))
+       (insert←region tags←buffer start (sub (search tags←buffer 13) 1) tg2)
+       (find←file tg2)
+       (store (get←filename←suffix tg2) tg2)
+       (ift (eq tg2 "pl1") nrml)
+       (ift (eq tg2 "sysin") nrml)
+       (delete tg1 (length tg1))
+       (insert "(defun " tg1)
+       (insert tg3 tg1)
+       (insert 32 tg1)        ; to be deleted below
+nrml   (delete tg1 1)         ; zap last cr
+       (set←loc current←buffer 0)
+loop
+       (set←loc current←buffer (iferror (search current←buffer tg1)
+                                        (goto ick)))
+       (store (nth current←buffer (location current←buffer)) char)
+       (ift (eq char 58) aha)
+       (ift (eq char 40) aha)
+       (ift (eq char 32) aha)
+       (ift (eq char 09) aha)
+       (add←to←loc current←buffer 1)
+       (goto loop)
+ick
+       (print←msg "No Such Tag" 1)
+       (set←loc current←buffer 0)
+aha    
+       )
+
+(defun delete←tags←for(name &aux start)
+       (ifnil (eq tags←buffer 0) win)
+       (print←msg "No Tags File" 1)
+       (return)
+win
+       (delete tg2 (length tg2))
+       (insert 12 tg2)
+       (insert name tg2)
+       (insert 13 tg2)
+       (set←loc tags←buffer (length tags←buffer))
+       (set←loc tags←buffer (iferror (rsearch tags←buffer tg2)
+                                     (progn (print←msg "New Subfile" 1)
+                                            (return))))
+       (store (location tags←buffer) start)
+       (add←to←loc tags←buffer 1)
+       (set←loc tags←buffer (iferror (search tags←buffer 12)
+                                     (length tags←buffer)))
+       (ift (eq (location tags←buffer) (length tags←buffer)) nback)
+       (add←to←loc tags←buffer -1)
+nback
+       (delete tags←buffer (sub start (location tags←buffer)))
+       )
+
+(defun tagify(&aux language)
+       (set←loc current←buffer 0)
+       (delete←tags←for current←filename)
+       (set←loc tags←buffer (length tags←buffer))
+       (insert 12 tags←buffer)
+       (insert current←filename tags←buffer)
+       (insert 13 tags←buffer)
+       (store (get←filename←suffix current←filename) language)
+       (ift (eq language "pl1") dopl1)
+       (ift (eq language "asm") dolisp)
+       (ift (eq language "lisp") dolisp)
+       (tagify←sysin)
+       (goto common)
+dopl1  (tagify←pl1)
+       (goto common)
+dolisp (tagify←lisp)
+common (write←file tags←buffer tags←file))
+
+(defun tagify←pl1(&aux start end)
+next   (set←loc current←buffer (iferror (search current←buffer 58)
+                                        (return)))
+       (store (sub (location current←buffer) 1) end)
+       (set←loc current←buffer (to←token←fa current←buffer))
+       (store (location current←buffer) start)
+       (set←loc current←buffer (over←token←fa current←buffer))
+       (delete tg1 (length tg1))
+       (insert←region current←buffer start (location current←buffer) tg1)
+       (ift (eq tg1 "proc") entag)
+       (ift (eq tg1 "procedure") entag)
+       (ift (eq tg1 "entry") entag)
+       (goto next)
+entag  (set←loc current←buffer end)
+       (set←loc current←buffer (to←token←ba current←buffer))
+       (store (location current←buffer) end)
+       (set←loc current←buffer (over←token←ba current←buffer))
+       (delete tg1 (length tg1))
+       (insert←region current←buffer (location current←buffer) end tg1)
+       (zap←a←tag tg1)
+       (insert tg1 tags←buffer)
+       (insert 13 tags←buffer)
+       (set←loc current←buffer (search current←buffer 58))
+       (goto next))
+
+(defun tagify←lisp(&aux start char)
+next   (set←loc current←buffer (iferror (search current←buffer "(defun ")
+                                        (return)))
+       (set←loc current←buffer (to←token←fa current←buffer))
+       (store (location current←buffer) start)
+more   (set←loc current←buffer (over←token←fa current←buffer))
+       (store (nth current←buffer (location current←buffer)) char)
+       (ift (eq char 43) more)
+       (ift (eq char 45) more)
+       (insert←region current←buffer start (location current←buffer)
+                      tags←buffer)
+       (insert 13 tags←buffer)
+       (goto next))
+
+(defun over←token←fa(buffer)
+       (find←first←in←fa buffer tags←white))
+
+(defun to←token←fa(buffer)
+       (find←first←not←in←fa buffer tags←white))
+
+(defun tagify←sysin(&aux start char)
+loop
+       (store (location current←buffer) start)
+       (store (nth current←buffer start) char)
+       (ift (eq char -1) update)
+       (ift (eq char 32) next)
+       (ift (eq char 09) next)
+       (ift (eq char 42) next)
+       (ift (eq char 12) next)
+       (ift (eq char 13) next)
+eotl
+       (add←to←loc current←buffer 1)
+       (store (nth current←buffer (location current←buffer)) char)
+       (ift (eq char -1) update)
+       (ift (eq char 32) snarf)
+       (ift (eq char 09) snarf)
+       (ift (eq char 13) snarf)
+       (goto eotl)
+snarf
+       (insert←region current←buffer start (location current←buffer)
+                         tags←buffer)
+       (insert 13 tags←buffer)
+next
+       (ift (eq (location current←buffer) (length current←buffer)) update)
+       (set←loc current←buffer (iferror (search current←buffer 13)
+                                        (goto update)))
+
+       (goto loop)
+update )
+
+
+;;; FIND←FILE THAT ASKS IF THERE IS SOMETHING IN THE BUFFER ALREADY
+
+(defun find←file(file &aux buf)
+       (store -1 display←mode←line)
+       (store buffer←list buf)       
+loop
+       (ifnil (eq buf 0) old)
+       (find←file←new file)
+       (return)
+old
+       (ift (eq (car (cdr (cdr (cdr (cdr (car buf)))))) file) ok)
+       (store (cdr buf) buf)
+       (goto loop)
+ok
+       (goto←buffer (car (car buf))))
+
+
+(defun find←file←new(filename &aux nbn)
+       (goto←buffer (derive←buffer←name filename))
+       (ift (eq current←filename filename) won)
+       (ift (eq (length current←buffer) 0) aha)
+       (store (read←line "Buffer exists! BufferName: " 13) nbn)
+       (cond ((gp (length nbn) 0) (goto←buffer nbn))
+             ((t)                 (insert (car current←tvbuf) echo←buf)))
+aha
+       (delete current←filename (length current←filename))
+       (insert filename current←filename)
+       (punt←changes)
+won
+       )
+
+(defun zap←a←tag(tag)
+       (set←loc tags←buffer 0)
+       (delete tg3 (length tg3))
+       (insert 13 tg3)
+       (insert tag tg3)
+       (insert 13 tg3)
+       (set←loc tags←buffer (iferror (search tags←buffer tg3)
+                                     (goto done)))
+       (delete tags←buffer (sub (length tag) 1))
+            (delete tags←buffer -1)
+done   (set←loc tags←buffer (length tags←buffer)))
+↑L 
+     Listing of >s>editors>tv>ap>replace.asm 12/30/79 17:34:23
+
+;;; REPLACE PACKAGE
+
+(documentation ">doc>sm>replace.doc")
+
+(variable print←msg)
+(variable read←line)
+(variable replace)
+
+(variable current←buffer)
+(variable M←dispatch)
+(variable default←d)
+(variable default←cxd)
+(variable default←md)
+(variable current←modifiedp)
+
+(static tg1)
+(static tg2)
+
+(defun user←init()
+       (store (make←gnirt) tg1)
+       (store (make←gnirt) tg2)
+       (as 'global←replace M←dispatch 82)    ; M-R
+       (as 'global←replace default←md 82)    ; M-R
+       (as 'global←replace M←dispatch 114)   ; M-R
+       (as 'global←replace default←md 114)   ; M-R
+       (as 'query←replace M←dispatch 18)     ; C-M-R
+       (as 'query←replace default←md 18))    ; C-M-R
+
+(defun query←replace (&aux oldlen char oldpos)
+       (read←old←new)
+       (store (location current←buffer) oldpos)
+       (store (length tg1) oldlen)
+loop
+       (set←loc current←buffer (iferror (search current←buffer tg1)
+                                        (progn (print←msg "No More Matches" 1)
+                                               (goto just←return))))
+       (print "-replace-" 60 23 0)
+       (display)
+       (cond ((eq (store (tyi) char) 32)
+              (store (t) current←modifiedp)
+              (delete current←buffer (sub 0 oldlen))
+              (insert tg2 current←buffer))
+             ((eq char 7)
+              (progn (print←msg "Aborting" 1)
+                     (goto just←return))))
+       (goto loop)
+just←return
+       (set←loc current←buffer oldpos))
+
+(defun global←replace(&aux oldpos)
+       (read←old←new)
+       (store (location current←buffer) oldpos)
+       (replace←all←util current←buffer
+                         (location current←buffer)
+                         (length current←buffer)
+                         tg1
+                         tg2)
+       (set←loc current←buffer oldpos))
+
+(defun read←old←new ()
+       (replace tg1 (read←line "Old String: " 27))
+       (replace tg2 (read←line "New String: " 27)))
+
+(defun replace←all←util (buffer start end old new &aux next)
+       (set←loc buffer start)
+loop
+       (store (iferror (search buffer old) (return)) next)
+       (ifnil (lep next end) just←return)
+       (set←loc buffer next)
+       (delete buffer (sub 0 (length old)))
+       (insert new buffer)
+       (store (add (sub (length new) (length old)) end) end)
+       (goto loop)
+just←return)
+↑L 
+     Listing of >s>editors>tv>ap>print←doc.asm    12/30/79 17:34:18
+
+(variable dispatch M←dispatch O←dispatch C-X←dispatch)
+(variable current←screen echo←buf echo←screen doc←buf doc←window doc←file)
+(variable hold replace tg)
+
+(documentation ">doc>sm>print←doc.doc")
+
+(defun print←doc ( &aux doc fun current←screen first )
+       (store echo←screen current←screen)
+       (set←loc echo←buf 0)
+       (delete echo←buf (length echo←buf))
+       (insert "TV Command: " echo←buf)
+       (cond ((eq (tyis) 0) (display)))
+       (store (tyi) first)
+       (cond ((eq first 27)
+              (insert "Meta " echo←buf)
+              (cond ((eq (tyis) 0) (display)))
+              (store (ar M←dispatch (insert←rep (tyi))) fun))
+             ((eq first 24)
+              (insert "C-X " echo←buf)
+              (cond ((eq (tyis) 0) (display)))
+              (store (ar C-X←dispatch (insert←rep (tyi))) fun))
+             ((eq first 3)
+              (insert "Ortho " echo←buf)
+              (cond ((eq (tyis) 0) (display)))
+              (store (ar O←dispatch (insert←rep (tyi))) fun))
+             ((eq first 31)
+              (insert "Para " echo←buf)
+              (cond ((eq (tyis) 0) (display)))
+              (store (ar M←dispatch 32) fun))          ;known illegal←command
+;             (store (ar O←dispatch (insert←rep (tyi))) fun))
+             ((t) (store (ar dispatch first) fun)
+              (insert←rep first)))
+       (cond ((eq (tyis) 0) (display)))
+       (cond ((stringp fun)
+              (print←clearing (cat←into tg "Auto←Loaded Function '" fun "'")
+                              1 1 1)
+              (store 1 hold))
+             ((t)
+              (cond ((functionp (store (get←documentation fun) doc))
+                     (+push fun)
+                     (call←vbl doc 1))
+                    ((t)
+                     (cond ((eq doc←buf 0)
+                            (store (make←buffer) doc←buf)
+                            (store (make←window doc←buf) doc←window)
+                            (store (make←gnirt) doc←file)))
+                     (cond ((not (eq doc doc←file))
+                            (read←file doc←buf doc)
+                            (replace doc←file doc)))
+                     (print←clearing (find←doc (get←pname fun) doc←buf) 1 1 1)
+                     (store 1 hold))))))
+
+(defun find←doc (string buf &aux start stop)
+       (cat←into tg 4 string ":")
+       (set←loc buf 0)
+       (store (sub (iferror (search buf tg)
+                            (progn (+push
+                                    (cat←into tg
+                                              "No Documentation On " string))
+                                   (return)))
+                   (sub (length tg) 1)) start)
+       (set←loc buf start)
+       (define←window (cond ((eq buf doc←buf) (push doc←window))
+                            ((t) (make←window buf)))
+                      start
+                      (iferror (sub (search buf 4) 1) (length buf))))
+
+(defun insert←rep (char)
+       (cond ((eq char 27) (insert "Alt" echo←buf))
+             ((lp char 32)
+              (insert "C-" echo←buf)
+              (insert (add char 64) echo←buf))
+             ((eq char 32) (insert "Space" echo←buf))
+             ((eq char 127) (insert "Del" echo←buf))
+             ((t) (insert char echo←buf)))
+       (push char))
+
+↑L 
+     Listing of >s>editors>tv>ap>ascii←chart.asm  12/30/79 17:34:17
+
+(documentation ">doc>sm>ascii.doc")
+
+(variable current←buffer)
+
+(defun ascii←chart(&aux index)
+       (store 0 index)
+loop
+       (ascii←put index (t))
+       (ascii←put (add index 32) (t))
+       (ascii←put (add index 64) (t))
+       (ascii←put (add index 96) (nil))
+       (insert 13 current←buffer)
+       (store (add index 1) index)
+       (ift (lp index 32) loop))
+
+(defun ascii←put(char blanks)
+       (insert←ioa " ↑3d  " char current←buffer)
+       (insert←ioa " ↑2w  " char current←buffer)
+       (cond ((lp char 32)
+              (insert "↑" current←buffer)
+              (insert (add char 64) current←buffer)
+              (ifnil blanks punt)
+              (insert "        " current←buffer))
+             ((eq char 127)
+              (insert "DEL" current←buffer)
+              (ifnil blanks punt)
+              (insert "       " current←buffer))
+             ((t)
+              (insert char current←buffer)
+              (ifnil blanks punt)
+              (insert "          " current←buffer)) )
+punt   )
+
+       
+↑L 
+     Listing of >s>editors>tv>ap>make←chart.asm   12/30/79 17:34:13
+
+(documentation >doc>sm>make←chart.doc)
+
+(variable blow←out)
+(variable find←file)
+(variable goto←buffer)
+(variable print←msg)
+(variable argument)
+(variable current←buffer)
+(variable editor←name)
+(variable last←buffer←in)
+(variable tg)
+(variable replace)
+(variable dispatch)
+(variable M←dispatch)
+(variable C-X←dispatch)
+
+(defun make←chart (&aux make←chart←arg)
+       (store argument make←chart←arg)
+       (store 0 argument)
+       (cond ((or (lp make←chart←arg 1) (gp make←chart←arg 6))
+              (blow←out "Bad Argument")))
+       (goto←buffer "CHART")
+       (set←loc current←buffer 0)
+       (delete current←buffer (length current←buffer))
+       (insert editor←name current←buffer)
+       (insert " Chart As Of " current←buffer)
+       (insert (call←af "time") current←buffer)
+       (insert 13 current←buffer)
+       (make←chart← dispatch (make←string "") make←chart←arg)
+       (insert 12 current←buffer)
+       (make←chart← M←dispatch (make←string "Alt ") make←chart←arg)
+       (insert 12 current←buffer)
+       (make←chart← C-X←dispatch (make←string "C-X ") make←chart←arg)
+       (set←loc current←buffer 0)
+       (print←msg (make←string "") 0))
+
+(defun make←chart← (dispatch←array prefix make←chart←arg &aux i fun string)
+       (insert 13 current←buffer)
+       (for i 0 127
+            (insert prefix current←buffer)
+            (make←chart←rep i)
+            (make←chart←goto←10)
+            (cond ((stringp (store (ar dispatch←array i) fun))
+                   (insert fun current←buffer)
+                   (insert " (Auto←Loaded)" current←buffer)
+                   (cond ((gp make←chart←arg 3)
+                          (insert 13 current←buffer))))
+                  ((t)
+                   (store (get←pname fun) string)
+                   (cond ((and (eq (mod make←chart←arg 3) 1)
+                               (eq string "illegal←command"))
+                          (delete current←buffer
+                                  (rsearchr current←buffer 13))
+                          (goto NEXT))
+                         ((and (eq (mod make←chart←arg 3) 2)
+                               (eq string "illegal←command"))
+                          (goto NEXT))
+                         ((t)
+                          (insert string current←buffer)
+                          (cond ((gp make←chart←arg 3)
+                                 (make←chart←insert←doc fun)))))))
+NEXT        (insert 13 current←buffer)))
+
+; we locally bind last←buffer←in so it doesn't upset what the user sees
+
+(defun make←chart←insert←doc (fun &aux i last←buffer←in doc←filename doc←buf)
+       (cond ((functionp (store (get←documentation fun) doc←filename))
+              (insert " (Documentation Is A Function)" current←buffer)
+              (insert 13 current←buffer))
+             ((eq doc←filename 0)
+NO←DOC        (insert " (No Documentation)" current←buffer)
+              (insert 13 current←buffer)
+              (return))
+             ((t)
+              (store "CHART" last←buffer←in)
+              (find←file doc←filename)
+              (store current←buffer doc←buf)
+              (goto←buffer last←buffer←in)
+              (cat←into tg 4 (get←pname fun) ":")
+              (set←loc doc←buf 0)
+              (store (iferror (search doc←buf tg) (goto NO←DOC)) i)
+              (set←loc doc←buf i)
+              (insert 13 current←buffer)
+              (make←chart←goto←10)
+              (insert←region doc←buf
+                             (add i 1)
+                             (iferror (sub (search doc←buf 4) 1)
+                                      (length doc←buf))
+                             current←buffer)
+LOOP←FOR←CRS  (cond ((eq (nthr current←buffer -1) 13)
+                     (delete current←buffer -1)
+                     (goto LOOP←FOR←CRS)))
+              (insert 13 current←buffer))))
+
+(defun make←chart←rep (char)
+       (cond ((eq char 27) (insert "Alt" current←buffer))
+             ((lp char 32)
+              (insert "C-" current←buffer)
+              (insert (add char 64) current←buffer))
+             ((eq char 32) (insert "Space" current←buffer))
+             ((eq char 127) (insert "Del" current←buffer))
+             ((t) (insert char current←buffer))))
+
+(defun make←chart←goto←10 (&aux i)
+       (for i 
+            (get←hpos current←buffer (location current←buffer))
+            10
+            (insert 32 current←buffer)))
+↑L 
+     Listing of >s>editors>tv>ap>print←binding.asm     12/30/79 17:34:23
+
+(documentation ">doc>sd>print←binding.doc")
+
+(variable print←msg)
+(variable read←line)
+(variable replace)
+
+(variable dispatch)
+(variable M←dispatch)
+(variable C-X←dispatch)
+(variable tg)
+
+(defun print←binding (&aux string foo bar)
+     (store (read←line "Key Description: " 13) string)
+     (cond ((eq (car (store (decode←key string) foo)) 0)
+            (print←msg "Decoding Error" 1))
+           ((t) (print←msg
+                 (cond ((stringp (store (ar (car foo) (cdr foo)) bar))
+                        (cat←into tg 34 bar 34))
+                       ((t) (get←pname bar)))
+                 0))))
+
+(defun decode←key (string &aux n char next
+                               control←x control meta index modifier)
+     (store 0 n)
+     (store (store (store (store 0 control←x) index) control) meta)
+parse←loop
+     (store (upper←case (store (nth string n) char)) modifier)
+     (store (nth string (add n 1)) next)
+     (cond  ((eq char -1) (goto got←it))
+            ((t) (cond ((and (eq (upper←case index) \58) (eq control 1))
+                        (store 1 control←x) (store (store 0 control) index)))))
+     (cond ((eq next -1) (ifnil (eq index 0) error)
+                         (store char index) (goto got←it))
+           ((and (eq modifier \43) (eq next \2d)) (ifnil (eq control 0) error)
+                                                  (store 1 control))
+           ((and (eq modifier \4d) (eq next \2d)) (ifnil (eq meta 0) error)
+                                                  (store 1 meta))
+           ((and (eq modifier \44)
+                 (and (eq (upper←case next) \45)
+                      (eq (upper←case (nth string (add n 2))) \4c)))
+            (store \7f index) (goto got←it))
+           ((eq modifier \5e) (ifnil (eq index 0) error)
+                              (store 1 control) (store next index))
+           ((t) (store char index) (store (add n 1) n) (goto parse←loop)))
+     (store (add 2 n) n)
+     (goto parse←loop)
+got←it
+     (cond ((eq index 0) (goto error)))
+     (cond ((eq control 1) (store (and index \1f) index)))
+     (cond ((eq control←x 1) (ift (eq meta 1) error)
+                             (cons C-X←dispatch index))
+           ((eq meta 1) (cons M←dispatch index))
+           ((t) (cons dispatch index))
+           ((t) error (cons 0 0))))
+
+(defun upper←case (char)
+     (cond ((and (gp char \60) (lp char \7b)) (sub char 32))
+           ((t) (push char))))
+↑L 
+     Listing of >s>editors>tv>ap>dired.asm   12/30/79 17:34:33
+
+(documentation ">doc>sd>dired.doc")
+
+(variable add←mode)
+(variable find←file)
+(variable goto←buffer)
+(variable load←file)
+(variable print←msg)
+(variable invoke←editor)
+(variable read←line)
+(variable replace)
+(variable replace←all←util)
+
+(variable C-X←dispatch)
+(variable default←d)
+(variable default←cxd)
+(variable default←md)
+(variable current←buffer)
+(variable current←screen)
+(variable current←tvbuf)
+(variable echo←buf)
+(variable tg)
+(variable library←dir)
+
+(variable dir)
+(variable star)
+(variable dired←cte)
+(variable CR←Tab)
+
+(defun user←init()
+     (store (make←gnirt) dir)
+     (store (make←gnirt) star)
+     (store (make←gnirt) dired←cte)
+     (store "
+     " CR←Tab)
+     (load←file (cat←into tg library←dir ">replace.sine"))
+     (as 'rcr←command C-X←dispatch 22)            ;C-X-C-V
+     (as 'rcr←command default←cxd 22)             ;C-X-C-V
+     (as 'dired C-X←dispatch 68)                  ;C-X-D
+     (as 'dired default←cxd 68)                   ;C-X-D
+     (as 'dired C-X←dispatch 100)                 ;C-X-d
+     (as 'dired default←cxd 100))                 ;C-X-d
+
+(defun dired ()
+     (replace dir (read←line "Dired Directory: " 13))
+     (replace star (read←line "Dired Starname: " 13))
+     (dired← dir star))
+
+(defun dired← (dir star &aux dired←last←buffer)
+     (cond ((eq (length dir) 0)
+             (insert (iferror (call←af "wd")
+                              (progn (print←msg "No Wdir?" 1) (return)))
+                     dir)))
+     (cond ((eq (length star) 0 ) (insert "**" star)))
+     (set←loc echo←buf 0)
+     (delete echo←buf (length echo←buf))
+     (insert "Dired Pathname: " echo←buf)
+     (insert dir echo←buf)
+     (insert ">" echo←buf)
+     (insert star echo←buf)
+     (replace dired←cte "de")
+     (store (car current←tvbuf) dired←last←buffer)
+     (goto←buffer (insert ".dired" dir))
+     (set←loc current←buffer 0)
+     (delete current←buffer (length current←buffer))
+     (delete dir 6)
+     (cat←into tg "entries " dir ">" star)
+     (insert (iferror (call←af tg)
+                      (progn (print←msg "No Such Dir?" 1)
+                             (goto←buffer dired←last←buffer)
+                             (return)))
+             current←buffer)
+     (insert 13 current←buffer)
+     (set←loc current←buffer 0)
+     (insert 9 current←buffer)
+     (replace←all←util current←buffer 0 (length current←buffer) 32 CR←Tab)
+     (add←mode "DIRED" 1 1)                       ;major mode
+     (set←loc current←buffer 0)
+loop
+     (errset "abort" ((invoke←editor 1))          ;1 => recursive editor
+                     ((goto loop)))
+     (goto←buffer dired←last←buffer)
+     (return))
+
+(defun rcr←command ()
+     (replace tg (read←line "Recursive File Name: " 13))
+     (rcr tg))
+
+(defun rcr (file &aux last←dired←buffer)
+     (store (car current←tvbuf) last←dired←buffer)
+     (find←file file)
+loop
+     (errset "abort" ((invoke←editor 1))          ;1 => recursive editor
+                     ((goto loop)))
+     (goto←buffer last←dired←buffer))
+wotT (31.672 27 2.21) >s>editors>tv
+
+↑P␈↑X
+</pre>
+</body>
+</html>
