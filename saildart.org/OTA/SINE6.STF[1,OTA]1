@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><link rel="stylesheet" href="https://www.saildart.org/css/u8.css" /><meta charset="utf-8" />
+<title>SINE6.STF[1,OTA]1 - www.SailDart.org</title>
+</head>
+<body id="u8body">
+<div id="tagline">perm filename SINE6.STF[1,OTA]1  blob <a href="https://www.saildart.org/SINE6.STF[1,OTA]1_blob">sn#541378</a> filedate 1980-10-15 generic text, type T, neo UTF8</div>
+<pre id="u8lump">pr >s>lang>sine>sine←system.doc
+     Listing of >s>lang>sine>sine←system.doc 09/12/80 04:13:27
+
+This document describes the organization of the SINE editor
+writing system. It is a brief decription of the systems
+organization, listing the various file names that make it up and
+roughly what each one does.
+
+The SINE system consists of the following parts:
+
+The SINE machine interpreter.  This consists of one very large
+assembly language program which implements most of the
+primitives of the SINE machine.  There are also several PL/1
+programs which do various things that were easier accomplished
+in the systems programming language than in assembly.  The
+redisplay code is written in PL/1 mainly to inhance the clarity
+of the algorithm especially since redisplay algorithms are known to be
+rather complicated anyway.
+
+The SINE assembler.  This is a program written in LISP which
+takes in "SINE" code and output the binary form interpreted by
+the SINE machine interpreter.  The assembler is a rather
+straight forward lisp program, written in the ArchLisp dialect,
+which reads in the sine source (which has a lisp like syntax),
+and expands any macros it finds, and produces the binary.  The
+sine macros are abbreviations for standerdly used structure,
+such as "do←while" and "for".
+
+The SINE code comprising the TVMacs editor.  This is a large
+bunch of programs written exclusively in SINE which use the sine
+machine to implement a real time screen editor.  This set of
+programs is dominated by the one which forms the main dispatch
+loop and contains most of the basic editing commands.  It is
+augmented by the mode packages and various subsystems which can
+be invoked from the main loop of the editor.
+
+Last and almost least is a tint macro which generates the opcode
+tables for each of the different language when ever a new
+instruction is added to the SINE machine.
+
+SINE Machine Interpreter:
+
+sm.sysin                 These four file are the main body of the interpreter.
+inst.incl.sysin          These are most of the random instructions
+control.incl.sysin       The flow control instructions
+file.incl.sysin          These are the file io instructions.
+rh.sysin                 Instructions that interface to the redisplay code.
+sfd.pl1                  The redisplay code itself.
+sine←gc.pl1              This is the sine environment garbage collector.
+sine.pl1                 This is called from the OS to start up the editor.
+init.pl1                 This is run once after a new sine is compiled to set up
+                         some initial data bases.
+load.pl1                 This loads compiled sine code into the environment.
+sine←error.pl1           This reports errors.
+buffer.pl1               This is the buffer creation code.
+swap←in.pl1              This makes a buffer addressable to the interpreter
+clean←sine.pl1           This is a kludge
+pl1←alloc.pl1            The pl1 interface to the sine machine storage allocator.
+opcodes.sysin            Opcode list for the Interdata 7/32.  I don't know why.
+debug.sysin              kludge
+swap←segs.sysin          Low level stuff for swap←in.pl1
+subst.sysin              PL/1 substr that works for overlapping strings.
+stack.incl.pl1           SINE Machine stack frame format
+ops.incl.pl1             Junk I think.
+data←types.incl.pl1      PL/1 declarations for all the sine machine data types.
+state.incl.pl1           state variables for the SINE Machine.
+opcode.incl.pl1          These are the opcodes of the sine machine.
+data←types.incl.sysin    This is the assembler equiv. of data←types.incl.pl1
+macros.incl.sysin        Just some worthless macros.
+opcodes.incl.sysin       This becomes the dispatch table for the sine machine
+                         interpreter.  It is included in sm.sysin.
+static.incl.sysin        This is a communications area.
+defuns.incl.sysin        Register and other definitions
+
+The LISP Assembler:
+
+asm.lisp                 This is the lisp code for the assembler.
+sinemacs.lisp            These are the macros which upgrade the sine assembler.
+
+The TVMacs Editor:
+
+tv.asm                   This is the main loop, command dispatch, and basic
+                         editor functions.
+sine.asm                 This is a test version of the above.  I think
+foo.asm                  These are just test debugging functions.
+tgc.asm
+mgc.asm
+abbrev←mode.asm          This mode allows definition and expansion of word abbrevs.
+overwrite←mode.asm       Makes text over write existing chars instead of inserting
+printing←aux.asm         This provides support for printing terminals.
+normal←aux.asm           This provides some of the more exotic editing commands
+dcl←mode.asm             mode to vacilitte typeing PL/1 declarations.
+dcl←lib.asm              Earlier version of above?
+fill←mode.asm            Provides automatic paragraph justification.
+sysin←mode.asm           Provides features for editing assembler programs.
+pl1←mode.asm             Same but for PL/1
+lisp←mode.asm            Same but for LISP
+DIRED←mode.asm           A file directory editor.
+asm.asm                  Vestigal attempt to replace asm.lisp with a sine program.
+debug.asm                Simple utilities to aid debugging sine programs.
+info.asm                 An (possibly uncompleted) attempt to provide an ITS
+                         like info system.
+comp.asm                 ?
+count.asm                Describes current position in buffer.
+ota.asm                  This is my SINE startup
+move←col.asm             ?
+tabify.asm               Adds or Removes tabs from white space in buffer.
+tags.asm                 Provides tags package ala ITS.
+replace.asm              This provide the query and global replace functions.
+print←doc.asm            This prints command documentation.
+ascii←chart.asm          This prints out a chart of ascii characters.
+make←chart.asm           This makes a chart of all editor commands.
+print←binding.asm        This looks up the binding for a given key.
+dired.asm                Interface for above DIRED command.
+owtT (1.609 1 2.74) home
+
+</pre>
+</body>
+</html>

@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><link rel="stylesheet" href="https://www.saildart.org/css/u8.css" /><meta charset="utf-8" />
+<title>SINE3.STF[1,OTA] - www.SailDart.org</title>
+</head>
+<body id="u8body">
+<div id="tagline">perm filename SINE3.STF[1,OTA]  blob <a href="https://www.saildart.org/SINE3.STF[1,OTA]_blob">sn#541375</a> filedate 1980-10-15 generic text, type T, neo UTF8</div>
+<pre id="u8lump">
+     Listing of >s>lang>asm>asm.lisp    12/30/79 17:28:42
+
+(setq trace ())
+(setq debug nil)
+(setq list ())
+(setq pushp nil)
+(setq new←cons nil)
+(setq debug←asm nil)
+(declare 'create←seg "lisp←create$lisp←create" '(y))
+(declare 'com←arg "lisp←create$com←arg" ())
+
+(defun macro sinemac (body)
+     (list 'progn (list 'putprop  (list 'quote (cadr body))
+                        (list 'quote (setq real←fun←name (gensym)))
+                        ''macro)
+                  (cons 'defun (cons real←fun←name (cddr body)))))
+
+(defun top←level ()
+     (cond (debug←asm (setq debug←asm
+                      (prog () loop (print (eval (progn (terpri) (read))))
+                                    (go loop)))))
+     (setq debug←asm t)       ;if it bombs out in the middle
+     (setq output←filename
+           (catenate (setq name (com←arg)) ".sine"))
+     (asm (catenate name ".asm"))
+     (setq debug←asm ())
+     (quit))
+
+(defun print←out (foo)
+     (do ((i 1 (1+ i)) (len (string←length foo)))
+         ((greaterp i len))
+          (tyo (get←ascii foo i))))
+
+
+(defun asm (filename &aux function←list pc vbls statics vbl←list
+                          documentation temps)
+     (or new←cons (progn (append←cons←seg) (setq new←cons t)))
+     (gc)
+
+;;; Read in the file and make all the variables and function names known
+
+     (setq statics 1)              ;Make room for the vbl table header
+     (setq vbls 1)                 ;make room for documentation
+     (cond ((eq (setq filei (open (print filename))) 0)
+            (print "File not found") (setq debug←asm ()) (quit)))
+
+     (setq pushing (get←opcode '+push))
+     (setq storing (remainder (get←opcode 'store) \1000))
+     (setq asing (remainder (get←opcode 'as) \1000))
+     (setq consing (remainder (get←opcode 'cons) \1000))
+     (setq rplacaing (remainder (get←opcode 'rplaca) \1000))
+     (setq rplacding (remainder (get←opcode 'rplacd) \1000))
+     (setq filling←vbl←array (remainder (get←opcode 'fill←vbl←array) \1000))
+     (setq documentation '!#$%&)
+
+     (do ((line (read filei) (read filei)) (op))
+         ((eq line '**eof**) ())
+;         (set←gc←flag 1)
+          (cond ((eq (setq op (car line)) 'variable)
+                 (mapcar '(lambda (x) (add←symbol x 'variable))
+                         (cdr line)))
+                ((eq op 'static)
+                 (mapcar '(lambda (x) (add←symbol x 'static))
+                         (cdr line)))
+                ((eq op 'defun)
+                 (setq function←list (cons line function←list))
+                 (add←symbol (cadr line) 'variable))
+                ((eq op 'documentation)
+                 (cond ((stringp (cadr line))
+                        (putprop (setq documentation (gensym)) (cadr line)
+                                 'string))
+                       (t (rplaca line 'defun)
+                          (rplacd line (cons '!#$%& (cdr line))))))
+                (t (print←warning "illegal top level op ignored" op))))
+     (close filei)
+
+;;; And grovel over everything and output it.
+
+     (create←seg output←filename)
+     (cond ((eq (setq fileo (open (print output←filename))) 0)
+            (print "File not found") (setq debug←asm ()) (quit)))
+
+     (setq object (make←array←header 16 (addr fileo) 32000))
+     (setq pc 1)    ;leave room for ptr to entry map
+
+;    (set←gc←flag 1)
+;    (mapcar '(lambda (x) (print (plist x))) vbl←list)
+
+     (mapcar '(lambda (x) (emit←fun (parse←fun x pc)))
+          (nreverse function←list))
+
+;;; Now the entry map
+
+     (terpri)
+     (print (list "max←code:" pc))
+
+     (as (* pc 2) object 0)             ;offset of entry map
+     (emithw (+ vbls statics -1))       ;output the vbl count
+
+     (do ((vbl (setq vbl←list (cons documentation (nreverse vbl←list)))
+               (cdr vbl))
+          (thing) (str))
+         ((null vbl) ())
+          (cond ((setq str (get (setq thing (car vbl)) 'string))
+                 (emit←name str -1))
+                (t (emit←name thing (or (get thing 'pc) 0)))))
+
+     (emithw 0)     ;now a terminator
+     (emithw 0)
+     (mapcar '(lambda (x) (setplist x '(a b))) vbl←list)
+     (print (list 'max←pc: pc))
+     (close fileo))
+
+(defun parse←fun (function pc
+          &aux fun args code initial←pc num←args)
+       (setq string←list ())
+     (and list (progn (terpri) (terpri) (print (cadr function))))
+     (setq initial←pc pc)
+     (setq temps 9)      ; this is tied to the size of the stack frame
+     (cond ((atom function) (print←warning "bad fun def" function))
+           ((lessp (length function) 3)
+               (print←warning "fun def too short" function))
+           (t (putprop (cadr function) pc 'pc)    ;for entry map
+              (setq pc (1+ pc))                   ;room for num←args
+              (setq args (caddr function))
+              (setq num←args (do ((i 0 (1+ i)) (arg args (cdr arg)))
+                                 ((or (null arg)(eq (car arg) '&aux)) i)))
+              (do ((i (- 0 num←args) (1+ i)) (arg args (cdr arg)) (arg←name))
+                  ((null arg) ())
+                    (setq arg←name (car arg))
+                    (or (eq arg←name '&aux)
+                        (cond ((memq arg←name vbl←list)
+                                   (generate (list 'bind arg←name))
+                                   (and (minusp i)
+                                        (generate (list 'store (list 'arg i)
+                                                        arg←name))))
+                               (t (cond ((minusp i)(add←symbol arg←name 'arg i))
+                                        (t (add←symbol arg←name 'temp)))))))
+              (setq fun (cdddr function))
+              (prog (line op)
+loop           (and list (progn (terpri) (print (list "source     " (car fun)))))
+               ((lambda (pushp) (parse←call (car fun))) (null (cdr fun)))
+               (and (setq fun (cdr fun))
+                    (go loop))
+               (generate '(return))
+               (mapcar '(lambda (x) (parse←call x)
+                                    (parse←call (list 'string (symeval x))))
+                       string←list)
+               (print (list (cadr function) (- pc initial←pc)))
+               (return (nreverse code))))))
+
+(defun parse←call (call &aux nargs arg←count call←code opcode this←arg fun←name
+                             real←fun←name)
+     (and trace (print (list pushp call)))
+     (cond ((numberp call) (parse←call (list 'push call)))
+           ((atom call) (report) (add←symbol call 'label))
+           ((setq real←fun←name (get (setq op (car call)) 'macro))
+            (apply real←fun←name (cdr call)))
+           ((eq op 'temp) (report) (add←symbol (cadr call) 'temp))
+           ((eq op 'string) (generate call
+                                      (1+ (/ (1+ (string←length
+                                                  (cadr call))) 2))))
+           (t (cond ((setq opcode (get←opcode (setq fun←name (car call))))
+                     (setq arg←count 0)
+                     (setq nargs 0)
+
+;;; Now just count the number of args that will be on the stack since
+;;; we have to reference them in reverse order.
+
+                     (do ((call←args (cdr call) (cdr call←args)))
+                         ((null call←args) ())
+                          (setq nargs (1+ nargs))
+                          (setq this←arg (car call←args))
+                          (or (atom this←arg)
+                              (progn ((lambda (pushp) (parse←call this←arg)) t)
+                                     (setq arg←count (1+ arg←count)))) )
+
+                     (or (null debug)                  ;don't check
+                         (eq nargs (cddr (assq fun←name opcode←table)))
+                         (error "bad nargs" call))
+
+;;; Build up the instruction preparation code.
+
+                     (do ((call←args (cdr call) (cdr call←args))
+                          (argno 0)
+                          (stratom))
+                         ((null call←args) ())
+                         (setq this←arg (car call←args))
+                         (cond ((stringp this←arg)
+                                (setq call←code
+                                      (cons (get←string←object this←arg
+                                                               opcode)
+                                            call←code)))
+                               ((atom this←arg)
+                                (setq call←code (cons this←arg call←code)))
+                               (t (setq call←code
+                                        (cons (list 'sp←rel
+                                                    (- (setq argno (1+ argno))
+                                                    arg←count 1))
+                                              call←code))) ))
+                     (setq to←generate (cons (cond (debug fun←name) (t opcode))
+                                             (nreverse call←code)))
+                     (and list
+                          (print (list pc (cons fun←name (cdr to←generate)))))
+                     (generate to←generate))
+
+;;;  In this case it is probably a function not an instruction
+
+                    ((or (eq (get fun←name 'type) 'variable)
+                         (progn (print←warning "Assuming external function"
+                                               fun←name)
+                                (add←symbol fun←name 'variable)
+                                t)) 
+                     (do ((call←args (cdr call) (cdr call←args)))
+                         ((null call←args) ())
+                         (setq this←arg (car call←args))
+                         (cond ((atom this←arg)   ;always push
+                                (parse←call (list '+push this←arg)))
+                               (t ((lambda (pushp) (parse←call this←arg)) t))))
+                     (parse←call (list 'call (car call) (length (cdr call)))))
+                    (t (error "undefined function" fun←name)) ))))
+
+(defun get←string←object (string opcode &aux string←label)
+       (cond
+
+;;;  Here we convert single character long strings into inline integers
+;;;  for efficiency.
+        ((eq (string←length string) 1) (get←ascii string 1))
+
+;;;  If the opcodes is a push then it will be on the stack and therefore
+;;;  must be global.  So do the real stuff.
+        ((or (eq opcode pushing)
+             (eq (remainder opcode \1000) storing)
+             (eq (remainder opcode \1000) asing)
+             (eq (remainder opcode \1000) consing)
+             (eq (remainder opcode \1000) rplacaing)
+             (eq (remainder opcode \1000) rplacding)
+             (eq (remainder opcode \1000) filling←vbl←array))
+         (putprop (setq stratom (gensym)) string 'string)
+         (add←symbol stratom 'variable)
+         stratom)
+
+;;;  Here it is only a operand to an instruction.  So a pc relative type
+;;;  string is good enough.
+        (t
+         (setq string←list (cons (setq string←label (gensym)) string←list))
+         (set string←label string)           ;remember the string
+         string←label)))
+
+(defun report ()
+     (and list (print (list pc call))))
+
+(defun add←symbol (sym type &opt value)
+;    (or (get sym 'type) (error "multiple definition" sym))
+     
+     (putprop sym type 'type)
+     (putprop sym
+              (cond ((eq type 'arg) value)
+                    ((eq type 'static) statics)
+                    ((eq type 'variable) vbls)
+                    ((eq type 'label) pc)
+                    ((eq type 'temp) temps)
+                    (t value))
+             'value)
+;;; We also need to keep track of the temps and the variables separately
+
+     (cond ((eq type 'temp) (setq temps (1+ temps)))
+           ((eq type 'static) (setq statics (1+ statics)))
+           ((eq type 'variable) (setq vbls (1+ vbls))
+                                (setq vbl←list (cons sym vbl←list))) ))
+
+(defun generate (data &opt new←pc)
+     (and debug (print data))
+     (setq code (cons (cond ((numberp (car data)) data)
+                            (t (cons (get←opcode (car data)) (cdr data))))
+                      code))
+     (setq pc (+ pc (or new←pc (length data)))) )
+
+(defun emit←name (name type &aux name←string)
+     (setq name←string (or (and (stringp name) name)
+                           (get←pname name)))
+     (emithw type)
+     (emithw (string←length name←string))
+     (emitchars name←string))
+
+(defun emit←fun (code)
+
+;;; First do the entry sequence
+
+     (emithw (- temps 9))   ; because of the stack offset
+
+     (do ((inst code (cdr inst)) (line) (op))
+         ((null inst) ())
+          (setq line (car inst))
+          (setq op (car line))
+          (cond ((numberp op) (emithw op))
+;               ((eq op 'number) (setq op (eval←operand (cadr line)))
+;                                (emithw (cond ((minusp op) -1) (t 0)))
+;                                (emithw op)
+;                                (go next))
+                ((eq op 'string) (emithw (string←length (cadr line)))
+                                 (emitchars (cadr line)) (go next))
+                (t (emithw (or (get←opcode op) (error "ii" op)))))
+          (do ((foo (cdr line) (cdr foo)))
+              ((null foo) ())
+               (emithw (eval←operand (car foo))))
+next      ))
+
+(defun get←opcode (op &aux string opcode)
+     (cond
+          ((eq op 'string) op)
+;         ((eq op 'number) op)
+          ((eq (get←ascii (setq string (get←pname op)) 1) (CtoI "+"))
+           (cadr (assq (intern (setq string (substr string 2)))
+                               opcode←table)))    ;force a push
+          ((setq opcode (cadr (assq op opcode←table)))
+           (cond (pushp opcode)
+                 (t (logior opcode \1000))   ;inhibit the push
+               ))))
+
+(defun eval←operand (operand)
+     (cond ((numberp operand) (logand \7fff operand))
+           ((atom operand)
+               (prog (sym←ent)
+try←again           (or (setq sym←ent (get operand 'value))
+                        (progn (print←warning "Assuming external variable"
+                                              operand)
+                               (add←symbol operand 'variable)
+                               (go try←again)))
+                    (go (get operand 'type))
+constant            (return (logand \7fff sym←ent))
+variable            (return (logior \e000 (logand \1fff (+ statics
+                                                           sym←ent))))     ;11
+static              (return (logior \e000 (logand \1fff sym←ent)))    ;11
+arg       temp      (return (logior \a000 (logand \1fff sym←ent)))    ;01
+label               (return (logior \8000                             ;00
+                                    (logand \1fff
+                                            (- sym←ent (1+ pc)))))))
+          ((eq (car operand) 'sp←rel)                                 ;10
+               (logior \c000 (logand \1fff (cadr operand))))
+          ((eq (car operand) 'arg)                                    ;01
+               (logior \a000 (logand \1fff (cadr operand))))
+          (t (error "bad code!" operand))))
+
+(defun emitchars (string)
+     (do ((i 1 (+ i 2)) (max (string←length string)))
+         ((> i max) ())
+          (emithw (plus (* 256 (get←ascii string i))
+                        (or (get←ascii string (1+ i)) 0)))))
+
+(defun emithw (hw)
+     (as hw object pc)
+     (setq pc (1+ pc)))
+
+(defun error ( &rest msg )
+     (terpri)
+     (print (cons 'ERROR msg))
+     #&%@adad)
+
+(defun print←warning ( &rest msg )
+     (terpri)
+     (print (cons 'WARNING msg)))
+
+↑L 
+     Listing of >s>lang>asm>sinemacs.lisp    12/30/79 17:28:37
+
+(sinemac errset ( &quote string form handler &aux label1 label2 label3)
+     (parse←call (list 'handle string (setq label2 (gensym))))
+     (mapcar 'parse←call handler)
+     (parse←call (list 'goto (setq label3 (gensym))))
+     (parse←call label2)           ;define label for start of code
+     (mapcar 'parse←call form)
+     (parse←call '(revert))
+     (parse←call label3))
+
+(sinemac list ( &quote &rest args )
+         (parse←call (recursive←list args)))
+
+(defun recursive←list (a)
+       (cond ((eq (length a) 1) (list 'cons (car a) '(nil)))
+             (t (list 'cons (car a) (recursive←list (cdr a))))))
+
+(sinemac caddr (&quote a)
+         (parse←call (list 'car (list 'cddr a))))
+
+(sinemac cdddr (&quote a)
+         (parse←call (list 'cdr (list 'cddr a))))
+
+(sinemac cadddr (&quote a)
+         (parse←call (list 'cadr (list 'cddr a))))
+
+(sinemac cddddr (&quote a)
+         (parse←call (list 'cddr (list 'cddr a))))
+
+(sinemac return←value (&quote value)
+         (parse←call (list '+push value))
+         (parse←call '(return)))
+
+(sinemac iferror ( &quote body &rest error &aux label1 )
+         (parse←call body)
+         (parse←call (list 'bnoerr (setq label1 (gensym))))
+;throw away whatever returned an error
+         (cond (pushp (parse←call '(discard))))
+;generate the code for what to do if error..
+         (mapcar 'parse←call error)
+         (parse←call label1))
+
+(sinemac cond ( &quote &rest body &aux end←atom next not←first )
+     (setq end←atom (gensym))
+     (mapcar '(lambda (x) (and not←first (progn
+                                    (parse←call (list 'goto end←atom))
+                                    (parse←call next)))
+                          (setq not←first t)
+                          (parse←call (list 'ifnil (car x)  ;get the predicate
+                                                   (setq next (gensym))))
+                          (parse←call (cons 'progn (cdr x))))
+             body)
+     (parse←call next)
+     (parse←call end←atom))   ;define termination point
+
+(sinemac progn ( &quote &rest body )
+     (do ((item body (cdr item)))
+         ((null (cdr item)) (parse←call (car item)))        ;let it push
+          ((lambda (pushp) (parse←call (car item))) nil)))  ;no pushes
+
+(sinemac for ( &quote index init max &rest body &aux loop end pushp)
+     (setq pushp nil)                        ;for is for side effect only
+     (parse←call (list 'store init index))
+     (parse←call (setq loop (gensym)))
+     (parse←call (list 'ift (list 'gp index max) (setq end (gensym))))
+     (parse←call (cons 'progn body))
+     (parse←call (list 'store (list 'add index 1) index))
+     (parse←call (list 'goto loop))
+     (parse←call end))
+
+(sinemac cat←into ( &quote gnirt &rest others)
+         (parse←call (list 'delete gnirt 99999))
+         (mapcar '(lambda (x) (parse←call (list 'insert x gnirt)))
+                 others))
+
+(sinemac bind←key ( &quote key function)
+     (parse←call (list 'bind←array←cell (car (decode key)) (cdr (decode key))
+                       (list 'quote function))))
+
+(defun macro store (x)
+     (rplaca x 'setq)
+     (rplacd x (list (caddr x) (cadr x)))
+     x)
+
+(defun decode (key &aux string n char next ortho
+                               control←x control meta index modifier)
+     (cond ((symbolp key) (setq string (get←pname key)))
+           (t (setq string key)))
+(prog ()
+     (store 1 n)
+     (store (store (store (store (store 0 control←x) index) control) meta) ortho)
+parse←loop
+     (store (upper←case (store (get←ascii string n) char)) modifier)
+     (store (get←ascii string (+ n 1)) next)
+     (cond  ((null char) (go got←it))
+            (t (cond ((and (eq (upper←case index) \58) (eq control 1))
+                        (store 1 control←x) (store (store 0 control) index)))))
+     (cond ((null next) (or (eq index 0) (go error))
+                         (store char index) (go got←it))
+           ((and (eq modifier \43) (eq next \2d)) (or (eq control 0) (go error))
+                                                  (store 1 control))
+           ((and (eq modifier \4d) (eq next \2d)) (or (eq meta 0) (go error))
+                                                  (store 1 meta))
+           ((and (eq modifier \4f) (eq next \2d)) (or (eq ortho 0) (go error))
+                                                  (store 1 ortho))
+           ((and (eq modifier \44)
+                 (and (eq (upper←case next) \45)
+                      (eq (upper←case (get←ascii string (+ n 2))) \4c)))
+            (store \7f index) (go got←it))
+           ((eq modifier \5e) (or (eq index 0) (go error))
+                              (store 1 control) (store next index))
+           (t (store char index) (store (+ n 1) n) (go parse←loop)))
+     (store (+ 2 n) n)
+     (go parse←loop)
+error
+     (return (cons 0 0))
+got←it
+     (cond ((eq index 0) (go error)))
+     (cond ((eq control 1) (store (logand index \1f) index)))
+     (return (cond ((eq control←x 1)
+                    (and (or (eq ortho 1)(eq meta 1)) (go error))
+                    (cons 'C-X←dispatch index))
+                   ((eq meta 1) (cons 'M←dispatch index))
+                   ((eq ortho 1) (cons 'O←dispatch index))
+                   (t (cons 'dispatch index))
+                   (t (cons 0 0))))))
+
+(defun upper←case (foo)
+       (cond ((null foo) foo)
+             ((and (> foo \60) (&lt; foo \7b)) (- foo \20))
+             (t foo)))
+
+(sinemac do←while (&quote test &rest body &aux loop end)
+         (parse←call (setq loop (gensym)))
+         (parse←call (list 'ifnil test (setq end (gensym))))
+         (mapcar 'parse←call body)
+         (parse←call (list 'goto loop))
+         (parse←call end))
+
+(sinemac do←until (&quote test &rest body &aux loop end)
+         (parse←call (setq loop (gensym)))
+         (parse←call (list 'ift test (setq end (gensym))))
+         (mapcar 'parse←call body)
+         (parse←call (list 'goto loop))
+         (parse←call end))
+wotT (5.572 0 3.21) >s>lang>asm
+
+</pre>
+</body>
+</html>
