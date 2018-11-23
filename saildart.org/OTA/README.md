@@ -16,3 +16,6 @@ lost to history, but they show some artifacts of that process.
    * original file date,
    * revision number, and
    * length in bytes.
+* convert_octal.pl - a filter for converting 36-bit words printed in
+  octal into text using the PDP-10 five character 7-bit ascii encoding.
+* octal/ - contains the corresponding octal files.
