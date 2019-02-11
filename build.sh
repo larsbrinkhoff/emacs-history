@@ -78,6 +78,7 @@ slackware=mirrors.slackware.com/slackware/slackware-3.1/source/e
 PATCHOPTS=-p1
 
 release 16.56 $friedman/emacs-16.56.tar.gz
+release 16.60 Mike_Haertel/emacs.tar.Z
 get_dir 17.61 $tuhs/emacs
 
 # Apply the 17.60 to 17.61 diff in reverse.

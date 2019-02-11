@@ -111,6 +111,15 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   It seems this is not the official 16.57.  There are no ChangeLogs
   entries.
 
+- Emacs 16.60, emacs.tar.Z
+
+  Mike Haertel: "This tar file came from a nine track tape that was
+  sent to members of the Unix Users of Minnesota.
+
+  I don't know if it's an original tar file made by RMS, but at least
+  the timestamps of the files within look correct, except maybe for a
+  few of the top level directories which are dated Oct 2, 1985."
+
 - Emacs 17.61 from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD/new.tar.gz
 
 - emacs-17.61.diff and emacs-17.64.diff from Usenet net.emacs.
