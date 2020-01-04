@@ -130,6 +130,8 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 - emacs_18.41.tar.gz from http://bitsavers.org/bits/MIT/gnu/
 
+- X11R1 patch for GNU Emacs 18.47 from https://www.x.org/releases/X11R1/X.V11R1.tar.gz
+
 - edist_18_51.tar_z from http://decuslib.com/decus/vax88a1/gnusoftware/
 
 - emacs.tar.Z (**modified** 18.51) from ftp://www.tuhs.org/UnixArchive/4BSD/Distributions/4.3BSD-Tahoe/new.tar.gz

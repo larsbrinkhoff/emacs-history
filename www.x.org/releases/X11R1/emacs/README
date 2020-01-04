@@ -1,0 +1,35 @@
+The following patches are for GNU Emacs V18 (specifically V18.47,
+although they should work for earlier versions).  To install X11
+capability, copy the files:
+
+xmakefile
+emacs.c
+xterm.c
+xfns.c
+xterm.h
+
+from this directory into the "src" directory of the emacs source tree.
+Then do another "make".  Your resultant "xemacs" file will run under
+X11, but not X10.
+
+If you don't have a copy of GNU Emacs, see the file "DISTRIB" in this
+directory for ordering information.
+
+Caveat: This is only a partial port.  Menus have not been
+reimplemented, and many of the lisp functions have not been converted
+yet.  It should work for normal text editing, however.  Future
+versions will be forthcoming.
+
+Among the known bugs: Display flickers horribly during updates, iconifying
+  sometimes crashes things, no support for color.
+
+
+If you have any problems, suggestions, fixes, etc., please contact:
+
+	rfrench@athena.mit.edu
+
+	... ihnp4!mit-eddie!mit-athena!rfrench
+
+
+			Robert French
+			MIT Project Athena
