@@ -1,0 +1,1383 @@
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: Fear and loathing on net.emacs
+Message-ID: <4421@mit-eddie.UUCP>
+Date: Mon, 10-Jun-85 04:14:13 EDT
+Article-I.D.: mit-eddi.4421
+Posted: Mon Jun 10 04:14:13 1985
+Date-Received: Tue, 11-Jun-85 03:23:11 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 18
+
+From: Richard M. Stallman <rms@mit-prep>
+Nobody has any reason to be afraid to use or distribute GNU
+Emacs.
+
+It is well known that I do not believe any software is
+anyone's property.  However, for the GNU project, I decided
+it was necessary to obey the law.  I have refused to look
+at code I did not have permission to distribute.
+
+About 5% of GNU Emacs is close to (though quite a bit
+changed from) an old version of Gosling Emacs.  I am
+distributing it for Fen Labalme, who received permission
+from Gosling to distribute it.  It is therefore legal for me
+to do so.  To be scrupulously legal, I put statements at the
+front of the files concerned, describing this situation.
+
+I don't see anything I should warn people about--except that
+Zimmerman is going to try to browbeat them.
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!linus!philabs!cmcl2!seismo!harvard!think!mit-eddie!
+martillo%mit-herac...@mit-athena.ARPA
+From: martillo%mit-herac...@mit-athena.ARPA
+Newsgroups: net.emacs
+Subject: Using Gnu Emacs (Clarification)
+Message-ID: <4440@mit-eddie.UUCP>
+Date: Wed, 12-Jun-85 08:06:50 EDT
+Article-I.D.: mit-eddi.4440
+Posted: Wed Jun 12 08:06:50 1985
+Date-Received: Sun, 16-Jun-85 07:27:41 EDT
+Sender: dae...@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 17
+
+From: martillo%mit-herac...@mit-athena.ARPA (Joaquim Martillo)
+I want to emphasize I am  not telling people  to stop using  gnu emacs
+because of rumored legal hassles.  I mean the sources  of these rumors
+should either come   up with something  concrete  to  back  up   their
+statements or they should shut up.  Until then we will continue to use
+gnu emacs.
+
+I should also like  to point out that  having  looked at the internals
+of Montgomery Emacs  (from ATT),  CCA Emacs, Unipress (Gosling)  Emacs
+and Gnu Emacs.  CCA Emacs is a lot more like ATT  Emacs than Gnu Emacs
+is like  Unipress Emacs.  An example of  this  both Montgomery and CCA
+emacs handle glob (*) via a backgroup shell process  to which emacs is
+writing and from  which emacs is  reading.  Actually, since  Gnu Emacs
+contains  a full implementation of   Lisp  (unlike  Gosling Emacs),  I
+would say that conceptually Gnu Emacs is more similar to Prime Emacs.  
+
+Yakim Martillo
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!shane@mit-grape-nehi
+From: shane@mit-grape-nehi
+Newsgroups: net.emacs
+Subject: Using Gnu Emacs (Clarification)
+Message-ID: <4441@mit-eddie.UUCP>
+Date: Wed, 12-Jun-85 08:36:47 EDT
+Article-I.D.: mit-eddi.4441
+Posted: Wed Jun 12 08:36:47 1985
+Date-Received: Thu, 13-Jun-85 01:59:24 EDT
+Sender: dae...@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 15
+
+From: shane@mit-grape-nehi (K. Shane Hartman)
+
+Not to mention the fact that there are only 6 or 7 files that have
+Gosling's name in them (for which RMS has permission to distribute)
+and if you run diff on Gnu and Unipress (or Gosling) sources the
+output fills reams of screens.  I did this last night out of curiosity
+after your messages; the differences are significantly more than cosmetic.
+
+Anyone who had to ever go to another terminal to kill a Unipress emacs
+because the mucklisp ran rampant would know why `the sources of these
+rumors' are muttering about the best software system I have ever seen
+under Unix (a trademark of some giganto conglomerate whose name I have
+forgotten).
+
+-[Shane]->
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84; site masscomp.UUCP
+Path: utzoo!watmath!clyde!bonnie!masscomp!z
+From: z...@masscomp.UUCP (Steve Zimmerman)
+Newsgroups: net.emacs
+Subject: Re: Using Gnu Emacs (Clarification)
+Message-ID: <721@masscomp.UUCP>
+Date: Mon, 17-Jun-85 12:20:57 EDT
+Article-I.D.: masscomp.721
+Posted: Mon Jun 17 12:20:57 1985
+Date-Received: Tue, 18-Jun-85 04:39:13 EDT
+References: <4440@mit-eddie.UUCP>
+Organization: Masscomp - Westford, MA
+Lines: 72
+
+I expected some flames in reply to my mesage, and I must say, I'm not
+disappointed.
+
+I think it's time for me to clear up some misinformation about CCA EMACS
+being spread on the net, largely by Yakim Martillo.  Since its release
+as a product, CCA EMACS has contained no code from Montgomery's EMACS.
+Early, free versions of CCA EMACS contained some of Montgomery's code
+(which was being freely distributed by other means and which had no
+indication in the sources that it was in any way proprietary).  When CCA
+decided to sell EMACS as a product, it made inquiries at Bell Labs to
+make sure that they did not consider it proprietary.  Bell Labs took
+several months studying the issue, during which time they discovered the
+widespread distribution of Montgomery's EMACS, and the fact that they
+had apparently not taken the necessary care to protect this code as
+demanded by trade secret law.  Nevertheless, they informed CCA that they
+still considered the code to be proprietary, and CCA offered to remove
+Montgomery's code.  Bell Labs accepted the offer, and the issue has been
+closed since then.  There is also no evidence that Bell Labs was
+"unhappy" with either me or CCA; their correspondence with us always
+mentioned our productive past relationship, thanked us for cooperating
+fully with them and for our understanding of the matter, etc.  In
+general, they seemed to be grateful that we took the time to check this
+situation out with them, and that we did not contest their claim of the
+proprietariness of Montgomery's code.
+
+> An example of  this  both Montgomery and CCA
+> emacs handle glob (*) via a backgroup shell process  to which emacs is
+> writing and from  which emacs is  reading.  
+
+This statement is patently false.  There was no background shell
+process, no "glob" routine, nor anything else performing the same or
+similar functions in the version of Montgomery's EMACS (4.0) that I once
+used, which always ran as a single process and which is the only version
+I ever saw.  These features were all completely original with me.
+Similarly, the statement about all the file names being the same is also
+false.  For one thing, Montgomery's EMACS 4.0 had around twelve source
+files, while mine has had over sixty for several years.  Now, it is
+known that my original hybrid of my EMACS and Montgomery's made its way
+to many Bell Labs sites.  It appears that Mr. Martillo saw some of this
+code and thought it was Montgomery's, not realizing that much of it was
+mine.  As it is, Mr. Martillo notes that he never saw a pure version of
+Montgomery's Emacs.
+
+On another note, RMS says that he got permission from Fen Labalme to
+distribute Gosling's Emacs (or portions thereof).  When I was at
+Usenix, I talked to Unipress, and this is what RMS told them as well.
+However, according to Unipress, Labalme has no right to distribute
+Gosling's Emacs, and when RMS was confronted with this, he was unable to
+produce any written permission from either Gosling or Unipress.
+
+When I talked with Unipress, they felt that Gosling was clearly in
+violation of the law.  (Note that copyright law covers "derivative
+works" as well as original source.)  However, with GNU Emacs already
+distributed all over the place, they seemed to feel that trying to step
+in at this late date would probably be counterproductive.  So, I gather
+that they will not press this issue.  However, I would hope that RMS is
+more careful when it comes to the writing of GNU itself.
+
+As for "browbeating" people, what does RMS think I am suggesting?  That
+everyone throw away their copy of GNU Emacs and forget that it ever
+existed?  Not at all.  It's simply that I'm sure that the creator of the
+original EMACS is intelligent enough to write an entire UNIX Emacs
+himself; under the circumstances, I hope he would do the honorable thing
+and rewrite from scratch those portions of GNU Emacs derived from
+Gosling's code.  If he does not, I think a cloud will hang over the GNU
+project for some time to come.
+
+        Steve Zimmerman
+        MASSCOMP
+
+"The opinions expressed above are not necessarily those of MASSCOMP,
+Uniworks, or anybody else."
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: Permission
+Message-ID: <4486@mit-eddie.UUCP>
+Date: Tue, 18-Jun-85 01:42:32 EDT
+Article-I.D.: mit-eddi.4486
+Posted: Tue Jun 18 01:42:32 1985
+Date-Received: Wed, 19-Jun-85 03:30:30 EDT
+Sender: dae...@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 17
+
+From: Richard M. Stallman < rms@mit-prep>
+Fen Labalme got permission from Gosling in a message several years ago.
+I'm told that this is legally binding on Gosling.
+This was before Unipress was involved in distributing Gosling Emacs
+and therefore Unipress has no direct knowledge about the question.
+
+Megatest uses that old Gosling Emacs (what Fen gave me originally) in
+its IC test systems.  Fen says that Megatest's lawyers tell him they
+can defend his permission in court if it were necessary.
+
+However, we don't expect it to be necessary.  We don't think Unipress
+wants to sue anyone.  It would be a shame if people refrain from using
+GNU Emacs because of a hypothetical suit that would not win and that
+won't happen.
+
+It's a shame that it is so hard to PROVE that someone won't
+sue someone else.  However, we are working on it.
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84 SMI; site sun.uucp
+Path: utzoo!watmath!clyde!cbosgd!ihnp4!mhuxn!mhuxr!ulysses!allegra!
+mit-eddie!genrad!
+decvax!decwrl!sun!jag
+From: j...@sun.uucp (James Gosling)
+Newsgroups: net.emacs
+Subject: Re: Permission
+Message-ID: <2334@sun.uucp>
+Date: Fri, 21-Jun-85 22:04:50 EDT
+Article-I.D.: sun.2334
+Posted: Fri Jun 21 22:04:50 1985
+Date-Received: Sun, 23-Jun-85 07:35:05 EDT
+References: <4486@mit-eddie.UUCP>
+Reply-To: j...@sun.UUCP (James Gosling)
+Organization: Sun Microsystems, Inc.
+Lines: 25
+
+I've tried to stay out of this discussion, but it has gotten too far
+out of hand for me to remain silent.  In no way did I ever give Fen
+Lebalm (and by dubious transitivity, Richard Stallman) permission to
+distribute any part of the Emacs that I wrote.  Version 85 was not in
+the public domain - I was very careful to get everyone who recieved a
+copy to agree to not redistribute it.  Unfortunatly, two moves have
+left my records in a shambles.
+
+I am not against public domain software: I am very much in favor of
+it.  There is an awful lot of public domain software floating around on
+the net that was written by me.  Emacs is not a part of it.
+
+I would applaud the GNU effort (Emacs has needed a real lisp in it for
+a long time) if it hadn't started off with what is at best a dreadful
+misunderstanding.
+
+Properly maintaining a piece of software like Emacs over a long period
+is hard to do on a volunteer basis.  I did it with my version for three
+years and nearly destroyed my chances to graduate.  I spent a long time
+trying to find a new maintainer (either commercial or public domain).
+I found no one willing to maintain it in the public domain and provide
+the quality and the commitment that I thought was necessary.  I talked
+with quite a few companies, and by far the best was Unipress.  They may
+prostitute their souls for a dollar, but they do a pretty good job of
+looking after Emacs.
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site usl.UUCP
+Path: utzoo!watmath!clyde!bonnie!akgua!akgub!usl!jih
+From: j...@usl.UUCP (Juha I. Heinanen)
+Newsgroups: net.emacs
+Subject: Re: Permission
+Message-ID: <570@usl.UUCP>
+Date: Mon, 24-Jun-85 09:38:43 EDT
+Article-I.D.: usl.570
+Posted: Mon Jun 24 09:38:43 1985
+Date-Received: Tue, 25-Jun-85 03:04:04 EDT
+References: <4486@mit-eddie.UUCP> <2334@sun.uucp>
+Reply-To: j...@usl.UUCP (Juha I. Heinanen)
+Distribution: net
+Organization: USL, Lafayette, LA
+Lines: 33
+Summary: 
+
+The discussion about various permits to distribute Unix based
+software brought to my mind the days when I filled applications for
+educational licenses for Unix Versions 6 and 7.  I still clearly
+remember that in order to get such a license I had to state in the
+application that the machine will be used for teaching and research
+purposes only and that the results of the research (including the
+code) had to be made publicly available.  The impression I got was
+that development of commercial software and an educational license
+don't mix and that if we were ever going to sell any of our code, the
+very first line of it had to be written on a purely commercial
+machine.
+
+Have the things changed since those days?  Is it now ok to charge
+more than a handling fee or to sumbit the software to a commercial
+distributor such as Unipress in order to add value to it?  If not, I
+would like to know how many purely commercial 4.x Unix systems CMU
+had when James wrote his Emacs and which one he used; or maybe he
+really did all the development in a company down the street?  What
+about Amsterdam Compiler Kit, another product of Unipress whose early
+versions were distributed for a nominal cost by EUUG?
+
+I have nothing againsts James or the folks at Amsterdam and I very
+well understand their motives in submitting the whole thing to a
+company that frees them from the hassle and maybe even improves the
+product.  But IF the software was developed on a machine with an
+educational Unix license, can the company be nothing else than a
+distributor of public domain software?  (Henry, are you listening
+this group?)
+-- 
+                              Juha Heinanen
+
+USL, P.O. Box 44330, Lafayette, LA 70504-433, tel. (318)231-5345
+UUCP:  {ut-sally, akgua}!usl!jih         ARPA:  usl!jih@ut-sally
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site usl.UUCP
+Path: utzoo!watmath!clyde!bonnie!akgua!akgub!usl!jih
+From: j...@usl.UUCP (Juha I. Heinanen)
+Newsgroups: net.emacs
+Subject: Re: Permission
+Message-ID: <575@usl.UUCP>
+Date: Tue, 25-Jun-85 18:49:50 EDT
+Article-I.D.: usl.575
+Posted: Tue Jun 25 18:49:50 1985
+Date-Received: Thu, 27-Jun-85 06:23:51 EDT
+References: <4486@mit-eddie.UUCP> <2334@sun.uucp> <570@usl.UUCP>
+Reply-To: j...@usl.UUCP (Juha I. Heinanen)
+Distribution: net
+Organization: USL, Lafayette, LA
+Lines: 42
+Summary: 
+
+This is followup to my own message where I questioned the use of an
+educational Unix license for commercial purposes.  Below are some
+relevant quotes from the terms for System V:
+
+1.01 (a) Uses for "academic and educational purposes" means uses
+directly related to teaching ... and uses in noncommercial research
+by students and faculty, ..., provided that (i) neither the results
+of such research nor any enhancement or modification so developed is
+intended primarily for the benefit of a third party, (ii) such
+results, enhancements and modifications (...) are made available to
+anyone (...) without restriction on use, copying, or further
+distribution, notwithstanding any proprietary right (such as a
+copyright or patent right) that could be asserted by LICENSEE, its
+students or faculty members and (iii) any copy of such result,
+enhancement or modification furnished by LICENSEE is furnished for no
+more than the cost of reproduction and shipping.
+
+(b) Commercial use by LICENSEE of the LICENSED SOFTWARE or of any
+such result, enhancement or modification is not permitted under this
+agreement.  Such commercial use is permissible only pursuant to the
+terms of an appropriate commercial software agreement between AT&T
+and LICENSEE.  Any such result, enhancement or modification may be
+developed further by LICENSEE for commercial use (...) only on CPUs
+covered by such commercial software agreement and only provided that
+the result, enhancement or modification, in the form in which it
+exists when such commercial software agreement is executed by
+LICENSEE, remains available to anyone as specified in Section 1.01
+(a).
+
+So, the question remains, did the machine James (I am using him here
+just as an example) developed his Emacs have a commercial Unix
+license.  If it didn't, James' copyright notice doesn't prevent
+anybody (including Richard) (re)distributing James' code in the
+form it was when it left the educational machine.  The same, of
+course, applies to any copyrighted code floating around in various
+universities.  This is provided that the earlier licenses said
+roughly the same thing.
+-- 
+                              Juha Heinanen
+
+USL, P.O. Box 44330, Lafayette, LA 70504-433, tel. (318)231-5345
+UUCP:  {ut-sally, akgua}!usl!jih         ARPA:  usl!jih@ut-sally
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84; site masscomp.UUCP
+Path: utzoo!watmath!clyde!bonnie!masscomp!z
+From: z...@masscomp.UUCP (Steve Zimmerman)
+Newsgroups: net.emacs
+Subject: Re: Permission
+Message-ID: <732@masscomp.UUCP>
+Date: Thu, 27-Jun-85 09:49:31 EDT
+Article-I.D.: masscomp.732
+Posted: Thu Jun 27 09:49:31 1985
+Date-Received: Fri, 28-Jun-85 02:01:29 EDT
+References: <4486@mit-eddie.UUCP> <2334@sun.uucp> <570@usl.UUCP> <575@usl.UUCP>
+Distribution: net
+Organization: Masscomp - Westford, MA
+Lines: 71
+
+> So, the question remains, did the machine James (I am using him here
+> just as an example) developed his Emacs have a commercial Unix
+> license.  If it didn't, James' copyright notice doesn't prevent
+> anybody (including Richard) (re)distributing James' code in the
+> form it was when it left the educational machine.  The same, of
+> course, applies to any copyrighted code floating around in various
+> universities.  This is provided that the earlier licenses said
+> roughly the same thing.
+> -- 
+>                               Juha Heinanen
+
+Not true.  There are several different issues here.  Let's assume for
+the moment that Gosling did develop his Emacs on a machine with an
+educational license.  (James, is this true?)  First of all, according to
+the copyright law, he has an automatic copyright on anything he
+develops, assuming it wasn't done as work for hire, which it apparently
+wasn't.  As part of that copyright, he has the right to put copyright
+notices on all his code, which he promptly did.  Neither of these steps
+are in violation of the System V license; Berkeley did essentially the
+same thing when it put all of its "Copyright 198? Regents of the
+University of California" legends on much of its software.
+
+Now, if Gosling developed his software on a machine licensed under the
+terms you quoted, the University would be required to share Gosling's
+code free of charge with others.  Whether or not it could compel Gosling
+to do so would depend on what agreements Gosling had made with the
+University.  In any case, Gosling's refusal to give unlimited
+distribution to his code would be at most a violation of a civil
+contract, and would therefore be a matter between him, the University,
+and AT&T.  It would not affect the copyright protection granted to him
+by federal law.  That is, other people might try to convince AT&T to
+force CMU and/or Gosling to distribute his code, but if AT&T didn't want
+to do that, Gosling's copyright protection would stand.  For example,
+AT&T might decide that since the educational license terms had been
+violated, it would force CMU to upgrade the license to a commercial one,
+and not bother Gosling.  Regardless of what course of action AT&T took,
+someone who copied Gosling's code without his permission would be in
+violation of federal copyright law, even if Gosling and/or CMU were
+found to be in violation of the AT&T license.
+
+This is all from a legal standpoint, of course; I have not addressed the
+moral question here.  Unfortunately, moral arguments usually don't get
+you very far in court if you get sued.
+
+My background in all of this is that during the development of my EMACS,
+I had occasion to study the entire copyright law quite carefully, and I
+also at one point retained an attorney whose specialty was copyright and
+trade secret protection, and who had represented clients such as Data
+General.  However, I am not a lawyer myself, and therefore cannot
+present any of this as definitive legal advice.  For that, people must
+go to their own lawyers.
+
+On a related note, I recently received some mail from someone who did go
+to the trouble of checking with his company's lawyer about GNU Emacs.  I
+thought that people reading this newsgroup would be interested in what the
+lawyer said.  The person sending me the message indicated that he didn't
+want to get in the middle of this whole thing, so I've changed the names
+to protect the innocent.  Here's the relevant part of his message:
+
+        I actually did talk to our lawyer in charge of licensing and
+        associated software stuff about GNU, described the situation and
+        asked him what his opinion was. That was that we probably didn't
+        want to touch it with a 10 foot pole. Unless RMS can come up
+        with something that is legally binding (and electronic mail,
+        which is easily forgeable, doesn't count) he won't let us add
+        GNU to our [line of software] unless we can get a release from
+        Gosling allowing us to. He doesn't buy the third hand
+        redistribution, especially in light of [Gosling's] statements,
+        and doesn't want us to expose ourselves to liability by
+        distributing further. He more or less thinks that RMS is all
+        wet.
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: honor
+Message-ID: <4489@mit-eddie.UUCP>
+Date: Tue, 18-Jun-85 02:57:42 EDT
+Article-I.D.: mit-eddi.4489
+Posted: Tue Jun 18 02:57:42 1985
+Date-Received: Wed, 19-Jun-85 03:32:28 EDT
+Sender: dae...@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 49
+
+From: Richard M. Stallman 
+I can't understand how honor could require me to replace any
+of the code I am distributing in GNU Emacs.
+
+Using the modified Gosling display code in GNU Emacs is
+not immoral.  Redistributing any code is always morally good.
+
+It's not disobeying the spirit of the law.  (We know
+we really do have permission.)
+
+It's not disobeying the letter of the law.  (That is, we expect
+we could win if we were sued.  That's the most anyone can ever say.)
+
+It's not breaking any promise Fen or I made.
+
+Where is the dishonor?
+
+Here is why I don't want to rewrite the display code:
+
+Any display code would have a considerable resemblance to that display
+code, just by virtue of doing the same job.
+
+Without any clear idea of exactly how much difference there would have
+to be to reassure you users, I cannot tell whether the rewrite would
+accomplish that.  The law is not any guidance here.  Just because something
+is legal doesn't mean you won't be scared--if you are scared now.
+
+Writing display code that is significantly different is not easy.
+I don't want to do that much work which is not really necessary,
+just to reassure someone, when I can't be sure it will even do that.
+
+The real problem is not a legal one; it is that some of you might be
+intimidated.  You are the only ones who stand to lose anything.
+Perhaps some of you would like to write a replacement for the display
+code?  You are the best one to know what it takes to reassure you.
+
+There is another point in favor of this.  It is that the people who
+think a certain piece of work is necessary are the ones who ought to
+get it done.  Remember, I have written GNU Emacs as a volunteer,
+trying to serve the public.  Many people like it, but some don't.  If
+you aren't satisfied with it, you can't blame me for that.  I did a lot
+for you just taking it as far as I have.  If you want something that
+I have not done, you should take some responsibility and do it.
+
+Zimmerman, are you interested?
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84; site masscomp.UUCP
+Path: utzoo!watmath!clyde!bonnie!masscomp!z
+From: z...@masscomp.UUCP (Steve Zimmerman)
+Newsgroups: net.emacs
+Subject: Re: honor
+Message-ID: <729@masscomp.UUCP>
+Date: Mon, 24-Jun-85 10:14:51 EDT
+Article-I.D.: masscomp.729
+Posted: Mon Jun 24 10:14:51 1985
+Date-Received: Tue, 25-Jun-85 03:02:09 EDT
+References: <4489@mit-eddie.UUCP>
+Organization: Masscomp - Westford, MA
+Lines: 134
+
+> From: Richard M. Stallman 
+> I can't understand how honor could require me to replace any
+> of the code I am distributing in GNU Emacs.
+> 
+> Using the modified Gosling display code in GNU Emacs is
+> not immoral.  Redistributing any code is always morally good.
+
+Clearly, you and I have differing conceptions of "honor" and what is
+"morally good".  I seriously doubt that either of us is going to convince
+the other, though, so let's leave it at that and not burn up any more
+phone bills over the issue.
+
+> It's not disobeying the spirit of the law.  (We know
+> we really do have permission.)
+> 
+> It's not disobeying the letter of the law.  (That is, we expect
+> we could win if we were sued.  That's the most anyone can ever say.)
+
+I can only say that it appears that you have not received any competent
+legal advice.  First of all, your record is pretty poor, since Mark
+Linton (the author of dbx) has publicly denied statements you attributed
+to him, and James Gosling has likewise publicly denied that he took the
+actions that you say he did.  However, let's even assume for the moment
+that your account is correct, and that Gosling sent some message to Fen
+Labalme that he later forgot, saying something like the following.
+
+        You have my permission to make copies of Emacs #85 for whomever
+        you want, whenever you want, without limitation.  Furthermore,
+        this permission can never be revoked.
+
+Even such a statement from Gosling to Labalme would not help your case
+at all.  For although it would give Labalme permission to make copies,
+it does not transfer that permission to anyone else.  The presence of
+the copyright notice at the top of each module reserves the right of
+copy to the author and to those to whom he has explicitly granted
+permission.  The fact the a publisher may have permission to make copies
+of a book does not mean that people who buy those copies or receive them
+for free have any right to copy them.  This would be the same type of
+situation.  In order for you to have the right to distribute GNU Emacs
+in the manner in which you have, you would have to have had something
+like the following attached to the previous statement:
+
+        Furthermore, you may grant permission to copy these files to
+        anyone else, and they may in turn grant such permission to
+        anyone else, and so on, ad infinitum.
+
+This would be tantamount to removing the copyright notices (a recourse
+available only to the author), which would be a much simpler procedure.
+Such a statemtent would be completely contrary to all of Gosling's
+public statements, as well as his public actions; he has taken great
+care throughout the years to keep his Emacs from falling into the public
+domain.
+
+But you keep mentioning this message to Labalme without producing it;
+once again, why don't you post this message to the net so that we can
+all see what permission was or was not granted to Labalme?  (Of course,
+verifying the authenticity of the message would be another interesting
+task, and should not be taken for granted.
+
+> It's not breaking any promise Fen or I made.
+
+This is irrelevant.  Copyright law has nothing to do with people making
+promises.
+
+> Here is why I don't want to rewrite the display code:
+> 
+> Any display code would have a considerable resemblance to that display
+> code, just by virtue of doing the same job.
+> 
+> Without any clear idea of exactly how much difference there would have
+> to be to reassure you users, I cannot tell whether the rewrite would
+> accomplish that.  The law is not any guidance here.  Just because something
+> is legal doesn't mean you won't be scared--if you are scared now.
+> 
+> Writing display code that is significantly different is not easy.
+> I don't want to do that much work which is not really necessary,
+> just to reassure someone, when I can't be sure it will even do that.
+
+This is all nonsense, and I speak as someone who has had a fair amount
+of experience in this area.  When CCA decided to rewrite Montgomery's
+display code in CCA EMACS, I was working under the restriction that none
+of the same algorithms could even be used.  Montgomery's code was quite
+reasonable, but there were some fundamental limitations in his
+algorithms.  I designed a new display manager from the ground up that
+bore no resemblance to his, and that had none of the limitations that
+his did.  (I understand that Montgomery later did a major revision of
+his display code himself, so his current version went off in yet another
+direction.)  My display manager now looks no more like Montgomery's than
+EMACS looks like vi.  (Both edit text, remember.)  The whole project
+took me three weeks, and that was while I also had responsibility for
+maintaining CCA's two VAXes.
+
+You, on the other hand, would be working under less stringent
+restrictions.  Since copyright law doesn't protect algorithms, you could
+even use Gosling's algorithms if you really wanted, as long as the new
+code wasn't derived from the old.  Of course, the difference would
+probably be more clearcut if you used different algorithms.  The display
+code in Emacs #85 is certainly not the ultimate in a display manager;
+one of its features was that certain changes in the display caused the
+CPU time required to update the display to grow quadratically with the
+number of lines affected.  I'm sure you could do better than that with
+different algorithms; several other people have.
+
+> The real problem is not a legal one; it is that some of you might be
+> intimidated.
+
+There is a very real legal problem here.  Unless both James Gosling and
+Mark Linton are lying, and unless you can produce and authenticate a
+message to Labalme from Gosling effecting renouncing Gosling's
+copyright, then you have violated the law with respect to both Emacs and
+dbx and have encouraged others to do the same.
+
+> You are the only ones who stand to lose anything.
+
+This is quite true.  It would be hard for anyone to win much of a
+judgement against you personally, since I assume you are not rich.
+However, a real liability is created for others on this net and for
+their companies.  Lotus and others have established by precedent that
+companies are liable for illegal duplication of software by their
+employees even if the companies were not directly aware of their
+employees' activities.  Now, Unipress has indicated that it is not
+inclined to sue at this point.  However, If AT&T sees parts of UNIX
+gradually being put into the public domain, it may feel forced to move
+its legions of attorneys into action.  To dismiss this possibility out
+of hand would be foolish.
+
+> Perhaps some of you would like to write a replacement for the display
+> code?  Zimmerman, are you interested?
+
+No, thanks.  I'm quite happy with my own EMACS.  GNU Emacs is your
+project.
+
+        Steve Zimmerman
+        Masscomp
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site megatest
+Path: utzoo!watmath!clyde!bonnie!akgua!whuxlm!whuxl!houxm!mtuxo!mtunh!
+mtung!mtunf!ariel!vax135!
+timeinc!phri!pesnta!amd!amdcad!cae780!ubvax!megatest!fen
+From: fen@megatest (Fen Labalme)
+Newsgroups: net.emacs
+Subject: Whither GNU EMACS ?
+Message-ID: <18@megatest>
+Date: Wed, 26-Jun-85 20:31:06 EDT
+Article-I.D.: megatest.18
+Posted: Wed Jun 26 20:31:06 1985
+Date-Received: Wed, 3-Jul-85 07:11:44 EDT
+Organization: Megatest Corp., San Jose, CA
+Lines: 73
+
+Originally posted on June 24, but the Megatest Mailer Monster ate it...
+-----------------------------------------------------------------------
+I would like to try to shed some light on what has become the great
+GNU EMACS copyright debate.
+
+As many of you may know, Richard Stallman originally wrote EMACS
+around 1974.  He did not charge for distributions.  Rather, he
+insisted that users "join the EMACS software-sharing commune."
+EMACS was used extensively throughout the MIT and ARPA communities.
+Many similar editors exist:  SINE, FINE, EINE, ZWEI, etc.
+
+While working on his thesis at CMU, Jim Gosling began work on FRED.
+Borrowing some ideas from Mike Kazar's FINE editor (notably the
+keymapping paradigm) he re-wrote the code to produce the first UNIX
+EMACS circa 1980.  I received one of these early versions in 1981,
+and later, version #85 in May of 1982.
+
+I (and others) made many modifications to EMACS along the way.  Most
+of these got sent back to JAG@CMU for incorporation into future rel-
+eases.  As I had personal contact with several sites in California
+(decwrl, sun, ucb, Shasta, and others) I asked Jim if I could distribute
+my modifications directly.  He granted me such permission in an informal
+(email) note.  This note said that I could make releases, provided that
+I provided to each site a complete copy of his original code.  My
+changes were to be released separately.  As it happened, my release
+tapes contained two files:  my version first followed by Jim's original
+version.
+
+On January 3, 1985, Fred Pack of UniPress contacted me, asking if I had
+permission to distribute EMACS and what the current state of my work was.
+I have since spent some time looking for the note that I received from
+Jim Gosling.  As it is somewhere on a three year old dump tape, and we
+have a very large distributed system, I have not found it easy to locate.
+I am still looking for the note.
+
+On April 22, I talked to Jim about the matter.  He remembered having given
+different distribution permissions to different people, but didn't recall
+what exactly he might have granted to me.  He also stated that the real
+reason behind the copyright notice was to keep others from profiting from
+his work. It is inexplicable why Gosling's current statements differ from
+what he said to me.
+
+The spirit of the original UNIX distributions was very similar to that of
+Richard Stallman's.  In fact, to quote frome Jim Gosling's "Unix Emacs"
+manual, dated May 1982: "Calling this editor EMACS is rather presumptious
+and even dangerous.... Unix Emacs was called EMACS in the hope that cries
+of outrage would be enough to goad the author and others to bring it up
+to the standards of what has come before."  Now that we have done so
+(with GNU EMACS) I am surprised and dismayed that the loudest objections
+come from the author of this statement.
+
+As one of the "others" who helped to bring EMACS up to speed, I was
+distressed when Jim sold the editor to UniPress.  This seemed to be
+a direct violation of the trust that I and others had placed in
+Jim as we sent him our improvements, modifications, and bug fixes.
+I am especially bothered by the general mercenary attitude surrounding
+EMACS which has taken over from the once proud "hacker" ethic -- EMACS is
+a tool that can make all of our lives better.  Let's help it to grow!
+
+I have been striving to treat UniPress fairly.  I have
+been in communication with them for the last 6 months, and have sent them
+2 letters, neither of which have been answered to date.  Instead, what I
+have gotten is a series of aspersions against me and the GNU project
+posted publicly in net.emacs.  I feel that I have treated the parties
+involved honorably and have remained well within the bounds of the law at
+all times.  I am currently awaiting a response from UniPress regarding an
+agreement that I sent to them several weeks ago.  I will gladly keep the
+net informed as to developments regarding this matter.
+
+                                        Fen Labalme
+
+-- 
+From: Fen Labalme  < megatest!fen@Shasta>
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!rms@mit-prep
+From: rms@mit-prep
+Newsgroups: net.emacs
+Subject: GNU Emacs
+Message-ID: <4559@mit-eddie.UUCP>
+Date: Thu, 27-Jun-85 07:58:34 EDT
+Article-I.D.: mit-eddi.4559
+Posted: Thu Jun 27 07:58:34 1985
+Date-Received: Fri, 28-Jun-85 02:05:41 EDT
+Sender: dae...@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 36
+
+From: Richard M. Stallman < rms@mit-prep>
+I was going to wait for Fen's message before saying more on the issue,
+but Fen's message ran into mailer troubles at Megatest.  It may be
+on its way now, but I don't want to wait any longer.
+
+I have decided to replace the Gosling code in GNU Emacs,
+even though I still believe Fen and I have permission to
+distribute that code, in order to keep people's confidence
+in the GNU project.
+
+I came to this decision when I found, this night, that I saw
+how to rewrite the parts that had seemed hard.  I expect to
+have the job done by the weekend.
+
+Unfortunately, this will delay the the time you receive the GNU Emacs
+manual.  I'm sure Unipress is happy to have accomplished that.
+
+Software sharers are happy if you get good software.
+Software-hoarding organizations such as Unipress and CCA are looking
+for ways they can restrict you, because each restriction they can
+manage to impose means more pressure on you to pay them.  If there
+is an alternative to paying them, they want to close it off.
+
+For example, just by looking at Zimmerman's messages, you can see
+that his goal is to convince you of the most restrictive interpretation
+of the law at every juncture--to get you to forfeit as much as possible.
+Gosling says he supports free software--yet he was clearly making
+preparations to sell Gosling Emacs even while urging the community
+to contribute.
+
+This is the kind of attitude that people develop when they make a
+habit of profiting from interfering with other people.
+
+In the long run, you are better off encouraging the growth of organizations
+that want to give you software, and not feeding companies Unipress or CCA
+that really just want to take as much as possible from you.
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84; site masscomp.UUCP
+Path: utzoo!watmath!clyde!bonnie!masscomp!z
+From: z...@masscomp.UUCP (Steve Zimmerman)
+Newsgroups: net.emacs
+Subject: Re: GNU Emacs
+Message-ID: <733@masscomp.UUCP>
+Date: Fri, 28-Jun-85 09:05:21 EDT
+Article-I.D.: masscomp.733
+Posted: Fri Jun 28 09:05:21 1985
+Date-Received: Sat, 29-Jun-85 01:26:09 EDT
+References: <4559@mit-eddie.UUCP>
+Organization: Masscomp - Westford, MA
+Lines: 25
+
+> From: Richard M. Stallman 
+> For example, just by looking at Zimmerman's messages, you can see
+> that his goal is to convince you of the most restrictive interpretation
+> of the law at every juncture--to get you to forfeit as much as possible.
+
+I challenge you to find an attorney who has a "less restrictive"
+interpretation of the law in this case.  This just happens to be the way
+the law is interpreted by the courts.
+
+> This is the kind of attitude that people develop when they make a
+> habit of profiting from interfering with other people.
+
+In an earlier message, I urged you to rewrite those portions of GNU
+Emacs containing Gosling's code.  Now that you are doing so, I am quite
+satisfied, and once this is finished, I can see no legal reason for
+someone not to use GNU Emacs.  I fail to see how I have profited from
+this.  To the contrary, it seems to be your users who have profited, for
+they will soon be able to use GNU Emacs without doubts as to its legal
+status.  Since UniPress apparently helped you come to your decision, I
+cannot see why they should be condemned.  I think most of your users
+would prefer to wait a little bit longer for the GNU Emacs manual in
+order to have a product that is free from questions about its legality.
+
+        Steve Zimmerman
+        Masscomp
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-athena.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!mit-athena!martillo
+From: martillo@mit-athena.UUCP (Joaquim Martillo)
+Newsgroups: net.emacs
+Subject: Gnu Emacs & Copyright Laws
+Message-ID: <287@mit-athena.UUCP>
+Date: Mon, 15-Jul-85 12:08:39 EDT
+Article-I.D.: mit-athe.287
+Posted: Mon Jul 15 12:08:39 1985
+Date-Received: Wed, 17-Jul-85 06:27:29 EDT
+Reply-To: martillo@mit-athena.UUCP (Joaquim Martillo)
+Distribution: net
+Organization: MIT Project Athena
+Lines: 80
+
+
+Unlike RMS I  am not driven  by ideological fervor  to  take a   stand
+against "software  hoarding."  I  was willing  to  "prostitute" myself
+and work for ATT Bell  Laboratories.   But I learned  Unix in the days
+when the government  forbade  ATT  to sell  Unix  as  a product.   The
+material which came out  of the Computer Research  Group then was much
+more interesting  than the substandard Unix called  5V2.  The computer
+research software was interesting because  the research group was able
+to give and receive  ideas from  the  university environment.  Now ATT
+is    so paranoic about  protecting  "trade   secrets"  that they  NIH
+(NDH)'ed almost every interesting idea in the system.
+
+Xerox's  paranoia basically kept  almost everyone  from learning about
+some of  the interesting new    computer   ideas developed  in   their
+research  environment and  in   the end this  paranoic concealment  of
+ideas is harming Xerox.
+
+RMS  could  easily  be correct that the current   system of industrial
+software development hinders  both  research and  harms business.  The
+justification that  someone must pay for the   development environment
+is   incorrect because hardware  is   worthless without good software.
+Therefore the  hardware manufactures have an interest  in  seeing good
+new software freely available.
+
+The current  situation  needs people  to  take strong  stands  against
+ridiculously rigid interpretations of copyright laws.  If I compose  a
+piece  of  written   material, the  convention  is   I  can use  three
+consecutive  words from  someone  else's writings  unattributed.    In
+scholarly literature, properly  attributed   quotation  is  considered
+acceptable up to  about 20% of the composition.   A ridiculously rigid
+interpretation of the copyright laws  could  easily require an  author
+to get  permission   for  every single  quote,  but this is  silly and
+everyone  knows it.  Software  copyright  law is  still relatively new
+and no one knows the  commonsense measure.   This  lack of commonsense
+measure is being used to scare people.
+
+I would suggest  1 pages of  unattributed code (of  generic  functions
+like  strcpy) in a  software  project of at   least moderate  size  is
+acceptable.   In  a similar  project, complaining about   10%  or less
+attributed code is  silly.   Now the disputed modules   in   Gnu Emacs
+constitue about 5% of the  code and I  suspect  less than 10%  of  the
+original  version of Gosling's emacs.    Further of the  modules which
+contain Gosling's copyright,  Trm.h (a 3  page module)  has  about 50%
+(by line  excluding comments) of  its code in common with  the current
+version of  Unipress   Emacs.   The difference   between   the current
+version of Unipress Emacs and  Gnu Emacs dsp.c (a   5 page module)  is
+90%.  The differences between  current version of  Unipress  Emacs and
+Gnu Emacs display.c  (a  19 page  module) is about   80%. For all  the
+modules which Fen LeBalme gave RMS permission to  use, the differences
+are  similar.  Unipress   is not  even using  the   disputed  software
+anymore!  Now, these modules contain code people like  Chris Torek and
+others contributed when Gosling's emacs  was  in the public domain.  I
+must  wonder  whether  these  people would  have  contributed had they
+known their freely-given  code was going to become   part of someone's
+product.
+
+The  use  of   this freely-given  code   in  the product seems  rather
+questionable if this code does not remain freely  available for others
+to use even despite the copyright notice.   Trying to forbid  RMS from
+using discarded code so that he must spend time to reinvent  the wheel
+supports  his  contention that "software  hoarders"  are slowing  down
+progress in computer science.
+
+If using  the discarded code  is  wrong, I must wonder  why  display.c
+(p. 10) contains the following notice.
+
+/****************************************************************************\
+*                                                                            *
+* The following hack and all following lines involving the variable          *
+* "DoneEarly" cause the bottom line of the screen to be redisplayed before   *
+* any others if it has changed and it would be redrawn in-place.  This is    *
+* purely for Emacs, people using this package for other things might want to *
+* lobotomize this section.                                                   *
+*                                                                            *
+\****************************************************************************/
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site pegasus.UUCP
+Path: utzoo!watmath!clyde!burl!ulysses!mhuxr!mhuxt!houxm!mtuxo!pegasus!mzal
+From: mzal@pegasus.UUCP (Mike Zaleski)
+Newsgroups: net.emacs
+Subject: Re: Gnu Emacs & Copyright Laws
+Message-ID: <2432@pegasus.UUCP>
+Date: Thu, 18-Jul-85 03:18:29 EDT
+Article-I.D.: pegasus.2432
+Posted: Thu Jul 18 03:18:29 1985
+Date-Received: Fri, 19-Jul-85 02:02:33 EDT
+Organization: AT&T Information Systems, Lincroft NJ
+Lines: 63
+
+[ Insert your favorit clever quote here. ]
+
+Excerpt from: martillo@mit-athena.UUCP (Joaquim Martillo)
+    <allegra!mit-eddie!mit-athena!martillo>
+
+   Software copyright law is still relatively new and no one knows
+   the commonsense measure.  This lack of commonsense measure is
+   being used to scare people.
+
+   I would suggest 1 pages of unattributed code (of generic functions
+   like strcpy) in a software project of at least moderate size is
+   acceptable.  In a similar project, complaining about 10% or less
+   attributed code is silly.
+
+A tangential point here which might be of interest.  When depositing
+code with the Copyright Office, one is required only to submit:
+
+"... one copy of identifying portions of the program ... 'identifying
+portions' shall mean either the first and last 25 pages of the
+program ... together with the page or equivalent unit containing the
+copyright notice, if any."  [1]
+
+Also, use of generic functions does not necessarily constitute copyright
+violation or preclude copyrighting.  After submiting a work for
+copyright, if the person submiting the forms has claimed exclusive
+authorship, a form letter which basically asks:
+
+[To what extent does the deposited program contain preexisting
+materials?  Your application implies ...] "... that the program
+is entirely new and contains no SUBSTANTIAL (my emphasis) amount of
+material that has been previously registered or published or that
+has become standard usage for certain purposes.  Although some
+programmers crate from scratch all parts of their programs, we
+understand that many draw from libraries or previously developed
+programs or routines in creating a new program." [1]
+
+A general comment: Many of the submissions "explaining" the law
+regarding copyrights, patents, and trade secret which I see on
+the net seem to have many misconceptions.  (I do not mean to
+imply anything negative about the above excerpted article, as it
+expresses wishes, rather than claims things are facts.)  It seems
+to me that some of these people should do some reading before they
+start writing.  Herewith, some suggestions:
+
+[1] "A Software Law Primer", Frederic W. Neitzke, 1984, Van
+    Nostrand Reinhold, page 52.
+
+[2] "Law and the Computer", Michael C. Gemignani, 1981, CBI
+    Publishing.
+
+A quick quiz:  If I put:
+
+/* great.c - Great C program
+ * (C) 1984 by Michael Zaleski */
+
+at the beginning of my great C program, have I preserved my
+legal copyright rights?
+
+The surprising answer is NO!  See page 50 of [1].
+
+-- "The Model Citizen" Mike^Z
+   Zaleski@Rutgers   [ allegra!, ihnp4! ] pegasus!mzal
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84; site masscomp.UUCP
+Path: utzoo!watmath!clyde!bonnie!masscomp!z
+From: z@masscomp.UUCP (Steve Zimmerman)
+Newsgroups: net.emacs
+Subject: Re: Gnu Emacs & Copyright Laws
+Message-ID: <736@masscomp.UUCP>
+Date: Fri, 19-Jul-85 09:16:27 EDT
+Article-I.D.: masscomp.736
+Posted: Fri Jul 19 09:16:27 1985
+Date-Received: Sat, 20-Jul-85 05:48:15 EDT
+References: <2432@pegasus.UUCP>
+Organization: Masscomp - Westford, MA
+Lines: 39
+
+> Also, use of generic functions does not necessarily constitute copyright
+> violation or preclude copyrighting.
+
+Although the second part of this statement is true, I think you're
+making some false assumptions in the first part.  As supporting
+evidence, you quote:
+
+> [To what extent does the deposited program contain preexisting
+> materials?  Your application implies ...] "... that the program
+> is entirely new and contains no SUBSTANTIAL (my emphasis) amount of
+> material that has been previously registered or published or that
+> has become standard usage for certain purposes.  Although some
+> programmers create from scratch all parts of their programs, we
+> understand that many draw from libraries or previously developed
+> programs or routines in creating a new program." [1]
+
+This certainly corresponds to my understanding of the copyright law.
+However, if you read it (and the copyright law itself) carefully, it is
+clear that this is merely stating the eligibility requirements for
+copyrighting a program.  That is, a program must be substantially
+original in order to be eligible for copyright, but use of library
+routines and similar programs (which may or may not be copyrighted) does
+not necessarily detract from that originality.  I think a close reading
+of these texts will show that they do not say that it is all right to
+use copyrighted subroutines or similar code in a new program without
+permission, and that the proper use of such code implies that permission
+has been received.
+
+I liked your example of the invalid copyright notice.  The problem, of
+course, is that the international copyright symbol is a C with a circle
+around it, and the parentheses don't quite qualify.  Adding the word
+"Copyright" is sufficient protection under U.S. law.  However, this word
+does not satisfy international copyright law, which accepts only the
+circle C.  This leads to the interesting situation that there is no way
+no put an internationally valid copyright notice into an ASCII source
+file.
+
+        Steve Zimmerman
+        Masscomp
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83 SMI; site unipress.uucp
+Path: utzoo!watmath!clyde!burl!ulysses!allegra!mit-eddie!think!harvard!
+seismo!columbia!topaz!unipress!mg
+From: mg@unipress.uucp (Mike Gallaher)
+Newsgroups: net.emacs
+Subject: Unipress and Gnumacs
+Message-ID: <104@unipress.uucp>
+Date: Thu, 1-Aug-85 15:19:33 EDT
+Article-I.D.: unipress.104
+Posted: Thu Aug  1 15:19:33 1985
+Date-Received: Sat, 3-Aug-85 05:20:13 EDT
+Organization: Unipress Software, Highland Park NJ
+Lines: 37
+
+
+    From: rms@mit-prep
+    Date: 27 Jun 85 11:58:34 GMT
+
+    Unfortunately, this will delay the the time you receive the GNU Emacs
+    manual.   I'm sure Unipress is happy to have accomplished that.  
+
+    Software sharers are happy if you get good software.  Software-hoarding
+    organizations such as Unipress and CCA are looking for ways they can
+    restrict you, because each restriction they can manage to impose means
+    more pressure on you to pay them.   If there is an alternative to paying
+    them, they want to close it off.  
+
+Some people working on the Gnu project obviously feel that they are at odds
+with UniPress, and that UniPress is doing everything in its power to damage
+them.  If making UniPress be the bad guys, and imagining yourself to be
+pitted against them for the good of all mankind, gives you the impetus you
+need to write good software, it seems to have worked - Gnumacs is a
+fantastic editor.   I suppose every cause needs a nemesis, but please
+choose one that is really on the other side.
+
+UniPress has no quarrel with the Gnu project.  It bothers me that people
+seem to think we are trying to hinder it.  In fact, we hardly did or said
+much at all, except to point out that the Gnumacs code had James Gosling's
+copyright in it.  We have not done anything to keep anyone from using
+Gnumacs, nor do we intend to now that it is "Gosling-free" (version
+16.56).
+
+You can consider this to be an official statement from UniPress:  There is
+nothing in Gnumacs version 16.56 that could possibly cause UniPress to get
+upset.  If you were afraid to use Gnumacs because you thought we would
+hassle you, don't be, on the basis of version 16.56.  
+
+Can we all please get back to our work now, and stop arguing about
+copyright law???
+
+mg
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: Notesfiles $Revision: 1.7.0.8 $; site ccvaxa
+Path: utzoo!watmath!clyde!cbosgd!cbdkc1!desoto!packard!ihnp1!ihnp4!
+inuxc!pur-ee!uiucdcs!ccvaxa!preece
+From: preece@ccvaxa.UUCP
+Newsgroups: net.emacs
+Subject: Re: Unipress and Gnumacs
+Message-ID: <11600003@ccvaxa>
+Date: Mon, 5-Aug-85 00:06:00 EDT
+Article-I.D.: ccvaxa.11600003
+Posted: Mon Aug  5 00:06:00 1985
+Date-Received: Tue, 6-Aug-85 10:26:49 EDT
+References: <104@unipress.uucp>
+Lines: 9
+Nf-ID: #R:unipress.uucp:-10400:ccvaxa:11600003:000:266
+Nf-From: ccvaxa.UUCP!preece    Aug  4 23:06:00 1985
+
+
+Could we have a little applause, please, for Unipress for issuing
+a direct, succinct statement about the status of Gosling-free Emacs.
+They were under no particular legal or moral obligation to do so.
+
+-- 
+scott preece
+gould/csd - urbana
+ihnp4!uiucdcs!ccvaxa!preece
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!linus!decvax!genrad!mit-eddie!mly@mit-prep
+From: mly@mit-prep
+Newsgroups: net.emacs
+Subject: Unipress and Gnumacs
+Message-ID: <4919@mit-eddie.UUCP>
+Date: Fri, 9-Aug-85 12:34:31 EDT
+Article-I.D.: mit-eddi.4919
+Posted: Fri Aug  9 12:34:31 1985
+Date-Received: Mon, 12-Aug-85 23:08:40 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 16
+
+From: Richard Mlynarik <mly@mit-prep>
+   Could we have a little applause, please, for Unipress for issuing
+   a direct, succinct statement about the status of Gosling-free Emacs.
+   They were under no particular legal or moral obligation to do so.
+
+   scott preece
+   gould/csd - urbana
+   ihnp4!uiucdcs!ccvaxa!preece
+
+mg (who posted it, and maintains gosmacs) is a cool person, and
+probably has a lot to do with keeping the corporate cretins at bay.
+(At least as far as gnu is concerned)  So let's hear it for Mike at least.
+
+However, I think that you will find that Unipress itself is as slimey as
+any other corporation in the business --- don't let one good
+impression spoil their image! =;-)
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.2 9/18/84; site h-sc1.UUCP
+Path: utzoo!linus!philabs!cmcl2!seismo!harvard!h-sc1!edwards
+From: edwards@h-sc1.UUCP (william edwards)
+Newsgroups: net.emacs
+Subject: Re: Unipress and Gnumacs
+Message-ID: <521@h-sc1.UUCP>
+Date: Sun, 11-Aug-85 20:03:44 EDT
+Article-I.D.: h-sc1.521
+Posted: Sun Aug 11 20:03:44 1985
+Date-Received: Wed, 14-Aug-85 00:47:19 EDT
+References: <4919@mit-eddie.UUCP>
+Reply-To: edwards@h-sc1.UUCP (william edwards)
+Organization: Harvard Univ. Science Center
+Lines: 27
+Keywords: "slimy"?
+
+In article <4919@mit-eddie.UUCP> mly@mit-prep writes:
+>However, I think that you will find that Unipress itself is as slimey as
+>any other corporation in the business --- don't let one good
+>impression spoil their image! =;-)
+
+DISCLAIMER:
+
+        The following does not represent anyone's opinion but my own.
+It does not reflect the official stance of Harvard University.
+
+FLAME:
+
+        I guess mly's comments are more fallout from the great Gosling
+code controversy, but I find them unhelpful and unconstructive.  Just
+what does he mean by "slimy"?  Is he accusing Unipress of illegal or
+immoral acts?  If he is, he had better either substantiate what he says
+with hard facts, or not express such opinions in "print" (yes, this
+arguably "printed material" you're reading).  Such remarks veer close
+to libel.  GNU is not going to help its cause by indiscriminately
+calling people or companies "slimy".
+
+        These remarks have no bearing on what I think of GNUemacs or of
+the GNU project as a whole.  GNUemacs is a fantastic editor, and the
+cause of a public-domain UNIX is a noble one.  Let's not endanger that
+cause with useless acrimony.
+
+                                                Bill Edwards
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site usl.UUCP
+Path: utzoo!watmath!clyde!bonnie!akgua!akgub!usl!jla
+From: jla@usl.UUCP (Joe Arceneaux)
+Newsgroups: net.emacs
+Subject: Re: Unipress and Gnumacs
+Message-ID: <624@usl.UUCP>
+Date: Tue, 27-Aug-85 00:33:29 EDT
+Article-I.D.: usl.624
+Posted: Tue Aug 27 00:33:29 1985
+Date-Received: Sat, 24-Aug-85 18:12:51 EDT
+References: <4919@mit-eddie.UUCP> <521@h-sc1.UUCP>
+Reply-To: jla@usl.UUCP (Joe Arceneaux)
+Organization: University of (SW) Louisiana
+Lines: 29
+Keywords: "slimy"?
+Summary: 
+
+In article <521@h-sc1.UUCP> edwards@h-sc1.UUCP (william edwards) writes:
+> 
+> FLAME:
+> 
+>       I guess mly's comments are more fallout from the great Gosling
+> code controversy, but I find them unhelpful and unconstructive.  Just
+> what does he mean by "slimy"?  Is he accusing Unipress of illegal or
+> immoral acts?  If he is, he had better either substantiate what he says
+> with hard facts, or not express such opinions in "print" (yes, this
+> arguably "printed material" you're reading).  Such remarks veer close
+> to libel.  GNU is not going to help its cause by indiscriminately
+> calling people or companies "slimy".
+
+The Unipress-GNU controversey has already begun to recede into the back
+of my mind, but I seem to recall  reports to the effect that Unipress
+was considering some form of action against GNU.  Anyway, SOMEthing must
+have prompted RMS to re-write the code.  If it was not Unipress, then it
+must have been the volume of articles suggesting that there were grounds
+for legal action.  While RMS' action was perhaps the best possible answer
+to the controversey, it seems rather "slimy" to me that he was indeed forced
+to do so.
+
+Such unpalatable affairs are only useful in that they further illuminate
+the worthy goals of the Freeware project.
+-- 
+                                    Joe Arceneaux
+
+                                    Lafayette, LA
+                                    {akgua, ut-sally}!usl!jla
+
+-------
+
+Relay-Version: version B 2.10 5/3/83; site utzoo.UUCP
+Posting-Version: version B 2.10.1 6/24/83; site mit-eddie.UUCP
+Path: utzoo!watmath!clyde!cbosgd!cbdkc1!desoto!packard!edsel!bentley!
+hoxna!houxm!mhuxt!mhuxr!ulysses!allegra!mit-eddie!tower@mit-prep
+From: tower@mit-prep
+Newsgroups: net.emacs
+Subject: Re: Unipress and Gnumacs
+Message-ID: <5112@mit-eddie.UUCP>
+Date: Mon, 26-Aug-85 14:20:41 EDT
+Article-I.D.: mit-eddi.5112
+Posted: Mon Aug 26 14:20:41 1985
+Date-Received: Wed, 28-Aug-85 20:32:54 EDT
+Sender: daemon@mit-eddi.UUCP
+Organization: MIT, Cambridge, MA
+Lines: 35
+
+From: Leonard H. Tower Jr. <tower@mit-prep>
+In Article-I.D.: usl.624
+usl!jla@mit-eddie (Joe Arceneaux) writes:
+
+>  The Unipress-GNU controversey has already begun to recede into the back
+>  of my mind, but I seem to recall  reports to the effect that Unipress
+>  was considering some form of action against GNU.  Anyway, SOMEthing must
+>  have prompted RMS to re-write the code.  If it was not Unipress, then it
+>  must have been the volume of articles suggesting that there were grounds
+>  for legal action.  While RMS' action was perhaps the best possible answer
+>  to  controversey, it seems rather "slimy" to me that he was indeed forced
+>  to do so.
+
+>  Such unpalatable affairs are only useful in that they further illuminate
+>  the worthy goals of the Freeware project.
+>  -- 
+
+RMS rewrote the display code because it was: "the best possible answer
+to" the controversy.  It removed any possible doubts about the public
+domainness of GNU Emacs.
+
+Note that RMS still feels the Gosling display code is in the public
+domain, and available for use.  It was just more important to have GNU
+Emacs be free of any controversy and decisions to not use it because
+of that controversy.
+
+I hope we can lay this whole thing to bed, and get back to producing
+good public-domain software.
+
+Len
+
+Disclaimer:     ;-}
+
+I am not speaking for RMS here, but am recounting what I know of the
+reasons for the decision.  I am a member of the GNU project.
+
+-------
