@@ -152,6 +152,11 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   changes up until July 1990.  This is interesting, because stock
   18.55 was released in August 1989, and 18.56 in January 1991.
 
+- NeXT GNU Emacs 18.55.122 from https://github.com/johnsonjh/NeXTEmacs
+
+  GitHub repository; the original source is anonymous.  This version
+  should be slightly newer than emacs-15.0.3.s.tar.gz.
+
 - emacs-18.57.tar.gz from  http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
 
 - emacs-18.58.tar.gz from  http://www.nic.funet.fi/index/gnu/funet/historical-funet-gnu-area-from-early-1990s/emacs/
