@@ -4,6 +4,7 @@
 
 - TECO EMACS (1976 - 1996)
 - Zwei/Zmacs (1978 - 1997)
+- SINE (1978 - ?)
 - Multics Emacs (1978 - 1989)
 - Gosling Emacs (1980 - 2007)
 - GNU Emacs (1984 -)
