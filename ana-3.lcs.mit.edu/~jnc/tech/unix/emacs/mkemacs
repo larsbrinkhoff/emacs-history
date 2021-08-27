@@ -1,0 +1,2 @@
+cc -i emacs_main.o emacs_re.o emacs_cmds.o emacs_buf.o emacs_disp.o\
+ emacs_io.o emacs_ux6.o -o /tmp/emacs

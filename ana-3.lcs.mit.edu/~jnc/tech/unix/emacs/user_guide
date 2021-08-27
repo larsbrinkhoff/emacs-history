@@ -1,0 +1,321 @@
+			UNIX Emacs User's Guide
+
+	This document contains a brief introduction to UNIX Emacs.  It is
+intended to be read in conjunction with Richard Stallman's Emacs User's
+Manual, which contains descriptions of most Emacs commands, etc. This
+guide contains mostly descriptions of commands in UNIX Emacs which differ
+from TOPS-20 or ITS Emacs; it also contains a command chart and a short
+description of a macro package I have written for editing C programs.
+
+	By far the best way to learn to use Emacs is to log in to XX
+(or one of the ITS machines) and run the program TEACH-EMACS.  This
+provides an interactive introduction to Emacs, its commands, and
+its "philosophy".  Then return to this manual for the differences
+between UNIX Emacs and the TOPS-20/ITS versions.
+
+	Before starting to use UNIX Emacs, you should get yourself an
+Emacs initialization file.  It would be best (at least at first) for
+you to copy mine.  Emacs looks for an initialization file named
+.emacs_init in your home directory; mine is /usr/lwa/.emacs_init.
+Just copy it into your home directory.  You need this because it
+contains several macros, character redefinitions, and so forth to
+make UNIX Emacs more closely resemble TOPS-20 Emacs.  The list of
+differences given below assumes that you have this initialization
+file.
+
+	The set of commands, screen layout, and buffer management
+provided in UNIX Emacs is very similar to that provided in TOPS-20
+Emacs, although many TOPS-20 commands are not available in UNIX Emacs. 
+The following is a list of the known commands which perform different
+functions in UNIX Emacs than in TOPS-20 Emacs:
+
+	C-@	and other mark-related commands: UNIX Emacs does not retain
+		a stack of marks; there is only one mark per buffer
+
+	C-C	In UNIX Emacs, C-C runs the function Capitalize Character;
+		this differs from either TOPS-20 or ITS Emacs
+
+	C-Z	In UNIX Emacs, C-Z performs the function Exit One Level, as
+		in ITS Emacs.  There is no character in UNIX Emacs to act
+		as the Control-Meta Prefix character; Control-Meta-<FOO>
+		must be typed as <ESC>Control-<FOO>.
+
+	C-]	performs functions related to macro programming in UNIX
+		Emacs, rather than exiting from a recursive edit.  To
+		exit from a recursive edit, use C-Z.
+
+	C-^	does not normally controlify the next character, as it
+		does in TOPS-20 Emacs.  However, by setting the mode
+		Controlify (by C-Xmcontrolify<CR>) it behaves identically
+		to TOPS-20.
+
+	C-M-m	in UNIX runs the function Mail Buffer, while in TOPS-20
+		it is identical to Carriage Return.
+
+	C-M-q	in UNIX causes the next character typed to be quoted and
+		inserted into the buffer with the 200-bit (Meta bit) set.
+		In TOPS-20 it runs a LISP Mode command.
+
+	C-M-r	In UNIX C-M-r runs the function Regular Expression Query
+		Replace, which performs regular expression searches like
+		those provided in grep and ed.  In TOPS-20, it performs
+		the function Reposition Window, which is available in
+		UNIX by typing C-M-l.
+
+	C-M-]	performs macro-related commands in UNIX, but LISP Mode
+		commands in TOPS-20.
+
+	M-\	inserts its numeric argument as a character in UNIX, while
+		it runs the function Delete Horizontal Space in TOPS-20.
+
+	M-g	In UNIX, M-g goes to the line number specified by its
+		argument.  In TOPS-20, it runs the function Fill Region.
+
+	M-m	in UNIX, displays all active buffer modes; in TOPS-20, is
+		identical to Carriage Return.
+
+	M-p	in UNIX performs the same function as M-w; in TOPS-20 moves
+		up one comment line.
+
+	M-r	in UNIX performs the same function as M-%; in TOPS-20 moves
+		to screen edge.
+
+	M-s	in UNIX displays usage statistics, in TOPS-20 runs the
+		function Center Line.
+
+	C-X C-D	in UNIX changes working directories, in TOPS-20 runs the
+		function Display Directory.
+
+	C-X C-I	in UNIX redirects input to a command file, in TOPS-20 runs
+		the function Indent Rigidly.
+
+	C-X C-L	in UNIX loads a file of macro definitions, in TOPS-20 runs
+		the function Lowercase Region.
+
+	C-X C-Q	in UNIX performs macro-related operations, in TOPS-20 prevents
+		the current file from being written.
+
+	C-X C-T	in UNIX copies the current region to another buffer, in
+		TOPS-20 runs the function Transpose Lines.
+
+	C-X C-U	in UNIX forces a display update, in TOPS-20 runs the function
+		Uppercase Region.
+
+	C-X d	in UNIX defines macros from the current buffer, in TOPS-20
+		runs DIRED.
+
+	In addition, there are a couple of philosophical differences between
+UNIX Emacs and TOPS-20 Emacs.  UNIX Emacs distinguishes between uppercase
+and lowercase characters everywhere; thus M-x is a different character
+and runs a different command than M-X.  This is not so in TOPS-20 Emacs.
+In UNIX, the buffer modes are global to all buffers, while in TOPS-20
+they are settable on a buffer-by-buffer basis.  Not all characters in
+UNIX Emacs are redefinable; in particular, the following characters may
+not be redefined: Escape, C-Z, C-U, M-{, and M-}.  Much less online help
+is available in UNIX Emacs than in TOPS-20 Emacs.  The only available help
+is the command M-?, which describes the function performed by the next
+character typed, and the command M-W, which inserts a "wall chart" of
+the available commands into the current buffer (the wall chart is included
+later in this document).
+
+	Many Emacs commands cause the top lines of the screen to be preempted
+by error messages or command typeout.  In TOPS-20 Emacs, the error message
+or typeout goes away when any command or character is typed.  In UNIX Emacs,
+the next character typed after an error message or command typeout is thrown
+away and not executed as a command or inserted into the buffer.
+
+	Programming in UNIX Emacs is somewhat different from programming in
+TOPS-20 Emacs.  To begin with, there is no minibuffer in UNIX Emacs.  This
+is because UNIX Emacs is written in C, rather than in TECO as TOPS-20 Emacs
+is, and hence there is no lower-level interpreter which the user can access.
+Customizing UNIX Emacs is done by means of keyboard macros, which are NOT
+to be confused with TOPS-20 keyboard macros.  UNIX Emacs provides keyboard
+commands for looping, conditionals, case selection, local variable handling,
+and so forth; in fact, keyboard macros in UNIX Emacs have much the same
+flavor as TECO programs.
+
+	UNIX Emacs programming is too complicated to describe further here.
+I have one copy of a "programming manual" for UNIX Emacs, if anyone is
+really interested.
+
+	We are always interested in hearing about bugs, incompatiblilities,
+suggested features, and so forth.  This includes errors in the documentation
+as well as errors in the program.  If you have any suggestions to offer,
+please send them to the mailing list bug-emacs@mit-csr.  Of course, I
+don't guarantee to do anything about them, but...  Also, if you come
+up with any interesting macro packages, I would be delighted to hear
+about them.
+					-Larry Allen
+	
+
+
+
+			UNIX Emacs Commands
+
+
+EMACS version 4.2 Date: 07/07/80
+
+^@:	sets the mark at the cursor position
+^A:	moves to the beginning of the line
+^B:	moves back one character
+^C:	capitalizes the current character
+^D:	deletes forward one character
+^E:	moves to the end of the line
+^F:	moves forward one character
+^G:	quits from any command in progress
+^H:	moves back one character
+^I:	inserts a tab
+^J:	opens a new line and moves to the beginning of it if the
+	next line is non-empty, otherwise down one line
+^K:	Kills to end of line (with argument, kills multiple lines)
+^L:	Redisplay-screen - clear screen and redisplay
+^M:	opens a new line and moves to the beginning of it if the
+	next line is non-empty, otherwise down one line
+^N:	moves down one line
+^O:	opens up a new line
+^P:	moves up one line
+^Q:	quotes the next character
+^R:	starts a reverse search
+^S:	starts a search
+^T:	Twiddle-characters - transpose previous two characters
+^U:	multiplies the argument by 4
+^V:	moves to the next page
+^W:	kills the current region (between cursor and mark)
+^X:	is a prefix for more single character commands,
+	type character or '*' for all
+^Y:	Yank nth killed item from kill stack
+^Z:	exits one level
+^[:	Makes the next character a meta character
+^\:	Load-C-Commands - Run various c editing commands
+^]:	makes a local variable of a macro invocation the argument to the
+	next command
+^^:	Causes the last returned result to become the argument
+^?:	deletes backward one character
+M-^L:	Re-displays with current line at top of page
+M-^M:	Mails the current buffer
+M-^Q:	Returns the next input character (in a macro)
+M-^R:	Regular expression query replace
+M-^S:	Regular expression search
+M-^V:	Scroll-other-window
+M-^X:	Executes argument 0 as a character command.
+M-^]:	Assigns the result of the next command to a macro local variable
+M- :	sets the mark at the cursor position
+M-!:	gets and executes a shell command
+M-":	Auto Fills the whole buffer
+M-$:	Executes a command, saving the output in buffer .exec
+M-%:	starts query replace
+M-/:	starts a comment
+M-::	Maps a character to a command
+M-;:	starts a comment
+M-<:	moves to top of file
+M->:	moves to bottom of file
+M-?:	explains the next character
+M-L:	refreshes the screen
+M-T:	Prompts for terminal type
+M-W:	Puts a wall chart of explanations in the buffer
+M-Y:	restores last killed text
+	(leaves cursor and mark around it)
+M-\:	Converts its argument to a character and inserts it
+M-_:	Underlines the next word
+M-a:	Moves to beginning of sentence
+M-b:	moves back one word
+M-c:	capitalizes the next word
+M-d:	deletes the next word
+M-e:	Moves to End of Sentence
+M-f:	moves forward one word
+M-g:	Moves to a specific line (its argument)
+M-k:	Kill-sentence - Kill from cursor to end of sentence
+M-m:	Displays active modes
+M-p:	Puts the current region in the kill buffer without killing it
+M-q:	Quotes the next character and adds the 0200 bit
+M-r:	starts query replace
+M-s:	Gives EMACS statistics
+M-t:	Twiddle-words - transpose two preceding words
+M-v:	moves back one page
+M-w:	Puts the current region in the kill buffer without killing it
+M-x:	Calls a macro by name
+M-y:	Replaces the last restore() with the next text in
+	the kill stack.
+M-z:	kills emacs with a core dump (for debugging)
+M-{:	Enters a command sequence (in a macro)
+M-}:	Exits a command sequence (in a macro)
+M-~:	Marks a buffer as being unmodified (up to date)
+M-^?:	deletes the last word
+
+Control-X commands:
+
+^X^B:	Lists all active buffers
+^X^C:	exits gracefully
+	(after asking whether or not to save the buffer)
+^X^D:	Changes the working directory
+^X^E:	Calls emacs recursively taking input from the terminal
+^X^F:	Find-file - Visit file in its own buffer
+^X^I:	Re-directs input from a file
+^X^K:	Kills a buffer
+^X^L:	Loads a file full of macro definitions
+^X^M:	Sets mode from argument (prompts for mode name)
+	and string if necessary
+^X^N:	Changes the buffer or file name
+^X^O:	quits from any command in progress
+^X^Q:	Returns the character under the cursor (in a macro)
+^X^R:	reads a new file
+^X^S:	saves the buffer in the current file (if modified)
+^X^T:	Prompts for a buffer name and inserts the text between the
+	cursor and the mark into the named buffer.
+^X^U:	Updates the display and delays for a specified time
+^X^V:	reads a new file
+^X^W:	writes a new or old file
+^X^X:	exchanges the mark and the cursor
+^X^Z:	Suspends EMACS and returns control to shell
+^X^^:	Causes the current window to grow one by line
+^X!:	Begins a case statement (in a macro)
+^X%:	Exchanges the top of the kill stack with another item
+^X&:	Compares two strings
+^X+:	Causes the next entry to the kill stack to append to the previous entry
+^X-:	Pops the kill stack
+^X1:	Exits two window mode
+^X2:	Enters two window mode
+^X3:	View-two-windows - Two-window mode leaving cursor in current window
+^X4:	Visit-in-other-window - Visit specified file in other window
+^X<:	Pushes a string from the tty or macro text into the kill stack
+^X=:	Gives statistics about the buffer
+^X>:	Duplicates an item on the kill stack
+^XB:	Puts the buffer name into the kill stack
+^XF:	Puts the file name into the stack
+^XL:	Loads a file full of macro definitions
+^XU:	Updates the display and delays for a specified time
+^XV:	Puts the current version on the kill stack.
+^X^:	Enters a "while" loop (in a macro)
+^Xb:	Changes Buffers (Change to * lists active buffers)
+^Xd:	Defines macros from the current buffer
+^Xf:	Edits a file in its own buffer
+	(if file has been read into a buffer, moves to it)
+^Xk:	Kill-buffer - if current buffer, change buffers also
+^Xn:	Rename-buffer to the base name of the file being edited
+^Xo:	Switches between windows
+^X|:	Begins a conditional execution sequence (in a macro)
+^X~:	Performs arithmetic or logical operations (in a macro)
+
+
+
+			C Macro Package
+
+A new set of emacs macros for formatting, type checking, and compiling
+c programs is now available.  The commands are accessed by typing
+^\ (ie Control-backslash) to emacs; you will then be prompted for
+a subcommand.  The following subcommands are available:
+
+? - help; prints a summary of the available commands
+c - compile the current buffer (cc -c <filename>, where <filename> is
+    the name of the file in the current buffer).  The buffer is written
+    out first if needed.  If any errors occur they will be displayed in
+    a second window, and the cursor will be moved to the line on which
+    the first error occurred.
+i - indent the current buffer.  Runs the c beautifier program cb over
+    the contents of the current buffer, then reads the result back in.
+l - compile and load the current buffer (cc -o <file> <file>.c, where
+    <file>.c is the name of the file in the current buffer.  Prompts
+    for a set of loader flags, which may contain library specifications
+    for example (like "-lS").  Errors are treated as in the c command.
+t - type-check the current buffer (lint -bsp <file>).  Runs the lint
+    type-checker over the current buffer.

@@ -6,6 +6,7 @@
 - Zwei/Zmacs (1978 - 1997)
 - SINE (1978 - ?)
 - Multics Emacs (1978 - 1989)
+- Montgomery Emacs (~1980)
 - Gosling Emacs (1980 - 2007)
 - GNU Emacs (1984 -)
 - Lucid Emacs (1992 - 1994)

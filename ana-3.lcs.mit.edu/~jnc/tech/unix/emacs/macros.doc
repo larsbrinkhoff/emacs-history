@@ -1,0 +1,212 @@
+This is a catalog of EMACS macros in the library
+
+balance: W. A. Montgomery (Version 3.4)
+	This file contains macros to display for each closing
+	parenthesis, brace, or bracket, the matching opening
+	character.  It re-defines these characters to do so, and
+	beeps if no match is found.  The effect on the file is the
+	same as if the macro library were not there with the
+	exception that } always behaves as it does in C mode.  The
+	maximum nesting depth that can be handled is about 20.
+	
+rmail:  W. A. Montgomery (version 3.4)
+	This file contains a macro put on ^Xr for processing mail. 
+	It gathers new and old mail (old mail from $HOME/rmail) and
+	allows the user to peruse it.  ? provides a brief
+	description of the available commands.  Among others, you
+	can selectively delete and undelete messages, reply to
+	messages, write messages to files, and gather the most
+	recent UNIX news items.
+	
+abbrev: W. A. Montgomery (version 3.2)
+	This file contains a single macro that is put on @ that
+	causes abbreviations to be expanded.  The abbreviation list
+	is taken from the file .abbrevs in the current directory.  If
+	the word preceeding @ matches an abbreviation, it is
+	expanded.  Otherwise, the terminal bell is sounded.
+	
+appropos: W. A. Montgomery (version 3.2)
+	This file contains a single macro on ^X? that provides a
+	different form of help information.  ^X? will prompt for a
+	subject, and display help explanations for all commands and
+	macros that pertain to that subject.  (actually, the subject
+	is used as a search string and all help explanations that
+	include the subject are displayed).
+	
+lcase: W. A. Montgomery (version 3.4)
+	This file contains macros for converting letters or words to lower
+	case.  M-l converts a single letter to lower case, while ^Xl
+	converrts an entire word to lower case.
+	
+refmac: W. A. Montgomery (version 3.2)
+	This file contains macros to interface with J. W. Leth's
+	nroff pre processor (nrpp) to maintain reference lists in
+	memoranda.  M-R places the user in the bibliography
+	file, and allows the user to move around in the
+	bibliography file through ordinary emacs commands. 
+	When the user exits from the bilbliography file via
+	^Z, the reference definition at the cursor position in the
+	bibliography is put into the file being edited at the cursor
+	position where M-R was invoked.  If the cursor position in
+	the bibliography is at the beginning of the buffer, no
+	reference definition is inserted into the edited file.
+	^XR can be used
+	while in the bibliography file to send the reference
+	description at the cursor position to the department
+	clerk for inclusion in the department bibliography.
+	
+spell: W. A. Montgomery (Version 3.4)
+	This macro package contains a single macro on M-S
+	that causes the spell program to be invoked on the
+	file in the buffer, and causes the result to be
+	analyzed.  The words found by spell are filtered through a
+	local dictionary (maintained in $HOME/.dict) so that you can
+	add words to your local dictionary that are not in the spell
+	dictionary. 
+
+	For each misspelled word, spell will prompt for
+	action.  You can file the word in your local dictionary by
+	typing 'd'. 'n' goes to the next word without looking up the
+	occurances of the current word.  '?' displays instructions. 
+
+	A space causes the cursor to move to the first occurance of
+	the misspelled word.  You can then edit the file to correct
+	the word and type ^Z to move on to the next occurance.  When
+	you reach the last occurance, spell moves on to the next word. 
+
+tags:	W. A. Montgomery (Version 3.6)
+	Tags is a macro library that facilitates working with
+	a collection of related files.  This package works
+	with a tags file, which defines a set of names for
+	positions in the files.  The macro placed on
+	^Xf will prompt for a tag name, reads the file
+	containing the position implied by the specified
+	tag, and moves to the indicated position.  This is
+	useful, for example, with a set of source files that
+	contain C function definitions when you want to find
+	a function and don't know or care what file it is in.
+	
+	A second macro in this package (C_TAGS) can be used
+	to construct a tags file from a C source file.  When
+	C_TAGS is invoked, it scans the current buffer for
+	function definitions, and prompts you.  If you enter
+	a space, it defines a tag whose name is the function.
+	Any other character causes the current definition to
+	be ignored.  Note:  If you declare functions with
+	types, like char *foobar(x,y), put the type on one
+	line and the function definition on a line by
+	itself, otherwise this will not work.
+
+	The command ^xt defines a tag from the current line of the
+	current file, and can be used to update tags files. 
+
+	The tags are accumulated in a buffer called .tags
+	which should be saved before you exit emacs.  Tags
+	from several files can be put in the same tags file
+	simply by running C_TAGS on several source files. 
+	There is currently no check for an attempt to
+	re-define the same tag name, which will fail.	
+
+	For those who like the nitty gritty, the format of
+	the tags file is a series of entries of the form
+
+	@<tag_name>:<file_name>:<search_string>:
+
+	Any of the fields can contain any character
+	(including newline) except : and @.  
+	
+crypt:	W. A. Montgomery (Version 4.0)
+	This macro library contains macros for reading and writing
+	files encrypted with crypt (1).  The library has three macros:
+	
+	^XR (READ_ENCRYPTED)  This macro prompts the user for a key
+	and a file name and reads the specfied file into the current
+	buffer.
+	
+	^XW (WRITE_ENCRYPTED)  This macro prompts for a key and a
+	file name and writes the buffer to the file, using the key
+	specified.
+	
+	^XS (SAVE_ENCRYPTED)  Prompts for a key and writes saves the
+	current buffer under the specified key.
+	
+	All of these commands are rather slow, as they use the crypt
+	command to do the reading and writing.
+
+debug:	W. A. Montgomery (Version 4.0)
+
+	This library contains several useful macros for debugging
+	and generaal programming.
+	
+	display_killstack:  Puts the items in the kill stack into a
+	buffer, and allows you to examine them.
+	
+	PNUMB:  Converts its argument to a character string and
+	leaves the result in the buffer at the current position.
+	
+	TO_DECIMAL:  Converts the top item of the kill stack to
+	a decimal integer and returns the result.
+	
+loader:  W. A. Montgomery (Version 4.1)
+
+	This file contains a number of macros to load macros from
+	this library when invoked.  If you use macros like spell,
+	rmail, refmac, and crypt, infrequently, load loader instead.
+	When you first invoke a macro in any of those libraries it
+	will be automatically loaded for you.
+	
+shell:	Joe Steffen and Bill Paulson (Version 4.0)
+	This file contains macros that provide convenient execution
+	of your frequently executed shell commands, and allow you to
+	see the output of several commands at once.
+	
+	The M-E macro allows you to edit a file of shell commands
+	called $HOME/.commands.  Enter the
+	command(s) you want to execute on a line, or move the cursor to a
+	different line of commands, and optionally enter ^Z to exit.  Enter
+	M-e to execute the command line the cursor was pointing at.  The
+	shell output will be put into the .exec buffer and
+	displayed in the bottom emacs window, unless
+	the command line started with a '!', in which case the
+	output will be displayed as the commands execute.
+
+	The M-s macro executes the shell interactively
+	instead of prompting for each command.  This allows cd
+	commands to stay in effect and allows you to see the results of
+	several commands.  The prompt is changed to 'emacs' to remind you
+	that you are still within emacs.  Enter ^D instead of a null line to
+	return to emacs.
+
+This directory contains a library of emacs macros for various purposes.
+Any macros submitted to this library should follow these rules:
+
+
+	Name and description (the first word of the comment on the
+	first line of a macro should be a unique macro name, right
+	after the ^\).
+	
+	A block of comments before any of the code describing in
+	more detail what the macro did, who wrote it, what version
+	of EMACS is needed to run it, and ways in which the user may
+	wish to customize it.
+	
+	Comments on any lines that do something non-obvious (i.e.
+	what is in the kill stack when it is used to supply a
+	parameter to something.
+	
+	When one macro calls another, use M-x.  Do not just invoke
+	them with a character sequence, so that a user can re-define
+	which character yours macros are on without screwing up the
+	macros. 
+	
+	Any macro that is not intended to be invoked by a character
+	sequence should be assigned to ^X^[ (control-x escape),
+	which is a highly improbable sequence to be useful for
+	anything else.
+
+	
+I am sure that we will be developing and using lots of macros, and
+that a lot of people will be looking at our macros, thus I think
+that this kind of detail is essential to try to avoid problems.
+
+Warren
