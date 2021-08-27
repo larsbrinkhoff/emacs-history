@@ -1,0 +1,72 @@
+Permission to access file %s denied
+Can't find file: %s
+No such process: %s
+Interrupted system call: %s
+Physical I/O error on file %s
+No such device for file %s
+Argument list too big for command: %s
+Bad executable file format: %s
+Invalid file number: %s
+Wait with no children %s
+System out of processes: %s
+System out of physical memory: %s
+Access denied to file: %s
+Bad system call: %s
+Block device required: %s
+Mount device busy: %s
+File already exists: %s
+Linked files must be on the same filesystem: %s
+No such device for file %s
+File %s is not a directory
+File %s is a directory
+Invalid argument for system call: %s
+System file table overflowed, opening %s
+Too many files open in this process, opening %s
+Standard I/O must attach to a terminal port: %s
+File %s is a pure procedure being executed and cannot be modified or deleted
+File %s is too big for the system
+System out of storage space for file %s
+Seek issued for inappropriate device: %s
+File %s is on a read only file system
+Too many links to file %s
+Write to a pipe with no reader %s
+Line %d too long
+File buffers broken
+Too Many Lines in Buffer
+Can't have Null buffer name
+Out of Buffers
+Buffer %s in use
+Buffer %s not found
+Can't kill current buffer
+Too Many Macros
+Can't Find Cursor
+Can't use terminal type %s
+Mark out of bounds, using buffer number
+No such mode: %s
+No destination lines (TO: line) in mail
+Line %d, braces do not balance in macro definition
+Last macro definition does not terminate
+Syntax error in conditional in macro
+Syntax error in iteration in macro
+Macro %s not found
+Range endpoint too large
+Bad number
+\digit out of range
+illegal or missing delimiter
+() imbalance
+Too many (
+More than 2 numbers given in \{\}
+} expected after \.
+First number exceeds second in \{\}
+[] imbalance
+Regular expression overflow
+Name retrieved from kill stack too big
+Macro nesting too deep, quitting
+Attempt to write buffer %s to null file name
+Can't remove directory: %s
+Unknown owner "%s" for file "%s"
+Unknown terminal parameter "%s"
+Display size too big for terminal type "%s"
+Bad character for printf: %%%c
+Can't save in readonly mode
+Replace of "%s" with "%s", would loop

@@ -1,0 +1,114 @@
+is undefined
+is self inserting
+moves to the beginning of the line
+moves back one character
+capitalizes the current character
+deletes forward one character
+moves to the end of the line
+moves forward one character
+quits from any command in progress
+inserts a tab
+opens a new line and moves to the beginning of it if thenext line is non-empty, otherwise down one line
+Kills to end of line (with argument, kills multiple lines)
+refreshes the screen
+moves down one line
+opens up a new line
+moves up one line
+quotes the next character
+starts a reverse search
+starts a search
+transposes the next two characters
+multiplies the argument by 4
+moves to the next page
+kills the current region (between cursor and mark)
+is a prefix for more single character commands,type character or '*' for all
+restores last killed text(leaves cursor and mark around it)
+exits one level
+moves back one word
+capitalizes the next word
+deletes the next word
+moves forward one word
+starts query replace
+moves back one page
+kills emacs with a core dump (for debugging)
+deletes the last word
+moves to top of file
+moves to bottom of file
+exits gracefully(after asking whether or not to save the buffer)
+reads a new file
+saves the buffer in the current file (if modified)
+writes a new or old file
+exchanges the mark and the cursor
+sets the mark at the cursor position
+explains the next character
+gets and executes a shell command
+deletes backward one character
+replaces the region with the next to last deleted text
+Prompts for terminal type
+Prompts for a buffer name and inserts the text between thecursor and the mark into the named buffer.
+Moves to a specific line (its argument)
+starts a comment
+Displays active modes
+Sets mode from argument (prompts for mode name)and string if necessary
+Moves to beginning of sentence
+Moves to End of Sentence
+Changes Buffers (Change to * lists active buffers)
+Edits a file in its own buffer(if file has been read into a buffer, moves to it)
+Kills a buffer
+Exits two window mode
+Switches between windows
+Enters two window mode
+Underlines the next word
+Executes a command, saving the output in buffer .exec
+Changes the working directory
+Re-directs input from a file
+Mails the current buffer
+Re-displays with current line at top of page
+Regular expression search
+Regular expression query replace
+Quotes the next character and adds the 0200 bit
+Converts its argument to a character and inserts it
+Plays the game of Life
+Puts the current region in the kill buffer without killing it
+Puts a wall chart of explanations in the buffer
+Gives EMACS statistics
+Replaces the last restore() with the next text inthe kill stack.
+Marks a file for deletion
+Undeletes a file
+Edits (or direds) the file
+Updates the directory
+Auto Fills the whole buffer
+Defines macros from the current buffer
+Performs arithmetic or logical operations (in a macro)
+Begins a conditional execution sequence (in a macro)
+Returns the next input character (in a macro)
+Returns the character under the cursor (in a macro)
+Enters a "while" loop (in a macro)
+Pushes a string from the tty or macro text into the kill stack
+Enters a command sequence (in a macro)
+Exits a command sequence (in a macro)
+Makes the next character a meta character
+Causes the last returned result to become the argument
+Puts the buffer name into the kill stack
+Puts the file name into the stack
+Calls emacs recursively taking input from the terminal
+Duplicates an item on the kill stack
+Pops the kill stack
+Exchanges the top of the kill stack with another item
+Loads a file full of macro definitions
+Calls a macro by name
+Compares two strings
+makes a local variable of a macro invocation the argument to thenext command
+Causes the current window to grow one by line
+Updates the display and delays for a specified time
+Begins a case statement (in a macro)
+Marks a buffer as being unmodified (up to date)
+Maps a character to a command
+Assigns the result of the next command to a macro local variable
+Causes the next entry to the kill stack to append to the previous entry
+Changes the buffer or file name
+Gives statistics about the buffer
+Puts the current version on the kill stack.
+Executes argument 0 as a character command.
+Lists all active buffers
+Suspends EMACS and returns control to shell
