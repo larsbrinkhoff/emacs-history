@@ -1,24 +1,157 @@
-I was a graduate student in the Computer Systems Research group at MIT from 1973 to 1978, doing a masters and Ph.D.  While much of my work was on Multics, I had an account on the ITS PDP-10 system supporting general work at LCS, and for much of that time shared a pair of offices with other students in the group and access to several terminals, including some early screen terminals cabled to the MIT-TIP providing high speed access to all the systems.  I think it was Bob Frankston or Dave Reed that introduced me to the "NR" text processing system on ITS and Emacs (actually at first one of it's predecessors), and I quickly adopted both for writing my thesis papers.  I even learned how to build some macros in both together with the others to automate the handling of references.  
+I was a graduate student in the Computer Systems Research group at MIT
+from 1973 to 1978, doing a masters and Ph.D.  While much of my work
+was on Multics, I had an account on the ITS PDP-10 system supporting
+general work at LCS, and for much of that time shared a pair of
+offices with other students in the group and access to several
+terminals, including some early screen terminals cabled to the MIT-TIP
+providing high speed access to all the systems.  I think it was Bob
+Frankston or Dave Reed that introduced me to the "NR" text processing
+system on ITS and Emacs (actually at first one of it's predecessors),
+and I quickly adopted both for writing my thesis papers.  I even
+learned how to build some macros in both together with the others to
+automate the handling of references.
 
-In 1978 I left MIT for Bell Labs in Naperville IL, where I joined an applied research departmeht with a newly acquired PDP 11/70, running standard Bell Labs Unix.  It was primaily support for our research in new telecom services delivered over digital connectivity to customers, but also our base for writing and other general support.  At the time though most had only 300 bad printing terminals, something I actually made use of dialed up to an Arpanet TIP to finish my dissertation paper.  When I successfully defended and turned that in in late 1978, I suddenly had extra time. About then started getting some video terminals and a colleague had run wiring to many of our offices to connect to our 11/70 at 9600 baud, fast enough for a screen editor, and while I could use VI, I missed Emacs, and decided trying to reproduce some semblance of it on Unix would be an interesting hobby project to help me learn C programming and better understand challenges like optimizing display refresh and managing files being edited.  I read up on both problems and others, and developed my approaches to them and to the binding of characters to editing commands, and fairly quickly had something usable running.
+In 1978 I left MIT for Bell Labs in Naperville IL, where I joined an
+applied research department with a newly acquired PDP 11/70, running
+standard Bell Labs Unix.  It was primarily support for our research in
+new telecom services delivered over digital connectivity to customers,
+but also our base for writing and other general support.  At the time
+though most had only 300 bad printing terminals, something I actually
+made use of dialed up to an Arpanet TIP to finish my dissertation
+paper.  When I successfully defended and turned that in in late 1978,
+I suddenly had extra time. About then started getting some video
+terminals and a colleague had run wiring to many of our offices to
+connect to our 11/70 at 9600 baud, fast enough for a screen editor,
+and while I could use VI, I missed Emacs, and decided trying to
+reproduce some semblance of it on Unix would be an interesting hobby
+project to help me learn C programming and better understand
+challenges like optimizing display refresh and managing files being
+edited.  I read up on both problems and others, and developed my
+approaches to them and to the binding of characters to editing
+commands, and fairly quickly had something usable running.
 
-By late 1980 I had implemented most of the basic commands of Emacs as well as the ability to have multiple editing buffers and split the screen, and the ability to support multiple terminals.  Doing all that on a machine with only 64K bytes of code space and 64K bytes of data space in a user process was a challenge and required a lot of tricks.  (In fact for a long time I supported machines which shared a single 64K byte space for instructions and data).  Once my emacs became stable enough to trust with files I started sharing it with others at the labs.  At the time most users accessed Unix on one of the computer center's systems, and someone had set up a mechanism to install useful tools mostly taken from the Berkley Unix distribution on in a common directory that I used to support it.  I also, partly at the suggestion of Mark Horton who was maintaining vi at the time imported an early version of netnews in part to communicate with my growing user community and wound up supporting that too for a while.  Eventually Mark came to Bell Labs Columbus and lead a re-implementation of Netnews to better scale and also it's adoption by the computer center as a general service, but I continued to support Emacs on a growing number of machines and a growing list of hardware implementations.  The popularity of my editor within the company grew in part because another emplioyee familiar with real-time Teco, the platform on which the original emacs was built, had implemented a version of that and distributed it as I did, but when he left the company most of those users migrated to my emacs which had most of the same key commands and feel to it.
+By late 1980 I had implemented most of the basic commands of Emacs as
+well as the ability to have multiple editing buffers and split the
+screen, and the ability to support multiple terminals.  Doing all that
+on a machine with only 64K bytes of code space and 64K bytes of data
+space in a user process was a challenge and required a lot of tricks.
+(In fact for a long time I supported machines which shared a single
+64K byte space for instructions and data).  Once my emacs became
+stable enough to trust with files I started sharing it with others at
+the labs.  At the time most users accessed Unix on one of the computer
+center's systems, and someone had set up a mechanism to install useful
+tools mostly taken from the Berkley Unix distribution on in a common
+directory that I used to support it.  I also, partly at the suggestion
+of Mark Horton who was maintaining vi at the time imported an early
+version of netnews in part to communicate with my growing user
+community and wound up supporting that too for a while.  Eventually
+Mark came to Bell Labs Columbus and lead a re-implementation of
+Netnews to better scale and also it's adoption by the computer center
+as a general service, but I continued to support Emacs on a growing
+number of machines and a growing list of hardware implementations.
+The popularity of my editor within the company grew in part because
+another employee familiar with real-time Teco, the platform on which
+the original emacs was built, had implemented a version of that and
+distributed it as I did, but when he left the company most of those
+users migrated to my emacs which had most of the same key commands and
+feel to it.
 
-Over the next 20 years I continued to dabble at Emacs, adding to it along the way.  When the IBM PC came out I worked with a colleague to figure out how to put emacs on it under DOS, using some assembly language functions keyboard and screen I/O, and a cross compiler for Intel processors (we used both a commercial tool and an internal one at times).   
+Over the next 20 years I continued to dabble at Emacs, adding to it
+along the way.  When the IBM PC came out I worked with a colleague to
+figure out how to put emacs on it under DOS, using some assembly
+language functions keyboard and screen I/O, and a cross compiler for
+Intel processors (we used both a commercial tool and an internal one
+at times).
 
-I added a macro capability to it over time, and since the C language wasn't really suited to dynamically loading macros, I created a language for writing macros essentially using unused key bindings for language constructs like loops, branches, and variables.  Macros could be written directly that way but it was quite awkward, so I created a compiler from a lisp like syntax (not anywhere near lisp semantics, but easy to parse) that made it easier for people to write macros, and many people did that.  There were macros implementing mail and news readers, word processing, and a lot of less ambitions personal shortcuts.
+I added a macro capability to it over time, and since the C language
+wasn't really suited to dynamically loading macros, I created a
+language for writing macros essentially using unused key bindings for
+language constructs like loops, branches, and variables.  Macros could
+be written directly that way but it was quite awkward, so I created a
+compiler from a lisp like syntax (not anywhere near lisp semantics,
+but easy to parse) that made it easier for people to write macros, and
+many people did that.  There were macros implementing mail and news
+readers, word processing, and a lot of less ambitions personal
+shortcuts.
 
-In addition to adding support for many different types of terminals, I added support for different languages and character sets, and at one point helped a team who had implemented a word processing tool for Chinese using it make a key delivery.  
+In addition to adding support for many different types of terminals, I
+added support for different languages and character sets, and at one
+point helped a team who had implemented a word processing tool for
+Chinese using it make a key delivery.
 
-When we got a prototype "BLIT" windowing terminal from Bell Lans research, I worked to provide support for a mouse based user interface.  The BLIT used downloaded software to support multiple terminal emulator windows each of which communicated with a Unix process, and I modified a version of that terminal window software to support menus, scroll bars, position reporting, and other features communicating with the Unix process with control and escape sequences.  In emacs those were bound to macros that provided capabilities like cut and paste and other features.  As Unix workstations began to appear in our workplace I adapted that terminal window software for X-windows so you could run the same Emacs macro packages there was well.  The BLIT was eventually productized and released as the 5620 and 630 terminals, the latter being widely used inside the company.
+When we got a prototype "BLIT" windowing terminal from Bell Labs
+research, I worked to provide support for a mouse based user
+interface.  The BLIT used downloaded software to support multiple
+terminal emulator windows each of which communicated with a Unix
+process, and I modified a version of that terminal window software to
+support menus, scroll bars, position reporting, and other features
+communicating with the Unix process with control and escape sequences.
+In emacs those were bound to macros that provided capabilities like
+cut and paste and other features.  As Unix workstations began to
+appear in our workplace I adapted that terminal window software for
+X-windows so you could run the same Emacs macro packages there was
+well.  The BLIT was eventually productized and released as the 5620
+and 630 terminals, the latter being widely used inside the company.
 
-When Windows appeared on PCs, and the CYGWIN package for supporting a Unix-like environment there was available I used CYGWIN and it's X windows libraries to port both Emacs and the terminal window program to Windows. It was about then that I realized that the era of the stand-alone screen editor was passing in favor of editing capability incorporated into other purpose-specific tools, like word processors, email clients, browsers, and many others.  
+When Windows appeared on PCs, and the CYGWIN package for supporting a
+Unix-like environment there was available I used CYGWIN and it's X
+windows libraries to port both Emacs and the terminal window program
+to Windows. It was about then that I realized that the era of the
+stand-alone screen editor was passing in favor of editing capability
+incorporated into other purpose-specific tools, like word processors,
+email clients, browsers, and many others.
 
-Over the years I did considerable re-work on the implementation internals, undoing some of the "tricks" I used initially to cope with limited memory to support greater portability, and removing implementation limits on many things.  At one point I even did a re-implementation of the way Emacs handled the file being edited to try to simplify things.  My original implementation followed the approach used in "ed" and "vi", which viewed a file as a sequence of lines of text, providing a two dimensional address for every chacter in it and using a representation that matched that. That created problems in my implementation with commands that spanned lines and with implementation limits on line length.  I successfully rebuilt the core of that to eliminate the two dimentional structure, but realized that reworking all the editing commands to use the new approach was probably beyond a hobby project for me and risked destabilizing what was by then a mature and trusted piece of software used by hundreds, probably thousands of others so I never completed that.  
+Over the years I did considerable re-work on the implementation
+internals, undoing some of the "tricks" I used initially to cope with
+limited memory to support greater portability, and removing
+implementation limits on many things.  At one point I even did a
+re-implementation of the way Emacs handled the file being edited to
+try to simplify things.  My original implementation followed the
+approach used in "ed" and "vi", which viewed a file as a sequence of
+lines of text, providing a two dimensional address for every character
+in it and using a representation that matched that. That created
+problems in my implementation with commands that spanned lines and
+with implementation limits on line length.  I successfully rebuilt the
+core of that to eliminate the two dimensional structure, but realized
+that reworking all the editing commands to use the new approach was
+probably beyond a hobby project for me and risked destabilizing what
+was by then a mature and trusted piece of software used by hundreds,
+probably thousands of others so I never completed that.
 
-I did take a stab at incorporating Emacs editing into other tools in the early 1990s.  At that time I inherited a project which had built an integrated programming environment around a new object oriented language.  It had been built as a prototype for how we could support customers developing their own services and dynamically adding them to one of our systems, modeled after the Smalltalk language and tools but with a look more like C, and a focus on real-time performance and reliability.  Because all the tools that displayed and edited text used the same underlying software classes it was easy enough to implement variants of them that supported emacs editing commands and other features, and those capabilities became available to the user in any tool provided instantly.  The system was a success internally, but management was reluctant to commit to supporting a new programming language for customers, so it was never released as a supported product.
+I did take a stab at incorporating Emacs editing into other tools in
+the early 1990s.  At that time I inherited a project which had built
+an integrated programming environment around a new object oriented
+language.  It had been built as a prototype for how we could support
+customers developing their own services and dynamically adding them to
+one of our systems, modeled after the Smalltalk language and tools but
+with a look more like C, and a focus on real-time performance and
+reliability.  Because all the tools that displayed and edited text
+used the same underlying software classes it was easy enough to
+implement variants of them that supported emacs editing commands and
+other features, and those capabilities became available to the user in
+any tool provided instantly.  The system was a success internally, but
+management was reluctant to commit to supporting a new programming
+language for customers, so it was never released as a supported
+product.
 
-Emacs was never incorporated into AT&T's standard software for Unix, mainly because they felt no need to incur the support expense to do that, but I did get it incorporated into the Unix Tool Chest, a catalog of useful software that AT&T would sell unsupported, mostly software like mine created by people for their own projects and not for the general release.  I don't know how many copies were purchased.  Emacs was also incorporated into the 5ESS software for the unix based system used to administer a switch, mainly because the 5ESS developers and the customer staff that had been exposed to it in our test labs were fans.  
+Emacs was never incorporated into AT&T's standard software for Unix,
+mainly because they felt no need to incur the support expense to do
+that, but I did get it incorporated into the Unix Tool Chest, a
+catalog of useful software that AT&T would sell unsupported, mostly
+software like mine created by people for their own projects and not
+for the general release.  I don't know how many copies were purchased.
+Emacs was also incorporated into the 5ESS software for the unix based
+system used to administer a switch, mainly because the 5ESS developers
+and the customer staff that had been exposed to it in our test labs
+were fans.
 
-I left Bell Labs in mid 2001 to take advantage of an early retirement offer and pursue other interests.  I turned the source over to others, though I doubt much was done to extend it as many others involved in producing and supporting tools left at the same time and the company went through a long period of downsizing.  I continued to use it myself for some time using Cygwin on Windows, and tracking new releases of both, but eventually fell behind in doing that, finding I wasn't using it all that much.  I always wanted to do a native windows port and look at better integrating it in that world but never found the time.
-
+I left Bell Labs in mid 2001 to take advantage of an early retirement
+offer and pursue other interests.  I turned the source over to others,
+though I doubt much was done to extend it as many others involved in
+producing and supporting tools left at the same time and the company
+went through a long period of downsizing.  I continued to use it
+myself for some time using Cygwin on Windows, and tracking new
+releases of both, but eventually fell behind in doing that, finding I
+wasn't using it all that much.  I always wanted to do a native windows
+port and look at better integrating it in that world but never found
+the time.
