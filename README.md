@@ -12,6 +12,7 @@
 - Lucid Emacs (1992 - 1994)
 - XEmacs (1994 - 2013)
 - MicroEMACS (1985 -)
+- Prime Emacs
 
 ### GNU Emacs Release History
 
@@ -229,3 +230,5 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   "I probably have a version that predates any of Daniel Lawrence's changes,
   but I will need to look around a little and find it."  
   "This looks like a version from 1986."
+
+- emacs23.tap from Dennis Boone.
