@@ -1,0 +1,75 @@
+vVacation Mail processor
+
+Warren A. Montgomery (IH6E314) Version 3.4
+
+This macro processes all of your new mail, building it into $HOME/rmail
+And responding with the response in $HOME/response.
+
+B		Push starting buffer into kill stack
+<RMAIL
+goto RMAIL buffer
+<$HOME/rmail
+0><$MAIL
+0>¾ append new mail and save
+¼5000-wipeout /usr/mail
+Read back rmail file
+^ûWhile more messages
+	ølast_mail
+	 ønext_mail
+	Bð<fiddle
+	¼--¼		Move text into fiddle buffer
+	<AUTOMATIC RESPONSE
+	|û
+		ûý		Skip message with "AUTOMATIC RESPONSE" in it
+	û B^û~‘>	While next line is '>'
+		|ûû~‘*	If not Forwarding line
+			 âð+<!
+			+ýý		This line processed
+		ýMove on
+	æ ^û·~~‘ ýSkip to space
+	ð	Pick up target user
+	 ð%And pick up sending time
+	ølast_mail
+	 ønext_mail
+	ð<Mail
+	To: %-
+	Subject: Your Message Sent: %-
+
+	AUTOMATIC RESPONSE
+	<fill
+	Fill mode on
+	<$HOME/response
+	Reply to mail
+	øSign_mail
+		Sign and send
+	-<$HOME/.mail_reply
+	<fill
+	B%Back to RMAIL
+ýýý
+next_mail Go to next mail entry
+<^From 
+|û	search for next From
+	û“ý
+	û ¾ýý
+last_mail Go to last mail entry
+<^From 
+|û	Search backwords for a From
+	û-2“ý
+	û ¼ýý
+Sign_mail
+
+|ûLook for what kind of mail
+	ûû<@
+	³çý<$HOME/.sig_arpa
+	ý	Arpanet mail
+	ûû<!
+	³çý<$HOME/.sig_btl
+	ý	btl mail
+	û 	Default, local mail
+	<$HOME/.sig_local
+	ýý
+¾ ­	Read in signature (If any)
+|ûû ý	If this worked, do nothing
+	û <$HOME/.signature
+	­	Read in default signature
+ýý

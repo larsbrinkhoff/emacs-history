@@ -1,0 +1,453 @@
+This is a catalog of EMACS macros in the library
+
+balance: W. A. Montgomery (Version 3.4)
+	This file contains macros to display for each closing
+	parenthesis, brace, or bracket, the matching opening
+	character.  It re-defines these characters to do so, and
+	beeps if no match is found.  The effect on the file is the
+	same as if the macro library were not there with the
+	exception that } always behaves as it does in C mode.  The
+	maximum nesting depth that can be handled is about 20.
+	
+rmail:  W. A. Montgomery (version 3.4)
+	This file contains a macro put on ^Xr for processing mail. 
+	It gathers new and old mail (old mail from $HOME/rmail) and
+	allows the user to peruse it.  ? provides a brief
+	description of the available commands.  Among others, you
+	can selectively delete and undelete messages, reply to
+	messages, write messages to files, and gather the most
+	recent UNIX news items.
+	
+vmail:  W. A. Montgomery (version 4.0)
+	This file contains a macro that responds to your mail while
+	you are vacation.  It will copy all new mail into
+	$HOME/rmail, and respond to each message, giving the date of
+	the message, the file $HOME/response, and your signature to
+	each.  The macro is put on ^Xv when loaded.
+	The intended use of this package is to set it up to run
+	periodically while you are away on vacation (or for some
+	other extended period of time) via at(1) jobs or the like. 
+	You do this by having the job run emacs -i <foo> where foo
+	is a file that does ^X^Lvmail\n^Xv^Z.  Each time you run it,
+	all new mail is replied to, and accumulates in $HOME/rmail
+	awating your return.
+
+abbrev: W. A. Montgomery (version 3.2)
+	This file contains a single macro that is put on @ that
+	causes abbreviations to be expanded.  The word preceeding
+	the '@' is looked up in a list of abbreviations for
+	expansion. The abbreviation list
+	is taken from the file .abbrevs in the current directory. 
+	The file contains a series of entries of the form:
+	
+	abbreviation@ what it expands to.  
+
+	Everything after the "@ " up to the next line containing
+	an '@' becomes the expansion of "abbreviation", so that you
+	may have multi-line abbreviations if you like.
+	
+appropos: W. A. Montgomery (version 3.2)
+	This file contains a single macro on ^X? that provides a
+	different form of help information.  ^X? will prompt for a
+	subject, and display help explanations for all commands and
+	macros that pertain to that subject.  (actually, the subject
+	is used as a search string and all help explanations that
+	include the subject are displayed).
+	
+lcase: W. A. Montgomery (version 3.4)
+	This file contains macros for converting letters or words to lower
+	case.  M-l converts a single letter to lower case, while ^Xl
+	converrts an entire word to lower case.
+	
+refmac: W. A. Montgomery (version 3.2)
+	This file contains macros to interface with J. W. Leth's
+	nroff pre processor (nrpp) to maintain reference lists in
+	memoranda.  M-R places the user in the bibliography
+	file, and allows the user to move around in the
+	bibliography file through ordinary emacs commands. 
+	When the user exits from the bilbliography file via
+	^Z, the reference definition at the cursor position in the
+	bibliography is put into the file being edited at the cursor
+	position where M-R was invoked.  If the cursor position in
+	the bibliography is at the beginning of the buffer, no
+	reference definition is inserted into the edited file.
+	^XR can be used
+	while in the bibliography file to send the reference
+	description at the cursor position to the department
+	clerk for inclusion in the department bibliography.
+	
+spell: W. A. Montgomery (Version 3.4)
+	This macro package contains a single macro on M-S
+	that causes the spell program to be invoked on the
+	file in the buffer, and causes the result to be
+	analyzed.  The words found by spell are filtered through a
+	local dictionary (maintained in $HOME/.dict) so that you can
+	add words to your local dictionary that are not in the spell
+	dictionary. 
+
+	For each misspelled word, spell will prompt for
+	action.  You can file the word in your local dictionary by
+	typing 'd'. 'n' goes to the next word without looking up the
+	occurances of the current word.  '?' displays instructions. 
+
+	A space causes the cursor to move to the first occurance of
+	the misspelled word.  You can then edit the file to correct
+	the word and type ^Z to move on to the next occurance.  When
+	you reach the last occurance, spell moves on to the next word. 
+
+tags:	W. A. Montgomery (Version 3.6)
+	Tags is a macro library that facilitates working with
+	a collection of related files.  This package works
+	with a tags file, which defines a set of names for
+	positions in the files.  The macro placed on
+	^Xf will prompt for a tag name, reads the file
+	containing the position implied by the specified
+	tag, and moves to the indicated position.  This is
+	useful, for example, with a set of source files that
+	contain C function definitions when you want to find
+	a function and don't know or care what file it is in.
+	
+	A second macro in this package (C_TAGS) can be used
+	to construct a tags file from a C source file.  When
+	C_TAGS is invoked, it scans the current buffer for
+	function definitions, and prompts you.  If you enter
+	a space, it defines a tag whose name is the function.
+	Any other character causes the current definition to
+	be ignored.  Note:  If you declare functions with
+	types, like char *foobar(x,y), put the type on one
+	line and the function definition on a line by
+	itself, otherwise this will not work.
+
+	The command ^xt defines a tag from the current line of the
+	current file, and can be used to update tags files. 
+
+	The tags are accumulated in a buffer called .tags
+	which should be saved before you exit emacs.  Tags
+	from several files can be put in the same tags file
+	simply by running C_TAGS on several source files. 
+	There is currently no check for an attempt to
+	re-define the same tag name, which will fail.	
+
+	For those who like the nitty gritty, the format of
+	the tags file is a series of entries of the form
+
+	@<tag_name>:<file_name>:<search_string>:
+
+	Any of the fields can contain any character
+	(including newline) except : and @.  
+	
+crypt:	W. A. Montgomery (Version 4.0)
+	This macro library contains macros for reading and writing
+	files encrypted with crypt (1).  The library has three macros:
+	
+	^XR (READ_ENCRYPTED)  This macro prompts the user for a key
+	and a file name and reads the specfied file into the current
+	buffer.
+	
+	^XW (WRITE_ENCRYPTED)  This macro prompts for a key and a
+	file name and writes the buffer to the file, using the key
+	specified.
+	
+	^XS (SAVE_ENCRYPTED)  Prompts for a key and writes saves the
+	current buffer under the specified key.
+	
+	All of these commands are rather slow, as they use the crypt
+	command to do the reading and writing.
+
+debug:	W. A. Montgomery (Version 4.0)
+
+	This library contains several useful macros for debugging
+	and generaal programming.
+	
+	display_killstack:  Puts the items in the kill stack into a
+	buffer, and allows you to examine them.
+	
+	PNUMB:  Converts its argument to a character string and
+	leaves the result in the buffer at the current position.
+	
+	TO_DECIMAL:  Converts the top item of the kill stack to
+	a decimal integer and returns the result.
+	
+loader:  W. A. Montgomery (Version 4.1)
+
+	This file contains a number of macros to load macros from
+	this library when invoked.  If you use macros like spell,
+	rmail, refmac, and crypt, infrequently, load loader instead.
+	When you first invoke a macro in any of those libraries it
+	will be automatically loaded for you.
+	
+shell:	Joe Steffen and Bill Paulson (Version 4.4)
+	This file contains macros that provide convenient execution
+	of your frequently executed shell commands, and allow you to
+	see the output of several commands at once.
+	
+	The M-E macro allows you to edit a file of shell commands
+	called $HOME/.commands.  Enter the
+	command(s) you want to execute on a line, or move the cursor to a
+	different line of commands, and optionally enter ^Z to exit.  Enter
+	M-^E to execute the command line the cursor was pointing at.  The
+	shell output will be put into the .exec buffer and
+	displayed in the bottom emacs window, unless
+	the command line started with a '!', in which case the
+	output will be displayed as the commands execute.
+
+	The M-C macro displays the current line in
+	this file in case you forget.  M-N and M-P move the cursor down and up,
+	respectively, in the file and display the current line.  They take an
+	argument just like ^N and ^P.  These commands make it easy to switch
+	between several command lines without using the M-E macro.
+
+	The ^Xs macro executes the shell interactively
+	instead of prompting for each command.  This allows cd
+	commands to stay in effect and allows you to see the results of
+	several commands.  The prompt is changed to 'emacs' to remind you
+	that you are still within emacs.  Enter ^D instead of a null line to
+	return to emacs.
+
+list:	C. Douglas Blewett (DR30L19) Version 4
+	
+	This file contains a command that allows the user to edit
+	(recursively) a list of files.  This is much like vi's :next
+	command.  The list of files is collected in .exec and the files
+	are edited in .list.  This is useful for making changes in a global
+	variable that appears in a list of files (e.g. ^XL *.c).
+	
+	If an argument other than 1 is given then the command looks up the
+	file name in the directories known to contain manual pages.  This
+	routine contains a string with embedded paths to the manual
+	directories.
+	
+	An "ls -d" is performed, so full Bourne shell style wild carding is
+	available.  This is very useful for manual page searches
+	(e.g. ^U^XL *open*).
+	
+	Modified to preserve the sanity of .exec. Saves the point, mark,
+	and extent of .exec.
+
+registers: C. Douglas Blewett (DR30L19) Version 4
+
+	This file contains two routines for implementing registers
+	(like those found in MIT EMACS or TECO).  M-P copies the current
+	area into the named register.  M-G copies the named register
+	to the current point.
+
+	The registers are kept in a buffer named .registers
+
+wild:	C. Douglas Blewett (DR30L19) Version 4
+	
+	This file contains assorted wild carding routines.  The
+	macro "Wild" wild cards 
+	the string found in the kill stack and returns its result in the
+	kill stack.  The interface routines (those called directly by the
+	user) prompt for a string containing wild carding characters.
+	
+	Modified to preserve the sanity of .exec.  Saves the point, mark,
+	and extent of .exec.
+	
+	 Interface routines
+		^Xc change directory
+		^Xr read file
+		^Xf find file
+	
+shift:	C. Douglas Blewett (DR30L19) Version 4
+
+	Shift a region right or left.  An argument of != 1 shift
+	left, otherwise right.  This is very useful for programing
+	a highly indented language.
+
+Concept100.pad: C. Douglas Blewett (DR30L19) Version 4
+
+	This routine handles all of the Concept100 cursor pad keys.
+
+	This routine assumes that the escape character for the Concept
+	has been changed to ^\.  This should have been done in the
+	c100* terminal data base file.  All escapes are changed to ^\.
+	This routine also takes advantage of the different handling of
+	the comment character interactively and in macros by EMACS.
+
+	Keys handled			Approximate translation
+		HOME				M-g
+		PAGE (upper and lower)		M-v and ^V
+		SCROL (upper and lower)		M-3^P and M-3^N
+		B TAB				^R^I
+		BREAK				^G
+		All of the arrowed keys		line or character movement
+
+	Arguments supplied to these commands multiply the affect.
+
+	The first five programmable function keys (upper and lower) are
+	defined in the data base file
+	(INSRT, DEL CHAR, DEL & INS LINE, CLEAR EOP & EOL, and SEND).
+
+	Modified to my own tastes 7/5/81: added MULT, reset & stat,
+	print and tape  
+
+cc_list	C. Douglas Blewett (DR30L19) Version 4
+
+	Compiler and list interface (arg>1 file list), (arg<1 manual pages)
+	Interface routines
+	
+		^XL	- the main mono-lith - controls editing lists of files
+		^X^@	- Creates the new command (or filename) generating routine
+		^X^_	- Command or file name routine - returns on the kill stack
+	
+	Compiler and list interface routine.  This routine prompts for a compiler
+	command (i.e. cc or make), runs it, and catches the output.  If line numbers
+	are present in the output, the routine will position to the correct line.
+	Three formats can be handled by this routine.
+	
+		"filename.c", line 23: etc.
+			or
+		filename.c: 23: etc.
+			or
+		filename.c
+	
+	The last format is typical ls stuff.
+	
+	With an argument < 1 the routine prompts for a manual page specification
+	and searches the known directories for manual pages.
+	
+	With an argument > 1 the routine prompts for a file specification and
+	searches using an "ls -d file_spec"
+	
+	SPECIAL STUFF FOR DEFAULT COMMANDS: WARNING creates a new routine
+	
+	This routine, ^XL, when used as a compiler interface calls ^X^_ to detemine
+	what command to issue.  ^X^_  can be setup to return a default command
+	(rather than prompting the user) by running the ^X^@ command.  ^X^@
+	actually creates a new macro for ^X^_.  It isn't LISP, but it works.
+	
+	The compiler interface (arg == 1) reads files in using ^X^F.  No
+	attempt is made to garbage collect buffers.  This does not pose a
+	real problem, becuase the routine places the user in the buffer .list
+	when this happens.  At that point the user can use ^X^K to remove
+	un-needed buffers.  ^X^F is used instead of ^X^R because it is very
+	likely with compiles that the user already has the file in a buffer
+	and want to keep it there (and current).
+	
+	The list (arg > 1) and manual page (arg < 1) facility uses the
+	buffer .list to read files using ^X^R.  These routines more or less
+	automatically garbage collect buffer space.
+
+home:	C. Douglas Blewett (DR30L19) Version 4
+	
+	This file contains assorted macors that help the user move quickly or
+	accurately around the screen.  The central rountines are M-H and
+	M-L (top and bottom of the screen).
+	
+	 Interface routines
+		M-H - home or top of screen
+		M-L - last or bottom of screen
+		M-M - Middle of screen
+		^\  - back one line - adds a line at the top of the screen
+		^_  - forward one line - adds a line at the bottom of the screen
+	
+filter: Warren Montgomery, 6E-314, Version 4.3
+
+	This file contains one macro, filter_region, which is put on
+	the key M-#.
+
+	This macro takes the marked region of the current buffer, prompts
+	for a command to run, passes the text from the marked region to the
+	specified command, and replaces the text from the marked
+	region with the output.  Thus marking a list of names
+	appearing in an nroff source and invoking M-# with the
+	command "sort" will cause the list to be sorted.  The macro
+	makes use of a temporary file (/tmp/$LOGNAME.emacs) to hold
+	some intermediate results.
+
+	
+nlpack: Warren Montgomery 6E-314, Version 4.3
+	This file contains a macro that implements a move to
+	next(previous) line command that moves to the same screen
+	position in the next line.  The macro is put on ^N.  It
+	moves to the same cursor position in the line that follows.
+	If a sequence of ^N or ^P commands is given, it tries to
+	stay in the same column, even if some of the intermediate
+	lines are too short.
+	
+	Actually, the ^N macro reads characters and carries out the
+	movement so long as the character read is a ^N or a ^P.  Any
+	other character breaks out of ^N.
+	
+	To get the same effect on ^P, invoke M-:^P^N.  when nlpack
+	has been loaded.
+	
+	Note that this macro may be significantly slower than the
+	built in movement commands.  Also, since it changes the
+	built in commands ^P and ^N, it may interact with other
+	macros that use them.
+
+
+Draw: W. A. Montgomery (Version 4.5)
+
+	This file contains several macros that are useful for
+	drawing pictures on the screen.  These should be run in
+	picture mode, with nodelete and overwrite modes set as well.
+
+	The draw macro allows  the user to draw on the screen in
+	picture mode by steering the cursor with the "home" keys of
+	the right hand.  The keys uiojlm,. are used to indicate up
+	and left, up, up and right, left, right, down and left,
+	down, and down and right.  Each key replaces the character
+	under the cursor by one of:  '-' '|' '\' or '/' and moves
+	the cursor in the indicated direction.  This provides a
+	simple way of drawing stick figures on the screen for use
+	with gc. 
+	
+	The downline macro draws a verticle line of length equal to
+	its argument down the screen starting from the current
+	position.  This is an internal macro used by the box
+	command, however it is useful in itself.  It is put on M-|
+	
+	The box macro draws boxes using | and -.  It draws a box
+	with corners where the current position and the mark are
+	set.  These can be in any corners of the desired box.  The
+	cursor is left at the lower right hand corner of the box.
+
+Keyboard Macro enhancements
+Author: George Furnas (alice!gwf)
+Date: 11/1/82
+Version: 4.5
+
+The allow saving a small ad hoc library of keyboard macross that can
+be referred to by name. It also allows editing the macros easily and
+is set up to encourage keeping documentation on the macros up to
+date. 
+
+Macros are saved in a directory $HOME/.kbdmac.dir under names
+km.NAME where NAME is the user specified name by which the keyboard
+macro is to be known, called, etc.  (The directory must be created
+ahead of time.)  
+
+Since the macros allow no internal documentation, a brief amount
+documentation is kept in a file called $HOME/.kbdmac.dir/README.doc
+The keyboard macro editing and renaming  macros always finish up by
+pausing with a buffer of this documentation which is to be edited
+recursively to keep it up to date. They go to old entries or create
+new ones as needed.
+
+
+M-^N: name_kbdmac	names keyboard macro. prompts for name
+	This allows you to save the current standard (unnamed)
+	keyboard macro under the name specified. First, however,
+	it pulls the macro into a buffer for perusal and/or editing 
+	(idea was to at the very least make usre you knew what you
+	were naming.) Then it asks for a name, and finally it
+	gives you the README.doc file for any short one-line comments
+	you might like to make on the newly named macro. (A
+	recursive edit, exited as usual by ^Z)
+
+M-X: execute_named_kbdmac executes named keyboard macro <arg> times
+	This simply prompts for the name of the previously stored 
+	keyboard macro, and executes it. It it is called with an
+	argument, it executes it <arg> times.
+
+M-^E: edit_named_kbdmac edits named keyboard macro
+	This allows you to alter (edit recursively) a previously named 
+	keyboard macro. It prompts for the name, pulls in the
+	appropriate file, and enters a recursive edit. When you are done
+	editing it (hitting ^Z, as usual) it goes and gets the
+	README.doc file, at the appropriate line, in case you want to
+	edit the comments on the macro. (Also a recursive edit,
+	exited by ^Z)

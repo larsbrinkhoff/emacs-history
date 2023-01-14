@@ -1,0 +1,301 @@
+The terminal support for EMACS is driven from a directory of terminal
+type descriptions.  This directory contains one file (or link) for
+each terminal type.  The file contains a set of lines of the form:
+
+	parameter=value
+	
+EMACS comes with terminal type files to support many of the common types.
+These are normally kept in the TERMINALS archive file and will be put
+in the terminals sub-directory of the directory from which emacs is made
+by the makefile.  You can change the makefile to change the location of
+these files for your location.
+
+If you wish to create your own private terminal file for emacs, you
+can use it without installing it in the terminals directory by
+setting your terminal type (either setting TERM or using M-t in
+emacs) to the full pathname of the terminal file.
+
+The best way to construct a new description is to start with a
+description of a similar terminal and modify it.  You can find the
+description of a particular terminal by reading
+"~EMACS/terminals/name>" where name is the name of the terminal you
+want to look at when in emacs.  (Don't type "emacs ~EMACS ... to the
+shelll, run emacs and use ^X^R or ^X^F)
+
+The terminal support is not the same as the termcap file used by vi.
+	
+The format that I have chosen is simple, easy to parse by both human
+and machine, and easy to extend.  Each parameter is identified by a
+two character code.  Those parameters that are exactly as in termcap
+are named as so.
+
+The format of the parameter values is quite simple, so as to allow
+parsing with a simple, efficient, parser.  Parameters are either a
+decimal number, starting with any digit, or are a string, starting
+with anything else.  String parameters contain exactly the
+characters desired (up to a newline).  The only mapping done on
+string parameters is to map sequences starting with a backslash (\)
+as follows:
+
+	\n maps to a newline
+	
+	\(anything else) maps to the backslashed character.  (useful
+	for backslashes or for parameters starting with digits.	
+
+Notice that I do not map octal character specifications, or any of
+the other commonly used character specifications.  The parameters
+can appear in any order, and only those that apply to a particular
+terminal should be specified.  String parameters contain a printf
+style string to be sent to the terminal to produce the desired
+effect.  Because printf strings are used, If you need to put a '%'
+in a string parameter put two % characters (%%) to get a single % output.
+
+The exact mappings used are similar to printf, with some
+limitations.  The general format is: %nc, where n is an optional
+field width (one or more ascii characters), and c is a character
+specifier.  What is done depends on c as follows:
+
+%%:	Print a single % sign
+%c:	Print the next arg as a character
+%o:	Print the next arg (an int) in octal, with width at least n.
+%d:	Like o, only decimal
+%p:	Print width milliseconds of pad characters.
+%P:	Print width*region number of pad characters.  Region
+	is the number of lines or characters in the region effected
+	by the current command.
+%m:	Print the substring in tm determined by the next arg. 
+	Width*arg is used as an index into the string parameter "tm",
+	(terminal map) and the next width characters are put out.
+	This is an 	"escape hatch", which allows you to specify the
+	cursor positioning algorithm for any terminal not covered by the
+	above mechanisms.  See the description of the "tm" parameter
+	for more details.
+%M:	Like %m above, except that the map is taken from the
+	parameter "tM".   This is provided for terminals which need
+	2 maps, one for horizantal and one for vertical.
+
+The following parameters are available:
+
+up=(string) move up one line
+
+do=(string) move down one line
+
+bc=(string) backward one character
+
+nd=(string) forward one character  (use only if this is a single 
+	character, otherwise omit)
+
+cr=(string) carriage return without linefeed. (^M)
+
+ho=(string) home (not currently used by emacs)
+
+cl=(string) clear entire screen (from any position, 
+	leaving cursor at home)
+
+cd=(string) clear from here to end of screen (not currently used by emacs)
+
+ce=(string) clear from cursor to end of line
+
+bl=(string) ring the bell
+
+cm=(string) absolute cursor addressing (a printf style character 
+      string that will	produce the correct escape sequence when
+      evaluated with the row and column.)  see xbase and ybase.
+
+ru=(string) relative up    (see relative cursor addressing below)
+rd=(string) relative down  (see relative cursor addressing below)
+rl=(string) relative left  (see relative cursor addressing below)
+rr=(string) relative right (see relative cursor addressing below)
+
+relative cursor addressing:
+	same as cm (above) except moves the cursor relative
+	to its current position.   This is meant for terminals like
+	the Tektronix 4025 which have only relative cursor movement
+	commands.  If you specify any of the relative
+	values you must specify them all.  Don't specify both absolute
+	(cm) and relative cursor positioning because EMACS will
+	use absolute (cm) cursor positioning if both are specified.
+
+tm=(string) Terminal Map.
+tM=(string) Alternate Terminal Map.
+
+Terminal maps.  These specify the output produced by %m or %M
+	conversions in cursor positioning strings.
+	A "terminal map" is used for terminals that use cursor
+	positioning addresses that are not decimal or octal numbers.
+	The "tm" and "tM" string are tables that EMACS will go into
+	for cursor position addresses.
+	As an example, suppose a terminal with a view width of 80 and
+	a view height of 24.  Suppose also that the terminal accepts
+	three digit decimal cursor addresses except that only even
+	numbers are used.  EMACS will calculate cursor addresses in
+	ranges of 00-23 and 00-79.  The terminal map would look like:
+	tm=\000002004006008010...158
+	(Note the leading zero must be backslashed to make this a
+	character string.)
+	The corresponding "cm" string	might look like:
+	cm=^W%3m%3m
+	If the number of position-dependent characters
+	varies, null characters in tm should be used in tm to pad
+	out shorter map entries.  (Real nulls to be output should be
+	have the high order bit set (enter with M-q in EMACS)).
+
+pc=(string) pad character.  (string containing a single character to be
+	used for padding).
+
+al=(string) insert line sequence  (see below).
+
+dl=(string) delete line sequence   These two parameters are used to
+	cause the screen to scroll selectively.  The insert line
+	sequence is assumed to insert a single blank line at the
+	line containing the cursor, and scroll the remaining lines
+	on the  screen downward.  The delete line sequence is
+	assumed to delete the current line, scrolling the remaining
+	lines upward.)
+	
+AL=(string) like 'al' but inserts several lines with printf string.
+
+DL=(string) like 'dl' but deletes several lines with printf string.
+
+im=(string) enter insert character mode.  This function is assumed
+	to put the terminal into insert character mode.  Insert
+	character mode is assumed to push the character under the
+	cursor and those beyond it to the right to accomodate new
+	characters.  See the description of "in" for more
+	information on what insert character is expected to do.
+
+ic=(string) insert character sequence.   If the terminal has no
+	insert character mode, but has a sequence that opens up one
+	blank position at the cursor, specify it with ic, and leave
+	im and ei blank.  For terminals that need to go into a mode
+	to do inserts, and need a special sequence to open up each
+	position, give both im and ic.
+	
+ip (string) Insert padding.  This string will be printed after every
+	character inserted.  It should be a padding specification
+	(%P or %p) to specify delay.  Note that you only need to
+	specify this on a terminal that needs padding, and has an
+	insert mode but no ic.  Otherwise, just put the padding into ic.
+
+ei=(string)overwrite mode sequence (see above).
+
+dc=(string)delete character sequence (the character sequence which
+	deletes the character under the cursor and causes the remaining
+	characters on the screen line to move over by one).
+
+dm=(int) delete mode.  If absent or set to zero, emacs assumes that
+	delete character and insert mode are independent and delete
+	character can be done at any time.  If dm is set to 1, then
+	emacs puts the terminal in insert mode before deleting
+	characters.  This is needed, for example, on some datamedia
+	and ann arbor terminals.  If dm is set to 2, then emacs
+	makes sure that the terminal is not in insert mode before
+	deleting characters.
+	
+in=(int) insert mode type.  If this is 0, insert and delete
+	character are assumed to move all of the characters to the
+	right of the curssor on the same line, like the adm31, and
+	hp terminals.  If this is 1, then insert and delete are
+	assumed to move every character in the rest of the display
+	until a position that has not been written since the last
+	clear is encountered, like the concept-100.
+	
+sf=(string) scroll sequence (the character sequence needed to scroll the
+	screen with the cursor at the bottom.  NULL if the screen
+	can't be scrolled simply.)
+	
+SF=(string) scroll several lines with printf sequence.
+
+sr=(string) scroll in reverse (The character sequence needed to
+	scroll the screen down when the cursor is at the top.  This
+	is only used to scroll in a region with a terminal like the
+	vt100.  This should be NULL if there is no such capability)
+	
+SR=(string) scroll reverse several lines with printf sequence.
+
+cs=(string) Scrolling region sequence. If non null, this is a printf style
+	string that will define the scrolling region on the screen
+	when given the top and bottom lines (offset by xbase) as
+	parameters.  The only known terminal which uses this feature
+	is the vt100 and its relatives.  If cs is set sr, sf and cm
+	must also be set.
+
+vs=(string) initialization escape sequence needed to put terminal in the
+	mode described by these parameters.
+	
+ve=(string) exit sequence.  If present, this sequence is printed
+	whenever you exit from emacs to undo the effects of vs.  Vs
+	will be printed whenever you enter emacs.
+	
+bx=(number) xbase.  offset to add to first cursor address parameter
+
+by=(number) ybase.  offset to add to second cursor address parameter.  To
+	accommodate the variety of cursor address escape sequences,
+	the curad parameter is a printf string that when evaluated
+	with the row and column positions, with xbase and ybase
+	added to them, will move to the proper position.
+	
+rc=(number) 1 if cursor addressing is row and column, 0 if column and row.
+
+co=(number) width of screen
+
+li=(number) number of lines on screen
+
+am=(number) 1 if cursor moves to next line after end of line, 0 otherwise
+
+vc=(number) milliseconds of real time needed by terminal for insert/delete
+	line sequence
+
+ul= Underline (see below)
+
+ue = End underline (see below)
+
+eo = (see below)
+
+Underscore processing.  relevant variables are 'eo', 'ul' and 'ue'.
+	'eo' should be one if writing over an underlined position clears
+	it, otherwise, make it zero, and emacs will clear the line to get
+	rid of unwanted underscores.  'ul' is a string parameter that
+	contains whatever is needed to print the character with an
+	underline.  If the terminal underscores naturally, then 'ul' is
+	%c<BS>_.  If the terminal has an underscore character mode,
+	then 'ul' is underscore mode on and 'ue' is underscore mode
+	off.  If  the terminal has an underscore single character
+	command, then 'ul' is 'underscore character command' %c. 
+	This is inefficient in underscoring giant blocks of text,
+	but this should be rare. 
+	
+	If the terminal does not have underscore but does have reverse 
+	video you may use reverse video for underscore. 
+	
+mi=(int) If this is set to 1, then emacs assumes that it can use the
+	cursor movement capabilities such as up, bc, cm, etc. while
+	the terminal is in insert mode.  If the parameters is
+	missing or set to zero, emacs will take the terminal out of
+	insert mode before doing any cursor motion.  On some
+	terminals, the movement commands cause characters or lines
+	to be inserted when sent in insert mode.
+
+CM=(int) Terminal handles "compressed" output.  Emacs can be
+	compiled with code to compress output sent to the terminal,
+	using character codes with the eighth bit on to represent
+	common multi-character sequences.  If you have a terminal
+	that will interpret these and have it set up compatibly with
+	emacs, this can be used.  I do not recommend it at this
+	time.
+	
+Any escape sequence not available should be omitted.  emacs needs
+clear and some form of cursor addressing (absolute or relative).
+Emacs can use 'up', 'do' and either 'bc' or 'cr' rather than
+cursor addressing (this often needed for PCs running as terminal
+emulator) but it will be very slow.  Users with terminals or PCs
+providing only these capabilities are strongly advised to obtain
+better terminals or PC terminal emulators.
+
+Other capabilities speed up the display or enhance what is
+displayed, but are not strictly necessary.
+
+The program ttest (made by "make ttest") can be used to test out a new
+terminal description file.  The output is relatively self-explanatory.
+
+

@@ -1,0 +1,64 @@
+Ð		Put the current area into a register
+
+C. Douglas Blewett (MH3-C-319) Version 4
+
+This file contains two routines for implementing registers
+(like those found in MIT EMACS or TECO).  M-P copies the current
+area into the named register.  M-G copies the named register
+to the current point.
+
+	<_______reg:
+	+					Get the string
+	<Put Area into Register? 
+	<_______reg:
+	>
+	|û				Conditional
+		û&			Check for Null string
+			-
+		ý				Null Check End
+		û 				Default
+			B%		Remember current buffer
+			ð%		Pickup the current area
+			<.registers
+						Go to .registers
+			¼			Go the top of the buffer
+			0>
+			|û		Conditional
+				û“	Check for reg already here
+					 0>“-	Remove
+				ý		Check for reg End
+			ý			Conditional End
+			¾--	Meta Moon and install
+			þ		Return to orig. buf.
+		ý
+	ý
+
+Ç		Get (insert) the contents of a register
+	<_______reg:
+	+					Get the string
+	<Get Area from Register? 
+	<_______reg:
+	>
+	|û				Conditional
+		û&			Check for Null string
+			-
+		ý				Null Check End
+		û 				Default
+			B%		Remember current buffer
+			<.registers
+						Go to .registers
+			0>
+			¼			Go the top of the buffer
+			|û		Conditional
+				û“	Check for reg already here
+					 “ð	Pickup the text
+				ý		Check for reg End
+				û 		Default
+				-0<Cannot find a register by that name.
+					<
+				ý
+			ý			Conditional End
+			%		Return to orig. buf.
+		ý	
+	ý	
+

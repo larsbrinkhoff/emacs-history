@@ -1,0 +1,63 @@
+fFIND_TAG Find a tag position
+
+Warren Montgomery (Version 3.6)
+
+This file contains some macros for maintaining and using a tags
+file.  The tag file lets you manipulate a group of related files,
+such as C source files, by quickly finding the location of a
+tagged position.  FIND_TAG asks for a tag name and locates the
+file that contains the tag and the position of the tag.
+
+B	Old buffer name (in case we must go back)
+<@
++<Tag name? 
++<:
+øTAGS_BUF
+|û	find tag
+	û<:
+		<:
+		 ð	file_name
+		 <:
+		ð			search string
+ 		%¼		find tag position
+		-ý		Pop original buffer name
+	û -<Tag not found
+		ýý		If not found, go back
+
+TAGS_BUF	Go to .tags buffer
+<.tags
+			go to .tags buffer
+¼ ¾|û	see if tags buffer is empty
+	ûý	If full, do nothing
+	û <Tags File? 
+		ýý	Read tags file if not there
+
+C_TAGS	Make tags list from C source file
+
+This macro causes tags to be defined from the C function
+definitions in the current file.  Because the parser is not perfect,
+it will ask whether or not to define a tag for everything that it
+thinks is a function definition.  A space causes a tag to be
+defined.  Typing ^Z gets you out of tag definition.  Anything else
+goes to the next potential function declaration
+The parser will see every line that does not begin with a
+space, tab or #, contains a balanced pair of parentheses, and does
+not have a semicolon after the parentheses as a function definition.
+
+<^[^ 	#].*(.*)[^;]*$
+0>	Search pattern.
+¼^û“	While more function defns
+	!û-<Tag?
+		û¾ýGo to eof
+		
+		û øMAKE_CTAG
+		ýýMake tag of function name
+	0>	Next line, duplicate search string
+ý			End of While
+-
+tMAKE_CTAG				/* define tag from current line */
+Fä+BøTAGS_BUF
+¾@%-:2>:
+-:
+			Form tag sequence in buffer
+--

@@ -1,0 +1,707 @@
+Infer Fails from { start }
+Hypothesis Findenv: {
+	Ask: "Which of the following describes your situation"
+	Replies: {
+		onsystem: "I am on the same system as is having the problem"
+		indirectory: "My current working directory is the emacs source directory"
+	}
+}
+Hypothesis Fails: {
+	Ask: "Which of the following describes the problem"
+	Replies: {
+		Nocompile: "makefile doesn't finish"
+		Earlyfail: "dumps or otherwise fails without displaying anything sensible"
+		Error43: "displays can't open error file for error number 43"
+		Badio: "comes up but does not respond or does not respond normally to input"
+		Command_bug:  "comes up but some commands or macros don't behave as expected"
+		Termbug: "works normally on some terimals but fails on others"
+	}
+}
+Hypothesis Nocompile: {
+	Ask: "Where does the makefile fail"
+	Replies: {
+		Loaderror: "The ld command reports errors"
+		Ccerror: "One of the compiles fails"
+		makerror: "The make command complains about the makefile"
+		othermake: "Some other command in the makefile complains"
+	}
+}
+Hypothesis Badio: {
+	Ask: "What kind of behavior do you see"
+	Replies: {
+		stopinput: "It displays, but stops doesn't respond
+		to typed characters, or stops responding after a few
+		characters"
+		slowecho: "Sometimes a character doesn't echo until
+		after a second character is typed"
+		junkscreen: "The screen contains unrecognizeable garbage"
+	}
+}
+
+Infer Bad_3b2 from { slowecho 3b }
+Infer Getmachine from junkscreen
+Infer Termbug certainty 20 from junkscreen
+
+Infer Getmachine certainty 50 from { nocompile }
+Hypothesis Loaderror: {
+	Ask: "What is the nature of the ld errors"
+	Replies: {
+		lundef: "Undefined symbols"
+		lmuldef: "Multiply defined symbols"
+		Missingobj: "Missing objects or libraries"
+	}
+}
+Hypothesis Missingobj: {
+	Explain: "If you are missing libraries, make sure you have
+	the proper libraries set in the compile of xemacs.  If you
+	are missing emacs objects, make sure you have all of the C
+	sources.  Otherwise, make on your system may not be
+	compatible with the makefile, run the procedures indicated manually"
+}
+Hypothesis Ccerror: {
+	Ask: "Which file(s) fail to compile"
+	Replies: {
+		emacs_main:	"emacs_main.c"
+		emacs_disp: "emacs_disp.c"
+		emacs_cmds: "emacs_cmds.c"
+		emacs_io: "emacs_io.c"
+		emacs_buf: "emacs_buf.c"
+		emacs_re: "emacs_re.c"
+		ecomp: "ecomp.c"
+	}
+	Explain: "If you can, check the code for syntactic correctness
+	You may have a damaged copy of the file that won't compile"
+}
+
+Infer Ccerror certainty 2 from { emacs_main }
+Infer Ccerror certainty 2 from { emacs_cmds }
+Infer Ccerror certainty 2 from { emacs_buf }
+Infer Ccerror certainty 2 from { emacs_io }
+Infer Ccerror certainty 2 from { emacs_re }
+Infer Ccerror certainty 2 from { emacs_disp }
+
+Hypothesis Getversion: {
+	Ask: "Which of the following unix versions are you compiling for?"
+	Replies: {
+		bsdunix: "Any berkeley version"
+		attunix: "System V, system III, or any other AT&T unix version"
+		pwbunix: "PWB unix, unix 1.2, 2.0, or version 6 unix"
+		msdos: "PC-DOS or MS-DOS"
+	}
+}
+Hypothesis Getmachine: {
+	Ask: "Which of the following machines are you compiling for?"
+
+	Replies: {
+		uts:	"Amdahl UTS"
+		pdp11: "DEC 11/70 or equivalent"
+		vax:	"Dec vax (all models)"
+		3b:	"AT&T 3B family"
+		8086:	"Intel 8086 or 8088 based system"
+		u370:	"Unix/370"
+	}
+}
+
+Conclude attunix from u370
+Conclude attunix from uts
+Conclude attunix from 3b
+Infer Getversion from { !uts !u370 !3b }
+Conclude feps from uts
+Conclude feps from u370
+Infer Get_terminal_support certainty 30 from { junkscreen } 
+Infer Get_terminal_support certainty 30 from { loaderror } 
+Infer Get_terminal_support certainty 30 from { ccerror }
+Infer Amdahl_bug certainty 70 from { uts command_bug }
+Infer Get_terminal_support certainty 20 from { earlyfail }
+Infer Portext_bug certainty 50 from { dinternal junkscreen }
+Infer Portext_bug certainty 0 from uts
+Infer Portext_bug certainty 0 from u370
+Infer Getmachine certainty 15 from { command_bug }
+Infer Getmachine certainty 25 from { earlyfail }
+Infer Getmachine certainty 25 from { badio }
+
+Hypothesis Get_terminal_support: {
+	Ask: "What terminal support are you using"
+	Replies: {
+		dinternal: "Emacs internal (no special defines)"
+		dtermcap: "Termcap (-DTERMCAP in the makefile)"
+		dterminfo: "Terminfo/curses (-DTERMINFO in the makefile)"
+	}
+}
+Infer Missing_libraries certainty 40 from { dtermcap lundef }
+Infer Missing_libraries certainty 40 from { dterminfo lundef }
+Infer Old_termcap certainty 50 from { lmuldef dtermcap }
+Infer Bad_terminfo certainty 40 from { emacs_disp dterminfo }
+Infer Bad_terminfo certainty 30 from { lundef dterminfo lcurses }
+Hypothesis Bad_terminfo: {
+	Ask: "Do you have either of these problems"
+	Replies: {
+		curtermdef: "cur_term undefined in emacs_disp, or illegal references to it" 
+		curtermobj: "cur_term undefined at load time"
+	}
+	Explain: "You seem to have an inconsistency between the
+	curses.h include file and the curses library.  If you get
+	the message at load time, make sure your curses.h includes
+	#define SINGLE.  If you get it at compile time, remove the
+	offending code from emacs."
+}
+Infer Bad_terminfo certainty 0 from { !curtermdef !curtermobj }
+
+Hypothesis Old_termcap: {
+	Ask: "Are some or all of these symbols multiply defined"
+	Replies: {
+		pcundef: "PC, BC, or DO"
+	}
+	Explain: "You seem to have an old termcap system.  To use
+	it, you must define all of these must be declared as
+	\"extern\" inside of emacs."
+}
+Infer Old_termcap certainty 0 from { !pcundef }
+
+Hypothesis Missing_libraries: {
+	Ask: "Did you include either of the following on in the
+	arguments to the final compile"
+	Replies: {
+		lcurses: "-lcurses (or whatever your curses library is)"
+		ltermcap: "-ltermcap (or whatever your termcap library is)"
+	}
+	Explain: "If you compile for terminfo/curses (-DTERMINFO) you
+	must include -lcurses in the compile.  If you compile for
+	termcap (-DTERMCAP) you must include -ltermcap in the final compile"
+}
+Infer Missing_libraries certainty 0 from { lcurses dterminfo }
+Infer Missing_libraries certainty 0 from { ltermcap dtermcap }
+
+Hypothesis Amdahl_bug: {
+	Ask: "Did you include any of the following compilation flags"
+	Replies: {
+		gflag: "-g (get symbol table)"
+	}
+	Explain: "On some or all Amdahl systems, the -g flag causes
+	external symbols not to be properly resolved.  Please
+	recompile without it"
+}
+Infer Amdahl_bug certainty 0 from { !gflag }
+
+Hypothesis Portext_bug: {
+	Ask: "Did you include any of the following in VFLAGS"
+	Replies: {
+		dportext: "-DPORTEXT (more portable externals)"
+	}
+	Explain: "Include -DPORTEXT in the setting of VFLAGS, remove
+	emacs_disp.c, and try again.  This flag is needed for some
+	system V release 2 systems that do not allocate external
+	symbols contiguously"
+}
+Infer Portext_bug certainty 0 from { dportext }
+Infer Bad_vflags certainty 20 from { !attunix }
+Infer Bad_vflags certainty 30 from { emacs_io }
+
+Hypothesis Bad_vflags: {
+	Ask: "Which of the following did you set in VFLAGS"
+	Replies: {
+		dbsd: "-Dbsd"
+		dux3: "-Dux3"
+		dpc: "-DPC"
+	}
+}
+Infer Missing_ux3 from { attunix !dux3 }
+Infer Missing_ux3 from { uts !dux3 }
+Infer Missing_bsd from { bsdunix !dbsd }
+Infer Bad_ux3 from { dux3 !attunix !uts }
+Infer Bad_bsd from { dbsd !bsdunix }
+Infer Bad_pc from { dpc !msdos }
+Infer Missing_pc from { msdos !dpc }
+
+Hypothesis Missing_pc: {
+	Explain: "The -DPC flag must be set when compiling the PC
+	version of emacs."
+}
+Hypothesis Bad_pc: {
+	Explain: "The -DPC flag should only be set when compiling
+	the PC version of emacs."
+}
+Hypothesis Missing_ux3: {
+	Explain: "The flag -Dux3 should be set for any recent AT&T
+	version or any other unix version compatible with system III
+	or system V unix"
+}
+Hypothesis Missing_bsd: {
+	Explain: "The flag -Dbsd should be set for any berkeley unix
+	version"
+}
+Hypothesis Bad_ux3: {
+	Explain: "the flag -Dux3 should be set only for recent AT&T
+	unix systems"
+}
+Hypothesis Bad_bsd: {
+	Explain: "the flag -Dbsd should be set only for Berkeley
+	unix systems"
+}
+Infer Bad_bsd_select certainty 20 from { dbsd }
+Infer Bad_bsd_select certainty 30 from { bsd41 bsdother }
+Infer Bad_bsd_select certainty 20 from { bsdunix emacs_io }
+
+Hypothesis Bad_bsd_select: {
+	Ask: "Which berkeley version are you compiling for"
+	Replies: {
+		bsd42: "4.2bsd"
+		bsd41: "4.1bsd"
+		bsdother: "Other berkeley versions"
+	}
+	Explain: "The berkeley version assumes 4.2bsd by default. 
+	If you wish to compile for another, make the following changes:
+	
+		Change sys/time.h to time.h in the include files in
+		emacs_io.c
+		
+		Remove the definitions of SELECT and CBREAK in
+		emacs_io.c unless your system supports these in a
+		way compatible with 4.2bsd."
+}
+Infer Bad_bsd_select certainty 0 from { bsd42 }
+Hypothesis Error43: {
+	Ask: "How was the emacs object produced?"
+	Replies: {
+		justcompiled: "Just compiled, nothing moved or
+		deleted since"
+		oldcompiled: "Compiled some time ago, source or
+		object may have been moved"
+		installed: "Compiled using \"make install\""
+	}
+}
+Infer Source_moved certainty 50 from { oldcompiled error43 }
+Infer Bad_library certainty 50 from { installed error43 }
+Infer Amdahl_bug certainty 20 from { justcompiled error43 }
+Infer Protection_bug certainty 30 from { justcompiled error43 }
+	
+Hypothesis Bad_library: {
+	Explain: "You probably did not get the \"LIBDIR\" variable
+	set properly in the makefile. First make sure you can make
+	and run xemacs.  Then remove the terminals.x file,
+	check the LIBDIR entry, and try again to make install"
+}
+Hypothesis Source_moved: {
+	Explain: "Emacs depends on being able to access the
+	\"terminals\" directory, helpfile, errfile, and all of the
+	files in the terminals directory.  If any of these have been
+	moved since compilation, or if they are not currently
+	readable by all, you must recompile and make sure all files
+	under the source directory are publicly readable."
+}
+Hypothesis Protection_bug: {
+	Ask: "Does the problem occur"
+	Replies: {
+		forothers: "When run by other unprivileged users"
+		forowner: "When run by the user who owns the source"
+	}
+}
+Infer Source_moved from { forothers !forowner }
+Hypothesis Termbug: {
+	Ask: "Does the terminal problem appear to be associated with"
+	Replies: {
+		tusers: "only with certain users"
+		tterms: "only on certain kinds of terminals"
+		tlan: "only when emacs is accessed over a local area network"
+	}
+}
+Infer Protection_bug certainty 80 from { termbug tusers }
+Infer Describe_terminal_bug certainty 50 from { termbug }
+Infer Get_terminal_support certainty 40 from { termbug }
+Hypothesis Describe_terminal_bug: {
+	Ask: "Which of the following applies to your problem"
+	Replies: {
+		badisp: "The display is always wrong, or wrong after
+		certain commands"
+		sqbotch: "Emacs sometimes goes into search mode all by itself"
+		markbreak: "Emacs says 'BREAK' when I try to set the mark"
+		flowbotch: "An small or empty buffer displays fine,
+		but the display is garbled when displaying a full screen"
+		stopout: "Output is garbled when you type during output"
+		Screensize: "Emacs says that the screen is too large"
+		noterm: "Emacs doesn't recognize the terminal type"
+	}
+}
+Infer Command_bug certainty 15 from badisp
+Infer Get_termtype certainty 50 from { tterms }
+	
+Hypothesis Get_termtype: {
+	Ask: "What type of terminal is failing"
+	Replies: {
+		
+		termpc: "A personal computer used as a terminal"
+		termvt100: "Dec vt100 or compatible terminal"
+		termhpbomb: "hp 2621B"
+		termblit: "Blit or tty 5620"
+		termfast: "A terminal running at 9600 baud"
+		other: "Other"
+	}
+}
+Infer Badpc from { termpc noterm }
+Infer Badpc certainty 20 from { tterms termpc }
+Infer Flowlim certainty 30 from { flowbotch tlan }
+Infer Flowlim certainty 30 from { sqbotch }
+Infer Slowterm certainty 20 from { sqbotch }
+Infer Slowterm certainty 1 from { !termhpbomb !termvt100 }
+Infer Slowterm certainty 50 from { termfast }
+Infer Slowterm certainty 20 from { flowbotch }
+Infer Termbug certainty 70 from { eatsq }
+Infer Eatflow from {eatsq tlan}
+Infer Eatflow certainty 70 from { eatsq termblit }
+Infer Eatflow certainty 50 from { eatsq termvt100 }
+Infer Flowlim certainty 70 from { stopout }
+Infer Badsize certainty 20 from { termpc badisp }
+Infer Missing_term certainty 20 from { noterm }
+
+Hypothesis Flowlim: {
+	Ask: "Is the following mode set to something other than 0"
+	Replies: {
+		flowlim: "flow_lim"
+	}
+	Explain: "With flow_lim mode set, type-ahead of ^S or ^Q will
+	confuse the display.  Avoid typing these characters while
+	emacs is displaying output.  You may wish to set flow_lim
+	mode to zero and try again, but this may cause other
+	problems if you have a slow terminal or are hooked to a
+	local area network"
+}
+Infer Flowlim certainty 0 from { !flowlim }
+Infer Badlan certainty 40 from { !flowlim tlan badisp }
+Infer Badlan certainty 40 from { !flowlim tlan sqbotch }
+Hypothesis Badpc: {
+	Explain: "If you are using a personal computer, make sure
+	you tell emacs the name of the terminal that it emulates,
+	not the name of the personal computer."
+}
+Hypothesis Badlan:  {
+	Explain: "It is likely that your local area network is using
+	^S and ^Q for flow control.  Try running with \"flow_lim\"
+	mode set to about 50"
+}
+Hypothesis Slowterm: {
+	Explain: "Your terminal probably won't run fast enough
+	without flow control.  If you are not connect through a
+	local area network, then set flow_lim mode to about 50.  If
+	you are connected through a local area network, you will
+	probably need to lower your terimal speed."
+}
+Hypothesis Eatflow: {
+	Explain: "Your terminal or local area network is interfering
+	with the ^S and ^Q characters from the keyboard.  Make sure
+	that your LAN is not interpreting these characters from the
+	terminal as flow control.  Some vt100 compatible terminals
+	and Blit's or TTY 5620 terminals also do this.  On a Blit or
+	5620, the only solution is to load a terminal emulator that
+	will pass ^S and ^Q (like netty) into the terminal."
+}
+Hypothesis Missing_term: {
+	Explain: "Your system does not recognize your terminal type.
+	It is very likely that your terminal is similar enough to
+	one of the standard types (like hp, vt100, adm, etc.) that
+	one will work.  Sorry."
+}
+Hypothesis Badsize: {
+	Explain: "Some PC based terminal emulators provide a larger
+	than normal screen, which confuses emacs and other screen
+	based programs.  There are some special terminal types (like
+	hp2621i) to describe standard terminals with non-standard
+	screen sizes."
+}
+
+Hypothesis Command_bug: {
+	Ask: "Which of the following describes the failure"
+	Replies: {
+		Othercmd: "Other commands don't work"
+		eatsq: "Commands containing ^S or ^Q (like search) wont work"
+		Initfail: "Initialization files don't work"
+		macrobug: "Some or all macros fail"
+	}
+}
+Hypothesis Othercmd: {
+	Ask: "What kinds of commands don't work"
+	Replies: {
+		unixescape: "M-!, M-$, or mail sending"
+		Fileio: "File reading/writing"
+		markbreak: "setting the mark"
+		Searches: "Search commands"
+		cmother: "commands that modify the buffer"
+		cmother: "commands that move the cursor"
+	}
+}
+Hypothesis Fileio: {
+	Ask: "What is the nature of your file reading/writing problem"
+	Replies: {
+		Bad_environment: "Emacs can't find some files I try
+		to read"
+		garbled_files: "The file read or written gets garbled"
+	}
+}
+Infer Pcfiles from { garbled_files msdos }
+Hypothesis Pcfiles: {
+	Explain: "You may have binary mode set wrong for the file
+	you are trying to read or write.  Binary mode should be off
+	if you are reading or writing text files.  Binary mode
+	should be on for reading and writing emacs macros."
+}
+Hypothesis Screensize: {
+	Explain: "Emacs has compile time limits on the size of
+	screen it can handle in emacs_disp.h.  If you would like to
+	change these, edit this file to increase the screen size. 
+	It will work fine without changing the limit and just ignore
+	the extra part of the screen"
+}
+
+Hypothesis Searches: {
+	Ask: "What kind of searches fail?"
+	Replies: {
+		sqbotch: "Emacs doesn't respond at all to ^S"
+		Regular: "Regular search and replace don't work"
+		Search_return: "It displays ^J after what I am
+		searching for and only finds the first one"
+	}
+}
+Hypothesis Search_return: {
+	Explain: "You are probably typing <return> after the string
+	to search for.  Don't do this with incremental search (^S).
+	Just type what you want to find without the return"
+}
+Hypothesis Regular: {
+	Explain: "Be sure you have looked at the description of
+	regular expressions carefully, and understand it.  Emacs's
+	regular expressions are not quite the same as those used in
+	other unix tools"
+}
+Infer Repeatibility from cmother
+Hypothesis Repeatibility: {
+	Ask: "Which of the following applies"
+	Replies: {
+		badisp: "The display looks wrong after I do
+		something, but typing ^L clears it up"
+		solidfail: "The problem occurs every time I use a
+		certain command"
+		interm: "The problem occurs only in some situations"
+	}
+}
+
+Infer Get_terminal_support certainty 40 from badisp
+
+Hypothesis Initfail: {
+	Ask: "Which of the following is true"
+	Replies: {
+		cmdfile: "running a command file with ^X^I fails"
+		userinit: "Emacs ignores $HOME/.emacs_init"
+		sysinit: "Emacs ignores the system .emacs_init"
+		Bad_user_init: "text in my .emacs_init winds up in my buffer"
+	}
+}
+Infer Protection_bug from { !userinit sysinit}
+Infer Bad_environment from { userinit }
+Hypothesis Bad_user_init: {
+	Explain: ".emacs_init files are supposed to contain commands
+	as typed from the terminal, like ^X^Msave, not embedded
+	modes like EMACS_MODES: save.  Make sure that the file
+	contains exactly what you would type from the keyboard to do
+	what you want."
+}
+Hypothesis Bad_environment: {
+	Ask: "Which of the following failures occur"
+	Replies: {
+		Badenv: "Doing ^X^R$HOME/.profile doesn't read your profile"
+		Badtilde: "Reading ~user/file doesn't access a file
+		in the users directory"
+		Badshell: "Reading \"*\" does not find a file in a
+		directory in which there are several files"
+		bademacs: "Reading ~EMACS/emacs_defs doesn't get you
+		a file"
+	}
+}
+Infer Protection_bug certainty 20 from { bademacs }
+Hypothesis Badenv: {
+	Explain: "Shell environment variables are not working, or
+	HOME is not exported in your installation"
+}
+Hypothesis Badshell: {
+	Explain: "The environment variable \"SHELL\" may not name a
+	suitable shell for running commands"
+}
+Hypothesis Badtilde: {
+	Explain: "Emacs is having difficulty reading and
+	understanding the password file.  Emacs includes the passwd
+	file reading code (the standard code wants to use stdio),
+	and must be modified if you have a non-standard
+	installation."
+}
+Infer Debug_terminal certainty 30 from { badisp dinternal }
+Hypothesis Debug_terminal: {
+	Ask: "The emacs terminal descriptor is probably bad for this
+	terminal.  Which of the following can you do to debug it?"
+	Replies: {
+		Ttest: "I can run the ttest program on it"
+		taccess: "I can run emacs on it"
+	}
+}
+Hypothesis Ttest: {
+	Ask: "Run ttest and indicate everything that seemed to fail"
+	Replies: {
+		Bad_curpos: "the absolute cursor positioning test
+		did not fill in numbers across and down the screen"
+		bad_relpos: "a relative motion did not work"
+		Bad_cr: "return did not appear at the left margin on
+		the same line as carriage"
+		Bad_clear: "The screen didn't clear when indicated"
+		Bad_wraps: "It printed \"wraps		cursor\" and
+		lots of gibberish in the right hand column"
+		Bad_size: "wraps did not line up under wraps"
+		Badscroll: "The screen did not scroll after each word
+		in the scroll ttest"
+		Bad_lclear: "It didn't clear the line after clear"
+	}
+}
+Hypothesis Ttest1: {
+	Ask: "Enter additional failures from ttest"
+	Replies: {
+		Bad_insert_character: "The insert/delete character
+		tests did not behave as advertised"
+		Bad_insert_line: "The test to scroll lines 2-23 up
+		and down failed"
+		Badunderline: "The underlining test failed"
+	}
+}
+Infer Ttest1 certainty 99 from { ttest }
+Infer Bad_curpos from { bad_relpos }
+Hypothesis Bad_insert_character: {
+	Explain: "Insert/delete character doesn't seem to run as
+	advertised.  Try running without it, or with \"in\" set differently"
+}
+Hypothesis Bad_curpos: {
+	Explain: "Cursor positioning doesn't work properly.  If a
+	relative movement fails, delete or change it.  If absolute
+	positioning fails, you may be able to avoid it, but emacs
+	won't run efficiently without it"
+}
+Hypothesis Badunderline: {
+	Explain: "The terminal doesn't underline as advertised.  If
+	you get extra underlines, try turning off 'eo'.  If you
+	don't get underlines where you should, check 'ul' or 'us'"
+}
+Hypothesis Bad_cr: {
+	Explain: "Carriage return does not work on your terminal. 
+	Alternatively, something (like a local area network) may be
+	turning carriage return into carriage return-linefeed"
+}
+Infer Badsize certainty 20 from { bad_size termpc }
+Infer Bad_size certainty 15 from { badscroll }
+Infer Bad_size certainty 15 from { bad_curpos }
+Hypothesis Bad_size: {
+	Explain: "Your screen size may be wrong, make sure it's
+	correct"
+}
+Hypothesis Bad_clear: {
+	Explain: "Clear screen doesn't work.  Without this, you
+	nothing else will work well.  If the terminal really won't
+	clear but will scroll, substitute gobs of newlines for clear!"
+}
+Hypothesis Bad_wraps: {
+	Explain: "Your terminal does not automatically wrap to the
+	next line on overly long lines.  You may be able to change
+	this in setup modes or switch settings on the terminals. 
+	Otherwise, take out the 'am' capability"
+}
+Hypothesis Badscroll: {
+	Explain: "Scrolling may not work on your terminal, get rid
+	of 'sf'"
+}
+Hypothesis Memcurad: {
+	Explain: "The cursor addressing on your terminal may be
+	memory based and not screen based.  Try removing the 'sf'
+	Parameter or changing th 'cm' parameter to a screen based
+	cursor addressing scheme"
+}
+
+Hypothesis Bad_lclear: {
+	Explain: "Clear line (ce) doesn't seem to work,
+	alternatively, your terminal may not be set to allow
+	characters to be overwritten by blanks"
+}
+Hypothesis Bad_insert_line: {
+	Explain: "Line insertion and deletion or settable scrolling
+	region doesn't work."
+}
+Infer Emtest certainty 20 from { taccess }
+Infer Emtest certainty 20 from { tterms !dinternal }
+
+Hypothesis Emtest: {
+	Ask: "To debug emacs, run emacs on the following terminal
+	and report what fails"
+	Replies: {
+		bad_clear: "Screen doesn't clear when you run emacs"
+		bad_curpos: "The emacs mode line is messed up even in
+		an empty buffer"
+		bad_size: "The screen scrolls or the mode line is in
+		the wrong place when emacs is run on file with no
+		long lines"
+		badunderline: "Underlines appear mysteriously in the text"
+		bad_lclear: "When paging through a file, junk from the
+		previous page is left on the screen"
+		wrapfail: "Long lines don't wrap properly"
+		afterscrol: "The screen is fouled up after
+		inserting/deleting lines or scrolling"
+	}
+}
+Hypothesis Test_ins_del: {
+	Ask: "Does your problem with inserting/deleting lines happen"
+	
+	Replies: {
+		aftern: "After doing ^N at the bottom of the screen"
+		afterp: "After doing ^P at the top of the screen"
+		afterdel: "After doing ^O in the middle of the screen"
+	}
+}
+Infer Test_ins_del from { afterscrol }
+Infer Memcurad from { aftern !badscroll }
+Infer Memcurad from { aftern !afterp }
+Infer Bad_insert_line from { afterdel !aftern }
+Infer Bad_insert_line certainty 20 from { afterscrol }
+Infer Memcurad certainty 20 from { afterscrol }
+Infer Bad_wraps certainty 30 from { wrapfail }
+Infer Bad_size certainty 30 from { wrapfail }
+Infer Bad_control_at from { dbsd markbreak }
+Hypothesis Bad_control_at: {
+	Explain: "The set mark command should be entered with
+	escape-space (M- ) and not control-atsign (^@) or
+	control-space.  ^@ will not work on berkeley unix systems
+	and causes a break instead."
+}
+Hypothesis Bad_3b2: {
+	Ask: "Which processor do you have the problem with"
+	Replies: {
+		3b2: "3b2"
+		3b5: "3b5"
+		3b20: "3b20"
+	}
+	Explain: "The I/O interface on some 3B2 systems sometimes
+		buffers one character, causing emacs to respond one
+		character behind your typing.  There is no fix for
+		this at the moment"
+}
+Infer Bad_fep from { feps stopinput }
+Infer Bad_fep certainty 20 from { fep badio }
+
+
+Hypothesis Bad_fep: {
+	Explain: "The front end processors on some unix/370 or amdahl
+	systems do not handle raw I/O properly.  To get around this,
+	change the values asigned to VMIN and VTIME in emacs_io.c to
+	1 and 0, and recompile"
+}
+Infer Bad_3b2 certainty 0 from { !3b2}
+
+Hypothesis Bad_termcap: {
+	Explain: "The termcap or terminfo description for your
+	terminal may be incorrect, or there may be a bug in the
+	emacs implementation.  Try recompiling with internal
+	terminal support."
+}
+
+Infer Bad_termcap certainty 30 from { badisp !dinternal }
+

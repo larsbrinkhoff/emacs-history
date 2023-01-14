@@ -1,0 +1,475 @@
+.ds Tm \ \ 
+.TH EMACS 1 exptools
+.SH NAME
+emacs - interactive screen editor
+.SH SYNOPSIS
+.nf
+emacs [-i init_file] [+line_number] [-x] [file]
+.SH DESCRIPTION
+.ad b
+.fi
+Emacs is an interactive screen editor which can be used to construct
+and edit files on UNIX.  A window of text from the file being edited
+is displayed on the terminal screen, along with a status line
+describing the editor version and file being edited.  Ordinary
+characters typed are inserted in the file, while escape sequences
+and control characters are used to invoke editing functions. 
+Several files can be edited at the same time in different editing
+buffers, and two of the active buffers can be displayed on the same
+screen.  
+.PP
+If given a \fIfile\fP argument, emacs reads the file into the buffer
+"Main".  Otherwise, an empty buffer is created.  If a \fIline_number\fP is
+given, emacs moves to that line number in the specified file.  If
+\fI-x\fP is specified, emacs asks for an encryption key and uses
+\fBcrypt(1)\fP to read or write any files edited in that session. 
+(See also the ^Xk command.)  If an \fIinit_file\fP is specified,
+emacs will treat the contents of that file as emacs commands to be
+executed on startup.  Emacs also looks in your home directory for a
+file named \fI.emacs_init\fP and interprets commands from it before
+those in the specified \fIinit_file\fP are executed.  This option
+can also be specified with \fB.i\fP, in which case it suppresses the
+processing of \fI.emacs_init\fP.
+If an \fI.emacs_init\fP does not exist, emacs looks in the emacs
+library directory (see below) for a standard \fI.emacs_init\fP.
+.PP
+Emacs can be customized by the user through user defined macro
+commands, which can re-define the effect of the basic editing
+commands.  Emacs has a number of built in editing modes that
+customize some of the commands to support editing of particular
+types of files, such as C source programs or word processing source
+documents.
+.PP
+There are a number of self-help features in emacs to aid in learning
+how to use the editor.  Complete documentation appears in:
+.sp
+.ti +10
+An Interactive Screen Editor for Unix
+.br
+and
+.ti +10
+Writing macros for EMACS.
+.PP
+Emacs supports editing on most of the commonly used dislay
+terminals including vt100, vt52, adm (adm3a), adm31, and most of the
+Hewlett-Packard and Teletype terminals.  The terminal type can be
+entered when emacs is invoked, or set in the environment variable
+TERM.  On some systems, the \fBttype(1)\fP command can be used to
+set your terminal type automatically by putting
+.sp
+.ti +10
+TERM=`ttype`
+.br
+.ti +10
+export $TERM
+.sp
+in your .profile.
+.sp
+If TERM is a given as a full path name, it will use a user
+supplied terminal descriptor file.
+.PP
+.SH MISCELLANEOUS CONVENTIONS
+.PP
+Emacs treats the following characters specially in filenames:
+.nf
+
+$NAME           Evaluate NAME as an environment variable and substitute
+~USER           Substitute the home directory of USER.
+~EMACS 		Specifies the emacs library directory. (contains
+		standard macros, etc.)
+*,?             Can be used for matching in partially specified
+                filenames.
+`COMMAND`       Substitute the output of running COMMAND.
+{,[             Used as they are with the shell.
+.fi
+.sp
+Emacs uses the following notation to display and input non-printing
+characters:
+.sp
+.nf
+^X              Control-X, where X is any character.  These
+                characters are input by holding down the control key
+                and another key simultaneously on your terminal. 
+                Emacs also provides a special mode (controlify) to
+                allow you to input control characters that your
+                terminal cannot send to your system (see the
+                discussion of modes).  Some of the control
+                characters displayed are not very intuitive:
+                        ^?      Rubbout
+                        ^[      Escape
+                        ^]      Control-right-bracket
+                        ^\e      Control-backslash
+                        ^_      Control-underline
+                        ^@      Null
+                        ^H      Backspace (Displays as ^H when
+                                backspace mode is off, see below).
+                        ^I      Tab (Displays as ^I when notabs mode
+                                is on.)
+                        ^J      Newline (Displays as ^J in searches)
+                        ^M      Carriage return
+                        
+M-x             Meta-x, where x is any character (including a
+                control character.  Meta characters are entered by
+                typing escape followed by another character.
+.fi
+.PP
+Many emacs commands take an optional numeric argument.  The argument
+for a command precedes the command itself, and can be specified a
+number of ways.  Typing ^U specifies an argument of 4, or 4 times
+the current argument.  Typing escape followed by a sequence of
+digits with or without a leading '-' specifies a decimal value. 
+Some examples:
+.nf
+.sp
+^U^U^N          Go forward 16 lines
+M-123^N         Go forward 123 lines
+M--12^N         Go forward -12 lines (goes back 12 lines).
+
+.fi
+.PP
+Some emacs commands prompt for a string parameter, such as a file
+name.  Some of the normal emacs commands can be used to edit the
+parameter while it is being entered.  These include: 
+^F,^B,^D,^H,^A,^E,^K,^U.  In addition, typing your kill character
+(usually @) deletes the string, typing ^X substitutes the
+contents of the current line in the buffer, and ^Y substitutes the
+current file name.  (The latter is a very convenient way of finding
+files with similar names.)
+.SH REGULAR EXPRESSIONS
+Emacs uses an extension of the regular expression syntax used by
+\fBed\fP(1) and \fBgrep\fP(1) for regular expression searches and query replace.
+The following character sequences have special meaning:
+.nf
+
+.               Matches any single character
+[xyz]           Matches one character among the set enclosed in
+                brackets. (If the first character is ^, it matches
+                all but the specified characters.)
+*               Matches 0 or more of the preceding expression (a
+                single character, specified as such or * or [])
++               Matches 1 or more of the preceding expression          
+\e{x,y\e}         Matches x through y occurrences of the preceding
+                expression. If y is omitted, it defaults to 255.
+                If x is omitted it defaults to 0.
+\e(expr\e)        Matches expr, and saves the text so matches for
+                later reference.
+\e<              Matches 0 characters at the beginning of a word.
+\e>              Matches 0 characters at the end of a word.
+^               Matches 0 characters at the beginning of a line
+$               Matches 0 characters at the end of a line.
+\en              Matches on newline at end of a line, must be last
+                character in the expression.
+
+The following special sequences apply in the strings to replace with
+in query replace.
+
+&               Specifies the entire string matched by the from
+                string.
+%               Specifies the previous from string.             
+\e\fIn\fR              Specifies the string matched by the \fIn\fRth occurrence
+                of \e(expr\e) (Regular expression replace only).
+^J              Specifies a newline is to be inserted at this point.
+
+.fi
+.SH COMMAND SUMMARY
+The following chart summarizes the available commands by category. 
+Some commands appear in more than one category.  Commands that are
+marked with '*' take a numeric argument that indicates how many
+times to do the command.  Commands that are marked with '+' take a
+numeric argument that changes the behavior of the command in some
+other way.
+.nf
+
+        \fBGeneral Commands\fP
+ ^G     Quit (Stops commands that prompt for things)
+ ^Z     Exit one level (Usually exits emacs)
+ ^X^C   Exit emacs
+ M-^Z	Suspend emacs, (Requires a second ^Z on System 5 Unix)
+ M-?    Help - Prompts for a command and displays its function.
+ M-w    Put a wall chart of command explanations in the current buffer
++^L     Refresh the screen. (Argument indicates where to put the
+        current line)
+
+        \fBCharacter oriented commands\fP
+*^F     Move forward one character
+*^B     Move backward one character
+*^D     Delete the character under the cursor
+*^H,^?  Delete the previous character
+*^T     transpose the current and next character, move forward.
+*^C     Capitalize the current character
+ M-i    Insert mode (macro, usually loaded from ~EMACS/.emacs_init)
+ M-o    Overwrite mode (macro, usually loaded from ~EMACS/.emacs_init)
+
+        \fBWord oriented commands\fP
+*M-f    move forward one word
+*M-b    move backward one word
+*M-d    delete forward one word
+*M-^?,M-^h delete backwards one word
+*M-c    Capitalize the next word
+*M-_    Underline the next word
+ M-a    Move to the beginning of the sentence
+ M-e    Move to the end of the sentence
+
+        \fBLine oriented commands\fP
+ ^A     move to beginning of line
+ ^E     move to end of line
+^M-<    Move to beginning of file
+^M->    Move to end of file
+*^P     move back one line
+*^N     move forward one line
++M-g    Go to the line specified by the argument
+*^O     Create a blank line in front of the cursor
+*^J,^M  Make a new line (Just moves through empty lines).
+*^K     Kill (delete) to the end of line (with argument, kills whole lines)
+
+        \fBDelete commands\fP
+*^D     Delete the character under the cursor
+*^H,^?  Delete the previous character
+*M-d    delete forward one word
+*M-^?,M-^h delete backwards one word
+*^K     Kill (delete) to the end of line (with argument, kills whole lines)
++^W     Delete the marked region (argument specifies a mark number)
+*^Y     Restore the last deletion (sets mark in front of it).
+*M-Y    Replace the marked region with the previous deletion
+                (Use only immediately ofter ^Y)
+
+        \fBDisplay commands\fP
+ ^L     Redraw the screen
+*^V     Display the next page
+*M-v    Display the previous page
+ M-<    Move to beginning of file
+ M->    Move to end of file
+ M-^L   redraw with the current line at the top of the screen
+
+        \fBBuffer commands\fP
+(Most prompt for a buffer name, entering return gets a list of active
+        buffers).
+ ^X^B   change working buffer
++^X^F   Find file (does change buffer if file is in one, creates a new
+                buffer and reads the file if not).
+ ^X^K   Kill buffer
++^X^N   Change buffer name (with argument, changes file name)
+ ^X^T   Send region to buffer
+ ^X=    Display statistics on buffer
+ ^X2    Enter two window mode (prompts for buffer name for second window)
+ ^X1    Make current window the only window
+ ^X^O   Switch windows.
+
+\fBFile commands\fP
++^X^R   Read file into current buffer (with an argument, inserts the
+                file at the current position)
++^X^W   Write buffer to file (With an argument, appends to the file)
+ ^X^S   Save current buffer into current file.
++^X^F   Find file (does change buffer if file is in one, creates a new
+                buffer and reads the file if not).
++^X^N   Change buffer name (with argument, changes file name)
++^X^L   Load macros from file. (With an argument, undefines all
+                previously defined macros.)
+                
+\fBRegion commands\fP
++M-(space) Set mark at position (argument the mark number)
++^X^X   Exchange mark and cursor position (argument is mark number)
++^W     Delete the region and put it on the kill stack
++M-p    Put the marked region in the kill stack without deleting it.
+
+\fBSearch and Replace commands\fP
+(All prompt for search and replace strings.)
+
+ ^S,^R  Forward and reverse incremental search.  (Both display the
+        string currently matched.  ^S moves to next occurrence, ^R
+        moves to previous occurrence.  ^H deletes last character, ^G
+        quits search, escape exits search at currently displayed
+        position.  See below on regular expression search.
+
+ M-^S   Regular expression search.  (waits for whole expression to
+        be typed).  ^S following M-^S goes to next occurrence. 
+        
+ M-r,M-^R Ordinary and regular expression query replace. (Prompts at
+        each occurrence of from string for the following:
+
+        y               Replace with "to" string and move on.
+        n               Do not replace this occurrence and move on.
+        r               Replace all of the rest, showing each replacement.
+        R               Replace the rest silently
+        p               Move to previous occurrence of from string.
+        .               Replace this one and stop
+        ^G              Quit query replace
+        ^[              Prompt for new to string, and replace this
+                        occurrence with it.
+                        
+\fBWindow commands\fP
+ ^X2    Enter two window mode (prompts for buffer name for second window)
+ ^X1    Make current window the only window
+ ^X^O   Switch windows.
+*^X^^   Make current window grow by one line.
+
+\fBSpecial input commands\fP
+*^Q     Takes the next input character and inserts it, even if it is
+        a control character
+*M-Q    Takes the next input character, makes it a meta character,
+        and inserts it.
++M-\e    Converts it's argument to an ascii character and inserts it.
+
+\fBInteraction with Unix\fP
++M-!    Prompt for a unix command and execute it (with an argument,
+        passes the buffer as standard input.
++M-$    Execute unix command, put output in .exec (with an argument,
+        appends to .exec., with an argument of 0, starts a
+	sub-process).
++^X^G	Interrupt sub-process.
+ ^X^D   Change working directory
+ M-^M   Send the current buffer as mail.  (Lines starting To: or Cc:
+        are taken as destinations.)
+ M-S    Run \fBspell\fP(1) on current buffer (macro, usually 
+        loaded from ~EMACS/.emacs_init).
+        
+\fBMiscellaneous commands\fP
++^X^M   Specifies modes (See below)
+ M-s    Prints emacs statistics
+ M-z    Kill emacs and produce a dump (DOES NOT SAVE BUFFERS)
++M-"    Re-adjusts line boundaries in the whole buffer to fill lines
+        evenly. (With an argument, it works only on the current
+        region.
+ M-/    Start a C comment.
+
+        
+.SH Modes
+Mode parameters allow you to customize the behavior of certain
+commands.  Some modes are switches, indicating only that something
+is either off or on, while others are numeric parameters.  Modes can
+be set by the ^X^M command.  Typing ^X^M followed by the name of a
+switch mode turns it on, typing ^U^X^M followed by the name turns it
+off.  To set numeric modes, give the value you want as an argument
+to ^X^M. (i.e. M-500^X^Msave).  Modes can be set automatically by
+putting ^X^M commands in your .emacs_init.  Modes can also be
+attached to a file by putting the string "EMACS_MODES: " followed by
+a list of mode settings in the first 10 lines of the file.  (The mode
+settings can be preceded or followed by anything, to allow you to
+make them look like a comment to other software processing the file.)
+The mode settings are separated by commas and can be of the
+following form:
+.nf
+.sp
+modename:       set this switch mode
+!modename:      Turn this switch mode off
+modename=x:     Set this numeric parameter to x.
+.fi
+.sp
+The following indicates the modes and their default settings. 
+Switches are listed as either ON or OFF, while numeric parameters
+have specified values.  \fINote that the system default .emacs_init may
+alter these settings on your local machine\fP
+.nf
+\fBsave\fP (OFF)      Automatically saves each buffer after savetype
+                characters of input or when you change buffers
+\fBsavetype\fP (256)  Number of characters between automatic saves
+\fBmailtype\fP (100)  Number of characters between checks for new mail
+\fBc\fP (OFF)         Automatically indents during typing for C programs
+\fBverbose\fP (ON)    provides prompts for meta and control-x commands.
+\fBfill\fP (ON)       Automatically replaces a space with a newline when
+                you type past the end of line or past fillcol
+                characters.
+\fBfillcol\fP (72)    column beyond which lines are wrapped.
+\fBeofnl\fP (ON)      Causes a newline to be appended to any file that
+                doesn't end in one.
+\fBend_newline\fP (OFF) Causes attempts to move beyond the end of the file
+                to add newlines.
+\fBkeepscroll(0)\fP   Number of lines kept from previous screen during ^V
+                and M-v
+\fBreadonly\fP (OFF)  Prevents saving the current buffer
+\fBpicture\fP (OFF)   Enables 2-dimensional editing (See the manual)
+\fBtabstop\fP (8)     Width of a tab character
+\fBoverwrite\fP (OFF) Causes input to replace characters already there,
+                rather than insert.
+\fBnodelete\fP (OFF)  Causes deletions to replace the characters with
+                whitespace rather than deleting them.
+\fBrigid_newline\fP (OFF) Causes newline to always insert a new line, even
+                if the next line is empty.
+\fBnotabs\fP (OFF)    Causes tabs to be expanded to spaces on input, and
+                tabs in files to display as ^I
+\fBcomcol\fP (40)     Column where the M-/ commands starts a comment.
+\fBbackspace\fP (?)   Causes backspaces to appear as cursor motion, not
+                ^H.  This mode is set ON if your terminal handles
+                underscored characters, OFF otherwise.
+\fBnobell\fP (OFF)    Causes emacs not to ring the terminal bell on an error
+\fBcaseless\fP (OFF)  Causes all searches to ignore upper/lower case distinctions
+\fBusilent\fP (OFF)   Causes output from unix commands run from emacs to
+                be discarded.
+\fBnoecho\fP (OFF)    Causes output from M-$ commands not to be
+                echoed.
+\fBcontrolify\fP (OFF) Causes a sequence of ctl_char followed by another
+                character to translate into the second character made
+                a control character.
+\fBctl_char\fP (30)   Prefix for controlify (This is an integer specifying
+                the ascii code of the character, the default is ^^.
+\fBlnumb\fP (ON)      Displays line numbers
+\fBlnowid\fP (4)      Width of line numbers.
+\fBtime\fP (OFF)      Displays a clock
+\fBdisplay_percent\fP (OFF) Displays current position as a percentage of
+                the whole file.
+\fBflow_lim\fP (0)    If non-zero, flow control will be enabled whenever
+                flow_lim characters are sent to the terminal in a
+                burst.
+\fBheight\fP (?)      Height of screen area for buffer display (set automatically)
+\fBwidth\fP (?)       width of screen
+\fBtspeed\fP (?)      Describes your terminal to host speed.
+\fBautoload\fP (ON)   Automatically loads macros when first referenced.
+
+.fi
+.SH ENVIRONMENT
+The environment variable TERM if set is used to determine the
+terminal type. The variable MAIL is the file name that emacs looks
+at for newly arrived mail.  If your mail is forwarded to some other
+system, MAIL should not be exported.  The environment variable
+MAILER optionally specifies the name of a mail command to use for
+sending mail.  The environment variable SHELL specifies the shell to
+use to execute shell commands.
+.ne 5
+.SH FILES
+.nf
+$HOME/.emacs_init
+~EMACS/.emacs_init
+$HOME/emacs[0-11]
+~EMACS/macros
+~EMACS/terminals
+~EMACS/helpfile
+~EMACS/errfile
+.fi
+The .emacs_init files, if present, contain a standard set of
+initializations to be made when you start emacs.  The characters in
+the file will be interpreted as if you had entered them as commands
+from your terminal.  The most common application of this is to set
+modes different from the default modes.  
+.PP
+When emacs is killed by an internal error, the \fBkill\fP(1) command, or
+by hanging up during an editing session, it saves your buffers in
+the files emacs0-emacs11 in your home directory.  You will receive
+\fBmail\fP(1) notifying you of what buffers were saved.
+.PP
+The directory ~EMACS is the emacs library, the location of which
+depends on your local installation.  Pathnames starting with ~EMACS
+will be translated to the local path of this directory by emacs (but
+\fInot\fP by other tools).  ~EMACS/macros contains a number of
+useful macro packages that can be loaded.  ~EMACS/terminals contains
+terminal information for emacs.  The other two files contain
+internal data for emacs.
+.sp 
+On exptools machines, if $TOOLS is set, ~EMACS is set 
+to $TOOLS/lib/emacs.  If $TOOLS is not set, ~EMACS is
+set to ~exptools/lib/emacs. 
+.SH SEE ALSO
+.in +15
+.ti -15
+dired (1),
+.br
+.ti -15
+.I An Interactive Screen Editor for UNIX,
+by Warren Montgomery
+TM-5343-80-2 (Updated copy may be maintained in
+~EMACS/emacs.tm.x
+.br
+.ti -15
+.I Writing Macros for EMACS,
+by Warren Montgomery (Updated copy may be maintained in
+~EMACS/macro.mm.x
+.in

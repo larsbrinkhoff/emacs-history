@@ -1,0 +1,240 @@
+Íruns the mail processing subsystem [MACRO]
+
+B			save the name of the current buffer
+<mail
+			goto mail buffer
+|û		check if should be special file
+	û1~0<
+		<Mail file to use? 
+	ý		else read new mail
+	û 0<Retrieving Mail
+		0		indicate that execution is in progress
+		<$MAIL
+		-¼ ¾empty mail file
+		<$HOME/mbox
+ýý
+F-	get (or create) the mailbox file
+¾ 		mark the end of the old mail
+-		append new mail and save
+			go to the top of the new mail
+<lnumb
+20	turn off lnumb mode (save old value)
+110	go to one window mode
+			loop until 1 is returned
+^û8~!û-<mail? 
+	û			exit mail
+					save mail file
+		B%	display old buffer and kill this one
+		<lnumb
+		2		restore old lnumb mode
+		ý			return 1 to exit loop
+	û?			help display
+		B<Mail
+		<~EMACS/macros/mail_help
+		0-<Continue? 
+		B%	kill Mail buffer
+		100ý	redisplay and return 0
+	û!s		shell escape
+		100ý
+	û		refresh screen
+		100ý
+	û<¼øNext
+		100ý	first message
+	û>¾øLast
+		100ý	last message
+	ûnøNext
+		100ý	next message
+	ûpøLast
+		100ý	previous message
+	ûøskip_down
+		00ý		next page
+	û øskip_down
+		00ý		next page
+	ûøskip_up
+		00ý		previous page
+	ûl			look for next From in newsletters
+		<^From
+		“Œ		move next From to top of screen
+		00ý
+	ûdøMark
+				delete message
+		%			swap it and the buffer name
+		100ý	redisplay and return 0
+	ûu%-		undelete message
+		øLast
+		100ý	redisplay and return 0
+	ûf			forward message
+		øPut
+		<${MAILER:-mail} 
+		+<Forward to? 
+		¡
+		B%	display mail buffer & kill temp buffer
+		100ý	redisplay and return 0
+	ûw			write message to file
+		øPut
+		<Write mail to File? 
+		
+		B%	display mail buffer & kill temp buffer
+		0ý		replace cursor and return 0
+	ûeB		edit mail buffer
+		øLast
+					restore mail buffer if other buffer displayed
+		100ý	redisplay and return 0
+	ûs			send message
+		<Mail
+		2To: 
+		Subject: 		insert message header
+		øreply_send
+		100ý	redisplay and return 0
+	ûr			reply to message
+		øMark
+		ð		push original message
+		<Mail
+		2¼		switch to Mail buffer and get message
+		^û~‘>	While next line is '>'
+			|ûû~‘*	If not Forwarding line
+				 âð+<!
+				+ýý		This line processed
+			ý	Move on
+		æ		get to start of sender string
+		^û2~‘ 	while less than a blank
+			ä+	append word to string
+			ý<
+					then get subject
+		|û ûû<^[Ss]ubj.*:
+			“ý	if line starts with some subject line
+			æý	get line after :
+			û 
+			|û ûû<^[rR]e:
+				“ý
+			æý	If a subject get line after :
+			û < 
+			ýý		put in a space if no subject
+		ýý
+		¾ ¼-	throw away message
+		To: %-	address reply buffer
+		Subject:-
+		øreply_send
+		-			pop the original message
+		100ý	redisplay and return 0
+	ûN			unix news
+		<news
+		øNews
+		00ý
+	ûU			Usenet news
+		<if nchk;then netnews -p;fi
+		øNews
+		00ý
+	ûP			print message
+		øPut
+		<8by11
+		¡
+		B%	display mail buffer & kill temp buffer
+		100ý	redisplay and return 0
+	ûA			append message to BLFP add file and delete
+		øPut
+		<add
+				append message to file
+		B%	display mail buffer & kill temp buffer
+		%			delete message so it can be undeleted
+		100ý	redisplay and return 0
+	ûC			append message to BLFP con file and delete
+		øPut
+		<con
+				append message to file
+		B%	display mail buffer & kill temp buffer
+		%			delete message so it can be undeleted
+		100ý	redisplay and return 0
+ýý
+Next
+	go to the next mail header
+<^From 
+|û	search for next From
+	û“ý
+	û ¾ýý
+Last
+	back up to the last mail header
+<^From 
+|û	Search backwords for a From
+	û-2“ý
+	û ¼ýý
+Mark
+	mark this message for deletion or putting on the kill stack
+øLast
+ øNext
+
+Put
+	put this message in the Mail buffer
+øMark
+Bð<Mail
+-þ
+reply_send
+	common code for sending and replying to a message
+
+Cc: 
+
+¼			put cursor at end of first line
+<fill
+		set fill mode (save old value)
+<usilent
+30	turn off usilent mode (save old value)
+<$HOME/.mail_reply
+		add a file name to keep autosave mode happy
+|û	û<Mail
+	øSign
+			if successfull edit, then sign, save the message,
+	ý		and mail
+ý
+			else save the partial message
+<usilent
+3		restore old usilent mode value
+<fill
+		restore old fill mode value
+B		return to other buffer & kill reply buffer
+1			restore one window mode
+<mail
+			display mail buffer in case other file was displayed
+
+News
+0<Retrieving News
+0		indicate that execution is in progress
+<usilent
+3		turn on usilent mode (save old value)
+¤B<.exec
+<(.*).*:..:
+0>^û“	while we find a search string
+	äFrom -0>ý
+-¼ ¾ð	put the news on the kill stack
+þ			mark .exec as up-to-date
+% -1 go to beginning and set at top of page
+<usilent
+3		restore old usilent mode
+			clear message line
+0< 
+
+Sign
+
+|ûLook for what kind of mail
+	ûû<@
+	³çý<$HOME/.sig_arpa
+	ý	Arpanet mail
+	ûû<!
+	³çý<$HOME/.sig_btl
+	ý	btl mail
+	û 	Default, local mail
+	<$HOME/.sig_local
+	ýý
+¾ ­	Read in signature (If any)
+|ûû ý	If this worked, do nothing
+	û <$HOME/.signature
+	­	Read in default signature
+ýý
+skip_down go to next page with cursor at top
+^û·~	while not at end of file after moving
+´~²=­1ýand not off the screen
+Œ			then put this line at the top of a page
+
+skip_up go to previous page with cursor at top
+ö0	get previous page on screen
+²=	and go up the number of the line on the screen
+

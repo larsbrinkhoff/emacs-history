@@ -1,0 +1,16 @@
+pscan -- scan for paren level
+°	Initialize level
+~Push onto kill stack
+^û~‘ ­@	While the user says space
+	<[][{}()]
+	“!û|ûû³~±28±2~±28ı
+			û ıı	Switch on what we found
+		û(±1~ı
+		û[±1~ı
+		û{±1~ı
+		û)±2~ı
+		û]±2~ı
+		û}±2~ı
+	ı
+	°~Push onto kill stack
+ı

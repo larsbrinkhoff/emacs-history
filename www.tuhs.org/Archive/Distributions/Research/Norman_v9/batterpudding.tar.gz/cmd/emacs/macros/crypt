@@ -1,0 +1,73 @@
+READ_ENCRYPTED Read Encrypted File
+
+Warren A. Montgomery 10/20/80 (EMACS 4.0)
+
+This macro library contains macros for reading and writing
+files encrypted with crypt (1) from emacs.  The macros prompt for
+key name and behave like ^X^R, ^X^W, and ^X^S
+
+READ_ENCRYPTED
+
+Read an encrypted file into the buffer
+Kill Stack contains  calling parameters of Key and File Name
+
+<usilent
+			silence unix
+B2%%<.exec
+crypt - < 	Form Commannd Line  in File
+		Kill Stack Now Contains
+		crypt (key) < (file)
+		File Name
+		then buffer name
+¤	Run "crypt <key> <file"
+	change file name
+0>	change buffer name
+<usilent
+¼þ	Remove linefeed introduced by crypt
+
+WRITE_ENCRYPTED
+
+Write an encrypted file from the buffer
+
+Kill Stack Contains parameters of key and file name
+
+<usilent
+			silence echoes
+crypt - >  Form Command Line
+
+			Kill Stack Now contains
+			crypt (key) > (File)
+			File Name
+			usilent
+¡		Run crypt <key> >file from buffer
+þ	Change File Name and mark buffer
+<usilent
+
+RRead_Encrypted	Read an encrypted file into the buffer
+
+Prompts for key and file name
+
+|û		Conditionals Here implement
+			If ((File entered) && (key entered)) do_it
+û<Read File? 
+	|ûû<Key? 
+		øREAD_ENCRYPTED
+ýýýý
+WWrite_Encrypted	Write to a file from the buffer
+
+Prompts for key and file name
+
+|û		Conditionals Here implement
+			If ((File entered) && (key entered)) do_it
+û<Write File? 
+	|ûû<Key? 
+		øWRITE_ENCRYPTED
+ýýýý
+SSAVE_ENCRYPTED  Save the buffer to a encrypted file
+
+Save an encrypted file from the buffer
+
+|û		If (Key Entered)
+û<Key? 
+	F%øWRITE_ENCRYPTED
+ýý

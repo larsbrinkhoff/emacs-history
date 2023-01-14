@@ -1,0 +1,51 @@
+M			MAIL reader
+Mail handling macros by J. Leth. (version 3.0)
+	Note that the names of the mail files should be changed
+	for each user.
+
+   B			save buffer name
+   </n1/leth/mbox
+   			go to mail buffer
+   <
+   			re-read mailbox
+   </usr/mail/leth
+   ¾		read in new mail, if any
+   </usr/mail/leth
+   Ã			empty system mail box
+   </n1/leth/mbox
+   			bring back mbox
+   ¼			allow editing with mail macros
+   			return to original buffer
+   
+«			Go to next mail item
+   <From 
+   |ûû ý
+             û ¾ ý
+         ý
+   
+­			Go to previous mail item
+   <From 
+   
+   
+ª			Delete current mail item
+    «
+   
+Þ			File current mail item in mail.file
+   B			remember current buffer
+   ª			remove current mail item
+   </n1/leth/mail.file
+   			go to mail.file buffer
+   ¾-		drop mail item and save
+   B			remember this buffer name
+   %			swap with original buffer name
+   			return to original buffer and kill temp.
+   
+§			Go to new buffer and send mail
+   B			save buffer name
+   <...
+   B			remember this buffer name
+   %			swap this buffer name with original.
+   TO: 			prompt and allow editing
+   			mail the buffer
+   			go back to orig. buffer and kill this one
+   

@@ -1,0 +1,42 @@
+ÒMake_ref Extracts a reference and inserts it into the current buffer
+
+Warren A. Montgomery, IH 6E-314, Version 3.0
+
+This macro interfaces with an nroff pre-processor in use in
+department 5343.  It allows the user to peruse a buffer load of
+reference descriptions and select one for inclusion in a document
+
+B			push file name to kill stack
+</ousr/references
+			Find refs file
+þ		allow the user to edit the references
+<*!R
+|ûû		if this line is a ref definition
+	 <=
+	ð				pick up ref name
+	>			back to buffer
+	[!]				insert reference
+	2-			clean the kill stack
+ýû 			Else
+					Back to old buffer
+ýý
+RSend_ref Send reference definition to leth
+
+		mails the current reference definition to Jim Leth
+		for inclusion in the department reference list
+
+B		buffer name
+<*!R
+ <!
+ð		Pick up reference
+<.temp
+-	bring it back
+
+¼TO: leth
+
+Please include the following reference:
+
+		mail it
+		back to original buffer
+<.temp
+

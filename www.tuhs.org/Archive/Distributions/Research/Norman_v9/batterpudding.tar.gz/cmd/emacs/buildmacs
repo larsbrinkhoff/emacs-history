@@ -1,0 +1,10 @@
+BINDIR=`pwd`
+cd $1
+sources=`ls *.e`
+for macro in $sources
+do 
+	echo "compiling $macro"
+	cp $macro ../macros
+	$BINDIR/ecomp ../macros/$macro
+	rm ../macros/$macro
+done;

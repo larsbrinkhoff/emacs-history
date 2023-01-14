@@ -1,0 +1,14 @@
+ë	kill (arg) lines
+
+	Joe Steffen, ihuxp!steffen, IH x5381, Version 3.0
+
+ 		mark the beginning of the current line
+1	go down (arg) lines and kill
+
+	put (arg) lines onto the kill stack
+
+	Joe Steffen, ihuxp!steffen, IH x5381, Version 3.0
+
+ 		mark the beginning of the current line
+1ğ	go down (arg) lines, and put the lines on the kill stack
+

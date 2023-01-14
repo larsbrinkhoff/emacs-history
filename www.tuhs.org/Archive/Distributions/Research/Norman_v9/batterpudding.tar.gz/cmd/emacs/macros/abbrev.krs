@@ -1,0 +1,60 @@
+@expand_abbrev: expand abbreviation [MACRO]
+
+Warren A. Montgomery, IH 6E-314, Version 3.2
+
+Modified by K. R. Stanley, IH 4F-321, Version 4.2    5/26/81
+Uses ABBEVIATION FILE: for file name
+bugs: uses mark 15 for temporary usage
+To use this macro, set $HOME/.abbrevs to be the location of your
+abbreviation file.  Change @ to whatever character you want for
+your abbrevations or have a macro call expand_abbrev.
+It uses the name after ABBREVIATION FILE: as the file to use
+in the $HOME directory.
+Bÿ		save buffer, and delete previous word then add an @
++<@
+<^
+
++			make a copy starting with a newline
+			search for string  "ABBREVIATION FILE:" in
+			first 10 lines
+15 10ç	mark here - go to 10'th line
+<ABBREVIATION FILE:
+			look for string starting with "ABBREVIATION FILE:"
+|û û		in front of this line  -  if found
+18ä-	get file name, delete, and reinsert
+<$HOME/
++ð		start file name at home and add new file name
+ý			else
+û <$HOME/.abbrevs
+ýý		put default file name in,end if and go back to
+15		where should be
+-		switch to abbrevfile  (but don't complain if new)
+2>B		Prepare to check if in .abbrevs (get old buffer
+			name and check present against it)
+|û		See if in abbrevs buffer
+	û&-2-ý	in buffer, just ignore it
+			(dump 2 copies of abbreviation and buffer name)
+	û ¾|û	Not in buffer, process abbrevs
+		û-“< 
+			search for abbreviation from back and if found
+		- <@
+			find space and mark next character go to next line
+		|ûûýsearch for next at and go to end of 
+					previous line
+			û ¾ýýor go to end of buffer and
+				back up to end of next line
+			ð%-ýsave region, return to buffer
+				and insert
+		û 	if not found in abbrev file
+		<abbreviation for ?
+		0><
+		|û û4& ask what abbrev for - check if null
+			¾ -if not - go to, end back up,
+			open line, store response and abbrev in buffer
+ødisplay_killstackshow status of buffer and stack
+			%2-@ýrestore and try again
+			û -	else restore back in old buffer
+				%-ýýend of new abbrev
+							 question
+			ýýýýif found if in buffer
+

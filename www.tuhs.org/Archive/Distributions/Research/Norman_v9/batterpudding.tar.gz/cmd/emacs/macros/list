@@ -1,0 +1,96 @@
+L			Edit a List of Files or (arg != 1) of manual pages
+
+C. Douglas Blewett (DR30L19) Version 4
+
+This file contains a command that allows the user to edit
+(recursively) a list of files.  This is much like vi's :next
+command.  The list of files is collected in .exec and the files
+are edited in .list.  This is useful for making changes in a global
+variable that appears in a list of files (e.g. ^XL *.c).
+
+If an argument other than 1 is given then the command looks up the
+file name in the directories known to contain manual pages.  This
+routine contains a string with embedded paths to the manual
+directories.
+
+An "ls -d" is performed, so full Bourne shell style wild carding is
+available.  This is very useful for manual page searches
+(e.g. ^U^XL *open*).
+
+Modified to preserve the sanity of .exec. Saves the point, mark,
+and extent of .exec.
+
+	B<List of files ?
+	0>				Get the string
+	<
+	|û				Input Conditional
+		û&			Check for Null string
+			-<
+		ý				Null Check End
+		û 				Default
+			0<Wait
+			0				Print "Wait"
+			<.exec
+								Move to .exec
+			60=71=		Current pos.
+			80=91=	Save the mark
+			¾				Meta Moon
+			50=				Save the eoB
+			|û				Check for man
+				û1~1	Arg == 1 normal list
+					exec /bin/ls -d -
+				ý
+				û 			man request
+					exec ls -d /usr/man/man?/.* /usr/ncmp/man/man?/.* /usr/man/local/.*-
+				ý
+			ý
+			<usilent
+							Run the command
+			¤5ç<usilent
+							Reset usilent
+			|û
+				û1~1	Arg == 1 normal list
+				ý
+				û 			man request
+					<not found
+					^û“
+						1-
+						<not found
+					ý
+					5ç
+				ý
+			ý
+			1				TRUE = 1
+			^û4~0		Loop forever
+				^û		Loop through filenames
+					<.list
+						Read in the file
+					0<Editing a List of Files: ^Z to move to the next file
+					0	Print "List"
+							Edit the file
+					<.exec
+							Move back and cleanup
+							The rest of the line
+				ý
+				5çŒ0
+				!û-<End of List: r to Rewind or Press Return
+					ûr	Rewind
+						0<Rewinding
+						0
+						-
+					ý
+					ûÿ
+						0	Zero == FALSE
+					ý
+				ý				Rewind End
+			ý				Forever End
+			5ç- ¾-6ç7 
+			8ç9	Reset point and mark
+			%		Cleanup and Move back
+			<.list
+			
+		ý				Default End
+	ý				Input Conditional End
+	0<
+	0		Cleanup of Print "Wait" and "List"
+

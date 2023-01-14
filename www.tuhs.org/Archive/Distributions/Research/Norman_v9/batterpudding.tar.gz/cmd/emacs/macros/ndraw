@@ -1,0 +1,25 @@
+draw -- draw on screen.
+
+Warren Montgomery, Emacs 4.5
+
+This macro allows the user to draw on the screen using a subset
+of the keyboard as a keypad, and uses the characters - | \ and /
+to draw
+
+^û!û-<Draw?
+	ûu\°ý
+	ûi|°ý
+	ûo/°ý
+	ûl-°ý
+	û.\°ý
+	û,|°ý
+	ûm/°ý
+	ûj-°ý
+	û@@°ý
+	ûvv°ý
+	û<<°ý
+	û>>°ý
+	û^^°ý
+	û  °ý
+	ûÿ°ý
+ýý

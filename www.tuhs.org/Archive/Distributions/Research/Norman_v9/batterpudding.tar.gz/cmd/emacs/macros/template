@@ -1,0 +1,63 @@
+Àtemplate expand template and execute commands [MACRO]
+
+
+Modified by K. R. Stanley, IH 4F-321, Version 4.2    8/31/81
+Based on abbrev macro
+Uses TEMPLATE FILE: for file name
+last modified 11/17/82
+uses a caret "^" to delineate where the cursor will go.
+
+restrictions: uses mark 15 as temporary  marker
+
+It uses the name after TEMPLATE FILE: as the file to use
+in the $HOME directory.
+Bÿ		save buffer, and delete previous word then add an @
++<@
+<^
+
++			make a copy starting with a newline
+			search for string  "TEMPLATE FILE:" in
+			first 10 lines
+15 10ç	mark here - go to 10'th line
+<TEMPLATE FILE:
+			look for string starting with "TEMPLATE FILE:"
+|û û		in front of this line  -  if found
+14ä-	get file name, delete, and reinsert
+<$HOME/
++ð		start file name at home and add new file name
+ý			else
+û <$HOME/.templates
+ýý		put default file name in,end if and go back to
+1515 	where should be and set mark 15
+-		switch to file  (but don't complain if new)
+2>B		Prepare to check if in same buffer (get old buffer
+			name and check present against it)
+|û		See if in buffer
+	û&-2-ý	in buffer, just ignore it
+			(dump 2 copies of abbreviation and buffer name)
+	û ¾|û	Not in buffer, process abbrevs
+		û-“< 
+			search for abbreviation from back and if found
+		- <@
+			find space and mark next character go to next line
+		|ûûýsearch for next at and go to end of 
+					previous line
+			û ¾ýýor go to end of buffer and
+				back up to end of next line
+		ð	put abbreviation on kill stack
+		<...
+		-</usr/tmp/emacs$LOGNAME
+
+		B%go to home buffer and destroy temp buff
+		</usr/tmp/emacs$LOGNAME
+			execute input
+		 delete newline and indentation
+		15Þgo to start of abbrev and do M-^
+		ýend of found
+		û %-
+							 question
+			ýýýýif found if in buffer
+
+Þd_caret find and delete the next caret
+<^
+

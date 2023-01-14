@@ -1,0 +1,19 @@
+@expand_abbrev: expand abbreviation
+
+Warren A. Montgomery, IH 6E-314, Version 3.2
+
+To use this macro, change .abbrevs to be the location of your
+abbreviation file.  Change @ to whatever character you want for
+your abbrevations
+
+Bÿ-@		pick up abbreviation
+0><.abbrevs
+0>4>		Prepare to check if in .abbrevs
+|û		See if in abbrevs buffer
+	û&----ý	in buffer, just ignore it
+	û ¼|û	Not in buuffer, process abbrevs
+		û< 
+		- <@
+		|ûûý
+			û ¾ýýð%-ý
+		û %-ýýýý

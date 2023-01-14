@@ -1,0 +1,74 @@
+	Information for blit owners on emacs related blit software
+		
+		
+There are two macro libraries for use with the blit and the etty
+terminal emulator.  Etty downloads into a layer and provides
+enhanced terminal functions that can be used by emacs, vi, and other
+screen tools.  When run with etty, the macro libraries blit
+or blit_dired can be loaded to allow the user to use the mouse for
+pointing and menu selection.  In general, button 1 on the mouse is
+used for pointing, and button two makes selections on the menu. 
+Some of the menu selections change the menu or cause positioning to
+be interpreted differently.  In general, a single push with the
+mouse standing still causes the cursor to move to that spot, while
+pushing button one and sweeping out a region before releasing the
+button causes some function (settable by a menu selection) to be
+performed on the selected region.
+
+the blit library has the following functions:
+
+M-O	Download the cursor and function keys for emacs (doesn't yet
+	work on the Super blit)
+
+M-#	Sent by pushing button 1 of the mouse, this macro reads the
+	position information from the mouse push and positions the
+	cursor there.  It will cross windows when running in two
+	window mode.
+	
+
+M-&	Sent at the end of a mouse push that selects a region.  This
+	Command is mapped to one of the following 3 commands
+	according to the mode selected by selecting mouse action
+	from the second menu.
+	
+^X-A	Kill region - deletes region swept out by the mouse
+^X-C	Pickup region - picks it up onto the kill stack
+^X-D	Mark region - marks the selected region.
+
+The following commands are bound to various menu selections.  There
+are two menues, the custom menu and standard menu.  The terminal
+file for etty loads the standard menu, while the macro bound to the
+custom menu selection loads it.
+
+M-H	Go to top of the screen	
+M-L	Go to bottom of the screen
+M-M	Go to middle of the screen
+M-^N	Scroll back one line
+M-^P	Scroll up one line
+^XM	Display the custom menu
+^Xs	Display the standard menu
+^X6	Set the action of the mouse on a region.  The next thing
+	done MUST be a menu selection (using button 2) from one of
+	the 3 alternatives.  Anything else will be ignored.
+	
+^X5	Change buffers - this macro is bound to a menu item and
+	displays a list of active buffers.  The next thing done MUST
+	be selection of one of the lines with the mouse.  Anything
+	else will be interpreted as a mouse push and will likely
+	result in going into a new empty buffer with a very strange
+	name.
+	
+^X4	Kill region - This command expects the next two actions to
+	be mouse pushes (button 1) and deletes the region between
+	them.
+	
+^X3	Scroll bar - This command displays a scroll bar at the
+	botton of the screen.  The scroll bar is 50 characters long
+	and has  X's representing the part of the file that is
+	before the cursor and -'s for that part that is after.  The
+	next action MUST be a mouse selection of a character on the
+	line (actually, you can push anywhere, only the horizontal
+	position counts), and will cause a move to the appropriate
+	spot in the file.
+	
+	

@@ -1,0 +1,17 @@
+RMAIL commands
+
+?:  display help
+n:  next message
+p:  previons message
+d:  delete message
+u:  undelete message
+r:  reply to message (^Y brings back text of old message)
+s:  send message
+w:  write message to file
+N:  put the latest UNIX news in your mail buffer
+!:  Run UNIX command
+P:  Print the current message using $PRINTER
+>:  go to end of mail
+<:  go to beggining of mail
+^V: display next page of this message
+^Z: exit rmail

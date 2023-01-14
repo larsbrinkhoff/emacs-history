@@ -1,0 +1,40 @@
+Óruns the spell command on the current buffer [MACRO]
+
+ This macro runs spell on the file in the current buffer, and
+ finds all of the misspelled words in the buffer, allowing the
+ user to edit them.
+
+ Move the cursor to the word to be found and type .
+ Type ^Z to go to next match of the same word, or to return to the list
+ of misspelled words if no match is found.
+ Repeat the above until done, then type ° to exit this macro.
+
+0<Executing Spell
+0		indicate that execution is in progress
+			save the text file
+F			put the filename on the stack
+1<.exec
+2			put .exec in the lower window
+spell -¤	spell <filename> >.exec
+0<Enter M-0^Z to exit, or move cursor to word and enter ^Z to find it.
+^û7~	while the cursor is moved to the next word and  is typed
+	<\<
+	 +ð+ concatenate "\<", the word, and "\>" on the stack
+	<\>
+	0>	duplicate the search word on the stack
+	¼	goto the top of the text file
+	^û0“	while the word is found in the text file
+		0<Enter ^Z to find next occurence of word, or to return to word list.
+		|ûû ý	if edit returns failure (°)
+			û ¾ý		goto eof so search fails
+		ý			end if
+					move the cursor past the word
+		0>		duplicate the word on the stack
+	ý		end while
+	-		pop the word from the stack
+		goto the next word in .exec
+	0<Enter M-0^Z to exit, or move cursor to word and enter ^Z to find it.
+ý		end while
+	return to the text file and save the changes
+1		drop spelling list window to signal end of spell
+

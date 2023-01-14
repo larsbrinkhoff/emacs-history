@@ -1,0 +1,15 @@
+rload_rmail
+
+Warren Montgomery (emacs 4.1)
+
+This file contains several macros to load standard macro packages
+on demand. 
+
+<~EMACS/macros/rmail
+˜
+Óload_spell
+<~EMACS/macros/spell
+˜
+Òload_refmac
+<~EMACS/macros/refmac
+˜

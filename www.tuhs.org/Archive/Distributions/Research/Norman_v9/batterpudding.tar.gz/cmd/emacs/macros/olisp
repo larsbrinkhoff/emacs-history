@@ -1,0 +1,272 @@
+)		Electric C ) - Show matching parens - [if lnowid >= 4]
+
+C. Douglas Blewett (MH3-C-319) Version 4.3
+
+This file contains assorted macros to make life more livable while
+working with LISP and C.  The routines attached to ) and } are a
+little smarter than "balance" about showing matches that are off the
+screen.  M-% goes to the matching paren or brace.  If the cursor is
+on a "(" the routine will find the corresponding ")" (or "{" and "}").
+Of course, if the cursor is on a ")" or a "}" the routine will find the
+matching "(" or "{".  C mode MUST be turned OFF for this stuff to work.
+
+At Jeff Langer's suggestion "}" also adjusts the indentation to that
+found on the line containing the matching "{".
+
+The routine attached to ^M (carriage return) indents correctly
+(maintains the level of indentation including spaces and tabs) and
+removes unused white space (usually caused by the indenting routine
+itself) on blank lines.
+
+WARNING: this routine uses "comcol" and "lnowid" as global variables for
+storing the current level of indentation and turning these features on
+and off (High Voltage).
+
+ Interface routines
+	M-%  - Moves to corresponding () or {} pair (like vi % command)
+	)    - Shows matching "(" (only if it is currently displayed)
+	{    - Inserts {, a ^M and indents one tab
+	}    - Shows matching "{" (only if it is currently displayed)
+	^M   - Maintains the exact level of indentation and removes
+		unused whitespace from interveneing empty lines
+	;    - Inserts a ; and does a ^M
+	M-^^ - Toggles these features (High Voltage) on and off
+
+	)
+	<lnowid
+	<lnowid
+	
+	|û
+		û5~4
+			 ¥
+			øOn_screen
+			
+		ý
+	ý
+
+ž	Electric C Level - [lnowid >= 4 ^M and ), >= 5 }, >= 6 { and ;]
+	<c
+					Turn of C mode
+	<comcol
+	0				Set indent to zero
+	<lnowid
+	<lnowid
+	|û
+		û~4
+			4
+			0<High Voltage Electric C On Low - 4
+		ý
+		û~5
+			5
+			0<High Voltage Electric C On Medium - 5
+		ý
+		û~6
+			6
+			0<High Voltage Electric C On High - 6
+		ý
+		û 
+			3
+			0<High Voltage Electric C off
+		ý
+	ý
+
+;		Electric C ; - New line and indent - [if lnowid >= 6]
+	;
+	<lnowid
+	<lnowid
+	
+	|û
+		û5~6
+			
+		ý
+	ý
+
+{		Electric C { - New line and indent - [if lnowid >= 6]
+	{
+	<lnowid
+	<lnowid
+	
+	|û
+		û5~6
+			øIndent_get
+				-
+		ý
+	ý
+
+}		Electric C } - Match Previous, etc. - [if lnowid >= 5]
+	}
+	<lnowid
+	<lnowid
+	
+	|û
+		û5~5
+			<-
+			 ¥
+			øOn_screen
+			øIndent_get
+			5 øIndent_get
+			--<}<-
+			“3-} 
+		ý
+	ý
+
+¥On_screen
+	|û			Test if it is on the screen
+		û~3=-1
+		ý
+		û 
+			#8 80--
+			80
+		ý	Quick Twitch - it is faster than a 1 sec. delay
+	ý
+
+¥Indent_get
+	1				Copy the indentation
+	<
+	^û4~0
+		!û
+			û 
+				+
+			ý
+			û	
+				+
+			ý
+			ûÿ
+				0
+			ý
+		ý
+	ý
+
+¥		Find_Matching parens and braces
+	!û			What are we matching
+		û(
+			1
+			51
+			64
+			<[()]
+		ý
+		û)
+			-1
+			5-1
+			6-4
+			<[()]
+		ý
+		û{
+			1
+			51
+			64
+			<[{}]
+		ý
+		û}
+			-1
+			5-1
+			6-4
+			<[{}]
+		ý
+		ûÿ
+			0
+			
+		ý
+	ý
+	^û4~0		Loop until match is found
+		|û
+			û5		Move off the  current item
+				0>	Get a copy of the search string
+				6“	Search in the correct direction
+				!û	What we found
+					û(
+						11~1
+					ý
+					û)
+						11~-1
+					ý
+					û{
+						11~1
+					ý
+					û}
+						11~-1
+					ý
+					ûÿ
+						0
+					ý
+				ý
+			ý
+			û 		Beginning or end of file
+				0
+			ý
+		ý
+		|û		Kludge to handle loop bug
+			û1~0
+				|û
+					û~50
+						50
+						-
+					ý
+				ý
+			ý
+		ý
+	ý
+
+		Electric C - Maintain the indent - [if lnowid >= 4]
+	
+	<lnowid
+	<lnowid
+	
+	|û
+		û5~4
+	|û
+		û
+			1	^U is the flag for space or tabs loop
+			60	6 is the flag for line containing chars
+		ý
+		û 
+			0
+			61
+		ý
+	ý
+	50			5 is the flag for space or tabs found
+	^û4~0	Loop while trailing spaces and tabs
+		!û11~64
+			û`		Space
+				51
+			ý
+			ûI	Tab
+				51
+			ý
+			ûJ		Line feed
+				0
+				|ûClear line if it has spaces or tabs
+					û~51
+						
+					ý
+				ý
+			ý
+			ûÿ	Real line - leave it alone
+				0
+				61
+			ý
+		ý
+	ý
+	øIndent_get
+	-				Install the copied chars.
+	0
+	|û
+		û~61		True text line
+		ý
+		û1~3=0		Intervening blank lines
+			<comcol
+			1
+			<	
+			14~8-
+			< 
+			15~8-
+		ý
+	ý
+	<comcol
+	3=				Set comcol
+	ý
+	û 
+		
+	ý
+ý
+

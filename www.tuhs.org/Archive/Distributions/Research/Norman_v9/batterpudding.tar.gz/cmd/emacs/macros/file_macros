@@ -1,0 +1,18 @@
+x			MAKE current file EXECUTABLE
+
+ File-handling macros of J. Leth version 3.0)
+
+   <chmod +x 
+   FÁ			append file name to "chmod" command
+   ¡
+   
+p			PROTECT current file (make it unreadable by others)
+   <chmod 600 
+   FÁ			append file name to "chmod" command
+   ¡
+   
+r			REMOVE current file
+   <rm 
+   FÁ			append file name to "rm" command
+   ¡
+   

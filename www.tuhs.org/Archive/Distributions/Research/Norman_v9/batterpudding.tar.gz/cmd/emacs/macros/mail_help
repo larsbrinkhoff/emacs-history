@@ -1,0 +1,29 @@
+                        MAIL commands
+
+^Z: exit mail subsystem                  ?:  display help
+>:  go to end of mail                    N:  put the latest UNIX news in your
+<:  go to beginning of mail                  mail buffer
+n:  next message                         U:  put the latest netnews in your
+p:  previous message                         mail buffer
+d:  delete message                       !:  execute UNIX command
+u:  undelete message                     e:  edit mail buffer
+r:  reply to message (^Y brings back     ^L: refresh screen
+    text of old message)                 ^V: display next page of this message
+s:  send message                         l:  go to next "Date" in newsletter
+w:  write message to file
+f:  forward message to another person 
+P:  print current message                
+ :  (space)     display next page of  
+    current message                            
+^H: (backspace) display previous page
+    of current message
+                                       
+                                       
+                                       
+                                       
+                                       
+                                       
+                                       
+                                       
+                                       
+                                       

@@ -1,0 +1,70 @@
+È		Move the cursor to home (top line)
+
+C. Douglas Blewett (MH3-C-319) Version 4
+
+This file contains assorted macros that help the user move quickly or
+accurately around the screen.  The central rountines are M-H and
+M-L (top and bottom of the screen).  Should be able to have just one
+routine to handle both, but ^]^N or ^]^P marks the file as modified
+at the end or beginning of the buffer.
+
+ Interface routines
+	M-H - Home or top of screen
+	M-L - Last or bottom of screen
+	M-M - Middle of screen
+	M-^P- Back one line - adds a line at the top of the screen
+	M-^N- Forward one line - adds a line at the bottom of the screen
+
+Modified  7/5/81: added argument count to M-^P and M-^N
+Modified  9/23/81: fixed two window brain damage and cleaned it up
+
+	
+	^û~0
+		|û
+			û~2=-1	Loop off thre screen
+				0
+			ı
+			û
+			ı
+			û 
+				0
+			ı
+		ı
+	ı
+
+Ì		Move the cursor to the last line
+	
+	^û~0
+		|û
+			û~2=-1	Loop off thre screen
+				0
+			ı
+			û
+			ı
+			û 
+				0
+			ı
+		ı
+	ı
+
+Í		Move the cursor to the middle of the screen
+	È60=
+	Ì712~0=6
+	714~72
+	7
+
+		Scroll up one line when on top line
+	^û3~0
+		12~1	Loop
+		ÈŒ0
+	ı
+
+		Scroll down one line
+	^û3~0
+		12~1	Loop
+		ÈŒ0
+	ı
+	Ì0
+
+
+

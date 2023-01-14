@@ -1,0 +1,30 @@
+screen_vertical
+
+Warren Montgomery, Version 4.4
+
+This macro makes vertical movements on the the screen.  It works just
+like ^N(^P) except that it tries to stay in the same collumn on the screen.
+
+´³=			Record the screen column
+^ûû!û°	Switch on the character to do.
+	û^û±2~ıGo to next line without doing ^N
+		´øequalize_line
+			Initialize argument
+	ı
+	û^û±2~ıGo to last line without doing 
+		´øequalize_line
+			Initialize argument
+	ı
+	û±3~ı	Arg = arg * 4
+	ûÿ˜°ıııEnd of condition portion
+	°°­<
+ı
+equalize_line
+
+This macro moves to the screen position equal to its argument in the
+Current line or end of line if it isnt there.
+
+|ûû²~³=°°ıı		Make sure that the current line is displayed.
+^û·~²~³=~±0ı
+			While not there, move forward
+

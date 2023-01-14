@@ -1,0 +1,38 @@
+ƒcapitalizes entered letters until end of word [MACRO]
+
+	Joe Steffen, ihuxs!steffen, IH x5381, Version 4.3
+
+ Lowercase letters are converted to uppercase until a character besides
+ a lower or uppercase letter, underscore, hyphen, or backspace is entered.
+ This character is then executed.  Uppercase letters, underscores, and hyphens
+ are inserted as is, whereas backspace deletes the previous character.
+
+		$4 = 1
+^û		while ($4 == 1)
+				$0 = getchar()
+	0-<caps
+	|û		condition list:
+		û7~5~0‘a0~0‘z	if (islower($0))
+			0Ü		insert $0 into the buffer
+						capitalize it
+		ı
+		û7~5~0‘A0~0‘Z	if (isupper($0))
+			0Ü		insert $0 into the buffer
+		ı
+		û~0‘_	if ($0 == '_')
+			0Ü		insert $0 into the buffer
+		ı
+		û~0‘-	if ($0 == '-')
+			0Ü		insert $0 into the buffer
+		ı
+		û~0‘	if ($0 == '')
+						backspace
+		ı
+		û 			default
+			0		$4 = 0
+			˜			execute the command in $0
+		ı
+	ı			end condition list
+	0		display the character
+ı			end loop
+

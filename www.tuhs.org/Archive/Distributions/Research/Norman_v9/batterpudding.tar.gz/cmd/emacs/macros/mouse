@@ -1,0 +1,89 @@
+mouse button 2 menu
+
+	This is a simplified set of macros for use with the 5620
+	mouse that do not conflict with the basic macro package.
+	It assumes that etty is the terminal emulator.
+
+	Joe Steffen
+
+³<M@!Kill!m@!3k!
+³<MA!Pick up!mA!3p!
+³<MB!Yank back!mB!3y!
+³<MC!Auto fill!mC!3f!
+³<MD!Scroll bar!mD!3s!
+³<ME!Change buffer!mE!3c!
+³<MF!!
+º0	save a pointer to the mouse button press macro
+
+3	mouse button 2 actions [MACRO]
+
+º0	map mouse button 1 press back to default
+º	map mouse button 1 release back to default
+!û­<
+				map button 1 release to
+	ûkº5ý		kill region
+	ûpº6ý		pickup region
+	ûfº8ý		auto fill region
+				map button 1 press to
+	ûyº7ý			yankback region
+				misc. actions
+	ûsøscroll_bar
+	ý
+	ûcøchange_buffer
+	ý
+ýM
+
+4	mark region [MACRO]
+ 
+
+5	kill region [MACRO]
+4
+
+6	pickup region [MACRO]
+4ð
+
+7	yank back region [MACRO]
+º0	map mouse button 1 press back to default
+
+
+8	auto fill region [MACRO]
+4¢
+
+	move cursor (default for mouse button 1 release)
+
+
+	move cursor when mouse button 1 is pressed
+
+The mouse transmits ^X ^_ <key number> x y.  The key number is ignored.
+
+				Collect the arguments
+­<
+­<
+5­<
+12~32	Subtract 32 to get the row and column
+512~532
+13~128	Shift the col over by 7 bits
+11~5	Add in the row
+g
+
+scroll_bar cursor positioning in file
+
+ °=¾³°=±2 ²±4~±3~µ0°=²X±2~µ0²-±2çbar
+­@
+­<
+­<
+-<
+5-<
+12~32
+±4~±3~³µ0ç
+
+change_buffer
+<
+­<Select one with mouse button 1
+­<
+­<
+-<
+5-<
+12~µ34
+~
+

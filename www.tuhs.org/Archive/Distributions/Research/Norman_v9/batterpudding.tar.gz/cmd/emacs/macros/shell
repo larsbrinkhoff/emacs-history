@@ -1,0 +1,148 @@
+Åedits the shell command file [MACRO]
+
+  Shell command execution macros for Version 4.4 and later
+
+	Joe Steffen and Bill Paulson
+
+	This set of macros allows convenient execution of shell commands
+ inside emacs.  Shell commands are kept in a "hidden" file
+ named $HOME/.commands.  Use Å to edit or move the line pointer in
+ this file.  Exit from M-E by ^Z.  M-C displays the current line in
+ this file in case you forget.  M-N and M-P move the cursor down and up,
+ respectively, in the file and display the current line.  They take an
+ argument just like ^N and ^P.  These commands make it easy to switch
+ between several command lines without using the M-E macro.
+	M-^E will execute the current line in the command file.  If the
+ first character of the line is not '!', then any
+ output will be captured in .exec just like using ¤.  On return
+ from execution, the current buffer will be displayed in the top window,
+ and .exec will be displayed in the lower window.  The shell output can
+ then be examined as a regular buffer.
+	If the first character of the line is '!', the output will be 
+ displayed on the screen  as the command(s) are being executed
+ just like using ¡.  This allows you to abort a program that is in an
+ infinite loop, or to enter program input interactively.  Entering 'n'
+ in place of a space when you get the "Continue?" prompt will execute the
+ ^Xs macro described later.
+	Note that the command line can contain multiple commands separated
+ by semicolons.  Since emacs allows a line to be several hundred
+ characters long, entire shell scripts can be executed.
+	Note also that you can use å while editing the command buffer
+ with Å.  Thus you can test the command line and quickly change it if
+ it contains an error.
+
+B		save current buffer name
+<$HOME/.commands
+		change to command file
+	recursively edit the command file
+		return to original buffer
+
+Ãdisplays the current line in shell command file [MACRO]
+B			save this buffer name
+<$HOME/.commands
+			get the command file
+ ð		save commands line
+1>		pull original buffer name to top of stack
+			return to the original buffer
+0@		display the commands line
+
+Îdisplays (arg'th) next line in shell command file [MACRO]
+B			save this buffer name
+<$HOME/.commands
+			get the command file
+1		move to next line
+ ð		save commands line
+1>		pull original buffer name to top of stack
+			return to the original buffer
+0@		display the commands line
+
+Ðdisplays (arg'th) previous line in shell command file [MACRO]
+B			save this buffer name
+<$HOME/.commands
+			get the command file
+1		move to previous line
+ ð		save commands line
+1>		pull original buffer name to top of stack
+			return to the original buffer
+0@		display the commands line
+
+…executes current line in shell command file [MACRO]
+0<Executing Commands
+0		indicate that execution is in progress
+B			save this buffer name
+<filename=
++F		prepend "filename=<filename>;" to command
++<; 
+<$HOME/.commands
+			get the command file
+!û		if the first char in the current line is a "!"
+	û!			skip over the !
+		12 -	prepend the filename assignment
+			save the commands line
+		12 -	restore comand line
+		þ		mark file updated
+		1>	pull original buffer name to top of stack
+				restore buffer
+		<usilent
+		0	turn off usilent mode (save old value)
+		¡		execute the line
+		<usilent
+			restore old usilent mode value
+		!û-<Continue?
+			ûnsý	execute the shell if 'n' is entered
+		ý			otherwise exit
+	ý		if the first char is a $
+	û$			skip over the $
+		12 -	prepend the filename assignment
+			save the commands line
+		12 -	restore command line
+		þ		mark file updated
+		1>	pull original buffer name to top of stack
+				restore buffer
+		<usilent
+		0	turn off usilent mode (save old value)
+		¤		execute the commands line & save the output
+		<usilent
+			restore old usilent mode value
+		1		ensure one window mode
+		<.exec
+		20	display .exec in lower window
+		þ		mark it as updated to prevent junk file
+				switch to the top window
+	ý
+	ûÿ	else
+		12 -	prepend the filename assignment
+			save the commands line
+		12 -	restore command line
+		þ		mark file updated
+		>		pull original buffer name to top of stack
+				restore buffer
+		0>	duplicate commands line
+		0@	display commands line
+		¤		execute the commands line & save the output
+		1		ensure one window mode
+		<.exec
+		20	display .exec in lower window
+		þ		mark it as updated to prevent junk file
+				switch to the top window
+	ý
+ý			endif
+			return to the original buffer
+
+sescapes to the shell (enter ^D to exit) [MACRO]
+
+	Joe Steffen, Version 4.0
+
+	This macro executes the shell interactively
+	instead of prompting for each command.  This allows cd
+	commands to stay in effect and allows you to see the results of
+	several commands.  The prompt is changed to 'emacs' to remind you
+	that you are still within emacs.  Enter ^D instead of a null line to
+	return to emacs.
+<usilent
+0	turn off usilent mode (save old value)
+<export PS1; PS1='emacs ' exec ${SHELL:-/bin/sh} -i
+¡		execute the shell interactively with a different prompt
+<usilent
+	restore old usilent mode value
+

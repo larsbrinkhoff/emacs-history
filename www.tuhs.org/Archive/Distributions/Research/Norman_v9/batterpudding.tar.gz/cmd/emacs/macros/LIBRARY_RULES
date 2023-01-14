@@ -1,0 +1,33 @@
+This directory contains a library of emacs macros for various purposes.
+Any macros submitted to this library should follow these rules:
+
+
+	Name and description (the first word of the comment on the
+	first line of a macro should be a unique macro name, right
+	after the ^\).
+	
+	A block of comments before any of the code describing in
+	more detail what the macro did, who wrote it, what version
+	of EMACS is needed to run it, and ways in which the user may
+	wish to customize it.
+	
+	Comments on any lines that do something non-obvious (i.e.
+	what is in the kill stack when it is used to supply a
+	parameter to something.
+	
+	When one macro calls another, use M-x.  Do not just invoke
+	them with a character sequence, so that a user can re-define
+	which character yours macros are on without screwing up the
+	macros. 
+	
+	Any macro that is not intended to be invoked by a character
+	sequence should be assigned to ^X^[ (control-x escape),
+	which is a highly improbable sequence to be useful for
+	anything else.
+
+	
+I am sure that we will be developing and using lots of macros, and
+that a lot of people will be looking at our macros, thus I think
+that this kind of detail is essential to try to avoid problems.
+
+Warren

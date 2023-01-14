@@ -1,0 +1,88 @@
+Žname_kbdmac	names keyboard macro. prompts for name
+<save
+2turn off autosave, but first save its current status
+B			save current buffer name
+<kbdmac
+			go to kbdmac buffer
+<$HOME/.emacs_kbd
+			read in the default kbdmac file
+			pause to show it off, with a recursive edit. 
+<Name for this kbdmac? 
+0>			copy this file name on kill stack
+¼$HOME/.kbdmac.dir/km.-set up line w/filename for macro
+-		kill the first line putting filename on stack 
+			write to new name
+øfix.kmac.doc
+<save
+2restore save mode status
+
+,fix.kmac.doc fix kboard macro documentation and return to
+			orig buffer 
+			requires macroname(top) and orig buffer(2)
+			in stack
+<$HOME/.kbdmac.dir/README.doc
+			now read in the documentation file
+<kbdmac.doc
+			rename the buffer
+¼km.-: 	make a copy of the filename with the "km.*: "
+-		put it on the kill stack twice
+|û û		search for the new file name
+		-<:
+			if found - pop filename and go past the ":" 
+	ý
+	û¾		if not found go to endof file
+		 $HOME/.kbdmac.dir/-set up new documentation line
+	ý		
+ý			
+			 edit the documentation recursively
+			save the new file...
+			return to original buffer
+<kbdmac.doc
+			kill kbdmac.doc buffer
+
+Øexecute_named_kbdmac executes named keyboard macro <arg> times
+	
+	
+	FIRST SET UP THE NAME OF THE KEYBOARD MACRO FILE
+<save
+2turn off autosave, but first save its current status
+B			save current buffer name
+<Execute kbdmac name: 
+<kbdmac
+¼-	go to and clear kbdmac buffer
+-$HOME/.kbdmac.dir/km.	set up filename of macro
+				then return to original buffer
+^û12~			While (arg--)
+	B			save current buffer name
+	<kbdmac
+				go to kbdmac buffer
+				get prevously set up filename of macro
+	%		switch kbdmac filename and orig buffer name
+				then return to original buffer
+				execute from the keyboard macro filename
+ý				
+<kbdmac
+				kill kbdmac buffer
+<save
+2			restore save mode status
+
+…edit_named_kbdmac edits named keyboard macro
+<save
+2turn off autosave, but first save its current status
+B				save current buffer name
+<kbdmac
+			go to kbdmac buffer
+< (Edit kbdmacro) name:
+0>			copy this file name on kill stack
+¼$HOME/.kbdmac.dir/km.-set up line w/filename for macro
+-		kill the first line putting filename on stack 
+			read in the  appropriate kbdmac file
+			pause to show it off, with a recursive edit. 
+			rewrite file
+øfix.kmac.doc
+<save
+2restore save mode status
+
+Éget.input gets a line of input from the terminal for use in kbdmacros
+<input:
+

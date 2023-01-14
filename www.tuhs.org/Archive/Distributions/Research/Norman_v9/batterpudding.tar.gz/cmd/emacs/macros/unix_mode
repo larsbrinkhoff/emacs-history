@@ -1,0 +1,13 @@
+Executes the current line as a unix command
+
+Warren A. Montgomery, IH 6e-314, Version 3.0
+
+		execute command line as a unix command
+		after a carraige return
+
+	Pick up command line
+¤		execute
+<next?
+
+		(last end of line goes to next line)
+

@@ -1,0 +1,43 @@
+г			SWAP current and following lines
+
+	Miscellaneous macros of J. Leth (Version 3.0)
+
+
+   			Kill following line
+   -			Insert before current line and clear stack.
+   
+С			APPEND last killed text to previously killed text.
+   B			push name of current buffer
+   <...
+   			go to temporary buffer
+   >3>љ-	append text in new buffer
+   1%			put current buf. on stack above ret. value
+   -М О		replace top of stack with appended text
+   2%-			move appended text to bottom of stack frame
+   B			push temporary buffer name
+   1%			...and swap with original buffer name
+   			go back to original buffer and kill tmp buf
+   
+a			withdraw and APPEND text to previously killed text
+   				withdraw text
+   С			append
+   
+s			invoke a SUB-SHELL
+   <$SH
+   Ё
+   
+i			ITALICS (nroff style)
+   \fI			insert italics string and allow editing
+   \fR			return to normal font at end of insert
+   
+є			TRANSPOSE next two words
+   ф			pick up this word and space after
+   ц			go to end of next word
+    -			drop saved word
+   -			clear stack
+   
+я			OPEN up the middle of a long line.
+   < 
+   ттттт	go to space before 5th-to-last word in line
+   			move words to next line, go to end of line.
+   

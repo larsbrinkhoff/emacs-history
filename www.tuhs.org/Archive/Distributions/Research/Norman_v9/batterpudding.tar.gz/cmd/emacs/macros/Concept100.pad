@@ -1,0 +1,90 @@
+			Concept100 cursor pad interpreter
+
+C. Douglas Blewett (DR30L19) Version 4
+
+This routine handles all of the Concept100 cursor pad keys.
+This routine assumes that the escape character for the Concept
+has been changed to ^\.  This should have been done in the
+c100* terminal data base file.  All escapes are changed to ^\.
+This routine also takes advantage of the different handling of
+the comment character interactively and in macros by EMACS.
+
+Keys handled			Approximate translation
+	HOME				M-g
+	PAGE (upper and lower)		M-v and ^V
+	SCROL (upper and lower)		M-3^P and M-3^N
+	B TAB				^R^I
+	BREAK				^G
+	All of the arrowed keys		line or character movement
+
+Arguments supplied to these commands multiply the affect.
+
+The first five programmable function keys (upper and lower) are
+defined in the data base file
+(INSRT, DEL CHAR, DEL & INS LINE, CLEAR EOP & EOL, and SEND).
+
+Modified to my own tastes 7/5/81: added MULT, reset & stat, print and tape
+
+	!û-<
+		û;		Up
+			
+		ı
+		û<		Down
+			
+		ı
+		û>		Left
+			
+		ı
+		û=		Right
+			
+		ı
+		û.		Page up
+			v
+		ı
+		û-		Page down
+			
+		ı
+		û[		Scroll down
+			13~3
+			
+		ı
+		û\		Scroll up
+			13~3
+			
+		ı
+		û?		Home
+			ç
+		ı
+		û]		Set tab
+			 
+		ı
+		û_		Clear tab
+			
+		ı
+		û'		Backtab
+			^û3~0
+				12~1	Loop
+				<	
+				-1
+			ı
+		ı
+		û:		Mult Code - back a word
+			b
+		ı
+		û{		print - forward a word
+			f
+		ı
+		û,		reset - back a line - from move
+			
+		ı
+		û+		stat - forward a line - from move
+			
+		ı
+		û`		tape - end of buffer
+			¾
+		ı
+		ûÿ	Defaults: | = PRINT(shifted),  = break
+			
+		ı
+	ı
+

@@ -1,0 +1,21 @@
+keypad lead-in character [MACRO]
+
+ This macro is triggered by the lead-in character of the Concept
+ keypad (after c108r has been loaded), and then acts based on which
+ key was pressed. This macro should be loaded during emacs initial-
+ ization.
+
+!û-<
+	û;ý
+	û<ý
+	û>ý
+	û=ý
+	û-ý
+	û.öý
+	û[åý
+	û\áý
+	û]æý
+	û_âý
+	ûÿ°<Key not yet defined!
+ý		Put out an error message
+ý

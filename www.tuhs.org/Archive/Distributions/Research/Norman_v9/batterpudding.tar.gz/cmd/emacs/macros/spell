@@ -1,0 +1,37 @@
+Óspell run spell on the buffer
+version 4.7, warren montgomery
+1in-case we have 2
+<spell 
+F·&<|fgrep -v -x -f $HOME/.dict
+·&¤B<.exec
+¾-remove trailing newline
+¼
+create empty line on top to prime loop
+2°prime text window
+^ûwhile more spell words
+°!û­<SPELL?
+û¾ýexit by moving to end of spell list
+û \<\>pick up word
+°>make 2 copies
+¼go to top of text
+^û´“while more occurances
+|ûûýif the user just exits, do nothing
+û ¾ýýif the user exits with 0, make the next search fail
+°>ý-ýremove search word
+next-case, put in dictionary
+ûdB<...
+push word, current buffer, ...
+%
+put word in new buffer
+-<$HOME/.dict
+push dictionary file
+B%write, and prepare to return
+ýûn-ýû?B<...
+help, save buffer name
+<~EMACS/macros/spell_help
+°­<Continue?
+help done, now go back
+B%ý note extra back compensates for forward at end of loop 
+ûÿýýanything else, just beep
+ý1return to 1 window mode
+

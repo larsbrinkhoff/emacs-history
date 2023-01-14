@@ -1,0 +1,354 @@
+This file describes the standard distribution for the emacs editor. 
+The file contains instructions for compiling, a list of associated
+software and files, and additional information for people with
+special problems, like porting to odd machine types or using odd
+operating systems.
+
+Anyone who is trying to maintain a copy of EMACS should send his
+name, address, machine name, and login name to me:
+
+Warren Montgomery
+IH 6C-501
+
+(ihesa!warren or ihnss!warren)
+
+I will try to distribute news of interest about new versions or
+features to anyone who is maintaining a copy
+
+COMPILATION AND INSTALLATION:
+
+The first step is to move all of the files into the directory that
+you intend to keep the source in.  Do this now if you haven't.
+
+The first line of the makefile describes any installation dependent
+parameters needed to compile emacs.  You will need to set the type
+of system that you are compiling for now.   You may want to set
+other parameter as well, as described later in the text, but you
+should be able to compile with just this option set.
+
+-Dux3:	Set this option if you are compiling for any AT&T Unix
+	system released after 1980.  (USG 3.0 or greater, system
+	III or greater, or version 7).  If you have an older version
+	(version 6, PWB unix, USG 2.0 or 1.2), omit this option.
+	
+-Dbsd:	Set this when compiling for Berkeley unix (4.X bsd). 
+	Depending on which version you compile for, you may get an
+	error in not being able to find one of the include files. 
+	If you do, just change the pathname of the include file to
+	wherever it lives on your system and recompile.  -Dbsd
+	should set it up for any Berkeley system of recent release).
+	
+	As distributed, emacs assumes 4.2BSD, with the select and
+	cbreak mechanisms appropriate to 4.2.  If your system does
+	not have these, change the defines near the front of
+	emacs_io.c that set up SELECT, FLIM,  and CBRAKE.
+
+	The primary effect of these two options is to specify what kind of
+	terminal I/O control mechanism to use.  If it is not set
+	correctly, emacs may not respond immediately to typed
+	characters (it may wait for 16 characters to be typed before
+	responding).
+	
+-Du370 and -Duts:  If you are compiling for unix/370 or amdahl uts,
+	set one of these, which affect the terminal initialization
+	code and some buffer size limits.
+
+-DTERMCAP or -DTERMINFO:  If you have a termcap or terminfo system
+	installed, emacs can be compiled to use it.  You must add
+	the appropriate library to the makefile entry for "xemacs"
+	before compiling.  If neither of these options are set,
+	emacs will compile for it's own terminal support.
+	
+-DPORTEXT:  Set this flag when compiling with a compiler that does
+	not allocate external variables in the order in which they
+	are designed.  This flag is set automatically when compiling
+	for uts or unix/370, but may need to be set manually if
+	needed on other machines
+	
+To make a copy of emacs, just type make.  The makefile will make
+emacs, putting the result in a file called xemacs.   EMACS requires
+several files while running for its error messages, help
+explanations, and statistics.  These are kept in a directory known
+as the emacs library.  By default, this is the
+directory in which emacs was made.  You should make xemacs at least
+once this way to test it.  After you are satisfied with it, you can
+cause the new versions of emacs, dired, and ecomp to be installed by
+editing the makefile.  Change the definitions of BINDIR and LIBDIR
+to specify where you want the executable files to be put and where
+you  want the emacs library files to be put and type "make install".
+This will cause some of the files to be recompiled in order to
+accommodate the change in the library location, and will cause all of
+the resulting objects to be moved to BINDIR and the support files
+installed in LIBDIR.  The pathname of LIBDIR is kept in the file
+"terminals.x".
+
+TROUBLESHOOTING:
+
+If emacs won't make or doesn't behave as you think it should, there
+is a primitive "expert system" that diagnoses common problems
+included in this distribution.  This system will ask you questions
+about your installation of emacs and give suggestions on what you
+can do to correct the problem.  To use it, first make "hyde"
+(HYpothesis Driven Expert).  (If the make file won't run, just run
+cc -o hyde hyde.c.)  Once you have hyde built, you use it by
+invoking "hyde kbase".  Hyde will ask questions about your
+installation.  In general, it will present a series of statements,
+each with numbers, and you respond by indicating all of the numbers
+that apply to your situation.
+
+Hyde is a crude tool, capable only of diagnosing the common problems
+that I have anticipated (or debugged for others) and put in it's
+knowledge base.  It may, however, save  a lot of time in pointing up
+things that you may have overlooked.
+
+OTHER FILES AND UTILITIES:
+
+EMACS can keep statistics on how it is being used and write these to a
+file called s<version> (where <version> is the version number) in
+the emacs library.  If you want statistics, create such a file (such
+as s4.7) in the emacs library give read and write access to
+everybody.  EMACS will produce one line of numbers for each
+invocation, which can be processed with stat_proc.
+
+In addition to building xemacs, the makefile will build "ecomp"
+which is the emacs macro compiler.  It can be used to compile EML
+programs into macros for emacs, and should be placed wherever you put
+the emacs binary.  Ecomp depends on the file "emacs_defs" to define
+the macro language.  This file should be kept in the emacs library.
+(All of this is done automatically by making "install")
+
+The utility programs stat_proc.c and see_it.c have been sent along
+with the EMACS sources.  Both simply require compilation.  stat_proc
+processes the statistics file.  Invoked with the name of the file to
+crunch, it produces a summary, and a list of users and the number of
+times each invoked EMACS.  Invoked with a user name as the second
+parameter, statistics for that user alone are given.  If a - is
+given as the second parameter, one summary is produced for each user.
+
+see_it works like cat, but translates non-ascii and control
+characters into multi-character sequences, like EMACS.  Thus the
+character 201(octal) in the input would produce M-^A in the output. 
+Normally, all control characters except newline are translated.  If
+the -t option is given, tabs will also pass untranslated.
+
+Emacs_vt.c is a collection of screen manipulation routines based on
+emacs.  The makefile entry for emacs_vt.o will compile it, and the
+mm source file emacs_vt.mm gives instructions for its use.
+
+Xusend.c is a write-around for a mis-feature of the usend file
+sending command.  It segments a list of files to avoid over running
+the byte count limit of usend.  Use should be self-explanatory.
+
+The cpio archive files MACROS and MACRO_SOURCE contain a collection
+of sample macros that do various things.  Macros for which source
+code exists are distributed in MACRO_SOURCE.  object code for all
+macros is in MACROS.  These will be automatically extracted into a
+macros directory when you run the makefile.  Most contain some
+limited documentation in addition to that available from the help
+command help.  The file CATALOG in the macro library summarizes what
+is available.
+
+The cpio archive file TERMINALS contains the terminal support
+description files.  When you first make emacs, a directory
+"terminals" will be created and the terminal descriptions will be
+loaded into it.  You may wish to change some of the entries, or add
+your own, depending on the terminals used on your machine and the
+naming conventions for terminals.
+
+The file term_support contains a description of the terminal
+description files, and instructions for adding support for a new terminal.
+
+The file hyde.c is a crude expert system inference engine used for
+the troubleshooter.  The kbase is it's knowledge base which
+describes the specific problems in emacs.
+
+SPECIAL INSTRUCTIONS FOR SPECIAL SITUATIONS:
+
+PORTABILITY:
+
+EMACS should be portable to a different machine with relatively
+little effort.  Parts of it depend on a Unix environment, and parts
+have been optimized to allow it to work in a 64K byte address space,
+but most code is quite portable.  Known points of
+machine dependence are:
+
+	The makefile unpacks several archives.  These are in ascii
+	(-c) cpio format and should be portable to any unix system
+	having cpio.
+
+	Several functions taking variable arguments depend on the
+	PDP-11 argument passing convention of storing the arguments
+	to a function consecutively on the stack.
+	
+	EMACS allocates storage above the end of its data area (the
+	symbol _end) by calling sbrk() directly to allocate more
+	space there. You cannot add code to emacs that calls on
+	malloc() or other dynamic storage allocators that call brk
+	or sbrk without modifying emacs.
+	
+	The normal terminal support code depends on types 
+	(int) and (char *) occupying the same physical
+	space, and on external symbols being allocated consecutive
+	storage locations in the order in which  they are declared.
+	This is true of most implementations of UNIX.  Setting the
+	"PORTEXT" flag will eliminate this dependency with some loss
+	of speed on start-up and some expansion of the code.
+	
+	You may get some type clash warnings from some versions of the
+	C compiler.  As long as they are all warnings, there
+	is no problem.
+	
+SYSTEM INFORMATION:
+
+EMACS consumes lots of disk space for holding the buffer files and
+the text in the kill stack.  Currently, this is allocated in /tmp. 
+If space is scarce there, you can change the pathnames of the
+temporary files by changing the definition of BTEMPATH in
+emacs_buf.h, or by setting -DBTEMPATH=\"/wherever/tmp\" in the
+VFLAGS line of the makefile.  
+
+If your system has the termcap database installed, you
+can use it instead of the internal 
+terminal support.  You must set "-DTERMCAP" in the VFLAGS parameter,
+and modify the makefile entry for xemacs so that the final load is
+done with the library containing the termcap access routines.  I do
+not guarantee that every termcap supported terminal will work
+optimally, since some of the parameters are not the same, however
+most if not all should work acceptably.
+
+If you have the terminfo system, you can compile emacs to use it with
+"-DTERMINFO".  The makefile must be modified to include "-lcurses"
+in the compilation entry for xemacs.  Here are a couple of notes
+about the terminfo/curses version:
+
+1)	If you have a version of the curses package compiled for a
+	single terminal (-DSINGLE), use it, as emacs needs only one
+	terminal and this compiles somewhat more compact and
+	efficient code.
+	
+2)	In order to avoid dynamic memory allocation, emacs fiddles
+	with the cur_term structure, and is thus dependent on the
+	implementation of curses.  If anything in the curses library
+	(or any other library) calls malloc() for dynamic memory
+	allocation, severe errors can result.  If you suspect a
+	problem here, check it by looking for malloc in a name list
+	of functions loaded in xemacs.
+	
+As distributed, emacs will time out input reads approximately every
+30 seconds to go and look for newly arrived mail and to update the
+time display for time mode.  The cost of this is that on a system
+with little memory, it will force the emacs process to stay resident
+or swap in frequently even if no input is entered.  This can be
+turned off by modifying the statement that sets the VMIN parameter
+in emacs_io.c to set it to 1. instead of 0.
+
+The compilation parameter "MINFILES" controls the use of temporary
+files.  Without this parameter set, emacs keeps the data associated
+with each buffer in a separate temporary file and keeps all of these
+files open when running.  On a heavily loaded unix system with a lot
+of emacs users, this may result in overflowing the system "inode" or
+file tables, which causes open(), pipe(), and other system calls
+which open files to fail.  Setting the parameter -DMINFILES in the
+definition of VFLAGS causes emacs to only keep one of its temporary
+files open at a time, thus reducing the use of inodes.  Doing this
+slows down emacs somewhat (for the time required to open and close
+temporary files every time you switch buffers), and can cause
+temporary files to be left in /tmp if emacs terminates abnormally. 
+Thus this setting is recommended only if your system has trouble
+with file or inode table overflows.  If you set it, watch for files
+with names of the form em.buffer_number.process_id accumulating
+in /tmp (or wherever you put the temporary files).
+
+Emacs will compile for most AT&T and Berkeley versions of unix. 
+There are some minor variations in functionality depending on what
+version you pick.
+
+FUNCTION		VARIATIONS
+
+display of time		These update every 30 seconds on AT&T 3.0 or
+and mail messages	more recent, and on Berkeley systems with
+			select() (4.2bsd).
+
+flow_lim mode		Works on AT&T 3.0 or more recent and
+			Berkeley systems with cbreak mode.  On
+			Berkeley systems, this can consume some
+			extra cpu time.  It is also more likely that
+			^S or ^Q typed as commands will be
+			interpreted as flow control.  This mode
+			should be used only when absolutely
+			necessary.
+			
+Handling of BREAK:	AT&T 3.0 or more recent and all Berkeley
+			unix with cbreak mode.
+			
+^@ (mark) command	^@ is a synonym for mark on AT&T systems,
+			but is not available on Berkeley unix
+			systems.  ^@ will behave like break on
+			these.
+			
+Sub-processes:		Work on both AT&T and Berkeley unix.  On
+			Berkeley unix, emacs will notice output from
+			the sub-process immediately, while on AT&T
+			systems there will be some delay.  On
+			certain unix/370 or Amdahl systems with
+			front processors, there is a bug that
+			prevents timing out reads to the terminal,
+			and on these systems, emacs will not notice
+			output from the sub-process until you stop
+			typing.
+			
+Suspension of emacs:	Suspending emacs with the M-^Z command works
+			fine on Berkeley unix.  On system V unix
+			running under "shl", you have to type an
+			extra ^Z to get it to suspend.
+			
+A version of emacs is available to run on an IBM personal computer. 
+In order to prevent the massive unauthorized proliferation of copies
+that occurred with the unix version of emacs, distribution is being
+more carefully controlled.  If you would like a copy, contact me by
+unix mail to ihesa!warren.
+
+Running on a shared I&D space pdp-11:
+
+	Because of growth in features and terminal support, fitting
+	emacs into a 64k address space is getting hard.  To run
+	effectively, you will have to remove something.  The main
+	effect of the limit is to limit the size of file  (number of
+	lines) you can edit.  Two bytes of data space are needed for
+	each line.  Here are
+	some hints on things that don't matter very much that can be
+	removed without serious degradation.
+	
+	NSCRCOL:  Changing NSCRCOL (emacs_disp.h) from 128 to 80
+	saves over 1000 bytes, and has no impact unless you support
+	terminals with more than 80 columns of display.
+	
+	NBLOCK (emacs_gb.h)  NBLOCK can be reduced from 16 to 2, saving
+	512 bytes for each unit of reduction.  Reducing it limits
+	the space available for macros, and thus the number of
+	macros that can be loaded.  It also increases disk I/O somewhat.
+	
+	NBUF (emacs_buf.h)  NBUF determines how many editor buffers
+	you can have.  Reducing it saves about 150 bytes for each
+	one you get rid of.
+	
+	Time mode (functions dtime, tzset, localtime asctime, etc.) Getting
+	rid of all of the time mode related stuff will save about
+	800 bytes.  This is a seldom used feature.
+	
+	Statistics (functions statout & stats)  These are seldom
+	used, and save about 300 bytes.
+	
+	M-".  This command is almost never used, and saves ~300 bytes.
+	
+	insert/delete line and character.  With a fast terminal,
+	these don't matter much, and getting rid of the code
+	(functions vadjust, lshift, rshift, and code to invoke them)
+	saves 800 bytes.
+	
+	Regular expressions.  These are useful, but large (2000 bytes).
+
+	Macros, very useful, but take a lot of code.
+	
+Good luck!
+

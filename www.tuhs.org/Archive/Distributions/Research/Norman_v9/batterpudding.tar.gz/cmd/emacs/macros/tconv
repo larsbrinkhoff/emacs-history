@@ -1,0 +1,96 @@
+Rep
+
+Version 4.0 to Version 4.2 terminal file conversion package.
+
+To convert a version 4.0 terminal file to version 4.2, run emacs
+(version 4.0 or 4.2 will do), load (^X^L) tconv, read the old
+description, and invoke meta-x fixterm.  This will convert the
+terminal description, and display it on the screen.  Everything
+except padding information should be propperly converted.  If you
+are satisfied with the conversion, type ^Z, and you will be returned
+to normal emacs.
+
+
+Meta-x tfix will fix all of the terminal files in the terminals directory
+DO NOT DO THIS WITH VERSION 4.2 terminal files!!!!
+
+
+¼|ûû2-ýý
+tfix
+
+Convert Version 4.0 Terminal Files to Version 4.1
+
+Should be invoked in the emacs source directory to convert all
+descriptions in the terminals directory.
+
+
+<.exec
+<ls -l terminals
+¤¼		Execute, and remove last newline
+¼^û		While more terminals
+øconv_tfile
+ý
+conv_tfile -- convert entry
+ < 
+<terminals/
++ðPick up terminal name
+<Terminals
+	Read terminal description
+øfixterm
+
+fixterm -- fix a single terminal description.
+
+This macro fixes a single terminal description.  The buffer is assumed
+to contain one terminal description, which is fixed and saved.  Recursive
+edit is invoked for approval of the updated description.
+Everything but delay specifications is fixed.
+
+cr=
+¼<CO
+coøinc
+			Increment co, and change name.
+<ic
+<IC
+øRep
+<ei
+<OC
+øRep
+<sf
+<sr
+øRep
+<SR
+|ûûcs
+	<sr
+	<al
+	øRep
+	ýý
+<bx
+<XB
+øRep
+<by
+<YB
+øRep
+<vc
+<VC
+øRep
+<rc
+<RC
+øRep
+<.exec
+
+inc -- increment number
+
+
+!û	Switch on character
+	û01ý	zero
+	û12ý	one
+	û23ý	two
+	û34ý	three
+	û45ý	four
+	û56ý	five
+	û67ý	six
+	û78ý	seven
+	û89ý	eight
+	û90øinc
+		ý	nine (carry into previous digit
+ý

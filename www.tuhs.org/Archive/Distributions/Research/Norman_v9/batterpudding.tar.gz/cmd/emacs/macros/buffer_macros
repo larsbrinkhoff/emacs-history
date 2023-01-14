@@ -1,0 +1,58 @@
+Ã			CLEAR current buffer
+
+	Buffer-handling macros of J. Leth. (version 3.0)
+
+   ¼ ¾-
+   
+C			CLEAN current buffer (restore to original state)
+   B			remember current buffer
+   B			remember current buffer again
+   <...
+   			go to temporary
+   			kill original buffer
+   B			remember this buffer name
+   %			swap with original buffer name
+   			return to (fresh) orig. buf. and kill temp.
+   
+Â			DISPLAY BUFFERS and choose a new one.
+   <
+   			display choices
+   2<goto buffer: 
+   			go to selected buffer.
+   
+Ë			KILL current buffer and choose a new one.
+   B			Remember current buffer name
+   <
+   			display choices
+   2<new buffer: 
+   			go to selected buffer, then kill old one
+   
+   
+ë			KILL multiple buffers (null buffer name ends)
+   <
+   			display choices, kill buffer and loop
+   2<kill buffer: 
+   ^û
+	<
+	
+	2<kill buffer: 
+      ý
+   
+T			edit in TEMPORARY buffer
+   B			remember current buffer
+   <...
+   			go to temporary and edit
+   B			remember this buffer name
+   %			swap with original buffer name
+   			return to original buffer and kill temp.
+   
+v			VIEW file in temporary buffer
+   B			remember current buffer
+   <...
+   			go to temporary
+   2<file? 
+   			read in file and edit
+   B			remember this buffer name
+   %			swap with original buffer name
+   			return to original buffer and kill temp.
+   

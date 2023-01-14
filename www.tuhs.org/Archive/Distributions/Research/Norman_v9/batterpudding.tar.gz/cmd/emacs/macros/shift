@@ -1,0 +1,51 @@
+Æ		shift marked area right or (arg != 1) left
+
+	C. Douglas Blewett, modified by Joe Steffen
+
+	Shift a region right or left.  An argument of != 1 shift
+	left, otherwise right.  This is useful for programing in
+	an indented language.
+	
+	The last line is shifted only if the region contains some 
+	part of it.  This allows shifting a region containing the
+	last line even if it does not end with a newline character.
+	
+12 				Mark the bottom
+40=				Get one line number
+					Goto the other end of the region
+30=				Get the other line number
+					Return to the original end of the region
+|û
+	û3~34	If cursor is at the top of the region
+						Goto the bottom
+	ı
+ı
+					The cursor is now at the bottom
+					If at beginning of line
+						Goto to previous line
+40=				Get the bottom line number
+					Goto the top
+30=				Get the top line number
+					Goto the bottom
+512~43		Number of lines
+511~51		Plus 1
+^û512~51	Loop count times
+	|û
+		û1~1	Arg == 1 insert
+				
+		ı
+		û 			Delete
+			!û11~64	White space
+				û`		Space
+					
+				ı
+				ûI	Tab
+					
+				ı
+			ı
+		ı
+	ı
+					Advance to next line
+ı
+12				Goto the bottom
+

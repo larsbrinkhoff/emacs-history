@@ -1,0 +1,51 @@
+novice emacs novice mode, exit via escape-z
+µ°^ûû¹û<00600000fffffffffffffffffffffffe
+°ı¸^û~¹²7 While the character in question is an escape 
+¹­<
+|ûû·~µ~¹´8°~¹µ7¸¹øget-count
+ process escape count 
+¹­<
+ read the real character 
+ıû ¹±1~±28¹ııı* Represent escapes as meta characters *
+!û¹û delete character 
+¸ıû return 
+¸
+ıû delete 
+¸øset-object
+±4 µıû forward search 
+ step forward 
+¸²<Forward Search? 
+|ûû²~¸° Search command aborted
+-ıû~¸° Search for last string 
+-±2&¶ Push the value of the search string 
+“ıû ¶±1&±2&¶“ıııûbackward search
+|ûû²<Backward Search? 
+­1“ıû ıııûıû|ûûµ±4µ°ıû µıııû¸ıû¸øset-object
+±2ıû¸øset-object
+±3ıûåøqsave-buffer
+|ûû²<edit-file? 
+ıııûñıûú°ıû÷|ûû²<write to file? 
+ıııûÿ²1~¹¸øset-object
+ıı Return the result of the case 
+ıı
+set-object Sets marks around specified object
+¹­<
+|ûû~¹²7¹±1~­<
+±28ıı  set mark for later use 
+!û¹ûforward character
+±2 ±3 ıûbackward character
+±2 ±3 ıûforward word
+±2 æ±3 â±2æıû±3 â±2 æ±3âıû±2 ±3 ±2±3ıû±2 ±3 ±2±3ıûó forward sentence 
+±2 ²å±3 á±2åıûæ±2 ¼±2¾±3 ıûÿ for now, just honk 
+ıı
+get-count get the object count
+¹±2~´8±6~¹¸­@^û·~µ~¸´8°~¸µ7* while more digits *
+¹±1~±3~±0¹±2~¸´8±6~¹¸­@ı²1~¸* restack character after count *
+¹
+yes-or-no ask yes-or-know question
+¹­1^ûû°> copy the question
+!û­@ûy¹ıû ¹ıûn¹°ıı²~¹°ıı¹
+qsave-buffer querry and save buffer
+|ûû­ş¹û<Buffer has been modified, write to file?
+øyes-or-no
+ı|ûû¹ıııı

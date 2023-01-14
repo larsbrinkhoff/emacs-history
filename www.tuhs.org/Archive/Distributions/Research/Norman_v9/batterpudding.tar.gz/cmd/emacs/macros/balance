@@ -1,0 +1,87 @@
+backscan -- scan backwards for [](){}
+
+Warren A. Montgomery, IH 6E314, Version 3.4
+
+ returns 0 if not found, 1 if found.
+
+.  This set requires emacs version 3.2, with the case command
+
+|û	see if at beggining of file
+	û<[][(){}]
+		-4“ýIf not, backsearch
+	û 0ýFalse
+ý
+match) match a right parenthesis
+
+	Returns 1 if it can match the current (, 0 otherwise
+^û|ûûøbackscan
+	!û	see what backscan found
+		û)ømatch)
+ý
+		û]ømatch]
+ý
+		û}ømatch}
+ýýý
+	û 0ýýý	found something that made us stop
+~‘(
+)paren_match Shows matching ( for a )
+
+
+) |û
+	ûømatch)
+	ý
+	û ýý
+match] match a right bracket
+
+	Returns 1 if it can match the current ], 0 otherwise
+^û|ûûøbackscan
+	!û	see what backscan found
+		û)ømatch)
+ý
+		û]ømatch]
+ý
+		û}ømatch}
+ýýý
+	û 0ýýý	found something that made us stop
+~‘[
+]bracket_match Shows matching [ for a ]
+
+
+] |û
+	ûømatch]
+	ý
+	û ýý
+match} match a right curly bracket
+
+	Returns 1 if it can match the current }, 0 otherwise
+^û|ûûøbackscan
+	!û	see what backscan found
+		û)ømatch)
+ý
+		û]ømatch]
+ý
+		û}ømatch}
+ýýý
+	û 0ýýý	found something that made us stop
+~‘{
+}brace_match  Show matching { for }
+
+
+|û
+	û~‘	ý
+	û ýý	simulate c mode
+} |û
+	ûømatch}
+	ý
+	û ýý
+©Show_match -- show matching terminator.
+ !û		Match the current character
+	û)ømatch)
+ý
+	û]ømatch]
+ý
+	û}ømatch}
+ý
+	ûÿ		Not matchable
+ý
+ý

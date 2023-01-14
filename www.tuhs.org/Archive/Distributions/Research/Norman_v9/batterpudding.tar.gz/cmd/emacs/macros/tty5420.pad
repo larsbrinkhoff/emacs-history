@@ -1,0 +1,116 @@
+	Teletype 5420 cursor pad interpreter
+
+	Paul F. Kellogg
+
+	These macros handle the teletype 5420 cursor pad keys.
+	It assumes the terminal is set up in the "send edit seq"
+	mode.
+
+	Key			Meaning
+	clear scrn		kill present screen
+	clear line		kill present line
+	(SHIFT) reset		redraw the screen
+	del char		delete the present character
+	del line		delete to the end of the line
+	del word		delete the next word
+	ins char, ins line	undefined
+	roll up (down)		move up (down) 5 lines
+	top (bottom)		move to the top (bottom) of the file
+	page up (down)		move one page up (down)
+	arrows			move in the indicated direction
+	f1 - f8			undefined
+
+
+ÛCursor keys that start with esc-[
+	!û-<
+		ûA		up
+			
+			ý
+		ûB		down
+			
+			ý
+		ûC		right
+			
+			ý
+		ûD		left
+			
+			ý
+		ûH		upper left arrow
+			0g
+			ý
+		ûV		page up
+			ö
+			ý
+		ûU		page down
+			
+			ý
+		ûS		roll up
+			5
+			ý
+		ûT		roll down
+			5
+			ý
+		û2		clear
+			!û-<
+				ûJ		clear scrn
+					0g 20
+					ý
+				ûK		clear line
+					 
+					ý
+				ûŸ	default
+					ý
+				ý
+			ý
+		ûP		del char
+			
+			ý
+		ûM		del line
+			
+			ý
+		û4		insert
+			!û-<
+				ûh		ins char
+					ý
+				ûŸ	default
+					ý
+				ý
+			ý
+		ûL		ins line
+			ý
+		ûŸ	default
+			ý
+		ý
+
+õlower left arrow key
+	19g
+
+ôtop of file key
+	¼
+
+úbottom of file key
+	¾
+
+ãreset screen key
+	
+
+Ïsystem programmable function keys
+	!û-<
+		ûc		f1
+			ý
+		ûd		f2
+			ý
+		ûe		f3
+			ý
+		ûf		f4
+			ý
+		ûg		f5
+			ý
+		ûh		f6
+			ý
+		ûi		f7
+			ý
+		ûj		f8
+			ý
+		ý
+

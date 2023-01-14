@@ -1,0 +1,21 @@
+üdownline -- draw down arg characters.
+
+^û±2~|ı
+box -- draw a box between point and mark
+
+
+³=		Current collumn
+´°=		Current line
+			Exchange
+³±2~³=Collumn Difference
+´±2~´°=line Difference
+|ûû³~°³If collumn difference is less than 0
+	³±2~°³³ıı
+|ûû³~°´If collumn difference is less than 0
+	´±2~°´´ıı
+³±1~³	Adjust collumn difference
+³-±2~´ødownline
+±2~³´		Back to top
+±2~´ødownline
+³-			Complete box
+

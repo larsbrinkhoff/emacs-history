@@ -1,0 +1,18 @@
+back_para  Back to last paragraph.
+
+Paragraph macros by Warren Montgomery
+Version 4.3 or later
+
+<^[.` 	]
+|ûû­“ý		If found it, OK.
+	û ¼ýý		Else, Go to beginning of file
+
+forw_para Forward to next paragraph.
+<^[.` 	]
+|ûû“ý		If found it, OK.
+	û ¾ýý		Else, Go to end of file
+
+"fill_para  Fill paragraph.
+±2 øback_para
+ øforw_para
+¢±2

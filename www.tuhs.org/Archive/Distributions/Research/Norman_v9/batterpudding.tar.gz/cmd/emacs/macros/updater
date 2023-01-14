@@ -1,0 +1,48 @@
+updater -- distribute emacs updates
+
+Warren Montgomery, Version 3.4
+
+This macro automatically distributes emacs updates to all users
+on update-list.  Each send is accompanied by unix mail, sent from
+the buffer "notice"
+
+<update-list
+<date > .date
+¡	Set up  date in file .date
+^û	While more lines in update file
+	< 
+		Find second word, that's the distribution code
+	!û
+	ûu				Usend file, always do
+		<make USER=
+		+ âð	Pick up user name
+		+< DEST=
+		+ ð		Pick up machine name
+		+< usend
+		¤øNOTIFY
+		ý	Send update and mail
+	ûÿ			Default, ask to mount tape.
+		Œ|û
+			û~‘y-<Mount tape?
+			<make 
+			+ æð¤	make tape if desired
+			øNOTIFY
+		ýý
+	ýý
+ý
+<rm .date
+¡<usilent
+
+NOTIFY Notify user of incoming emacs sources and update log
+
+ < 
+ð			Pickup mailing name
+<notice
+¼< 
+ --	Supstitute new destination and mail
+<update-list
+< 
+ 	Rid old version and date
+- <.date
+		Read in today's date
+

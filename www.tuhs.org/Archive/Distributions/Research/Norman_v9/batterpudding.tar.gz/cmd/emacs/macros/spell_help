@@ -1,0 +1,7 @@
+SPELL commands
+
+?:  display help
+n:  next word
+d:  put word in local dictionary and go to next word
+ :  look up occurrences of word in file
+^Z: exit spell

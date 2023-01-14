@@ -1,0 +1,29 @@
+/* Terminal type c1008p for concepts - 1200 baud or < - progs function keys */
+up=;
+do=<
+bc=
+cr=
+ho=?
+cl=%1P
+cd=%8P
+ce=%8p
+bl=
+cm=a%c%c
+pc=al=%2P
+dl=%2P
+im=
+ei=€
+ip=%8p
+ul=%c_
+dc=%8p
+vs=Uo !f578lNH€Xv  8p4!0" 4! " 4!1"4!!"4"2"4$""14!3"4&#" > 4"4"4#$"%356p
+ve=o xv  p4 2!4 "!4 3!4 #!4 4!4 $!p=\n%356p
+sf=\n
+sr=\\
+bx=32
+by=32
+co=80
+li=24
+rc=1
+am=1
+in=1

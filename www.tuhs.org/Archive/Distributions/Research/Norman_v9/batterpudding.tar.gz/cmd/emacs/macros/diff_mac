@@ -1,0 +1,25 @@
+view_line View one line of diff
+ ^û·~µ~‘0µ~‘9ıWhile a number, skip
+ğ²±7~		Get in variable 2
+^û²~‘aıSkip until a letter
+ ^û·~µ~‘0µ~‘9ıWhile a number, skip
+ğ³±7~		Get in variable 3
+
+%²ç°	Display buffer
+³ç°	Display other buffer
+°@
+
+diff Diff two files, show corresponding sections.
+
+
+<First file to diff? 
+°>		Load it up
+<Second file to diff? 
+°>		Load it up
+<.exec
+-diff >- ¤	Cons up command line and run it
+°>2
+¼^û>øview_line
+	<.exec
+	^û¶~¶~~‘<~‘>~‘-ı
+ı1-

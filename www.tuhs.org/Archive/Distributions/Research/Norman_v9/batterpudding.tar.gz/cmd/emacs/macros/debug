@@ -1,0 +1,47 @@
+display_killstack -- display contents of killstack
+
+Warren Montgomery, Version 3.5
+
+This package contains misc macros for help in debugging/general
+programming.
+
+  display_killstack displays the current contents of
+the kill stack in a temp buffer.  The bottom two items of the kill
+stack will be lost through this.  Typing ^Z returns you to where you
+left off.  This macro can be used in debugging other macros to
+give you a chance to see the state of the world in the middle
+of the macro
+
+ù	initialize count
+B<killstack
+		goto scratch file
+†æ-	empty it
+^˚%	while more stuff in kill stack to float to top
+	
+	Kill stack item number: ¯PNUMB
+	
+	%extract item and swap
+	ù11~	increment item counter
+	˝ºB%
+PNUMB  -- print a number
+
+Warren Montgomery, Version 3.5
+This macro converts its argument to decimal and inserts it in the buffer.
+
+|˚
+	˚2~1011~060‹˝ <10, print
+	˚ 14~10¯PNUMB
+11~06015~10‹˝
+˝
+TO_DECIMAL  	Converts a number on the kill stack to a decimal return value
+
+Warren Montgomery (EMACS 4.0)
+
+ This macro takes the item on the top of the kill stack, converts
+ it to an integer, and returns the value as its result.
+
+- ù0	Initialize answer to zeero
+^˚	While More to convert
+ù11~13~1012~ë0Process next digit
+-		Delete it and go back to the end
+˝-

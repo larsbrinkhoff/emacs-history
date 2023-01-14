@@ -1,0 +1,159 @@
+emacsterm mouse region marking [MACRO]
+
+ Move the cursor when mouse button 1 marks a region.
+ Emacsterm transmits ^X^]nxyxy.  The key number (n) is ignored.
+
+				Ignore the key number.
+­<
+øgoto_xy
+ 				Set the mark.
+øgoto_xy
+
+emacsterm mouse pointing [MACRO]
+
+ Move the cursor when mouse button 1 is clicked.
+ Emacsterm transmits ^X^_nxy.  The key number (n) is ignored.
+
+				Ignore the key number.
+­<
+øgoto_xy
+
+goto_xy
+				Collect the arguments
+­<
+5­<
+12~32	Subtract 32 to get the row and column
+512~532
+13~128	Shift the col over by 7 bits
+11~5	Add in the row
+g
+
+Éinserts output of a shell command into current buffer [MACRO]
+<usilent
+	turn on usilent mode (save old value)
+B		store current buffer name
+<command line? 
+¤		invoke shell on command inserted at the prompt
+<.exec
+		switch .exec buffer
+¼		go to top of buffer
+ 		mark top of buffer
+¾		go to bottom of buffer
+ð		put entire .exec buffer on kill stack
+%		swap first and second items of the kill stack
+		go to original buffer
+		insert contents of .exec (on kill stack) into current buf
+<usilent
+	restore old usilent mode value
+-		restore kill stack
+
+Ôtranspose next two words [MACRO]
+ä		pick up this word and char. after
+æ		go to end of next word
+-â	drop saved word and go back to start of it.
+-		clear stack
+
+§signs name to message with $HOME/.signature file [MACRO]
+
+<$HOME/.signature
+°
+ïsets overwrite mode [MACRO]
+
+<overwrite
+
+éreturns to insert mode [MACRO]
+
+<overwrite
+
+ëkills (arg) lines [MACRO]
+
+ 		mark the beginning of the current line
+±	go down (arg) lines and kill
+
+puts (arg) lines onto the kill stack [MACRO]
+
+ 		mark the beginning of the current line
+±ð	go down (arg) lines, and put the lines on the kill stack
+
+Ïcopies the current file to file.old [MACRO]
+
+<cp 
++F	append the file name
++< 
++F	append the file name
++<.old
+¡		execute the cp command
+
+Øcalls an interactive C symbol cross-referencer [MACRO]
+
+<usilent
+0	turn off usilent mode (save old value)
+<cscope
+|ûû´~±±	if arg != 1 
+	+< 
+	+F			append the file name
+ýý
+¡		call cscope
+<usilent
+	restore old usilent mode value
+
+Ddisplays a directory [MACRO]
+
+<usilent
+°	turn off usilent mode (save old value)
+<vsh 
++<Directory? 
+¡		prompt for the directory name
+<usilent
+	restore old usilent mode value
+
+Óruns the spell command on the current buffer [MACRO]
+<~EMACS/macros/spell1
+Ó load spell macro, execute it
+
+Íruns the mail processing subsystem [MACRO]
+<~EMACS/macros/mail
+±Í
+ƒcapitalizes entered letters until end of word [MACRO]
+<~EMACS/macros/caps
+ƒ
+Àinserts C lang. templates & executes command abbrevs. [MACRO]
+<~EMACS/macros/template
+À
+Þd_caret find and delete the next caret [MACRO]
+<^
+
+ochanges to the other window in same buffer [MACRO]
+1B2	put this buffer in the other window
+ºo	redefine ^X^O
+<~EMACS/macros/bufswap
+		load bufswap macro
+12 	and set mark here for use
+o
+Ggraphics (draw) [MACRO]
+<~EMACS/macros/draw
+G
+bbox -- draw a box between cursor and mark [MACRO]
+<~EMACS/macros/draw
+b
+Åedits the shell command file [MACRO]
+<~EMACS/macros/shell
+Å
+…executes current line in shell command file [MACRO]
+<~EMACS/macros/shell
+…
+Ãdisplays current command in shell command file [MACRO]
+<~EMACS/macros/shell
+Ã
+Îdisplays (arg) next command in shell command file [MACRO]
+<~EMACS/macros/shell
+±Î
+Ðdisplays (arg) next command in shell command file [MACRO]
+<~EMACS/macros/shell
+±Ð
+sescapes to the shell (enter ^D to exit) [MACRO]
+<~EMACS/macros/shell
+s
+Æshifts marked area right (no arg) or left (arg != 1) [MACRO]
+<~EMACS/macros/shift
+±Æ

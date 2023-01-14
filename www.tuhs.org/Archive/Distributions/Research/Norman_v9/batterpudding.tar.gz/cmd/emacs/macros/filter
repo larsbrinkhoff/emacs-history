@@ -1,0 +1,13 @@
+£filter_region
+
+Warren Montgomery, Version 4.3
+
+Runs a command with the marked region from the current
+buffer as input, and replaces the marked region with the output.
+This macro uses the file /tmp/$LOGNAME.emacs as a temporary file
+
+B<...
+-<Command? 
++< >/tmp/$LOGNAME.emacs
+¡B%</tmp/$LOGNAME.emacs
+

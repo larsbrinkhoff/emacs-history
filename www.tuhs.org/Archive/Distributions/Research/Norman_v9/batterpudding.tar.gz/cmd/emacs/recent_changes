@@ -1,0 +1,913 @@
+SUBJECT: new features and old bugs
+
+Version 2.4 will soon be installed as EMACS (it is now NEMACS). 
+This version allows longer files to be edited (up to about 9,000
+lines), and has several other changes.
+
+The M-w command puts a "wall chart" of commands (the combined output
+of "M-?*" and "M-?^X*" into the current buffer.  This is a handy reference.
+
+If you try to quit via ^X^C and tell emacs to write a buffer that
+has been modified, it will not quit if it encounters a problem (such
+as a protection violation).
+
+Several problems in the manual have been fixed.  These were first
+discovered when Brad, a new user totally unfamiliar with emacs,
+tried to learn emacs from the manual.  The manual is in
+/n1/warren/emacs/emacs.doc
+
+SUBJECT: Version 2.6
+
+Version 2.6 (now /usr/obin/nemacs) has several new features.  This
+version has some modifications to the file and buffer handling, and
+there may be bugs that cause garbled files.  It will probably stay
+as nemacs for some time until I am sure that it is sound.
+
+Non-Destructive buffer reading:  The ^X^R and M-$ commands now take
+the value of their argument to specify whether or not clear the buffer
+before reading.  If no argument is given (just
+invoke ^X^R or M-$), they clear, as they did in past versions.  If
+an argument is given, the text read is inserted into the buffer at
+the current cursor position, or at the end for M-$.   Thus if you
+type ^U^X^R and a file name, it is inserted.  If you type ^UM-$ and
+a command line, the output of the command is appended to the buffer .exec.
+
+(almost) Unlimited Kill Buffer.  The limit on the amount of text you
+can kill and still receive is now 256K characters.  The kill buffer
+is kept in a file, and the only limit is the amount of stuff you
+want to clutter up the file system with.  As before, only the last 8
+deletions are remembered.
+
+Reading a file without re-initializing the buffer, or retrieving
+lots of killed text, take lots of time if the cursor is in the
+middle of a line (i.e. there is text to the right of the cursor). 
+You can save a lot of time by opening up a line, doing the read or
+retrieval, and then killing the leftovers.
+
+SUBJECT: version 2.7
+
+version 2.7 contains many non-visible changes to reduce memory usage
+and improve efficiency.  The visible changes in version 2.7 are
+
+support for HP terminals (terminal type hp)
+
+An improved re-display algorithm that sometimes scrolls the screen.
+
+^Z now does exactly what ^X^C did.
+
+The ^X^T command takes the marked region in the current buffer and
+inserts it into a second buffer.
+
+Mail will now take any number of lines starting TO: or CC: for the
+destination of the mail.
+
+EMACS will not try to write buffers with a null file name after ^X^C
+or ^X^S
+
+SUBJECT: new features in EMACS 2.8
+
+New commands:
+
+	^X= will print out the character position of the cursor in
+the buffer and the total number of characters in the buffer.
+
+	M-" will re-adjust the lines in the buffer so that each line 
+has 72 or fewer characters.  Blank lines, or lines starting with '.'
+or '`' are not changed (these are nroff control lines).
+
+Other new features:
+	You now have 12 marks available for the commands dealing
+with marks.  If you specify no argument to commands using marks,
+they will use a different mark in each buffer.  By specifying an
+argument to commands using marks, you can explicitly set two or more
+marks in the same buffer.  See the documentation for more details.
+
+	You can now set default modes for a file by putting the
+string EMACS_MODES: anywhere in the first 10 lines of a file,
+followed by a description of the modes to set.  For example, the string
+/* EMACS_MODES: c, !fill, tabstop=3 */
+in a c source file will turn on c mode, turn off fill mode, and set
+the number of spaces per tab in the display to 3.  For more details,
+see the document.
+
+	When EMACS asks "continue?" after executing a unix command
+or listing active buffers, if you type 'y', ' ', or (return), EMACS
+will go back to the buffer.  Otherwise, it will ask for another unix
+command or another buffer name.  You can also get a list of active
+buffers by entering (return) in response to any of the commands
+that ask for a buffer name.
+
+SUBJECT: new features in EMACS 3.0
+
+There is now a way to pass the contents of the current buffer as
+standard input to a command.  Preceding meta-! (execute unix
+command) with ^U causes it to pass the buffer as standard input. 
+This does not work for meta-$.  (Sorry, but there is no obvious way
+to do this without the possibility of deadlock.)
+
+There are several minor bug fixes in this version.
+
+The undocumented game of life command (M-#) has been deleted.  If
+there is any interest in it, I will keep a version that has this feature.
+
+The big change here is the ability to define new commands.  Basically,
+any sequence of emacs commands can be defined as a command.  There
+are additional commands for sequencing execution, and for obtaining
+information from the terminal.  A brief description of the new
+commands is available in /n1/warren/emacs/macro.mm (mm source) or
+/n1/warren/emacs/macro.xopr (xopr'able copy).  Some sample macro
+definitions are available in the directory /n1/warren/emacs/macros.
+
+SUBJECT: new features in EMACS 3.1
+
+Several new features relating to macros:
+	The ^X% command which exchanges the top of the kill stack with
+ 	the item identified by the argument.
+
+	All of the commands that access the kill stack
+	(^Y,^X-,^X>,^X%, etc) now return 1 as a result if successful
+	and 0 if there are not enough items in the kill stack to
+	satisfy the request.
+	
+	EMACS will not ask Continue? after commands, buffer display,
+	statistics, and similar commands when the command is invoked
+	in a macro.  You can use ^X< to ask Continue? if you like.
+	
+	M-s now displays the amount of buffer space left for editing
+	or macro text.  You need a minimum of 1024 characters.
+
+	The buffer name ... is now special.  If you create a buffer
+	named ..., it will create a new buffer with a unique name
+	instead.  This is useful for creating temporary buffers in macros.
+	
+	M-x can now be used to call macros by names, rather than always
+	invoking a macro by a character.  This should help in the
+	construction of macro libraries.
+	
+	^X& compares two strings for a macro
+
+SUBJECT: new features in EMACS 3.2
+
+Several miscelaneous display bugs have been fixed
+
+A new mode parameter (keepscroll) has been added.  This is initially
+0 and can be set to the number of lines that you wish to keep from
+the last screen when going forward or backward by pages (^V or M-V)
+
+If you give an argument to ^L, it specifies the number of lines to
+appear on the screen before the current line when the display is rereshed.
+
+The command ^X^^ causes one line to be added to the current window
+when in two window mode.
+
+The command ^X^U causes the display to be updated and causes EMACS
+to delay for n seconds, where n is the argument to ^X^U.  This is
+useful in macros.
+
+The command M-] causes the last numeric argument to a macro to be
+passed as the argument to the current command.
+
+By popular demand, EMACS will now ask whether or not to write a
+buffer that contains text and has no file name associated with it.
+
+SUBJECT: new features in EMACS 3.3
+
+The command ^X! starts a case statement in a macro (see the macros
+memo for details)
+
+The redisplay heuristics have been improved for terminals that have
+insert/delete line and insert/delete character capabilities (hp,
+adm31, vt100, etc.)
+
+The command M-~ marks a buffer as not being up to date without
+writing it out.
+
+The .emacs_init file is now run before reading in a file specified
+on the command line.  This should reduce unwanted display on
+starting up.
+
+I am now maintaining a library of macros in /n1/warren/emacs/macros.
+There are macros for various purposes, such as dealing with unix
+mail, keeping track of refrences for mm, a help function for emacs
+commands, balancing parentheses, etc.  Anyone interested in
+submitting macros should follow the rules outlined in the
+LIBRARY_RULES file, and send them to me.
+
+SUBJECT: new features in EMACS 3.4
+
+EMACS will now expand environment variables, such as $HOME or $MAIL,
+in pathnames for reading, writing, and finding files.  Asteristisks
+in file names (ie *.c) are still not expanded.
+
+EMACS will not print prompts from commands read from an init file or
+form files read with ^X^I. This should cut down on annoying output
+at startup.
+
+A negative argument to a command can be specified with escape, '-',
+followed by the number.  Most commands treat their argument as
+unsigned, so a negative argument is treated like a large positive
+argument.  For some commands, negative arguments cause special effects.
+
+Passing a negative argument to ^X< causes a prompt to be given, and
+a single character to be read from the terminal as the result.
+
+The command M-: allows you to re-map character commands.  It prompts
+for a character (or a meta or ^X sequence) and a command  (also a
+character sequence) to put on that character.  This allows you to
+re-configure EMACS to your liking.
+
+The regular expression search facility (M-^S) has been improved.  You can
+now search forward or backward, either ending at the beginning or end of
+buffer, or wrapping around (like ed).  With a positive argument, the
+search is forward, while a negative argument searches backwards.  An
+argument of 1 or -1 causes the search to wrap, failing only if there
+is no occurance of the expression in the buffer.  Any other argument
+causes the search to stop at the beginning or end of file.  Note
+that the default (argument = 1) does exactly what the old one did.
+Entering ^S or ^R immediately following a regular expression search
+will find the next or previous occurance of the expression.
+
+***********Note to EMACS maintainers*************
+
+As of version 3.4, the file regexp.h is no longer needed.  The
+makefile has been updated to reflect this, and you will not receive
+this file in future updates.
+
+Beginning with version 3.5, EMACS will maintain error messages in a
+separate file (errfile).  This is produced like the helpfile.  Also
+beginning with this version the pathnames for the help and error
+files will be automatically set to the directory from which make is
+invoked.  Thus you do not need to change any pathnames unless you
+plan to keep the error, help, and statistics files in some other
+location on your system.  This should simplify making EMACS.
+
+***************************************************************
+
+SUBJECT: new features in EMACS 3.5
+
+Passing an argument to ^X^W (i.e. ^U^X^W) will cause the contents of the
+buffer to be appended to the specified file, rather than replacing it.
+
+There is a new mode: caseless.  Setting this mode will cause case to be
+ignored in searches and replaces.
+
+EMACS will now periodically check to see if you have received mail. 
+If so, it will print a warning at the bottom of the screen and beep.
+
+You can now use \ folowed by a single digit in the "To? " string for
+regular expression query replace to specify replacement by a
+sub-expression of what was matched.  This works just like it does in ed.
+
+You can now have local variables within a macro.  This is done through
+the ^] ad M-^] commands.  ^] returns as its result the value of a
+local variable selected by its argument.  M-^] assigns the result of
+the following command to a local variable selected by the argument
+to M-^] and returns as its result the previous value held by the
+variable.  You can have up to 10 local variables in each macro.  For
+compatibility with the previous definition of ^], local variable
+number 1 in each macro invocation is initialized to the argument
+given to the macro.
+
+There is a new mode, rigid_newline, that will cause a newline or carriage
+return to always insert a newline into the file, even if the
+following line is blank.
+
+Typing ^Z in response to an error message will no longer result in a
+core dump, but will ask if you want to write out modified buffers
+before exiting.
+
+Regular expression querry replace will check for matching something
+at the end of a line, and move to the next line if so, so that you
+will not get into an infinite loop replacing the end of a line with
+something else.
+
+^N will no longer go beyond the end of the buffer.
+
+The displays for search and querry replace have been changed somewhat to
+give you immediate feedback in response to characters typed before
+long searches.
+
+SUBJECT: new features in EMACS 3.6
+
+There is now a default match in the macro case construct.  See the
+macro memo for details.
+
+The display algorithm has been changed somewhat to avoid centering
+the window every time that you change buffers.  This should make
+macros like abbrev, that changes to another buffer to look up the
+abbreviation, more acceptable on slow terminals.
+
+The special character sequences \< and \> can be used to delimit a
+word in a regular expression.  The regular expression "\<the\>"
+matches an occurance of the word "the" (but not the delimiters on
+either side).  Words are delimited by line boundaries, white space,
+punctuation, and control characters.
+
+The new command ^X+ causes the next item put in the kill stack to be
+appended to the last item put in the kill stack.  See the macros manual for
+more details and cautions.
+
+Minor changes:  
+
+	^X^S on a buffer without a file name will fail in a
+	macro, rather than asking for a file name.
+
+	The algorithm used to find sentence beginning and end has
+	been changed somewhat.
+
+	The change mode command (^X^M) now returns the previous value of
+	the mode set as its result.  
+
+	There is a new mode (end_newline) which when set causes ^N
+	at the end of a buffer to extend the buffer by one line like
+	it used to before version 3.5.
+
+New Macros:
+	
+	There is a new macro package called tags in
+	/n1/warren/emacs/macros that facilitates working with a
+	group of related files.  See /n1/warren/emacs/macros/CATALOG
+	for details
+
+DIRED changes:
+	If you give dired an argument beginning with a dash, it is taken
+	as additional arguments to the ls -al command used to
+	produce a listing for dired.  Thus "dired -t" produces a
+	time sorted listing of the current directory, "dired -t
+	/usr/bin" produces a similar listing of /usr/bin.
+
+SUBJECT: new features in EMACS 4.0
+
+There is a new terminal support mechanism in EMACS 3.7.  This allows
+me (or anyone) to construct terminal description files for terminals
+without re-compiling.  This will allow many more terminal
+descriptions and synonyms, easing compatibility problems with EX. 
+It also lets us define "funny" terminals, such as vt100 in 80 column mode.
+
+This version makes use of the (crude) terminal improvements in UNIX
+3.0 to read-ahead, and hopefully reduce re-display somewhat on slow
+terminals.  System support for this is still very poor, thus there
+is little I can do.
+
+There are lots of new features for DIRED, see the manual page or
+memo for details.
+
+^X= has been changed to give lots more information.
+
+There are two new modes, tspeed and usilent.  
+
+tspeed is the speed of
+your terminal in miliseconds per character.  tspeed is used by emacs
+in determining how to update the screen, and is set automatically
+whenever you enter or exit emacs.
+
+usilent causes emacs not to display the command line or output of
+M-$ commands.  This is useful for running unix commands silently
+from macros.
+
+The new command ^X^N allows you to change the buffer name or the
+file name associated with a buffer without changing the contents of
+the buffer.
+
+The buffer re-display algorithm has been changed.  This should eliminate
+several display bugs and make it much easier to maintain.  Report
+any bugs in terminal support or display.
+
+There is a new macro library (/n1/warren/emacs/macros/crypt) for
+those who like encrypted files.  See /n1/warren/emacs/macros/CATALOG
+for details.
+
+SUBJECT: new features in EMACS 4.2
+
+There is a new command line option, "-i <filename>" which lets you specify
+an additional initialization file.  The file <filename> will be run after
+your standard init file and before any file name specified on the
+command line is read in.  Recall that init files contain sequences
+of emacs commands.
+
+The algorithm for determining terminal type has changed slightly. It
+first checks $TERM, then runs your init file, and if terminal type
+still hasn't been determined, asks for it.
+
+The command ^X= has been changed to return status information when
+invoked in a macro, depending on its argument.  You can get file or screen
+line and character positions. See the macros document for details.
+ 
+^X^F or ^X^R will not give an error if the file cannot be read when
+invoked with a negative argument.
+
+You can now re-map any command using M-:.  This allows, for example,
+mapping some more convenient key to escape on a terminal where
+escape is not in a convenient place.
+
+NEW modes:
+
+	notabs mode causes emacs to display tabs as ^I (rather than
+	white space), and to insert spaces up to the next tab
+	boundary when the tab key is pressed (unless the tab is
+	quoted with ^Q).
+	
+	readonly mode causes emacs to refuse to save the current
+	buffer back to the associated file and to not save the
+	buffer in auto save mode.  You can still save by writting to
+	a file explicitly with ^X^W.
+	
+	controlify mode allows you to use the character ^^ 
+	(control-uparrow) to make the next character a control
+	character.  This is primarily useful for using emacs over cu
+	(uucall, cuu) links, which swallow ^S and ^Q, or on a
+	console terminal, which swallows ^O.
+	
+SUBJECT: new features in EMACS 4.3
+
+Failing Searches inside of macros no longer beep.
+
+The mail command has been modified to support the header format used
+by other unix tools and by the arpanet community.  The principal
+changes are to define the header of a mail item to be all of the
+lines up to the first blank line, and to have M-^M look for lines
+beginning To: or Cc: (Instead of TO: and CC:) to specify the recipients.
+The old format will continue to be supported for some time, and old
+header lines will be converted to new headers before the mail is sent.
+
+New support has been added for terminals that underline, and terminals with
+a forms-editing style insert character mode (like the concept-100). 
+On terminals with underlining capabilities, the backspace mode is on
+by default, and positions that are over struck with an underscore
+will be underscored on the display.  Turning backspace mode off
+causes backspaces to appear as ^H, and nothing to be underscored.
+
+Emacs will now send you mail when it is killed (i.e. hung up on from
+a dialup terminal) and saves buffers.
+
+Emacs will only ring the terminal bell after the first "you have
+mail" warning.  If you don't read the mail, the warning will stay on
+the screen but emacs will not beep.
+
+Emacs will now preserve owner and group when writing files.  It also
+warns you when you try to write to a file that you do not own.
+
+New command: ^X^A.  This command puts the first un-processed command
+line argument on the kill stack.  See macros document for details.
+
+MACRO changes:
+
+rmail has been extended to provide local, btl-wide, and arpanet signatures,
+for mail replies depending on the destination.  It has also been
+modified to support standard mail headers.
+
+There is a new macro package (vmail) that automatically responds to
+your mail while you are on vacation.
+
+SUBJECT: changes in emacs_4.4
+
+Several bugs in regular expressions having to do with ranges of
+repeats (\{n,m\}) have been fixed.  Also, a new operator '+' has
+been defined to mean 1 or more occurance of what preceeds it, as it
+does in common use of regular expressions.
+
+The newline function has been changed so that the only time it does
+not insert a new line is when you are at the end of the current
+line, the next line is blank, and you are not in "rigid_newline" mode.
+
+Autofill and fill buffer have been slightly modified.  Autofill will
+now consider the whole line for possible breaking whenever you type
+a space or tab.  This means that if the line is several words over
+the line length, and you type space, several words will move to the
+next line instead of just the last word.  
+
+Fill buffer will now act
+just on the marked region (Actually the first character of the first
+line marked to the last character of the last line marked)  when
+given an argument.  The whole region is considered as one block to
+fill, irrespective of paragraph boundaries or blank lines, although
+it still avoids breaking lines in such a way that a '.' or ''' is
+put at the front of a line.
+
+The new command ^X@ works just like ^^X<, except that it takes the
+string used for prompting
+from the kill stack (or from the user if invoked from the
+terminal)  This allows you to alter the string used for prompting
+rather than compiling it in.
+
+The ^X^O command now returns 1 if both windows contain the same
+buffer, 0 if the windows contain different buffers, and -1 if it is
+called in one window mode.
+
+Querry replace will now display the from and to strings at the
+bottom of the screen.  It also has a new option 'b' which causes it
+to go backwards to the previous occurance of the To string.  (Note
+that this means find the previous occurance in the current file and
+does not find something that has already been replaced!).  Query
+replace also remembers the most recent replacement string and will
+substitute it for a replacement string consisting of a single '%'
+character.  
+
+The grow/shrink window  command (^X^^) will now expand or contract
+the display window while in 1 window mode as well as two window
+mode. The mode and echo lines remain at the bottom of the screen
+independent of window size.
+
+Emacs will now expand all of the usual shell meta characters in
+filenames.  Thus you can read "*.c", or `logdir usa`/.profile.  In
+all cases, only the first "word" (up to the first whitespace
+character) is used from the expansion.  Thus when specifying files
+with "*", only the first match is found.  The expansion of shell
+meta characters is slow, since emacs runs a subshell to do it.
+
+There is a new mode (display_percent) which will display the current
+file position as a percentage of the number of lines in the file
+when turned on.
+
+Two new operators have been added to convert between numeric and
+string values.  With an argument of 16, ^X~ will convert the result
+of the next command to a string and put it on the kill stack.  With
+an argument of 17, The top item on the kill stack is converted to an
+integer and returned as the result of ^X~.  See the macros document
+for details.
+
+Emacs now strips leading tabs and blanks from macro definitions when
+they are loaded in order to reduce storage requirements.  Although
+it is possible to construct a macro that would be effected by this
+change, it does not occur with normal coding practices.
+
+SUBJECT: changes in emacs_4.5
+
+Added a new command (M-E) which expands an environment variable and
+returns its value (or a null string) on the kill stack.  The return
+value of M-E is 1 if the string fed to it matched an environment
+variable, and 0 otherwise. (12/22/81)
+
+Added a new option to query replace.  When you respond with ".",
+query replace replaces the current occurance and exits query
+replace. (12/29/81)
+
+New Meta character for file names: (12/30/81)
+
+Emacs now interprets the tilde character (~) in filenames as meaning
+	"home directory" like the C shell.  Emacs will take the
+	characters following the ~ up to the next word separator as
+	the login name of a user and translate the entire sequence
+	to that user's home directory.  A null user name is taken as
+	your own, while the special user name EMACS is mapped to the
+	emacs data directry (contains the macro library and other
+	emacs related files).  Thus ~/.profile references
+	your .profile, ~foo/.profile references the .profile for
+	user foo, and ~EMACS/macros/crypt references the crypt macro
+	package.
+
+Emacs will now take a full path name to specify the terminal
+	description file either in the TERM environment variable or
+	with the M-t command.  This allows a user who does not have
+	control of the terminals database to customize his own
+	terminal description to meet special needs.
+
+Emacs now responds to a break signal.  When a break is detected,
+emacs stops what it is doing and prompts the user.  You have 5 options:
+
+	'y' or ' ' causes a "recursive edit" to be invoked on top of
+	whatever you were doing.  Entering ^Z from the recursive
+	edit will return you to the break message.
+	
+	'n' (no break) causes emacs to resume whatever was in
+	progress when break was detected.
+	
+	'^G' (quit) causes emacs to abandon what was interrupted and
+	unwind to the top level.  Any macros or init files being
+	executed are abandoned.
+	
+	'^Z' Causes emacs to exit, after asking about saving any
+	modified buffers.
+
+	'^]' Causes emacs to crash leaving behind a core dump.  (Not
+	terribly useful except for my debugging!)
+
+This allows you to interrupt a looping macro or long running search
+and to escape from it if necessary.
+
+MAILER parameter:  If you set the environment variable $MAILER,
+emacs will take it as the name of the command to run to send mail
+when M-^M is invoked.
+
+More editing for string parameters: (3/1/82)
+
+	You can now edit string-valued parameters (Like filenames or
+	unix commands) Using ^A, ^E, ^F, ^B, ^D, ^K ^U and ^?
+	If you type characters in the middle of a line, they are
+	inserted in place.
+
+Keyboard Macros: (6/15/82)
+
+	You can now tell emacs to remember a sequence of keystrokes
+	to be re-executed whenever you want.  ^X( tells emacs to
+	start remembering, ^X) ends the remembered sequence, and ^XE
+	executes it.  ^X( and ^X) do not interfere with normal
+	editing, however the saving causes some overhead, as
+	characters received from the keyboard are written one at a
+	time into a file ($HOME/.emacs_kbd) to be re-invoked.  Note
+	that you can use this feature to record a backup script of
+	your editing session.
+	
+Picture Editing Modes:  (6/6/82)
+
+	Two new modes have been added to facilitate editing of pictures:
+
+	"picture" mode treats the buffer as an electronic blackboard
+	extending infinitely to the right and down.  The screen is a
+	window into this blackboard.  Text to the right of the window is
+	not shown  (As in normal mode, a ! appears at the right margin,
+	but the rest of the line is invisible.)  The horizontal position
+	of the left most character position displayed is given on the
+	mode line to the left of the editor name, if it is not zero. 
+	The screen automatically scrolls left or right to keep the
+	cursor in view.  Several commands behave differently in
+	picture mode:
+	
+	^N/^P	These keep the same character position.  If the line
+		being moved to is not long enough, it is extended.
+
+	^F/^B	These will not go off of the current line.  Movement
+		to the right causes the line to extend, movement to
+		the left stops at the left margin.
+		
+	Deletions and ^Y.  These treat the region to be deleted as a
+		rectangle on the screen.  For example, ^W takes the
+		mark as one corner and the cursor position as the
+		other corner of a rectangle and deletes its
+		contents.  Likewise, ^Y retrieves text in the same
+		fashion.  (This makes most sense with nodelete mode
+		and overwrite mode.  See below).
+		
+	"nodelete" mode directs emacs not to remove text that is
+	deleted via text deletion commands, but to overwrite it with
+	blanks.  This should probably be the behavior associated
+	with overwrite mode, but for compatibility, they are treated
+	separaterly.
+	
+	These two modes are intended to work together with overwrite
+	mode to give you an editor designed to work with two
+	dimensional displays of textual information.  Using these
+	modes in other combinations may cause somewhat strange
+	behavior.  In addition, commands may not behave exactly as
+	expected if the file being edited contains tabs, backspaces,
+	or control and meta characters.  If this is a serious
+	problem, I can consider fixing it, but this would not be a
+	simple fix!
+	
+	Enjoy
+	
+SUBJECT: changes in emacs_4.6
+
+Dired now does recursive edits in the same process, allowing you to
+peruse a directory structure much quicker.  If you try to read a
+file with dired, it will display the contents, not the directory
+listing.  
+
+Emacs has some hooks to interface to the blit terminal.  These
+include a new command (^Xg) for use in positioning from input from
+the mouse, and a new method of spewing out raw text to the terminal
+(M-3^X<) that can be used to download control information directly
+into the terminal, and a feature that enables emacs to discover the
+window size of the current layer.  For more information, see the
+blit.info file in the macros directory.
+
+Emacs will read and write encrypted files via the unix crypt
+program.  The command ^Xk prompts for an encryption key.  All
+subsequent reads, writes, and saves use that key in saving.  This
+also applies to files saved in case of crashes, and to the temporary
+files used by emacs (though the encryption algorithm used for
+temporary files is not the standard one).  Running emacs with the
+command line flag "-x" will cause emacs to prompt for a key name
+before reading the file specified on the command line.  For both
+this and ^Xk, the key is echoed on the screen, but disappears as
+soon as you hit return.
+
+Performance on editing large files should be improved substantially.
+Startup for all size files should be faster.
+
+There is a new option to querry replace.  Typing <escape> to the
+prompt during querry replace will cause it to ask for a new string
+to substitute.  Unless you type ^G, this will become the new string
+to substitute in subsequent instances (^G exits querry replace).
+
+Lowercase letter command: M-l.  Converts the next character to lower
+	case.
+
+Screen goto command: ^Xg
+
+	This command goes to a screen position.  It is intended to
+	help interface to terminals with a mouse, or other
+	positioning device.  The command takes its argument and
+	decodes it as: Row=arg%128,Col=arg/128, where row 0,col 0 is
+	the upper left hand corner of the screen.  It then goes to
+	the requested position, changing windows if appropriate. 
+	Attempts to position to most "illegal" positions result in
+	going to the nearest legal position, however positioning
+	into the echo area or off the bottom of the screen result in
+	no movement.
+	
+The display of time and "you have mail" has been changed somewhat. 
+The effect should be that both messages will now appear on the line
+below the mode line when appropriate, and both will be updated when
+your terminal sits idle.  You may notice the mail message appearing
+and disappearing at different times than it did before.
+
+New Modes:
+
+ctl_char:	The character to be used to specify that the next
+		character is to be made a control character when
+		controlify mode is on.  The mode is the ascii value
+		of the character.
+
+flow_lim:	An integer specifying control over xon/xoff flow
+		control.  If flow_lim is non-zero, emacs will enable
+		xon/xoff flow control whenever more than flow_lim
+		characters are sent to the terminal at one time. 
+		This will also cause typeahead of ^S or ^Q to be
+		mis-interpreted.  This mode should be set only if
+		xon/xoff flow control is absolutely required for
+		correct operation.  Under normal conditions, emacs
+		supplies sufficient padding to terminals to allow
+		operation at all speeds without xon/xoff flow
+		control.
+		
+eofnl:		an on/off mode specifying that a newline will be
+		appended to any file written from a buffer not
+		containing a newline.  This mode defaults to ON.  If
+		you want to edit files that you do not want to end
+		in a newline, turn this mode off.
+	
+SUBJECT: changes in emacs_4.7
+
+4.6a,b,c:	Added checks on reading/writing files for concurrent
+		access by other processes.  Emacs will complain if
+		you try and write to something that someone modified
+		while you were editing it.  It will not let you
+		overwrite the other changes.  You must save your
+		buffer in some other file, then find out what's
+		wrong.
+		
+4.6d:		Lots of minor bug fixes, including fixes to dired.
+
+
+4.6d:		Macro trace command (^XT).  This command traces the
+		execution of the next command. Each primitave
+		command is printed as it is executed, along with the
+		argument and result.  Retrievals from the kill stack
+		are also displayed so that you can see the arguments
+		passed to commands that take string arguments. 
+		Emacs pauses after every command for you to hit a
+		key.
+
+4.7:		Improved macro capabilities.  A macro compiler that
+		compiles a lisp like language into the familiar and
+		uncomprehensible macro language of the past.  This
+		is separately described (in the nroff file
+		ecompile).  In connection with this change, the
+		following additions/changes were made to the basic
+		macro language:
+		
+		a)	Expanded naming.  There is now no limit on
+			the number of named macros.  calling/called
+			names must matched exactly now.  (The old
+			system allowed any prefix, and just caused
+			confusion.)
+		b)	New numeric operations for bitwise and, or,
+			and xor.  (see macro.mm for details)
+			
+		c)	New string operations for append strings,
+			substring, index, and string length.
+
+		d)	New operation to convert strings to pointers
+			and vice versa.  This supports the string
+			variables.
+			
+		e)	Named global variables (seem macro
+			documentation for details)
+			
+	new modes:
+	
+	autoload mode (defaults to on) 
+	
+		causes a call of a macro by name from another macro
+		to try to load a file with the same name as the
+		macro from either the directory specified by
+		environment variable $EMACS_LIB, or the directory
+		~EMACS/macros.
+
+4.7:	Display enhancement.  Emacs will now display the current line
+	first whenever re-drawing a large portion of the screen, provided
+	that your terminal has either insert/delete line or selective
+	scrolling capability.
+
+Subject: New features in emacs versions 4.8 and 4.9
+
+1)	Undo command.  M-u will undo the last significant text
+	change.  Deletions, insertions, the effect of m-y, can all
+	be undone.  Replacements can sometimes be undone.  (If there
+	weren't more than about 10 individual replacements done). 
+	Undo is it's own inverse.  
+	
+2)	Macro hooks.  Macros defined with particular names will be
+	invoked automatically under appropriate circumstances,
+	allowing you to customize the behavior of emacs.
+	
+3)	New macro programming commands:
+
+		format -- do  string format conversion, substituting
+		parameter strings for format specifiers.
+
+	(unget-character <arg>) pushes a character back onto the
+		input queue.
+	
+	input-count Returns the number of characters typed and not
+		yet processed by emacs.
+
+	window-top	screen-line of top of window
+	window-bottom	screen-line at bottom of window
+	first-visible-line	file-line at top of window
+	last-visible-line	file-line at bottom of window
+
+	(format <format> <string 1> <string 2 > ...)
+		This is a kind of primitive printf allowing you to
+		substitute string arguments into a format string.
+		
+	Several macro compiler bugs were fixed, allowing more
+	flexible syntax and avoiding errors that caused coredumps in
+	earlier versions.		
+
+	Due to changes in the ways that key bindings are done,
+	macros should now run about 3 times as fast as they did in
+	previous versions.
+
+4)	Berkeley unix tty I/O changes.  Emacs now supports flow_lim
+	mode, handles break from the keyboard, and updates the time
+	and mail messages while the terminal is idle on 4.2BSD
+	systems as well as on AT&T unix.  As a result of this
+	change, the mark command cannot be typed as ^@ on the
+	keyboard from berkeley unix systems.  Please use meta-space
+	instead.  (^@ and meta-space both continue to work in macros
+	as usual).
+
+5 (11/1) 7bit_ascii mode:  This mode changes the display of meta
+	characters, showing them as underlined rather than prefixed
+	with M-, to make displays of files using the high order bit
+	for graphics or format control more readable.
+
+
+6 New command:	M-^Z.  This command causes emacs to try to suspend
+		itself and return control to the shell on any system
+		using berkeley job control, or on a system using
+		"shl".  On systems using "shl", emacs will print a
+		message requesting you to type your normal character
+		for suspending jobs, while on berkeley systems,
+		emacs suspends itself automatically.
+
+7 New command -- M-0M-$.  This command runs a sub-process in a buffer
+		on emacs.  The process is started and runs
+		assynchronously.  All output that is produced is
+		appended to the buffer.  You can send input to the
+		sub-process by entering a line of text and hitting
+		return in the buffer in which it is run, or by using
+		the ^X^T command to send text to that buffer.  The
+		mark in this buffer is maintained at the end of the
+		last output from the process.  When you hit return,
+		if you are on the same line as the mark, everything
+		after the mark is sent.  This avoids sending back
+		prompts typed by the process.  (If you are anywhere
+		else, it sends the whole line.)
+		
+Key Bindings:	As of version 4.9, the key bindings used by macros
+		are different from those of the terminal.  This
+		allows you to re-map the keyboard without
+		interfering with the execution of macros.  Macro
+		code will use the built-in command attached to a key
+		(if any), no matter how the keyboard may have been
+		re-mapped by changing key bindings around with M-:,
+		and no matter what macros have been bound to
+		keyboard keys.  If there is no default binding, and
+		if there is a macro bound to the key, then it will
+		execute the macro.  You can restore the default
+		keyboard key bindings with by invoking the M-:
+		command with an argument of 0.
+
+
+Macros:		Many macros have been enhanced, and source is now
+		available for more of them.
+		
+
+		Of particular interest are the new netty and
+		emacsterm macros for use with blits and dmd 5620
+		terminals.  For documentation, see
+		~EMACS/macro_source/blit-or-dmd.  Also included are
+		new macros for lisp editing and for editing of emacs
+		macros.  These provide the parentheses matching and
+		indenting functions of the old lisp macros, plus
+		some new functions for navigating in a lisp file and
+		interacting with a lisp interpreter running in a
+		buffer.
+
+Documentation:	The users manual and macros manual have both been
+		completely rewritten to try to achieve a logical
+		organization rather than a historical one.
+
