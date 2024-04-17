@@ -525,7 +525,7 @@ graphic applications like my subway signal simulator (NXSYS,
 https://github.com/BernardGreenberg/NXSYS), I use XCode, the native
 Mac IDE, which I find pretty spectacular.  I don’t develop on Windows
 except to check releases of NXSYS already debugged on the Mac (or do
-their windowy parts). With C++ I can go can go either way (Aquamacs or
+their windowy parts). With C++ I can go either way (Aquamacs or
 XCode, depending). I don’t do any Lisp these days, except for the
 Lisp-expressed scenario logic in the subway system.  I'm using
 Aquamacs now (in "org mode", which is new for me) to edit this.
