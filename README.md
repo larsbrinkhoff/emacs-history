@@ -225,6 +225,10 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
   VAX/SUN UNIX 4.2 Source
   (C)1983 tar S/N # 1054 7/84"
 
+- UniPress C-macs and Emacs V2.20 from 1989.
+
+  From a floppy disk for an IBM 6150; files provided by Hans Hübner.
+
 - old-uemacs.tar.gz from Dave Conroy.
 
   "I probably have a version that predates any of Daniel Lawrence's changes,
