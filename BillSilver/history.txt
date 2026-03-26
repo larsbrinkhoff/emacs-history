@@ -1,0 +1,14 @@
+It ran under a custom timesharing system that I wrote sometime in 1976
+or 1977 for the MIT Weather Radar Research Project. No OS code or
+documentation survives, and I remember only a few things about it. I
+can see calls to my OS in the code, for example at sheet 4, line 0206
+a system call is made to set process (thread) priority. Priority was a
+16-bit word with four 4-bit fields, for timeslot length and priority
+level for I/O-bound and compute-bound states, as
+dynamically-determined by the OS.
+
+ 
+The Emacs listing has no date, but my best guess is that it was
+written in the summer of 1978. I was a grad student for the 77-78
+school year and had been exposed to Emacs under ITS. I returned to
+Weather Radar in the summers during grad school.
