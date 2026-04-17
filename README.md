@@ -182,7 +182,7 @@ the top entry in `src/ChangeLog`; this seems to be a good heuristic.
 
 - lemacs* and xemacs* from http://ftp.xemacs.org/Attic/Releases/
 
-- gosling-emacs-1999.tar and gosling-emacs-2007.tar from http://brian.org/~reid/misc
+- gosling-emacs-1999.tar and gosling-emacs-2007.tar from http://reid.org/~brian/misc
 
   Brian Reid: "I found two versions.
   They are in  reid.org/~brian/misc/gosling-emacs-1999.tar
